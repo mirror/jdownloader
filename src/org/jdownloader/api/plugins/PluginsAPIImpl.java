@@ -3,6 +3,9 @@ package org.jdownloader.api.plugins;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import jd.http.Browser;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.BadParameterException;
@@ -17,38 +20,40 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class PluginsAPIImpl implements PluginsAPI {
     @Override
-    public List<String> getPluginRegex(String URL) {
-        List<String> ret = new ArrayList<String>();
-        if (StringUtils.isNotEmpty(URL)) {
-            URL = URL.replaceAll("^https?://(www.)?", "");
-            for (LazyHostPlugin lhp : HostPluginController.getInstance().list()) {
-                if (URL.equals(lhp.getDisplayName())) {
-                    ret.add(lhp.getPattern().pattern());
-                }
-            }
-            for (LazyCrawlerPlugin lhp : CrawlerPluginController.getInstance().list()) {
-                if (URL.equals(lhp.getDisplayName())) {
-                    ret.add(lhp.getPattern().pattern());
+    public List<String> getPluginRegex(final String url) {
+        final List<String> ret = new ArrayList<String>();
+        if (StringUtils.isNotEmpty(url)) {
+            final String host = Browser.getHost(url);
+            final List<LazyPlugin<?>> plugins = getAllPlugins();
+            for (final LazyPlugin<?> lazyPlugin : plugins) {
+                if (host.equals(lazyPlugin.getDisplayName())) {
+                    final String pattern = getPattern(lazyPlugin);
+                    if (StringUtils.isNotEmpty(pattern)) {
+                        ret.add(pattern);
+                    }
                 }
             }
         }
         return ret;
     }
 
+    private String getPattern(LazyPlugin<?> lazyPlugin) {
+        final Pattern ret = lazyPlugin.getCompiledPattern();
+        if (ret != null) {
+            return ret.pattern();
+        } else {
+            return lazyPlugin.getPatternSource();
+        }
+    }
+
     @Override
-    public List<String> getPluginVersion(String URL) {
-        List<String> ret = new ArrayList<String>();
-        if (StringUtils.isNotEmpty(URL)) {
-            URL = URL.replaceAll("^https?://(www.)?", "");
-            for (LazyHostPlugin lhp : HostPluginController.getInstance().list()) {
-                if (URL.equals(lhp.getDisplayName())) {
-                    ret.add(String.valueOf(lhp.getVersion()));
-                }
-            }
-            for (LazyCrawlerPlugin lhp : CrawlerPluginController.getInstance().list()) {
-                if (URL.equals(lhp.getDisplayName())) {
-                    ret.add(String.valueOf(lhp.getVersion()));
-                }
+    public List<PluginAPIStorable> getPluginInfos(final String url) {
+        final List<PluginAPIStorable> ret = new ArrayList<PluginAPIStorable>();
+        final String host = StringUtils.isEmpty(url) ? null : Browser.getHost(url);
+        final List<LazyPlugin<?>> plugins = getAllPlugins();
+        for (final LazyPlugin<?> lazyPlugin : plugins) {
+            if (host == null || host.equals(lazyPlugin.getDisplayName())) {
+                ret.add(createPluginListStorable(lazyPlugin, null));
             }
         }
         return ret;
@@ -135,11 +140,11 @@ public class PluginsAPIImpl implements PluginsAPI {
         final PluginAPIStorable storable = new PluginAPIStorable();
         storable.setClassName(lazyPlugin.getClassName());
         storable.setDisplayName(lazyPlugin.getDisplayName());
-        if (query.isPattern()) {
-            storable.setPattern(lazyPlugin.getPattern().pattern());
+        if (query == null || query.isPattern()) {
+            storable.setPattern(getPattern(lazyPlugin));
         }
-        if (query.isVersion()) {
-            storable.setVersion(String.valueOf(lazyPlugin.getVersion()));
+        if (query == null || query.isVersion()) {
+            storable.setVersion(Long.toString(lazyPlugin.getVersion()));
         }
         return storable;
     }

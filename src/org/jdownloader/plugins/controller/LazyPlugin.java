@@ -1,8 +1,8 @@
 package org.jdownloader.plugins.controller;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,6 +18,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
+    private final static Charset                           UTF8            = Charset.forName("UTF-8");
     private final byte[]                                   patternBytes;
     private volatile MinTimeWeakReference<Pattern>         compiledPattern = null;
     private final String                                   displayName;
@@ -40,13 +41,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public LazyPlugin(LazyPluginClass lazyPluginClass, String patternString, String displayName, Class<T> class1, PluginClassLoaderChild classLoader) {
-        byte[] patternBytes = null;
-        try {
-            patternBytes = patternString.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            patternBytes = patternString.getBytes();
-        }
-        this.patternBytes = patternBytes;
+        this.patternBytes = patternString.getBytes(UTF8);
         this.lazyPluginClass = lazyPluginClass;
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
@@ -220,11 +215,10 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public final String getPatternSource() {
-        try {
-            return new String(patternBytes, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return new String(patternBytes);
+        if (patternBytes.length == 0) {
+            return "";
+        } else {
+            return new String(patternBytes, UTF8);
         }
     }
 
@@ -233,23 +227,31 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         final MinTimeWeakReference<Matcher> lMatcher = matcher;
         if (lMatcher != null && (ret = lMatcher.get()) != null) {
             return ret;
+        } else {
+            matcher = new MinTimeWeakReference<Matcher>((ret = getPattern().matcher("")), 60 * 1000l, displayName, this);
+            return ret;
         }
-        matcher = new MinTimeWeakReference<Matcher>((ret = getPattern().matcher("")), 60 * 1000l, displayName, this);
-        return ret;
+    }
+
+    public final Pattern getCompiledPattern() {
+        final MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
+        if (lCompiledPattern != null) {
+            return lCompiledPattern.get();
+        } else {
+            return null;
+        }
     }
 
     public final Pattern getPattern() {
-        Pattern ret = null;
-        final MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
-        if (lCompiledPattern != null && (ret = lCompiledPattern.get()) != null) {
-            return ret;
+        Pattern ret = getCompiledPattern();
+        if (ret == null) {
+            if (Application.getJavaVersion() >= Application.JAVA17) {
+                ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
+            } else {
+                ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE);
+            }
+            compiledPattern = new MinTimeWeakReference<Pattern>(ret, 60 * 1000l, displayName, this);
         }
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
-        } else {
-            ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE);
-        }
-        compiledPattern = new MinTimeWeakReference<Pattern>(ret, 60 * 1000l, displayName, this);
         return ret;
     }
 
@@ -271,13 +273,13 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         PluginClassLoaderChild ret = null;
         if (classLoader != null && (ret = classLoader.get()) != null) {
             return ret;
-        }
-        if (createNew == false) {
+        } else if (createNew == false) {
             return null;
+        } else {
+            ret = PluginClassLoader.getSharedChild(this);
+            setClassLoader(ret);
+            return ret;
         }
-        ret = PluginClassLoader.getSharedChild(this);
-        setClassLoader(ret);
-        return ret;
     }
 
     public synchronized void setClassLoader(PluginClassLoaderChild cl) {

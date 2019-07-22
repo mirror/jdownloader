@@ -163,7 +163,7 @@ public class TvnowDe extends PluginForHost {
 
     /** Returns parameters for API 'fields=' key. Only request all fields we actually need. */
     public static String getFields() {
-        return "*,format,packages,isDrm";
+        return "*,format,isDrm";
     }
 
     /** Parses API json to find important downloadlink properties. */
