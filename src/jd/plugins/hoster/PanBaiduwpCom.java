@@ -211,7 +211,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
         final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
         // final boolean urlCompatible_by_position_array = positionarrayCommaSeparated != null;
-        String targetHTML = null;
+        final String targetHTML;
         if (urlCompatible_by_hash) {
             /* 2019-07-16: Easy and more reliable way; can also work for files in nested subfolders */
             targetHTML = findTargetHTML_by_hash(internal_md5hash, null);
