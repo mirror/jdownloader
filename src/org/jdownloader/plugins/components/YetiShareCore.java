@@ -24,6 +24,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -200,8 +200,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -278,18 +278,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else if (isPremiumOnlyURL()) {
                     return AvailableStatus.TRUE;
                 }
-                final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
-                /*
-                 * 2019-06-12: TODO: E.g. special case: 'error.html?e=File+is+not+publicly+available.' --> File is online but can only be
-                 * downloaded by owner. E.g. an uploader uploaded something and then changed it to private - all other users accessing that
-                 * URL will get this errormessage. For now we'll leave it as it is and treat this case as offline but if the uploader
-                 * decided to re-puflish that content, it would be available again via the same URL! File-host used for tests:
-                 * sundryfiles.com.
-                 */
-                final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
-                final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
-                if (!isFileWebsite || isErrorPage || isOffline) {
-                    checkErrors(link, null);
+                if (isOfflineWebsite(link, true)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
@@ -632,7 +621,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
-    public static String getFUIDFromURL(final String url) {
+    public String getFUIDFromURL(final String url) {
         try {
             final String result = new Regex(new URL(url).getPath(), "^/([A-Za-z0-9]+)").getMatch(0);
             return result;
@@ -676,7 +665,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Tries to get filename from URL and if this fails, will return <fuid> filename. */
-    public static String getFallbackFilename(final String url) {
+    public String getFallbackFilename(final String url) {
         String fallback_filename = getFilenameFromURL(url);
         if (fallback_filename == null) {
             fallback_filename = getFUIDFromURL(url);
@@ -809,6 +798,9 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
+        if (isOfflineWebsite(link, false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -826,6 +818,29 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (responsecode == 429) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 connection limit reached, please contact our support!", 5 * 60 * 1000l);
         }
+    }
+
+    /**
+     * @return true = file is offline, false = file is online
+     * @throws PluginException
+     */
+    private boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
+        final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
+        /*
+         * 2019-06-12: TODO: E.g. special case: 'error.html?e=File+is+not+publicly+available.' --> File is online but can only be downloaded
+         * by owner. E.g. an uploader uploaded something and then changed it to private - all other users accessing that URL will get this
+         * errormessage. For now we'll leave it as it is and treat this case as offline but if the uploader decided to re-puflish that
+         * content, it would be available again via the same URL! File-host used for tests: sundryfiles.com.
+         */
+        final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
+        final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
+        if (!isFileWebsite || isErrorPage || isOffline) {
+            if (checkErrors) {
+                checkErrors(link, null);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -913,10 +928,8 @@ public class YetiShareCore extends antiDDoSForHost {
         return br;
     }
 
-    private static final Object LOCK = new Object();
-
-    private void login(final Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+    protected void login(final Account account, boolean force) throws Exception {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBrowser(this.br, account.getHoster());

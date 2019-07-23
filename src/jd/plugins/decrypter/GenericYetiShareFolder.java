@@ -52,6 +52,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         return domains;
     }
 
+    /* 2019-07-23: Check url-structure and folder-structure of firedrop.com */
     public static String[] getAnnotationUrls() {
         /*
          * 2019-06-12: Special: The owner of this host mograded from another script to XFS which is why we accept other URLs than only
@@ -155,7 +156,16 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 dl.setName(filename);
             } else {
                 /* No filename information given? Use either fuid or name from inside URL. */
-                dl.setName(YetiShareCore.getFallbackFilename(url));
+                final String url_name = YetiShareCore.getFilenameFromURL(url);
+                if (url_name != null) {
+                    dl.setName(url_name);
+                } else {
+                    /* Final fallback to fuid */
+                    final String fuid = new Regex(url, "https?://[^/]+/([^/]+)").getMatch(0);
+                    if (fuid != null) {
+                        dl.setName(fuid);
+                    }
+                }
             }
             if (filesize != null) {
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
