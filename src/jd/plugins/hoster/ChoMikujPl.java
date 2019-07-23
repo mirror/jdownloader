@@ -58,7 +58,6 @@ public class ChoMikujPl extends antiDDoSForHost {
     /* Pluging settings */
     public static final String   DECRYPTFOLDERS              = "DECRYPTFOLDERS";
     private static final String  AVOIDPREMIUMMP3TRAFFICUSAGE = "AVOIDPREMIUMMP3TRAFFICUSAGE";
-    private static boolean       pluginloaded                = false;
     private Browser              cbr                         = null;
     private static final int     free_maxchunks              = 1;
     private static final boolean free_resume                 = false;
