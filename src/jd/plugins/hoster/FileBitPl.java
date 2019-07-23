@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,12 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
@@ -284,7 +284,6 @@ public class FileBitPl extends PluginForHost {
         loginAPI(account, true);
         br.getPage(API_BASE + "?a=accountStatus&sessident=" + SESSIONID);
         handleAPIErrors(br, account, null);
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         final String accountDescription = PluginJSonUtils.getJson(br, "acctype");
         String premium = PluginJSonUtils.getJson(this.br, "premium");
@@ -442,54 +441,53 @@ public class FileBitPl extends PluginForHost {
     private void loginWebsite(final Account account) throws IOException, PluginException, InterruptedException {
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
+        boolean loggedinViaCookies = false;
         if (cookies != null) {
             /* Avoid full login whenever possible as it requires a captcha to be solved ... */
             br.setCookies(account.getHoster(), cookies);
-            br.getPage("http://" + account.getHoster() + "/");
-            if (isLoggedinHTMLWebsite()) {
-                account.saveCookies(br.getCookies(account.getHoster()), "");
-                return;
+            br.getPage("https://" + account.getHoster() + "/");
+            loggedinViaCookies = isLoggedinHTMLWebsite();
+        }
+        if (!loggedinViaCookies) {
+            br.getPage("https://" + account.getHoster() + "/");
+            Form loginform = null;
+            final Form[] forms = br.getForms();
+            for (final Form aForm : forms) {
+                if (aForm.containsHTML("/panel/login")) {
+                    loginform = aForm;
+                    break;
+                }
             }
-            /* Perform full login */
-            br.clearCookies(account.getHoster());
-        }
-        br.getPage("http://" + account.getHoster() + "/");
-        Form loginform = null;
-        final Form[] forms = br.getForms();
-        for (final Form aForm : forms) {
-            if (aForm.containsHTML("/panel/login")) {
-                loginform = aForm;
-                break;
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        if (loginform == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        loginform.put("login", Encoding.urlEncode(account.getUser()));
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
-        String reCaptchaKey = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
-        if (reCaptchaKey == null) {
-            /* 2018-02-13: Fallback-key */
-            reCaptchaKey = "6Lcu5AcUAAAAAC9Hkb6eFqM2P_YLMbI39eYi7KUm";
-        }
-        final DownloadLink dlinkbefore = this.getDownloadLink();
-        if (dlinkbefore == null) {
-            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
-        }
-        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
-        if (dlinkbefore != null) {
-            this.setDownloadLink(dlinkbefore);
-        }
-        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        br.submitForm(loginform);
-        final String redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]+)\" />").getMatch(0);
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
-        SESSIONID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
-        if (SESSIONID == null || !isLoggedinHTMLWebsite()) {
-            // This should never happen
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            loginform.put("login", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            String reCaptchaKey = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+            if (reCaptchaKey == null) {
+                /* 2018-02-13: Fallback-key */
+                reCaptchaKey = "6Lcu5AcUAAAAAC9Hkb6eFqM2P_YLMbI39eYi7KUm";
+            }
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            if (dlinkbefore == null) {
+                this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
+            if (dlinkbefore != null) {
+                this.setDownloadLink(dlinkbefore);
+            }
+            loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(loginform);
+            final String redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]+)\" />").getMatch(0);
+            if (redirect != null) {
+                br.getPage(redirect);
+            }
+            SESSIONID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
+            if (SESSIONID == null || !isLoggedinHTMLWebsite()) {
+                // This should never happen
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         account.saveCookies(br.getCookies(account.getHoster()), "");
     }

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -57,15 +58,16 @@ public class BeegCom extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         server_issue = false;
-        final String videoid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
+        final String videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         String[] match = br.getRegex("script src=\"([^\"]+/(\\d+)\\.js)").getRow(0);
         String jsurl = null;
         String beegVersion = null;
@@ -89,31 +91,39 @@ public class BeegCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
-        br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
-        boolean failure = true;
-        for (final Object videoO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoO;
-            final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
-            if (videoidTemp != null && videoid.equals(videoidTemp)) {
-                failure = false;
-                break;
+        LinkedHashMap<String, Object> entries;
+        final boolean useAPIv2 = false;
+        if (useAPIv2) {
+            /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
+            br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
+            boolean failure = true;
+            for (final Object videoO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoO;
+                final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
+                final String videoidTemp2 = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
+                if ((videoidTemp != null && videoid.equals(videoidTemp)) || (videoidTemp2 != null && videoid.equals(videoidTemp2))) {
+                    failure = false;
+                    break;
+                }
             }
+            if (failure) {
+                /* This should not happen but it is also a possible offline case! */
+                logger.info("Failed to find data for desired content");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final long v_start = JavaScriptEngineFactory.toLong(entries.get("start"), -1);
+            final long v_end = JavaScriptEngineFactory.toLong(entries.get("end"), -1);
+            if (v_start == -1 || v_end == -1) {
+                /* 2019-07-16: These values are required to call the API to access single objects! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=2&s=" + v_start + "&e=" + v_end);
+        } else {
+            /* 2019-07-23: Hmm back from v2 to v1?! */
+            br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=1");
         }
-        if (failure) {
-            /* This should not happen but it is also a possible offline case! */
-            logger.info("Failed to find data for desired content");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final long v_start = JavaScriptEngineFactory.toLong(entries.get("start"), -1);
-        final long v_end = JavaScriptEngineFactory.toLong(entries.get("end"), -1);
-        if (v_start == -1 || v_end == -1) {
-            /* 2019-07-16: These values are required to call the API to access single objects! */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("//beeg.com/api/v6/" + beegVersion + "/video/" + videoid + "?v=2&s=" + v_start + "&e=" + v_end);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -146,14 +156,14 @@ public class BeegCom extends PluginForHost {
         if (filename.endsWith(".")) {
             filename = filename.substring(0, filename.length() - 1);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", downloadLink.getDownloadURL());
+        br.getHeaders().put("Referer", link.getDownloadURL());
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
             if (con.isOK() && !con.getContentType().contains("html") && !con.getContentType().contains("text")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 server_issue = true;
             }
