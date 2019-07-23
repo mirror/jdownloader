@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,11 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
 public class ToutDebridEu extends antiDDoSForHost {
@@ -220,7 +220,7 @@ public class ToutDebridEu extends antiDDoSForHost {
         synchronized (account) {
             /* Load cookies */
             br.setCookiesExclusive(true);
-            br.setAllowedResponseCodes(507);
+            br.setAllowedResponseCodes(new int[] { 507 });
             this.br = prepBR(this.br);
             // cookies do expire very fast
             account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 15 * 60 * 1000l);

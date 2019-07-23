@@ -19,6 +19,11 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -35,11 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" })
 public class EHentaiOrg extends PluginForDecrypt {
@@ -68,6 +68,8 @@ public class EHentaiOrg extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
+        final String tagsCommaSeparated = br.getRegex("<meta name=\"description\" content=\"[^\"]+ - Tags: ([^\"]+)\" />").getMatch(0);
         String fpName = ((jd.plugins.hoster.EHentaiOrg) hostplugin).getTitle(br);
         if (fpName == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "fpName can not be found");
@@ -119,6 +121,13 @@ public class EHentaiOrg extends PluginForDecrypt {
                 }
                 dl.setProperty("namepart", namepart);
                 dl.setProperty("imageposition", imgposition);
+                /* Additional properties (e.g. for usage via packagizer) */
+                if (uploaderName != null) {
+                    dl.setProperty("uploader", uploaderName);
+                }
+                if (tagsCommaSeparated != null) {
+                    dl.setProperty("tags_comma_separated", tagsCommaSeparated);
+                }
                 final String name;
                 if (preferOriginalFilename && StringUtils.isNotEmpty(originalFileName)) {
                     name = originalFileName;

@@ -391,7 +391,7 @@ public class EHentaiOrg extends PluginForHost {
                     br.setCookies(MAINPAGE, cookies);
                     br.setCookies("http://exhentai.org/", cookies);
                     br.getPage("https://forums.e-hentai.org/index.php?");
-                    loggedInViaCookies = this.isLoggedIn();
+                    loggedInViaCookies = this.isLoggedIn(br);
                 }
                 if (!loggedInViaCookies) {
                     boolean failed = true;
@@ -417,7 +417,7 @@ public class EHentaiOrg extends PluginForHost {
                             break;
                         }
                         br.submitForm(loginform);
-                        failed = !isLoggedIn();
+                        failed = !isLoggedIn(br);
                         if (!failed) {
                             break;
                         }
@@ -436,7 +436,7 @@ public class EHentaiOrg extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIn() {
+    private boolean isLoggedIn(final Browser br) {
         return br.getCookie(MAINPAGE, "ipb_pass_hash", Cookies.NOTDELETEDPATTERN) != null;
     }
 
