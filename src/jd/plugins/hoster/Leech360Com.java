@@ -17,11 +17,16 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,30 +44,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leech360.com" }, urls = { "" })
 public class Leech360Com extends PluginForHost {
-    private static final String                            NICE_HOST                 = "leech360.com";
-    private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final String                            PROPERTY_API_TOKEN        = "api_login_token";
-    private final String                                   default_UA                = "JDownloader";
-    private static final boolean                           USE_API                   = true;
-    private final String                                   website_html_loggedin     = "id=\"linkpass\"";
-    private static Object                                  LOCK                      = new Object();
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc                   = null;
-    private DownloadLink                                   currDownloadLink          = null;
-    private String                                         currAPIToken              = null;
+    private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final String          PROPERTY_API_TOKEN        = "api_login_token";
+    private final String                 default_UA                = "JDownloader";
+    private static final boolean         USE_API                   = true;
+    private final String                 website_html_loggedin     = "id=\"linkpass\"";
+    private static Object                LOCK                      = new Object();
+    private String                       currAPIToken              = null;
+    private static MultiHosterManagement mhm                       = new MultiHosterManagement("leech360.com");
 
     public Leech360Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,12 +80,6 @@ public class Leech360Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
-        currAPIToken = null;
     }
 
     @Override
@@ -120,70 +110,54 @@ public class Leech360Com extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = prepBR(this.br);
-        setConstants(account, link);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         login(account, false);
-        String dllink = getDllink(link);
+        String dllink = getDllink(account, link);
         if (StringUtils.isEmpty(dllink)) {
             /* E.g. (website) "error_message":"some.filehost current offline or not support this time!" */
-            handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "dllinknull", 50, 3 * 60 * 1000l);
         }
         handleDL(account, link, dllink);
     }
 
-    private String getDllink(final DownloadLink link) throws IOException, PluginException {
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+    private String getDllink(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             if (USE_API) {
-                dllink = getDllinkAPI(link);
+                dllink = getDllinkAPI(account, link);
             } else {
-                dllink = getDllinkWebsite(link);
+                dllink = getDllinkWebsite(account, link);
             }
         }
         return dllink;
     }
 
-    private String getDllinkAPI(final DownloadLink link) throws IOException, PluginException {
-        this.getAPISafe("https://" + this.getHost() + "/generate?token=" + Encoding.urlEncode(this.currAPIToken) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+    private String getDllinkAPI(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        this.getAPISafe("https://" + this.getHost() + "/generate?token=" + Encoding.urlEncode(this.currAPIToken) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
         String dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
         return dllink;
     }
 
-    private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
+    private String getDllinkWebsite(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        this.postAPISafe("https://" + this.getHost() + "/generate", "link_password=&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
         String dllink = PluginJSonUtils.getJsonValue(this.br, "download_url");
         return dllink;
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
+            if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isOK() || dl.getConnection().getLongContentLength() == -1) {
                 br.followConnection();
                 updatestatuscode();
-                handleAPIErrors(this.br);
-                handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
+                handleAPIErrors(this.br, account, link);
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 3 * 60 * 1000l);
             }
             this.dl.startDownload();
         } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
     }
@@ -196,17 +170,17 @@ public class Leech360Com extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
@@ -215,7 +189,6 @@ public class Leech360Com extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
         this.br = prepBR(this.br);
         final AccountInfo ai;
         if (USE_API) {
@@ -315,9 +288,10 @@ public class Leech360Com extends PluginForHost {
             // if (br.containsHTML(">Free Member<")) {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
+            ai.setTrafficLeft(0);
             return ai;
         }
-        this.getAPISafe("https://" + account.getHoster() + "/api/get_userinfo?token=" + Encoding.urlEncode(this.currAPIToken));
+        this.getAPISafe("https://" + account.getHoster() + "/api/get_userinfo?token=" + Encoding.urlEncode(this.currAPIToken), account, null);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         /*
@@ -348,7 +322,7 @@ public class Leech360Com extends PluginForHost {
         }
         ai.setTrafficLeft(traffic_max - traffic_used);
         ai.setTrafficMax(traffic_max);
-        this.getAPISafe("/api/get_support?token=" + Encoding.urlEncode(this.currAPIToken));
+        this.getAPISafe("/api/get_support?token=" + Encoding.urlEncode(this.currAPIToken), account, null);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
@@ -412,8 +386,8 @@ public class Leech360Com extends PluginForHost {
                 this.br = prepBR(new Browser());
             }
             br.getPage("https://" + this.getHost() + "/sign-in.html");
-            String postData = "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass());
-            this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData);
+            String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+            this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData, account, null);
             if (!br.containsHTML(website_html_loggedin)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -436,21 +410,11 @@ public class Leech360Com extends PluginForHost {
             return;
         }
         /* Full login (generate new token) */
-        this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, null);
         this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
         final String error_message = PluginJSonUtils.getJson(br, "error_message");
-        if (StringUtils.containsIgnoreCase(error_message, "API only support for PREMIUM")) {
-            return;
-        }
         if (StringUtils.isEmpty(this.currAPIToken)) {
-            if (StringUtils.equalsIgnoreCase("Free members do not support API.", error_message)) {
-                /*
-                 * 2018-01-15: Free accounts would get accepted via website but you cannot use them to download anything. API will
-                 * completely refuse them.
-                 */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, error_message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
         /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
@@ -462,81 +426,51 @@ public class Leech360Com extends PluginForHost {
         account.saveCookies(this.br.getCookies(this.getHost()), "");
     }
 
-    private void tempUnavailableHoster(final long timeout) throws PluginException {
-        if (this.currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(this.currAcc, unavailableMap);
-            }
-            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
+    private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
         br.setAllowedResponseCodes(400);
         br.getPage(accesslink);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(this.br, account, link);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+    private void postAPISafe(final String accesslink, final String postdata, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
         br.postPage(accesslink, postdata);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(this.br, account, link);
     }
 
     /** Keep this for possible future API implementation */
     private void updatestatuscode() {
     }
 
-    /** Keep this for possible future API implementation */
-    private void handleAPIErrors(final Browser br) throws PluginException {
-        final String errorStr = PluginJSonUtils.getJson(br, "error");
+    /**
+     * Keep this for possible future API implementation
+     *
+     * @throws InterruptedException
+     */
+    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        final String errorBooleanStr = PluginJSonUtils.getJson(br, "error");
         final String errorMessage = PluginJSonUtils.getJson(br, "error_message");
-        if ("true".equalsIgnoreCase(errorStr)) {
-            if (errorMessage.contains("API only support for PREMIUM")) {
-                return;
+        if ("true".equalsIgnoreCase(errorBooleanStr) && !StringUtils.isEmpty(errorMessage)) {
+            if (StringUtils.equalsIgnoreCase("Free members do not support API.", errorMessage) || StringUtils.equalsIgnoreCase("API only support for PREMIUM", errorMessage)) {
+                /* Gets handled somewhere else! */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (this.currDownloadLink == null) {
+            if (link == null) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
             } else if ("Invalid token".equalsIgnoreCase(errorMessage)) {
                 /* TODO_ check */
                 /* Reset token and retry via full login. */
-                this.currDownloadLink.setProperty(PROPERTY_API_TOKEN, Property.NULL);
+                link.setProperty(PROPERTY_API_TOKEN, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "API token invalid");
+            } else if (errorMessage.matches("Sorry our .+ has reach bandwidth limit, please try again after few hours")) {
+                /* 2019-07-23: e.g. "Sorry our filer.net has reach bandwidth limit, please try again after few hours" */
+                mhm.putError(account, link, 10 * 60 * 1000l, "Bandwidth limit reached");
             } else {
                 /* E.g. "error_message":"Could not connect to download server, please try again!" */
-                handleErrorRetries("unknown_error_state", 50, 2 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "unknown_error_state", 50, 3 * 60 * 1000l);
             }
-        }
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final String error, final int maxRetries, final long waittime) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(waittime);
         }
     }
 

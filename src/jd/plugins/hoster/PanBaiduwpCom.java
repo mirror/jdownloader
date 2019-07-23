@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
@@ -123,19 +122,10 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         return dllink;
     }
 
-    private String getDllinkAPI(final DownloadLink link) throws IOException, PluginException {
-        return null;
-    }
-
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
-        final String positionarrayCommaSeparated = link.getStringProperty("positionarray", null);
-        final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
-        final boolean urlCompatible_by_position_array = positionarrayCommaSeparated != null;
-        // final boolean urlCompatible_by_position = position > -1;
         /* In over 99% of all cases, we should already have the correct password here! */
         String passCode = link.getDownloadPassword();
         int counter = 0;
@@ -156,21 +146,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (passCode != null) {
             link.setDownloadPassword(passCode);
         }
-        String targetHTML = null;
-        if (urlCompatible_by_hash) {
-            /* 2019-07-16: Easy and more reliable way; can also work for files in nested subfolders */
-            targetHTML = findTargetHTML_by_hash(internal_md5hash, null);
-        } else {
-            /* Grab file to download only by position! This is an unsafe way but will usually do the job! */
-            final String[] positionarrayStr = positionarrayCommaSeparated.split(",");
-            int[] posarray = new int[positionarrayStr.length];
-            int counter_pos = 0;
-            for (final String positionStr : positionarrayStr) {
-                posarray[counter_pos] = Integer.parseInt(positionStr);
-                counter_pos++;
-            }
-            targetHTML = findTargetHTML_by_position(0, posarray);
-        }
+        final String targetHTML = findTargetHTML(link);
         if (targetHTML == null) {
             logger.warning("Failed to find html leading to desired file");
             /* Keep the retry count low as this should never happen!! */
@@ -229,9 +205,35 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         return dllink;
     }
 
+    private String findTargetHTML(final DownloadLink link) throws Exception {
+        final String positionarrayCommaSeparated = link.getStringProperty("positionarray", null);
+        final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
+        final String shorturl_id = link.getStringProperty("shorturl_id", null);
+        final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
+        // final boolean urlCompatible_by_position_array = positionarrayCommaSeparated != null;
+        String targetHTML = null;
+        if (urlCompatible_by_hash) {
+            /* 2019-07-16: Easy and more reliable way; can also work for files in nested subfolders */
+            targetHTML = findTargetHTML_by_hash(internal_md5hash, null);
+        } else {
+            /* Grab file to download only by position! This is an unsafe way but will usually do the job! */
+            final String[] positionarrayStr = positionarrayCommaSeparated.split(",");
+            /* First convert comma separated numbers as String to Integer-Array */
+            int[] posarray = new int[positionarrayStr.length];
+            int counter_pos = 0;
+            for (final String positionStr : positionarrayStr) {
+                posarray[counter_pos] = Integer.parseInt(positionStr);
+                counter_pos++;
+            }
+            /* Enter recursive function, start with position 0. */
+            targetHTML = findTargetHTML_by_position(0, posarray);
+        }
+        return targetHTML;
+    }
+
     /*
-     * E.g. positionArray = {0,3,6} --> Enter the subfolder on position[0], then the subfolder on position[3], then the file on position
-     * [6].
+     * E.g. positionArray = {0,3,6} --> Enter the subfolder on position[0], then the subfolder on position[3], then the file on position [6]
+     * is the one we want to download. This is a recursive function!
      */
     private String findTargetHTML_by_position(int positionCurrent, int[] positionArray) throws Exception {
         final String[] subfolderHTMLs = getSubfolderHTMLSnippets();

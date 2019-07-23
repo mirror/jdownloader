@@ -105,6 +105,10 @@ public class MultiHosterManagement {
      * @throws InterruptedException
      */
     public void handleErrorGeneric(final Account account, final DownloadLink downloadLink, final String error, final int maxRetries, final long errorWait) throws PluginException, InterruptedException {
+        if (downloadLink == null) {
+            /* 2019-07-23: Just set account to invalid if called without DownloadLink. */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         final String errorID = hsFailed + error;
         int timesFailed = downloadLink.getIntegerProperty(errorID, 0);
         if (timesFailed < maxRetries) {
