@@ -3,6 +3,8 @@ package jd.controlling.downloadcontroller;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +41,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.settings.GeneralSettings;
@@ -85,6 +88,24 @@ public class DownloadSession extends Property {
     private final AtomicBoolean                                           activateForcedOnly      = new AtomicBoolean(false);
     private AtomicLong                                                    activatorRebuildRequest = new AtomicLong(1);
     private NullsafeAtomicReference<CaptchaSettings.MODE>                 captchaMode             = new NullsafeAtomicReference<CaptchaSettings.MODE>(CaptchaSettings.MODE.NORMAL);
+    private final static Comparator<CachedAccount>                        EXPIRE_DATE_SORTER      = new Comparator<CachedAccount>() {
+                                                                                                      public final int compare(long x, long y) {
+                                                                                                          return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                                                      }
+
+                                                                                                      @Override
+                                                                                                      public int compare(CachedAccount account1, CachedAccount account2) {
+                                                                                                          long expireDate1 = account1.getAccount() == null ? -1 : account1.getAccount().getValidPremiumUntil();
+                                                                                                          if (expireDate1 <= 0) {
+                                                                                                              expireDate1 = Long.MAX_VALUE;
+                                                                                                          }
+                                                                                                          long expireDate2 = account2.getAccount() == null ? -1 : account2.getAccount().getValidPremiumUntil();
+                                                                                                          if (expireDate2 <= 0) {
+                                                                                                              expireDate2 = Long.MAX_VALUE;
+                                                                                                          }
+                                                                                                          return compare(expireDate1, expireDate2);
+                                                                                                      }
+                                                                                                  };
 
     public CaptchaSettings.MODE getCaptchaMode() {
         return captchaMode.get();
@@ -215,36 +236,36 @@ public class DownloadSession extends Property {
     }
 
     private final CopyOnWriteArraySet<SingleDownloadController> controllers        = new CopyOnWriteArraySet<SingleDownloadController>() {
-        /**
+                                                                                       /**
          *
          */
-        private static final long serialVersionUID = -3897088297641777499L;
+                                                                                       private static final long serialVersionUID = -3897088297641777499L;
 
-        public boolean add(SingleDownloadController e) {
-            downloadsStarted.incrementAndGet();
-            e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-            return super.add(e);
-        };
+                                                                                       public boolean add(SingleDownloadController e) {
+                                                                                           downloadsStarted.incrementAndGet();
+                                                                                           e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+                                                                                           return super.add(e);
+                                                                                       };
 
-        @Override
-        public boolean remove(Object e) {
-            final boolean ret = super.remove(e);
-            if (ret) {
-                try {
-                    getDiskSpaceManager().freeAllReservationsBy(e);
-                } catch (final Throwable ignore) {
-                }
-                try {
-                    getFileAccessManager().unlockAllHeldby(e);
-                } finally {
-                    if (e instanceof SingleDownloadController) {
-                        ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                    }
-                }
-            }
-            return ret;
-        };
-    };
+                                                                                       @Override
+                                                                                       public boolean remove(Object e) {
+                                                                                           final boolean ret = super.remove(e);
+                                                                                           if (ret) {
+                                                                                               try {
+                                                                                                   getDiskSpaceManager().freeAllReservationsBy(e);
+                                                                                               } catch (final Throwable ignore) {
+                                                                                               }
+                                                                                               try {
+                                                                                                   getFileAccessManager().unlockAllHeldby(e);
+                                                                                               } finally {
+                                                                                                   if (e instanceof SingleDownloadController) {
+                                                                                                       ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                                                                                                   }
+                                                                                               }
+                                                                                           }
+                                                                                           return ret;
+                                                                                       };
+                                                                                   };
     private final long                                          createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
@@ -419,7 +440,7 @@ public class DownloadSession extends Property {
             if (ret == null) {
                 final List<CachedAccountGroup> cachedGroups = new ArrayList<CachedAccountGroup>();
                 boolean removeNoAccountWithCaptcha = false;
-                final CachedAccountGroup hosterPremiumGroup = new CachedAccountGroup(Rules.RANDOM);
+                final CachedAccountGroup hosterPremiumGroup = new CachedAccountGroup(Rules.ORDER);
                 final CachedAccountGroup hosterFreeGroup = new CachedAccountGroup(Rules.RANDOM);
                 for (final Account acc : AccountController.getInstance().list(host)) {
                     if (acc.isEnabled() && acc.isValid()) {
@@ -440,11 +461,18 @@ public class DownloadSession extends Property {
                     }
                 }
                 if (hosterPremiumGroup.size() > 0) {
+                    if (hosterPremiumGroup.size() > 1) {
+                        try {
+                            Collections.sort(hosterPremiumGroup, EXPIRE_DATE_SORTER);
+                        } catch (final Throwable e) {
+                            LogController.CL().log(e);
+                        }
+                    }
                     cachedGroups.add(hosterPremiumGroup);
                 }
                 {
                     // multihoster
-                    final CachedAccountGroup multiHosterGroup = new CachedAccountGroup(Rules.RANDOM);
+                    final CachedAccountGroup multiHosterGroup = new CachedAccountGroup(Rules.ORDER);
                     final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
                     if (multiHosts != null) {
                         for (final Account acc : multiHosts) {
@@ -454,6 +482,13 @@ public class DownloadSession extends Property {
                         }
                     }
                     if (multiHosterGroup.size() > 0) {
+                        if (multiHosterGroup.size() > 1) {
+                            try {
+                                Collections.sort(multiHosterGroup, EXPIRE_DATE_SORTER);
+                            } catch (final Throwable e) {
+                                LogController.CL().log(e);
+                            }
+                        }
                         cachedGroups.add(multiHosterGroup);
                     }
                 }

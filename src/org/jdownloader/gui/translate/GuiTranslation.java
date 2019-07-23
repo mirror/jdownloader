@@ -111,6 +111,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Captcha for %s1 to continue!" })
     String gui_captchaWindow_askForInput(String hoster);
 
+    @Default(lngs = { "en" }, values = { "Waiting for Captcha for %s1 to continue!" })
+    String gui_captchaWindow_waitForInput(String hoster);
+
     @Default(lngs = { "en", "de" }, values = { "<html>Enable shared IP workaround?<br /><p style=\"color:#808080\">If you share share-online accounts with friends or use them via a VPN it may happen that they get temporarily banned from share-online.<br />It would then usually get temporarily deactivated in JDownloader as well.<br />This setting will keep share-online accounts active in this case and retry the download process after some time.</p></html>", "<html>Aktiviere shared IP workaround?<br /><p style=\"color:#808080\">Sofern du deine share-online Accounts mit einem VPN benutzt oder mit Freunden teilst kann dieser von share-online temporär gesperrt werden.<br />Er wird dann normalerweise auch in JDownloader temporär deaktiviert.<br />Diese Einstellung bewirkt, dass der Account aktiv bleibt und die Downloads nach einiger Zeit erneut versucht werden.</p></html>" })
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
@@ -733,6 +736,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Linkchecker Activity" })
     String StatusBarImpl_initGUI_linkchecker();
+
+    @Default(lngs = { "en" }, values = { "Captcha Activity" })
+    String StatusBarImpl_initGUI_captcha();
 
     @Default(lngs = { "en" }, values = { "Abort Linkchecker" })
     String StatusBarImpl_initGUI_abort_linkchecker();

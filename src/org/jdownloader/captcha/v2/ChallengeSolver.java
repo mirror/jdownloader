@@ -4,9 +4,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -23,11 +23,11 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public abstract class ChallengeSolver<T> {
     public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
-        @Override
-        public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
-            throw new WTFException("Not Implemented");
-        }
-    };
+                                                   @Override
+                                                   public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
+                                                       throw new WTFException("Not Implemented");
+                                                   }
+                                               };
 
     private ChallengeSolver() {
     }
@@ -82,7 +82,7 @@ public abstract class ChallengeSolver<T> {
         this(null, i);
     }
 
-    protected HashMap<SolverJob<T>, JobRunnable<T>> map = new HashMap<SolverJob<T>, JobRunnable<T>>();
+    protected final WeakHashMap<SolverJob<T>, JobRunnable<T>> map = new WeakHashMap<SolverJob<T>, JobRunnable<T>>();
 
     public SolverService getService() {
         return service;
