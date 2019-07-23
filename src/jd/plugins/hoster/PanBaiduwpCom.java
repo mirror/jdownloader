@@ -150,7 +150,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         if (targetHTML == null) {
             logger.warning("Failed to find html leading to desired file");
             /* Keep the retry count low as this should never happen!! */
-            mhm.handleErrorGeneric(account, link, "target_html_null", 5, 2 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "target_html_null", 3, 2 * 60 * 1000l);
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2019-07-17: For development purposes */
@@ -267,7 +267,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         return targetHTML;
     }
 
-    private String findTargetHTML_by_hash(final String internal_md5hash, String[] subfoldersHTMLs) throws Exception {
+    private String findTargetHTML_by_hash(final String internal_md5hash, final String[] subfoldersHTMLs) throws Exception {
         if (subfoldersHTMLs != null) {
             for (final String subfolderHTML : subfoldersHTMLs) {
                 final String subfolderURL = regexSubfolderURL(subfolderHTML);
@@ -276,18 +276,27 @@ public class PanBaiduwpCom extends antiDDoSForHost {
                     return null;
                 }
                 getPage(subfolderURL);
-                String targetHTML = findDownloadHTMLSnippet(internal_md5hash, -1, true);
+                final String targetHTML = findDownloadHTMLSnippet(internal_md5hash, -1, true);
                 if (targetHTML != null) {
                     return targetHTML;
                 }
                 /* Else continue to look for more subfolders! */
             }
+        } else {
+            /* E.g. file present in root */
+            final String targetHTML = findDownloadHTMLSnippet(internal_md5hash, -1, true);
+            if (targetHTML != null) {
+                return targetHTML;
+            }
         }
-        subfoldersHTMLs = getSubfolderHTMLSnippets();
+        final String[] newsubfoldersHTMLs = getSubfolderHTMLSnippets();
         if (subfoldersHTMLs == null) {
             return null;
+        } else if (newsubfoldersHTMLs.equals(subfoldersHTMLs)) {
+            /* Prevent endless loops */
+            return null;
         }
-        return findTargetHTML_by_hash(internal_md5hash, subfoldersHTMLs);
+        return findTargetHTML_by_hash(internal_md5hash, newsubfoldersHTMLs);
     }
 
     private String[] getSubfolderHTMLSnippets() {
