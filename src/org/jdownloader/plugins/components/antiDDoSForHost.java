@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +34,7 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -406,6 +408,15 @@ public abstract class antiDDoSForHost extends PluginForHost {
         antiDDoS(ibr, null);
     }
 
+    protected final AtomicInteger antiDDosCaptcha = new AtomicInteger(0);
+
+    @Override
+    public void setHasCaptcha(DownloadLink link, Account acc, Boolean hasCaptcha) {
+        if (antiDDosCaptcha.get() == 0) {
+            super.setHasCaptcha(link, acc, hasCaptcha);
+        }
+    }
+
     /**
      * Performs Cloudflare, Incapsula, Sucuri requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
@@ -421,6 +432,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         final Cookies cookies = new Cookies();
         if (ibr.getHttpConnection() != null) {
             final Object lockObject = Thread.currentThread();
+            antiDDosCaptcha.incrementAndGet();
             try {
                 // Cloudflare
                 // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
@@ -449,6 +461,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 }
             } finally {
                 releaseLock(lockObject);
+                antiDDosCaptcha.decrementAndGet();
             }
         }
     }

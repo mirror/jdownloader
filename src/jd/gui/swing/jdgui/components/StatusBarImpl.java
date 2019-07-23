@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.components;
 
 import java.awt.Component;
@@ -62,6 +61,11 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.captcha.event.ChallengeResponseListener;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.bottombar.AutoConfirmProcessIndicator;
@@ -81,20 +85,15 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     public StatusBarImpl() {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         initGUI();
                     }
                 };
-
             }
-
         });
-
     }
 
     private void initGUI() {
@@ -103,7 +102,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         } else {
             setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, getBackground().darker()));
         }
-
         statusLabel = new JLabel();
         statusLabel.setEnabled(false);
         reconnectIndicator = new ReconnectProgress();
@@ -113,7 +111,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         reconnectIndicator.setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
-
             @Override
             public void onBeforeReconnect(ReconnecterEvent event) {
                 new EDTRunner() {
@@ -136,9 +133,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 };
             }
         });
-
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
-
             @Override
             public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
             }
@@ -159,7 +154,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             public void onLinkCrawlerAdded(final LinkCollectorCrawler crawler) {
                 if (crawler instanceof JobLinkCrawler) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             new JobLinkCrawlerIndicator(StatusBarImpl.this, (JobLinkCrawler) crawler);
@@ -205,12 +199,10 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             }
         });
         LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
-
             public void onLinkCheckerEvent(final LinkCheckerEvent event) {
                 if (!(event.getCaller() instanceof JobLinkChecker)) {
                     if (LinkCheckerEvent.Type.STARTED.equals(event.getType())) {
                         new EDTRunner() {
-
                             @Override
                             protected void runInEDT() {
                                 new LinkCheckerIndicator(StatusBarImpl.this, event.getCaller());
@@ -219,17 +211,40 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                     }
                 }
             }
-
         });
+        ChallengeResponseController.getInstance().getEventSender().addListener(new ChallengeResponseListener() {
+            @Override
+            public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
+            }
 
+            @Override
+            public void onNewJob(final SolverJob<?> job) {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        new CaptchaIndicator(StatusBarImpl.this, job);
+                    }
+                };
+            }
+
+            @Override
+            public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
+            }
+
+            @Override
+            public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
+            }
+
+            @Override
+            public void onJobDone(SolverJob<?> job) {
+            }
+        });
         final AutoConfirmProcessIndicator autoConfirmProcessIndicator = new AutoConfirmProcessIndicator();
         LinkCollector.getInstance().getAutoStartManager().getEventSender().addListener(autoConfirmProcessIndicator);
         if (LinkCollector.getInstance().getAutoStartManager().isRunning()) {
             autoConfirmProcessIndicator.onAutoStartManagerRunning();
         }
-
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-
         updateDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 1000, 2000) {
             @Override
             public String getID() {
@@ -239,7 +254,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             @Override
             public void delayedrun() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         redoLayout();
@@ -248,7 +262,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             }
         };
         redoLayout();
-
     }
 
     private void redoLayout() {
@@ -317,14 +330,11 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                     return downloadWatchdogIndicator;
                 }
                 IconedProcessIndicator ldownloadWatchdogIndicator = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_SKIPPED, 16));
-
                 ldownloadWatchdogIndicator.setTitle(_GUI.T.StatusBarImpl_skippedLinksMarker_title());
-
                 ldownloadWatchdogIndicator.setIndeterminate(false);
                 ldownloadWatchdogIndicator.setEnabled(true);
                 ldownloadWatchdogIndicator.setValue(100);
                 ldownloadWatchdogIndicator.addMouseListener(new MouseListener() {
-
                     public void mouseReleased(MouseEvent e) {
                         DownloadWatchDog.getInstance().unSkipAllSkipped();
                     }
@@ -344,7 +354,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 return ldownloadWatchdogIndicator;
             }
         }.getReturnValue();
-
         return downloadWatchdogIndicator;
     }
 
@@ -375,7 +384,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     @Override
     public void onDownloadWatchdogStateIsIdle() {
-
     }
 
     @Override
@@ -408,5 +416,4 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
-
 }

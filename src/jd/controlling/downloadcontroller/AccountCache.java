@@ -178,7 +178,9 @@ public class AccountCache implements Iterable<CachedAccount> {
                     break;
                 case RANDOM:
                     synchronized (cachedAccountGroup) {
-                        Collections.shuffle(cachedAccountGroup);
+                        if (cachedAccountGroup.size() > 1) {
+                            Collections.shuffle(cachedAccountGroup);
+                        }
                         ret.addAll(cachedAccountGroup);
                     }
                     break;

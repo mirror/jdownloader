@@ -1903,6 +1903,15 @@ public abstract class K2SApi extends PluginForHost {
         return a_captchaRequirement;
     }
 
+    protected final AtomicInteger antiDDosCaptcha = new AtomicInteger(0);
+
+    @Override
+    public void setHasCaptcha(DownloadLink link, Account acc, Boolean hasCaptcha) {
+        if (antiDDosCaptcha.get() == 0) {
+            super.setHasCaptcha(link, acc, hasCaptcha);
+        }
+    }
+
     /**
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
@@ -1925,21 +1934,26 @@ public abstract class K2SApi extends PluginForHost {
                     a_captchaRequirement = true;
                     // recapthcha v2
                     if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                        this.setDownloadLink(dllink);
-                        final Form cf = cloudflare;
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-                            @Override
-                            public String getSiteKey() {
-                                return getSiteKey(cf.getHtmlCode());
-                            }
+                        antiDDosCaptcha.incrementAndGet();
+                        try {
+                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                            this.setDownloadLink(dllink);
+                            final Form cf = cloudflare;
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+                                @Override
+                                public String getSiteKey() {
+                                    return getSiteKey(cf.getHtmlCode());
+                                }
 
-                            @Override
-                            public String getSecureToken() {
-                                return getSecureToken(cf.getHtmlCode());
-                            }
-                        }.getToken();
-                        cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                @Override
+                                public String getSecureToken() {
+                                    return getSecureToken(cf.getHtmlCode());
+                                }
+                            }.getToken();
+                            cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        } finally {
+                            antiDDosCaptcha.decrementAndGet();
+                        }
                     } else {
                         // recapthca v1
                         if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
