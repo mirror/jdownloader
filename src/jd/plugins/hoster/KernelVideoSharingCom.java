@@ -142,21 +142,20 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      * List of hosts for which filename from inside html should be used as finding it via html would require additional RegExes or is
      * impossible.
      */
-    private static final List<String> domains_force_url_filename = Arrays.asList(new String[] { "thisvid.com" });
+    private static final List<String> domains_force_url_filename = Arrays.asList(new String[] { "thisvid.com", "xbabe.com" });
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         return requestFileInformation(downloadLink, false);
     }
 
-    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final boolean download_started) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getPluginPatternMatcher());
         final String filename_url = regexURLFilenameAuto(this.br, downloadLink);
         if (br.containsHTML("KernelTeamVideoSharingSystem\\.js|KernelTeamImageRotator_")) {
             /* <script src="/js/KernelTeamImageRotator_3.8.1.jsx?v=3"></script> */
@@ -366,6 +365,29 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 }
             }
         }
+        {
+            /* 2019-07-24: E.g. pick best of multiple sources e.g. multiple sources available: xbabe.com */
+            int qualityMax = 0;
+            int qualityTmp = 0;
+            final String[] sources = br.getRegex("<source[^>]*?src=\"(https?://[^<>\"]*?)\"[^>]*?type=(\"|')video/[a-z0-9]+\\2[^>]*?").getColumn(-1);
+            for (final String source : sources) {
+                final String dllinkTemp = new Regex(source, "src=\"(https?://[^<>\"]+)\"").getMatch(0);
+                final String qualityTempStr = new Regex(source, "title=\"(\\d+)p\"").getMatch(0);
+                if (dllinkTemp == null) {
+                    continue;
+                }
+                if (qualityTempStr == null) {
+                    /* No quality found --> Pick the first downloadlink and stop */
+                    dllink = dllinkTemp;
+                    break;
+                }
+                qualityTmp = Integer.parseInt(qualityTempStr);
+                if (qualityTmp > qualityMax) {
+                    qualityMax = qualityTmp;
+                    dllink = dllinkTemp;
+                }
+            }
+        }
         if (inValidate(dllink, plugin)) {
             /* Last change: 2017-08-03, regarding txxx.com */
             // dllink = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getMatch(0);
@@ -379,9 +401,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
         if (inValidate(dllink, plugin)) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
-        }
-        if (inValidate(dllink, plugin)) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);
         }
         if (inValidate(dllink, plugin)) { // tryboobs.com
             dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls").getMatch(0);
@@ -635,7 +654,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             } else if (url_source.matches(type_normal_fuid_at_end)) {
                 filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
             } else {
-                filename_url = new Regex(url_source, "(?:videos|movies)/(?:\\d+/)?([a-z0-9\\-]+)(?:\\-\\d+/?$|/?|\\.html)$").getMatch(0);
+                filename_url = new Regex(url_source, "(?:videos?|movies)/(?:\\d+/)?([a-z0-9\\-]+)(?:\\-\\d+/?|/?|\\.html)$").getMatch(0);
                 if (filename_url == null) {
                     /* Last chance fallback: auto-url-filename */
                     String url_part = new Regex(url_source, "https?://[^/]+/(.+)").getMatch(0);

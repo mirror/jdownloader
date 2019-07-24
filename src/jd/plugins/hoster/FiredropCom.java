@@ -199,6 +199,11 @@ public class FiredropCom extends YetiShareCore {
                             logger.info("Fallback to custom built loginform");
                             loginform = new Form();
                             loginform.put("submitme", "1");
+                        } else {
+                            /* 2019-07-24: Hmm we have to correct this sometimes! */
+                            if (loginform.getMethod() == null || loginform.getMethod() != MethodType.POST) {
+                                loginform.setMethod(MethodType.POST);
+                            }
                         }
                         loginform.put("email", Encoding.urlEncode(account.getUser()));
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
@@ -216,8 +221,7 @@ public class FiredropCom extends YetiShareCore {
                             loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         }
                         submitForm(loginform);
-                        getPage("/account_home.html");
-                        if (!br.containsHTML("\"login_status\":\"success\"")) {
+                        if (!br.containsHTML("\"error\":false")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     } else {

@@ -1891,18 +1891,28 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dllink == null && this.isImagehoster()) {
             /* Used for imagehosts */
-            String[] possibleDllinks = null;
-            // possibleDllinks = new Regex(this.src, String.format(dllinkRegexImage, getHostsPatternPart())).getColumn(0);
-            if (possibleDllinks == null || possibleDllinks.length == 0) {
-                /* Try without predefined domains */
-                possibleDllinks = new Regex(src, String.format(getGenericDownloadlinkRegExImage(), "[A-Za-z0-9\\-\\.]+")).getColumn(-1);
-            }
+            /*
+             * 2019-07-24: This is basically a small workaround because if a file has a "bad filename" the filename inside our URL may just
+             * look like it is a thumbnail although it is not. If we find several URLs and all are the same we may still just take one of
+             * them although it could be a thumbnail.
+             */
+            String lastDllink = null;
+            boolean allResultsAreTheSame = true;
+            final String[] possibleDllinks = new Regex(src, String.format(getGenericDownloadlinkRegExImage(), "[A-Za-z0-9\\-\\.]+")).getColumn(-1);
             for (final String possibleDllink : possibleDllinks) {
-                /* Do NOT download thumbnails! */
+                if (possibleDllinks.length > 1 && lastDllink != null && !possibleDllink.equalsIgnoreCase(lastDllink)) {
+                    allResultsAreTheSame = false;
+                }
+                /* Avoid downloading thumbnails */
+                /* 2019-07-24: Improve recognization of thumbnails e.g. https://img67.imagetwist.com/th/123456/[a-z0-9]{12}.jpg */
                 if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
                     dllink = possibleDllink;
                     break;
                 }
+            }
+            if (dllink == null && possibleDllinks.length > 1 && allResultsAreTheSame) {
+                logger.info("image download-candidates were all identified as thumbnails --> Using first result anyways as it is likely that it is not a thumbnail!");
+                dllink = possibleDllinks[0];
             }
         }
         return dllink;
