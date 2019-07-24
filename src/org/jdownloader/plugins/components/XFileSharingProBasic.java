@@ -1909,6 +1909,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     dllink = possibleDllink;
                     break;
                 }
+                lastDllink = possibleDllink;
             }
             if (dllink == null && possibleDllinks.length > 1 && allResultsAreTheSame) {
                 logger.info("image download-candidates were all identified as thumbnails --> Using first result anyways as it is likely that it is not a thumbnail!");
