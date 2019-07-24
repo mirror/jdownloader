@@ -16,6 +16,11 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.swing.MigPanel;
@@ -46,11 +51,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 
 public abstract class RecaptchaV1Handler {
     public static String load(Browser rcBr, final String siteKey) throws IOException, InterruptedException {
@@ -95,6 +95,11 @@ public abstract class RecaptchaV1Handler {
                     logger.log(e);
                     throw new WTFException(e);
                 }
+            }
+
+            @Override
+            protected String getCaptchaNameSpace() {
+                return "recaptchav1";
             }
 
             @Override

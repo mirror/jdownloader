@@ -3,14 +3,6 @@ package org.jdownloader.captcha.v2.solver.browser;
 import java.awt.Rectangle;
 import java.io.IOException;
 
-import org.appwork.remoteapi.exceptions.RemoteAPIException;
-import org.appwork.utils.net.httpserver.requests.GetRequest;
-import org.appwork.utils.net.httpserver.requests.HttpRequest;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
-import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.solverjob.ResponseList;
-
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -21,6 +13,14 @@ import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
     protected final Plugin  plugin;
@@ -105,11 +105,13 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         return null;
     }
 
-    public String getHttpPath() {
+    abstract protected String getCaptchaNameSpace();
+
+    protected String getHttpPath() {
         if (plugin != null) {
-            return plugin.getHost();
+            return "captcha/" + getCaptchaNameSpace() + "/" + plugin.getHost();
         } else {
-            return "jd";
+            return "captcha/" + getCaptchaNameSpace() + "/jd";
         }
     }
 }

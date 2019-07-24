@@ -77,6 +77,11 @@ public abstract class CutCaptchaChallenge extends AbstractBrowserChallenge {
         }
     }
 
+    @Override
+    protected String getCaptchaNameSpace() {
+        return "cut";
+    }
+
     public static boolean isValidToken(String v) {
         return v != null && v.matches("[\\w-]{10,}");
     }

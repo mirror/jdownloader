@@ -24,11 +24,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,6 +46,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -200,8 +200,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -435,14 +435,18 @@ public class YetiShareCore extends antiDDoSForHost {
             if (supports_availablecheck_over_info_page()) {
                 getPage(link.getPluginPatternMatcher());
                 /* For premium mode, we might get our final downloadurl here already. */
-                final String redirect = this.br.getRedirectLocation();
-                if (redirect != null && isDownloadlink(redirect)) {
-                    continue_link = br.getRedirectLocation();
-                } else if (redirect != null) {
-                    /* Follow redirect */
-                    br.setFollowRedirects(true);
-                    getPage(redirect);
-                    br.setFollowRedirects(false);
+                while (true) {
+                    final String redirect = this.br.getRedirectLocation();
+                    if (redirect != null) {
+                        if (isDownloadlink(redirect)) {
+                            continue_link = redirect;
+                            break;
+                        } else {
+                            br.followRedirect();
+                        }
+                    } else {
+                        break;
+                    }
                 }
             }
             if (continue_link == null) {
@@ -610,9 +614,10 @@ public class YetiShareCore extends antiDDoSForHost {
     public boolean isDownloadlink(final String url) {
         if (url == null) {
             return false;
+        } else {
+            final boolean isdownloadlink = url.contains("download_token=");
+            return isdownloadlink;
         }
-        final boolean isdownloadlink = url.contains("download_token=");
-        return isdownloadlink;
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
@@ -1017,7 +1022,9 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }

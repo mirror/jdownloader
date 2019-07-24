@@ -67,6 +67,11 @@ public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
+    protected String getCaptchaNameSpace() {
+        return "geetest";
+    }
+
+    @Override
     public boolean validateResponse(AbstractResponse<String> response) {
         return super.validateResponse(response) && isCaptchaResponseValid();
     }

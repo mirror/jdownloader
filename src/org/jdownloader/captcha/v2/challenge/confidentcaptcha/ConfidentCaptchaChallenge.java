@@ -5,6 +5,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -19,10 +23,6 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge {
     private String siteKey;
@@ -63,6 +63,11 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
         response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
         return true;
+    }
+
+    @Override
+    protected String getCaptchaNameSpace() {
+        return "confident";
     }
 
     @Override

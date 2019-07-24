@@ -21,7 +21,9 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpserver.HttpConnection.ConnectionHook;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.net.httpserver.handler.ExtendedHttpRequestHandler;
@@ -86,9 +88,8 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         this.challenge = challenge;
     }
 
-    private String              baseHost;
-    private int                 basePort;
-    private final static Object LOCK = new Object();
+    protected volatile HttpHandlerInfo handler = null;
+    protected final static Object      LOCK    = new Object();
 
     public void open() throws IOException {
         TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
@@ -105,32 +106,40 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                         }
                         lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, BrowserReference.this);
                     } catch (final IOException e) {
+                        getLogger().log(e);
                         lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
                     }
                     BrowserSolverService.getInstance().getConfig().setLocalHttpPort(lHandlerInfo.getPort());
                 }
-                base = "http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath();
-                baseHost = "127.0.0.1";
-                basePort = lHandlerInfo.getPort();
-                openURL(base + "/?id=" + id.getID());
+                handler = lHandlerInfo;
+                openURL(URLHelper.parseLocation(new URL(getBase()), "?id=" + id.getID()));
                 return null;
             }
         });
     }
 
+    protected LogInterface getLogger() {
+        return challenge.getJob().getLogger();
+    }
+
     public String getBaseHost() {
-        return baseHost;
+        return "127.0.0.1";
     }
 
     public int getBasePort() {
-        return basePort;
+        final HttpHandlerInfo handler = this.handler;
+        if (handler != null) {
+            return handler.getPort();
+        } else {
+            return -1;
+        }
     }
 
     public String getBase() {
-        return base;
+        return "http://127.0.0.1:" + getBasePort() + "/" + challenge.getHttpPath() + "/";
     }
 
-    private void openURL(String url) {
+    protected void openURL(String url) {
         String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
         if (browserCmd == null || browserCmd.length == 0) {
             // if (CrossSystem.isWindows()) {

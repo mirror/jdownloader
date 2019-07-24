@@ -1,8 +1,10 @@
 package jd.gui.swing.jdgui.components;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 
+import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.captcha.SkipRequest;
@@ -10,6 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
@@ -28,15 +31,18 @@ public class CaptchaIndicator extends IconedProcessIndicator implements Challeng
     /**
      *
      */
-    private static final long   serialVersionUID = -7267364376253248300L;
-    private final SolverJob<?>  job;
-    private final StatusBarImpl statusBar;
+    private static final long         serialVersionUID = -7267364376253248300L;
+    private final SolverJob<?>        job;
+    private final StatusBarImpl       statusBar;
+    private final static AbstractIcon ocr              = new AbstractIcon(IconKey.ICON_OCR, 16);
 
     public CaptchaIndicator(final StatusBarImpl statusBar, SolverJob<?> job) {
-        super(new AbstractIcon(IconKey.ICON_OCR, 16));
+        super(ocr);
         this.job = job;
         this.statusBar = statusBar;
         setTitle(_GUI.T.StatusBarImpl_initGUI_captcha());
+        final Icon icon = new ExtMergedIcon(getDomainInfo().getFavIcon()).add(ocr, 6, 6);
+        updatePainter(icon, Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
         setDescription(_GUI.T.gui_captchaWindow_waitForInput(job.getChallenge().getHost()));
         setEnabled(true);
         ChallengeResponseController.getInstance().getEventSender().addListener(this, true);
