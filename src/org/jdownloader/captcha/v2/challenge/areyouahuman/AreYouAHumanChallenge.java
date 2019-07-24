@@ -67,6 +67,11 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
+    protected String getCaptchaNameSpace() {
+        return "areyouahuman";
+    }
+
+    @Override
     public boolean validateResponse(AbstractResponse<String> response) {
         return super.validateResponse(response) && isCaptchaResponseValid();
     }

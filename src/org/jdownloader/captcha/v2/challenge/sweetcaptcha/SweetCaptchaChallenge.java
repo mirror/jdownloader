@@ -3,6 +3,8 @@ package org.jdownloader.captcha.v2.challenge.sweetcaptcha;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -16,8 +18,6 @@ import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
-
-import jd.plugins.Plugin;
 
 public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
     private String siteKey;
@@ -54,6 +54,10 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
         }
         return false;
     }
+
+    protected String getCaptchaNameSpace() {
+        return "sweet";
+    };
 
     @Override
     public String getHTML(HttpRequest request, String id) {

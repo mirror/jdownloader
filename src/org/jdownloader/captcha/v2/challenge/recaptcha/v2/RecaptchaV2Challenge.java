@@ -682,6 +682,15 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
+    @Override
+    protected String getCaptchaNameSpace() {
+        if (getV3Action() != null) {
+            return "recaptchav3";
+        } else {
+            return "recaptchav2";
+        }
+    }
+
     /**
      * Used to validate result against expected pattern. <br />
      * This is different to AbstractBrowserChallenge.isSolved, as we don't want to throw the same error exception.
