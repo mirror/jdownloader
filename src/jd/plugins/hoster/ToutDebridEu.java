@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,17 +42,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
 public class ToutDebridEu extends antiDDoSForHost {
     private static final String          PROTOCOL                  = "https://";
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    /* 2019-07-25: According to reports, using multiple chunks will often lead to disconnects */
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private static MultiHosterManagement mhm                       = new MultiHosterManagement("tout-debrid.eu");
 
     public ToutDebridEu(PluginWrapper wrapper) {
