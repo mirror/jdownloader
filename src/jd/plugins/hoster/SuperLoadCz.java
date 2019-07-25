@@ -20,6 +20,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,12 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahomat\\.cz|stahomat\\.sk|stahovatelka\\.cz)/(stahnout|download)/[a-zA-Z0-9%-]+" })
 public class SuperLoadCz extends antiDDoSForHost {
@@ -141,7 +141,6 @@ public class SuperLoadCz extends antiDDoSForHost {
         return 0;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         showMessage(downloadLink, "Task 1: Check URL validity!");
@@ -150,14 +149,25 @@ public class SuperLoadCz extends antiDDoSForHost {
         handleMultiHost(downloadLink, account);
     }
 
-    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
+    private void handleDL(final Account account, final DownloadLink link, final String dllink, final boolean isStoredDirectURL) throws Exception {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        boolean updateCredits = true;
+        final boolean resume;
+        boolean updateCredits;
+        if (isStoredDirectURL) {
+            logger.info("Using stored directurl --> NOT updating credits after download as this method should not use up any new credits");
+            updateCredits = true;
+            /* 2019-07-24: Resume attempt will return response 400 for stored directurls */
+            resume = false;
+        } else {
+            logger.info("Generated new directurl --> Updating credits after downloadstart");
+            updateCredits = false;
+            resume = true;
+        }
         try {
             /* we want to follow redirects in final stage */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 /* download is not contentdisposition, so remove this host from premiumHosts list */
                 br.followConnection();
@@ -193,7 +203,11 @@ public class SuperLoadCz extends antiDDoSForHost {
         prepBrowser(br);
         final String pass = link.getStringProperty("pass", null);
         String downloadURL = checkDirectLink(link, "superloadczdirectlink");
-        if (downloadURL == null) {
+        final boolean usingStoredDirecturl;
+        if (downloadURL != null) {
+            usingStoredDirecturl = true;
+        } else {
+            usingStoredDirecturl = false;
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
             postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
@@ -237,7 +251,7 @@ public class SuperLoadCz extends antiDDoSForHost {
             showMessage(link, "Task 2: Download begins!");
         }
         // might need a sleep here hoster seems to have troubles with new links.
-        handleDL(account, link, downloadURL);
+        handleDL(account, link, downloadURL, usingStoredDirecturl);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -270,7 +284,6 @@ public class SuperLoadCz extends antiDDoSForHost {
         AccountInfo ai = new AccountInfo();
         prepBrowser(br);
         updateCredits(ai, account);
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(5);
         ai.setValidUntil(-1);

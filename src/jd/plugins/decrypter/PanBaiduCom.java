@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,6 +23,7 @@ import java.util.Random;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -45,6 +47,11 @@ public class PanBaiduCom extends PluginForDecrypt {
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
     private static final String                TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9-_]+#(dir|list)/path=%.+)";
@@ -100,7 +107,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (this.parameter.matches(TYPE_FOLDER_USER_HOME)) {
+        if (br.getURL().matches(TYPE_FOLDER_USER_HOME)) {
             crawlHome();
         } else {
             crawlFoldersAndFiles();
@@ -165,35 +172,50 @@ public class PanBaiduCom extends PluginForDecrypt {
         String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
         if (br.getURL().contains("/share/init")) {
-            if (parameter.matches(TYPE_FOLDER_GENERAL) || parameter.matches(TYPE_FOLDER_NORMAL)) {
-                uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
-                shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
-                if (link_password == null && parameter.matches(TYPE_FOLDER_NORMAL)) {
-                    link_password = new Regex(parameter, "%20%E5%AF%86%E7%A0%81:(.+)").getMatch(0);
+            if (br.getURL().matches(TYPE_FOLDER_GENERAL) || br.getURL().matches(TYPE_FOLDER_NORMAL)) {
+                uk = new Regex(br.getURL(), "uk=(\\d+)").getMatch(0);
+                shareid = new Regex(br.getURL(), "shareid=(\\d+)").getMatch(0);
+                if (link_password == null && br.getURL().matches(TYPE_FOLDER_NORMAL)) {
+                    link_password = new Regex(br.getURL(), "%20%E5%AF%86%E7%A0%81:(.+)").getMatch(0);
                 }
             } else {
                 uk = new Regex(br.getURL(), "uk=(\\d+)").getMatch(0);
                 shareid = new Regex(br.getURL(), "shareid=(\\d+)").getMatch(0);
             }
-            final String linkpart = new Regex(parameter, "(pan\\.baidu\\.com/.+)").getMatch(0);
+            final String linkpart = new Regex(br.getURL(), "(pan\\.baidu\\.com/.+)").getMatch(0);
+            if (linkpart == null) {
+                logger.warning("Failed to find linkpart");
+                return;
+            }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final String basic_url_parameters = new Regex(br.getURL(), "\\?(.+)").getMatch(0);
+            if (basic_url_parameters == null) {
+                logger.warning("Failed to find basic_url_parameters");
+                return;
+            }
+            boolean failed = true;
             for (int i = 1; i <= 3; i++) {
                 if (link_password == null) {
                     link_password = getUserInput("Password for " + linkpart + "?", param);
                 }
+                /*
+                 * 2019-07-25: Wrong Referer = After one password attempt, all tried will get a "Wrong password" response even when a
+                 * correct password is entered!
+                 */
+                br.getHeaders().put("Referer", "https://pan.baidu.com/share/init?" + basic_url_parameters);
                 if (uk != null) {
-                    br.postPage("/share/verify?" + "channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + Encoding.urlEncode(link_password));
+                    br.postPage("/share/verify?" + basic_url_parameters + "&channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + URLEncode.encodeURIComponent(link_password));
                 } else {
-                    String location = new Regex(br.getURL(), "\\?(.+)").getMatch(0);
-                    br.postPage("/share/verify?" + location + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + Encoding.urlEncode(link_password));
+                    br.postPage("/share/verify?" + basic_url_parameters + "&t=" + System.currentTimeMillis(), "vcode=&vcode_str=&pwd=" + URLEncode.encodeURIComponent(link_password));
                 }
                 if (!br.containsHTML("\"errno\":0")) {
                     link_password = null;
                     continue;
                 }
+                failed = false;
                 break;
             }
-            if (!br.containsHTML("\"errno\":0")) {
+            if (failed) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
             link_password_cookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
@@ -227,10 +249,6 @@ public class PanBaiduCom extends PluginForDecrypt {
         if (uk == null || shareid == null) {
             /* Probably user added invalid url */
             return;
-        }
-        String singleFolder = new Regex(parameter, "#dir/path=(.*?)$").getMatch(0);
-        if (singleFolder == null) {
-            singleFolder = new Regex(parameter, "&dir=([^&\\?]+)").getMatch(0);
         }
         String dir = null;
         String dirName = null;
@@ -271,7 +289,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             } else {
                 final String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
                 if (json == null) {
-                    logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
+                    logger.warning("json is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
@@ -293,7 +311,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         } while (currentlinksnum >= maxlinksperpage && currentpage <= maxpages);
     }
 
-    private void crawlFolderObject(final Object fileo, final String shorturl_id, final String shareid) {
+    private void crawlFolderObject(final Object fileo, final String shorturl_id, final String shareid) throws UnsupportedEncodingException {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) fileo;
         final String server_filename = (String) entries.get("server_filename");
         if (StringUtils.isEmpty(server_filename)) {
@@ -311,31 +329,22 @@ public class PanBaiduCom extends PluginForDecrypt {
         } else {
             position_arrayStr_current = position_arrayStr + "," + object_index;
         }
+        String path = (String) entries.get("path");
         if (isdir == 1) {
-            final String path = (String) entries.get("path");
+            /* Subfolder --> Goes back into decrypter */
             String subdir_link = null;
-            if (path == null) {
+            if (StringUtils.isEmpty(path)) {
                 /* Nothing to grab */
+                logger.info("path is empty");
                 return;
             }
-            /* Subfolder --> Goes back into decrypter */
-            if (shorturl_id == null && !shareid.equals("")) {
-                String general_folder = parameter;
-                String folder_path = new Regex(general_folder, "(#dir/path=.*?)$").getMatch(0);
-                if (folder_path != null) {
-                    general_folder = general_folder.replace(folder_path, "");
-                }
-                subdir_link = general_folder + "#dir/path=" + Encoding.urlEncode(path);
-            } else {
-                subdir_link = "http://pan.baidu.com/s/" + shorturl_id + "#dir/path=" + Encoding.urlEncode(path);
-            }
-            subdir_link += "?positionarray=" + Encoding.urlEncode(position_arrayStr_current);
+            subdir_link = "https://pan.baidu.com/s/" + shorturl_id + "#dir/path=" + URLEncode.encodeURIComponent(path) + "?positionarray=" + Encoding.urlEncode(position_arrayStr_current);
             if (link_password != null) {
                 /*
                  * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for
                  * each subfolder :)
                  */
-                subdir_link += "&linkpassword=" + Encoding.urlEncode(link_password);
+                subdir_link += "&linkpassword=" + URLEncode.encodeURIComponent(link_password);
             }
             dl = createDownloadlink(subdir_link);
         } else {
@@ -343,14 +352,20 @@ public class PanBaiduCom extends PluginForDecrypt {
                 /* Nothing to grab */
                 return;
             }
-            /* 2017-07-21: 'shorturl_id' is not always given (anymore?)! */
             final String contenturl;
-            if (shorturl_id != null) {
-                contenturl = String.format("http://%s/s/%s", this.getHost(), shorturl_id);
+            /* 2017-07-21: 'shorturl_id' is not always given (anymore?)! */
+            if (shorturl_id != null && !StringUtils.isEmpty(path) && path.contains("/")) {
+                /*
+                 * Filename can be at the end of the path --> Remove that to get a valid path (= leads to folder which contains the file(s))
+                 */
+                if (path.contains(server_filename)) {
+                    path = path.substring(0, path.lastIndexOf("/"));
+                }
+                contenturl = "https://pan.baidu.com/s/" + shorturl_id + "#list/path=" + URLEncode.encodeURIComponent(path);
             } else {
-                contenturl = getPlainLink(parameter);
+                /* Fallback */
+                contenturl = parameter;
             }
-            String path = (String) entries.get("path");
             String md5 = (String) entries.get("md5");
             if (StringUtils.isEmpty(md5)) {
                 /* 2019-07-16: Workaround: md5 value is important to have but it is not always given ... */
@@ -454,13 +469,10 @@ public class PanBaiduCom extends PluginForDecrypt {
         decryptedLinks.add(dl);
     }
 
-    private String getFolder(final String parameter, String dir, final int page, String shareid) {
-        // String unicode_stuff = new Regex(dir, "_(.+)$").getMatch(0);
-        // if (unicode_stuff != null) {
-        // dir = dir.replace(unicode_stuff, "");
-        // unicode_stuff = unescape(unicode_stuff);
-        // dir += Encoding.urlEncode(unicode_stuff);
-        // }
+    private String getFolder(final String parameter, String dir, final int page, String shareid) throws UnsupportedEncodingException {
+        if (!Encoding.isUrlCoded(dir)) {
+            dir = URLEncode.encodeURIComponent(dir);
+        }
         if (shareid == null) {
             shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
         }
@@ -477,10 +489,6 @@ public class PanBaiduCom extends PluginForDecrypt {
             uk = br.getRegex("uk=(\\d+)").getMatch(0);
         }
         return "//pan.baidu.com/share/list?uk=" + (uk != null ? uk : "") + "&shareid=" + (shareid != null ? shareid : "") + "&page=" + page + "&num=100&dir=" + dir + "&order=time&desc=1&_=" + System.currentTimeMillis() + "&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID;
-    }
-
-    private String getPlainLink(final String input) {
-        return input.replace("/share/init?", "/share/link?");
     }
 
     private void setConfigElements() {
