@@ -2456,7 +2456,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             getPage(this.getMainPage() + "/?op=my_account");
         }
         {
-            /* 2019-07-11: apikey handling - prefer that over website */
+            /*
+             * 2019-07-11: apikey handling - prefer that instead of website. Even if an XFS website has the "API mod" enabled, we will only
+             * find a key here if the user at least once pressed the "Generate API Key" button! We should consider auto-doing this as the
+             * API is simply more reliable.
+             */
             final String apikey = new Regex(correctedBR, "/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
             if (apikey != null) {
                 /*
@@ -2641,9 +2645,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         entries = (LinkedHashMap<String, Object>) entries.get("result");
         long expire_milliseconds_precise_to_the_second = 0;
         final long balance = JavaScriptEngineFactory.toLong(entries.get("balance"), 0);
+        /* 2019-07-26: values can also be "inf" for "Unlimited": "storage_left":"inf" */
         // final long storage_left = JavaScriptEngineFactory.toLong(entries.get("storage_left"), 0);
         final long storage_used = JavaScriptEngineFactory.toLong(entries.get("storage_used"), 0);
-        /* 2019-05-30: Seems to be a typo by the guy who develops the XFS script :D */
+        /*
+         * 2019-05-30: Seems to be a typo by the guy who develops the XFS script :D. For newly created free accounts, an expire-date will
+         * also always be given even if the account has never been a premium account. This expire-date will usually be the creation date of
+         * the account then --> Handling will correctly recognize it as a free account!
+         */
         String expireStr = (String) entries.get("premim_expire");
         if (StringUtils.isEmpty(expireStr)) {
             /* Try this too in case he corrects his mistake. */
