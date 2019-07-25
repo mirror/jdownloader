@@ -483,7 +483,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Returns https?://host.tld */
     protected String getMainPage() {
+        final String host;
+        final String browser_host = this.br != null ? br.getHost() : null;
         final String[] hosts = this.siteSupportedNames();
+        if (browser_host != null) {
+            host = browser_host;
+        } else {
+            /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
+            host = hosts[0];
+        }
         String mainpage;
         final String protocol;
         if (this.supports_https()) {
@@ -495,7 +503,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (requires_WWW()) {
             mainpage += "www.";
         }
-        mainpage += hosts[0];
+        mainpage += host;
         return mainpage;
     }
 
@@ -2715,6 +2723,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public boolean isLoggedin() {
         /**
          * please use valid combinations only! login or email alone without xfss is NOT valid!
+         */
+        /**
+         * 2019-07-25: TODO: Maybe check for valid cookies on all supported domains (e.g. special case imgrock.info and some others in
+         * ImgmazeCom plugin)
          */
         final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
         /* xfsts cookie is mostly used in xvideosharing sites (videohosters) example: vidoza.net */
