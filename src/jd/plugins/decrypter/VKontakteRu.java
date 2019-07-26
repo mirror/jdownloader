@@ -237,10 +237,8 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         prepBrowser(br);
         prepCryptedLink(null);
-        boolean loginrequired = true;
         /* Check/fix links before browser access START */
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_SHORT)) {
-            loginrequired = false;
             br.setFollowRedirects(false);
             getPage(br, CRYPTEDLINK_ORIGINAL);
             final String finallink = br.getRedirectLocation();
@@ -262,24 +260,16 @@ public class VKontakteRu extends PluginForDecrypt {
             decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
         } else if (isSingleVideo(CRYPTEDLINK_ORIGINAL)) {
-            loginrequired = false;
             if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
                 CRYPTEDLINK_FUNCTIONAL = MAINPAGE + "/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(?:\\-)?\\d+_\\d+)").getMatch(0);
             }
-        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM)) {
-            loginrequired = false;
-        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM)) {
-            loginrequired = false;
-        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS)) {
-            loginrequired = false;
-        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
-            loginrequired = false;
         }
         loggedIn = getUserLogin(false);
         try {
-            if (loginrequired && !loggedIn) {
-                throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
-            }
+            /* 2019-07-26: TODO: Improved recognization of state "Account required" */
+            // if (loginrequired && !loggedIn) {
+            // throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
+            // }
             prepCryptedLink(Boolean.valueOf(loggedIn));
             /* Replace section start */
             String newLink = CRYPTEDLINK_FUNCTIONAL;
@@ -818,6 +808,9 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.toString().contains("id=\"video_ext_msg\"")) {
             /* 2017-11-21: Basic trait for all kinds of errormessage (shall be language-independant) */
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        } else if (br.containsHTML("profile_deleted_text")) {
+            /* 2019-07-26: E.g. <h5 class="profile_deleted_text">Dieses Profil ist nur f&#252;r autorisierte Nutzer verf&#252;gbar.</h5> */
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
     }
@@ -1893,6 +1886,10 @@ public class VKontakteRu extends PluginForDecrypt {
         int i = 0;
         while (true) {
             getPage(br, parameter);
+            /* 2019-07-26: TODO: Review this function */
+            if (true) {
+                break;
+            }
             // required when they switch from http/https or vice versa, we need code to prevent retrying
             final String currentUrlCorrected = br.getURL().replaceFirst("https?:", "");
             final String parameterCorrected = parameter.replaceFirst("https?:", "");
@@ -2179,7 +2176,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Returns the ownerID which belongs to a name e.g. vk.com/some_name
+     * 2019-07-26: TODO: This API call requires authorization from now on Returns the ownerID which belongs to a name e.g. vk.com/some_name
      *
      * @throws Exception
      */
@@ -2303,7 +2300,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return input.matches(PATTERN_WALL_POST_LINK);
     }
 
-    /** Handles basic offline errors. */
+    /** Handles basic (offline) errors. */
     private void siteGeneralErrorhandling() throws DecrypterException {
         /* General errorhandling start */
         if (br.containsHTML("Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
@@ -2337,7 +2334,7 @@ public class VKontakteRu extends PluginForDecrypt {
         // CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/",
         // Boolean.FALSE.equals(a) ? "new.vk.com/" : "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need em! */
-        if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS)) {
+        if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS) && !this.isKnownType()) {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
         } else {
             /* Remove unneeded parameters. */
