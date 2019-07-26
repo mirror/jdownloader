@@ -246,9 +246,9 @@ public class ScriptEnvironment {
                                 ProcessOutput ret = ProcessBuilderFactory.runCommand(commands);
                                 if (callback != null) {
                                     if (CrossSystem.getOSFamily() == OSFamily.WINDOWS) {
-                                        executeCallback(callback, ret.getExitCode(), new String(new String(ret.getStdOutData(), "cp850").getBytes("UTF-8"), "UTF-8"), new String(new String(ret.getErrOutData(), "cp850").getBytes("UTF-8"), "UTF-8"));
+                                        executeCallback(callback, ret.getExitCode(), new String(ret.getStdOutString("cp850").getBytes("UTF-8"), "UTF-8"), new String(ret.getErrOutString("cp850").getBytes("UTF-8"), "UTF-8"));
                                     } else {
-                                        executeCallback(callback, ret.getExitCode(), new String(ret.getStdOutData(), "UTF-8"), new String(ret.getErrOutData(), "UTF-8"));
+                                        executeCallback(callback, ret.getExitCode(), ret.getStdOutString("UTF-8"), ret.getErrOutString("UTF-8"));
                                     }
                                 }
                             } catch (IOException e) {

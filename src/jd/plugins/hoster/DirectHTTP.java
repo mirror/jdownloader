@@ -511,6 +511,20 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    private boolean retryConnection(final DownloadLink downloadLink, final URLConnectionAdapter con) {
+        switch (con.getResponseCode()) {
+        case 400:// Bad Request
+        case 401:// Unauthorized
+        case 403:// Forbidden
+        case 404:// Not found
+        case 410:// Gone
+        case 470:// special response code, see thread 81171
+            return downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null || RequestMethod.HEAD.equals(con.getRequest().getRequestMethod());
+        default:
+            return false;
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
@@ -586,7 +600,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403 || urlConnection.getResponseCode() == 410 || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromHeader(urlConnection), "expired")))) {
+                if (retryConnection(downloadLink, urlConnection) || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromHeader(urlConnection), "expired"))) {
                     if (downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null || RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                         /* check if we need the URLPARAMS to download the file */
                         followURLConnectinon(br, urlConnection);

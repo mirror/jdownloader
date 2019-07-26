@@ -296,6 +296,7 @@ public abstract class AbstractFFmpegBinary {
         }
     }
 
+    // TODO: rewrite to use ProcessStreamReader or AbstractLineHandler
     private void readInputStreamToString(final AccessibleByteArrayOutputStream bos, final AtomicBoolean processExitedFlag, final InputStream fis, final boolean isStdout) throws IOException {
         final LogInterface logger = getLogger();
         long size = 0;

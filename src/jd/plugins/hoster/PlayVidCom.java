@@ -20,10 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +40,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
@@ -193,11 +193,10 @@ public class PlayVidCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://playvid.com";
-    private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -258,7 +257,9 @@ public class PlayVidCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -327,7 +328,7 @@ public class PlayVidCom extends PluginForHost {
             /* 2019-07-26 */
             final String qualityP = new Regex(quality, "(\\d+)p").getMatch(0);
             if (qualityP != null) {
-                videourl = new Regex(videosource, "data\\-src" + qualityP + "=\"(https[^\"]+)\"").getMatch(0);
+                videourl = new Regex(videosource, "data\\-src" + qualityP + "=\"(https?[^\"]+)\"").getMatch(0);
             }
         }
         return videourl;
@@ -341,7 +342,7 @@ public class PlayVidCom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br2.openGetConnection(dllink);
-                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
                         downloadLink.setProperty(property, Property.NULL);
                     } else {
                         downloadLink.setDownloadSize(con.getLongContentLength());
@@ -353,6 +354,7 @@ public class PlayVidCom extends PluginForHost {
                     }
                 }
             } catch (Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
             }
         }

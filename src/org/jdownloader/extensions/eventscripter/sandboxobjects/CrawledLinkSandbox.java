@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.PackageController;
@@ -57,6 +58,19 @@ public class CrawledLinkSandbox {
             } catch (final Throwable e) {
                 link.setPriority(Priority.DEFAULT);
             }
+        }
+    }
+
+    public CrawlerJobSandbox getSourceJob() {
+        if (link != null) {
+            final LinkCollectingJob job = link.getSourceJob();
+            if (job != null) {
+                return new CrawlerJobSandbox(job);
+            } else {
+                return null;
+            }
+        } else {
+            return null;
         }
     }
 
