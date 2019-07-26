@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -36,13 +40,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class PlayVidComDecrypter extends PluginForDecrypt {
     public PlayVidComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,7 +70,10 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "static-access", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        videoID = new Regex(param.toString(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        videoID = new Regex(param.toString(), "(?:watch(?:\\?v=|/)|embed/|v/)([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (videoID == null) {
+            videoID = new Regex(param.toString(), "https?://[^/]+/(?:[a-z]{2})?([A-Za-z0-9\\-_]+)").getMatch(0);
+        }
         if (param.toString().contains("playvid.com/")) {
             parameter = new Regex(param.toString(), "https?://").getMatch(-1) + "www.playvid.com/watch/" + videoID;
         } else {
@@ -91,19 +95,14 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Decrypt start */
-        filename = br.getRegex("data\\-title=\"([^<>\"]*?)\"").getMatch(0);
+        filename = PluginJSonUtils.getJson(br, "name");
         if (filename == null) {
-            filename = br.getRegex("data\\-callback=\"pv_hideshowTitle\">([^<>\"]*?)<").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(parameter, "/([^/]+)$").getMatch(0);
-                    if (filename == null) {
-                        logger.warning("Playvid.com decrypter failed..." + parameter);
-                        return null;
-                    }
-                }
-            }
+            /* Final fallback */
+            filename = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        }
+        if (filename == null) {
+            logger.warning("Playvid.com decrypter failed..." + parameter);
+            return null;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
@@ -206,7 +205,9 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                         if (container.getEstimatedFileSize() > 0) {
                             link.setDownloadSize(container.getEstimatedFileSize());
                         }
-                        link.setLinkID(getHost() + "//" + videoID + "/" + qualityValue + "/" + container.getInternalID());
+                        if (videoID != null) {
+                            link.setLinkID(getHost() + "//" + videoID + "/" + qualityValue + "/" + container.getInternalID());
+                        }
                         ret.add(link);
                     }
                 }
@@ -220,7 +221,9 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 dl.setLinkID(fname);
                 dl.setFinalFileName(fname);
                 dl.setContentUrl(parameter);
-                dl.setLinkID(getHost() + "//" + videoID + "/" + qualityValue);
+                if (videoID != null) {
+                    dl.setLinkID(getHost() + "//" + videoID + "/" + qualityValue);
+                }
                 if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) {
                     dl.setAvailable(true);
                 }
@@ -279,7 +282,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.PlayVidCom) plugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setValid(false);
             return false;
         }
         return true;

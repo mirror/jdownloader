@@ -20,6 +20,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,10 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
@@ -291,12 +291,15 @@ public class PlayVidCom extends PluginForHost {
     }
 
     public static String getVideosource(final Browser br) {
-        final String videosource = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
-        if (videosource == null) {
-            return null;
+        String videosource = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+        if (videosource != null) {
+            /* Old */
+            videosource = Encoding.htmlDecode(videosource);
         } else {
-            return Encoding.htmlDecode(videosource);
+            /* 2019-07-26: New */
+            videosource = br.toString();
         }
+        return videosource;
     }
 
     public static LinkedHashMap<String, String> getQualities(final Browser br) {
@@ -319,7 +322,15 @@ public class PlayVidCom extends PluginForHost {
     }
 
     public static String getQuality(final String quality, final String videosource) {
-        return new Regex(videosource, "video_vars(?:\\[video_urls\\])?\\[" + quality + "\\]= ?(https?://[^<>\"]*?)(\\&(?!sec)|$)").getMatch(0);
+        String videourl = new Regex(videosource, "video_vars(?:\\[video_urls\\])?\\[" + quality + "\\]= ?(https?://[^<>\"]*?)(\\&(?!sec)|$)").getMatch(0);
+        if (videourl == null) {
+            /* 2019-07-26 */
+            final String qualityP = new Regex(quality, "(\\d+)p").getMatch(0);
+            if (qualityP != null) {
+                videourl = new Regex(videosource, "data\\-src" + qualityP + "=\"(https[^\"]+)\"").getMatch(0);
+            }
+        }
+        return videourl;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

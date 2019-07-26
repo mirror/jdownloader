@@ -16,6 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -23,10 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/videos/\\d+/[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/videos/(?:\\d+/[a-z0-9\\-]+/|private/[a-z0-9\\-]+/)" })
 public class CamwhoresTv extends PornEmbedParser {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +38,7 @@ public class CamwhoresTv extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
-        final String parameter = param.toString().replaceFirst("camwhores.tv/", "camwhores.cc/");
+        String parameter = param.toString().replaceFirst("camwhores.tv/", "camwhores.cc/");
         br.getPage(parameter);
         if (jd.plugins.hoster.CamwhoresTv.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -51,10 +52,26 @@ public class CamwhoresTv extends PornEmbedParser {
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.size() == 0) {
+            String id = new Regex(parameter, "/videos/(\\d+)").getMatch(0);
+            if (id == null) {
+                logger.info("Failed to find videoid, probably private video");
+                final String filename_url = new Regex(parameter, "([^/]+/)$").getMatch(0);
+                /*
+                 * Private videos do not contain videoID inside URL but we can usually find the original URL containing that ID inside html.
+                 */
+                id = br.getRegex("https?://[^/]+/videos/(\\d+)/" + Pattern.compile(filename_url) + "\"").getMatch(0);
+                if (id != null) {
+                    logger.info("Found videoid");
+                    parameter = "http://www.camwhores.tv/videos/" + id + "/" + filename_url;
+                } else {
+                    logger.info("Found no videoid at all");
+                }
+            }
             /* Probably a selfhosted video. */
             final DownloadLink dl = createDownloadlink(createDownloadUrlForHostPlugin(parameter));
-            final String id = new Regex(parameter, "/videos/(\\d+)").getMatch(0);
-            dl.setLinkID(getHost() + "://" + id);
+            if (id != null) {
+                dl.setLinkID(getHost() + "://" + id);
+            }
             decryptedLinks.add(dl);
         }
         return decryptedLinks;

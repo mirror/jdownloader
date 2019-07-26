@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -34,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/embed/\\d+" })
 public class CamwhoresTv extends PluginForHost {
@@ -67,7 +67,9 @@ public class CamwhoresTv extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", getCurrentDomain() + "/").replace("camwhores.tv/", getCurrentDomain() + "/"));
         final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
-        link.setLinkID(getHost() + "://" + id);
+        if (id != null) {
+            link.setLinkID(getHost() + "://" + id);
+        }
     }
 
     @Override
@@ -308,7 +310,7 @@ public class CamwhoresTv extends PluginForHost {
         // }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         /* 2018-12-04: Website does not contain better titles than URL --> Always use title we find in our URLs */
-        final String urlregex = "/videos/\\d+/([^/]+)";
+        final String urlregex = "/([^/]+)/$";
         String filename_url = new Regex(url_source, urlregex).getMatch(0);
         if (StringUtils.isEmpty(filename_url)) {
             filename_url = new Regex(br.getURL(), urlregex).getMatch(0);
