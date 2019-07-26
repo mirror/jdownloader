@@ -159,6 +159,7 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             resume = true;
         }
         try {
+            link.setProperty("ServerComaptibleForByteRangeRequest", true);
             /* we want to follow redirects in final stage */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
             if (!dl.getConnection().isContentDisposition()) {
@@ -237,13 +238,16 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
         } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
             synchronized (account) {
                 account.removeProperty("token");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* First temp. disable - account will either be valid or gets permanently disabled on next accountcheck */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
             mhm.handleErrorGeneric(account, link, "unable_to_download_the_file", 50, 5 * 60 * 1000l);
         } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (StringUtils.equalsIgnoreCase(error, "Invalid token")) {
+            /* Needs full login to refresh token on next login */
+            account.removeProperty("token");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid logintoken", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
     }
