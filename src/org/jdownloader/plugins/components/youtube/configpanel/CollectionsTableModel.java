@@ -25,13 +25,10 @@ import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollection> implements GenericConfigEventListener<Object> {
-
     private abstract class AutoResizingTextColumn extends ExtTextColumn<YoutubeVariantCollection> {
         private AutoResizingTextColumn(String name) {
             super(name);
-
             this.setRowSorter(new ExtDefaultRowSorter<YoutubeVariantCollection>() {
-
                 @Override
                 public int compare(final YoutubeVariantCollection o1, final YoutubeVariantCollection o2) {
                     String o1s = getStringValue(o1);
@@ -44,16 +41,12 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
                     }
                     if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                         int ret = o1s.compareToIgnoreCase(o2s);
-
                         return ret;
                     } else {
                         int ret = o2s.compareToIgnoreCase(o1s);
-
                         return ret;
                     }
-
                 }
-
             });
         }
 
@@ -94,10 +87,8 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
 
         @Override
         protected int adjustWidth(int w) {
-
             return Math.max(w, this.calculateMinimumHeaderWidth());
         }
-
     }
 
     private abstract class AutoResizingIntColumn extends ExtTextColumn<YoutubeVariantCollection> {
@@ -105,24 +96,18 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
             super(name);
             rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
             this.setRowSorter(new ExtDefaultRowSorter<YoutubeVariantCollection>() {
-
                 @Override
                 public int compare(final YoutubeVariantCollection o1, final YoutubeVariantCollection o2) {
-
                     final int _1 = AutoResizingIntColumn.this.getInt(o1);
                     final int _2 = AutoResizingIntColumn.this.getInt(o2);
-
                     int ret;
                     if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                         ret = _1 == _2 ? 0 : _1 < _2 ? -1 : 1;
                     } else {
                         ret = _1 == _2 ? 0 : _1 > _2 ? -1 : 1;
                     }
-
                     return ret;
-
                 }
-
             });
         }
 
@@ -174,22 +159,18 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
 
         @Override
         protected int adjustWidth(int w) {
-
             return Math.max(w, this.calculateMinimumHeaderWidth());
         }
-
     }
 
     private class EnabledColumn extends ExtCheckColumn<YoutubeVariantCollection> {
         private EnabledColumn(String string) {
             super(string);
-
             this.setRowSorter(new ExtDefaultRowSorter<YoutubeVariantCollection>() {
                 @Override
                 public int compare(final YoutubeVariantCollection o1, final YoutubeVariantCollection o2) {
                     final boolean b1 = getBooleanValue(o1);
                     final boolean b2 = getBooleanValue(o2);
-
                     int ret;
                     if (b1 == b2) {
                         ret = 0;
@@ -200,16 +181,12 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
                             ret = !b1 && b2 ? -1 : 1;
                         }
                     }
-
                     return ret;
                 }
-
             });
-
         }
 
         public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
             final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
                 private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                 private static final long serialVersionUID = 3224931991570756349L;
@@ -222,9 +199,7 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
                     setText(null);
                     return this;
                 }
-
             };
-
             return ret;
         }
 
@@ -254,8 +229,6 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
     public CollectionsTableModel() {
         super("YoutubeLinkTableModel");
         // ensure Link and its statics are loaded
-
-        _fireTableStructureChanged(YoutubeVariantCollection.load(), true);
         CFG_YOUTUBE.COLLECTIONS.getEventSender().addListener(this, true);
     }
 
@@ -295,7 +268,6 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
                 return value.getName();
             }
         });
-
         addColumn(new AutoResizingTextColumn(_GUI.T.youtube_collection_size()) {
             @Override
             public boolean isAutoWidthEnabled() {
@@ -316,7 +288,10 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
                 return i + "/" + value.getVariants().size();
             }
         });
+    }
 
+    public void load() {
+        onConfigValueModified(null, null);
     }
 
     protected void save() {
@@ -330,7 +305,6 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 _fireTableStructureChanged(YoutubeVariantCollection.load(), true);
@@ -344,7 +318,6 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
     public void onEnabledMapUpdate(CounterMap<String> enabledMap) {
         this.enabledMap = enabledMap;
         getTable().repaint();
-
     }
 
     protected int getEnabledCount(YoutubeVariantCollection value) {
@@ -357,14 +330,10 @@ public class CollectionsTableModel extends ExtTableModel<YoutubeVariantCollectio
         }
         if (value.getVariants() != null) {
             for (VariantIDStorable v : value.getVariants()) {
-
                 int vi = enabledMap.getInt(v.createUniqueID());
-
                 i += vi;
-
             }
         }
         return i;
     }
-
 }

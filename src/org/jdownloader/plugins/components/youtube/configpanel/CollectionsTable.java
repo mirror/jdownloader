@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.swing.JPopupMenu;
 
+import jd.gui.swing.jdgui.BasicJDTable;
+
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.uio.UIOManager;
@@ -22,15 +24,11 @@ import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.gui.swing.jdgui.BasicJDTable;
-
 public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
-
     public CollectionsTable(CollectionsTableModel model) {
         super(model);
         setColumnBottonVisibility(false);
         this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<YoutubeVariantCollection>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null) {
-
             @Override
             protected Color getBackground(Color current) {
                 return LAFOptions.getInstance().getColorForPanelHeaderBackground();
@@ -40,9 +38,16 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
             public boolean accept(ExtColumn<YoutubeVariantCollection> column, YoutubeVariantCollection value, boolean selected, boolean focus, int row) {
                 return value.getGroupingID() != null;
             }
-
         });
+    }
 
+    @Override
+    public CollectionsTableModel getModel() {
+        return (CollectionsTableModel) super.getModel();
+    }
+
+    public void load() {
+        getModel().load();
     }
 
     @Override
@@ -64,14 +69,11 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
             public void actionPerformed(ActionEvent e) {
                 onShortcutDelete(getModel().getSelectedObjects(), null, false);
             }
-
         });
-
         popup.add(new AppAction() {
             {
                 setSmallIcon(new AbstractIcon(IconKey.ICON_POPDOWNLARGE, 20));
                 setName(_GUI.T.youtube_edit_variant_dropdown_list());
-
             }
 
             @Override
@@ -80,9 +82,7 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
                     public void run() {
                         YoutubeVariantsListChooser d;
                         try {
-
                             UIOManager.I().show(null, d = new YoutubeVariantsListChooser(contextObject)).throwCloseExceptions();
-
                             List<VariantIDStorable> newList = d.getSelection();
                             contextObject.setDropdown(newList);
                             CFG_YOUTUBE.CFG.setCollections(getModel().getElements());
@@ -99,7 +99,6 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
                             // LinkCollector.getInstance().setActiveVariantForLink(cl, found);
                             // }
                             // }
-
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {
@@ -108,12 +107,9 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
                             e.printStackTrace();
                         }
                     }
-
                 }.start();
             }
-
         });
-
         return popup;
     }
 
@@ -137,7 +133,6 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
     }
 
     public void onEnabledMapUpdate(CounterMap<String> enabledMap) {
-        ((CollectionsTableModel) getModel()).onEnabledMapUpdate(enabledMap);
+        getModel().onEnabledMapUpdate(enabledMap);
     }
-
 }

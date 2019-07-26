@@ -89,23 +89,66 @@ public class DownloadSession extends Property {
     private AtomicLong                                                    activatorRebuildRequest = new AtomicLong(1);
     private NullsafeAtomicReference<CaptchaSettings.MODE>                 captchaMode             = new NullsafeAtomicReference<CaptchaSettings.MODE>(CaptchaSettings.MODE.NORMAL);
     private final static Comparator<CachedAccount>                        EXPIRE_DATE_SORTER      = new Comparator<CachedAccount>() {
-                                                                                                      public final int compare(long x, long y) {
-                                                                                                          return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                                                      }
+        public final int compare(long x, long y) {
+            return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        }
 
-                                                                                                      @Override
-                                                                                                      public int compare(CachedAccount account1, CachedAccount account2) {
-                                                                                                          long expireDate1 = account1.getAccount() == null ? -1 : account1.getAccount().getValidPremiumUntil();
-                                                                                                          if (expireDate1 <= 0) {
-                                                                                                              expireDate1 = Long.MAX_VALUE;
-                                                                                                          }
-                                                                                                          long expireDate2 = account2.getAccount() == null ? -1 : account2.getAccount().getValidPremiumUntil();
-                                                                                                          if (expireDate2 <= 0) {
-                                                                                                              expireDate2 = Long.MAX_VALUE;
-                                                                                                          }
-                                                                                                          return compare(expireDate1, expireDate2);
-                                                                                                      }
-                                                                                                  };
+        public final long getExpireDate(Account account) {
+            if (account == null) {
+                return Long.MAX_VALUE;
+            } else {
+                final long validUntil = account.getValidPremiumUntil();
+                if (validUntil <= 0) {
+                    return Long.MAX_VALUE;
+                } else {
+                    return validUntil;
+                }
+            }
+        }
+
+        @Override
+        public int compare(CachedAccount account1, CachedAccount account2) {
+            final long expireDate1 = getExpireDate(account1.getAccount());
+            final long expireDate2 = getExpireDate(account2.getAccount());
+            return compare(expireDate1, expireDate2);
+        }
+    };
+    private final static Comparator<CachedAccount>                        TRAFFIC_LEFT_SORTER     = new Comparator<CachedAccount>() {
+        public final int compare(long x, long y) {
+            return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        }
+
+        public final long getTrafficLeft(Account account) {
+            if (account == null) {
+                return Long.MAX_VALUE;
+            } else {
+                final AccountInfo ai = account.getAccountInfo();
+                if (ai == null || ai.isUnlimitedTraffic()) {
+                    return Long.MAX_VALUE;
+                } else {
+                    return ai.getTrafficLeft();
+                }
+            }
+        }
+
+        @Override
+        public int compare(CachedAccount account1, CachedAccount account2) {
+            final long trafficLeft1 = getTrafficLeft(account1.getAccount());
+            final long trafficLeft2 = getTrafficLeft(account2.getAccount());
+            return compare(trafficLeft1, trafficLeft2);
+        }
+    };
+    private final static Comparator<CachedAccount>                        ACCOUNT_SORTER          = new Comparator<CachedAccount>() {
+        @Override
+        public int compare(CachedAccount o1, CachedAccount o2) {
+            final int ret = EXPIRE_DATE_SORTER.compare(o1, o2);
+            if (ret == 0) {
+                return TRAFFIC_LEFT_SORTER.compare(o1, o2);
+            } else {
+                return ret;
+            }
+        }
+    };
 
     public CaptchaSettings.MODE getCaptchaMode() {
         return captchaMode.get();
@@ -236,36 +279,36 @@ public class DownloadSession extends Property {
     }
 
     private final CopyOnWriteArraySet<SingleDownloadController> controllers        = new CopyOnWriteArraySet<SingleDownloadController>() {
-                                                                                       /**
+        /**
          *
          */
-                                                                                       private static final long serialVersionUID = -3897088297641777499L;
+         private static final long serialVersionUID = -3897088297641777499L;
 
-                                                                                       public boolean add(SingleDownloadController e) {
-                                                                                           downloadsStarted.incrementAndGet();
-                                                                                           e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-                                                                                           return super.add(e);
-                                                                                       };
+        public boolean add(SingleDownloadController e) {
+            downloadsStarted.incrementAndGet();
+            e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+            return super.add(e);
+        };
 
-                                                                                       @Override
-                                                                                       public boolean remove(Object e) {
-                                                                                           final boolean ret = super.remove(e);
-                                                                                           if (ret) {
-                                                                                               try {
-                                                                                                   getDiskSpaceManager().freeAllReservationsBy(e);
-                                                                                               } catch (final Throwable ignore) {
-                                                                                               }
-                                                                                               try {
-                                                                                                   getFileAccessManager().unlockAllHeldby(e);
-                                                                                               } finally {
-                                                                                                   if (e instanceof SingleDownloadController) {
-                                                                                                       ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                                                                                                   }
-                                                                                               }
-                                                                                           }
-                                                                                           return ret;
-                                                                                       };
-                                                                                   };
+        @Override
+        public boolean remove(Object e) {
+            final boolean ret = super.remove(e);
+            if (ret) {
+                try {
+                    getDiskSpaceManager().freeAllReservationsBy(e);
+                } catch (final Throwable ignore) {
+                }
+                try {
+                    getFileAccessManager().unlockAllHeldby(e);
+                } finally {
+                    if (e instanceof SingleDownloadController) {
+                        ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                    }
+                }
+            }
+            return ret;
+        };
+    };
     private final long                                          createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
@@ -463,7 +506,7 @@ public class DownloadSession extends Property {
                 if (hosterPremiumGroup.size() > 0) {
                     if (hosterPremiumGroup.size() > 1) {
                         try {
-                            Collections.sort(hosterPremiumGroup, EXPIRE_DATE_SORTER);
+                            Collections.sort(hosterPremiumGroup, ACCOUNT_SORTER);
                         } catch (final Throwable e) {
                             LogController.CL().log(e);
                         }
@@ -484,7 +527,7 @@ public class DownloadSession extends Property {
                     if (multiHosterGroup.size() > 0) {
                         if (multiHosterGroup.size() > 1) {
                             try {
-                                Collections.sort(multiHosterGroup, EXPIRE_DATE_SORTER);
+                                Collections.sort(multiHosterGroup, ACCOUNT_SORTER);
                             } catch (final Throwable e) {
                                 LogController.CL().log(e);
                             }

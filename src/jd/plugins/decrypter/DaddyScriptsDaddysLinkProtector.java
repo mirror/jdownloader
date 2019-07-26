@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.net/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
