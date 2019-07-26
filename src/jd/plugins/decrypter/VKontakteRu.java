@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -49,11 +54,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -171,6 +171,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final int        API_MAX_ENTRIES_PER_REQUEST               = 100;
     private SubConfiguration        cfg                                       = null;
     private static final String     MAINPAGE                                  = "https://vk.com";
+    public static final String      LINKID_PREFIX                             = "vkontakte://";
     private String                  CRYPTEDLINK_FUNCTIONAL                    = null;
     private String                  CRYPTEDLINK_ORIGINAL                      = null;
     private CryptedLink             CRYPTEDLINK                               = null;
@@ -594,7 +595,7 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
-            dl.setLinkID(linkid);
+            dl.setLinkID(LINKID_PREFIX + linkid);
             if (fp != null) {
                 dl._setFilePackage(fp);
             }
@@ -793,7 +794,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (fastLinkcheck) {
                         dl.setAvailable(true);
                     }
-                    dl.setLinkID(linkid + "_" + selectedQualityValue);
+                    dl.setLinkID(LINKID_PREFIX + linkid + "_" + selectedQualityValue);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 }
@@ -892,7 +893,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink dl = getSinglePhotoDownloadLink(content_id);
             final String linkid = albumID + "_" + content_id;
             dl.setProperty("albumid", albumID);
-            dl.setLinkID(linkid);
+            dl.setLinkID(LINKID_PREFIX + linkid);
             fp.add(dl);
             decryptedLinks.add(dl);
         }
@@ -1305,7 +1306,7 @@ public class VKontakteRu extends PluginForDecrypt {
                             dl.setName(filename);
                         }
                         dl.setProperty("content_id", content_id);
-                        dl.setLinkID(owner_id + "_" + content_id);
+                        dl.setLinkID(LINKID_PREFIX + owner_id + "_" + content_id);
                     }
                     fp.add(dl);
                     decryptedLinks.add(dl);
@@ -1709,7 +1710,7 @@ public class VKontakteRu extends PluginForDecrypt {
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         dl.setProperty("photo_module", module);
         dl.setProperty("photo_list_id", list_id);
-        dl.setLinkID(linkid);
+        dl.setLinkID(LINKID_PREFIX + linkid);
         decryptedLinks.add(dl);
         return;
     }
@@ -1754,7 +1755,7 @@ public class VKontakteRu extends PluginForDecrypt {
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setProperty("owner_id", owner_ID);
             dl.setProperty("content_id", content_ID);
-            dl.setLinkID(linkid);
+            dl.setLinkID(LINKID_PREFIX + linkid);
             fp.add(dl);
             decryptedLinks.add(dl);
         }

@@ -70,7 +70,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_VIDEOLINK                                  = "https?://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
     private static final String TYPE_PICTURELINK                                = "https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
+    private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc([\\d\\-]+)_(\\d+)(?:\\?hash=[a-z0-9]+)?";
     public static final long    trust_cookie_age                                = 300000l;
     private static final String TEMPORARILYBLOCKED                              = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
@@ -141,7 +141,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public CrawledLink convert(DownloadLink link) {
         final CrawledLink ret = super.convert(link);
-        final String url = link.getDownloadURL();
+        final String url = link.getPluginPatternMatcher();
         if (url != null && url.matches(TYPE_DIRECT)) {
             String filename = extractFileNameFromURL(url);
             if (filename != null) {
@@ -184,19 +184,22 @@ public class VKontakteRuHoster extends PluginForHost {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (link.getDownloadURL().matches(TYPE_DIRECT)) {
-            finalUrl = link.getDownloadURL();
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+            finalUrl = link.getPluginPatternMatcher();
             /* Prefer filename inside url */
             filename = extractFileNameFromURL(finalUrl);
             checkstatus = linkOk(link, filename, isDownload);
             if (checkstatus != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
-            if (link.getLinkID() == null || !link.getLinkID().matches("")) {
-                link.setLinkID(new Regex(link.getDownloadURL(), "/doc((?:\\-)?\\d+_\\d+)").getMatch(0));
+        } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+            if (link.getLinkID() == null) {
+                link.setLinkID(jd.plugins.decrypter.VKontakteRu.LINKID_PREFIX + this.ownerID + "_" + this.contentID);
             }
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
+            if (docs_add_unique_id) {
+                filename = "doc" + this.ownerID + "_" + this.contentID;
+            }
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
                     logger.info("Doc Link type redirect");
@@ -204,8 +207,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 } else if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DIRECT)) {
                     logger.info("Direct Link type redirect");
                     finalUrl = br.getRedirectLocation();
-                    /* Prefer filename inside url */
-                    filename = extractFileNameFromURL(finalUrl);
+                    if (filename == null) {
+                        /* Use filename inside url */
+                        filename = extractFileNameFromURL(finalUrl);
+                    }
                     checkstatus = linkOk(link, filename, isDownload);
                     if (checkstatus != 1) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -221,32 +226,31 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML("This document is available only to its owner\\.")) {
+                /* 2019-07-26: TODO: Improve this handling */
                 final Account acc = account != null ? account : AccountController.getInstance().getValidAccount(this);
                 if (acc != null) {
                     login(br, acc);
                     br.setFollowRedirects(true);
-                    br.getPage(link.getDownloadURL());
+                    br.getPage(link.getPluginPatternMatcher());
                 }
                 if (br.containsHTML("This document is available only to its owner\\.")) {
                     link.getLinkStatus().setStatusText("This document is available only to its owner");
-                    link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
                     return AvailableStatus.TRUE;
                 }
             }
-            filename = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
             finalUrl = br.getRegex("var src = \\'(https?://[^<>\"]*?)\\';").getMatch(0);
-            if (filename == null || finalUrl == null) {
+            if (finalUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
-            final String betterFilename = new Regex(finalUrl, "docs/[a-z0-9]+.*?([^<>\"/]+)\\?extra=.+").getMatch(0);
-            if (betterFilename != null) {
-                filename = Encoding.htmlDecode(betterFilename).trim();
-            } else {
-                filename = Encoding.htmlDecode(filename.trim());
-            }
-            if (docs_add_unique_id) {
-                filename = link.getLinkID() + filename;
+            if (filename == null) {
+                final String filename_html = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+                /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
+                final String betterFilename = new Regex(finalUrl, "docs/[a-z0-9]+.*?([^<>\"/]+)\\?extra=.+").getMatch(0);
+                if (betterFilename != null) {
+                    filename = Encoding.htmlDecode(betterFilename).trim();
+                } else if (filename_html != null) {
+                    filename = Encoding.htmlDecode(filename_html.trim());
+                }
             }
             checkstatus = linkOk(link, filename, isDownload);
             if (checkstatus != 1) {
@@ -263,7 +267,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* Always login if possible. */
                 login(br, aa);
             }
-            if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
+            if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
                 String finalFilename = link.getFinalFileName();
                 if (finalFilename == null) {
                     finalFilename = link.getName();
@@ -343,7 +347,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                     link.setProperty("directlink", finalUrl);
                 }
-            } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
+            } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
                 br.setFollowRedirects(true);
                 finalUrl = link.getStringProperty("directlink", null);
                 /* Check if directlink is expired */
@@ -437,7 +441,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        if (downloadLink.getDownloadURL().matches(TYPE_PICTURELINK)) {
+        if (downloadLink.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
             // this is for resume of cached link.
             if (finalUrl != null) {
                 if (!photolinkOk(downloadLink, null, false)) {
@@ -457,7 +461,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 return;
             }
         }
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+        if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
             if (br.containsHTML("This document is available only to its owner\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
             }
@@ -713,7 +717,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Doc-links and other links with permission can be downloaded without login */
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK) || downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_DIRECT)) {
+        if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK) || downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DIRECT)) {
             requestFileInformation(downloadLink, null, true);
             doFree(downloadLink);
         } else if (checkNoLoginNeeded(downloadLink)) {
@@ -728,7 +732,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private boolean checkNoLoginNeeded(final DownloadLink dl) {
         boolean noLogin = dl.getBooleanProperty("nologin", false);
         if (!noLogin) {
-            noLogin = dl.getDownloadURL().matches(TYPE_PICTURELINK);
+            noLogin = dl.getPluginPatternMatcher().matches(TYPE_PICTURELINK);
         }
         return noLogin;
     }
@@ -830,9 +834,9 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private int getMaxChunks(final DownloadLink downloadLink, final String url) {
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
+        if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
             return 0;
-        } else if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getDownloadURL(), ".mp4")) {
+        } else if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getPluginPatternMatcher(), ".mp4")) {
             return 0;
         } else {
             return 1;
@@ -918,9 +922,9 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private boolean isResumeSupported(final DownloadLink downloadLink, final String downloadURL) throws IOException {
-        if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
+        if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
             return true;
-        } else if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getDownloadURL(), ".mp4")) {
+        } else if (downloadLink.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK) && StringUtils.containsIgnoreCase(downloadLink.getPluginPatternMatcher(), ".mp4")) {
             return true;
         } else if (downloadURL != null && (downloadURL.matches(".+\\.(mp4)$") || new URL(downloadURL).getFile().matches(".+\\.(mp4)$"))) {
             return true;
@@ -1321,9 +1325,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** Returns photoID in url-form: oid_id (userID_pictureID). */
-    @SuppressWarnings("deprecation")
     private String getPhotoID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
+        return new Regex(dl.getPluginPatternMatcher(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?[\\d\\-]+_[\\d\\-]+)").getMatch(0);
     }
 
     private void setConstants(final DownloadLink dl) {
@@ -1346,22 +1349,26 @@ public class VKontakteRuHoster extends PluginForHost {
 
     private String getOwnerID(final DownloadLink dl) {
         String ownerID = dl.getStringProperty("owner_id", null);
-        if (ownerID == null && dl.getDownloadURL().matches(TYPE_AUDIOLINK)) {
+        if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
             /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
-            ownerID = new Regex(dl.getDownloadURL(), TYPE_AUDIOLINK).getMatch(0);
-        } else if (ownerID == null && dl.getDownloadURL().matches(TYPE_PICTURELINK)) {
-            ownerID = new Regex(dl.getDownloadURL(), TYPE_PICTURELINK).getMatch(0);
+            ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_AUDIOLINK).getMatch(0);
+        } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
+            ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_PICTURELINK).getMatch(0);
+        } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK)) {
+            ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(0);
         }
         return ownerID;
     }
 
     private String getContentID(final DownloadLink dl) {
         String contentID = dl.getStringProperty("content_id", null);
-        if (contentID == null && dl.getDownloadURL().matches(TYPE_AUDIOLINK)) {
+        if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
             /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
-            contentID = new Regex(dl.getDownloadURL(), TYPE_AUDIOLINK).getMatch(1);
-        } else if (contentID == null && dl.getDownloadURL().matches(TYPE_PICTURELINK)) {
-            contentID = new Regex(dl.getDownloadURL(), TYPE_PICTURELINK).getMatch(1);
+            contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_AUDIOLINK).getMatch(1);
+        } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
+            contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_PICTURELINK).getMatch(1);
+        } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK)) {
+            contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(1);
         }
         return contentID;
     }

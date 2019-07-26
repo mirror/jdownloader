@@ -65,38 +65,61 @@ public class ChoMikujPl extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = null;
         br.setLoadLimit(3123000);
+        int startPage = 1;
+        boolean scanForMorePages = false;
+        String parameter_without_page_number = null;
         if (new Regex(param.toString(), Pattern.compile(VIDEO_DIRECTURL, Pattern.CASE_INSENSITIVE)).matches()) {
             /* 2019-07-16: Very rare case e.g. svn.jdownloader.org/issues/81525 */
             decryptedLinks.add(this.createDownloadlink("directhttp://" + param.toString()));
             return decryptedLinks;
         } else if (param.toString().matches(PAGEDECRYPTLINK)) {
-            String base = new Regex(param.toString(), "\\.pl/result/(.+)").getMatch(0);
+            final String base = new Regex(param.toString(), "\\.pl/result/([^\\?]+)").getMatch(0);
             parameter = Encoding.Base64Decode(base);
+            if (param.toString().contains("?check_for_more=true")) {
+                scanForMorePages = true;
+                startPage = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
+                parameter_without_page_number = parameter.substring(0, parameter.lastIndexOf(","));
+            }
         } else {
             parameter = param.toString().replace("chomikuj.pl//", "chomikuj.pl/");
-            // Check for page 1 of multi page folder
-            if (!parameter.contains(",")) {
-                getPage(parameter);
-                /* Find all pages and re-add them to the crawler to handle one page after another! */
-                if (br.containsHTML("fileListPage")) {
-                    FilePackage fp = FilePackage.getInstance();
-                    Integer pageNum = 1;
-                    while (true) {
-                        if (!br.containsHTML("class=\"\" rel=\"" + (pageNum + 1) + "\" ")) {
-                            break;
+            parameter_without_page_number = parameter;
+            scanForMorePages = !parameter.contains(",");
+        }
+        /* Check if user wants specific page only */
+        if (scanForMorePages) {
+            /* No specific page only? Add all! */
+            getPage(parameter);
+            /* Find all pages and re-add them to the crawler to handle one page after another! */
+            if (br.containsHTML("fileListPage")) {
+                int maxPage = startPage;
+                int pageTemp = 1;
+                final String[] pages = br.getRegex("class=\"\" rel=\"(\\d+)\" ").getColumn(0);
+                for (final String pageStr : pages) {
+                    pageTemp = Integer.parseInt(pageStr);
+                    if (pageTemp > maxPage) {
+                        maxPage = pageTemp;
+                    }
+                }
+                /* Add separate links for all found pages so call can be crawled independantly from each other! */
+                if (maxPage > startPage) {
+                    logger.info("Found " + maxPage + " pages");
+                    final FilePackage fp = FilePackage.getInstance();
+                    for (int pageCounter = startPage + 1; pageCounter <= maxPage; pageCounter++) {
+                        String crawlerURL = "https://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter_without_page_number + "," + pageCounter);
+                        /*
+                         * 2019-07-26: Folders with over 9 pages will not contain the final maxPage value inside html. Users will have to
+                         * access page 9 to see more pages (or even to see the last page).
+                         */
+                        if (pageCounter == maxPage && br.containsHTML("rel=\"" + pageCounter + "\" title=\"" + pageCounter + " \\.\\.\\.\"")) {
+                            crawlerURL += "?check_for_more=true";
                         }
-                        pageNum = pageNum + 1;
-                        final DownloadLink dl = createDownloadlink("https://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + pageNum));
-                        dl.setProperty("reallink", parameter);
+                        final DownloadLink dl = createDownloadlink(crawlerURL);
+                        /* 2019-07-26: This property is not required anymore */
+                        // dl.setProperty("reallink", parameter);
                         fp.add(dl);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
-                        }
+                        distribute(dl);
                         decryptedLinks.add(dl);
                     }
-                    logger.info("Number of page: " + pageNum);
                 }
             }
         }
@@ -117,6 +140,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         br.setLoadLimit(4194304);
         /* checking if the single link is folder with EXTENSTION in the name */
         boolean folderCheck = false;
+        boolean accessedURL = false;
         /* Handle single links */
         if (linkending != null) {
             String tempExt = null;
@@ -128,7 +152,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
             if (new Regex(linkending, Pattern.compile("\\d+\\.[A-Za-z0-9]{1,5}", Pattern.CASE_INSENSITIVE)).matches() || isLinkendingWithoutID) {
                 /**
-                 * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
+                 * If the ID is missing but it's a single link we have to access the link to get it's real link and it's download ID.
                  */
                 if (isLinkendingWithoutID) {
                     getPage(parameter);
@@ -177,22 +201,22 @@ public class ChoMikujPl extends PluginForDecrypt {
                     String fileid = info.getMatch(1);
                     if (fileid == null) {
                         getPage(parameter);
+                        accessedURL = true;
                         fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
                     }
-                    if (fileid == null) {
-                        /* No ID --> We can't download anything --> Must be offline */
-                        dl.setProperty("offline", true);
-                        dl.setAvailable(false);
-                    } else {
+                    if (fileid != null) {
+                        logger.info("Found single file");
                         dl.setProperty("fileid", fileid);
+                        dl.setName(filename);
+                        dl.setContentUrl(parameter);
+                        dl.setProperty("mainlink", parameter);
+                        dl.setLinkID(fileid);
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    } else {
+                        logger.info("Failed to find single file --> Crawling folder");
                     }
-                    dl.setName(filename);
-                    dl.setContentUrl(parameter);
-                    dl.setProperty("mainlink", parameter);
-                    dl.setLinkID(fileid);
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
                 }
             } else {
                 // Or it's just a specified page of a folder, we remove that to
@@ -201,7 +225,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 // parameter = parameter.replace(linkending, "");
             }
         }
-        getPage(parameter);
+        if (!accessedURL) {
+            getPage(parameter);
+        }
         // Check for redirect and apply new link
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
