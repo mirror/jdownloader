@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?bs\\.to/(serie/.*|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
@@ -86,7 +87,22 @@ public class BsTo extends PluginForDecrypt {
                 }
             }
             if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* 2019-07-26: New */
+                final String security_token = br.getRegex("<meta name=\"security_token\" content=\"([a-f0-9]+)\" />").getMatch(0);
+                final String lid = br.getRegex("data\\-lid=\"(\\d+)\"").getMatch(0);
+                if (security_token == null || lid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* 2019-07-26: Hardcoded reCaptchaV2Key */
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LeiZSYUAAAAAI3JZXrRnrsBzAdrZ40PmD57v_fs").getToken();
+                br.postPage("/ajax/embed.php", "token=" + security_token + "&LID=" + lid + "&ticket=" + Encoding.urlEncode(recaptchaV2Response));
+                finallink = PluginJSonUtils.getJson(br, "link");
+                if (StringUtils.isEmpty(finallink) || !finallink.startsWith("http")) {
+                    logger.warning("Failed to find finallink");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* 2019-07-26: Sadly we cannot re-use these tokens! */
+                // this.getPluginConfig().setProperty("recaptchaV2Response", recaptchaV2Response);
             } else if (finallink.contains("bs.to/out/")) {
                 br.setFollowRedirects(false);
                 br.getPage(finallink);
