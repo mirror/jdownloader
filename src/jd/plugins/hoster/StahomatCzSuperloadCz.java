@@ -159,7 +159,6 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             resume = true;
         }
         try {
-            link.setProperty("ServerComaptibleForByteRangeRequest", true);
             /* we want to follow redirects in final stage */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
             if (!dl.getConnection().isContentDisposition()) {
