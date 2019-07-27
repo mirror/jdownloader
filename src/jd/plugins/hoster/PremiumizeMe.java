@@ -21,22 +21,28 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "premiumizedecrypted://.+" })
 public class PremiumizeMe extends ZeveraCore {
@@ -94,22 +100,53 @@ public class PremiumizeMe extends ZeveraCore {
         return -1;
     }
 
-    @Override
-    public void setFreeAccountTraffic(final AccountInfo ai) {
-        ai.setTrafficLeft(5000000000l);
-    }
-
-    /**
-     * TODO: Maybe add a setting to not add .nzb and .torrent files when adding cloud folders as JD will automatically add the contents of
-     * .nzb files after downloading them but in this case that makes no sense as when users add cloud URLs these will contain the
-     * downloaded- and extracted contents of .nzb(and .torrent) files already.
-     */
     public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
+        public class Translation {
+            public String getAllowFreeAccountDownloads_label() {
+                return "Allow free account downloads?\r\nFor more information visit: premiumize.me/free";
+            }
+        }
+
+        public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
+
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isAllowFreeAccountDownloads();
+
+        void setAllowFreeAccountDownloads(boolean b);
     };
 
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new PremiumizeAccountFactory(callback);
+    }
+
+    @Override
+    protected PluginConfigPanelNG createConfigPanel() {
+        return new UsenetConfigPanel() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+                return "allowfreeaccountdownloads".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected boolean useCustomUI(KeyHandler<?> keyHandler) {
+                return !"allowfreeaccountdownloads".equals(keyHandler.getKey());
+            }
+
+            @Override
+            protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> cf) {
+                super.initAccountConfig(plgh, acc, cf);
+                extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
+            }
+        };
+    }
+
+    @Override
+    public PremiumizeMeConfigInterface getAccountJsonConfig(final Account acc) {
+        return (PremiumizeMeConfigInterface) super.getAccountJsonConfig(acc);
     }
 
     @Override
@@ -133,8 +170,8 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsFreeMode() {
-        return true;
+    public boolean supportsFreeMode(final Account account) {
+        return this.getAccountJsonConfig(account).isAllowFreeAccountDownloads();
     }
 
     @Override

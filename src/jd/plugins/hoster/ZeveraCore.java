@@ -52,11 +52,9 @@ import jd.plugins.components.PluginJSonUtils;
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean  ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    // private static Object LOCK = new Object();
-    private MultiHosterManagement mhm                          = null;
-    private static final boolean  allow_free_account_downloads = false;
+    private static final boolean  ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private MultiHosterManagement mhm                       = null;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -240,18 +238,15 @@ abstract public class ZeveraCore extends UseNet {
             this.br = prepBR(this.br);
             mhm.runCheck(account, link);
             login(this.br, account, false, getClientID());
-            String dllink = getDllink(this.br, account, link, getClientID(), this);
-            if (StringUtils.isEmpty(dllink)) {
-                handleAPIErrors(this.br, link, account);
-                mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
-            }
+            final String dllink = getDllink(this.br, account, link, getClientID(), this);
             handleDL_MOCH(account, link, dllink);
         }
     }
 
     private void handleDL_MOCH(final Account account, final DownloadLink link, final String dllink) throws Exception {
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handleAPIErrors(this.br, link, account);
+            mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
         }
         link.setProperty(account.getHoster() + "directlink", dllink);
         try {
@@ -358,7 +353,6 @@ abstract public class ZeveraCore extends UseNet {
     public AccountInfo fetchAccountInfoAPI(final Browser br, final String client_id, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true, client_id);
-        /* 2018-12-07: Rare serverside issue returns bad values e.g.: "limit_used":9.3966473825276e-5 */
         final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
         final String space_used = PluginJSonUtils.getJson(br, "space_used");
         final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
@@ -394,7 +388,7 @@ abstract public class ZeveraCore extends UseNet {
             /* Expired == FREE */
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
-            setFreeAccountTraffic(ai);
+            setFreeAccountTraffic(account, ai);
         }
         callAPI(br, account, "/api/services/list");
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -405,8 +399,8 @@ abstract public class ZeveraCore extends UseNet {
         if (supportsUsenet()) {
             list.add("usenet");
         }
-        if (account.getType() == AccountType.FREE && supportsFreeMode() && allow_free_account_downloads) {
-            /* 2019-06-25: TODO: Wait for them to finish this feature serverside! */
+        if (account.getType() == AccountType.FREE && supportsFreeMode(account)) {
+            /* Display info-dialog regarding free account usage */
             handleFreeModeLoginDialog("https://www." + account.getHoster() + "/free");
         }
         if (directdl != null) {
@@ -450,16 +444,16 @@ abstract public class ZeveraCore extends UseNet {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = br.getHost() + " ermöglicht ab sofort auch kostenlose Downloads";
                         message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
-                        message += "Ab sofort kannst du diesen Anbieter auch nutzen ohne zu bezahlen!\r\n";
+                        message += "Ab sofort kannst du diesen Anbieter auch mit einem kostenlosen Account verwenden!\r\n";
                         message += "Mehr infos dazu findest du unter:\r\n" + new URL(url) + "\r\n";
                     } else {
                         title = br.getHost() + " allows free downloads from now on";
                         message += "Hello dear " + br.getHost() + " user\r\n";
-                        message += "From now on this service lets you download for free as well.\r\n";
+                        message += "From now on this service allows downloads via free account.\r\n";
                         message += "More information:\r\n" + new URL(url) + "\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(2 * 60 * 1000);
+                    dialog.setTimeout(1 * 60 * 1000);
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
                         CrossSystem.openURL(url);
                     }
@@ -507,22 +501,25 @@ abstract public class ZeveraCore extends UseNet {
                     final boolean xSystem = CrossSystem.isOpenBrowserSupported();
                     String message = "";
                     final String title;
+                    final String host = Browser.getHost(url);
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = br.getHost() + " möchte einen kostenlosen Download starten";
-                        message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
                         if (xSystem) {
-                            message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' im Fenster das sich gleich öffnet aktivieren.\r\n";
+                            message += "Um mit deinem kostenlosen Account von " + host + " herunterladen zu können musst du den 'free mode' im Fenster das sich gleich öffnet aktivieren.\r\n";
                         } else {
                             message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' unter dieser Adresse aktivieren:\r\n" + new URL(url) + "\r\n";
                         }
+                        message += "Starte sie Downloads danach erneut um zu sehen, ob deine Downloadlinks die Bedingungen eines kostenlosen Downloads erfüllen.\r\n";
                     } else {
                         title = br.getHost() + " wants to start a free download";
-                        message += "Hello dear " + br.getHost() + " user\r\n";
+                        message += "Hello dear " + host + " user\r\n";
                         if (xSystem) {
                             message += "To be able to use the free mode of this service, you will have to enable it in the browser-window which will open soon.\r\n";
                         } else {
                             message += "To be able to use the free mode of this service, you will have to enable it here:\r\n" + new URL(url) + "\r\n";
                         }
+                        message += "Restart your downloads afterwards to see whether your downloadlinks meet the requirements to be downloadable via free account.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(2 * 60 * 1000);
@@ -541,9 +538,14 @@ abstract public class ZeveraCore extends UseNet {
         return thread;
     }
 
-    public void setFreeAccountTraffic(final AccountInfo ai) {
-        /* Default = Free accounts do not have any traffic. */
-        ai.setTrafficLeft(0);
+    protected final void setFreeAccountTraffic(final Account account, final AccountInfo ai) {
+        if (this.supportsFreeMode(account)) {
+            /** 2019-07-27: TODO: Remove this hardcoded trafficlimit and obtain this value via API (not yet given at the moment)! */
+            ai.setTrafficLeft(5000000000l);
+        } else {
+            /** Default = Free accounts do not have any traffic. */
+            ai.setTrafficLeft(0);
+        }
     }
 
     public void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
@@ -730,7 +732,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /** Indicates whether downloads via free accounts are possible or not. */
-    public boolean supportsFreeMode() {
+    public boolean supportsFreeMode(final Account account) {
         return false;
     }
 
@@ -762,8 +764,16 @@ abstract public class ZeveraCore extends UseNet {
                 message = errortype;
             }
             if ("topup_required".equalsIgnoreCase(errortype)) {
+                /**
+                 * 2019-07-27: TODO: Premiumize should add an API call which returns whether free account downloads are currently activated
+                 * or not (see premiumize.me/free). Currently if a user tries to download files via free account and gets this errormessage,
+                 * it is unclear whether: 1. Premium is required to download, 2. User needs to activate free mode first to download this
+                 * file. 3. User has activated free mode but this file is not allowed to be downloaded via free account.
+                 */
                 /* {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
-                if (account != null && account.getType() == AccountType.FREE && allow_free_account_downloads) {
+                if (account != null && account.getType() == AccountType.FREE && this.supportsFreeMode(account)) {
+                    /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
+                    message = "Premium required or activate free mode via premiumize.me/free";
                     handleFreeModeDownloadDialog("https://www." + this.br.getHost() + "/free");
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 30 * 60 * 1000l);
                 } else {
@@ -772,8 +782,13 @@ abstract public class ZeveraCore extends UseNet {
             } else if ("content not in cache".equalsIgnoreCase(message)) {
                 /* 2019-02-19: Not all errors have an errortype given */
                 /* E.g. {"status":"error","message":"content not in cache"} */
-                /* Case: User tries to download non-cached-file via free account. */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
+                if (account != null && account.getType() == AccountType.FREE && this.supportsFreeMode(account)) {
+                    /* Case: User tries to download non-cached-file via free account. */
+                    message = "Not downloadable via free account because: " + message;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
+                }
             } else {
                 /* Unknown error */
                 mhm.handleErrorGeneric(account, link, errortype, 2, 5 * 60 * 1000l);

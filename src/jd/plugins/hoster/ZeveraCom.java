@@ -29,7 +29,6 @@ import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -89,12 +88,6 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public void setFreeAccountTraffic(final AccountInfo ai) {
-        /* Free accounts do not have any traffic! */
-        ai.setTrafficLeft(0);
-    }
-
-    @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new ZeveraAccountFactory(callback);
     }
@@ -121,7 +114,7 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsFreeMode() {
+    public boolean supportsFreeMode(final Account acc) {
         return false;
     }
 
