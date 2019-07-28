@@ -100,7 +100,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             /* 2019-04-29: E.g. letsupload.co offline folder --> Redirect to /index.html */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (br.containsHTML("<strong>\\- There are no files within this folder\\.</strong>")) {
+        } else if (br.containsHTML("<strong>- There are no files within this folder\\.</strong>")) {
             logger.info("Folder is empty");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -132,6 +132,10 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             urls = new Regex(tableHTML, "<tr>.*?</tr>").getColumn(-1);
         } else {
             urls = br.getRegex("href=\"(https?://[^<>/]+/[A-Za-z0-9]+(?:/[^<>/]+)?)\" target=\"_blank\"").getColumn(0);
+            // if (urls == null || urls.length == 0) {
+            // /* 2019-07-28: Wider RegEx e.g. for firedrop.com */
+            // urls = br.getRegex("href=\"(https?://[^/]+/[A-Za-z0-9]+[^\"]*?)\"").getColumn(0);
+            // }
         }
         if (urls == null || urls.length == 0) {
             logger.warning("Failed to find any content");
@@ -148,6 +152,9 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 filesize = finfo.getMatch(1);
             }
             if (url == null) {
+                continue;
+            } else if (new Regex(url, this.getSupportedLinks()).matches()) {
+                /* Skip URLs which would go into this crawler again */
                 continue;
             }
             final DownloadLink dl = createDownloadlink(url);
@@ -170,10 +177,11 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             if (filesize != null) {
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            if (filename != null && filesize != null) {
-                /* 2019-04-29: Assume all files in a folder with filename&filesize are ONline - TODO: Verify this assumption! */
-                dl.setAvailable(true);
-            }
+            /* 2019-07-28: Given filename + filesize information does not imply that URLs are online. Example: firedrop.com */
+            // if (filename != null && filesize != null) {
+            // /* 2019-04-29: Assume all files in a folder with filename&filesize are ONline - TODO: Verify this assumption! */
+            // dl.setAvailable(true);
+            // }
             if (folderPassword != null) {
                 /*
                  * 2019-06-12: URLs in password protected folders are not necessarily password protected (which is kinda stupid) as well but
