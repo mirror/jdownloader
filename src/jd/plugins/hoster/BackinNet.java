@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,37 +18,32 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class AnonFileCom extends UnknownHostingScriptCore {
-    private final String   MaxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT";
-    private final String[] MaxSimultaneousDownloads       = new String[] { "Unlimited", "1", "2", "3", "4", "5" };
-
-    public AnonFileCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class BackinNet extends XFileSharingProBasic {
+    public BackinNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
-        setConfigElements();
     }
 
     /**
+     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null<br />
-     * other: 2019-05-15: NOT RELATED TO anonfiles.com!!!<br />
+     * captchatype-info: 2019-07-11: reCaptchaV2<br />
+     * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "anonfile.com" });
+        ret.add(new String[] { "backin.net" });
         return ret;
     }
 
@@ -62,7 +57,7 @@ public class AnonFileCom extends UnknownHostingScriptCore {
     }
 
     public static String[] getAnnotationUrls() {
-        return UnknownHostingScriptCore.buildAnnotationUrls(getPluginDomains());
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -83,38 +78,24 @@ public class AnonFileCom extends UnknownHostingScriptCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -3;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
-        }
-    }
-
-    public int getMaxDownloadSelect() {
-        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(MaxSimultaneousDownloads_LIMIT, 0);
-        try {
-            if (chosenDownloadLimit > 0) {
-                return Integer.parseInt(MaxSimultaneousDownloads[chosenDownloadLimit]);
-            } else {
-                return -1;
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            return -1;
+            return 1;
         }
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return getMaxDownloadSelect();
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return getMaxDownloadSelect();
+        return 1;
     }
 
     @Override
@@ -122,7 +103,8 @@ public class AnonFileCom extends UnknownHostingScriptCore {
         return -1;
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), MaxSimultaneousDownloads_LIMIT, MaxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
+    protected boolean supports_https() {
+        /* 2019-07-11: Special */
+        return false;
     }
 }

@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -98,6 +99,18 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return this.getMainPage() + "/register";
     }
 
+    public static final String getDefaultAnnotationPatternPart() {
+        return "/[A-Za-z0-9]+(?:/[^/<>]+)?";
+    }
+
+    public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         /* 2019-05-07: So far I was not able to find any website using this script which required a captcha. */
         return false;
@@ -108,8 +121,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)");
-        final String fid = urlinfo.getMatch(0);
+        final String fid = getFID(link);
         final String protocol;
         if (supports_https()) {
             protocol = "https";
@@ -117,7 +129,13 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             protocol = "http";
         }
         link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, this.getHost(), fid));
-        link.setLinkID(fid);
+        link.setLinkID(this.getHost() + "://" + fid);
+    }
+
+    private String getFID(final DownloadLink link) {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)");
+        final String fid = urlinfo.getMatch(0);
+        return fid;
     }
 
     /**
@@ -247,7 +265,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         try {
             if (supports_availablecheck_via_api()) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                getPage(String.format("https://%s/api/v2/file/%s/info", this.getHost(), this.getLinkID(link)));
+                getPage(String.format("https://%s/api/v2/file/%s/info", this.getHost(), this.getFID(link)));
                 /*
                  * E.g.
                  * {"status":false,"error":{"message":"The file you are looking for does not exist.","type":"ERROR_FILE_NOT_FOUND","code":
@@ -257,7 +275,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                  * E.g. wrong language cookie set --> Website will always first redirect to mainpage and set supported language-cookie (e.g.
                  * minfil.com does not support "lang":"us") [see prepBrowser()]
                  */
-                final boolean isNoAPIUrlAnymore = !br.getURL().contains(this.getLinkID(link));
+                final boolean isNoAPIUrlAnymore = !br.getURL().contains(this.getFID(link));
                 final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
                 if (isOffline || isNoAPIUrlAnymore) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -438,17 +456,17 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return getDllink(this.br, dl);
     }
 
-    private String getDllink(final Browser br, final DownloadLink dl) {
+    private String getDllink(final Browser br, final DownloadLink link) {
         String dllink = br.getRegex("id=\"download\\-url\"\\s*?class=\"[^\"]+\"\\s*?href=\"(https[^<>\"]*?)\"").getMatch(0);
         if (StringUtils.isEmpty(dllink) || true) {
             /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
-            final String linkid = dl.getLinkID();
+            final String linkid = getFID(link);
             /*
              * First try to find downloadurl which contains linkid as for different streaming qualities, downloadURLs look exactly the same
              * but lead to different video-resolutions.
              */
             /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
-            dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/" + linkid + "[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://cdn-\\d+\\.[^/\"]+/" + linkid + "[^<>\"]+)\"").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/[^<>\"]+)\"").getMatch(0);
             }
