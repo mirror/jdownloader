@@ -416,8 +416,8 @@ abstract public class ZeveraCore extends UseNet {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
-            if (showAlways || config.getBooleanProperty("featuredialog_login_Shown", Boolean.FALSE) == false) {
-                if (showAlways || config.getProperty("featuredialog_login_Shown2") == null) {
+            if (showAlways || config.getBooleanProperty("featuredialog_login_Shown_2019_07_01", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_login_Shown_2019_07_02") == null) {
                     showFreeModeLoginInformation(url);
                 } else {
                     config = null;
@@ -428,8 +428,8 @@ abstract public class ZeveraCore extends UseNet {
         } catch (final Throwable e) {
         } finally {
             if (config != null) {
-                config.setProperty("featuredialog_login_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_login_Shown2", "shown");
+                config.setProperty("featuredialog_login_Shown_2019_07_01", Boolean.TRUE);
+                config.setProperty("featuredialog_login_Shown_2019_07_02", "shown");
                 config.save();
             }
         }
@@ -446,11 +446,13 @@ abstract public class ZeveraCore extends UseNet {
                         message += "Hallo liebe(r) " + br.getHost() + " NutzerIn\r\n";
                         message += "Ab sofort kannst du diesen Anbieter auch mit einem kostenlosen Account verwenden!\r\n";
                         message += "Mehr infos dazu findest du unter:\r\n" + new URL(url) + "\r\n";
+                        message += "Beim ersten Downloadversuch wird ein Info-Dialog mit weiteren Informationen erscheinen.\r\n";
                     } else {
                         title = br.getHost() + " allows free downloads from now on";
                         message += "Hello dear " + br.getHost() + " user\r\n";
                         message += "From now on this service allows downloads via free account.\r\n";
                         message += "More information:\r\n" + new URL(url) + "\r\n";
+                        message += "On the first download attempt, a window with more detailed information will be displayed.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(1 * 60 * 1000);
@@ -475,8 +477,8 @@ abstract public class ZeveraCore extends UseNet {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
-            if (showAlways || config.getBooleanProperty("featuredialog_download_Shown", Boolean.FALSE) == false) {
-                if (showAlways || config.getProperty("featuredialog_download_Shown2") == null) {
+            if (showAlways || config.getBooleanProperty("featuredialog_download_Shown_2019_07_1", Boolean.FALSE) == false) {
+                if (showAlways || config.getProperty("featuredialog_download_Shown_2019_07_2") == null) {
                     showFreeModeDownloadInformation(url);
                 } else {
                     config = null;
@@ -487,8 +489,8 @@ abstract public class ZeveraCore extends UseNet {
         } catch (final Throwable e) {
         } finally {
             if (config != null) {
-                config.setProperty("featuredialog_download_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_download_Shown2", "shown");
+                config.setProperty("featuredialog_download_Shown_2019_07_1", Boolean.TRUE);
+                config.setProperty("featuredialog_download_Shown_2019_07_2", "shown");
                 config.save();
             }
         }
@@ -510,7 +512,8 @@ abstract public class ZeveraCore extends UseNet {
                         } else {
                             message += "Um kostenlos von diesem Anbieter herunterladen zu können musst du den 'free mode' unter dieser Adresse aktivieren:\r\n" + new URL(url) + "\r\n";
                         }
-                        message += "Starte sie Downloads danach erneut um zu sehen, ob deine Downloadlinks die Bedingungen eines kostenlosen Downloads erfüllen.\r\n";
+                        message += "Starte die Downloads danach erneut um zu sehen, ob deine Downloadlinks die Bedingungen eines kostenlosen Downloads erfüllen.\r\n";
+                        message += "Sobald du das Limit erreicht hast, musst du den Free Mode wieder über die oben gezeigte URL aktivieren.\r\n";
                     } else {
                         title = br.getHost() + " wants to start a free download";
                         message += "Hello dear " + host + " user\r\n";
@@ -520,6 +523,7 @@ abstract public class ZeveraCore extends UseNet {
                             message += "To be able to use the free mode of this service, you will have to enable it here:\r\n" + new URL(url) + "\r\n";
                         }
                         message += "Restart your downloads afterwards to see whether your downloadlinks meet the requirements to be downloadable via free account.\r\n";
+                        message += "Once you've reached the free account downloadlimit, you will have to re-activate free mode via the previously mentioned URL.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(2 * 60 * 1000);
@@ -777,7 +781,8 @@ abstract public class ZeveraCore extends UseNet {
                     handleFreeModeDownloadDialog("https://www." + this.br.getHost() + "/free");
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 30 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message);
+                    message = "Traffic empty or fair use limit reached?";
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             } else if ("content not in cache".equalsIgnoreCase(message)) {
                 /* 2019-02-19: Not all errors have an errortype given */

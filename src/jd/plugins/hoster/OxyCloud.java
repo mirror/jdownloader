@@ -15,7 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -33,13 +35,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oxy.cloud" }, urls = { "https?://(?:www\\.)?oxy\\.cloud/d/([A-Za-z0-9]+)" })
-public class OxyCloud extends PluginForHost {
+public class OxyCloud extends antiDDoSForHost {
     public OxyCloud(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://oxy.cloud/partners");
@@ -54,7 +52,7 @@ public class OxyCloud extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
@@ -75,11 +73,11 @@ public class OxyCloud extends PluginForHost {
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         final String linkid = this.getLinkID(link);
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(linkid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -108,7 +106,7 @@ public class OxyCloud extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.htmlDecode(dllink);
-            br.getPage(dllink);
+            getPage(dllink);
             /* --> This one will redirect to the final URL */
             dllink = br.getRegex("(/get/[a-f0-9]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
@@ -165,11 +163,11 @@ public class OxyCloud extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://app.oxy.cloud/");
+                    getPage("https://app.oxy.cloud/");
                     isLoggedin = isLoggedin();
                 }
                 if (!isLoggedin) {
-                    br.getPage("https://" + account.getHoster() + "/partners");
+                    getPage("https://" + account.getHoster() + "/partners");
                     final Form loginform = br.getForm(0);
                     if (loginform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -190,7 +188,7 @@ public class OxyCloud extends PluginForHost {
                     }
                     loginform.put("email", account.getUser());
                     loginform.put("password", account.getPass());
-                    br.submitForm(loginform);
+                    submitForm(loginform);
                     if (!isLoggedin()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -243,7 +241,7 @@ public class OxyCloud extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher());
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {

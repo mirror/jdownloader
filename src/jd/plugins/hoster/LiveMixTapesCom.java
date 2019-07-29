@@ -16,29 +16,31 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://(\\w+\\.)?(livemixtapesdecrypted\\.com/download(/mp3)?/\\d+/.*?\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
-public class LiveMixTapesCom extends PluginForHost {
+public class LiveMixTapesCom extends antiDDoSForHost {
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
-    private static final String MAINPAGE               = "http://www.livemixtapes.com/";
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
     private static final String TYPE_REDIRECTLINK      = "https?://(www\\.)?livemixtap\\.es/[a-z0-9]+";
@@ -50,21 +52,19 @@ public class LiveMixTapesCom extends PluginForHost {
         this.enablePremium("http://www.livemixtapes.com/signup.html");
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("livemixtapesdecrypted.com/", "livemixtapes.com/"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("livemixtapesdecrypted.com/", "livemixtapes.com/"));
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().matches(TYPE_DIRECTLINK)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(link.getDownloadURL());
+                con = br.openGetConnection(link.getPluginPatternMatcher());
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
@@ -78,8 +78,8 @@ public class LiveMixTapesCom extends PluginForHost {
                 }
             }
         } else {
-            br.getPage(link.getDownloadURL());
-            if (br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) {
+            getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = null, filesize = null;
@@ -116,8 +116,8 @@ public class LiveMixTapesCom extends PluginForHost {
         String dllink = null;
         boolean resume;
         int maxChunks;
-        if (downloadLink.getDownloadURL().matches(TYPE_DIRECTLINK)) {
-            dllink = downloadLink.getDownloadURL();
+        if (downloadLink.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
+            dllink = downloadLink.getPluginPatternMatcher();
             resume = true;
             maxChunks = 0;
         } else {
@@ -126,7 +126,7 @@ public class LiveMixTapesCom extends PluginForHost {
             if (br.containsHTML(MUSTBELOGGEDIN)) {
                 final Browser br2 = br.cloneBrowser();
                 try {
-                    br2.getPage("https://www.livemixtapes.com/play/" + new Regex(downloadLink.getDownloadURL(), "download(/mp3)?/(\\d+)").getMatch(1));
+                    getPage(br2, "https://www.livemixtapes.com/play/" + new Regex(downloadLink.getPluginPatternMatcher(), "download(/mp3)?/(\\d+)").getMatch(1));
                     dllink = br2.getRedirectLocation();
                 } catch (final Exception e) {
                 }
@@ -149,7 +149,7 @@ public class LiveMixTapesCom extends PluginForHost {
                     if (captcha == null || code == null || code.equals("")) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    br.postPage(br.getURL(), "retries=0&timestamp=" + timestamp + "&code=" + code);
+                    postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&code=" + code);
                     if (br.containsHTML("<img src=\"/captcha/captcha\\.gif\\?\\d+")) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -175,7 +175,7 @@ public class LiveMixTapesCom extends PluginForHost {
                     // sleep(waittime * 1001, downloadLink);
                     // }
                     try {
-                        br.postPage(br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
+                        postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
                     } catch (Exception e) {
                     }
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
@@ -202,18 +202,47 @@ public class LiveMixTapesCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account);
-        } catch (PluginException e) {
-            account.setValid(false);
+        } catch (final PluginException e) {
             return ai;
         }
         ai.setUnlimitedTraffic();
+        /* 2019-07-29: As far as I know there are no 'premium' accounts available! */
         ai.setStatus("Registered User");
+        account.setType(AccountType.FREE);
         return ai;
+    }
+
+    private void handleUserVerify() throws Exception {
+        if (br.getURL().contains("verify-user.php")) {
+            /* Handle login-captcha if required */
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            final DownloadLink dl_dummy;
+            if (dlinkbefore != null) {
+                dl_dummy = dlinkbefore;
+            } else {
+                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + br.getHost(), true);
+                this.setDownloadLink(dl_dummy);
+            }
+            Form captchaForm = br.getFormByInputFieldPropertyKeyValue("submit", "Submit");
+            if (captchaForm == null) {
+                captchaForm = br.getForm(0);
+            }
+            if (captchaForm == null) {
+                logger.warning("Failed to find captchaForm");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            if (dlinkbefore != null) {
+                this.setDownloadLink(dlinkbefore);
+            }
+            captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+            br.submitForm(captchaForm);
+        }
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.livemixtapes.com/contact.html";
+        return "https://www.livemixtapes.com/contact.html";
     }
 
     @Override
@@ -237,17 +266,51 @@ public class LiveMixTapesCom extends PluginForHost {
         requestFileInformation(link);
         login(this.br, account);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         doFree(link);
     }
 
     public void login(final Browser br, final Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         // br.getPage(MAINPAGE);
-        br.postPage("https://www.livemixtapes.com/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie(MAINPAGE, "u") == null || br.getCookie(MAINPAGE, "p") == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        final Cookies cookies = account.loadCookies("");
+        boolean loggedInViaCookies = false;
+        if (cookies != null) {
+            br.setCookies(account.getHoster(), cookies);
+            getPage("https://www." + account.getHoster() + "/");
+            loggedInViaCookies = isLoggedIn();
         }
+        if (!loggedInViaCookies) {
+            getPage("https://www." + account.getHoster() + "/");
+            postPage(br, "/login.php", "remember=y&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (!isLoggedIn()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        account.saveCookies(br.getCookies(br.getHost()), "");
+    }
+
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(br, page);
+        handleUserVerify();
+    }
+
+    @Override
+    protected void postPage(final String page, final String postData) throws Exception {
+        super.postPage(page, postData);
+        handleUserVerify();
+    }
+
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        submitForm(br, form);
+        handleUserVerify();
+    }
+
+    private boolean isLoggedIn() {
+        return br.getCookie(br.getHost(), "u") != null && br.getCookie(br.getHost(), "p") != null;
     }
 
     @Override
