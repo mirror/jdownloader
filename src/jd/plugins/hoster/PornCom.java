@@ -291,7 +291,7 @@ public class PornCom extends antiDDoSForHost {
     }
 
     public static String getFilename(Browser br) throws Exception {
-        String filename = br.getRegex("<meta name=\"description\" content=\"([^<>\"]*?)\"\\s*/>").getMatch(0);
+        String filename = br.getRegex("<meta name=\"description\" content=\"(?:Watch video |Watch )?([^<>\"]*?)\"\\s*/>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)( - PORN.COM)?</title>").getMatch(0);
         }
