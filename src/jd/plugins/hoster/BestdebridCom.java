@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -25,7 +26,7 @@ import javax.swing.JLabel;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -105,13 +106,8 @@ public class BestdebridCom extends PluginForHost {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
-            /*
-             * 2019-07-12: TODO: Find out which result we get back. Also find out what the parameter 'ip' is good for. API documentation
-             * only states: "ip=dst_client_ip".
-             */
-            getAPISafe(API_BASE + "/generateLink?auth=" + Encoding.urlEncode(this.getApiKey(account)) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&ip=null", account, link);
-            // dllink = PluginJSonUtils.getJsonValue(br, "TODO_VALUE_KEY_UNKNOWN");
-            dllink = br.getRegex("\"(https?://[^\"]+)\"").getMatch(0);
+            getAPISafe(API_BASE + "/generateLink?auth=" + Encoding.urlEncode(this.getApiKey(account)) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
+            dllink = PluginJSonUtils.getJsonValue(br, "link");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
@@ -168,32 +164,54 @@ public class BestdebridCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         loginAPI(account);
-        /* 2019-07-12: No idea what 'bypass_api_limit' means! */
-        // final String bypass_api_limit = PluginJSonUtils.getJson(br, "bypass_api_limit");
-        /* 2019-07-12: TODO: Find out in which form/datatype expiredate and trafficleft are given! */
-        final String expire = PluginJSonUtils.getJson(br, "expire");
-        final String traffic_leftStr = PluginJSonUtils.getJson(br, "credit");
+        /*
+         * 2019-07-30: This means that an account is owned by a reseller. Reseller accounts have no limits (no daily bandwidth/numberof
+         * links limits even compared to premium).
+         */
+        final String bypass_api_limit = PluginJSonUtils.getJson(br, "bypass_api_limit");
+        final String expireStr = PluginJSonUtils.getJson(br, "expire");
+        /* 2019-07-30: E.g. "premium":true --> Website may even show a more exact status e.g. "Debrid Plan : Silver" */
+        // final String premium = PluginJSonUtils.getJson(br, "premium");
+        /* 2019-07-30: credit value = for resellers --> Money on the account which can be used to 'buy more links'. */
+        final String creditStr = PluginJSonUtils.getJson(br, "credit");
+        int credit = 0;
         long validuntil = 0;
-        if (expire != null && expire.matches("\\d+")) {
-            validuntil = Long.parseLong(expire) * 1000l;
+        if (expireStr != null) {
+            validuntil = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
+        if (creditStr != null && creditStr.matches("\\d+")) {
+            credit = Integer.parseInt(creditStr);
+        }
+        String statusAcc;
         if (validuntil < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free account");
-            // account.setMaxSimultanDownloads(1);
-            /*
-             * 2019-07-12: Seems like they have hosts which free account users can download from but their hostlist does not state which
-             * ones these are. In the "Informations" tab there is a list of "Free hosters": https://bestdebrid.com/downloader (more precise:
-             * https://bestdebrid.com/info.php) For now, we will simply set the free account traffic to ZERO.
-             */
-            ai.setTrafficLeft(0);
+            statusAcc = "Free Account";
+            if ("true".equalsIgnoreCase(bypass_api_limit)) {
+                statusAcc += " [Reseller]";
+                ai.setUnlimitedTraffic();
+            } else {
+                /*
+                 * 2019-07-12: Seems like they have hosts which free account users can download from but their hostlist does not state which
+                 * ones these are. In the "Informations" tab there is a list of "Free hosters": https://bestdebrid.com/downloader (more
+                 * precise: https://bestdebrid.com/info.php) For now, we will simply set the free account traffic to ZERO.
+                 */
+                ai.setTrafficLeft(0);
+                // account.setMaxSimultanDownloads(1);
+            }
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
+            statusAcc = "Premium Account";
+            if ("true".equalsIgnoreCase(bypass_api_limit)) {
+                statusAcc += " [Reseller]";
+            }
+            ai.setUnlimitedTraffic();
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
             ai.setValidUntil(validuntil, this.br);
-            ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftStr));
         }
+        if (credit > 0) {
+            statusAcc += " [" + credit + " credits]";
+        }
+        ai.setStatus(statusAcc);
         br.getPage(API_BASE + "/hosts?auth=" + Encoding.urlEncode(this.getApiKey(account)));
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         LinkedHashMap<String, Object> entries;
