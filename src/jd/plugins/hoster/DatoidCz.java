@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,19 +56,23 @@ public class DatoidCz extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br = new Browser();
         this.setBrowserExclusive();
-        final String linkid = this.getLinkID(link);
+        final String linkid = this.getFID(link);
         final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
         boolean set_final_filename = true;
         String filename = null;
@@ -147,10 +152,11 @@ public class DatoidCz extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String fid = getFID(link);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
             logger.info("Only downloadable by Premium Account holders");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -162,17 +168,23 @@ public class DatoidCz extends PluginForHost {
         br.getPage(continue_url);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("content-type", "application/json; charset=utf-8");
         br.getPage(continue_url + "?request=1&_=" + System.currentTimeMillis());
+        /* 2019-07-31: Seems like we always have to access that URL */
+        final boolean force_popup_download = true;
         final String redirect = PluginJSonUtils.getJson(br, "redirect");
-        if (!StringUtils.isEmpty(redirect)) {
+        if (!StringUtils.isEmpty(redirect) || force_popup_download) {
             /* Redirect will lead to main-page and we don't want that! */
             // br.getPage(redirect);
-            br.getPage("/detail/popup-download?code=" + getLinkID(downloadLink) + "&_=" + System.currentTimeMillis());
+            br.getPage("/detail/popup-download?code=" + fid + "&_=" + System.currentTimeMillis());
         }
         if (br.containsHTML("\"error\":\"IP in use\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         } else if (br.containsHTML("\"No anonymous free slots\"") || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+        } else if (br.containsHTML("class=\"hidden big\\-file\"")) {
+            /* 2019-07-31 e.g. "<span class="hidden big-file">Soubory větší než 1 GB můžou stahovat pouze <span" */
+            throw new AccountRequiredException();
         }
         // final int wait = Integer.parseInt(getJson("wait"));
         String dllink = PluginJSonUtils.getJsonValue(br, "download_link");
@@ -181,7 +193,7 @@ public class DatoidCz extends PluginForHost {
         }
         /* 2019-02-04: Waittime can be skipped */
         // sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

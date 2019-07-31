@@ -63,9 +63,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     /** Settings stuff */
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
     private static final String           ALLOW_BEST     = "ALLOW_BEST";
-    private static final String           ALLOW_360P     = "ALLOW_360P";
-    private static final String           ALLOW_480P     = "ALLOW_480P";
-    private static final String           ALLOW_720P     = "ALLOW_720";
 
     @SuppressWarnings({ "static-access", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -116,51 +113,34 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         /** Decrypt qualities, selected by the user */
         final SubConfiguration cfg = SubConfiguration.getConfig("playvid.com");
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
-        final boolean q360p = cfg.getBooleanProperty(ALLOW_360P, true);
-        final boolean q480p = cfg.getBooleanProperty(ALLOW_480P, true);
-        final boolean q720p = cfg.getBooleanProperty(ALLOW_720P, true);
-        final boolean all = (q360p == false && q480p == false && q720p == false);
+        final boolean q360p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_360P, true);
+        final boolean q480p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_480P, true);
+        final boolean q720p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_720P, true);
+        final boolean q1080p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_1080, true);
+        final boolean all = (q360p == false && q480p == false && q720p == false && q1080p == false);
+        final ArrayList<String> selectedQualities = new ArrayList<String>();
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
-        List<DownloadLink> ret = getVideoDownloadlinks("720p");
-        if (ret != null && (q720p || all)) {
-            List<DownloadLink> list = results.get("720p");
-            if (list == null) {
-                list = new ArrayList<DownloadLink>();
-                results.put("720p", list);
-            }
-            list.addAll(ret);
+        List<DownloadLink> tempList = new ArrayList<DownloadLink>();
+        if (q1080p || all) {
+            selectedQualities.add("1080p");
         }
-        ret = getVideoDownloadlinks("hds_manifest");
-        if (ret != null && (q720p || all)) {
-            List<DownloadLink> list = results.get("720p");
-            if (list == null || !best) {
-                if (list == null) {
-                    list = new ArrayList<DownloadLink>();
-                    results.put("720p", list);
-                }
-                list.addAll(ret);
-            }
+        if (q720p || all) {
+            selectedQualities.add("720p");
         }
-        ret = getVideoDownloadlinks("480p");
-        if (ret != null && (q480p || all)) {
-            List<DownloadLink> list = results.get("480p");
-            if (list == null || !best) {
-                if (list == null) {
-                    list = new ArrayList<DownloadLink>();
-                    results.put("480p", list);
-                }
-                list.addAll(ret);
-            }
+        if (q480p || all) {
+            selectedQualities.add("480p");
         }
-        ret = getVideoDownloadlinks("360p");
-        if (ret != null && (q360p || all)) {
-            List<DownloadLink> list = results.get("360p");
-            if (list == null || !best) {
-                if (list == null) {
-                    list = new ArrayList<DownloadLink>();
-                    results.put("360p", list);
+        if (q360p || all) {
+            selectedQualities.add("360p");
+        }
+        for (final String quality : selectedQualities) {
+            final List<DownloadLink> ret = getVideoDownloadlinks(quality);
+            if (ret != null) {
+                // tempList = new ArrayList<DownloadLink>();
+                results.put(quality, ret);
+                if (best) {
+                    break;
                 }
-                list.addAll(ret);
             }
         }
         for (List<DownloadLink> list : results.values()) {

@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VidozaNet extends XFileSharingProBasic {
-    public VidozaNet(final PluginWrapper wrapper) {
+public class MixloadsCom extends XFileSharingProBasic {
+    public MixloadsCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,10 +36,17 @@ public class VidozaNet extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null (official download has reCaptchaV2)<br />
+     * limit-info: 2019-07-31: Premium untested, set FREE account limits <br />
+     * captchatype-info: 2019-07-31: reCaptchaV2<br />
      * other:<br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mixloads.com" });
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -53,24 +60,17 @@ public class VidozaNet extends XFileSharingProBasic {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidoza.net" });
-        return ret;
-    }
-
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -78,44 +78,28 @@ public class VidozaNet extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -2;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -2;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 5;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 5;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 5;
-    }
-
-    @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean isOffline = super.isOffline(link);
-        if (!isOffline) {
-            /* 2019-07-04: Special: */
-            isOffline = correctedBR.contains("/embed-.html\"") || correctedBR.contains("Reason for deletion:");
-        }
-        return isOffline;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filename_abuse() {
-        /* 2019-07-04: Special */
-        return false;
+        return 1;
     }
 }

@@ -51,7 +51,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "shortmony.me", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me",
-            "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw",
+            "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com",
             /** 2019-07-24: 2click.us domains */
             "2click.us", "2ck.cc", "earticale.xyz",
             /** 2019-07-24: 2shorten.com domains */
