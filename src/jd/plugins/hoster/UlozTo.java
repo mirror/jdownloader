@@ -15,15 +15,21 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -36,13 +42,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -340,7 +344,38 @@ public class UlozTo extends PluginForHost {
                     if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String code = getCaptchaCode(captchaUrl, downloadLink);
+                    URLConnectionAdapter con = null;
+                    File file = null;
+                    String filename = null;
+                    try {
+                        final Browser brCaptcha = br.cloneBrowser();
+                        con = brCaptcha.openGetConnection(captchaUrl);
+                        if (con.isOK()) {
+                            if (con.isContentDisposition()) {
+                                filename = Plugin.getFileNameFromDispositionHeader(con);
+                            } else {
+                                filename = JDHash.getMD5(captchaUrl);
+                            }
+                            file = JDUtilities.getResourceFile("captchas/ulozto/" + filename);
+                            if (file == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            file.deleteOnExit();
+                            brCaptcha.downloadConnection(file, con);
+                        } else {
+                            /* 2019-07-31: E.g. redirect to 'https://xapca6.uloz.to/blocked' (response 404) --> Possible GEO-block?? */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot load captcha");
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                    if (file == null || !file.exists()) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String code = getCaptchaCode(file, downloadLink);
                     if (code == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }

@@ -172,6 +172,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        /* 2019-07-31: TODO: Add support for their other domains. */
         externID = br.getRegex("(\"|')((?:https?:)?//openload\\.co/embed/[A-Za-z0-9_\\-]+(/[^<>\"/]*?)?)\\1").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(externID);

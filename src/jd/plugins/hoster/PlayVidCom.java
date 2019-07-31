@@ -20,6 +20,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,10 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
     public PlayVidCom(PluginWrapper wrapper) {
@@ -62,13 +62,15 @@ public class PlayVidCom extends PluginForHost {
 
     /** Settings stuff */
     private static final String FASTLINKCHECK = "FASTLINKCHECK";
-    private static final String ALLOW_BEST    = "ALLOW_BEST";
-    private static final String ALLOW_360P    = "ALLOW_360P";
-    private static final String ALLOW_480P    = "ALLOW_480P";
-    private static final String ALLOW_720     = "ALLOW_720";
-    private static final String quality_360   = "360p";
-    private static final String quality_480   = "480p";
-    private static final String quality_720   = "720p";
+    public static final String  ALLOW_BEST    = "ALLOW_BEST";
+    public static final String  ALLOW_360P    = "ALLOW_360P";
+    public static final String  ALLOW_480P    = "ALLOW_480P";
+    public static final String  ALLOW_720P    = "ALLOW_720P";
+    public static final String  ALLOW_1080    = "ALLOW_1080";
+    public static final String  quality_360   = "360p";
+    public static final String  quality_480   = "480p";
+    public static final String  quality_720   = "720p";
+    public static final String  quality_1080  = "1080p";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -311,7 +313,7 @@ public class PlayVidCom extends PluginForHost {
         final LinkedHashMap<String, String> foundqualities = new LinkedHashMap<String, String>();
         /** Decrypt qualities START */
         /** First, find all available qualities */
-        final String[] qualities = { "hds_manifest", "hds_manifest_720", "hds_manifest_480", "hds_manifest_360", "720p", "480p", "360p" };
+        final String[] qualities = { "hds_manifest", "hds_manifest_720", "hds_manifest_480", "hds_manifest_360", "1080p", "720p", "480p", "360p" };
         for (final String quality : qualities) {
             final String currentQualityUrl = getQuality(quality, videosource);
             if (currentQualityUrl != null) {
@@ -372,9 +374,10 @@ public class PlayVidCom extends PluginForHost {
         final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.playvidcom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.playvidcom.check360p", "Grab 360p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.playvidcom.check480p", "Grab 480p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.playvidcom.check720p", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, "Grab 360p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, "Grab 480p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, "Grab 720p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, "Grab 1080p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     public Browser prepBrowser(final Browser prepBr) {
