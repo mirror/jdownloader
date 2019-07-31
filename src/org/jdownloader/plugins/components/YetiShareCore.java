@@ -24,6 +24,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -123,7 +123,7 @@ public class YetiShareCore extends antiDDoSForHost {
             protocol = "http";
         }
         link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, this.getHost(), fid));
-        link.setLinkID(fid);
+        link.setLinkID(this.getHost() + "://" + fid);
     }
 
     /**
@@ -200,11 +200,16 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
+        return true;
+    }
+
+    /** @return default: true */
+    protected boolean supports_availablecheck_filesize_html() {
         return true;
     }
 
@@ -383,13 +388,15 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB|B))\\)<");
             if (StringUtils.isEmpty(fileInfo[0])) {
-                fileInfo[0] = Encoding.htmlDecode(fInfo.getMatch(0)).trim();
+                fileInfo[0] = fInfo.getMatch(0);
             }
-            if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = fInfo.getMatch(1);
-            }
-            if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
+            if (supports_availablecheck_filesize_html()) {
+                if (StringUtils.isEmpty(fileInfo[1])) {
+                    fileInfo[1] = fInfo.getMatch(1);
+                }
+                if (StringUtils.isEmpty(fileInfo[1])) {
+                    fileInfo[1] = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
+                }
             }
         }
         return fileInfo;
@@ -829,7 +836,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * @return true = file is offline, false = file is online
      * @throws PluginException
      */
-    private boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
+    protected boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         /*
          * 2019-06-12: TODO: E.g. special case: 'error.html?e=File+is+not+publicly+available.' --> File is online but can only be downloaded
@@ -1012,9 +1019,42 @@ public class YetiShareCore extends antiDDoSForHost {
                             loginform.put("username", Encoding.urlEncode(account.getUser()));
                             loginform.put("password", Encoding.urlEncode(account.getPass()));
                         }
+                        /* 2019-07-31: At the moment only this older login method supports captchas. Examplehost: uploadship.com */
+                        if (br.containsHTML("solvemedia\\.com/papi/")) {
+                            /* Handle login-captcha if required */
+                            DownloadLink dlinkbefore = this.getDownloadLink();
+                            try {
+                                final DownloadLink dl_dummy;
+                                if (dlinkbefore != null) {
+                                    dl_dummy = dlinkbefore;
+                                } else {
+                                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                    this.setDownloadLink(dl_dummy);
+                                }
+                                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                                if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                                    sm.setSecure(true);
+                                }
+                                File cf = null;
+                                try {
+                                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                                } catch (final Exception e) {
+                                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                                    }
+                                    throw e;
+                                }
+                                final String code = getCaptchaCode("solvemedia", cf, dl_dummy);
+                                final String chid = sm.getChallenge(code);
+                                loginform.put("adcopy_challenge", chid);
+                                loginform.put("adcopy_response", "manual_challenge");
+                            } finally {
+                                if (dlinkbefore != null) {
+                                    this.setDownloadLink(dlinkbefore);
+                                }
+                            }
+                        }
                         submitForm(loginform);
-                        // postPage(this.getProtocol() + this.getHost() + "/login.html", "submit=Login&submitme=1&loginUsername=" +
-                        // Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                         if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
