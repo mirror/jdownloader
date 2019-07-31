@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,10 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+.*$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" })
 public class SrfCh extends PluginForHost {
@@ -50,8 +50,8 @@ public class SrfCh extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.setAllowedResponseCodes(410);
-        br.getPage(link.getDownloadURL());
+        this.br.setAllowedResponseCodes(new int[] { 410 });
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -74,65 +74,99 @@ public class SrfCh extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String geoblock_reason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?audio\\:\\s*?\"([^\"]+)\"").getMatch(0);
         final String domainpart = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
         final String videoid = new Regex(downloadLink.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
         final String channelname = convertDomainPartToShortChannelName(domainpart);
         /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
-        this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".json");
+        final boolean useV2 = false;
+        if (useV2) {
+            br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/urn:rts:video:" + videoid + ".json?onlyChapters=true&vector=portalplay");
+        } else {
+            this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".json");
+        }
         String url_http_download = null;
         String url_hls_master = null;
         String url_rtmp = null;
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("Video");
-        LinkedHashMap<String, Object> temp = null;
-        ArrayList<Object> ressourcelist = null;
-        /* Try to find http downloadurl (not always available) */
-        try {
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
-            for (final Object streamtypeo : ressourcelist) {
-                temp = (LinkedHashMap<String, Object>) streamtypeo;
-                final String protocol = (String) temp.get("@protocol");
-                if (protocol == null) {
-                    continue;
-                }
+        ArrayList<Object> ressourcelist;
+        if (useV2) {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
+            // final String id = (String) entries.get("id");
+            ressourcelist = (ArrayList<Object>) entries.get("resourceList");
+            for (final Object ressourceO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) ressourceO;
+                final String protocol = (String) entries.get("protocol");
                 if (protocol.equals("HTTP")) {
-                    url_http_download = this.findBestQualityForStreamtype(temp);
+                    if (url_http_download != null) {
+                        /* Already found result? Skip object! */
+                        continue;
+                    }
+                    url_http_download = (String) entries.get("url");
                     break;
-                }
-            }
-        } catch (final Throwable e) {
-        }
-        /* Try to find hls master (usually available) */
-        try {
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
-            for (final Object streamtypeo : ressourcelist) {
-                temp = (LinkedHashMap<String, Object>) streamtypeo;
-                final String protocol = (String) temp.get("@protocol");
-                if (protocol == null) {
+                } else if (protocol.equals("HLS")) {
+                    if (url_hls_master != null) {
+                        /* Already found result? Skip object! */
+                        continue;
+                    }
+                    url_hls_master = (String) entries.get("url");
+                } else {
+                    /* Skip unsupported protocol */
+                    logger.info("Skipping protocol: " + protocol);
                     continue;
                 }
-                if (protocol.equals("HTTP-HLS")) {
-                    url_hls_master = this.findBestQualityForStreamtype(temp);
-                    break;
-                }
             }
-        } catch (final Throwable e) {
-        }
-        /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
-        try {
-            ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
-            for (final Object streamtypeo : ressourcelist) {
-                temp = (LinkedHashMap<String, Object>) streamtypeo;
-                final String protocol = (String) temp.get("@protocol");
-                if (protocol == null) {
-                    continue;
+        } else {
+            entries = (LinkedHashMap<String, Object>) entries.get("Video");
+            LinkedHashMap<String, Object> temp = null;
+            /* Try to find http downloadurl (not always available) */
+            try {
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
+                for (final Object streamtypeo : ressourcelist) {
+                    temp = (LinkedHashMap<String, Object>) streamtypeo;
+                    final String protocol = (String) temp.get("@protocol");
+                    if (protocol == null) {
+                        continue;
+                    }
+                    if (protocol.equals("HTTP")) {
+                        url_http_download = this.findBestQualityForStreamtype(temp);
+                        break;
+                    }
                 }
-                if (protocol.equals("RTMP")) {
-                    url_rtmp = findBestQualityForStreamtype(temp);
-                    break;
-                }
+            } catch (final Throwable e) {
             }
-        } catch (final Throwable e) {
+            /* Try to find hls master (usually available) */
+            try {
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
+                for (final Object streamtypeo : ressourcelist) {
+                    temp = (LinkedHashMap<String, Object>) streamtypeo;
+                    final String protocol = (String) temp.get("@protocol");
+                    if (protocol == null) {
+                        continue;
+                    }
+                    if (protocol.equals("HTTP-HLS")) {
+                        url_hls_master = this.findBestQualityForStreamtype(temp);
+                        break;
+                    }
+                }
+            } catch (final Throwable e) {
+            }
+            /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
+            try {
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
+                for (final Object streamtypeo : ressourcelist) {
+                    temp = (LinkedHashMap<String, Object>) streamtypeo;
+                    final String protocol = (String) temp.get("@protocol");
+                    if (protocol == null) {
+                        continue;
+                    }
+                    if (protocol.equals("RTMP")) {
+                        url_rtmp = findBestQualityForStreamtype(temp);
+                        break;
+                    }
+                }
+            } catch (final Throwable e) {
+            }
         }
         if (url_http_download == null && url_hls_master == null && url_rtmp == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -154,6 +188,13 @@ public class SrfCh extends PluginForHost {
             /* Prefer hls over rtmp but sometimes only one of both is available. */
             logger.info("Downloading hls");
             this.br.getPage(url_hls_master);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                if (geoblock_reason != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked: " + geoblock_reason);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
+                }
+            }
             // try {
             // this.br.cloneBrowser().getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid +
             // "/clicked.xml");
