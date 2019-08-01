@@ -1,4 +1,5 @@
 CAPTCHA_CHALLENGE_AFTER=Nach einem Captcha-Dialog
+CAPTCHA_CHALLENGE_BEFORE=Vor einer Captcha Challenge
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Schaltfläche in Download-Bodenleiste betätigt
 DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Du musst mit Hilfe des Menüeditors dem Menü der Bodenleiste im Download-Tab eine eigene Ereignisschaltfläche hinzufügen.
 DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Schaltfläche im Download-Kontextmenü betätigt
@@ -59,5 +60,7 @@ securityLoading=Du versuchst, JavaScript von %s1 zu laden und auszuführen. Bitt
 securityLoading_title=Sicherheitswarnung!
 showMessageDialog_title=Alarmierung von %s1@%s2
 sure_delete_entries=Möchtest Du wirklich %s1 Skript(e) löschen?
+synchronous=Synchrones Ausführen des Skripts
+synchronous_desc=Aktivieren Sie die synchrone Ausführung, wenn Sie nicht möchten, dass dieses Skript ein zweites Mal ausgeführt wird, während die erste Instanz noch ausgeführt wird. Wenn Sie Parameter per Referenz ändern möchten, stellen Sie sicher, dass diese Option aktiviert ist.
 syntax_error=Java Script Syntax Fehler
 title=Ereignis-Skripter
