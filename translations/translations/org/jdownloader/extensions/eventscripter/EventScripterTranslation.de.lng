@@ -22,6 +22,7 @@ ON_GENERIC_EXTRACTION=Jedes Entpack-Ereignis
 ON_JDOWNLOADER_STARTED=JDownloader gestartet
 ON_NEW_CRAWLER_JOB=Neuer Sammel-Job
 ON_NEW_FILE=Eine neue Datei wurde erstellt
+ON_NEW_LINK=Ein neuer Link wurde hinzugefügt
 ON_OUTGOING_REMOTE_API_EVENT=My.JDownloader - Ereignis abgeschickt
 ON_PACKAGE_FINISHED=Paket fertiggestellt
 ON_PACKAGIZER=Hook für Paketverwalter
