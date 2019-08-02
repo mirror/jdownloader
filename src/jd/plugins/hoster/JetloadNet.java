@@ -173,6 +173,9 @@ public class JetloadNet extends PluginForHost {
             // final String encoding_status = (String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status");
             final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
             final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
+            final boolean archive = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/archive"));
+            final boolean low = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/low"));
+            final boolean med = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/med"));
             if (StringUtils.isEmpty(filename_internal)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isEmpty(ext)) {
@@ -187,7 +190,20 @@ public class JetloadNet extends PluginForHost {
                 }
                 // br.getPage("/api/get_direct_video/" + this.getFID(link));
                 // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                dllink = String.format("%s/v2/schema/archive/%s/master.m3u8", hostname, filename_internal);
+                // ng-visitor/js/play.js
+                final String m3u8;
+                if (low && med) {
+                    m3u8 = "master.m3u8";
+                } else if (!low || med) {
+                    m3u8 = "med.m3u8";
+                } else {
+                    m3u8 = "low.m3u8";
+                }
+                if (archive) {
+                    dllink = String.format("%s/v2/schema/archive/%s/" + m3u8, hostname, filename_internal);
+                } else {
+                    dllink = String.format("%s/v2/schema/%s/" + m3u8, hostname, filename_internal);
+                }
             } else {
                 /* Official download via API */
                 String serverID = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
