@@ -30,6 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -100,7 +101,8 @@ public class ArchiveOrg extends PluginForDecrypt {
             final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
             final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
             // New way
-            final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
+            String html = br.toString().replaceAll("(\\(\\s*<a.*?</a>\\s*\\))", "");
+            final String[][] finfo = new Regex(html, "<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
             String filesXML = null;
             for (final String[] finfosingle : finfo) {
                 final String filename = finfosingle[0];
@@ -120,7 +122,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                     }
                 }
                 final String fsize = finfosingle[1] + "b";
-                final DownloadLink fina = createDownloadlink(br.getURL() + "/" + filename);
+                final DownloadLink fina = createDownloadlink(br.getURL() + "/" + URLEncode.encodeURIComponent(filename));
                 fina.setDownloadSize(SizeFormatter.getSize(fsize));
                 fina.setAvailable(true);
                 fina.setFinalFileName(filename);
