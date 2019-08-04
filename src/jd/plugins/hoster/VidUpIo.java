@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidup.io" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.(me|tv|io)/(?:(?:vid)?embed-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidup.io" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.(me|tv|io)/(?:(?:vid)?embed[\\-/])?[a-z0-9]{12}" })
 public class VidUpIo extends PluginForHost {
     public VidUpIo(PluginWrapper wrapper) {
         super(wrapper);
