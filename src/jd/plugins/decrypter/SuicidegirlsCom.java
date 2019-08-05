@@ -13,13 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Random;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,15 +31,36 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" })
 public class SuicidegirlsCom extends PluginForDecrypt {
-
     public SuicidegirlsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String TYPE_ALBUM = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
     private static final String TYPE_USER  = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/";
+
+    private final int padLength(final int size) {
+        if (size < 10) {
+            return 1;
+        } else if (size < 100) {
+            return 2;
+        } else if (size < 1000) {
+            return 3;
+        } else if (size < 10000) {
+            return 4;
+        } else if (size < 100000) {
+            return 5;
+        } else if (size < 1000000) {
+            return 6;
+        } else if (size < 10000000) {
+            return 7;
+        } else {
+            return 8;// hello djmakinera
+        }
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<String> dupecheck = new ArrayList<String>();
@@ -71,7 +90,6 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                 fpName = new Regex(parameter, "([A-Za-z0-9\\-_]+)/$").getMatch(0);
             }
             fpName = username + " - " + fpName;
-
             final String[] links = br.getRegex("<li class=\"photo-container\" id=\"thumb-\\d+\" data-index=\"\\d+\"[^>]*>\\s*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
             if ((links == null || links.length == 0) && !loggedin) {
                 /* Account is needed most times */
@@ -82,9 +100,14 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            int imageIndex = 1;
             for (final String directlink : links) {
                 final DownloadLink dl = this.createDownloadlink("http://suicidegirlsdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                final String extension = getFileNameExtensionFromURL(directlink, ".jpg");
+                final String imageName = String.format(Locale.US, "%0" + padLength(links.length) + "d", imageIndex++) + "_" + fpName + extension;
                 dl.setProperty("directlink", directlink);
+                dl.setProperty("imageName", imageName);
+                dl.setFinalFileName(imageName);
                 dl.setLinkID(directlink);
                 dl.setAvailable(true);
                 dl.setContentUrl(directlink);
@@ -126,18 +149,15 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                     }
                 }
             } while (addedlinks >= max_entries_per_page);
-
             if (decryptedLinks.size() == 0) {
                 return null;
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 }

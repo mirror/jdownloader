@@ -13,15 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Locale;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -43,9 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" })
 public class SuicidegirlsCom extends PluginForHost {
-
     public SuicidegirlsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.suicidegirls.com/shop/");
@@ -59,7 +57,6 @@ public class SuicidegirlsCom extends PluginForHost {
     /* Linktypes */
     private static final String  TYPE_DECRYPTED               = "http://suicidegirlsdecrypted/\\d+";
     private static final String  TYPE_VIDEO                   = "https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -70,7 +67,6 @@ public class SuicidegirlsCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               dllink                       = null;
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -101,6 +97,7 @@ public class SuicidegirlsCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             filename += ".mp4";
         } else {
+            filename = link.getStringProperty("imageName", null);
             dllink = link.getStringProperty("directlink", null);
         }
         if (dllink == null) {
@@ -113,7 +110,7 @@ public class SuicidegirlsCom extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (con.isOK() && !con.getContentType().contains("text")) {
                 link.setDownloadSize(con.getLongContentLength());
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
@@ -128,8 +125,10 @@ public class SuicidegirlsCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        filename = encodeUnicode(filename);
-        link.setFinalFileName(filename);
+        if (link.getFinalFileName() != null) {
+            filename = encodeUnicode(filename);
+            link.setFinalFileName(filename);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -202,12 +201,10 @@ public class SuicidegirlsCom extends PluginForHost {
                         this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-
                         @Override
                         public String getSiteKey() {
                             return getSiteKey(loginform.getHtmlCode());
                         };
-
                     }.getToken();
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     if (dlinkbefore != null) {
@@ -343,5 +340,4 @@ public class SuicidegirlsCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
