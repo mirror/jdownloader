@@ -36,9 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidup.io" }, urls = { "https?://(?:www\\.|beta\\.)?(?:vidup\\.(?:me|tv|io)|vidop\\.icu)/(?:(?:vid)?embed[\\-/])?[a-z0-9]{12}" })
-public class VidUpIo extends PluginForHost {
-    public VidUpIo(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vev.io" }, urls = { "https?://(?:www\\.)?(?:thevideo\\.me|thevideo\\.cc|vev\\.io|vev\\.red)/((?:vid)?embed\\-|embed/)?[a-z0-9]{12}" })
+public class VevIo extends PluginForHost {
+    public VevIo(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
@@ -56,7 +56,7 @@ public class VidUpIo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://vidup.io/home";
+        return "https://vev.io/home";
     }
 
     @Override
@@ -71,7 +71,7 @@ public class VidUpIo extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFID(link);
-        link.setPluginPatternMatcher(String.format("https://vidup.io/%s", fuid));
+        link.setPluginPatternMatcher(String.format("https://vev.io/%s", fuid));
     }
 
     @Override
@@ -171,7 +171,7 @@ public class VidUpIo extends PluginForHost {
                 }
                 captchaFailed = true;
                 /* 2019-08-05: Hardcoded reCaptchaV2 key */
-                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LeoRqIUAAAAALdCUWGtkTQb8xRVm0dgsK-DYYDq").getToken();
+                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ld6RqIUAAAAAKjcjfIgh2TmF_HmAc5hvrQx_D9a").getToken();
             } else if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -230,7 +230,6 @@ public class VidUpIo extends PluginForHost {
         return dllink;
     }
 
-    /** Disable this if captcha is usually required to get streamingURL. This then saves one http request during availablecheck. */
     private boolean check_filesize_via_directurl() {
         return false;
     }

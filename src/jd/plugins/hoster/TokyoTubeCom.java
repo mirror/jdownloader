@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,8 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "https?://(www\\.)?tokyo\\-tube\\.com/video/\\d+" })
 public class TokyoTubeCom extends PluginForHost {
@@ -56,7 +56,7 @@ public class TokyoTubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Encoding", "identity");
         br.postPage(downloadLink.getDownloadURL(), "language=en_US");
-        if (br.getURL().contains("tokyo-tube.com/error/video_missing") || br.containsHTML("(>This video cannot be found|Are you sure you typed in the correct url\\?<|<title>無料アダルト動画 TokyoTube\\-Japanese Free Porn</title>)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("tokyo-tube.com/error/video_missing") || br.containsHTML("(>This video cannot be found|Are you sure you typed in the correct url\\?<|<title>無料アダルト動画 TokyoTube\\-Japanese Free Porn</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);

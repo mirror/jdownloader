@@ -15,15 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -33,11 +34,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz", "pornoid.cz" }, urls = { "https?://(?:www\\.)?datoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?", "https?://(?:www\\.)?pornoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?" })
-public class DatoidCz extends PluginForHost {
+public class DatoidCz extends antiDDoSForHost {
     public DatoidCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://datoid.cz/cenik");
@@ -54,6 +54,8 @@ public class DatoidCz extends PluginForHost {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("datoid.sk/", "datoid.cz/"));
     }
 
+    private static final String API_BASE = "https://api.datoid.cz/v1";
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
@@ -69,9 +71,7 @@ public class DatoidCz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        br = new Browser();
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String linkid = this.getFID(link);
         final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
         boolean set_final_filename = true;
@@ -81,17 +81,17 @@ public class DatoidCz extends PluginForHost {
         String api_param_url = prepareApiParam_URL(downloadURL);
         boolean api_failed = false;
         final boolean trust_API = true;
-        br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(api_param_url));
+        getPage(API_BASE + "/get-file-details?url=" + Encoding.urlEncode(api_param_url));
         if (fileIsOfflineAPI() && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
             downloadURL = downloadURL.replace("https://", "http://");
             api_param_url = prepareApiParam_URL(downloadURL);
-            br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(api_param_url));
+            getPage(API_BASE + "/get-file-details?url=" + Encoding.urlEncode(api_param_url));
             if (fileIsOfflineAPI() && !trust_API) {
                 /* Double-check - API fallback */
                 api_failed = true;
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
-                brc.getPage(downloadURL);
+                getPage(brc, downloadURL);
                 if (!brc.getURL().contains(linkid) || brc.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -156,40 +156,45 @@ public class DatoidCz extends PluginForHost {
         requestFileInformation(link);
         final String fid = getFID(link);
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
             logger.info("Only downloadable by Premium Account holders");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        final String continue_url = br.getRegex("class=\"btn btn-large btn-download detail-download\" href=\"(/f/[^<>\"]+)\"").getMatch(0);
+        final String continue_url = br.getRegex("class=\"[^\"]*?btn btn-large btn-download detail-download\" href=\"(/f/[^<>\"]+)\"").getMatch(0);
         if (continue_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(continue_url);
+        getPage(continue_url);
+        /* 2019-08-05: Ignore errormessages at this stage e.g. "{"error":"Lack of credits"}" */
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("content-type", "application/json; charset=utf-8");
-        br.getPage(continue_url + "?request=1&_=" + System.currentTimeMillis());
-        /* 2019-07-31: Seems like we always have to access that URL */
-        final boolean force_popup_download = true;
-        final String redirect = PluginJSonUtils.getJson(br, "redirect");
-        if (!StringUtils.isEmpty(redirect) || force_popup_download) {
-            /* Redirect will lead to main-page and we don't want that! */
-            // br.getPage(redirect);
-            br.getPage("/detail/popup-download?code=" + fid + "&_=" + System.currentTimeMillis());
-        }
-        if (br.containsHTML("\"error\":\"IP in use\"")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        } else if (br.containsHTML("\"No anonymous free slots\"") || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
-        } else if (br.containsHTML("class=\"hidden big\\-file\"")) {
-            /* 2019-07-31 e.g. "<span class="hidden big-file">Soubory větší než 1 GB můžou stahovat pouze <span" */
-            throw new AccountRequiredException();
-        }
-        // final int wait = Integer.parseInt(getJson("wait"));
+        getPage(continue_url + "?request=1&_=" + System.currentTimeMillis());
         String dllink = PluginJSonUtils.getJsonValue(br, "download_link");
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2019-07-31: Seems like we always have to access that URL */
+            final boolean force_popup_download = true;
+            final String redirect = PluginJSonUtils.getJson(br, "redirect");
+            if (!StringUtils.isEmpty(redirect) || force_popup_download) {
+                /* Redirect will lead to main-page and we don't want that! */
+                // br.getPage(redirect);
+                getPage("/detail/popup-download?code=" + fid + "&_=" + System.currentTimeMillis());
+            }
+            if (br.containsHTML("\"error\":\"IP in use\"")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            } else if (br.containsHTML("\"No anonymous free slots\"")
+                    || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+            } else if (br.containsHTML("class=\"hidden big\\-file\"")) {
+                /* 2019-07-31 e.g. "<span class="hidden big-file">Soubory větší než 1 GB můžou stahovat pouze <span" */
+                throw new AccountRequiredException();
+            }
+            // final int wait = Integer.parseInt(getJson("wait"));
+            dllink = PluginJSonUtils.getJsonValue(br, "download_link");
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         /* 2019-02-04: Waittime can be skipped */
         // sleep(wait * 1001l, downloadLink);
@@ -201,9 +206,9 @@ public class DatoidCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private String login(final Account account) throws Exception {
+    private String loginAPI(final Account account) throws Exception {
         br.setFollowRedirects(false);
-        br.getPage("http://api.datoid.cz/v1/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         try {
             if (br.containsHTML("\\{\"success\":false\\}")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -220,16 +225,50 @@ public class DatoidCz extends PluginForHost {
         }
     }
 
+    private void loginWebsite(final Account account) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                boolean isLoggedin = false;
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    getPage("https://" + account.getHoster() + "/");
+                    isLoggedin = isLoggedin();
+                }
+                if (!isLoggedin) {
+                    getPage("https://" + account.getHoster() + "/prihlaseni");
+                    final Form loginform = br.getFormbyProperty("id", "login");
+                    if (loginform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginform.put("username", account.getUser());
+                    loginform.put("password", account.getPass());
+                    submitForm(loginform);
+                    if (!isLoggedin()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        final String token;
-        try {
-            token = login(account);
-        } catch (final PluginException e) {
-            throw e;
-        }
-        br.getPage("http://api.datoid.cz/v1/get-user-details?token=" + token);
+        final String token = loginAPI(account);
+        getPage(API_BASE + "/get-user-details?token=" + token);
         /** 1 Credit = 1 MB */
         final String credits = PluginJSonUtils.getJsonValue(br, "credits");
         long trafficleft = 0;
@@ -243,6 +282,8 @@ public class DatoidCz extends PluginForHost {
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
+            /* Allow downloads without credits, see comments in handlePremium! */
+            ai.setSpecialTraffic(true);
         }
         return ai;
     }
@@ -250,7 +291,8 @@ public class DatoidCz extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
-            /* 2019-02-04: Basically download without account as free accounts usually don't have any traffic. */
+            /* 2019-08-25: Free accounts may not have any credits (= premium traffic) but are required to e.g. download files > 1 GB. */
+            loginWebsite(account);
             handleFree(link);
         } else {
             requestFileInformation(link);
@@ -261,12 +303,12 @@ public class DatoidCz extends PluginForHost {
             }
             String downloadURL = link.getPluginPatternMatcher();
             String api_param_url = prepareApiParam_URL(downloadURL);
-            br.getPage("http://api.datoid.cz/v1/get-download-link?token=" + token + "&url=" + Encoding.urlEncode(api_param_url));
+            getPage(API_BASE + "/get-download-link?token=" + token + "&url=" + Encoding.urlEncode(api_param_url));
             if (br.containsHTML("\"error\":\"File not found\"") && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
                 /* Workaround */
                 downloadURL = downloadURL.replace("https://", "http://");
                 api_param_url = prepareApiParam_URL(downloadURL);
-                br.getPage("http://api.datoid.cz/v1/get-download-link?token=" + token + "&url=" + Encoding.urlEncode(api_param_url));
+                getPage(API_BASE + "/get-download-link?token=" + token + "&url=" + Encoding.urlEncode(api_param_url));
             }
             if (br.containsHTML("\"error\":\"Lack of credits\"")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
