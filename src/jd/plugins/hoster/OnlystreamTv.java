@@ -17,18 +17,23 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class EasyBytezCom extends XFileSharingProBasic {
-    public EasyBytezCom(final PluginWrapper wrapper) {
+public class OnlystreamTv extends XFileSharingProBasic {
+    public OnlystreamTv(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,14 +41,15 @@ public class EasyBytezCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-08-06: Premium untested, set FREE account limits <br />
+     * limit-info:<br />
      * captchatype-info: 2019-08-06: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
+        /* 2019-08-06: Current list of domains can be found here: https://onlystream.tv/?op=safe_domains */
+        ret.add(new String[] { "onlystream.tv", "ostream.pro", "ostream.me" });
         return ret;
     }
 
@@ -78,34 +84,83 @@ public class EasyBytezCom extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return -2;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -2;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return 5;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return 5;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 5;
+    }
+
+    protected boolean isVideohoster_enforce_video_filename() {
+        /* 2019-08-06: Special */
+        return true;
+    }
+
+    public String[] scanInfo(final String[] fileInfo) {
+        /* 2019-08-06: Special */
+        fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) - Onlystream\\.tv</title>").getMatch(0);
+        fileInfo[1] = new Regex(correctedBR, "Download video \\(([^<>\"]+)\\)").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
+            super.scanInfo(fileInfo);
+        }
+        return fileInfo;
     }
 
     @Override
-    protected boolean supports_https() {
+    protected boolean isOffline(final DownloadLink link) {
+        boolean offline = super.isOffline(link);
+        if (!offline) {
+            offline = correctedBR.contains(">File you are looking for is not found");
+        }
+        return offline;
+    }
+
+    @Override
+    protected String findAPIKey(String src) throws Exception {
         /* 2019-08-06: Special */
-        return false;
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        getPage(br2, "/?op=my_api");
+        src = br2.toString();
+        final Pattern apikeyPattern = Pattern.compile("API Key\\s*?</td>\\s*?<td>\\s*?<input type=\"text\" value=\"([a-z0-9]+)\"");
+        String apikey = new Regex(src, apikeyPattern).getMatch(0);
+        String generate_apikey_url = new Regex(src, "\"([^\"]*?op=my_account[^\"]*?generate_api_key=1[^\"]*?token=[a-f0-9]{32}[^\"]*?)\"").getMatch(0);
+        if (apikey == null && generate_apikey_url != null) {
+            if (Encoding.isHtmlEntityCoded(generate_apikey_url)) {
+                generate_apikey_url = Encoding.htmlDecode(generate_apikey_url);
+            }
+            logger.info("Failed to find apikey but host has api-mod enabled --> Trying to generate first apikey for this account");
+            try {
+                br2.setFollowRedirects(true);
+                getPage(br2, generate_apikey_url);
+                apikey = br2.getRegex(apikeyPattern).getMatch(0);
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+            if (apikey == null) {
+                logger.info("Failed to find generated apikey - possible plugin failure");
+            } else {
+                logger.info("Successfully found newly generated apikey");
+            }
+        }
+        return apikey;
     }
 }
