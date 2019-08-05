@@ -101,7 +101,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKDOCS_ADD_UNIQUE_ID                            = "VKDOCS_ADD_UNIQUE_ID";
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
     private static final String VKPHOTO_CORRECT_FINAL_LINKS                     = "VKPHOTO_CORRECT_FINAL_LINKS";
-    public static final String  VKWALL_USE_API                                  = "VKWALL_USE_API";
+    public static final String  VKWALL_USE_API                                  = "VKWALL_USE_API_2019_07";
     public static final String  VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY      = "VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY";
     public static final String  VKADVANCED_USER_AGENT                           = "VKADVANCED_USER_AGENT";
     /* html patterns */
@@ -1425,7 +1425,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKDOCS_ADD_UNIQUE_ID                            = false;
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                     = false;
-    public static final boolean  default_VKWALL_USE_API                                  = true;
+    public static final boolean  default_VKWALL_USE_API                                  = false;
     public static final boolean  default_VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY      = false;
     public static final String   default_user_agent                                      = UserAgents.stringUserAgent(BrowserName.Firefox);
     public static final long     defaultSLEEP_PAGINATION_GENERAL                         = 1000;

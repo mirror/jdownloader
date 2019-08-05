@@ -177,7 +177,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private CryptedLink             CRYPTEDLINK                               = null;
     private boolean                 fastcheck_photo                           = false;
     private boolean                 fastcheck_audio                           = false;
-    private boolean                 vkwall_use_api                            = true;
+    private boolean                 vkwall_use_api                            = false;
     private final boolean           docs_add_unique_id                        = true;
     private boolean                 loggedIn                                  = false;
     private ArrayList<DownloadLink> decryptedLinks                            = null;
@@ -1361,7 +1361,10 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** Using API, finds and adds contents of a single wall post. */
+    /**
+     * Using API, finds and adds contents of a single wall post. <br/>
+     * 2019-08-05: Requires authorization!
+     */
     @SuppressWarnings("unchecked")
     private void decryptWallPost_API() throws Exception {
         final Regex wallRegex = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((?:\\-)?\\d+)_(\\d+)");
@@ -1402,7 +1405,6 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Using Website */
     private void decryptWall_Website() throws Exception {
-        this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         long total_numberof_entries;
         final String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
@@ -1434,8 +1436,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 this.postPageSafe("/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&owner_id=%s&type=own&wall_start_from=%s", "", currentOffset, ownerID, counter_wall_start_from));
                 this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
             }
-            final String[] htmls = this.br.getRegex("<div class=\"post_header_info\">.*?class=\"post_views_count _count\"").getColumn(-1);
-            for (final String html : htmls) {
+            final String[] wall_posts_htmls = this.br.getRegex("<div class=\"post_header_info\">.*?post_view_hash=").getColumn(-1);
+            for (final String html : wall_posts_htmls) {
                 decryptSingleWallPostAndComments_Website(null, html);
                 /* Count how many items the current offset exists to stop if it does not contain any. */
                 counter_items_found__in_current_offset++;
@@ -1581,7 +1583,9 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private void websiteCrawlContent(final String wall_post_ids, final String html, final boolean grabAudio, final boolean grabVideo, final boolean grabPhoto, final boolean grabDocs, final boolean grabURLsInsideText) throws IOException, DecrypterException {
         /* Do we have a post or a reply? */
-        final boolean is_reply = wallPostHTMLGetisReply(html);
+        boolean is_reply = wallPostHTMLGetisReply(html);
+        /* TODO: 2019-08-05: Fix this */
+        is_reply = false;
         final String wall_post_reply_id = new Regex(html, "\"reply_delete((?:\\-)?\\d+_\\d+)").getMatch(0);
         if (wall_post_ids == null) {
             throw new DecrypterException("Decrypter broken");
@@ -2303,7 +2307,7 @@ public class VKontakteRu extends PluginForDecrypt {
     /** Handles basic (offline) errors. */
     private void siteGeneralErrorhandling() throws DecrypterException {
         /* General errorhandling start */
-        if (br.containsHTML("Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
+        if (br.containsHTML(">\\s+Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.containsHTML(">Only logged in users can see this profile\\.<")) {
             throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);

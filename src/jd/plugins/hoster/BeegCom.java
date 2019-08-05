@@ -92,7 +92,7 @@ public class BeegCom extends PluginForHost {
             }
         }
         LinkedHashMap<String, Object> entries;
-        final boolean useAPIv2 = false;
+        final boolean useAPIv2 = true;
         if (useAPIv2) {
             /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
             br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
@@ -123,11 +123,11 @@ public class BeegCom extends PluginForHost {
         } else {
             /* 2019-07-23: Hmm back from v2 to v1?! */
             br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=1");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         String filename = (String) entries.get("title");
         final String[] qualities = { "2160", "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {

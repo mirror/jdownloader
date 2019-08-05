@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,10 +34,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
 public class NewgroundsCom extends antiDDoSForHost {
@@ -55,7 +55,7 @@ public class NewgroundsCom extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
-    /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. */
+    /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. Else we will get error 429 */
     private static final int     free_maxdownloads = 1;
     private String               dllink            = null;
     private boolean              server_issues     = false;

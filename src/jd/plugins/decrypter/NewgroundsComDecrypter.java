@@ -16,18 +16,20 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/|$)" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
@@ -43,57 +45,61 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = new Regex(parameter, "https?://([^/]+)\\.newgrounds\\.com/").getMatch(0);
-        if (parameter.matches(TYPE_AUDIO)) {
-            String[][] urlinfo = br.getRegex("\"(?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
-            if (urlinfo == null || urlinfo.length == 0) {
-                urlinfo = br.getRegex("\\\\?\"(?:https?:)?\\\\?/\\\\?/(?:\\w+\\.)?newgrounds\\.com\\\\?/audio\\\\?/listen\\\\?/(\\d+)\\\\?\"[^>]*title\\s*=\\s*\\\\?\"(.*?)\\\\?\"").getMatches();
-            }
-            for (final String[] urlinfosingle : urlinfo) {
-                final String fid = urlinfosingle[0];
-                final String title = urlinfosingle[1].replace("\\", "");
-                final DownloadLink dl = createDownloadlink("https://www.newgrounds.com/audio/listen/" + fid);
-                dl.setAvailable(true);
-                dl.setName(Encoding.htmlDecode(title) + "_" + fid + ".mp3");
-                dl.setLinkID(fid);
-                decryptedLinks.add(dl);
-            }
-        } else if (parameter.matches(TYPE_ART)) {
-            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
-            if (view_urls == null || view_urls.length == 0) {
-                return null;
-            }
-            for (String view_url : view_urls) {
-                if (view_url.startsWith("//")) {
-                    view_url = "https:" + view_url;
-                }
-                final DownloadLink dl = createDownloadlink(view_url);
-                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-                dl.setAvailable(true); // <---
-                decryptedLinks.add(dl);
-            }
-        } else {
-            /* movies & games */
-            final String[] view_urls = br.getRegex("\"((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
-            if (view_urls == null || view_urls.length == 0) {
-                return null;
-            }
-            for (String view_url : view_urls) {
-                if (view_url.startsWith("//")) {
-                    view_url = "https:" + view_url;
-                }
-                final DownloadLink dl = createDownloadlink(view_url);
-                dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-                decryptedLinks.add(dl);
-            }
-        }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
+        fp.setName(fpName);
+        int page = 0;
+        String nextPage = null;
+        do {
+            page++;
+            final String json;
+            if (page == 1) {
+                json = br.getRegex("var years = (\\{.*?)render\\(years\\);").getMatch(0);
+            } else {
+                br.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                // br.getHeaders().put("", "");
+                br.getPage(nextPage);
+                json = br.toString();
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+            nextPage = (String) entries.get("more");
+            final LinkedHashMap<String, Object> years = (LinkedHashMap<String, Object>) entries.get("years");
+            final ArrayList<Object> sequence = (ArrayList<Object>) entries.get("sequence");
+            for (final Object sequenceO : sequence) {
+                final String year = Long.toString(JavaScriptEngineFactory.toLong(sequenceO, 0));
+                entries = (LinkedHashMap<String, Object>) years.get(year);
+                final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
+                for (final Object itemO : items) {
+                    final String html = (String) itemO;
+                    final String title = new Regex(html, "title=\"([^<>\"]+)\"").getMatch(0);
+                    String url = new Regex(html, "((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/(?:(?:art|portal)/view|audio/listen)/\\d+)").getMatch(0);
+                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(title)) {
+                        continue;
+                    }
+                    if (url.startsWith("//")) {
+                        url = "https:" + url;
+                    }
+                    final DownloadLink dl = createDownloadlink(url);
+                    dl.setName(title);
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    if (url.matches(TYPE_AUDIO)) {
+                        dl.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+                    } else if (url.matches(TYPE_ART)) {
+                        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                    } else {
+                        /* movies & games */
+                        dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                    }
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            }
+        } while (!StringUtils.isEmpty(nextPage) && !nextPage.equals("null") && !this.isAbort());
         return decryptedLinks;
     }
 }
