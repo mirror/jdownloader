@@ -2463,6 +2463,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 apikey = this.findAPIKey(correctedBR);
             } catch (final Throwable e) {
+                logger.info("Failed to find apikey (with Exception), continuing via website");
                 e.printStackTrace();
             }
             if (apikey != null) {
