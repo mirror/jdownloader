@@ -161,8 +161,12 @@ public class OxyCloud extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 boolean isLoggedin = false;
                 final Cookies cookies = account.loadCookies("");
+                // final Cookies cookies2 = account.loadCookies("app");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
+                    // if (cookies2 != null) {
+                    // this.br.setCookies("app." + this.getHost(), cookies2);
+                    // }
                     getPage("https://app.oxy.cloud/");
                     isLoggedin = isLoggedin();
                 }
@@ -188,12 +192,18 @@ public class OxyCloud extends antiDDoSForHost {
                     }
                     loginform.put("email", account.getUser());
                     loginform.put("password", account.getPass());
+                    /* Enable long cookie life */
+                    loginform.put("save_auth", "on");
+                    if (!loginform.hasInputFieldByName("submit")) {
+                        loginform.put("submit", "");
+                    }
                     submitForm(loginform);
                     if (!isLoggedin()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
+                // account.saveCookies(this.br.getCookies("app." + this.getHost()), "app");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -204,7 +214,7 @@ public class OxyCloud extends antiDDoSForHost {
     }
 
     private boolean isLoggedin() {
-        return br.getCookie(this.getHost(), "__ddgu", Cookies.NOTDELETEDPATTERN) != null || br.containsHTML("/logout");
+        return (br.getCookie(this.getHost(), "__ddgu", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "auth", Cookies.NOTDELETEDPATTERN) != null) || br.containsHTML("/logout");
     }
 
     @Override
@@ -213,7 +223,7 @@ public class OxyCloud extends antiDDoSForHost {
         login(account, true);
         ai.setUnlimitedTraffic();
         int balance = 0;
-        String balanceStr = br.getRegex("class=\"user\\-status\\-balance\">(\\d+ [^<>\"]*?)<small>USD</small>").getMatch(0);
+        String balanceStr = br.getRegex("class=\"user-status-balance\">(\\d+ [^<>\"]*?)<small>USD</small>").getMatch(0);
         if (balanceStr != null) {
             try {
                 balanceStr = balanceStr.trim();

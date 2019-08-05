@@ -119,7 +119,8 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsPairingLogin() {
+    public boolean supportsPairingLogin(final Account account) {
+        /** 2019-08-05: Pairing login is not supported by this service! */
         return false;
     }
 

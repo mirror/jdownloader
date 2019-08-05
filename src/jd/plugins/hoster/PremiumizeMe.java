@@ -105,6 +105,10 @@ public class PremiumizeMe extends ZeveraCore {
             public String getAllowFreeAccountDownloads_label() {
                 return "Allow free account downloads?\r\nFor more information visit: premiumize.me/free";
             }
+
+            public String getEnablePairingLogin_label() {
+                return "Enable pairing login (BETA)?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
+            }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
@@ -114,6 +118,12 @@ public class PremiumizeMe extends ZeveraCore {
         boolean isAllowFreeAccountDownloads();
 
         void setAllowFreeAccountDownloads(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isEnablePairingLogin();
+
+        void setEnablePairingLogin(boolean b);
     };
 
     @Override
@@ -128,12 +138,12 @@ public class PremiumizeMe extends ZeveraCore {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "allowfreeaccountdownloads".equals(keyHandler.getKey());
+                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enablepairinglogin".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"allowfreeaccountdownloads".equals(keyHandler.getKey());
+                return !"allowfreeaccountdownloads".equals(keyHandler.getKey()) && !"enablepairinglogin".equals(keyHandler.getKey());
             }
 
             @Override
@@ -175,9 +185,12 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsPairingLogin() {
-        /* 2019-06-25: TODO: Enable this once it is fully supported serverside! */
-        return false;
+    public boolean supportsPairingLogin(final Account account) {
+        if (this.getAccountJsonConfig(account).isEnablePairingLogin()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

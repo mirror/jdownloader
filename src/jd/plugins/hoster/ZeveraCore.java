@@ -396,7 +396,8 @@ abstract public class ZeveraCore extends UseNet {
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
         // final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
         final HashSet<String> list = new HashSet<String>();
-        if (supportsUsenet()) {
+        /* 2019-08-05: usenet is not supported when pairing login is used because then we do not have the internal Usenet-Logindata! */
+        if (supportsUsenet() && !this.supportsPairingLogin(account)) {
             list.add("usenet");
         }
         if (account.getType() == AccountType.FREE && supportsFreeMode(account)) {
@@ -561,68 +562,77 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        if (supportsPairingLogin()) {
+        if (supportsPairingLogin(account)) {
             /* 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
-            final long token_valid_until = account.getLongProperty("token_valid_until", 0);
-            if (System.currentTimeMillis() > token_valid_until) {
-                logger.info("Token has expired");
-            } else if (setAuthHeader(br, account)) {
-                callAPI(br, account, "/api/account/info");
-                if (isLoggedIn(br)) {
-                    return;
-                }
-                logger.info("Token expired or user has revoked access --> Full login required");
-            }
-            this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
-            final int interval_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "interval"));
-            final int expires_in_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "expires_in")) - interval_seconds;
-            final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
-            final String verification_uri = PluginJSonUtils.getJson(br, "verification_uri");
-            final String device_code = PluginJSonUtils.getJson(br, "device_code");
-            final String user_code = PluginJSonUtils.getJson(br, "user_code");
-            if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            boolean success = false;
-            int loop = 0;
-            int internal_max_loops_limit = 120;
-            final Thread dialog = showPairingLoginInformation(verification_uri, user_code);
-            String access_token = null;
             try {
-                do {
-                    logger.info("Waiting for user to authorize application: " + loop);
-                    Thread.sleep(interval_seconds * 1001l);
-                    this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
-                    access_token = PluginJSonUtils.getJson(br, "access_token");
-                    if (!StringUtils.isEmpty(access_token)) {
-                        success = true;
-                        break;
-                    } else if (!dialog.isAlive()) {
-                        logger.info("Dialog closed!");
-                        break;
+                final long token_valid_until = account.getLongProperty("token_valid_until", 0);
+                if (System.currentTimeMillis() > token_valid_until) {
+                    logger.info("Token has expired");
+                } else if (setAuthHeader(br, account)) {
+                    callAPI(br, account, "/api/account/info");
+                    if (isLoggedIn(br)) {
+                        return;
                     }
-                    loop++;
-                } while (!success && System.currentTimeMillis() < expires_in_timestamp && loop < internal_max_loops_limit);
+                    logger.info("Token expired or user has revoked access --> Full login required");
+                }
+                this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
+                final int interval_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "interval"));
+                final int expires_in_seconds = Integer.parseInt(PluginJSonUtils.getJson(br, "expires_in")) - interval_seconds;
+                final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
+                final String verification_uri = PluginJSonUtils.getJson(br, "verification_uri");
+                final String device_code = PluginJSonUtils.getJson(br, "device_code");
+                final String user_code = PluginJSonUtils.getJson(br, "user_code");
+                if (StringUtils.isEmpty(device_code) || StringUtils.isEmpty(user_code) || StringUtils.isEmpty(verification_uri)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                boolean success = false;
+                int loop = 0;
+                int internal_max_loops_limit = 120;
+                final Thread dialog = showPairingLoginInformation(verification_uri, user_code);
+                String access_token = null;
+                try {
+                    do {
+                        logger.info("Waiting for user to authorize application: " + loop);
+                        Thread.sleep(interval_seconds * 1001l);
+                        this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
+                        access_token = PluginJSonUtils.getJson(br, "access_token");
+                        if (!StringUtils.isEmpty(access_token)) {
+                            success = true;
+                            break;
+                        } else if (!dialog.isAlive()) {
+                            logger.info("Dialog closed!");
+                            break;
+                        }
+                        loop++;
+                    } while (!success && System.currentTimeMillis() < expires_in_timestamp && loop < internal_max_loops_limit);
+                } finally {
+                    dialog.interrupt();
+                }
+                final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
+                final String token_type = PluginJSonUtils.getJson(br, "token_type");
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "User did not confirm pairing code!\r\nDo not close the pairing dialog until you've confirmed the code via browser!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (!"bearer".equals(token_type)) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.setProperty("access_token", access_token);
+                if (!StringUtils.isEmpty(token_expires_in) && token_expires_in.matches("\\d+")) {
+                    account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
+                }
+                setAuthHeader(br, account);
+                callAPI(br, account, "/api/account/info");
+                if (!isLoggedIn(br)) {
+                    /* Double-check */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } finally {
-                dialog.interrupt();
-            }
-            final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
-            final String token_type = PluginJSonUtils.getJson(br, "token_type");
-            if (!success) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "User did not confirm pairing code\r\nDo not close the pairing dialog until you've confirmed the code via browser!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (!"bearer".equals(token_type)) {
-                /* This should never happen! */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            account.setProperty("access_token", access_token);
-            if (!StringUtils.isEmpty(token_expires_in) && token_expires_in.matches("\\d+")) {
-                account.setProperty("token_valid_until", System.currentTimeMillis() + Long.parseLong(token_expires_in));
-            }
-            setAuthHeader(br, account);
-            callAPI(br, account, "/api/account/info");
-            if (!isLoggedIn(br)) {
-                /* Double-check */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /*
+                 * Users may enter logindata through webinterface which means they may even enter their real password which we do not want
+                 * to store in our account database. Also we do not want this field to be empty (null) as this would look strange in the
+                 * account manager.
+                 */
+                account.setPass("JD_DUMMY_PASSWORD");
             }
         } else {
             callAPI(br, account, "/api/account/info");
@@ -651,7 +661,7 @@ abstract public class ZeveraCore extends UseNet {
             url += "&";
         }
         url += "client_id=" + this.getClientID();
-        if (!this.supportsPairingLogin()) {
+        if (!this.supportsPairingLogin(account)) {
             /*
              * Without pairing login we need an additional parameter. It will also work with pairing mode when that parameter is given with
              * a wrong value but that may change in the future so this is to avoid issues!
@@ -741,7 +751,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /** Indicates whether or not the new 'pairing' login is supported: https://alexbilbie.com/2016/04/oauth-2-device-flow-grant/ */
-    public boolean supportsPairingLogin() {
+    public boolean supportsPairingLogin(final Account account) {
         return false;
     }
 
