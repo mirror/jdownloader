@@ -17,8 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -202,9 +204,11 @@ public class ImgSrcRu extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setProperty("ALLOW_MERGE", true);
             fp.setName(Encoding.htmlDecode(name.trim()));
+            final Set<String> pagesDone = new HashSet<String>();
+            final List<String> pagesTodo = new ArrayList<String>();
             do {
                 parsePage(param);
-            } while (parseNextPage(param));
+            } while (parseNextPage(param, pagesDone, pagesTodo));
             for (DownloadLink link : decryptedLinks) {
                 if (username != null) {
                     link.setProperty("username", username.trim());
@@ -278,18 +282,31 @@ public class ImgSrcRu extends PluginForDecrypt {
         }
     }
 
-    private boolean parseNextPage(CryptedLink param) throws Exception {
+    private boolean parseNextPage(CryptedLink param, Set<String> pagesDone, List<String> pagesTodo) throws Exception {
         String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>(▶|&#9658;?)</a>").getMatch(1);
         if (nextPage == null) {
             nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>&#9654;?</a>").getMatch(1);
         }
-        if (nextPage != null) {
-            if (!getPage(nextPage, param)) {
+        String previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>(◄|&#9668;?)</a>").getMatch(1);
+        if (previousPage == null) {
+            previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>&#9664;?</a>").getMatch(1);
+        }
+        if (previousPage != null && !pagesTodo.contains(previousPage) && !pagesDone.contains(previousPage)) {
+            pagesTodo.add(previousPage);
+        }
+        if (nextPage != null && !pagesTodo.contains(nextPage) && !pagesDone.contains(nextPage)) {
+            pagesTodo.add(nextPage);
+        }
+        while (true) {
+            if (pagesTodo.size() > 0) {
+                nextPage = pagesTodo.remove(0);
+                if (pagesDone.add(nextPage) && getPage(nextPage, param)) {
+                    return true;
+                }
+            } else {
                 return false;
             }
-            return true;
         }
-        return false;
     }
 
     private boolean isPasswordProtected(Browser br) {

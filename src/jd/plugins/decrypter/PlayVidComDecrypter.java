@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,6 +38,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class PlayVidComDecrypter extends PluginForDecrypt {
@@ -112,15 +112,19 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */
         final SubConfiguration cfg = SubConfiguration.getConfig("playvid.com");
-        final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
+        final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);// currently the help text to best doesn't imply that it works on
+        // selected resolutions only, maybe add another option for this
         final boolean q360p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_360P, true);
         final boolean q480p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_480P, true);
         final boolean q720p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_720P, true);
         final boolean q1080p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_1080, true);
-        final boolean all = (q360p == false && q480p == false && q720p == false && q1080p == false);
+        final boolean q2160p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_2160, true);
+        final boolean all = best || (q360p == false && q480p == false && q720p == false && q1080p == false && q2160p == false);
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
-        List<DownloadLink> tempList = new ArrayList<DownloadLink>();
+        if (q2160p || all) {
+            selectedQualities.add("2160p");
+        }
         if (q1080p || all) {
             selectedQualities.add("1080p");
         }

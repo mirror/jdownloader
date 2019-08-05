@@ -127,7 +127,13 @@ public class JetloadNet extends PluginForHost {
         if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
             link.setDownloadSize(Long.parseLong(filesize));
         }
-        return AvailableStatus.TRUE;
+        final String encoding_status = PluginJSonUtils.getJson(br, "encoding_status");
+        if (StringUtils.equalsIgnoreCase("pending", encoding_status)) {
+            // downloading hls stream
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still encoding!", 60 * 60 * 1000l);
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws IOException, PluginException {
@@ -150,7 +156,13 @@ public class JetloadNet extends PluginForHost {
         if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
             link.setDownloadSize(Long.parseLong(filesize));
         }
-        return AvailableStatus.TRUE;
+        final String encoding_status = PluginJSonUtils.getJson(br, "encoding_status");
+        if (StringUtils.equalsIgnoreCase("pending", encoding_status)) {
+            // downloading hls stream
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still encoding!", 60 * 60 * 1000l);
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
