@@ -31,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
@@ -60,35 +61,38 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
                 passwordFail = false;
                 captchaFail = false;
                 break;
-            }
-            /* 2017-01-30: Either captcha OR password */
-            if (confirmationForm.hasInputFieldByName("security_code")) {
-                captchaFail = true;
-                final String code = this.getCaptchaCode("ziddu.com", "/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
-                confirmationForm.put("security_code", Encoding.urlEncode(code));
-            } else if (confirmationForm.hasInputFieldByName("Pass1")) {
-                passwordFail = true;
-                if (counter == 0) {
-                    passCode = this.getPluginConfig().getStringProperty("LAST_WORKING_PASSWORD");
-                }
-                if (passCode == null) {
-                    passCode = getUserInput("Password?", param);
-                }
-                confirmationForm.put("Pass1", Encoding.urlEncode(passCode));
             } else {
-                passwordFail = false;
-                captchaFail = false;
-                break;
+                /* 2017-01-30: Either captcha OR password */
+                if (confirmationForm.hasInputFieldByName("security_code")) {
+                    captchaFail = true;
+                    final String code = this.getCaptchaCode("ziddu.com", "/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
+                    confirmationForm.put("security_code", Encoding.urlEncode(code));
+                } else if (confirmationForm.hasInputFieldByName("Pass1")) {
+                    passwordFail = true;
+                    if (counter == 0) {
+                        passCode = this.getPluginConfig().getStringProperty("LAST_WORKING_PASSWORD");
+                    } else {
+                        passCode = null;
+                    }
+                    if (StringUtils.isEmpty(passCode)) {
+                        passCode = getUserInput("Password?", param);
+                    }
+                    confirmationForm.put("Pass1", Encoding.urlEncode(passCode));
+                } else {
+                    passwordFail = false;
+                    captchaFail = false;
+                    break;
+                }
+                submitForm(confirmationForm);
+                counter++;
             }
-            submitForm(confirmationForm);
-            counter++;
         } while (confirmationForm != null && counter <= 2);
         if (captchaFail) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (passwordFail) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        if (passCode != null) {
+        if (!StringUtils.isEmpty(passCode)) {
             /* Store valid password for next attempt */
             this.getPluginConfig().setProperty("LAST_WORKING_PASSWORD", passCode);
         }

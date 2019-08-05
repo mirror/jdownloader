@@ -17,11 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Request;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,7 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)([A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+|run\\.php-urls.*)" })
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
 public class GetComics extends PluginForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,24 +37,31 @@ public class GetComics extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] links = null;
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         // Load page
         br.setFollowRedirects(true);
-        Request request = br.createGetRequest(parameter);
-        request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        request.getHeaders().put("upgrade-insecure-requests", "1");
-        request.getHeaders().put("dnt", "1");
-        String page = br.getPage(request).toString();
+        br.getPage(parameter);
         final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
-        //
-        if (StringUtils.containsIgnoreCase(parameter, "run.php-urls")) {
-            // TODO: Handle redirect to actual file
-        } else {
-            links = br.getRegex("<div class=\"aio-[^\"]+\"><a[^>]+href=\"([^\"]+)\"[^>]+class=\"aio-[^\"]+\" title=\"[^\"]+Link\"").getColumn(0);
-            if (links != null && links.length > 0) {
-                for (String link : links) {
+        final String[] links = br.getRegex("<div class=\"aio-[^\"]+\"><a[^>]+href=\"([^\"]+)\"[^>]+class=\"aio-[^\"]+\" title=\"[^\"]+Link\"").getColumn(0);
+        if (links != null && links.length > 0) {
+            for (String link : links) {
+                if (StringUtils.containsIgnoreCase(link, "run.php-urls")) {
+                    // checks for correct referer!
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(false);
+                    brc.getPage(link);
+                    String redirect = brc.getRedirectLocation();
+                    if (redirect == null) {
+                        sleep(1000, param);
+                        brc.getPage(parameter);
+                        brc.getPage(link);
+                        redirect = brc.getRedirectLocation();
+                    }
+                    if (redirect != null) {
+                        decryptedLinks.add(createDownloadlink(redirect));
+                    }
+                } else {
                     decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
                 }
             }

@@ -22,18 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -58,10 +46,21 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
     private final String                   noChunks                       = "noChunks";
-    private static Object                  LOCK                           = new Object();
     private final String                   normalTraffic                  = "normalTraffic";
     private final String                   specialTraffic                 = "specialTraffic";
     private final String                   storageTraffic                 = "storageTraffic";
@@ -280,7 +279,7 @@ public class PremiumTo extends UseNet {
 
     private boolean login(Account account, boolean force) throws Exception {
         final boolean redirect = br.isFollowingRedirects();
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
