@@ -47,13 +47,12 @@ public class FiveSingCom extends PluginForHost {
 
     private static final String CRIPPLEDLINK = "http://(www\\.)?5sing\\.kugou\\.com/(f|y)c/\\d+\\.html";
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("FileNotFind") || br.getURL().contains("5sing.com/404.htm") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("/images/404/btn\\.jpg") || br.getURL().contains("FileNotFind") || br.getURL().contains("5sing.com/404.htm") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String extension = br.getRegex("(<em>)?格式：(</em>)?([^<>\"]*?)(<|&)").getMatch(2);
