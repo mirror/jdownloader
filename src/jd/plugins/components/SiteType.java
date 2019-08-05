@@ -24,7 +24,8 @@ public class SiteType {
          */
         DaddyScripts_FileHostV2,
         /**
-         * Link protector script: <a href="http://www.daddyscripts.com/products.php?name=daddys_link_protector">Daddy's Link Protector</a><br />
+         * Link protector script: <a href="http://www.daddyscripts.com/products.php?name=daddys_link_protector">Daddy's Link
+         * Protector</a><br />
          * example: <a href="http://protect-link.org/">protect-link.org</a>
          */
         DaddyScripts_DaddysLinkProtector,
@@ -62,11 +63,13 @@ public class SiteType {
         KernelVideoSharing,
         /**
          * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
-         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
-         * >http://codecanyon.net/item/imgshot-image-hosting- script/2558257</a>.<br />
+         * Can be bought e.g. from here:
+         * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
+         * script/2558257</a>.<br />
          * <b>Main decrypter class:</b> ImgShotDecrypt<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
-         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a> <br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a>
+         * <br />
          * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
@@ -106,8 +109,8 @@ public class SiteType {
          */
         OuoIoCryptor,
         /**
-         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by <a
-         * href="http://pimproll.com/">pimproll.com</a>
+         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by
+         * <a href="http://pimproll.com/">pimproll.com</a>
          */
         PimpRoll_HostedTube,
         /**
@@ -128,6 +131,13 @@ public class SiteType {
          * google
          */
         Unknown_ChineseFileHosting,
+        /**
+         * Script used by some video-hosting sites.Not sure what's the name of this script but the URLs look similar to those of
+         * xfilesharing/xvideosharing websites.<br />
+         * <b>Examples:</b> <a href="https://vidup.io/">vidup.io</a>, <a href="https://vev.io/">vev.io</a><br />
+         * <b>Superclass:</b> UnknownVideohostingCore <br />
+         */
+        Unknown_Videohosting,
         /**
          * Script used by some (mostly free) file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what's the name of this
          * script.<br />
@@ -265,7 +275,8 @@ public class SiteType {
         URLShortnerLLP_URLShortner,
         /**
          * URL shortening or monetizing platform by <a href="https://www.mightyscripts.com/">mightyscripts.com</a><br />
-         * <a href="https://www.mightyscripts.com/downloads/adlinkfly-monetized-url-shortener/">AdLinkFly – Monetized URL Shortener</a><br />
+         * <a href="https://www.mightyscripts.com/downloads/adlinkfly-monetized-url-shortener/">AdLinkFly – Monetized URL
+         * Shortener</a><br />
          * <a href="https://www.mightyscripts.com/downloads/mighty-url-shortener-short-url-script/">Mighty URL Shortener | Short URL
          * Script</a><br />
          * They seem to share the same HTML frame work.
@@ -300,8 +311,8 @@ public class SiteType {
          * <b>Product:</b> <a href="https://codecanyon.net/item/advanced-php-url-shortener/3450738">Advanced PHP URL Shortener @
          * codecanyon.net market place</a> & <a href="https://codepulsar.com/short2/index.php?a=short">demo site</a> <br/>
          * his user/profile name is Pricop, on demo site for url shortener it has his <a href="https://twitter.com/pricop2007">twitter
-         * profile</a> mentioned (also profile picture on twitter is the same as codecanyon). In which his <a
-         * href="https://pricop.info/">personal website</a> is then linked <br />
+         * profile</a> mentioned (also profile picture on twitter is the same as codecanyon). In which his
+         * <a href="https://pricop.info/">personal website</a> is then linked <br />
          * common traits<br />
          * chain link image top left in title bar next to site name.
          */
