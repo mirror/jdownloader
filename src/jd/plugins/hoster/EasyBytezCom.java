@@ -23,7 +23,6 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -89,20 +88,6 @@ public class EasyBytezCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 1;
         }
-    }
-
-    @Override
-    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        /* 2019-08-06: Special */
-        final AccountInfo ai = super.fetchAccountInfo(account);
-        if (account.getType() == AccountType.FREE) {
-            /*
-             * 2019-08-06: Special: Allow downloads even if account does not have enough traffic. By performing a reconnect we can reset
-             * that limit and the account will have full traffic again (2 GB/day[?])
-             */
-            ai.setSpecialTraffic(true);
-        }
-        return ai;
     }
 
     @Override
