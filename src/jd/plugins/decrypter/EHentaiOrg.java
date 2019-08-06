@@ -17,12 +17,9 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,6 +37,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" })
 public class EHentaiOrg extends PluginForDecrypt {
@@ -88,6 +90,7 @@ public class EHentaiOrg extends PluginForDecrypt {
             }
         }
         final DecimalFormat df = new DecimalFormat("0000");
+        final Set<String> dups = new HashSet<String>();
         int counter = 1;
         final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         for (int page = 0; page <= pagemax; page++) {
@@ -106,6 +109,10 @@ public class EHentaiOrg extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String link[] : links) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
+                }
                 final String singleLink = link[0];
                 final DownloadLink dl = createDownloadlink(singleLink);
                 final String imgposition = df.format(counter);
@@ -114,10 +121,8 @@ public class EHentaiOrg extends PluginForDecrypt {
                 final String extension;
                 if (StringUtils.isNotEmpty(originalFileName) && Files.getExtension(originalFileName) != null) {
                     extension = "." + Files.getExtension(originalFileName);
-                } else if (getFileNameExtensionFromURL(link[2]) != null) {
-                    extension = getFileNameExtensionFromURL(link[2]);
                 } else {
-                    extension = ".jpg";
+                    extension = getFileNameExtensionFromURL(link[2], ".jpg");
                 }
                 dl.setProperty("namepart", namepart);
                 dl.setProperty("imageposition", imgposition);
@@ -130,7 +135,18 @@ public class EHentaiOrg extends PluginForDecrypt {
                 }
                 final String name;
                 if (preferOriginalFilename && StringUtils.isNotEmpty(originalFileName)) {
-                    name = originalFileName;
+                    if (dups.add(originalFileName)) {
+                        name = originalFileName;
+                    } else {
+                        int num = 1;
+                        while (true) {
+                            final String newName = originalFileName.replaceFirst("(\\.)([^\\.]+$)", "_" + (num++) + ".$2");
+                            if (dups.add(newName)) {
+                                name = newName;
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     name = namepart + extension;
                 }

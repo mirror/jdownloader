@@ -24,11 +24,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,6 +46,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -200,8 +200,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -359,14 +359,14 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             try {
                 /* Language-independant attempt ... */
-                if (StringUtils.isEmpty(fileInfo[0])) {
+                if (StringUtils.isEmpty(fileInfo[0]) && tableData.length > 0) {
                     String name = tableData[0];
                     name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
-                    if (name != null && !fileNameCandidates.contains(name)) {
+                    if (StringUtils.isNotEmpty(name) && !fileNameCandidates.contains(name)) {
                         fileNameCandidates.add(name);
                     }
                 }
-                if (StringUtils.isEmpty(fileInfo[1])) {
+                if (StringUtils.isEmpty(fileInfo[1]) && tableData.length > 1) {
                     fileInfo[1] = tableData[1];
                 }
             } catch (final Throwable e) {
@@ -506,7 +506,6 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.put("g-recaptcha-response", recaptchaV2Response);
                         continue_form.setMethod(MethodType.POST);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
-                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     } else if (rcID != null) {
                         /* Dead end! */
                         captcha = true;
@@ -536,19 +535,37 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.put("adcopy_response", Encoding.urlEncode(code));
                         continue_form.setMethod(MethodType.POST);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
-                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     } else if (continue_form != null && continue_form.getMethod() == MethodType.POST) {
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput);
                         /* Use URL instead of Form - it is all we need! */
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
-                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     } else {
+                        if (!isDownloadlink(continue_link)) {
+                            br.setFollowRedirects(false);
+                            br.getPage(continue_link);
+                            while (true) {
+                                final String redirect = this.br.getRedirectLocation();
+                                if (redirect != null) {
+                                    if (isDownloadlink(redirect)) {
+                                        continue_link = redirect;
+                                        break;
+                                    } else {
+                                        br.followRedirect();
+                                    }
+                                } else {
+                                    continue_link = getDllink(br);
+                                    break;
+                                }
+                            }
+                            if (continue_link == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput);
                         /* Use URL instead of Form - it is all we need! */
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
-                        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
                     }
                 }
                 checkResponseCodeErrors(dl.getConnection());
@@ -578,6 +595,7 @@ public class YetiShareCore extends antiDDoSForHost {
             checkErrors(link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
     }
 
