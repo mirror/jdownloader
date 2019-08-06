@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -28,6 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
@@ -116,8 +116,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         /* 2019-08-06: Special */
         final AccountInfo ai = super.fetchAccountInfoWebsite(account);
-        if (account.getType() == AccountType.FREE) {
-            account.setType(AccountType.FREE);
+        if (AccountType.FREE.equals(account.getType())) {
             /*
              * 2019-08-06: Special: Allow downloads even if account does not have enough traffic. By performing a reconnect we can reset
              * that limit and the account will have full traffic again (2 GB/day[?])
