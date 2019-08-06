@@ -52,7 +52,7 @@ public class FileBitPl extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            APIKEY             = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
     private static final String                            API_BASE           = "https://filebit.pl/api/index.php";
-    private static String                                  SESSIONID          = null;
+    private String                                         sessionID          = null;
     /*
      * 2018-02-13: Their API is broken and only returns 404. Support did not respond which is why we now have website- and API support ...
      */
@@ -186,7 +186,7 @@ public class FileBitPl extends PluginForHost {
 
     private String getDllinkAPI(final Account account, final DownloadLink link) throws Exception {
         this.loginAPI(account, false);
-        br.getPage(API_BASE + "?a=addNewFile&sessident=" + SESSIONID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+        br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         handleAPIErrors(br, account, link);
         final String fileId = PluginJSonUtils.getJson(br, "fileId");
         if (StringUtils.isEmpty(fileId)) {
@@ -199,7 +199,7 @@ public class FileBitPl extends PluginForHost {
             if (isAbort()) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + SESSIONID + "&fileId=" + fileId);
+            br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + sessionID + "&fileId=" + fileId);
             final String error = PluginJSonUtils.getJson(br, "error");
             final String errno = PluginJSonUtils.getJson(br, "errno");
             if ("1".equals(error)) {
@@ -282,7 +282,7 @@ public class FileBitPl extends PluginForHost {
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginAPI(account, true);
-        br.getPage(API_BASE + "?a=accountStatus&sessident=" + SESSIONID);
+        br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
         handleAPIErrors(br, account, null);
         account.setConcurrentUsePossible(true);
         final String accountDescription = PluginJSonUtils.getJson(br, "acctype");
@@ -420,19 +420,19 @@ public class FileBitPl extends PluginForHost {
         synchronized (account) {
             try {
                 newBrowserAPI();
-                SESSIONID = account.getStringProperty("sessionid");
+                sessionID = account.getStringProperty("sessionid");
                 final long session_expire = account.getLongProperty("sessionexpire", 0);
-                if (force || SESSIONID == null || System.currentTimeMillis() > session_expire) {
+                if (force || sessionID == null || System.currentTimeMillis() > session_expire) {
                     br.getPage(API_BASE + "?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
                     handleAPIErrors(br, account, null);
-                    SESSIONID = PluginJSonUtils.getJson(this.br, "sessident");
-                    if (SESSIONID == null) {
+                    sessionID = PluginJSonUtils.getJson(this.br, "sessident");
+                    if (sessionID == null) {
                         // This should never happen
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     /* According to API documentation, sessionIDs are valid for 60 minutes */
                     account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
-                    account.setProperty("sessionid", SESSIONID);
+                    account.setProperty("sessionid", sessionID);
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -494,8 +494,8 @@ public class FileBitPl extends PluginForHost {
                     if (redirect != null) {
                         br.getPage(redirect);
                     }
-                    SESSIONID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
-                    if (SESSIONID == null || !isLoggedinHTMLWebsite()) {
+                    sessionID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
+                    if (sessionID == null || !isLoggedinHTMLWebsite()) {
                         // This should never happen
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
