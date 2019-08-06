@@ -393,25 +393,45 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
-    private boolean decryptAllVideosOfAPlaylist() {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return true;
-        }
+    private boolean decryptAllVideosOfAPlaylist() throws Exception {
+        String base_url = null;
+        int page = 1;
         final Set<String> dupes = new HashSet<String>();
-        final String publicVideosHTMLSnippet = br.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
-        final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
-        if (viewkeys == null || viewkeys.length == 0) {
-            return false;
-        }
-        for (final String viewkey : viewkeys) {
-            if (dupes.add(viewkey)) {
-                // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
-                final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
-                decryptedLinks.add(dl);
-                distribute(dl);
+        do {
+            if (this.isAbort()) {
+                return true;
             }
-        }
+            if (page > 1) {
+                final String nextpage_url = base_url + "/?page=" + page;
+                jd.plugins.hoster.PornHubCom.getPage(br, br.createGetRequest(nextpage_url));
+            } else {
+                base_url = br.getURL();
+            }
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                if (dupes.size() == 0) {
+                    decryptedLinks.add(createOfflinelink(parameter));
+                }
+                return true;
+            }
+            final String publicVideosHTMLSnippet = br.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
+            final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
+            if (viewkeys == null || viewkeys.length == 0) {
+                if (dupes.size() == 0) {
+                    return false;
+                } else {
+                    break;
+                }
+            }
+            for (final String viewkey : viewkeys) {
+                if (dupes.add(viewkey)) {
+                    // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
+                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            }
+            page++;
+        } while (true);
         return true;
     }
 

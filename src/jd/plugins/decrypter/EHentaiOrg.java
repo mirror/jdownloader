@@ -79,6 +79,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
+        fp.setProperty(FilePackage.PROPERTY_PACKAGE_KEY, uid);
         int pagemax = 0;
         final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);
         if (pages != null && pages.length != 0) {

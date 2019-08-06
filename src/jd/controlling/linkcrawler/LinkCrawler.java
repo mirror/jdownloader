@@ -3019,6 +3019,16 @@ public class LinkCrawler {
                         }
                     }
                 }
+                if (fp.hasProperty(FilePackage.PROPERTY_PACKAGE_KEY)) {
+                    if (fpi == null) {
+                        if (link.getDesiredPackageInfo() == null) {
+                            fpi = new PackageInfo();
+                        } else {
+                            fpi = link.getDesiredPackageInfo();
+                        }
+                    }
+                    fpi.setPackageKey(fp.getStringProperty(FilePackage.PROPERTY_PACKAGE_KEY, null));
+                }
                 if (fp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
                     if (fpi == null) {
                         if (link.getDesiredPackageInfo() == null) {

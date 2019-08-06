@@ -532,7 +532,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            return EventTrigger.TRAY_BUTTON.getTestProperties();
+            return getContextTriggerProperties(true, true);
         }
 
         public String getAPIDescription() {
@@ -581,7 +581,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            return EventTrigger.TRAY_BUTTON.getTestProperties();
+            return getContextTriggerProperties(true, false);
         }
 
         public String getAPIDescription() {
@@ -630,7 +630,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            return EventTrigger.TRAY_BUTTON.getTestProperties();
+            return getContextTriggerProperties(false, true);
         }
 
         public String getAPIDescription() {
@@ -678,7 +678,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            return EventTrigger.TRAY_BUTTON.getTestProperties();
+            return getContextTriggerProperties(true, false);
         }
 
         public String getAPIDescription() {
@@ -726,7 +726,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            return EventTrigger.TRAY_BUTTON.getTestProperties();
+            return getContextTriggerProperties(false, true);
         }
 
         public String getAPIDescription() {
@@ -774,14 +774,7 @@ public enum EventTrigger implements LabelInterface {
         }
 
         public HashMap<String, Object> getTestProperties() {
-            HashMap<String, Object> props = new HashMap<String, Object>();
-            props.put("name", "MyMenuButton");
-            props.put("icon", "myIconKey");
-            props.put("shortCutString", "myShortcut");
-            props.put("menu", "TriggerName");
-            props.put("dlSelection", new DownloadlistSelectionSandbox());
-            props.put("lgSelection", new LinkgrabberSelectionSandbox());
-            return props;
+            return getContextTriggerProperties(true, true);
         }
 
         public String getAPIDescription() {
@@ -799,6 +792,21 @@ public enum EventTrigger implements LabelInterface {
             sb.append("var ").append(Utils.toMy(Utils.cleanUpClass(es.getValue().getClass().getSimpleName()))).append(" = ").append(es.getKey()).append(";").append("\r\n");
         }
         return sb.toString();
+    }
+
+    public static HashMap<String, Object> getContextTriggerProperties(boolean includeDownloadList, boolean includeLinkgrabberList) {
+        final HashMap<String, Object> props = new HashMap<String, Object>();
+        props.put("name", "MyMenuButton");
+        props.put("icon", "myIconKey");
+        props.put("shortCutString", "myShortcut");
+        props.put("menu", "TriggerName");
+        if (includeDownloadList) {
+            props.put("dlSelection", new DownloadlistSelectionSandbox());
+        }
+        if (includeLinkgrabberList) {
+            props.put("lgSelection", new LinkgrabberSelectionSandbox());
+        }
+        return props;
     }
 
     protected static void collectClasses(Class<? extends Object> cl, ArraySet<Class<?>> clazzes) {

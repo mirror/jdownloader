@@ -404,6 +404,7 @@ public class ScriptEnvironment {
             if (cl == ScriptEnvironment.class && ann == null) {
                 continue;
             }
+            final boolean isDeprecated = m.getAnnotation(Deprecated.class) != null;
             if (!Clazz.isVoid(m.getReturnType())) {
                 sb.append("var ").append(Utils.toMy(Utils.cleanUpClass(m.getReturnType().getSimpleName()))).append(" = ");
             }
@@ -429,6 +430,9 @@ public class ScriptEnvironment {
             sb.append(");");
             if (ann != null && StringUtils.isNotEmpty(ann.description())) {
                 sb.append("/*").append(ann.description()).append("*/");
+            }
+            if (isDeprecated) {
+                sb.append("/*DEPRECATED, this method may be removed in future version*/");
             }
             sb.append("\r\n");
             if (ann != null && StringUtils.isNotEmpty(ann.example())) {
