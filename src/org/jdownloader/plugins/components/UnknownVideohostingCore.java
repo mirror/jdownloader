@@ -36,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 public class UnknownVideohostingCore extends PluginForHost {
     public UnknownVideohostingCore(PluginWrapper wrapper) {
@@ -326,6 +327,11 @@ public class UnknownVideohostingCore extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_Videohosting;
     }
 
     @Override
