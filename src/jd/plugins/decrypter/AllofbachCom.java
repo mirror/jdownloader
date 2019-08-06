@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,9 +24,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allofbach.com" }, urls = { "https?://(?:www\\.)?allofbach\\.com/[A-Za-z]{2}/.+" }) 
-public class AllofbachCom extends PluginForDecrypt {
+import org.appwork.utils.StringUtils;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allofbach.com" }, urls = { "https?://(?:www\\.)?allofbach\\.com/[A-Za-z]{2}/.+" })
+public class AllofbachCom extends PluginForDecrypt {
     public AllofbachCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,16 +41,24 @@ public class AllofbachCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] vimeo_ids = br.getRegex("data\\-(?:vimeo|video)\\-id=\"(\\d+)\"").getColumn(0);
-        if (vimeo_ids != null) {
-            for (final String vimeo_id : vimeo_ids) {
-                final String vimeo_url = jd.plugins.decrypter.VimeoComDecrypter.createPrivateVideoUrlWithReferer(vimeo_id, this.br.getURL());
-                final DownloadLink dl = createDownloadlink(vimeo_url);
+        final String[][] video_ids = br.getRegex("data\\-(?:vimeo|video)\\-id\\s*=\\s*\"(.*?)\"\\s*data-video-type\\s*=\\s*\"(vimeo|youtube)\"").getMatches();
+        if (video_ids != null) {
+            for (final String video_id[] : video_ids) {
+                final String id = video_id[0];
+                final String type = video_id[1];
+                final DownloadLink dl;
+                if (StringUtils.equalsIgnoreCase("vimeo", type)) {
+                    final String vimeo_url = jd.plugins.decrypter.VimeoComDecrypter.createPrivateVideoUrlWithReferer(id, this.br.getURL());
+                    dl = createDownloadlink(vimeo_url);
+                } else if (StringUtils.equalsIgnoreCase("youtube", type)) {
+                    dl = createDownloadlink("https://www.youtube.com/watch?v=" + id);
+                } else {
+                    logger.info("Unsupported video-type:" + type);
+                    continue;
+                }
                 decryptedLinks.add(dl);
             }
         }
-
         return decryptedLinks;
     }
-
 }

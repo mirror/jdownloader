@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 
 import org.jdownloader.plugins.components.abstractSafeLinking;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.me" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu|co)/(p\\d*|d)/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.org" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu|co|org)/(p\\d*|d)/[a-z0-9]+" })
 public class KeepLinksMe extends abstractSafeLinking {
     public KeepLinksMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -34,8 +34,8 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected String regexSupportedDomains() {
-        if (getHost().contains("keeplinks.me")) {
-            return "keeplinks\\.(me|eu|co)";
+        if (getHost().contains("keeplinks.org")) {
+            return "keeplinks\\.(me|eu|co|org)";
         } else {
             return super.regexSupportedDomains();
         }
@@ -54,7 +54,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected boolean supportsHTTPS() {
-        if (getHost().contains("keeplinks.me")) {
+        if (getHost().contains("keeplinks.org")) {
             return true;
         }
         if ("kprotector.com".equals(getHost())) {
@@ -65,7 +65,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected boolean enforcesHTTPS() {
-        if (getHost().contains("keeplinks.me")) {
+        if (getHost().contains("keeplinks.org")) {
             return true;
         }
         if ("kprotector.com".equals(getHost())) {
@@ -111,7 +111,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected String correctLink(final String string) {
-        final String s = string.replaceFirst("^https?://", enforcesHTTPS() && supportsHTTPS() ? "https://" : "http://").replaceFirst("(keeplinks\\.(me|eu|co)/)", "keeplinks.co/");
+        final String s = string.replaceFirst("^https?://", enforcesHTTPS() && supportsHTTPS() ? "https://" : "http://").replaceFirst("(keeplinks\\.(me|eu|co|org)/)", "keeplinks.org/");
         return s;
     }
 
