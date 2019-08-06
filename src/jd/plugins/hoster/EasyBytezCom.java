@@ -94,7 +94,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* 2019-08-06: Special */
-        if (link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft()) {
+        if (AccountType.FREE.equals(account.getType()) && link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft()) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reconnect required to reset free account traffic", 5 * 60 * 1000l);
         }
         super.handlePremium(link, account);
@@ -103,7 +103,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     @Override
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-08-06: Special */
-        if (account != null && account.getType() == AccountType.FREE) {
+        if (account != null && AccountType.FREE.equals(account.getType())) {
             /* Run without Account object so that reconnects are performed whenever the user runs into downloadlimits. */
             super.checkErrors(link, null, checkAll);
         } else {
