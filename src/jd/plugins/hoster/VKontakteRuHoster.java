@@ -20,9 +20,11 @@ import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -50,6 +52,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -65,56 +68,61 @@ import jd.utils.locale.JDL;
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
-    private static final String DOMAIN                                          = "vk.com";
-    private static final String TYPE_AUDIOLINK                                  = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
-    private static final String TYPE_VIDEOLINK                                  = "https?://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
-    private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
-    private static final String TYPE_PICTURELINK                                = "https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc([\\d\\-]+)_(\\d+)(?:\\?hash=[a-z0-9]+)?";
-    public static final long    trust_cookie_age                                = 300000l;
-    private static final String TEMPORARILYBLOCKED                              = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
+    private static final String DOMAIN                                                                      = "vk.com";
+    private static final String TYPE_AUDIOLINK                                                              = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
+    private static final String TYPE_VIDEOLINK                                                              = "https?://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
+    private static final String TYPE_DIRECT                                                                 = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
+    private static final String TYPE_PICTURELINK                                                            = "https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_DOCLINK                                                                = "https?://(?:new\\.)?vk\\.com/doc([\\d\\-]+)_(\\d+)(?:\\?hash=[a-z0-9]+)?";
+    public static final long    trust_cookie_age                                                            = 300000l;
+    private static final String TEMPORARILYBLOCKED                                                          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
-    private static final String FASTLINKCHECK_VIDEO                             = "FASTLINKCHECK_VIDEO";
-    private static final String FASTLINKCHECK_PICTURES                          = "FASTLINKCHECK_PICTURES_V2";
-    private static final String FASTLINKCHECK_AUDIO                             = "FASTLINKCHECK_AUDIO";
-    private static final String ALLOW_BEST                                      = "ALLOW_BEST";
-    private static final String ALLOW_240P                                      = "ALLOW_240P";
-    private static final String ALLOW_360P                                      = "ALLOW_360P";
-    private static final String ALLOW_480P                                      = "ALLOW_480P";
-    private static final String ALLOW_720P                                      = "ALLOW_720P";
-    private static final String ALLOW_1080P                                     = "ALLOW_1080P";
-    private static final String VKWALL_GRAB_ALBUMS                              = "VKWALL_GRAB_ALBUMS";
-    private static final String VKWALL_GRAB_PHOTOS                              = "VKWALL_GRAB_PHOTOS";
-    private static final String VKWALL_GRAB_AUDIO                               = "VKWALL_GRAB_AUDIO";
-    private static final String VKWALL_GRAB_VIDEO                               = "VKWALL_GRAB_VIDEO";
-    private static final String VKWALL_GRAB_URLS                                = "VKWALL_GRAB_URLS";
-    public static final String  VKWALL_GRAB_DOCS                                = "VKWALL_GRAB_DOCS";
-    public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS                   = "VKWALL_GRAB_URLS_INSIDE_POSTS";
-    public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX             = "VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX";
-    public static final String  VKWALL_GRAB_COMMENTS_PHOTOS                     = "VKWALL_GRAB_COMMENTS_PHOTOS";
-    public static final String  VKWALL_GRAB_COMMENTS_AUDIO                      = "VKWALL_GRAB_COMMENTS_AUDIO";
-    public static final String  VKWALL_GRAB_COMMENTS_VIDEO                      = "VKWALL_GRAB_COMMENTS_VIDEO";
-    public static final String  VKWALL_GRAB_COMMENTS_URLS                       = "VKWALL_GRAB_COMMENTS_URLS";
-    private static final String VKVIDEO_USEIDASPACKAGENAME                      = "VKVIDEO_USEIDASPACKAGENAME";
-    private static final String VKAUDIOS_USEIDASPACKAGENAME                     = "VKAUDIOS_USEIDASPACKAGENAME";
-    private static final String VKDOCS_USEIDASPACKAGENAME                       = "VKDOCS_USEIDASPACKAGENAME";
-    private static final String VKDOCS_ADD_UNIQUE_ID                            = "VKDOCS_ADD_UNIQUE_ID";
-    private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
-    private static final String VKPHOTO_CORRECT_FINAL_LINKS                     = "VKPHOTO_CORRECT_FINAL_LINKS";
-    public static final String  VKWALL_USE_API                                  = "VKWALL_USE_API_2019_07";
-    public static final String  VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY      = "VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY";
-    public static final String  VKADVANCED_USER_AGENT                           = "VKADVANCED_USER_AGENT";
+    private static final String FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
+    private static final String FASTLINKCHECK_PICTURES                                                      = "FASTLINKCHECK_PICTURES_V2";
+    private static final String FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
+    private static final String ALLOW_BEST                                                                  = "ALLOW_BEST";
+    private static final String ALLOW_240P                                                                  = "ALLOW_240P";
+    private static final String ALLOW_360P                                                                  = "ALLOW_360P";
+    private static final String ALLOW_480P                                                                  = "ALLOW_480P";
+    private static final String ALLOW_720P                                                                  = "ALLOW_720P";
+    private static final String ALLOW_1080P                                                                 = "ALLOW_1080P";
+    private static final String VKWALL_GRAB_ALBUMS                                                          = "VKWALL_GRAB_ALBUMS";
+    private static final String VKWALL_GRAB_PHOTOS                                                          = "VKWALL_GRAB_PHOTOS";
+    private static final String VKWALL_GRAB_AUDIO                                                           = "VKWALL_GRAB_AUDIO";
+    private static final String VKWALL_GRAB_VIDEO                                                           = "VKWALL_GRAB_VIDEO";
+    private static final String VKWALL_GRAB_URLS                                                            = "VKWALL_GRAB_URLS";
+    public static final String  VKWALL_GRAB_DOCS                                                            = "VKWALL_GRAB_DOCS";
+    public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS                                               = "VKWALL_GRAB_URLS_INSIDE_POSTS";
+    public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX                                         = "VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX";
+    public static final String  VKWALL_GRAB_COMMENTS_PHOTOS                                                 = "VKWALL_GRAB_COMMENTS_PHOTOS";
+    public static final String  VKWALL_GRAB_COMMENTS_AUDIO                                                  = "VKWALL_GRAB_COMMENTS_AUDIO";
+    public static final String  VKWALL_GRAB_COMMENTS_VIDEO                                                  = "VKWALL_GRAB_COMMENTS_VIDEO";
+    public static final String  VKWALL_GRAB_COMMENTS_URLS                                                   = "VKWALL_GRAB_COMMENTS_URLS";
+    private static final String VKVIDEO_USEIDASPACKAGENAME                                                  = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String VKAUDIOS_USEIDASPACKAGENAME                                                 = "VKAUDIOS_USEIDASPACKAGENAME";
+    private static final String VKDOCS_USEIDASPACKAGENAME                                                   = "VKDOCS_USEIDASPACKAGENAME";
+    private static final String VKDOCS_ADD_UNIQUE_ID                                                        = "VKDOCS_ADD_UNIQUE_ID";
+    private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME                             = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
+    private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME";
+    private static final String VKPHOTO_CORRECT_FINAL_LINKS                                                 = "VKPHOTO_CORRECT_FINAL_LINKS";
+    public static final String  VKWALL_USE_API                                                              = "VKWALL_USE_API_2019_07";
+    public static final String  VKWALL_STORE_PICTURE_DIRECTURLS                                             = "VKWALL_STORE_PICTURE_DIRECTURLS";
+    public static final String  VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY                                  = "VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY";
+    public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT";
     /* html patterns */
-    public static final String  HTML_VIDEO_NO_ACCESS                            = "NO_ACCESS";
-    public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS           = "This video has been removed from public access";
-    private boolean             docs_add_unique_id                              = true;
-    public static Object        LOCK                                            = new Object();
-    private String              finalUrl                                        = null;
-    private String              ownerID                                         = null;
-    private String              contentID                                       = null;
-    private String              mainlink                                        = null;
-    private static final String ALPHANUMERIC                                    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
-    private String              vkID                                            = null;
+    public static final String  HTML_VIDEO_NO_ACCESS                                                        = "NO_ACCESS";
+    public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS                                       = "This video has been removed from public access";
+    private boolean             docs_add_unique_id                                                          = true;
+    public static Object        LOCK                                                                        = new Object();
+    private String              finalUrl                                                                    = null;
+    private String              ownerID                                                                     = null;
+    private String              contentID                                                                   = null;
+    private String              mainlink                                                                    = null;
+    private static final String ALPHANUMERIC                                                                = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
+    private String              vkID                                                                        = null;
+    /* Properties */
+    public static final String  PROPERTY_picturedirectlink                                                  = "picturedirectlink";
+    public static final String  PROPERTY_directurls_fallback                                                = "directurls_fallback";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -128,14 +136,8 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        /* 2019-08-06: Do not allow multihost downloads as it makes no sense */
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-    }
-
-    @Override
-    public void onPluginAssigned(DownloadLink link) throws Exception {
-        if (link != null) {
-            link.removeProperty("directlinks");// remove, never used but requires a lot of memory
-        }
     }
 
     @Override
@@ -376,77 +378,105 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
             } else {
-                finalUrl = link.getStringProperty("picturedirectlink", null);
+                finalUrl = link.getStringProperty(PROPERTY_picturedirectlink, null);
+                String dllink_temp = null;
                 if (finalUrl == null) {
-                    final String photo_list_id = link.getStringProperty("photo_list_id", null);
-                    final String module = link.getStringProperty("photo_module", null);
-                    final String photoID = getPhotoID(link);
-                    if (module != null && photo_list_id != null) {
-                        /* Access photo inside wall-post */
-                        setHeadersPhoto(this.br);
-                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&al_ad=0&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
-                    } else {
-                        /* Access normal photo / photo inside album */
-                        String albumID = link.getStringProperty("albumid");
-                        boolean jsonSourceAvailableFromHtml = false;
-                        if (albumID == null) {
-                            /* No albumID available? Search it in the html! */
-                            getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
-                            if (br.containsHTML(">\\s*?(Unknown error|Unbekannter Fehler|Access denied)") || this.br.getHttpConnection().getResponseCode() == 404) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                            if (albumID == null) { /* new.vk.com */
-                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
-                            }
+                    try {
+                        final String photo_list_id = link.getStringProperty("photo_list_id", null);
+                        final String module = link.getStringProperty("photo_module", null);
+                        final String photoID = getPhotoID(link);
+                        if (module != null && photo_list_id != null) {
+                            /* Access photo inside wall-post */
+                            setHeadersPhoto(this.br);
+                            postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&al_ad=0&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
+                        } else {
+                            /* Access normal photo / photo inside album */
+                            String albumID = link.getStringProperty("albumid");
+                            boolean jsonSourceAvailableFromHtml = false;
                             if (albumID == null) {
-                                /* New 2016-08-23 */
-                                final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                if (json != null) {
-                                    albumID = PluginJSonUtils.getJsonValue(json, "list");
-                                    if (albumID != null) {
-                                        /* Fix id */
-                                        albumID = albumID.replace("album", "");
+                                /* No albumID available? Search it in the html! */
+                                getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
+                                if (br.containsHTML(">\\s*?(Unknown error|Unbekannter Fehler|Access denied)") || this.br.getHttpConnection().getResponseCode() == 404) {
+                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                }
+                                albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                                if (albumID == null) { /* new.vk.com */
+                                    albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
+                                }
+                                if (albumID == null) {
+                                    /* New 2016-08-23 */
+                                    final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                    if (json != null) {
+                                        albumID = PluginJSonUtils.getJsonValue(json, "list");
+                                        if (albumID != null) {
+                                            /* Fix id */
+                                            albumID = albumID.replace("album", "");
+                                        }
                                     }
                                 }
+                                if (albumID != null) {
+                                    /* Save this! Important! */
+                                    link.setProperty("albumid", albumID);
+                                }
+                                if (picturesGetJsonFromHtml() != null) {
+                                    jsonSourceAvailableFromHtml = true;
+                                }
                             }
-                            if (albumID != null) {
-                                /* Save this! Important! */
-                                link.setProperty("albumid", albumID);
-                            }
-                            if (picturesGetJsonFromHtml() != null) {
-                                jsonSourceAvailableFromHtml = true;
+                            if (!jsonSourceAvailableFromHtml) {
+                                /* Only go the json-way if we have to! */
+                                if (albumID == null) {
+                                    logger.info("vk.com: albumID is null and failed to find picture json");
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                setHeadersPhoto(this.br);
+                                postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                                if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
+                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                }
                             }
                         }
-                        if (!jsonSourceAvailableFromHtml) {
-                            /* Only go the json-way if we have to! */
-                            if (albumID == null) {
-                                logger.info("vk.com: albumID is null and failed to find picture json");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            setHeadersPhoto(this.br);
-                            postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                            if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
+                        try {
+                            /*
+                             * We're only doing this to get our filename at this stage!! 'Real' downloadlink will be grabben once user
+                             * starts the download!
+                             */
+                            dllink_temp = getHighestQualityPictureDownloadurl(link, false);
+                        } catch (final Throwable e) {
+                        }
+                    } catch (final PluginException e) {
+                        /* Now try out fallback URLs and if they fail as well, throw initial Exception! */
+                        try {
+                            logger.info("Last attempt to find working downloadlink");
+                            finalUrl = getHighestQualityPicFromSavedJson(link);
+                        } catch (final Throwable e2) {
+                            logger.info("Failed to find any working downloadlink --> Throwing initial Exception");
+                            throw e;
                         }
                     }
                 }
                 /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
                 setHeaderRefererPhoto(this.br);
+                final String temp_name;
+                if (this.finalUrl != null) {
+                    temp_name = this.photoGetFinalFilename(link, null, this.finalUrl);
+                } else {
+                    temp_name = this.photoGetFinalFilename(link, null, dllink_temp);
+                }
+                if (temp_name != null) {
+                    link.setName(temp_name);
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (downloadLink.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
             // this is for resume of cached link.
             if (finalUrl != null) {
                 if (!photolinkOk(downloadLink, null, false)) {
                     // failed, lets nuke cached entry and retry.
-                    downloadLink.setProperty("picturedirectlink", Property.NULL);
+                    downloadLink.setProperty(PROPERTY_picturedirectlink, Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 return;
@@ -457,7 +487,7 @@ public class VKontakteRuHoster extends PluginForHost {
                  * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
                  * downloadable!
                  */
-                getHighestQualityPic(downloadLink);
+                finalUrl = getHighestQualityPictureDownloadurl(downloadLink, true);
                 return;
             }
         }
@@ -695,6 +725,12 @@ public class VKontakteRuHoster extends PluginForHost {
     private void generalErrorhandling() throws PluginException {
         if (br.containsHTML(VKontakteRuHoster.TEMPORARILYBLOCKED)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
+        } else if (br.containsHTML("You have to log in to view this user")) {
+            /*
+             * 2019-08-06 e.g.
+             * "CENSORED<!><!>3<!>4231<!>8<!>You have to log in to view this user&#39;s photos.<!><!>CENSORED<!><!pageview_candidate>"
+             */
+            throw new AccountRequiredException();
         }
     }
 
@@ -878,7 +914,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     finalfilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
                 }
                 downloadLink.setFinalFileName(finalfilename);
-                downloadLink.setProperty("picturedirectlink", finalUrl);
+                downloadLink.setProperty(PROPERTY_picturedirectlink, finalUrl);
                 dl.startDownload();
                 return true;
             } else {
@@ -942,12 +978,15 @@ public class VKontakteRuHoster extends PluginForHost {
      * VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME .
      */
     private String photoGetFinalFilename(final DownloadLink dl, String finalfilename, final String directlink) throws MalformedURLException {
-        final String url_filename = this.getFileNameFromURL(new URL(directlink));
+        final String url_filename = getFileNameFromURL(new URL(directlink));
         if (finalfilename != null) {
             /* Do nothing - final filename has already been set (usually this is NOT the case). */
-        } else if (this.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && url_filename != null) {
+        } else if (this.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
             finalfilename = url_filename;
+        } else if (this.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+            finalfilename = getPhotoID(dl) + " - " + url_filename;
         } else {
+            /* Default filename */
             finalfilename = getPhotoID(dl) + getFileNameExtensionFromString(finalUrl, ".jpg");
         }
         return finalfilename;
@@ -1134,12 +1173,16 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /**
-     * Try to get best quality and test links until a working link is found. will also handle errors in case
+     * Try to get best quality and test links until a working link is found. Will also handle errors in case
      *
      * @throws IOException
+     *
+     * @param checkDownloadability
+     *            true: Return best quality which also can be downloaded <br/>
+     *            false: return best quality downloadurl without checking
      */
     @SuppressWarnings({ "unchecked" })
-    private void getHighestQualityPic(final DownloadLink dl) throws Exception {
+    private String getHighestQualityPictureDownloadurl(final DownloadLink dl, final boolean checkDownloadability) throws Exception {
         String json = picturesGetJsonFromHtml();
         if (json == null) {
             json = picturesGetJsonFromXml();
@@ -1150,9 +1193,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("Failed to find source json of picturelink");
-            final PluginException e = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            errLog(e, br, dl);
-            throw e;
+            return null;
         }
         final String thisid = getPhotoID(dl);
         final Object photoo = findPictureObject(JavaScriptEngineFactory.jsonToJavaObject(json), thisid);
@@ -1160,11 +1201,12 @@ public class VKontakteRuHoster extends PluginForHost {
         if (sourcemap == null) {
             logger.info(json);
             logger.warning("Failed to find specified source json of picturelink:" + thisid);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         }
         boolean success = false;
         /* Count how many possible downloadlinks we have */
         int links_count = 0;
+        String dllink = null;
         final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (final String q : qs) {
             if (this.isAbort()) {
@@ -1176,19 +1218,30 @@ public class VKontakteRuHoster extends PluginForHost {
             final Object picobject = sourcemap.get(srcstring);
             /* Check if the link we eventually found is downloadable. */
             if (picobject != null) {
-                finalUrl = (String) picobject;
+                dllink = (String) picobject;
+                if (!dllink.startsWith("http")) {
+                    /* Skip invalid objects */
+                    continue;
+                }
                 links_count++;
-                if (photolinkOk(dl, null, "m_".equals(q))) {
-                    return;
+                if (checkDownloadability) {
+                    /* Make sure that url is downloadable */
+                    if (photolinkOk(dl, null, "m_".equals(q))) {
+                        return dllink;
+                    }
+                } else {
+                    /* Don't check whether URL is downloadable or not - just return URL to highest quality picture! */
+                    return dllink;
                 }
             }
         }
         if (links_count == 0) {
-            logger.warning("Found no possible downloadlink for current picturelink --> Plugin broken");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Found no possible downloadlink for current picturelink --> Maybe plugin broken");
+            return null;
         } else if (links_count > 0 && !success) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
+        return null;
     }
 
     /** Recursive function to find object containing picture (download) information. */
@@ -1241,39 +1294,61 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
-     * online. This function is made to check the information which has been saved via decrypter as the property "directlinks" on the
-     * DownloadLink.
+     * online. This function is made to check the information which has been saved via decrypter as the property
+     * PROPERTY_directurls_fallback on the DownloadLink.
      *
      * @throws IOException
      */
-    @SuppressWarnings({ "unused", "unchecked" })
-    private void getHighestQualityPicFromSavedJson(final DownloadLink dl, final Object o) throws Exception {
-        if (o == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        boolean success = false;
-        /* Count how many possible downloadlinks we have */
-        int links_count = 0;
-        Map<String, Object> attachments = (Map<String, Object>) o;
-        final String qualities[] = { "src_xxxbig", "src_xxbig", "src_xbig", "src_big", "src", "src_small" };
-        for (final String quality : qualities) {
-            final Object finurl = attachments.get(quality);
-            if (finurl != null) {
-                links_count++;
-                finalUrl = finurl.toString();
-                if (photolinkOk(dl, null, "src_small".equals(quality))) {
-                    return;
+    @SuppressWarnings({ "unchecked" })
+    private String getHighestQualityPicFromSavedJson(final DownloadLink dl) throws Exception {
+        final String saved_json = dl.getStringProperty(PROPERTY_directurls_fallback, null);
+        String dllink = null;
+        if (saved_json != null) {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(saved_json);
+            final String base = (String) entries.get("base");
+            final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+            int qualityMax = 0;
+            int qualityTemp = 0;
+            String dllink_temp = null;
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final Object picO = entry.getValue();
+                /* Skip invalid objects */
+                if (!(picO instanceof ArrayList)) {
+                    continue;
                 }
-            } else {
-                continue;
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) picO;
+                qualityTemp = (int) JavaScriptEngineFactory.toLong(ressourcelist.get(1), 0);
+                dllink_temp = (String) ressourcelist.get(0);
+                if (qualityTemp > qualityMax) {
+                    qualityMax = qualityTemp;
+                    dllink = dllink_temp;
+                }
+            }
+            if (dllink != null && !dllink.startsWith("http") && !StringUtils.isEmpty(base)) {
+                /* Sometimes base is empty and already contained in dllink! */
+                dllink = base + dllink;
             }
         }
-        if (links_count == 0) {
-            logger.warning("Found no possible downloadlink for current picturelink --> Plugin broken");
+        boolean success = false;
+        final boolean foundValidURL = dllink != null && dllink.startsWith("http");
+        String directurl = null;
+        if (dllink != null && dllink.startsWith("http")) {
+            /* 2019-08-06: Extension is sometimes missing but required! */
+            if (!dllink.endsWith(".jpg")) {
+                dllink += ".jpg";
+            }
+            directurl = dllink;
+            success = photolinkOk(dl, null, true);
+        }
+        if (!foundValidURL) {
+            logger.info("No saved downloadlink available");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (links_count > 0 && !success) {
+        } else if (!success) {
+            logger.info("Saved downloadlink(s) did not work");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
+        return directurl;
     }
 
     /**
@@ -1394,43 +1469,45 @@ public class VKontakteRuHoster extends PluginForHost {
         return "JDownloader's Vk Plugin helps downloading all sorts of media from vk.com.";
     }
 
-    public static final String   SLEEP_PAGINATION_GENERAL                                = "SLEEP_PAGINATION_GENERAL";
-    public static final String   SLEEP_PAGINATION_COMMUNITY_VIDEO                        = "SLEEP_PAGINATION_COMMUNITY_VIDEO";
-    public static final String   SLEEP_TOO_MANY_REQUESTS                                 = "SLEEP_TOO_MANY_REQUESTS_V1";
+    public static final String   SLEEP_PAGINATION_GENERAL                                                            = "SLEEP_PAGINATION_GENERAL";
+    public static final String   SLEEP_PAGINATION_COMMUNITY_VIDEO                                                    = "SLEEP_PAGINATION_COMMUNITY_VIDEO";
+    public static final String   SLEEP_TOO_MANY_REQUESTS                                                             = "SLEEP_TOO_MANY_REQUESTS_V1";
     /* Default values... */
-    private static final boolean default_fastlinkcheck_FASTLINKCHECK                     = true;
-    private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK              = true;
-    private static final boolean default_fastlinkcheck_FASTAUDIOLINKCHECK                = true;
-    private static final boolean default_ALLOW_BEST                                      = false;
-    private static final boolean default_ALLOW_240p                                      = true;
-    private static final boolean default_ALLOW_360p                                      = true;
-    private static final boolean default_ALLOW_480p                                      = true;
-    private static final boolean default_ALLOW_720p                                      = true;
-    private static final boolean default_ALLOW_1080p                                     = true;
-    private static final boolean default_WALL_ALLOW_albums                               = true;
-    private static final boolean default_WALL_ALLOW_photo                                = true;
-    private static final boolean default_WALL_ALLOW_audio                                = true;
-    private static final boolean default_WALL_ALLOW_video                                = true;
-    private static final boolean default_WALL_ALLOW_urls                                 = false;
-    private static final boolean default_WALL_ALLOW_documents                            = true;
-    public static final boolean  default_WALL_ALLOW_lookforurlsinsidewallposts           = false;
-    public static final boolean  default_VKWALL_GRAB_COMMENTS_PHOTOS                     = false;
-    public static final boolean  default_VKWALL_GRAB_COMMENTS_AUDIO                      = false;
-    public static final boolean  default_VKWALL_GRAB_COMMENTS_VIDEO                      = false;
-    public static final boolean  default_VKWALL_GRAB_COMMENTS_URLS                       = false;
-    public static final String   default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX             = ".+";
-    private static final boolean default_VKVIDEO_USEIDASPACKAGENAME                      = false;
-    private static final boolean default_VKAUDIO_USEIDASPACKAGENAME                      = false;
-    private static final boolean default_VKDOCS_USEIDASPACKAGENAME                       = false;
-    private static final boolean default_VKDOCS_ADD_UNIQUE_ID                            = false;
-    private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME = false;
-    private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                     = false;
-    public static final boolean  default_VKWALL_USE_API                                  = false;
-    public static final boolean  default_VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY      = false;
-    public static final String   default_user_agent                                      = UserAgents.stringUserAgent(BrowserName.Firefox);
-    public static final long     defaultSLEEP_PAGINATION_GENERAL                         = 1000;
-    public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO           = 1000;
-    public static final long     defaultSLEEP_TOO_MANY_REQUESTS                          = 3000;
+    private static final boolean default_fastlinkcheck_FASTLINKCHECK                                                 = true;
+    private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK                                          = true;
+    private static final boolean default_fastlinkcheck_FASTAUDIOLINKCHECK                                            = true;
+    private static final boolean default_ALLOW_BEST                                                                  = false;
+    private static final boolean default_ALLOW_240p                                                                  = true;
+    private static final boolean default_ALLOW_360p                                                                  = true;
+    private static final boolean default_ALLOW_480p                                                                  = true;
+    private static final boolean default_ALLOW_720p                                                                  = true;
+    private static final boolean default_ALLOW_1080p                                                                 = true;
+    private static final boolean default_WALL_ALLOW_albums                                                           = true;
+    private static final boolean default_WALL_ALLOW_photo                                                            = true;
+    private static final boolean default_WALL_ALLOW_audio                                                            = true;
+    private static final boolean default_WALL_ALLOW_video                                                            = true;
+    private static final boolean default_WALL_ALLOW_urls                                                             = false;
+    private static final boolean default_WALL_ALLOW_documents                                                        = true;
+    public static final boolean  default_WALL_ALLOW_lookforurlsinsidewallposts                                       = false;
+    public static final boolean  default_VKWALL_GRAB_COMMENTS_PHOTOS                                                 = false;
+    public static final boolean  default_VKWALL_GRAB_COMMENTS_AUDIO                                                  = false;
+    public static final boolean  default_VKWALL_GRAB_COMMENTS_VIDEO                                                  = false;
+    public static final boolean  default_VKWALL_GRAB_COMMENTS_URLS                                                   = false;
+    public static final String   default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX                                         = ".+";
+    private static final boolean default_VKVIDEO_USEIDASPACKAGENAME                                                  = false;
+    private static final boolean default_VKAUDIO_USEIDASPACKAGENAME                                                  = false;
+    private static final boolean default_VKDOCS_USEIDASPACKAGENAME                                                   = false;
+    private static final boolean default_VKDOCS_ADD_UNIQUE_ID                                                        = false;
+    private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME                             = false;
+    private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME = false;
+    private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                                                 = false;
+    public static final boolean  default_VKWALL_USE_API                                                              = false;
+    public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS                                             = false;
+    public static final boolean  default_VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY                                  = false;
+    public static final String   default_user_agent                                                                  = UserAgents.stringUserAgent(BrowserName.Firefox);
+    public static final long     defaultSLEEP_PAGINATION_GENERAL                                                     = 1000;
+    public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO                                       = 1000;
+    public static final long     defaultSLEEP_TOO_MANY_REQUESTS                                                      = 3000;
 
     public void setConfigElements() {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "General settings:"));
@@ -1480,11 +1557,15 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKDOCS_ADD_UNIQUE_ID, "Add doc-Owner-ID and doc-Content-ID as a unique identifier to the beginning of filenames?").setDefaultValue(default_VKDOCS_ADD_UNIQUE_ID));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/photo' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, JDL.L("plugins.hoster.vkontakteruhoster.photosTempServerFilenameAsFinalFilename", "Use (temporary) server filename as final filename instead of E.g.) 'oid_id.jpg'?")).setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, "Use (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: '<server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, "Use oid_id AND (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: 'oid_id - <server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
+        /* 2019-08-06: Disabled API setting for now as API requires authorization which we do not (yet) support! */
+        // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(),
+        // VKontakteRuHoster.VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, "For 'vk.com/wall' links: Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\n WARNING: This may use a lot of RAM!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY, "Crawl posts & comments separately?\r\nThis might increase speed in some constellations.").setDefaultValue(default_VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
