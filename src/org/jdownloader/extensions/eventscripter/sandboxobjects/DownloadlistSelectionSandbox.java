@@ -37,7 +37,7 @@ public class DownloadlistSelectionSandbox {
         this(null);
     }
 
-    public DownloadLinkSandBox[] getDownloadLinks() {
+    public DownloadLinkSandBox[] getLinks() {
         if (selectionInfo == null) {
             return null;
         }
@@ -47,6 +47,11 @@ public class DownloadlistSelectionSandbox {
             ret[i] = new DownloadLinkSandBox(childs.get(i));
         }
         return ret;
+    }
+
+    @Deprecated
+    public DownloadLinkSandBox[] getDownloadLinks() {
+        return getLinks();
     }
 
     public boolean isLinkContext() {

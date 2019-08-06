@@ -224,15 +224,16 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return FP == fp;
     }
 
-    private String                                       name              = null;
-    private long                                         created           = -1l;
-    private Boolean                                      isExpanded        = null;
-    private PackageController<FilePackage, DownloadLink> controlledby      = null;
-    private volatile UniqueAlltimeID                     uniqueID          = null;
-    private volatile ModifyLock                          lock              = null;
-    public static final String                           PROPERTY_EXPANDED = "EXPANDED";
-    private static final String                          PROPERTY_COMMENT  = "COMMENT";
-    private static final String                          PROPERTY_PRIORITY = "PRIORITY";
+    private String                                       name                 = null;
+    private long                                         created              = -1l;
+    private Boolean                                      isExpanded           = null;
+    private PackageController<FilePackage, DownloadLink> controlledby         = null;
+    private volatile UniqueAlltimeID                     uniqueID             = null;
+    private volatile ModifyLock                          lock                 = null;
+    public static final String                           PROPERTY_EXPANDED    = "EXPANDED";
+    private static final String                          PROPERTY_COMMENT     = "COMMENT";
+    private static final String                          PROPERTY_PRIORITY    = "PRIORITY";
+    public static final String                           PROPERTY_PACKAGE_KEY = "PACKAGE_KEY";
 
     /**
      * @return the uniqueID
