@@ -23,8 +23,11 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
@@ -85,6 +88,41 @@ public class EasyBytezCom extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
+        }
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        /* 2019-08-06: Special */
+        final AccountInfo ai = super.fetchAccountInfo(account);
+        if (account.getType() == AccountType.FREE) {
+            /*
+             * 2019-08-06: Special: Allow downloads even if account does not have enough traffic. By performing a reconnect we can reset
+             * that limit and the account will have full traffic again (2 GB/day[?])
+             */
+            ai.setSpecialTraffic(true);
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /* 2019-08-06: Special */
+        if (link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft()) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reconnect required to reset free account traffic", 5 * 60 * 1000l);
+        }
+        super.handlePremium(link, account);
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        /* 2019-08-06: Special */
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Run without Account object so that reconnects are performed whenever the user runs into downloadlimits. */
+            super.checkErrors(link, null, checkAll);
+        } else {
+            /* Default way */
+            super.checkErrors(link, account, checkAll);
         }
     }
 
