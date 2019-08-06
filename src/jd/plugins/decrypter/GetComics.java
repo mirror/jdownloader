@@ -17,19 +17,21 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision: 41034 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
 public class GetComics extends PluginForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,9 +45,12 @@ public class GetComics extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
-        final String[] links = br.getRegex("<div class=\"aio-[^\"]+\"><a[^>]+href=\"([^\"]+)\"[^>]+class=\"aio-[^\"]+\" title=\"[^\"]+Link\"").getColumn(0);
+        String baseurl1 = br.getHost();
+        final String[] textBody = br.getRegex("<section class=\"post-contents\">(.*)<strong>(?:Screenshots|Notes)").getColumn(0);
+        final String[] links = (textBody == null || textBody.length == 0) ? null : HTMLParser.getHttpLinks(textBody[0], null);
         if (links != null && links.length > 0) {
             for (String link : links) {
+                String detectedLink = null;
                 if (StringUtils.containsIgnoreCase(link, "run.php-urls")) {
                     // checks for correct referer!
                     final Browser brc = br.cloneBrowser();
@@ -59,11 +64,15 @@ public class GetComics extends PluginForDecrypt {
                         redirect = brc.getRedirectLocation();
                     }
                     if (redirect != null) {
-                        decryptedLinks.add(createDownloadlink(redirect));
+                        detectedLink = redirect;
                     }
                 } else {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+                    detectedLink = Encoding.htmlDecode(link);
                 }
+                if (new Regex(detectedLink, ".*(imgur\\.com|/contact|/sitemap|/how-to-download).*").matches()) {
+                    continue;
+                }
+                decryptedLinks.add(createDownloadlink(detectedLink));
             }
         }
         if (title != null) {
