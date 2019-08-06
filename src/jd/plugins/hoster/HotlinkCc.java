@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -29,6 +26,9 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -148,7 +148,7 @@ public class HotlinkCc extends XFileSharingProBasic {
     public String regExTrafficLeft() {
         String trafficleft = super.regExTrafficLeft();
         if (StringUtils.isEmpty(trafficleft)) {
-            trafficleft = new Regex(correctedBR, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>([^<>\"]+)</b><").getMatch(0);
+            trafficleft = new Regex(correctedBR, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>\\s*([^<>\"]+)\\s*</b><").getMatch(0);
         }
         return trafficleft;
     }

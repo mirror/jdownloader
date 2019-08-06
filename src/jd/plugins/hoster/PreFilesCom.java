@@ -124,7 +124,7 @@ public class PreFilesCom extends XFileSharingProBasic {
         String trafficleft = super.regExTrafficLeft();
         if (StringUtils.isEmpty(trafficleft)) {
             /* 2019-07-03: Free Accounts: According to this place, 5 GB (per day?) but another place states 2 GB/day */
-            trafficleft = new Regex(correctedBR, "Traffic Remaining</td>\\s*?<td>([^<>\"]+)</td>").getMatch(0);
+            trafficleft = new Regex(correctedBR, "Traffic Remaining</td>\\s*?<td>\\s*([^<>\"]+)\\s*</td>").getMatch(0);
         }
         return trafficleft;
     }

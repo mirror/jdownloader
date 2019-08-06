@@ -158,7 +158,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         /* 2018-07-19: Special */
         String trafficleftStr = super.regExTrafficLeft();
         if (StringUtils.isEmpty(trafficleftStr)) {
-            trafficleftStr = new Regex(correctedBR, "Usable Bandwidth\\s*<span class=\"[^\"]+\">(\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5}) / [^<]+<").getMatch(0);
+            trafficleftStr = new Regex(correctedBR, "Usable Bandwidth\\s*<span class=\"[^\"]+\">\\s*(\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5}) / [^<]+<").getMatch(0);
         }
         return trafficleftStr;
     }
