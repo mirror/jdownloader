@@ -26,7 +26,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.UrlDisplayType;
 
-@ScriptAPI(description = "The context download list link")
+@ScriptAPI(description = "The context linkgrabber list link")
 public class CrawledLinkSandbox {
     private final CrawledLink                                              link;
     private final static WeakHashMap<CrawledLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<CrawledLink, HashMap<String, Object>>();
