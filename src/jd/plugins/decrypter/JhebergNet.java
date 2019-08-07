@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.net" }, urls = { "https?://(?:www\\.|download\\.)?jheberg\\.net/(captcha|download|mirrors|go|redirect)/[A-Z0-9a-z\\.\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.net" }, urls = { "https?://(?:www\\.|download\\.)?jheberg\\.net/(captcha/|download/|mirrors/|go/|redirect/)?[A-Z0-9a-z\\.\\-_]+" })
 public class JhebergNet extends antiDDoSForDecrypt {
     public JhebergNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,8 +74,8 @@ public class JhebergNet extends antiDDoSForDecrypt {
                 ret.add(dl);
             }
             return ret;
-        } else if (StringUtils.contains(parameter, "/go/") || StringUtils.contains(parameter, "/captcha/")) {
-            final String linkID = new Regex(parameter, "/(go|captcha)/(.*)").getMatch(1);
+        } else {
+            final String linkID = new Regex(parameter, ".+/([A-Z0-9a-z\\.\\-_]+)").getMatch(0);
             getPage("https://download.jheberg.net/go/" + linkID);
             final String fileInfos[] = br.getRegex("<h4>\\s*(.*?)\\s*\\(\\s*<strong>\\s*([0-9\\.]+\\s*[^<]+)\\s*</").getRow(0);
             if (br.getHttpConnection().getResponseCode() == 404 || fileInfos == null || fileInfos.length == 0) {

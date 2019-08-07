@@ -278,18 +278,22 @@ public class Multi extends IExtraction {
                 extractionExtension.getSettings()._getStorageHandler().write();
             }
             final OperatingSystem os = CrossSystem.getOS();
+            final ARCHFamily arch = CrossSystem.getARCHFamily();
+            final boolean is64BitJvm = Application.is64BitJvm();
             switch (os.getFamily()) {
             case BSD:
-                switch (CrossSystem.getARCHFamily()) {
+                switch (arch) {
                 case X86:
                     switch (os) {
                     case DRAGONFLYBSD:
-                        if (Application.is64BitJvm()) {
+                        if (is64BitJvm) {
                             libIDs.add("DragonFlyBSD-amd64");
+                        } else {
+                            logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                         }
                         break;
                     case FREEBSD:
-                        if (Application.is64BitJvm()) {
+                        if (is64BitJvm) {
                             libIDs.add("FreeBSD-amd64");
                             libIDs.remove("FreeBSD-i386");
                             // libIDs.add("FreeBSD-amd64-2");// untested
@@ -298,20 +302,29 @@ public class Multi extends IExtraction {
                             libIDs.remove("FreeBSD-amd64");
                         }
                         break;
+                    case NETBSD:
+                        if (Application.is64BitJvm()) {
+                            libIDs.add("NetBSD-amd64");
+                            libIDs.remove("NetBSD-i386");
+                        } else {
+                            libIDs.add("NetBSD-i386");
+                            libIDs.remove("NetBSD-amd64");
+                        }
+                        break;
                     default:
-                        // Not supported
+                        logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                         break;
                     }
                     break;
                 default:
-                    // Not supported
+                    logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                     break;
                 }
                 break;
             case LINUX:
-                switch (CrossSystem.getARCHFamily()) {
+                switch (arch) {
                 case ARM:
-                    if (Application.is64BitJvm()) {
+                    if (is64BitJvm) {
                         libIDs.add("Linux-aarch64");
                     } else {
                         if (CrossSystem.isRaspberryPi()) {
@@ -325,7 +338,7 @@ public class Multi extends IExtraction {
                     }
                     break;
                 case X86:
-                    if (Application.is64BitJvm()) {
+                    if (is64BitJvm) {
                         libIDs.add("Linux-amd64");
                         libIDs.remove("Linux-i386");
                     } else {
@@ -337,12 +350,12 @@ public class Multi extends IExtraction {
                     libIDs.add("Linux-ppc");
                     break;
                 default:
-                    // Not supported
+                    logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                     break;
                 }
                 break;
             case MAC:
-                if (Application.is64BitJvm()) {
+                if (is64BitJvm) {
                     libIDs.add("Mac-x86_64");
                     libIDs.remove("Mac-i386");
                 } else {
@@ -351,7 +364,7 @@ public class Multi extends IExtraction {
                 }
                 break;
             case WINDOWS:
-                if (Application.is64BitJvm()) {
+                if (is64BitJvm) {
                     libIDs.add("Windows-amd64");
                     libIDs.remove("Windows-x86");
                 } else {
@@ -360,7 +373,7 @@ public class Multi extends IExtraction {
                 }
                 break;
             default:
-                // Not supported
+                logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                 break;
             }
             return checkLibraries(extractionExtension, filter(libIDs));

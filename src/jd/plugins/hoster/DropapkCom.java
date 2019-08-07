@@ -43,12 +43,25 @@ public class DropapkCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dropapk.com" });
+        ret.add(new String[] { "dropapk.to", "dropapk.com" });
         return ret;
     }
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return null;
+        } else {
+            final String mapping = this.getMappedHost(getPluginDomains(), host);
+            if (mapping != null) {
+                return mapping;
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
