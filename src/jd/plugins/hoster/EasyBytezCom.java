@@ -63,6 +63,18 @@ public class EasyBytezCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected void setAccountInfos(Account account, AccountType type) {
+        super.setAccountInfos(account, type);
+        switch (type) {
+        case FREE:
+            account.setConcurrentUsePossible(true);
+            break;
+        default:
+            break;
+        }
+    }
+
+    @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
