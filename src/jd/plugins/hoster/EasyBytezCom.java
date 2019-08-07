@@ -18,16 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
@@ -95,21 +94,10 @@ public class EasyBytezCom extends XFileSharingProBasic {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* 2019-08-06: Special */
         if (AccountType.FREE.equals(account.getType()) && link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft()) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reconnect required to reset free account traffic", 5 * 60 * 1000l);
+            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reconnect required to reset free account traffic", 5 * 60 * 1000l);
+            throw new AccountUnavailableException("Reconnect required to reset free account traffic", 1 * 60 * 1000l);
         }
         super.handlePremium(link, account);
-    }
-
-    @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
-        /* 2019-08-06: Special */
-        if (account != null && AccountType.FREE.equals(account.getType())) {
-            /* Run without Account object so that reconnects are performed whenever the user runs into downloadlimits. */
-            super.checkErrors(link, null, checkAll);
-        } else {
-            /* Default way */
-            super.checkErrors(link, account, checkAll);
-        }
     }
 
     @Override
