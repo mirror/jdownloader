@@ -2518,9 +2518,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (supports_lifetime_account() && is_lifetime_account()) {
             ai.setValidUntil(-1);
-            account.setType(AccountType.LIFETIME);
-            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
-            account.setConcurrentUsePossible(true);
+            setAccountInfos(account, AccountType.LIFETIME);
         } else {
             /* 2019-07-11: It is not uncommon for XFS websites to display expire-dates even though the account is not premium anymore! */
             String expireStr = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -2619,15 +2617,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (expire_milliseconds > 0) {
                     logger.info("Premium expired --> Free account");
                 }
-                account.setType(AccountType.FREE);
-                account.setConcurrentUsePossible(false);
-                account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
+                setAccountInfos(account, AccountType.FREE);
             } else {
                 /* Expire date is in the future --> It is a premium account */
                 ai.setValidUntil(expire_milliseconds, br);
-                account.setType(AccountType.PREMIUM);
-                account.setConcurrentUsePossible(true);
-                account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+                setAccountInfos(account, AccountType.PREMIUM);
             }
         }
         return ai;
@@ -2728,15 +2722,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Premium expired --> Free account");
             }
             /* Expired premium or no expire date given --> It is usually a Free Account */
-            account.setType(AccountType.FREE);
-            account.setConcurrentUsePossible(false);
-            account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
+            setAccountInfos(account, AccountType.FREE);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds_precise_to_the_second, br);
-            account.setType(AccountType.PREMIUM);
-            account.setConcurrentUsePossible(true);
-            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            setAccountInfos(account, AccountType.PREMIUM);
         }
         if (!StringUtils.isEmpty(email) && setAndAnonymizeUsername) {
             /* don't store the complete email as a security purpose */
@@ -2761,6 +2751,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setAccountBalance(balance);
         }
         return ai;
+    }
+
+    protected void setAccountInfos(final Account account, final AccountType type) {
+        account.setType(type);
+        switch (type) {
+        case LIFETIME:
+        case PREMIUM:
+            account.setConcurrentUsePossible(true);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            break;
+        case FREE:
+            account.setConcurrentUsePossible(false);
+            account.setMaxSimultanDownloads(getMaxSimultaneousFreeAccountDownloads());
+            break;
+        case UNKNOWN:
+        default:
+            account.setConcurrentUsePossible(false);
+            account.setMaxSimultanDownloads(1);
+            break;
+        }
     }
 
     public Form findLoginform(final Browser br) {

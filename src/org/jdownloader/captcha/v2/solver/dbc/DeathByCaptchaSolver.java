@@ -1,5 +1,6 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -18,9 +19,10 @@ import jd.http.requests.PostFormDataRequest;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -112,7 +114,8 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             } else if (challenge instanceof BasicCaptchaChallenge) {
                 type = "Image";
                 final BasicCaptchaChallenge bcc = (BasicCaptchaChallenge) challenge;
-                final byte[] bytes = IO.readFile(bcc.getImageFile());
+                final BufferedImage image = ImageProvider.read(bcc.getImageFile());
+                final byte[] bytes = IconIO.toJpgBytes(image);
                 r.addFormData(new FormData("swid", "0"));
                 r.addFormData(new FormData("challenge", ""));
                 r.addFormData(new FormData("captchafile", "captcha", "application/octet-stream", bytes));
