@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Date;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +34,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends antiDDoSForHost {
@@ -83,7 +83,7 @@ public class HighpornNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         getPage(url_source);
-        dllink = br.getRegex("data-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        dllink = br.getRegex("data-src=\"(https?[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         if (jd.plugins.decrypter.HighpornNet.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -138,7 +138,7 @@ public class HighpornNet extends antiDDoSForHost {
             link.setName(filename);
         }
         if (!isSingleVideo) {
-            PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+            PostRequest postRequest = new PostRequest("https://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
             postRequest.setContentType("application/x-www-form-urlencoded");
             postRequest.put("v", fid);
             postRequest.put("source_play", "highporn");
@@ -163,7 +163,7 @@ public class HighpornNet extends antiDDoSForHost {
         dllink = downloadLink.getStringProperty("directlink");
         if (!isSingleVideo) {
             fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-            PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+            PostRequest postRequest = new PostRequest("https://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
             postRequest.setContentType("application/x-www-form-urlencoded");
             postRequest.addVariable("v", fid);
             postRequest.addVariable("source_play", "highporn");

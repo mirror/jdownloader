@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net", "tanix.net", "japanhub.net", "thatav.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tanix\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?japanhub\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?thatav\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
@@ -53,7 +53,7 @@ public class HighpornNet extends PluginForDecrypt {
         }
         final String fpName = getTitle(br, parameter);
         boolean singleVideo = false;
-        final String videoLink = br.getRegex("data-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        final String videoLink = br.getRegex("data-src=\"(https?[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         String[] videoIDs = br.getRegex("data-src=\"(\\d+)\"").getColumn(0);
         if (videoIDs == null || videoIDs.length == 0) {
             if (videoLink == null) {
@@ -79,12 +79,12 @@ public class HighpornNet extends PluginForDecrypt {
             if (singleVideo) {
                 dl.setProperty("singlevideo", true);
             } else {
-                PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+                PostRequest postRequest = new PostRequest("https://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
                 postRequest.setContentType("application/x-www-form-urlencoded");
                 postRequest.addVariable("v", videoID);
                 postRequest.addVariable("source_play", "highporn");
                 String file = br.getPage(postRequest);
-                final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+                final URLConnectionAdapter con = br.cloneBrowser().openGetConnection(file);
                 try {
                     if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
                         dl.setVerifiedFileSize(con.getCompleteContentLength());
