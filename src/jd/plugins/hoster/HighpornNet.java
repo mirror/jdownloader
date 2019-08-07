@@ -62,6 +62,7 @@ public class HighpornNet extends antiDDoSForHost {
     private String              dllink            = null;
     private String              fid               = null;
     private boolean             server_issues     = false;
+    boolean                     isSingleVideo     = false;
     private SubConfiguration    cfg               = getPluginConfig();
 
     @Override
@@ -73,6 +74,7 @@ public class HighpornNet extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         server_issues = false;
+        isSingleVideo = link.getBooleanProperty("singlevideo", false);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String url_source = link.getStringProperty("mainlink", null);
@@ -135,33 +137,38 @@ public class HighpornNet extends antiDDoSForHost {
             /* We cannot be sure whether we have the correct extension or not! */
             link.setName(filename);
         }
-        PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
-        postRequest.setContentType("application/x-www-form-urlencoded");
-        postRequest.put("v", fid);
-        postRequest.put("source_play", "highporn");
-        String file = br.getPage(postRequest);
-        final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
-        try {
-            if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+        if (!isSingleVideo) {
+            PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+            postRequest.setContentType("application/x-www-form-urlencoded");
+            postRequest.put("v", fid);
+            postRequest.put("source_play", "highporn");
+            String file = br.getPage(postRequest);
+            final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+            try {
+                if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+            } finally {
+                con.disconnect();
             }
-        } finally {
-            con.disconnect();
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        isSingleVideo = downloadLink.getBooleanProperty("singlevideo", false);
         final boolean resumes = cfg.getBooleanProperty("Allow_resume", true);
         logger.info("resumes: " + resumes);
         dllink = downloadLink.getStringProperty("directlink");
-        fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
-        postRequest.setContentType("application/x-www-form-urlencoded");
-        postRequest.addVariable("v", fid);
-        postRequest.addVariable("source_play", "highporn");
-        dllink = br.getPage(postRequest);
+        if (!isSingleVideo) {
+            fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+            postRequest.setContentType("application/x-www-form-urlencoded");
+            postRequest.addVariable("v", fid);
+            postRequest.addVariable("source_play", "highporn");
+            dllink = br.getPage(postRequest);
+        }
         if (dllink != null) {
             // cached downloadlink doesn't have a browser session, which leads to 403.
             br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null));

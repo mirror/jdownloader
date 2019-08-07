@@ -19,6 +19,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,11 +40,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p/mp4|film/\\d+)|https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/[A-Za-z0-9\\-]+/\\d+", "https?://members\\.evilangelnetwork\\.com/[a-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
 public class EvilAngelCom extends antiDDoSForHost {
@@ -311,24 +312,20 @@ public class EvilAngelCom extends antiDDoSForHost {
                 final String host_account = account.getHoster();
                 final String url_main = "http://" + host_account + "/";
                 final Cookies cookies = account.loadCookies("");
+                /* Strange browser object usage is to be able to use this method like static */
                 br = ibr.cloneBrowser();
                 if (host_account.equals("evilangelnetwork.com")) {
-                    getpage = "http://www.evilangelnetwork.com/en/login";
+                    getpage = "https://www.evilangelnetwork.com/en/login";
                 } else if (host_account.equalsIgnoreCase("evilangel.com")) {
-                    getpage = "http://members.evilangel.com/en";
+                    getpage = "https://www.evilangel.com/en/login";
                 } else {
                     /* getpage must have already been set via parameter */
                 }
                 boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
-                    // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                    // /* We trust these cookies --> Do not check them */
-                    // ibr = br.cloneBrowser();
-                    // return;
-                    // }
                     getPage(br, getpage);
-                    if (br.containsHTML(html_loggedin)) {
+                    if (this.isLoggedIn(html_loggedin)) {
                         /* Cookie login successful */
                         loggedIN = true;
                         ibr = br.cloneBrowser();
@@ -348,25 +345,23 @@ public class EvilAngelCom extends antiDDoSForHost {
                     }
                     final Form login = br.getFormbyProperty("id", "loginForm");
                     if (login == null) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     {
-                        final Date d = new Date();
-                        SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-                        final String date = sd.format(d);
-                        sd = new SimpleDateFormat("k:mm");
-                        final String time = sd.format(d);
-                        final String timedatestring = date + " " + time;
-                        br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
-                        br.setCookie(url_main, "mOffset", "1");
-                        br.setCookie(url_main, "origin", "promo");
-                        br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
+                        final boolean fillTimeFalues = false;
+                        if (fillTimeFalues) {
+                            final Date d = new Date();
+                            SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+                            final String date = sd.format(d);
+                            sd = new SimpleDateFormat("k:mm");
+                            final String time = sd.format(d);
+                            final String timedatestring = date + " " + time;
+                            br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
+                            br.setCookie(url_main, "mOffset", "1");
+                            br.setCookie(url_main, "origin", "promo");
+                            br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
+                        } else {
+                        }
                     }
                     login.setAction("/en/login");
                     login.put("username", Encoding.urlEncode(account.getUser()));
@@ -389,6 +384,8 @@ public class EvilAngelCom extends antiDDoSForHost {
                         }
                     }
                     login.remove("submit");
+                    login.remove("rememberme");
+                    login.put("rememberme", "1");
                     submitForm(login);
                     if (br.containsHTML(">Your account is deactivated for abuse")) {
                         final AccountInfo ai = new AccountInfo();
@@ -396,27 +393,14 @@ public class EvilAngelCom extends antiDDoSForHost {
                         account.setAccountInfo(ai);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    if (br.containsHTML(">Wrong username or password provided. Please try again\\\\.<") || !br.containsHTML(html_loggedin)) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                    if (br.getURL().contains("/reactivate")) {
+                    }
+                    if (!isLoggedIn(html_loggedin)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(host_account), "");
                 ibr = br.cloneBrowser();
-                if (br.containsHTML(">Your membership has expired")) {
-                    /* 2018-04-25 */
-                    final AccountInfo ai = new AccountInfo();
-                    ai.setExpired(true);
-                    account.setAccountInfo(ai);
-                    account.setType(AccountType.FREE);
-                } else {
-                    account.setType(AccountType.PREMIUM);
-                }
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -424,7 +408,10 @@ public class EvilAngelCom extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean isLoggedIn(final String html_loggedin) {
+        return (!br.containsHTML(">Wrong username or password provided. Please try again\\\\.<") && br.containsHTML(html_loggedin)) || br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = account.getAccountInfo() != null ? account.getAccountInfo() : new AccountInfo();
@@ -432,10 +419,19 @@ public class EvilAngelCom extends antiDDoSForHost {
             /* Prevent direct login to prevent login captcha whenever possible */
             loginEvilAngelNetwork(this.br, account, LOGIN_PAGE, HTML_LOGGEDIN);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
-        ai.setUnlimitedTraffic();
+        final String subscriptionStatus = PluginJSonUtils.getJson(br, "subscriptionStatus");
+        if (br.containsHTML(">Your membership has expired") || br.getURL().contains("/reactivate") || "expired".equalsIgnoreCase(subscriptionStatus)) {
+            /* 2018-04-25 */
+            ai.setExpired(true);
+            ai.setTrafficLeft(0);
+            account.setAccountInfo(ai);
+            account.setType(AccountType.FREE);
+        } else {
+            ai.setUnlimitedTraffic();
+            account.setType(AccountType.PREMIUM);
+        }
         return ai;
     }
 
