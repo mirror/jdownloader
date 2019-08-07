@@ -55,7 +55,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -121,7 +121,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private String                  vkwall_graburlsinsideposts_regex_default;
     /* Some supported url patterns */
     private static final String     PATTERN_VALID_PREFIXES                    = "https?://(?:www\\.|new\\.)?";
-    private static final String     PATTERN_SHORT                             = PATTERN_VALID_PREFIXES + "vk\\.cc/[A-Za-z0-9]+";
+    private static final String     PATTERN_SHORT                             = PATTERN_VALID_PREFIXES + "vk\\.cc/.+";
     private static final String     PATTERN_URL_EXTERN                        = PATTERN_VALID_PREFIXES + "vk\\.com/away\\.php\\?to=.+";
     private static final String     PATTERN_GENERAL_AUDIO                     = PATTERN_VALID_PREFIXES + "vk\\.com/audio.*?";
     private static final String     PATTERN_AUDIO_ALBUM                       = PATTERN_VALID_PREFIXES + "vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
@@ -1644,7 +1644,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     photo_list_id = wall_post_owner_ID + "_" + wall_post_reply_content_id;
                 } else {
                     /* Links the post containing the photo */
-                    wall_single_photo_content_url = getProtocol() + this.getHost() + "/wall" + wall_post_ids + "?z=photo" + ownerIDTemp + "_" + contentIDTemp;
+                    wall_single_photo_content_url = getProtocol() + this.getHost() + "/wall" + wall_post_ids + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_ids;
                     photo_list_id = wall_post_ids;
                 }
                 dl = getSinglePhotoDownloadLink(wall_id_info[0] + "_" + wall_id_info[1]);

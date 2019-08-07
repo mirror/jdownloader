@@ -52,6 +52,7 @@ public class HighpornNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = getTitle(br, parameter);
+        boolean singleVideo = false;
         final String videoLink = br.getRegex("data-src=\"(http[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         String[] videoIDs = br.getRegex("data-src=\"(\\d+)\"").getColumn(0);
         if (videoIDs == null || videoIDs.length == 0) {
@@ -61,6 +62,7 @@ public class HighpornNet extends PluginForDecrypt {
             } else {
                 videoIDs = new String[1];
                 videoIDs[0] = (Long.toString(System.currentTimeMillis())); // dummy videoID
+                singleVideo = true;
             }
         }
         final int padLength = getPadLength(videoIDs.length);
@@ -74,20 +76,24 @@ public class HighpornNet extends PluginForDecrypt {
             dl.setProperty("decryptername", filename);
             dl.setProperty("mainlink", parameter);
             dl.setContentUrl(parameter);
-            PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
-            postRequest.setContentType("application/x-www-form-urlencoded");
-            postRequest.addVariable("v", videoID);
-            postRequest.addVariable("source_play", "highporn");
-            String file = br.getPage(postRequest);
-            final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
-            try {
-                if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
-                    dl.setVerifiedFileSize(con.getCompleteContentLength());
+            if (singleVideo) {
+                dl.setProperty("singlevideo", true);
+            } else {
+                PostRequest postRequest = new PostRequest("http://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+                postRequest.setContentType("application/x-www-form-urlencoded");
+                postRequest.addVariable("v", videoID);
+                postRequest.addVariable("source_play", "highporn");
+                String file = br.getPage(postRequest);
+                final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+                try {
+                    if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
+                        dl.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } finally {
+                    con.disconnect();
                 }
-            } finally {
-                con.disconnect();
+                dl.setAvailable(true);
             }
-            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

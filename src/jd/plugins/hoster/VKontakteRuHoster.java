@@ -28,6 +28,13 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,13 +64,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
@@ -312,7 +312,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -475,7 +475,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (downloadLink.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
             // this is for resume of cached link.
             if (finalUrl != null) {
-                if (!photolinkOk(downloadLink, null, false)) {
+                if (!photolinkOk(downloadLink, null, false, finalUrl)) {
                     // failed, lets nuke cached entry and retry.
                     downloadLink.setProperty(PROPERTY_picturedirectlink, Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -887,17 +887,20 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
      */
-    private boolean photolinkOk(final DownloadLink downloadLink, String finalfilename, final boolean isLast) throws Exception {
+    private boolean photolinkOk(final DownloadLink downloadLink, String finalfilename, final boolean isLast, String downloadurl) throws Exception {
+        if (StringUtils.isEmpty(downloadurl)) {
+            return false;
+        }
         final Browser br2 = this.br.cloneBrowser();
         /* Correct final URLs according to users' plugin settings. */
-        photo_correctLink();
+        downloadurl = photo_correctLink(downloadurl);
         /* Ignore invalid urls. Usually if we have such an url the picture is serverside temporarily unavailable. */
-        if (finalUrl.contains("_null_")) {
+        if (downloadurl.contains("_null_")) {
             return false;
         }
         br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, finalUrl, isResumeSupported(downloadLink, finalUrl), getMaxChunks(downloadLink, finalUrl));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, downloadurl, isResumeSupported(downloadLink, downloadurl), getMaxChunks(downloadLink, downloadurl));
             // request range fucked
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
@@ -909,13 +912,13 @@ public class VKontakteRuHoster extends PluginForHost {
                 return false;
             }
             if (!dl.getConnection().getContentType().contains("html")) {
-                finalfilename = photoGetFinalFilename(downloadLink, finalfilename, finalUrl);
+                finalfilename = photoGetFinalFilename(downloadLink, finalfilename, downloadurl);
                 if (finalfilename == null) {
                     /* This should actually never happen. */
                     finalfilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
                 }
                 downloadLink.setFinalFileName(finalfilename);
-                downloadLink.setProperty(PROPERTY_picturedirectlink, finalUrl);
+                downloadLink.setProperty(PROPERTY_picturedirectlink, downloadurl);
                 dl.startDownload();
                 return true;
             } else {
@@ -925,14 +928,14 @@ public class VKontakteRuHoster extends PluginForHost {
                 return false;
             }
         } catch (final BrowserException ebr) {
-            logger.info("BrowserException on directlink: " + finalUrl);
+            logger.info("BrowserException on directlink: " + downloadurl);
             logger.log(ebr);
             if (isLast) {
                 throw ebr;
             }
             return false;
         } catch (final ConnectException ec) {
-            logger.info("Directlink timed out: " + finalUrl);
+            logger.info("Directlink timed out: " + downloadurl);
             logger.log(ec);
             if (isLast) {
                 throw ec;
@@ -1230,7 +1233,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 links_count++;
                 if (checkDownloadability) {
                     /* Make sure that url is downloadable */
-                    if (photolinkOk(dl, null, "m_".equals(q))) {
+                    if (photolinkOk(dl, null, "m_".equals(q), dllink)) {
                         return dllink;
                     }
                 } else {
@@ -1343,7 +1346,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 dllink += ".jpg";
             }
             directurl = dllink;
-            success = photolinkOk(dl, null, true);
+            success = photolinkOk(dl, null, true, directurl);
         }
         if (!foundValidURL) {
             logger.info("No saved downloadlink available");
@@ -1359,48 +1362,53 @@ public class VKontakteRuHoster extends PluginForHost {
      * Changes server of picture links if wished by user - if not it will change them back to their "original" format. On error (server does
      * not match expected) it won't touch the current finallink at all! Only use this for photo links!
      */
-    private void photo_correctLink() {
+    private String photo_correctLink(String downloadurl) {
+        if (downloadurl == null) {
+            return null;
+        }
         if (true || this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
-            if (finalUrl.matches("https://pp\\.vk\\.me/c\\d+/.+")) {
-                logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> final link is already in desired format ::: " + finalUrl);
+            if (downloadurl.matches("https://pp\\.vk\\.me/c\\d+/.+")) {
+                logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> final link is already in desired format ::: " + downloadurl);
             } else {
                 /*
                  * Correct server to get files that are otherwise inaccessible - note that this can also make the finallinks unusable (e.g.
                  * server returns errorcode 500 instead of the file) but this is a very rare problem.
                  */
-                final String was = finalUrl;
-                final String oldserver = new Regex(finalUrl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
-                final String serv_id = new Regex(finalUrl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
+                final String was = downloadurl;
+                final String oldserver = new Regex(downloadurl, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
+                final String serv_id = new Regex(downloadurl, "cs(\\d+)\\.vk\\.me/").getMatch(0);
                 if (oldserver != null && serv_id != null) {
                     final String newserver = "https://pp.vk.me/c" + serv_id + "/";
-                    finalUrl = finalUrl.replace(oldserver, newserver);
-                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink ::: Was = " + was + " Now = " + finalUrl);
+                    downloadurl = downloadurl.replace(oldserver, newserver);
+                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink ::: Was = " + was + " Now = " + downloadurl);
                 } else {
-                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink ::: " + finalUrl);
+                    logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink ::: " + downloadurl);
                 }
             }
+            return downloadurl;
         } else {
             // disabled as it fucks up links - raztoki20160612
             if (true) {
-                return;
+                return null;
             }
             logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLED --> changing final link back to standard");
-            if (finalUrl.matches("http://cs\\d+\\.vk\\.me/v\\d+/.+")) {
+            if (downloadurl.matches("http://cs\\d+\\.vk\\.me/v\\d+/.+")) {
                 logger.info("final link is already in desired format --> Doing nothing");
             } else {
                 /* Correct links to standard format */
-                final Regex dataregex = new Regex(finalUrl, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
+                final Regex dataregex = new Regex(downloadurl, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
                 final String serv_id = dataregex.getMatch(1);
                 final String oldserver = dataregex.getMatch(0) + serv_id + "/";
                 if (oldserver != null && serv_id != null) {
                     final String newserver = "http://cs" + serv_id + ".vk.me/";
-                    finalUrl = finalUrl.replace(oldserver, newserver);
+                    downloadurl = downloadurl.replace(oldserver, newserver);
                     logger.info("VKPHOTO_CORRECT_FINAL_LINKS disabled --> SUCCEEDED to revert corrected finallink");
                 } else {
                     logger.warning("VKPHOTO_CORRECT_FINAL_LINKS disabled --> FAILED to revert corrected finallink");
                 }
             }
         }
+        return null;
     }
 
     /** Returns photoID in url-form: oid_id (userID_pictureID). */
