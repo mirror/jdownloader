@@ -258,7 +258,7 @@ public class VKontakteRu extends PluginForDecrypt {
             /**
              * Single photo links, those are just passed to the hoster plugin! Example:http://vk.com/photo125005168_269986868
              */
-            final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(CRYPTEDLINK_ORIGINAL, "photo((?:\\-)?\\d+_\\d+)").getMatch(0));
+            final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(CRYPTEDLINK_ORIGINAL, "photo((?:\\-)?\\d+_\\d+)").getMatch(0), null);
             decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
         } else if (isSingleVideo(CRYPTEDLINK_ORIGINAL)) {
@@ -850,7 +850,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 albumID = "tag" + new Regex(content_id, "\\?tag=(\\d+)").getMatch(0);
             }
             /* Pass those goodies over to the hosterplugin */
-            final DownloadLink dl = getSinglePhotoDownloadLink(content_id);
+            final DownloadLink dl = getSinglePhotoDownloadLink(content_id, null);
             final String linkid = albumID + "_" + content_id;
             dl.setProperty("albumid", albumID);
             dl.setLinkID(LINKID_PREFIX + linkid);
@@ -859,13 +859,14 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
+    private DownloadLink getSinglePhotoDownloadLink(final String photoID, final String picture_pewview_json) throws IOException {
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
         dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
         if (fastcheck_photo) {
             dl.setAvailable(true);
         }
-        dl.setName(photoID);
+        final String tempFilename = jd.plugins.hoster.VKontakteRuHoster.photoGetFinalFilename(photoID, null, null);
+        dl.setName(tempFilename);
         dl.setContentUrl(getProtocol() + "vk.com/photo" + photoID);
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
         return dl;
@@ -1178,7 +1179,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     content_id = typeObject.get("pid").toString();
                     final String album_id = typeObject.get("aid").toString();
                     final String wall_single_photo_content_url = getProtocol() + "vk.com/wall" + ownerID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
-                    dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+                    dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
                     /*
                      * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
                      */
@@ -1636,7 +1637,18 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String[] wall_id_info = photoIDs.split("_");
                 ownerIDTemp = wall_id_info[0];
                 contentIDTemp = wall_id_info[1];
+                String picture_preview_json = null;
+                final String photo_info = new Regex(html, "showPhoto\\([^\\)]*?" + photoIDs + "[^\\)]*?\\)").getMatch(-1);
+                if (photo_info != null) {
+                    picture_preview_json = new Regex(photo_info, "\\{(?:\"|\\&quot;)base(?:\"|\\&quot;).*?\\}").getMatch(-1);
+                }
                 String wall_single_photo_content_url;
+                /*
+                 * 2019-08-08: This is a debug/workaround switch. Default = true. If disabled, the way picture downloads are requested
+                 * changes and some which may have failed before might be downloadable now but it will more likely happen that a
+                 * "Too many requests in a short time" message appears then!
+                 */
+                final boolean set_photo_list_id = true;
                 final String photo_list_id;
                 if (wall_post_reply_content_id != null) {
                     /* Links photo 'directly' */
@@ -1656,7 +1668,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     wall_single_photo_content_url = getProtocol() + this.getHost() + "/wall" + wall_post_ids + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_ids;
                     photo_list_id = wall_post_ids;
                 }
-                dl = getSinglePhotoDownloadLink(wall_id_info[0] + "_" + wall_id_info[1]);
+                dl = getSinglePhotoDownloadLink(wall_id_info[0] + "_" + wall_id_info[1], picture_preview_json);
                 /*
                  * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
                  */
@@ -1664,17 +1676,14 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setProperty("postID", wall_post_content_id);
                 dl.setProperty("albumid", Property.NULL);
                 dl.setProperty("owner_id", ownerIDTemp);
-                dl.setProperty("photo_list_id", photo_list_id);
+                if (set_photo_list_id) {
+                    dl.setProperty("photo_list_id", photo_list_id);
+                }
                 dl.setProperty("photo_module", "wall");
                 if (store_picture_directurls) {
-                    String directurls_json = null;
-                    final String photo_info = new Regex(html, "showPhoto\\([^\\)]*?" + photoIDs + "[^\\)]*?\\)").getMatch(-1);
-                    if (photo_info != null) {
-                        directurls_json = new Regex(photo_info, "\\{(?:\"|\\&quot;)base(?:\"|\\&quot;).*?\\}").getMatch(-1);
-                    }
-                    if (directurls_json != null) {
-                        directurls_json = Encoding.htmlDecode(directurls_json);
-                        dl.setProperty(jd.plugins.hoster.VKontakteRuHoster.PROPERTY_directurls_fallback, directurls_json);
+                    if (picture_preview_json != null) {
+                        picture_preview_json = Encoding.htmlDecode(picture_preview_json);
+                        dl.setProperty(jd.plugins.hoster.VKontakteRuHoster.PROPERTY_directurls_fallback, picture_preview_json);
                     }
                 }
                 decryptedLinks.add(dl);
@@ -1730,7 +1739,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo((?:\\-)?\\d+)_\\d+").getMatch(0);
         final String content_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo(?:\\-)?\\d+_(\\d+)").getMatch(0);
-        final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+        final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
         final String linkid = owner_id + "_" + content_id;
         dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
@@ -1774,7 +1783,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             final String filename = stringdata[1];
             final String content_ID = new Regex(docinfo, "^(?:\\[)?(\\d+)").getMatch(0);
-            final DownloadLink dl = getSinglePhotoDownloadLink("https://vk.com/doc" + owner_ID + "_" + content_ID);
+            final DownloadLink dl = getSinglePhotoDownloadLink("https://vk.com/doc" + owner_ID + "_" + content_ID, null);
             final String linkid = owner_ID + "_" + content_ID;
             dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
             dl.setName(Encoding.htmlDecode(filename));
