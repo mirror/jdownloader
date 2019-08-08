@@ -1641,7 +1641,16 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (wall_post_reply_content_id != null) {
                     /* Links photo 'directly' */
                     wall_single_photo_content_url = getProtocol() + this.getHost() + "/wall" + wall_post_ids + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp;
-                    photo_list_id = wall_post_owner_ID + "_" + wall_post_reply_content_id;
+                    // photo_list_id = wall_post_owner_ID + "_" + wall_post_reply_content_id;
+                    /** 2019-08-08: TODO: Check this and make sure that this ID is correct! */
+                    /*
+                     * 2019-08-08: Not sure whether it is correct to set the wall_post_reply_content_id here. There is either a bug in the
+                     * crawler which leads to the situation that we find a wall_post_reply_content_id here although this is not a reply
+                     * and/or this was wrong before. If a wrong photo_list_id gets set, downloads may fail as the host plugin will be unable
+                     * to find a downloadlink!
+                     */
+                    /* ownerID_replyID */
+                    photo_list_id = wall_post_IDs[0] + "_" + wall_post_reply_content_id;
                 } else {
                     /* Links the post containing the photo */
                     wall_single_photo_content_url = getProtocol() + this.getHost() + "/wall" + wall_post_ids + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + wall_post_ids;

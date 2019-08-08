@@ -13,16 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.dcm.Dcm;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,7 +45,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/index\\.php\\?dlid=\\d+" })
 public class DigitalcomicmuseumCom extends PluginForHost {
-
     public DigitalcomicmuseumCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://digitalcomicmuseum.com/forum/index.php?action=register");
@@ -61,21 +62,20 @@ public class DigitalcomicmuseumCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private String               fid                       = null;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/images/error\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("id='catname'>> <a href='index\\.php\\?dlid=\\d+'>([^<>]*?)</a>").getMatch(0);
+        String filename = br.getRegex("<a href='index\\.php\\?dlid=" + fid + "'>([^<>]*?)</a>").getMatch(0);
         if (filename == null) {
+            /* Fallback */
             filename = fid;
         }
         String filesize = br.getRegex(">Filesize:</td>[\t\n\r ]+<td colspan='2'>([^<>\"]*?)</td>").getMatch(0);
@@ -249,5 +249,4 @@ public class DigitalcomicmuseumCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
