@@ -474,7 +474,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 ai.setValidUntil(-1);
             }
             ai.setSpecialTraffic(userTrafficWorkaround());
-            if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP")) {
+            if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP") && !StringUtils.equalsIgnoreCase(infos.get("group"), "VIP-Special")) {
                 /* VIP do not have traffic usage available via api */
                 final int chosenTrafficLimit = getPluginConfig().getIntegerProperty(TRAFFIC_LIMIT, 0);
                 String trafficmaxlimit = null;
