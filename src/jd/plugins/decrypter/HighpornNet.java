@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
@@ -53,8 +54,8 @@ public class HighpornNet extends PluginForDecrypt {
         }
         final String fpName = getTitle(br, parameter);
         boolean singleVideo = false;
-        final String videoLink = br.getRegex("data-src=\"(https?[^<>\"]+)\"").getMatch(0); // If single link, no videoID
-        String[] videoIDs = br.getRegex("data-src=\"(\\d+)\"").getColumn(0);
+        final String videoLink = br.getRegex("data-src\\s*=\\s*\"(https?[^<>\"]+)\"").getMatch(0); // If single link, no videoID
+        String[] videoIDs = br.getRegex("data-src\\s*=\\s*\"(\\d+)\"").getColumn(0);
         if (videoIDs == null || videoIDs.length == 0) {
             if (videoLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -68,6 +69,9 @@ public class HighpornNet extends PluginForDecrypt {
         final int padLength = getPadLength(videoIDs.length);
         int counter = 0;
         for (final String videoID : videoIDs) {
+            if (isAbort()) {
+                continue;
+            }
             counter++;
             final String orderid_formatted = String.format(Locale.US, "%0" + padLength + "d", counter);
             final String filename = fpName + "_" + orderid_formatted + ".mp4";
@@ -79,18 +83,24 @@ public class HighpornNet extends PluginForDecrypt {
             if (singleVideo) {
                 dl.setProperty("singlevideo", true);
             } else {
-                PostRequest postRequest = new PostRequest("https://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
+                final PostRequest postRequest = new PostRequest("https://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
                 postRequest.setContentType("application/x-www-form-urlencoded");
                 postRequest.addVariable("v", videoID);
                 postRequest.addVariable("source_play", "highporn");
-                String file = br.getPage(postRequest);
-                final URLConnectionAdapter con = br.cloneBrowser().openGetConnection(file);
+                final Browser brc = br.cloneBrowser();
+                final String file = brc.getPage(postRequest);
                 try {
-                    if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
-                        dl.setVerifiedFileSize(con.getCompleteContentLength());
+                    final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+                    // referer check
+                    try {
+                        if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "text")) {
+                            dl.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    } finally {
+                        con.disconnect();
                     }
-                } finally {
-                    con.disconnect();
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
                 dl.setAvailable(true);
             }
@@ -115,7 +125,7 @@ public class HighpornNet extends PluginForDecrypt {
     }
 
     public static String getTitle(final Browser br, final String url) {
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        String title = br.getRegex("property\\s*=\\s*\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (title == null) {
             title = new Regex(url, "video/(.+)").getMatch(0);
         }
