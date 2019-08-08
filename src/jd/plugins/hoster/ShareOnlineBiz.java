@@ -452,6 +452,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         }
     }
 
+    private boolean isVIPGroup(final String group) {
+        return StringUtils.equalsIgnoreCase("VIP-Special", group) || StringUtils.equalsIgnoreCase("VIP", group);
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -474,7 +478,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 ai.setValidUntil(-1);
             }
             ai.setSpecialTraffic(userTrafficWorkaround());
-            if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP") && !StringUtils.equalsIgnoreCase(infos.get("group"), "VIP-Special")) {
+            final String group = infos.get("group");
+            if (!isVIPGroup(group)) {
                 /* VIP do not have traffic usage available via api */
                 final int chosenTrafficLimit = getPluginConfig().getIntegerProperty(TRAFFIC_LIMIT, 0);
                 String trafficmaxlimit = null;
@@ -649,7 +654,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             final String group = account.getStringProperty("group", null);
             if ("Penalty-Premium".equalsIgnoreCase(group)) {
                 max = account_premium_penalty_maxdownloads;
-            } else if ("VIP-Special".equalsIgnoreCase(group) || "VIP".equalsIgnoreCase(group)) {
+            } else if (isVIPGroup(group)) {
                 max = account_premium_vipspecial_maxdownloads;
             } else {
                 final AccountInfo ai = account.getAccountInfo();
@@ -883,7 +888,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         } else {
             // linkcheck otherwise users get banned ip when trying to download offline content. jdlog://3063296763241/
             requestFileInformation(link);
-            final boolean preferHttps = userPrefersHttps() && !StringUtils.equalsIgnoreCase(account.getStringProperty("group", null), "VIP");
+            final boolean preferHttps = userPrefersHttps() && !isVIPGroup(account.getStringProperty("group", null));
             final String linkID = getID(link);
             String dlC = infos.get("dl");
             if (dlC != null && !"not_available".equalsIgnoreCase(dlC)) {

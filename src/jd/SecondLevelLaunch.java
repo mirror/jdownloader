@@ -74,7 +74,6 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.JVMVersion;
 import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -629,9 +628,6 @@ public class SecondLevelLaunch {
                     } else if (javaVersion <= 18006000l) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
                         LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: java version <= 1.8.0_06! Java-" + javaVersion);
-                    } else if (StringUtils.containsIgnoreCase(System.getProperty("java.vm.name"), "OpenJDK") && javaVersion < JVMVersion.JAVA19) {
-                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: OpenJDK VM detected! Java-" + javaVersion);
                     } else if (CFG_GENERAL.CFG.isPreferBouncyCastleForTLS()) {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
                         LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: enabled! Java-" + javaVersion);
