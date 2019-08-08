@@ -146,7 +146,7 @@ public class ImgSrcRu extends PluginForHost {
     private void getDllink() {
         Object result = null;
         String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
-        js = js.replaceFirst("var n=new Image.*?;", "").replaceFirst("n\\.src.*?;", "");
+        js = js.replaceFirst("var n=new Image.*?;", "").replaceFirst("n\\.src.*?;", "").replaceAll("Mousetrap.*?;\\}\\s*\\)\\s*;", "");
         String elementName = new Regex(js, "(?:var|let) [a-z]=(\"|')(.+?)\\1").getMatch(1);
         String imageTag = br.getRegex("<[^>]+'" + Pattern.quote(elementName) + "'[^>]*>").getMatch(-1);
         String varSrc = new Regex(imageTag, "src=(\"|')(.+?)\\1").getMatch(1);

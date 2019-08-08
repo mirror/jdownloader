@@ -20,7 +20,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thundernews.com" }, urls = { "" }) public class ThunderNewsCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thundernews.com" }, urls = { "" })
+public class ThunderNewsCom extends UseNet {
     public ThunderNewsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.thundernews.com/signup.php");
@@ -55,7 +56,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 login = br.getFormbyActionRegex("thundernews\\.com/memlogin\\.php");
                 if (login != null && login.containsHTML("memberid") && login.containsHTML("password")) {
                     br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                } else if (br.getCookie(getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) == null) {
                     br.getCookies(getHost()).clear();
                 }
             }
@@ -85,35 +86,35 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 if (login != null && login.containsHTML("memberid") && login.containsHTML("password")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                if (br.getCookie(getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.getPage("https://www.thundernews.com/members.php");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String accountStatus = br.getRegex(">Account status:.*?<span>(.*?)</span").getMatch(0);
+            final String accountStatus = br.getRegex(">\\s*Account status\\s*:.*?<span>\\s*(.*?)\\s*</span").getMatch(0);
             if (!StringUtils.equalsIgnoreCase(accountStatus, "Active")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account status: " + accountStatus, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            final String userName = br.getRegex("<p>User id:\\s*<span>(.*?)</span></p>").getMatch(0);
+            final String userName = br.getRegex(">\\s*User id\\s*:\\s*<span>\\s*(.*?)\\s*</span>").getMatch(0);
             if (userName == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, userName);
             }
-            final String plan = br.getRegex("<td>Plan:</td>.*?<td class=\"info\">(.*?)</td>").getMatch(0);
+            final String plan = br.getRegex("<td>\\s*Plan\\s*:\\s*</td>.*?<td class=\"info\">\\s*(.*?)\\s*</td>").getMatch(0);
             if (plan != null) {
                 ai.setStatus("Plan: " + plan);
             } else {
                 ai.setStatus("Unknown plan");
             }
-            final String connections = br.getRegex("<td>Connections:</td>.*?<td class=\"info\">(\\d+)&nbsp;Connections</td>").getMatch(0);
+            final String connections = br.getRegex("<td>\\s*Connections\\s*:\\s*</td>.*?<td class=\"info\">(\\d+)&nbsp;\\s*Connections\\s*</td>").getMatch(0);
             if (connections != null) {
                 account.setMaxSimultanDownloads(Integer.parseInt(connections));
             } else {
                 account.setMaxSimultanDownloads(25);
             }
-            final String nextInvoice = br.getRegex("<td>Next Invoice:</td>.*?<td class=\"info\">(\\d+/\\d+/\\d+)</td>").getMatch(0);// month/day/year
+            final String nextInvoice = br.getRegex("<td>\\s*Next Invoice\\s*:\\s*</td>.*?<td class=\"info\">\\s*(\\d+/\\d+/\\d+)\\s*</td>").getMatch(0);// month/day/year
             if (nextInvoice != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(nextInvoice, "MM/dd/yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
             }
