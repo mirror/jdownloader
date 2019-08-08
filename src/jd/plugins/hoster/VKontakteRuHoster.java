@@ -63,6 +63,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
@@ -448,7 +449,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* Now try out fallback URLs and if they fail as well, throw initial Exception! */
                         try {
                             logger.info("Last attempt to find working downloadlink");
-                            finalUrl = getHighestQualityPicFromSavedJson(link);
+                            finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), true);
                         } catch (final Throwable e2) {
                             logger.info("Failed to find any working downloadlink --> Throwing initial Exception");
                             throw e;
@@ -459,13 +460,13 @@ public class VKontakteRuHoster extends PluginForHost {
                 setHeaderRefererPhoto(this.br);
                 final String temp_name;
                 if (this.finalUrl != null) {
-                    temp_name = this.photoGetFinalFilename(link, null, this.finalUrl);
+                    temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
                 } else {
                     if (link.getStringProperty(PROPERTY_directurls_fallback, null) == null) {
                         /* 2019-08-08: Just a hint */
                         logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
                     }
-                    temp_name = this.photoGetFinalFilename(link, null, dllink_temp);
+                    temp_name = photoGetFinalFilename(getPhotoID(link), null, dllink_temp);
                 }
                 if (temp_name != null) {
                     link.setName(temp_name);
@@ -889,7 +890,7 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
      *         is not downloadable!
      */
-    private boolean photolinkOk(final DownloadLink downloadLink, String finalfilename, final boolean isLast, String downloadurl) throws Exception {
+    private boolean photolinkOk(final DownloadLink link, String finalfilename, final boolean isLast, String downloadurl) throws Exception {
         if (StringUtils.isEmpty(downloadurl)) {
             return false;
         }
@@ -902,11 +903,11 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         br2.getHeaders().put("Accept-Encoding", "identity");
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLink, downloadurl, isResumeSupported(downloadLink, downloadurl), getMaxChunks(downloadLink, downloadurl));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br2, link, downloadurl, isResumeSupported(link, downloadurl), getMaxChunks(link, downloadurl));
             // request range fucked
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
-                downloadLink.setChunksProgress(null);
+                link.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (dl.getConnection().getLongContentLength() <= 100 || dl.getConnection().getResponseCode() == 404 || dl.getConnection().getResponseCode() == 502) {
@@ -914,18 +915,18 @@ public class VKontakteRuHoster extends PluginForHost {
                 return false;
             }
             if (!dl.getConnection().getContentType().contains("html")) {
-                finalfilename = photoGetFinalFilename(downloadLink, finalfilename, downloadurl);
+                finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, downloadurl);
                 if (finalfilename == null) {
                     /* This should actually never happen. */
                     finalfilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
                 }
-                downloadLink.setFinalFileName(finalfilename);
-                downloadLink.setProperty(PROPERTY_picturedirectlink, downloadurl);
+                link.setFinalFileName(finalfilename);
+                link.setProperty(PROPERTY_picturedirectlink, downloadurl);
                 dl.startDownload();
                 return true;
             } else {
                 if (isLast) {
-                    handleServerErrors(downloadLink);
+                    handleServerErrors(link);
                 }
                 return false;
             }
@@ -983,20 +984,21 @@ public class VKontakteRuHoster extends PluginForHost {
      * Returns the final filename for photourls based on given circumstances and user-setting
      * VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME .
      */
-    private String photoGetFinalFilename(final DownloadLink dl, String finalfilename, final String directlink) throws MalformedURLException {
+    public static String photoGetFinalFilename(final String photo_id, String finalfilename, final String directlink) throws MalformedURLException {
         final String url_filename = directlink != null ? getFileNameFromURL(new URL(directlink)) : null;
+        final PluginForHost plg = JDUtilities.getPluginForHost("vk.com");
         if (finalfilename != null) {
             /* Do nothing - final filename has already been set (usually this is NOT the case). */
-        } else if (this.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+        } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
             finalfilename = url_filename;
-        } else if (this.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
-            finalfilename = getPhotoID(dl) + " - " + url_filename;
-        } else if (finalUrl != null) {
+        } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+            finalfilename = photo_id + " - " + url_filename;
+        } else if (directlink != null) {
             /* Default filename */
-            finalfilename = getPhotoID(dl) + getFileNameExtensionFromString(finalUrl, ".jpg");
+            finalfilename = photo_id + getFileNameExtensionFromString(directlink, ".jpg");
         } else {
             /* Default filename */
-            finalfilename = getPhotoID(dl) + ".jpg";
+            finalfilename = photo_id + ".jpg";
         }
         return finalfilename;
     }
@@ -1188,7 +1190,7 @@ public class VKontakteRuHoster extends PluginForHost {
      *
      * @param checkDownloadability
      *            true: Return best quality which also can be downloaded <br/>
-     *            false: return best quality downloadurl without checking
+     *            false: return best quality downloadurl without checking whether it is downloadable or not
      */
     @SuppressWarnings({ "unchecked" })
     private String getHighestQualityPictureDownloadurl(final DownloadLink dl, final boolean checkDownloadability) throws Exception {
@@ -1307,36 +1309,41 @@ public class VKontakteRuHoster extends PluginForHost {
      * PROPERTY_directurls_fallback on the DownloadLink.
      *
      * @throws IOException
+     * @param checkDownloadability
+     *            true: Return best quality which also can be downloaded <br/>
+     *            false: return best quality downloadurl without checking whether it is downloadable or not
      */
     @SuppressWarnings({ "unchecked" })
-    private String getHighestQualityPicFromSavedJson(final DownloadLink dl) throws Exception {
-        final String saved_json = dl.getStringProperty(PROPERTY_directurls_fallback, null);
+    private String getHighestQualityPicFromSavedJson(final DownloadLink link, final String picture_preview_json, final boolean checkDownloadability) throws Exception {
         String dllink = null;
-        if (saved_json != null) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(saved_json);
-            final String base = (String) entries.get("base");
-            final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-            int qualityMax = 0;
-            int qualityTemp = 0;
-            String dllink_temp = null;
-            while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                final Object picO = entry.getValue();
-                /* Skip invalid objects */
-                if (!(picO instanceof ArrayList)) {
-                    continue;
+        if (picture_preview_json != null) {
+            try {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(picture_preview_json);
+                final String base = (String) entries.get("base");
+                final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                int qualityMax = 0;
+                int qualityTemp = 0;
+                String dllink_temp = null;
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final Object picO = entry.getValue();
+                    /* Skip invalid objects */
+                    if (!(picO instanceof ArrayList)) {
+                        continue;
+                    }
+                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) picO;
+                    qualityTemp = (int) JavaScriptEngineFactory.toLong(ressourcelist.get(1), 0);
+                    dllink_temp = (String) ressourcelist.get(0);
+                    if (qualityTemp > qualityMax) {
+                        qualityMax = qualityTemp;
+                        dllink = dllink_temp;
+                    }
                 }
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) picO;
-                qualityTemp = (int) JavaScriptEngineFactory.toLong(ressourcelist.get(1), 0);
-                dllink_temp = (String) ressourcelist.get(0);
-                if (qualityTemp > qualityMax) {
-                    qualityMax = qualityTemp;
-                    dllink = dllink_temp;
+                if (dllink != null && !dllink.startsWith("http") && !StringUtils.isEmpty(base)) {
+                    /* Sometimes base is empty and already contained in dllink! */
+                    dllink = base + dllink;
                 }
-            }
-            if (dllink != null && !dllink.startsWith("http") && !StringUtils.isEmpty(base)) {
-                /* Sometimes base is empty and already contained in dllink! */
-                dllink = base + dllink;
+            } catch (final Throwable e) {
             }
         }
         boolean success = false;
@@ -1348,7 +1355,11 @@ public class VKontakteRuHoster extends PluginForHost {
                 dllink += ".jpg";
             }
             directurl = dllink;
-            success = photolinkOk(dl, null, true, directurl);
+            if (checkDownloadability) {
+                success = photolinkOk(link, null, true, directurl);
+            } else {
+                return directurl;
+            }
         }
         if (!foundValidURL) {
             logger.info("No saved downloadlink available");
