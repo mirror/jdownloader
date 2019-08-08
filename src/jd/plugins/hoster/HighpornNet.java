@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Date;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,9 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
 public class HighpornNet extends antiDDoSForHost {
@@ -58,6 +58,10 @@ public class HighpornNet extends antiDDoSForHost {
     private static final String default_extension = ".mp4";
     /* Connection stuff */
     private final int           free_maxchunks    = 1;
+    /*
+     * 2019-08-08: More than one is possible but will cause a lot of connection issues. Also a lot of videos will not play via browser and
+     * need multiple restarts to complete, even with only 1 simultaneous download!
+     */
     private final int           free_maxdownloads = 1;
     private String              dllink            = null;
     private String              fid               = null;
@@ -190,6 +194,7 @@ public class HighpornNet extends antiDDoSForHost {
                 final Browser br = this.br.cloneBrowser();
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 postPage(br, "/play.php", "v=" + fid);
+                handleResponsecodeErrors(dl.getConnection().getResponseCode());
                 dllink = br.toString();
                 if (br.toString().equals("fail")) {
                     server_issues = true;
@@ -210,11 +215,7 @@ public class HighpornNet extends antiDDoSForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
+                handleResponsecodeErrors(dl.getConnection().getResponseCode());
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable e) {
@@ -224,6 +225,17 @@ public class HighpornNet extends antiDDoSForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private void handleResponsecodeErrors(final int responsecode) throws PluginException {
+        switch (responsecode) {
+        case 403:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        case 404:
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        default:
+            break;
+        }
     }
 
     private void setConfigElements() {

@@ -461,6 +461,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (this.finalUrl != null) {
                     temp_name = this.photoGetFinalFilename(link, null, this.finalUrl);
                 } else {
+                    if (link.getStringProperty(PROPERTY_directurls_fallback, null) == null) {
+                        /* 2019-08-08: Just a hint */
+                        logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
+                    }
                     temp_name = this.photoGetFinalFilename(link, null, dllink_temp);
                 }
                 if (temp_name != null) {
@@ -750,7 +754,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Doc-links and other links with permission can be downloaded without login */
@@ -765,7 +768,6 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private boolean checkNoLoginNeeded(final DownloadLink dl) {
         boolean noLogin = dl.getBooleanProperty("nologin", false);
         if (!noLogin) {
