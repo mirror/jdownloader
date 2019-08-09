@@ -62,7 +62,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         CIPHERSUITES = INIT_CIPHER_SUITES();
     }
 
-    private static int[] filterCipherSuites(int[] cipherSuites, Set<String> disabledCipherSuites) {
+    private static int[] getEnabledCipherSuites(int[] cipherSuites, Set<String> disabledCipherSuites) {
         if (disabledCipherSuites == null || disabledCipherSuites.size() == 0) {
             return cipherSuites;
         } else {
@@ -228,7 +228,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         final boolean sniEnabled = !StringUtils.isEmpty(hostName) && (options == null || options.isSNIEnabled());
         java.security.SecureRandom secureRandom = new java.security.SecureRandom();
         final TlsClientProtocol protocol = new TlsClientProtocol(socketStream.getInputStream(), socketStream.getOutputStream(), secureRandom);
-        final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName, sniEnabled, filterCipherSuites(CIPHERSUITES, options != null ? options.getDisabledCipherSuites() : null));
+        final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName, sniEnabled, getEnabledCipherSuites(CIPHERSUITES, options != null ? options.getDisabledCipherSuites() : null));
         protocol.connect(client);
         final Integer selectedCipherSuite = client.getSelectedCipherSuite();
         final String selectedCipherSuiteName = getCipherSuiteName(selectedCipherSuite);
