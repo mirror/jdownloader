@@ -261,7 +261,12 @@ public class YetiShareCore extends antiDDoSForHost {
         return new String[2];
     }
 
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         setWeakFilename(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -272,6 +277,12 @@ public class YetiShareCore extends antiDDoSForHost {
             if (supports_availablecheck_over_info_page()) {
                 getPage(link.getPluginPatternMatcher() + "~i");
                 if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
+                    /*
+                     * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
+                     * to redirect to a error-page so we would not be able to see any filename information at this stage but the file may
+                     * not be offline!
+                     */
+                    this.checkErrors(link, account);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
@@ -284,6 +295,12 @@ public class YetiShareCore extends antiDDoSForHost {
                     return AvailableStatus.TRUE;
                 }
                 if (isOfflineWebsite(link, true)) {
+                    /*
+                     * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
+                     * to redirect to a error-page so we would not be able to see any filename information at this stage but the file may
+                     * not be offline!
+                     */
+                    this.checkErrors(link, account);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
@@ -891,6 +908,10 @@ public class YetiShareCore extends antiDDoSForHost {
      *         false: User can start new downloads right away.
      */
     public boolean isWaitBetweenDownloadsURL() {
+        /**
+         * 2019-08-09: Maybe try to change errorhandling to work via their language-strings so we could make it language-independant e.g.
+         * for this case: "error_you_must_wait_between_downloads"
+         */
         String url = br.getURL();
         if (url != null && url.contains("%")) {
             url = Encoding.htmlDecode(url);
@@ -1167,7 +1188,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         login(account, false);
         br.setFollowRedirects(false);
         getPage(link.getPluginPatternMatcher());
