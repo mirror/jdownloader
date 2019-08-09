@@ -13,6 +13,7 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,6 +34,7 @@ public class RedTubeCom extends PluginForHost {
     private static final boolean default_allow_multihoster_usage = false;
     private String               dllink                          = null;
     private boolean              server_issues                   = false;
+    private boolean              private_video                   = false;
 
     private void setConfigElements() {
         String user_text;
@@ -82,14 +84,14 @@ public class RedTubeCom extends PluginForHost {
         // Offline link
         if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("class=\"video-deleted-info\"") || br.containsHTML("class=\"unavailable_text\"")) {
+        } else if (br.containsHTML("class=\"video-deleted-info\"") || br.containsHTML("class=\"unavailable_text\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
         if (br.containsHTML(">Error Page Not Found|<title>Kostenlose Porno Sexvideos")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        private_video = this.br.containsHTML("class=\"private_video_text\"");
         String fileName = br.getRegex("<h1 class=\"videoTitle[^>]+>(.*?)</h1>").getMatch(0);
         if (fileName == null) {
             fileName = br.getRegex("<title>(.*?) (?:(?:-|\\|)|(?:&#124;)) RedTube[^<]+</title>").getMatch(0);
@@ -157,10 +159,10 @@ public class RedTubeCom extends PluginForHost {
             /* 2017-03-11 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         String ext = new Regex(dllink, "(\\.flv|\\.mp4).+$").getMatch(0);
+        if (ext == null) {
+            ext = ".mp4";
+        }
         if (fileName != null || ext != null) {
             fileName = Encoding.htmlOnlyDecode(fileName);
             link.setName(fileName.trim() + ext);
@@ -189,7 +191,9 @@ public class RedTubeCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (server_issues) {
+        if (private_video) {
+            throw new AccountRequiredException("Private video");
+        } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

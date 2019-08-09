@@ -278,11 +278,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
         boolean loggedInViaCookies = false;
         if (cookies != null) {
             br.setCookies(account.getHoster(), cookies);
-            getPage("https://www." + account.getHoster() + "/");
+            getPage(br, "https://www." + account.getHoster() + "/");
             loggedInViaCookies = isLoggedIn();
         }
         if (!loggedInViaCookies) {
-            getPage("https://www." + account.getHoster() + "/");
+            getPage(br, "https://www." + account.getHoster() + "/");
             postPage(br, "/login.php", "remember=y&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             if (!isLoggedIn()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
