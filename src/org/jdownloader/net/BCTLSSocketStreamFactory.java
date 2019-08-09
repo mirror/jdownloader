@@ -23,10 +23,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.CipherSuite;
@@ -47,7 +49,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
     private static final String                   CIPHERS          = "EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!anon:!eNULL:!DHE:!SRP:!EXPORT:!DES:!MD5:!PSK:!RC4";
     private static final HashMap<Integer, String> CIPHERSUITENAMES = new HashMap<Integer, String>();
     private static int[]                          CIPHERSUITES;
-    {
+    static {
         try {
             final Field[] fields = CipherSuite.class.getFields();
             for (Field field : fields) {
@@ -58,6 +60,29 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             e.printStackTrace();
         }
         CIPHERSUITES = INIT_CIPHER_SUITES();
+    }
+
+    private static int[] filterCipherSuites(int[] cipherSuites, Set<String> disabledCipherSuites) {
+        if (disabledCipherSuites == null || disabledCipherSuites.size() == 0) {
+            return cipherSuites;
+        } else {
+            final List<Integer> enabledCipherSuites = new ArrayList<Integer>();
+            cipherSuites: for (final int cipherSuite : cipherSuites) {
+                final String name = getCipherSuiteName(cipherSuite);
+                for (String disabledCipherSuite : disabledCipherSuites) {
+                    if (StringUtils.containsIgnoreCase(name, disabledCipherSuite)) {
+                        continue cipherSuites;
+                    }
+                }
+                enabledCipherSuites.add(cipherSuite);
+            }
+            final int[] ret = new int[enabledCipherSuites.size()];
+            int index = 0;
+            for (Integer enabledCipherSuite : enabledCipherSuites) {
+                ret[index++] = enabledCipherSuite.intValue();
+            }
+            return ret;
+        }
     }
 
     private static int[] INIT_CIPHER_SUITES() {
@@ -102,26 +127,20 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         return ret;
     }
 
-    private static class BCTLSSocketStreamTlsClient extends DefaultTlsClient {
-        private final String hostName;
+    private class BCTLSSocketStreamTlsClient extends DefaultTlsClient {
+        private final String  hostName;
+        private final int[]   enabledCipherSuites;
+        private final boolean sniEnabled;
 
-        private BCTLSSocketStreamTlsClient(final String hostName) {
+        private BCTLSSocketStreamTlsClient(final String hostName, final boolean sniEnabled, final int[] enabledCipherSuites) {
             this.hostName = hostName;
+            this.enabledCipherSuites = enabledCipherSuites;
+            this.sniEnabled = sniEnabled;
         }
 
         @Override
         public int[] getCipherSuites() {
-            // List<String> def = getCipherSuites(super.getCipherSuites());
-            // List<String> cus = getCipherSuites(CIPHERSUITES);
-            return CIPHERSUITES;
-        }
-
-        private List<String> getCipherSuites(int... ids) {
-            final List<String> ret = new ArrayList<String>();
-            for (int id : ids) {
-                ret.add(CIPHERSUITENAMES.get(id));
-            }
-            return ret;
+            return enabledCipherSuites;
         }
 
         @SuppressWarnings("rawtypes")
@@ -132,7 +151,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
                 clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
             }
             // rfc3546
-            if (StringUtils.isNotEmpty(hostName) && !hostName.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+            if (sniEnabled && StringUtils.isNotEmpty(hostName) && !hostName.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
                 final ByteArrayOutputStream extBaos = new ByteArrayOutputStream();
                 final DataOutputStream extOS = new DataOutputStream(extBaos);
                 final byte[] hostnameBytes = this.hostName.getBytes("UTF-8");
@@ -196,19 +215,23 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         }
     }
 
+    private static String getCipherSuiteName(Integer selectedCipherSuite) {
+        if (CIPHERSUITENAMES.containsKey(selectedCipherSuite)) {
+            return CIPHERSUITENAMES.get(selectedCipherSuite);
+        } else {
+            return selectedCipherSuite.toString();
+        }
+    }
+
     @Override
-    public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String hostName, final int port, final boolean autoclose, final boolean trustAll, final String[] cipherblacklist) throws IOException {
+    public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String hostName, final int port, final boolean autoclose, final SSLSocketStreamOptions options) throws IOException {
+        final boolean sniEnabled = !StringUtils.isEmpty(hostName) && (options == null || options.isSNIEnabled());
         java.security.SecureRandom secureRandom = new java.security.SecureRandom();
         final TlsClientProtocol protocol = new TlsClientProtocol(socketStream.getInputStream(), socketStream.getOutputStream(), secureRandom);
-        final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName);
+        final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName, sniEnabled, filterCipherSuites(CIPHERSUITES, options != null ? options.getDisabledCipherSuites() : null));
         protocol.connect(client);
-        final String cipherSuite;
         final Integer selectedCipherSuite = client.getSelectedCipherSuite();
-        if (CIPHERSUITENAMES.containsKey(selectedCipherSuite)) {
-            cipherSuite = CIPHERSUITENAMES.get(selectedCipherSuite);
-        } else {
-            cipherSuite = selectedCipherSuite.toString();
-        }
+        final String selectedCipherSuiteName = getCipherSuiteName(selectedCipherSuite);
         return new SSLSocketStreamInterface() {
             @Override
             public Socket getSocket() {
@@ -238,7 +261,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
             @Override
             public String getCipherSuite() {
-                return cipherSuite;
+                return selectedCipherSuiteName;
             }
         };
     }
