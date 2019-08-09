@@ -261,7 +261,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
             @Override
             public String getCipherSuite() {
-                return selectedCipherSuiteName;
+                return "BC:" + selectedCipherSuiteName;
             }
         };
     }
