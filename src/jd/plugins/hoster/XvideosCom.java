@@ -166,9 +166,20 @@ public class XvideosCom extends PluginForHost {
         if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
+        String filename = br.getRegex("\"video_title_ori\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
+            filename = br.getRegex("\"video_title\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        }
+        if (filename != null) {
+            filename = Encoding.unicodeDecode(filename);
+            filename = Encoding.htmlDecode(filename);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
+            }
+            filename = Encoding.htmlDecode(filename);
         }
         final String videoID = getVideoID(link);
         if (videoID == null) {
@@ -202,7 +213,7 @@ public class XvideosCom extends PluginForHost {
                         link.setDownloadSize(estimatedSize);
                     }
                     filename = filename.trim() + ".mp4";
-                    link.setFinalFileName(Encoding.htmlDecode(filename));
+                    link.setFinalFileName(filename);
                     return AvailableStatus.TRUE;
                 }
             }
@@ -222,7 +233,7 @@ public class XvideosCom extends PluginForHost {
             streamURL = videoURL;
         }
         filename = filename.trim() + getFileNameExtensionFromString(videoURL, ".mp4");
-        link.setFinalFileName(Encoding.htmlDecode(filename));
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
