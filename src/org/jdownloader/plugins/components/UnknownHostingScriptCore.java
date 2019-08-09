@@ -8,15 +8,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,12 +28,22 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownHostingScriptCore extends antiDDoSForHost {
     public UnknownHostingScriptCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(getPurchasePremiumURL());
     }
+
     // /* 1st domain = current domain! */
     // public static String[] domains = new String[] { "dummyhost.tld" };
     //
@@ -63,7 +64,6 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     // final String host = getHostsPattern();
     // return new String[] { host + "/[A-Za-z0-9]+(?:/[^/<>]+)?" };
     // }
-
     //
     // /** Returns '(?:domain1|domain2)' */
     // private static String getHostsPatternPart() {
@@ -605,10 +605,8 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return br;
     }
 
-    private static final Object LOCK = new Object();
-
     private void login(final Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBrowser(this.br, account.getHoster());
@@ -650,7 +648,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -663,11 +663,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         if (br.getURL() == null) {
             getPage(this.getMainPage());
         }
@@ -778,9 +774,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         final boolean setWeakFilename = link.getName() == null || (weak_fallback_filename != null && weak_fallback_filename.length() > link.getName().length());
         if (setWeakFilename) {
             link.setName(weak_fallback_filename);
-            /// * TODO: Find better way to determine whether a String contains a file-extension or not. */
+            // / * TODO: Find better way to determine whether a String contains a file-extension or not. */
             // final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null &&
-            /// weak_fallback_filename.contains(".");
+            // / weak_fallback_filename.contains(".");
             // if (!fallback_filename_contains_file_extension) {
             // /* Only setMimeHint if weak filename does not contain filetype. */
             // if (this.isAudiohoster()) {
