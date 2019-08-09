@@ -63,8 +63,8 @@ public class EasyBytezCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void setAccountInfos(Account account, AccountType type) {
-        super.setAccountInfos(account, type);
+    protected void setAccountLimitsByType(Account account, AccountType type) {
+        super.setAccountLimitsByType(account, type);
         switch (type) {
         case FREE:
             account.setConcurrentUsePossible(true);

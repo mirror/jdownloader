@@ -282,16 +282,20 @@ public class DatoidCz extends antiDDoSForHost {
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
-            /* Allow downloads without credits, see comments in handlePremium! */
-            ai.setSpecialTraffic(true);
         }
+        /* Allow downloads without credits, see comments in handlePremium! */
+        ai.setSpecialTraffic(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (account.getType() == AccountType.FREE) {
-            /* 2019-08-25: Free accounts may not have any credits (= premium traffic) but are required to e.g. download files > 1 GB. */
+        /*
+         * 2019-08-25: Free accounts may not have any credits (= premium traffic) but are required to e.g. download files > 1 GB. The same
+         * accounts for premium accounts which do not have enough traffic left.
+         */
+        final boolean enforceFreeDownload = account.getType() == AccountType.FREE || link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft();
+        if (enforceFreeDownload) {
             loginWebsite(account);
             handleFree(link);
         } else {

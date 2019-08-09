@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -45,7 +47,6 @@ public class SrfCh extends PluginForHost {
         return "http://www.srf.ch/allgemeines/impressum";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -58,7 +59,7 @@ public class SrfCh extends PluginForHost {
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>]*?) \\- Play [^\"]+\"").getMatch(0);
         if (filename == null) {
             /* Get filename via url */
-            filename = new Regex(link.getDownloadURL(), "/([^/]+)\\?id=.+").getMatch(0);
+            filename = new Regex(link.getPluginPatternMatcher(), "/([^/]+)\\?id=.+").getMatch(0);
             filename = filename.replace("-", " ");
         }
         if (filename == null) {
@@ -79,9 +80,9 @@ public class SrfCh extends PluginForHost {
         final String videoid = new Regex(downloadLink.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
         final String channelname = convertDomainPartToShortChannelName(domainpart);
         /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
-        final boolean useV2 = false;
+        final boolean useV2 = true;
         if (useV2) {
-            br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/urn:rts:video:" + videoid + ".json?onlyChapters=true&vector=portalplay");
+            this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/urn:rts:video:" + videoid + ".json?onlyChapters=true&vector=portalplay");
         } else {
             this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".json");
         }
@@ -114,6 +115,36 @@ public class SrfCh extends PluginForHost {
                     /* Skip unsupported protocol */
                     logger.info("Skipping protocol: " + protocol);
                     continue;
+                }
+            }
+            if (!StringUtils.isEmpty(url_hls_master)) {
+                /* Sign URL */
+                String acl = new Regex(url_hls_master, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
+                if (acl == null) {
+                    logger.warning("Failed to find acl");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                acl += "/*";
+                br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) entries.get("token");
+                /* 2019-08-09: TODO: Cleanup this encoding mess ... */
+                String authparams = (String) entries.get("authparams");
+                if (StringUtils.isEmpty(authparams)) {
+                    logger.warning("Failed to find authparams");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
+                authparams = URLEncode.encodeURIComponent(authparams);
+                authparams = authparams.replace("*", "%2A");
+                url_hls_master += "&hdnts=" + authparams;
+                final String param_caption = new Regex(url_hls_master, "caption=([^\\&]+)").getMatch(0);
+                if (param_caption != null) {
+                    String param_caption_new = param_caption;
+                    param_caption_new = Encoding.htmlDecode(param_caption_new);
+                    param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
+                    param_caption_new = param_caption_new.replace("%3D", "=");
+                    url_hls_master = url_hls_master.replace(param_caption, param_caption_new);
                 }
             }
         } else {
@@ -186,8 +217,13 @@ public class SrfCh extends PluginForHost {
             this.dl.startDownload();
         } else if (url_hls_master != null) {
             /* Prefer hls over rtmp but sometimes only one of both is available. */
+            /* 2019-08-09: These headers are not necessarily needed */
             logger.info("Downloading hls");
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Origin", "https://player.rts.ch");
+            br.getHeaders().put("Sec-Fetch-Site", "cross-site");
             this.br.getPage(url_hls_master);
+            /* 2019-08-09: This will also return error 403 for wrongly signed URLs! */
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 if (geoblock_reason != null) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked: " + geoblock_reason);

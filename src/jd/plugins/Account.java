@@ -24,12 +24,6 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -40,6 +34,12 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
     private static final String VALID_UNTIL                    = "VALID_UNTIL";
@@ -152,6 +152,11 @@ public class Account extends Property {
 
     /**
      * @since JD2
+     *
+     *        true = Multiple accounts of this host can be used at the same time <br/>
+     *        false = Multiple accounts of this host can NOT be used at the same time. <br/>
+     *        For most hosts, this should be set to false for free accounts as the traffic limit of those sits on current IP + account which
+     *        means that if a traffic-limit of one free account is reached, all accounts will be out of traffic!
      */
     public void setConcurrentUsePossible(boolean concurrentUsePossible) {
         this.concurrentUsePossible = concurrentUsePossible;
