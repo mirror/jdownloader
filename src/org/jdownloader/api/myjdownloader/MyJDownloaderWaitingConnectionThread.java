@@ -24,6 +24,7 @@ import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper;
@@ -180,7 +181,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                     }
                                 };
                                 if (addr.getPort() == 443) {
-                                    socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, true, null);
+                                    socketStream = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory().create(socketStream, SocketConnection.getHostName(addr), 443, true, new SSLSocketStreamOptions(true));
                                 }
                                 final OutputStream os = socketStream.getOutputStream();
                                 os.write(("DEVICE" + request.getSession().getSessionToken()).getBytes(ISO_8859_1));
