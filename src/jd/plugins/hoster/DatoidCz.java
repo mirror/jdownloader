@@ -294,8 +294,8 @@ public class DatoidCz extends antiDDoSForHost {
          * 2019-08-25: Free accounts may not have any credits (= premium traffic) but are required to e.g. download files > 1 GB. The same
          * accounts for premium accounts which do not have enough traffic left.
          */
-        final boolean enforceFreeDownload = account.getType() == AccountType.FREE || link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft();
-        if (enforceFreeDownload) {
+        final boolean enforceFreeAccountDownload = account.getType() == AccountType.FREE || link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft();
+        if (enforceFreeAccountDownload) {
             loginWebsite(account);
             handleFree(link);
         } else {
