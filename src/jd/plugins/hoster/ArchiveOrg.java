@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,8 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -84,6 +84,9 @@ public class ArchiveOrg extends PluginForHost {
             } else if (con.isOK() && (con.getLongContentLength() > 0 || con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application") || StringUtils.containsIgnoreCase(con.getContentType(), "video"))) {
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setDownloadSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } else if (con.isOK()) { // txt/xml, size not available
+                link.setFinalFileName(getFileNameFromHeader(con));
                 return AvailableStatus.TRUE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
