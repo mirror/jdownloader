@@ -1696,8 +1696,13 @@ public abstract class K2SApi extends PluginForHost {
             if (exception != null) {
                 throw exception;
             }
+            /*
+             * 2019-08-12: Sometimes we will be stuck on e.g. error 400 here. In general it is a better idea to wait and retry later instead
+             * of showing plugin_defect at this stage!
+             */
             logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
         }
         return currentIP;
     }

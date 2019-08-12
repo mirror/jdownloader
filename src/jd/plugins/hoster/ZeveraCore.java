@@ -687,7 +687,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /** true = Account has 'access_token' property, false = Account does not have 'access_token' property. */
-    private boolean setAuthHeader(final Browser br, final Account account) {
+    public static boolean setAuthHeader(final Browser br, final Account account) {
         final String access_token = account.getStringProperty("access_token", null);
         if (access_token != null) {
             br.getHeaders().put("Authorization", "Bearer " + access_token);
@@ -755,7 +755,7 @@ abstract public class ZeveraCore extends UseNet {
         return false;
     }
 
-    private String getAPIKey(final Account account) {
+    public static String getAPIKey(final Account account) {
         return account.getPass().trim();
     }
 

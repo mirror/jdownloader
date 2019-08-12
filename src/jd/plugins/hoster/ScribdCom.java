@@ -48,7 +48,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|audiobook|embeds|read)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
     private final String                  formats    = "formats";
     /** The list of server values displayed to the user */
@@ -207,6 +207,8 @@ public class ScribdCom extends PluginForHost {
         String accountType = null;
         String accountPaymentType = null;
         String expiredateStr = null;
+        /* The userID might be used in our crawler later */
+        String userID = null;
         long expireTimestamp = 0;
         if (fetchDataViaPurchaseHistory) {
             /* 2019-08-12: Alternative way */
@@ -248,6 +250,10 @@ public class ScribdCom extends PluginForHost {
             final String json_account = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.AccountSettings\\.Show, (\\{.*?\\})\\), document\\.getElementById").getMatch(0);
             try {
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_account);
+                final long userIDLong = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "user/id"), 0);
+                if (userIDLong > 0) {
+                    userID = Long.toString(userIDLong);
+                }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "membership_info/plan_info");
                 /* 2019-08-12: E.g. "cancelled_with_valid_to" */
                 accountType = (String) entries.get("type");
@@ -255,6 +261,10 @@ public class ScribdCom extends PluginForHost {
                 expireTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss ZZZ", Locale.ENGLISH);
             } catch (final Throwable e) {
             }
+        }
+        if (StringUtils.isEmpty(userID)) {
+            /* Fallback */
+            userID = br.getRegex("var _user_id\\s*?=\\s*?\"(\\d+)\";").getMatch(0);
         }
         String accountStatus = null;
         if (expireTimestamp > System.currentTimeMillis()) {
@@ -276,6 +286,9 @@ public class ScribdCom extends PluginForHost {
         }
         ai.setStatus(accountStatus);
         ai.setUnlimitedTraffic();
+        if (!StringUtils.isEmpty(userID)) {
+            account.setProperty("userid", userID);
+        }
         return ai;
     }
 

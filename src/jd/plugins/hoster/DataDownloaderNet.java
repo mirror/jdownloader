@@ -5,6 +5,13 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -15,13 +22,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datadownloader.net" }, urls = { "" })
 public class DataDownloaderNet extends PluginForHost {
@@ -40,7 +40,7 @@ public class DataDownloaderNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, ai);
         // no list available, update manually
-        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "rapidgator.net", "datafile.com", "alfafile.net" }));
+        ai.setMultiHostSupport(this, Arrays.asList(new String[] { "rapidgator.net", "alfafile.net" }));
         return ai;
     }
 
