@@ -19,11 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -62,6 +64,15 @@ public class DropapkCom extends XFileSharingProBasic {
             }
         }
         return super.rewriteHost(host);
+    }
+
+    @Override
+    public String[] scanInfo(String[] fileInfo) {
+        String[] ret = super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(ret[1])) {
+            ret[1] = new Regex(correctedBR, "\\(\\s*(\\d+(?:\\.\\d+)?(?: |\\&nbsp;)?(KB|MB|GB))").getMatch(0);
+        }
+        return ret;
     }
 
     @Override
