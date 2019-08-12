@@ -16,24 +16,33 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/user/\\d+/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?scribd\\.com/(?:(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|user/\\d+/[^/]+|(?:audiobook|listen)/\\d+(?:/[^/]+)?)" })
 public class ScribdCom extends PluginForDecrypt {
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String type_collections = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/collections/\\d+/[A-Za-z0-9\\-_%]+";
+    private static final String type_audiobook   = ".+/(?:audiobook|listen)/(\\d+).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -100,7 +109,91 @@ public class ScribdCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+        } else if (parameter.matches(type_audiobook)) {
+            final String bookID = new Regex(parameter, type_audiobook).getMatch(0);
+            final Account account = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+            if (account == null) {
+                logger.info("Cannot crawl that URL without account");
+                return decryptedLinks;
+            }
+            jd.plugins.hoster.ScribdCom.login(this.br, account, false);
+            final String userID = account.getStringProperty("userid", null);
+            if (StringUtils.isEmpty(userID)) {
+                logger.warning("Failed to find userID");
+                return null;
+            }
+            String title = null;
+            br.getPage("https://de." + this.getHost() + "/listen/" + bookID);
+            LinkedHashMap<String, Object> entries = null;
+            String session_key = null;
+            try {
+                final String json = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.Audiobooks\\.Show, (\\{.*?\\})\\), document\\.getElementById").getMatch(0);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                title = (String) JavaScriptEngineFactory.walkJson(entries, "doc/title");
+                session_key = (String) JavaScriptEngineFactory.walkJson(entries, "audiobook/session_key");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+            if (StringUtils.isEmpty(title)) {
+                title = bookID;
+            }
+            /*
+             * They're using external provider "findawayworld.com" to get these audiobooks so now we need to find their ID of this
+             * audiobook.
+             */
+            final String external_id = PluginJSonUtils.getJson(br, "external_id");
+            if (StringUtils.isEmpty(session_key)) {
+                logger.warning("Plugin failure or current account is not allowed to stream this audiobook");
+                return decryptedLinks;
+            } else if (StringUtils.isEmpty(external_id)) {
+                return null;
+            }
+            final String license_id;
+            final boolean grabLicenceIDFromWebsite = false;
+            if (grabLicenceIDFromWebsite) {
+                /* This call will also provide more details about the audiobook e.g. 'drm_free' */
+                br.getPage("https://api.findawayworld.com/v4/accounts/scribd-" + userID + "/audiobooks/" + external_id);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                /* There are multiple licenses available. Use the first one. */
+                license_id = (String) JavaScriptEngineFactory.walkJson(entries, "licenses/{0}/id");
+            } else {
+                /* 2019-08-12 */
+                license_id = "5d51721799c3cd70e3dab9fd";
+            }
+            br.getHeaders().put("Sec-Fetch-Mode", "cors");
+            br.getHeaders().put("Sec-Fetch-Site", "cross-site");
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Session-Key", session_key);
+            br.getHeaders().put("Origin", "https://www." + this.getHost());
+            /* 2019-08-12: Generated directurls will usually be valid for ~48 hours */
+            br.postPageRaw("https://api.findawayworld.com/v4/audiobooks/" + external_id + "/playlists", "{\"license_id\":\"" + license_id + "\"}");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("playlist");
+            int counter = 0;
+            for (final Object audioO : ressourcelist) {
+                counter++;
+                entries = (LinkedHashMap<String, Object>) audioO;
+                String filename = title;
+                final String downloadurl = (String) entries.get("url");
+                final long part_number = JavaScriptEngineFactory.toLong(entries.get("part_number"), 0);
+                final long chapter_number = JavaScriptEngineFactory.toLong(entries.get("chapter_number"), 0);
+                if (part_number > 0) {
+                    filename += "_part_" + part_number;
+                } else if (chapter_number > 0) {
+                    filename += "_chapter_" + chapter_number;
+                } else {
+                    /* Use internal counter for numbering */
+                    filename += "_internal_number_" + counter;
+                }
+                filename += ".mp3";
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + downloadurl);
+                dl.setAvailable(true);
+                dl.setFinalFileName(filename);
+                decryptedLinks.add(dl);
+            }
+            fpname = title;
         } else {
+            /* Crawl all uploads of a user */
             final Regex urlinfo = new Regex(parameter, "scribd\\.com/user/(\\d+)/([^/]+)");
             String id = urlinfo.getMatch(0);
             final String url_username = urlinfo.getMatch(1);

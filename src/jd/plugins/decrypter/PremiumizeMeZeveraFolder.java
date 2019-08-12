@@ -181,13 +181,24 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
     }
 
     public static String accessCloudItem(final Browser br, final Account account, final String url_source) throws IOException {
+        final boolean pairingLogin = jd.plugins.hoster.ZeveraCore.setAuthHeader(br, account);
         final String itemID = jd.plugins.hoster.PremiumizeMe.getCloudID(url_source);
+        final String client_id;
+        if (account.getHoster().equals("premiumize.me")) {
+            client_id = jd.plugins.hoster.PremiumizeMe.getClientIDExt();
+        } else {
+            client_id = jd.plugins.hoster.ZeveraCom.getClientIDExt();
+        }
+        String getData = "?id=" + itemID;
+        if (!pairingLogin) {
+            getData += "&client_id=" + client_id;
+        }
         if (url_source.contains("folder_id")) {
             /* Folder */
-            br.getPage("https://www." + account.getHoster() + "/api/folder/list?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&id=" + itemID);
+            br.getPage("https://www." + account.getHoster() + "/api/folder/list" + getData);
         } else {
             /* Single file */
-            br.getPage("https://www." + account.getHoster() + "/api/item/details?customer_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&id=" + itemID);
+            br.getPage("https://www." + account.getHoster() + "/api/item/details" + getData);
         }
         return br.toString();
     }

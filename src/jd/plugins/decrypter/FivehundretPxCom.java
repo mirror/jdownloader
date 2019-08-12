@@ -32,6 +32,10 @@ public class FivehundretPxCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         if (parameter.toString().matches(".+/galleries/.+") || parameter.toString().matches(".+/featured")) {
             getPage(br, parameter.toString());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                ret.add(createOfflinelink(parameter.toString()));
+                return ret;
+            }
             String curatorID = br.getRegex("App\\.CuratorId\\s*=\\s*(\\d+)").getMatch(0);
             if (curatorID == null) {
                 curatorID = br.getRegex("500px.com/user/(\\d+)").getMatch(0);
@@ -119,7 +123,7 @@ public class FivehundretPxCom extends antiDDoSForDecrypt {
             }
         } else {
             getPage(br, parameter.toString());
-            if (br.containsHTML(">Sorry, no such page")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Sorry, no such page")) {
                 ret.add(createOfflinelink(parameter.toString()));
                 return ret;
             }

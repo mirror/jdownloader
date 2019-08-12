@@ -53,6 +53,10 @@ public class PremiumizeMe extends ZeveraCore {
 
     @Override
     public String getClientID() {
+        return getClientIDExt();
+    }
+
+    public static String getClientIDExt() {
         return "616325511";
     }
 
