@@ -45,7 +45,7 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     public static String getClientIDExt() {
-        return "616325511";
+        return "306575304";
     }
 
     @Override
