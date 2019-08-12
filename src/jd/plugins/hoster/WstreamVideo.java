@@ -151,11 +151,28 @@ public class WstreamVideo extends XFileSharingProBasic {
             }
             /* 2019-06-13: Skip waittime (6-10 seconds) */
             this.getPage(brc, dlFunctionURL);
-            final String[] dlinfo = brc.getRegex("class='buttonDownload' href='[^\\']+'>Download [^<>]+</a>").getColumn(-1);
+            /* Cat/mouse games... */
+            // final String[] hosts = siteSupportedNames();
+            final String[] dlinfo = brc.getRegex("class='[^\\']+' href='[^\\']+'>Download [^<>]+</a>").getColumn(-1);
             String dllink_last = null;
             String filesize_last = null;
             for (final String dlinfoSingle : dlinfo) {
-                dllink_last = new Regex(dlinfoSingle, "href=\\'(http[^\"\\']+)").getMatch(0);
+                final String dllink_temp = new Regex(dlinfoSingle, "href=\\'(http[^\"\\']+)").getMatch(0);
+                if (StringUtils.isEmpty(dllink_temp)) {
+                    continue;
+                }
+                boolean dllinkValid = dllink_temp.contains(".mp4");
+                // for (final String host : hosts) {
+                // if (dllink_temp.contains(host)) {
+                // dllinkValid = true;
+                // break;
+                // }
+                // }
+                if (!dllinkValid) {
+                    /* Skip invalid URLs */
+                    continue;
+                }
+                dllink_last = dllink_temp;
                 filesize_last = new Regex(dlinfoSingle, ">Download [A-Za-z0-9 ]+ (\\d+(?:\\.\\d+)? [A-Za-z]{1,5})\\s*?<").getMatch(0);
                 if (dlinfoSingle.contains("Download Original")) {
                     dllink = dllink_last;
