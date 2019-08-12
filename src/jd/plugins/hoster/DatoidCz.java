@@ -160,6 +160,9 @@ public class DatoidCz extends antiDDoSForHost {
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
             logger.info("Only downloadable by Premium Account holders");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (br.containsHTML(">Soubor byl zablokován\\.")) {
+            /* 2019-08-12: WTF: Log: 6759186935451 : svn.jdownloader.org/issues/87302 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Soubor byl zablokován.", 5 * 60 * 1000l);
         }
         final String continue_url = br.getRegex("class=\"[^\"]*?btn btn-large btn-download detail-download\" href=\"(/f/[^<>\"]+)\"").getMatch(0);
         if (continue_url == null) {
