@@ -18,18 +18,19 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -37,60 +38,85 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|embeds)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|audiobook|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
-    private final String        formats            = "formats";
+    private final String                  formats    = "formats";
     /** The list of server values displayed to the user */
-    private final String[]      allFormats         = new String[] { "PDF", "TXT", "DOCX" };
-    private static final String FORMAT_PPS         = "class=\"format_ext\">\\.PPS</span>";
-    private final String        NODOWNLOAD         = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
-    private final String        PREMIUMONLY        = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
-    private String              authenticity_token = null;
-    private String              ORIGURL            = null;
-    private static Object       LOCK               = new Object();
-    private static final String COOKIE_HOST        = "http://scribd.com";
+    private final String[]                allFormats = new String[] { "PDF", "TXT", "DOCX" };
+    private static final String           FORMAT_PPS = "class=\"format_ext\">\\.PPS</span>";
+    private static final String           TYPE_AUDIO = ".+/audiobook/.+";
+    private String                        origurl    = null;
+    private LinkedHashMap<String, Object> entries    = null;
+    private int                           json_type  = 1;
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.scribd.com");
+        this.enablePremium("https://www.scribd.com");
         setConfigElements();
-        this.setStartIntervall(5 * 1000l);
+        /* 2019-08-12: Seems like this startintervall is not needed anymore */
+        // this.setStartIntervall(5 * 1000l);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        final String linkid = getLinkID(link);
         /* Forced https */
-        link.setPluginPatternMatcher("https://www.scribd.com/document/" + linkid);
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("https?://[^/]+/", "https://www.scribd.com/"));
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(\\d+)(?:/[^/]+)?$").getMatch(0);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean checkViaJson) throws IOException, PluginException, InterruptedException {
+        // this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepFreeBrowser(this.br);
-        try {
+        // final boolean checkViaJson = !link.getPluginPatternMatcher().matches(TYPE_AUDIO);
+        String filename = null;
+        String description = null;
+        final String fid = this.getFID(link);
+        boolean is_audiobook = false;
+        if (checkViaJson) {
+            /* This way we can only determine is_audiobook status via URL. */
+            is_audiobook = link.getPluginPatternMatcher().matches(TYPE_AUDIO);
+            origurl = link.getPluginPatternMatcher();
+            // createCSRFTOKEN();
+            br.postPage("https://de." + this.getHost() + "/read2/" + fid + "/access_token", "doc_id=" + fid);
+            final String token = PluginJSonUtils.getJson(br, "response");
+            if (token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setFollowRedirects(true);
+            br.getPage("https://www." + this.getHost() + "/scepub/" + fid + "/book_metadata.json?token=" + token);
+            filename = PluginJSonUtils.getJson(br, "title");
+        } else {
             int counter400 = 0;
             do {
-                br.getPage(downloadLink.getPluginPatternMatcher());
+                br.getPage(link.getPluginPatternMatcher());
                 counter400++;
             } while (counter400 <= 5 && br.getHttpConnection().getResponseCode() == 400);
             for (int i = 0; i <= 5; i++) {
@@ -99,14 +125,12 @@ public class ScribdCom extends PluginForHost {
                     if (newurl.contains("/removal/") || newurl.contains("/deleted/")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    downloadLink.setUrlDownload(newurl);
-                    br.getPage(downloadLink.getDownloadURL());
+                    link.setPluginPatternMatcher(newurl);
+                    br.getPage(link.getPluginPatternMatcher());
                 } else {
                     break;
                 }
             }
-        } catch (final BrowserException e) {
-            /* Stable errorhandling */
             if (br.getHttpConnection().getResponseCode() == 400) {
                 logger.info("Server returns error 400");
                 return AvailableStatus.UNCHECKABLE;
@@ -116,30 +140,53 @@ public class ScribdCom extends PluginForHost {
             } else if (br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            throw e;
-        }
-        if (this.br.containsHTML("<p>The document .* has been deleted.*?</p>")) {
-            /* Offline message without corresponding http response. */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        ORIGURL = br.getURL();
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"media:title\" content=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<Attribute name=\"title\">(.*?)</Attribute>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"title\" id=\"\">(.*?)</h1>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                    }
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            origurl = br.getURL();
+            boolean is_deleted = false;
+            try {
+                final String json1 = br.getRegex(">Scribd\\.current_doc\\s*?=\\s*?(\\{.*?\\})</script>").getMatch(0);
+                final String json2 = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.BookPage\\.Modules\\.Header, (\\{.*?), document\\.getElementById").getMatch(0);
+                final String json3 = br.getRegex("<script type=\"application/json\" data-hypernova-key=\"doc_page\"[^>]+><[^\\{]*?(\\{.*?)</script>").getMatch(0);
+                if (json1 != null) {
+                    /* Type 1 */
+                    json_type = 1;
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json1);
+                    is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
+                    filename = (String) entries.get("title");
+                    description = (String) entries.get("description");
+                } else if (json2 != null) {
+                    /* Type 2 */
+                    json_type = 2;
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json2);
+                    is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
+                    filename = (String) entries.get("document_title");
+                    description = (String) entries.get("document_description");
+                    is_deleted = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "document/deleted")).booleanValue();
+                } else {
+                    json_type = 3;
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json3);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/word_document");
+                    filename = (String) entries.get("title");
+                    // final boolean show_archive_paywall = ((Boolean) entries.get("show_archive_paywall")).booleanValue();
                 }
+                /* 2019-08-11: TODO: Find out what these are good for: 'secret_password' and 'access_key' */
+            } catch (final Throwable e) {
+            }
+            if (is_deleted) {
+                /* 2019-08-12: Rare case */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = fid;
         }
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + "." + getExtension());
+        link.setName(Encoding.htmlDecode(filename).trim() + "." + getExtension(is_audiobook));
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
         /* saving session info can result in avoiding 400, 410 server errors */
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = br.getCookies(this.getHost());
@@ -155,38 +202,80 @@ public class ScribdCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        br.getPage("/account-settings/order-history");
-        ai.setUnlimitedTraffic();
-        if (br.containsHTML("<span>Status: </span>Active</li>")) {
-            /* Okay we know now that the user bought a package - let's see if we can find the expire date as well */
-            final String purchaseDate = br.getRegex("<span>Purchased on: </span>([^<>\"]*?)</li>").getMatch(0);
-            if (purchaseDate != null) {
-                if (br.containsHTML("Annual Subscription for")) {
-                    /* User purchased a year */
-                    final long longpurchasedate = TimeFormatter.getMilliSeconds(purchaseDate, "yyyy-MM-dd", Locale.ENGLISH);
-                    ai.setValidUntil(longpurchasedate + 365 * 24 * 60 * 60 * 1000l);
-                } else {
-                    logger.info("Purchased package is unknown --> Cannot display expire date");
+        login(this.br, account, true);
+        final boolean fetchDataViaPurchaseHistory = true;
+        String accountType = null;
+        String accountPaymentType = null;
+        String expiredateStr = null;
+        long expireTimestamp = 0;
+        if (fetchDataViaPurchaseHistory) {
+            /* 2019-08-12: Alternative way */
+            /* First attempt - go through payment history and grab the latest entry + expire-date */
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            brc.getHeaders().put("sec-fetch-mode", "cors");
+            brc.getHeaders().put("sec-fetch-site", "same-origin");
+            brc.getHeaders().put("accept", "application/json, text/javascript, */*; q=0.01");
+            brc.getPage("/account-settings/payment-transactions");
+            try {
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("payment_transactions");
+                for (final Object transactionO : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) transactionO;
+                    final boolean refunded = ((Boolean) entries.get("refunded")).booleanValue();
+                    final Object descriptionO = entries.get("description");
+                    if (refunded || descriptionO == null) {
+                        continue;
+                    }
+                    accountPaymentType = (String) entries.get("payment_method");
+                    entries = (LinkedHashMap<String, Object>) descriptionO;
+                    expiredateStr = (String) entries.get("valid_until");
+                    if (!StringUtils.isEmpty(expiredateStr)) {
+                        break;
+                    }
                 }
-            }
-            try {
-                account.setType(AccountType.PREMIUM);
+                /* E.g. "Gültig: 8/12/19 - 9/11/19" */
+                final String[] createDataAndExpireDate = new Regex(expiredateStr, "(\\d{1,2}/\\d{1,2}/\\d{1,2})").getColumn(0);
+                if (createDataAndExpireDate.length >= 2) {
+                    expiredateStr = createDataAndExpireDate[1];
+                    expireTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "MM/dd/yy", Locale.ENGLISH);
+                }
             } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
+                e.printStackTrace();
             }
-            account.setProperty("free", false);
-            ai.setStatus("Premium account");
         } else {
+            br.getPage("/account-settings/account");
+            final String json_account = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.AccountSettings\\.Show, (\\{.*?\\})\\), document\\.getElementById").getMatch(0);
             try {
-                account.setType(AccountType.FREE);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_account);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "membership_info/plan_info");
+                /* 2019-08-12: E.g. "cancelled_with_valid_to" */
+                accountType = (String) entries.get("type");
+                expiredateStr = (String) entries.get("valid_to_date");
+                expireTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss ZZZ", Locale.ENGLISH);
             } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
             }
-            account.setProperty("free", true);
-            ai.setStatus("Registered (Free) account");
         }
-        account.setValid(true);
+        String accountStatus = null;
+        if (expireTimestamp > System.currentTimeMillis()) {
+            account.setType(AccountType.PREMIUM);
+            accountStatus = "Premium account";
+            if ("cancelled_with_valid_to".equalsIgnoreCase(accountType)) {
+                accountStatus += " [Subscription cancelled]";
+            } else if (!StringUtils.isEmpty(accountType)) {
+                /* TODO: 2019-08-12: Find out which other versions of "type" they have! */
+                accountStatus += " [Active subscription]";
+            }
+            if (accountPaymentType != null) {
+                accountStatus += " [Paid via " + accountPaymentType + "]";
+            }
+            ai.setValidUntil(expireTimestamp, br);
+        } else {
+            account.setType(AccountType.FREE);
+            accountStatus = "Registered (Free) account";
+        }
+        ai.setStatus(accountStatus);
+        ai.setUnlimitedTraffic();
         return ai;
     }
 
@@ -195,11 +284,14 @@ public class ScribdCom extends PluginForHost {
         return "http://support.scribd.com/forums/33939/entries/25459";
     }
 
-    private String getExtension() {
-        /* Special case */
+    private String getExtension(final boolean is_audiobook) {
+        /* Special cases first */
         if (br.containsHTML(FORMAT_PPS)) {
             return "pps";
+        } else if (is_audiobook) {
+            return "mp3";
         }
+        /* Seems like we have a document so user-settings are allowed! */
         switch (getPluginConfig().getIntegerProperty(formats, -1)) {
         case 0:
             logger.fine("PDF format is configured");
@@ -241,107 +333,128 @@ public class ScribdCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* Account required */
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
-        requestFileInformation(parameter);
-        if (br.containsHTML("class=\"download_disabled_button\"")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+        login(this.br, account, false);
+        requestFileInformation(parameter, false);
+        boolean is_downloadable = true;
+        boolean is_downloadable_for_premium_users = false;
+        boolean is_view_restricted_archive = false;
+        boolean show_archive_paywall = false;
+        boolean is_audiobook = false;
+        try {
+            switch (this.json_type) {
+            case 1:
+                is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
+                is_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
+                is_downloadable_for_premium_users = ((Boolean) entries.get("downloadable_for_premium_users")).booleanValue();
+                break;
+            case 2:
+                entries = (LinkedHashMap<String, Object>) entries.get("document");
+                /* 2019-08-12: Unsure about that, there is also: word_download, text_download, pdf_download */
+                is_downloadable = ((Boolean) entries.get("all_download")).booleanValue();
+                final String document_type = (String) entries.get("document_type");
+                /* E.g. "audiobook", "book" */
+                if ("audiobook".equalsIgnoreCase(document_type)) {
+                    is_audiobook = true;
+                }
+                break;
+            case 3:
+                is_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
+                is_view_restricted_archive = ((Boolean) entries.get("is_view_restricted_archive")).booleanValue();
+                show_archive_paywall = ((Boolean) entries.get("show_archive_paywall")).booleanValue();
+                break;
+            default:
+                break;
+            }
+        } catch (final Throwable e) {
+            logger.info("Possible json parsing issues, moving forward to download attempt anyways");
+            e.printStackTrace();
         }
-        login(account, false);
-        final String[] downloadInfo = getDllink(parameter);
+        // final boolean is_paid = ((Boolean) entries.get("is_paid")).booleanValue();
+        /* 2019-08-11: TODO: Find out what 'is_credit_restricted' and 'is_paid' means */
+        // final boolean is_credit_restricted = ((Boolean) entries.get("is_credit_restricted")).booleanValue();
+        if (is_downloadable_for_premium_users && account.getType() != AccountType.PREMIUM) {
+            throw new AccountRequiredException("Only downloadable for premium users");
+        } else if (!is_downloadable) {
+            /* 2019-08-11: Not downloadable at all (?!) */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is not downloadable");
+        } else if (is_view_restricted_archive && show_archive_paywall) {
+            this.premiumonlyArchiveViewRestricted();
+        } else if (is_audiobook) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Audiobooks cannot be downloaded yet!");
+        }
+        final String[] downloadInfo = getDllink(parameter, account, is_audiobook);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            /* Assume that our current account type = free and the errorcase is correct */
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download is only available for premium users!");
+            /* Assume that our current account type = free and the file is not downloadable */
+            throw new AccountRequiredException();
         }
         parameter.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
-    public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBRGeneral();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        getauthenticity_token(account);
-                        return;
-                    }
-                }
+                prepBRGeneral(br);
                 br.setFollowRedirects(true);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://www.scribd.com/csrf_token?href=http%3A%2F%2Fwww.scribd.com%2F");
-                authenticity_token = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
-                if (authenticity_token == null) {
-                    logger.warning("Login broken!");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final Cookies cookies = account.loadCookies("");
+                boolean isLoggedin = false;
+                String authenticity_token = null;
+                if (cookies != null) {
+                    br.setCookies(account.getHoster(), cookies);
+                    authenticity_token = getauthenticity_token(account);
+                    br.getPage("https://www." + account.getHoster() + "/");
+                    isLoggedin = isLoggedin(br);
+                }
+                if (!isLoggedin) {
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    authenticity_token = createCSRFTOKEN(br);
+                    br.postPage("/login", "authenticity_token=" + authenticity_token + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                    final String loginstatus = PluginJSonUtils.getJson(br, "login");
+                    if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://www.scribd.com/login", "authenticity_token=" + authenticity_token + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 account.setProperty("authenticity_token", authenticity_token);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.removeProperty("authenticity_token");
+                }
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private String[] getDllink(final DownloadLink parameter) throws PluginException, IOException {
-        try {
-            br.getPage(ORIGURL);
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 400) {
-                logger.info("Server returns error 400");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400");
-            }
-            throw e;
+    public static boolean isLoggedin(final Browser br) {
+        return br.getCookie(br.getHost(), "_scribd_session", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    public static String createCSRFTOKEN(final Browser br) throws IOException, PluginException {
+        br.getPage("https://www." + br.getHost() + "/csrf_token?href=http%3A%2F%2Fwww.scribd.com%2F");
+        final String authenticity_token = PluginJSonUtils.getJson(br, "csrf_token");
+        if (StringUtils.isEmpty(authenticity_token)) {
+            // logger.warning("Failed to find authenticity_token");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return authenticity_token;
+    }
+
+    private String[] getDllink(final DownloadLink link, final Account account, final boolean is_audiobook) throws PluginException, IOException {
+        br.getPage(origurl);
+        if (this.br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400");
         }
         String[] dlinfo = new String[2];
-        dlinfo[1] = getExtension();
-        final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/(?:doc|document)/(\\d+)").getMatch(0);
+        dlinfo[1] = getExtension(is_audiobook);
+        final String fileId = this.getFID(link);
         if (fileId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -354,41 +467,27 @@ public class ScribdCom extends PluginForHost {
         final String correctedXML = xmlbrowser.toString().replace("\\", "");
         // Check if the selected format is available
         if (correctedXML.contains("premium: true")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download is only available for premium users!");
+            throw new AccountRequiredException();
         }
         xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
-        xmlbrowser.getHeaders().put("X-CSRF-Token", authenticity_token);
+        xmlbrowser.getHeaders().put("X-CSRF-Token", getauthenticity_token(account));
         /* Seems like this is not needed anymore. */
         // xmlbrowser.postPage("/document_downloads/register_download_attempt", "doc_id=" + fileId +
         // "&next_screen=download_lightbox&source=read");
-        dlinfo[0] = "https://de.scribd.com/document_downloads/" + fileId + "?extension=" + dlinfo[1];
+        dlinfo[0] = "https://de." + this.getHost() + "/document_downloads/" + fileId + "?extension=" + dlinfo[1];
         xmlbrowser = new Browser();
         final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
         final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
-        xmlbrowser.setCookie("http://scribd.com/", "_scribd_session", scribdsession);
-        xmlbrowser.setCookie("http://scribd.com/", "_scribd_expire", scribdexpire);
-        this.br.setCookie("http://scribd.com/", "_scribd_expire", scribdexpire);
-        this.br.setCookie("http://scribd.com/", "_scribd_expire", scribdexpire);
+        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_session", scribdsession);
+        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
         xmlbrowser.getPage(dlinfo[0]);
-        if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
+        if (xmlbrowser.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
         }
-        if (br.containsHTML("You do not have access to download this document") || br.containsHTML("Invalid document format")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        if (xmlbrowser.containsHTML("You do not have access to download this document|Invalid document format")) {
+            throw new AccountRequiredException("This file can only be downloaded by premium users");
         }
         dlinfo[0] = xmlbrowser.getRedirectLocation();
         if (dlinfo[0] == null) {
@@ -397,16 +496,19 @@ public class ScribdCom extends PluginForHost {
         return dlinfo;
     }
 
+    private void premiumonlyArchiveViewRestricted() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "You need to upload a document in order to be able to download this document");
+    }
+
     /** Returns the most important account token */
-    private String getauthenticity_token(final Account acc) {
-        authenticity_token = acc.getStringProperty("authenticity_token", null);
-        return authenticity_token;
+    private static String getauthenticity_token(final Account acc) {
+        return acc.getStringProperty("authenticity_token", null);
     }
 
     private String getSpecifiedCookie(final Browser brc, final String paramname) {
         ArrayList<String> sessionids = new ArrayList<String>();
         final HashMap<String, String> cookies = new HashMap<String, String>();
-        final Cookies add = this.br.getCookies("http://scribd.com/");
+        final Cookies add = this.br.getCookies("http://" + this.getHost() + "/");
         for (final Cookie c : add.getCookies()) {
             cookies.put(c.getKey(), c.getValue());
         }
@@ -427,24 +529,24 @@ public class ScribdCom extends PluginForHost {
     private static AtomicReference<Object> cookieMonster = new AtomicReference<Object>();
 
     @SuppressWarnings("unchecked")
-    private Browser prepFreeBrowser(final Browser prepBr) {
-        prepBRGeneral();
+    private Browser prepFreeBrowser(final Browser prepBR) {
+        prepBRGeneral(prepBR);
         // loading previous cookie session results in less captchas
         synchronized (cookieMonster) {
             if (cookieMonster.get() != null && cookieMonster.get() instanceof HashMap<?, ?>) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
                 for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                    prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
+                    prepBR.setCookie(this.getHost(), entry.getKey(), entry.getValue());
                 }
                 coLoaded = true;
             }
         }
-        return prepBr;
+        return prepBR;
     }
 
-    private void prepBRGeneral() {
+    private static void prepBRGeneral(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
-        br.setAllowedResponseCodes(new int[] { 400, 410 });
+        br.setAllowedResponseCodes(new int[] { 400, 410, 500 });
         br.setLoadLimit(br.getLoadLimit() * 5);
         br.setCookie("https://www.scribd.com/", "lang", "en");
     }
