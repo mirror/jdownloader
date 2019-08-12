@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Speed4upNet extends XFileSharingProBasic {
@@ -40,7 +40,7 @@ public class Speed4upNet extends XFileSharingProBasic {
      * captchatype-info: 2019-08-12: null<br />
      * other:<br />
      */
-    public static List<String[]> getPluginDomains() {
+    private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "speed4up.net", "speed4up.com" });
@@ -53,7 +53,7 @@ public class Speed4upNet extends XFileSharingProBasic {
         if (host == null) {
             return null;
         } else {
-            final String mapping = this.getMappedHost(ImgmazeCom.getPluginDomains(), host);
+            final String mapping = this.getMappedHost(getPluginDomains(), host);
             if (mapping != null) {
                 return mapping;
             }
