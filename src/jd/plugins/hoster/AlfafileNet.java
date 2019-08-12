@@ -357,7 +357,6 @@ public class AlfafileNet extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
