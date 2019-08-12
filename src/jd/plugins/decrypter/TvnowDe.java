@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -27,6 +28,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "https?://(?:www\\.)?tvnow\\.(?:at|ch|de)/.+|https?://link\\.tvnow\\.de/\\?f=\\d+\\&e=\\d+" })
@@ -105,6 +108,15 @@ public class TvnowDe extends PluginForDecrypt {
                 break;
             } else if (jd.plugins.hoster.TvnowDe.isSeriesSingleEpisodeNew(parameter)) {
                 /* New single-series-episode linkformat */
+                url_new = getNewURL(parameter);
+                if (url_new != null && jd.plugins.hoster.TvnowDe.isSeriesSingleEpisodeNew(url_new)) {
+                    /*
+                     * Very rare case: Summary: If we do NOT use the new URL to continue we might not be able to use the old API for
+                     * downloading which will make almost all URLs premiumonly!
+                     */
+                    logger.info("Using new URL: " + url_new);
+                    parameter = url_new;
+                }
                 final Regex urlInfo = new Regex(parameter, jd.plugins.hoster.TvnowDe.TYPE_SERIES_SINGLE_EPISODE_NEW);
                 stationName = null;
                 url_showname = urlInfo.getMatch(0);
@@ -171,24 +183,12 @@ public class TvnowDe extends PluginForDecrypt {
                 url_singleEpisodeName = urlInfo.getMatch(2);
                 final boolean showname_url_is_unsafe = url_showname == null || (new Regex(url_showname, "(\\-\\d+){1}$").matches() && !new Regex(url_showname, "(\\-\\d+){2}$").matches());
                 if (showname_url_is_unsafe) {
-                    logger.info("Expecting redirect from old linktype to new linktype");
-                    br.setFollowRedirects(false);
-                    br.getPage(url_old);
-                    /* Old linkformat should redirect to new linkformat */
-                    url_new = br.getRedirectLocation();
-                    /*
-                     * We accessed the main-URL so it makes sense to at least check for a 404 at this stage to avoid requestion potentially
-                     * dead URLs again via API!
-                     */
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                        return decryptedLinks;
-                    } else if (url_new == null) {
+                    url_new = getNewURL(url_old);
+                    if (url_new == null) {
                         logger.warning("Redirect to new linktype failed --> probably user has added invalid URLs");
                         decryptedLinks.add(this.createOfflinelink(parameter));
                         return decryptedLinks;
                     }
-                    logger.info("URL_old: " + parameter + " | URL_new: " + url_new);
                     /* Find the values we need. */
                     urlInfo = new Regex(url_new, "https?://[^/]+/[^/]+/([^/]*?)/([^/]+/)?(.+)");
                     url_showname = urlInfo.getMatch(0);
@@ -323,6 +323,42 @@ public class TvnowDe extends PluginForDecrypt {
             page++;
         } while (!done && !this.isAbort());
         return decryptedLinks;
+    }
+
+    /** Handles up to 3 redirects and returns final Location. */
+    private String getNewURL(String url_old) throws IOException, PluginException {
+        if (url_old == null) {
+            return null;
+        }
+        logger.info("Expecting redirect from old linktype to new linktype");
+        br.setFollowRedirects(false);
+        String last_redirect = null;
+        String redirect;
+        int counter = 0;
+        do {
+            counter++;
+            if (counter == 1) {
+                br.getPage(url_old);
+            } else {
+                br.getPage(last_redirect);
+            }
+            /* Old linkformat sometimes redirects to new linkformat */
+            redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                logger.info("Stopping at redirect: " + counter);
+                break;
+            }
+            last_redirect = redirect;
+        } while (counter <= 5);
+        /*
+         * We accessed the main-URL so it makes sense to at least check for a 404 at this stage to avoid requestion potentially dead URLs
+         * again via API!
+         */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        logger.info("URL_old: " + url_old + " | URL_new: " + last_redirect);
+        return last_redirect;
     }
 
     private String getContentURL(final String formatID, final String episodeID, final String url_showname, final String videoSeoName, final String seasonnumber, final String episodenumber, final Object episodenumberO, final String url_addedbyuser, final String url_old, final String thisStationName, final String broadcastStartDate_important_part, final boolean isMovie, final boolean isSingleObject) {
