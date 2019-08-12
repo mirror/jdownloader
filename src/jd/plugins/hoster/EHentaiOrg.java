@@ -19,10 +19,6 @@ import java.text.DecimalFormat;
 import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +43,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
 public class EHentaiOrg extends PluginForHost {
@@ -94,8 +94,9 @@ public class EHentaiOrg extends PluginForHost {
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
             return false;
+        } else {
+            return super.canHandle(downloadLink, account);
         }
-        return super.canHandle(downloadLink, account);
     }
 
     @Override
@@ -211,7 +212,15 @@ public class EHentaiOrg extends PluginForHost {
             dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
             /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
             dllink = dllink_fullsize;
-            return AvailableStatus.TRUE;
+            if (requiresAccount(dllink)) {
+                if (account != null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
+            } else {
+                return AvailableStatus.TRUE;
+            }
         }
         if (dllink != null) {
             while (true) {
@@ -330,12 +339,23 @@ public class EHentaiOrg extends PluginForHost {
                 }
             }
         }
+        if (requiresAccount(dllink)) {
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink, null);
         doFree(downloadLink, null);
+    }
+
+    private boolean requiresAccount(final String url) {
+        return url != null && StringUtils.containsIgnoreCase(url, "/img/kokomade.jpg");
     }
 
     @SuppressWarnings("deprecation")
@@ -374,15 +394,20 @@ public class EHentaiOrg extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (requiresAccount(dl.getConnection().getURL().toString()) || (dl.getConnection().getCompleteContentLength() > 0 && dl.getConnection().getLongContentLength() < minimal_filesize)) {
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
         }
         dl.startDownload();
     }
 
     private static final String MAINPAGE = "http://e-hentai.org";
-    private static Object       LOCK     = new Object();
 
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -430,7 +455,9 @@ public class EHentaiOrg extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -443,11 +470,7 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
