@@ -20,6 +20,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.TvnowConfigInterface;
+import org.jdownloader.plugins.components.config.TvnowConfigInterface.Quality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,19 +51,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.config.TvnowConfigInterface;
-import org.jdownloader.plugins.components.config.TvnowConfigInterface.Quality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvnow.de" }, urls = { "tvnowdecrypted://.+" })
 public class TvnowDe extends PluginForHost {
@@ -178,9 +178,15 @@ public class TvnowDe extends PluginForHost {
         final String description;
         final int season;
         if (newAPI) {
+            final long code = JavaScriptEngineFactory.toLong(entries.get("code"), 0);
             final String error = (String) entries.get("error");
-            if ("User not authorized!".equalsIgnoreCase(error)) {
+            // if ("User not authorized!".equalsIgnoreCase(error)) {
+            if (code == 403) {
                 /* Paid content - goes along with response 403, also json will not contain anything else but the thumbnail-URL. */
+                /*
+                 * 2019-08-12: E.g. "{"code":403,"message":"User is not allowed to see this movie with the current
+                 * subscription","errorType":"premium","image":"https://CENSORED"}"
+                 */
                 isFree = false;
                 /* Just assumptions - no way to find out without account at this stage. */
                 isDRM = false;
