@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.AbortException;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
+
+import org.jdownloader.plugins.components.AbortException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(?:www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
 public class MirrorCreatorCom extends PluginForDecrypt {
@@ -100,9 +100,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);
             if (forms == null || forms.length == 0) {
                 forms = br.getFormsByActionRegex("/downlink/[A-Z0-9]+");
-            }
-            if (forms == null || forms.length == 0) {
-                forms = br.getFormsByActionRegex("/out_url.+");
+                if (forms == null || forms.length == 0) {
+                    forms = br.getFormsByActionRegex("/out_url.*");
+                }
             }
             if (forms != null && forms.length > 0) {
                 logger.info("Found " + forms.length + " links");

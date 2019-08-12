@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -393,7 +394,7 @@ public class TurbobitCore extends antiDDoSForHost {
         } else if (br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        partTwo(link);
+        partTwo(link, true);
     }
 
     protected String IMAGEREGEX(final String b) {
@@ -412,7 +413,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
-    private final void partTwo(final DownloadLink link) throws Exception {
+    private final void partTwo(final DownloadLink link, final boolean allowRetry) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -427,6 +428,12 @@ public class TurbobitCore extends antiDDoSForHost {
         if (captchaform == null) {
             handleGeneralErrors();
             if (!br.getURL().contains("/download/free/")) {
+                if (allowRetry && br.containsHTML("/download/free/" + Pattern.quote(id))) {
+                    // from a log where the first call to this, just redirected to main page and set some cookies
+                    getPage("/download/free/" + id);
+                    partTwo(link, false);
+                    return;
+                }
                 /* 2019-04-24: This should not happen anymore but still we should retry if it happens. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha form fail", 1 * 60 * 1000l);
             }
