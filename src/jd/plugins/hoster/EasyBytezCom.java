@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -25,8 +27,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
@@ -116,6 +116,17 @@ public class EasyBytezCom extends XFileSharingProBasic {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         /* 2019-08-06: Special */
         final AccountInfo ai = super.fetchAccountInfoWebsite(account);
+        /*
+         * 2019-08-13: This is a workaround for newly created easybytez.com FREE accounts. They will be displayed as premium account with
+         * expire date (expiredate = CURRENT date [TODAY]) on their website but they are FREE accounts! Premium accounts have unlimited
+         * traffic and free accounts have limited traffic --> Use this to recognize this special case and fix AccountType!
+         */
+        if (AccountType.PREMIUM.equals(account.getType()) && ai.getTrafficLeft() > 0) {
+            logger.info("Correcting AccountType from PREMIUM to FREE and removing expire-date");
+            account.setType(AccountType.FREE);
+            /* Remove wrong expire-date (given via website) */
+            ai.setValidUntil(-1);
+        }
         if (AccountType.FREE.equals(account.getType())) {
             /*
              * 2019-08-06: Special: Allow downloads even if account does not have enough traffic. By performing a reconnect we can reset
