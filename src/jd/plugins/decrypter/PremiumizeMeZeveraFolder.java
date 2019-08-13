@@ -160,8 +160,8 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
              */
             cloudID = "0";
         }
-        accessCloudItem(br, account, url);
-        final Map<String, Object> responseMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
+        final String response = accessCloudItem(br, account, url);
+        final Map<String, Object> responseMap = JSonStorage.restoreFromString(response, TypeRef.HASHMAP, null);
         final String status = (String) responseMap.get("status");
         final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
         if (StringUtils.equals("success", status)) {
