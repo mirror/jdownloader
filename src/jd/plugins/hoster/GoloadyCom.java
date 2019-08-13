@@ -47,7 +47,7 @@ import jd.plugins.components.PluginJSonUtils;
 public class GoloadyCom extends PluginForHost {
     public GoloadyCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("https://www.goloady.com/premium");
     }
 
     @Override
@@ -377,24 +377,41 @@ public class GoloadyCom extends PluginForHost {
         } catch (final PluginException e) {
             throw e;
         }
-        ai.setUnlimitedTraffic();
-        if (br.containsHTML("")) {
+        br.getPage("/me");
+        final Regex trafficRegex = br.getRegex(">Used Bandwidth</div>\\s*?<div class =\\s*?\"usedspace_percentage\"[^>]*?>([^<>\"]+) / ([^<>\"]+)</div>");
+        final String traffic_usedStr = trafficRegex.getMatch(0);
+        final String traffic_maxStr = trafficRegex.getMatch(1);
+        final String expireStr = br.getRegex(">Expires on:</p> <[^>]*?>(\\d{1,2}-\\d{1,2}-\\d{4})</p>").getMatch(0);
+        long expireTimestamp = 0;
+        if (expireStr != null) {
+            expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "dd-MM-yyyy", Locale.ENGLISH);
+        }
+        if (expireTimestamp < System.currentTimeMillis()) {
+            /* Free & expired premium */
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
+            /* Premium */
+            ai.setValidUntil(expireTimestamp);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
+        }
+        long traffic_left = 0;
+        if (traffic_usedStr != null && traffic_maxStr != null) {
+            final long traffic_used = SizeFormatter.getSize(traffic_usedStr);
+            final long traffic_max = SizeFormatter.getSize(traffic_usedStr);
+            traffic_left = traffic_max - traffic_used;
+        }
+        if (traffic_left > 0) {
+            ai.setTrafficLeft(traffic_left);
+        } else {
+            logger.info("Failed to find trafficleft");
+            ai.setUnlimitedTraffic();
         }
         return ai;
     }
