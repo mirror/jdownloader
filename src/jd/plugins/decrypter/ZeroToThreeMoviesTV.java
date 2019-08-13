@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,6 +30,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 41082 $", interfaceVersion = 2, names = { "0123moviestv.com" }, urls = { "https?://(www[0-9]*\\.)?0123moviestv\\.com/watch.+/.+" })
 public class ZeroToThreeMoviesTV extends antiDDoSForDecrypt {
@@ -68,8 +68,8 @@ public class ZeroToThreeMoviesTV extends antiDDoSForDecrypt {
     }
 
     private ArrayList<String> getVideoLinks(Browser br) throws IOException {
-        ArrayList<String> result = new ArrayList<String>();
-        String baseLinks = br.getRegex("data: \'([^\']+)\'").getMatch(0);
+        final ArrayList<String> result = new ArrayList<String>();
+        final String baseLinks = br.getRegex("data: \'([^\']+)\'").getMatch(0);
         String moreLinks = br.getRegex("\\{[^\\}]+( id:[^\\}]+)[^\\}]+\\}").getMatch(0);
         if (baseLinks != null) {
             result.addAll(retrieveVideoLinks(br, baseLinks.toString()));
@@ -78,17 +78,14 @@ public class ZeroToThreeMoviesTV extends antiDDoSForDecrypt {
             moreLinks = moreLinks.toString().replaceAll(" ", "").replaceAll(":", "=").replaceAll(",", "&").replaceAll("'", "");
             result.addAll(retrieveVideoLinks(br, moreLinks.toString()));
         }
-        LinkedHashSet<String> set = new LinkedHashSet<>(result);
-        result.clear();
-        result.addAll(set);
-        return result;
+        final LinkedHashSet<String> ret = new LinkedHashSet<String>(result);
+        return new ArrayList<String>(ret);
     }
 
     private List<String> retrieveVideoLinks(Browser br, String queryString) throws IOException {
-        ArrayList<String> result = new ArrayList<String>();
         final Browser brc = br.cloneBrowser();
         brc.getPage(brc.getURL("/includes/links.php?" + queryString));
-        String[] links = HTMLParser.getHttpLinks(brc.toString(), null);
+        final String[] links = HTMLParser.getHttpLinks(brc.toString(), null);
         return Arrays.asList(links);
     }
 }

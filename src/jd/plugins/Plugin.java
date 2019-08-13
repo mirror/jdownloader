@@ -131,13 +131,13 @@ public abstract class Plugin implements ActionListener {
 
     protected String getMappedHost(List<String[]> pluginDomains, String host) {
         for (final String[] domains : pluginDomains) {
-            for (String domain : domains) {
+            for (final String domain : domains) {
                 if (StringUtils.equalsIgnoreCase(host, domain)) {
-                    return domains[0];
+                    return domains[0];// return first domain = plugin domain = getHost();
                 }
             }
         }
-        return host;
+        return null;
     }
 
     protected static String[] buildAnnotationNames(List<String[]> pluginDomains) {

@@ -24,7 +24,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -54,7 +53,7 @@ public class WupfileCom extends XFileSharingProBasic {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
-    public static List<String[]> getPluginDomains() {
+    private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "wupfile.com", "salefiles.com" });
@@ -63,17 +62,7 @@ public class WupfileCom extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(String host) {
-        if (StringUtils.equalsIgnoreCase(this.getHost(), "wupfile.com")) {
-            if (host == null) {
-                return null;
-            } else {
-                final String mapping = this.getMappedHost(getPluginDomains(), host);
-                if (mapping != null) {
-                    return mapping;
-                }
-            }
-        }
-        return super.rewriteHost(host);
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     @Override

@@ -50,15 +50,7 @@ public class Speed4upNet extends XFileSharingProBasic {
     /** 2019-08-12: Main domain was changed from speed4up.com to speed4up.net */
     @Override
     public String rewriteHost(String host) {
-        if (host == null) {
-            return null;
-        } else {
-            final String mapping = this.getMappedHost(getPluginDomains(), host);
-            if (mapping != null) {
-                return mapping;
-            }
-        }
-        return super.rewriteHost(host);
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
