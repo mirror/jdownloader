@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/\\d+(?:/[a-z0-9\\-_]+)?" })
 public class NaughtymachinimaCom extends PluginForHost {
-
     public NaughtymachinimaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -39,14 +37,12 @@ public class NaughtymachinimaCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
     private boolean              privatecontent    = false;
@@ -58,7 +54,7 @@ public class NaughtymachinimaCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("https://", "http://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -84,10 +80,8 @@ public class NaughtymachinimaCom extends PluginForHost {
         if (filename == null) {
             filename = url_name;
         }
-
         /* E.g. SD: http://www.naughtymachinima.com/media/videos/iphone/<fid>.mp4 */
         dllink = "/media/videos/hd/" + fid + ".mp4";
-
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

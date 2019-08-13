@@ -277,23 +277,32 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 // reset request
                 request.resetConnection();
             }
-            URLConnectionAdapter con = null;
+            final URLConnectionAdapter con = ibr.openRequestConnection(request);
             try {
-                con = ibr.openRequestConnection(request);
                 readConnection(con, ibr);
             } finally {
-                if (con != null) {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
+                con.disconnect();
+            }
+            final boolean updateConnectionOnly;
+            synchronized (requestConnectionOnly) {
+                updateConnectionOnly = !requestConnectionOnly.containsKey(request);
             }
             try {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.put(request, Boolean.FALSE);
+                    }
+                }
                 antiDDoS(ibr);
                 break;
             } catch (final ConcurrentLockException cle) {
                 continue;
+            } finally {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.remove(request);
+                    }
+                }
             }
         }
         runPostRequestTask(ibr);
@@ -323,12 +332,27 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 // reset request
                 request.resetConnection();
             }
+            final boolean updateConnectionOnly;
+            synchronized (requestConnectionOnly) {
+                updateConnectionOnly = !requestConnectionOnly.containsKey(request);
+            }
             ibr.openRequestConnection(request);
             try {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.put(request, Boolean.TRUE);
+                    }
+                }
                 antiDDoS(ibr, request);
                 break;
             } catch (final ConcurrentLockException cle) {
                 continue;
+            } finally {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.remove(request);
+                    }
+                }
             }
         }
         return ibr.getHttpConnection();
@@ -476,6 +500,28 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         concurrentLock.compareAndSet(lockObject, null);
     }
 
+    private final WeakHashMap<GetRequest, HeadRequest> headRequestHierarchyMap = new WeakHashMap<GetRequest, HeadRequest>();
+    private final WeakHashMap<Request, Object>         requestConnectionOnly   = new WeakHashMap<Request, Object>();
+
+    private HeadRequest getInitialHeadRequest(Request request) {
+        Request source = request;
+        Request next = null;
+        while (true) {
+            synchronized (headRequestHierarchyMap) {
+                next = headRequestHierarchyMap.get(source);
+            }
+            if (next != null) {
+                source = next;
+            } else {
+                if (source instanceof HeadRequest) {
+                    return (HeadRequest) source;
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
@@ -485,7 +531,23 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (request != null) {
                     // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest) {
-                        openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                        final GetRequest getRequest = new GetRequest(request);
+                        try {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.put(getRequest, (HeadRequest) request);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.put(getRequest, Boolean.FALSE);
+                            }
+                            openAntiDDoSRequestConnection(ibr, getRequest);
+                        } finally {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.remove(getRequest);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.remove(getRequest);
+                            }
+                        }
                         return;
                     }
                 }
@@ -493,7 +555,23 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (request != null) {
                     // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest && isCloudFlareProtectionMode(responseCode)) {
-                        openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                        final GetRequest getRequest = new GetRequest(request);
+                        try {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.put(getRequest, (HeadRequest) request);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.put(getRequest, Boolean.FALSE);
+                            }
+                            openAntiDDoSRequestConnection(ibr, getRequest);
+                        } finally {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.remove(getRequest);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.remove(getRequest);
+                            }
+                        }
                         return;
                     }
                     ibr.followConnection();
@@ -555,14 +633,25 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     Thread.sleep(2500);
                     // effectively refresh page!
                     try {
-                        sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
+                        final Request currentRequest = ibr.getRequest();
+                        final HeadRequest initialHeadRequest = getInitialHeadRequest(currentRequest);
+                        final Request nextRequest = currentRequest.cloneRequest();
+                        final boolean openConnection;
+                        synchronized (requestConnectionOnly) {
+                            openConnection = (initialHeadRequest != null && Boolean.TRUE.equals(requestConnectionOnly.get(initialHeadRequest))) || Boolean.TRUE.equals(requestConnectionOnly.containsKey(currentRequest));
                         }
-                        t.printStackTrace();
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                        if (openConnection) {
+                            openAntiDDoSRequestConnection(ibr, nextRequest);
+                        } else {
+                            sendRequest(ibr, nextRequest);
+                        }
+                    } catch (InterruptedException e) {
+                        throw e;
+                    } catch (PluginException e) {
+                        throw e;
+                    } catch (final Exception e) {
+                        // we want to preserve proper exceptions!
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                     }
                     // new sendRequest saves cookie session
                     return;
@@ -577,14 +666,25 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         Thread.sleep(61000);
                         // try again! -NOTE: this isn't stable compliant-
                         try {
-                            sendRequest(ibr, ibr.getRequest().cloneRequest());
-                        } catch (final Exception t) {
-                            // we want to preserve proper exceptions!
-                            if (t instanceof PluginException) {
-                                throw t;
+                            final Request currentRequest = ibr.getRequest();
+                            final HeadRequest initialHeadRequest = getInitialHeadRequest(currentRequest);
+                            final Request nextRequest = currentRequest.cloneRequest();
+                            final boolean openConnection;
+                            synchronized (requestConnectionOnly) {
+                                openConnection = (initialHeadRequest != null && Boolean.TRUE.equals(requestConnectionOnly.get(initialHeadRequest))) || Boolean.TRUE.equals(requestConnectionOnly.containsKey(currentRequest));
                             }
-                            t.printStackTrace();
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                            if (openConnection) {
+                                openAntiDDoSRequestConnection(ibr, nextRequest);
+                            } else {
+                                sendRequest(ibr, nextRequest);
+                            }
+                        } catch (InterruptedException e) {
+                            throw e;
+                        } catch (PluginException e) {
+                            throw e;
+                        } catch (final Exception e) {
+                            // we want to preserve proper exceptions!
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                         }
                         // new sendRequest saves cookie session
                         return;
@@ -678,14 +778,21 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 try {
                                     // resend originalRequest
                                     originalRequest.resetConnection();
-                                    sendRequest(ibr, originalRequest);
-                                } catch (final Exception t) {
-                                    // we want to preserve proper exceptions!
-                                    if (t instanceof PluginException) {
-                                        throw t;
+                                    final boolean openConnection;
+                                    synchronized (requestConnectionOnly) {
+                                        openConnection = Boolean.TRUE.equals(requestConnectionOnly.get(originalRequest));
                                     }
-                                    t.printStackTrace();
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                                    if (openConnection) {
+                                        openAntiDDoSRequestConnection(ibr, originalRequest);
+                                    } else {
+                                        sendRequest(ibr, originalRequest);
+                                    }
+                                } catch (InterruptedException e) {
+                                    throw e;
+                                } catch (PluginException e) {
+                                    throw e;
+                                } catch (final Exception e) {
+                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                                 }
                                 // because next round could be 200 response code, you need to nullify this value here.
                                 a_captchaRequirement = false;
@@ -760,14 +867,21 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 try {
                                     // resend originalRequest
                                     originalRequest.resetConnection();
-                                    sendRequest(ibr, originalRequest);
-                                } catch (final Exception t) {
-                                    logger.log(t);
-                                    // we want to preserve proper exceptions!
-                                    if (t instanceof PluginException) {
-                                        throw t;
+                                    final boolean openConnection;
+                                    synchronized (requestConnectionOnly) {
+                                        openConnection = Boolean.TRUE.equals(requestConnectionOnly.get(originalRequest));
                                     }
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                                    if (openConnection) {
+                                        openAntiDDoSRequestConnection(ibr, originalRequest);
+                                    } else {
+                                        sendRequest(ibr, originalRequest);
+                                    }
+                                } catch (InterruptedException e) {
+                                    throw e;
+                                } catch (PluginException e) {
+                                    throw e;
+                                } catch (final Exception e) {
+                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                                 }
                                 // new sendRequest saves cookie session
                                 return;
