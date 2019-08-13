@@ -121,7 +121,8 @@ public class EasyBytezCom extends XFileSharingProBasic {
          * expire date (expiredate = CURRENT date [TODAY]) on their website but they are FREE accounts! Premium accounts have unlimited
          * traffic and free accounts have limited traffic --> Use this to recognize this special case and fix AccountType!
          */
-        if (AccountType.PREMIUM.equals(account.getType()) && ai.getTrafficLeft() > 0) {
+        final boolean premiumValidLessThanOneDay = ai.getValidUntil() - System.currentTimeMillis() < (24 * 60 * 60 * 1000l);
+        if (AccountType.PREMIUM.equals(account.getType()) && ai.getTrafficLeft() > 0 && premiumValidLessThanOneDay) {
             logger.info("Correcting AccountType from PREMIUM to FREE and removing expire-date");
             account.setType(AccountType.FREE);
             /* Remove wrong expire-date (given via website) */
