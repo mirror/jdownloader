@@ -44,7 +44,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -233,11 +232,7 @@ public class PluralsightCom extends PluginForHost {
                 return fetchFileInformation(link, account);
             } catch (PluginException e) {
                 final LogInterface logger = getLogger();
-                if (logger instanceof LogSource) {
-                    handleAccountException(account, (LogSource) logger, e);
-                } else {
-                    handleAccountException(account, null, e);
-                }
+                handleAccountException(account, logger, e);
             }
         }
         return fetchFileInformation(link, account);
