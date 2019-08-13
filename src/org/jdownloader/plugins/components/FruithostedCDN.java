@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,12 +42,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class FruithostedCDN extends antiDDoSForHost {
     public FruithostedCDN(PluginWrapper wrapper) {
@@ -172,10 +172,14 @@ public class FruithostedCDN extends antiDDoSForHost {
                              */
                             link.setAvailable(false);
                         } else {
-                            final String filename = (String) finfo.get("name");
+                            String filename = (String) finfo.get("name");
                             final String sha1 = (String) finfo.get("sha1");
                             final long filesize = JavaScriptEngineFactory.toLong(finfo.get("size"), 0);
                             if (!StringUtils.isEmpty(filename)) {
+                                if (!filename.toLowerCase().endsWith(".mp4")) {
+                                    /* 2019-08-13: In very rare cases there are filenames containing .mp4 but not ending with .mp4! */
+                                    filename += ".mp4";
+                                }
                                 link.setFinalFileName(filename);
                             }
                             if (filesize > 0) {

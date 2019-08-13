@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.co" }, urls = { "https?://(?:www\\.)?vidcloud\\.co/embed/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.co" }, urls = { "https?://(?:www\\.)?vidcloud\\.co/(?:embed|v)/([a-z0-9]+)" })
 public class VidcloudCo extends PluginForHost {
     public VidcloudCo(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,6 +61,10 @@ public class VidcloudCo extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        return this.getHost() + "://" + getFID(link);
+    }
+
+    public String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
     }
 
@@ -72,7 +76,7 @@ public class VidcloudCo extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = getLinkID(link);
+        final String fid = getFID(link);
         String filename = null;
         final boolean crawlWebsiteFirst = false;
         if (crawlWebsiteFirst) {
