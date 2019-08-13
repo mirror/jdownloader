@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.Random;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -193,8 +191,10 @@ public class VizCom extends PluginForHost {
                 br.setCookie(account.getHoster(), "curtain_seen", "true");
                 br.getPage("https://www.viz.com/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                // br.getPage("https://www.viz.com/account/refresh_login_links");
-                br.postPage("https://www." + account.getHoster() + "/account/try_login.json?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(1000000000), "a=n&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                // Grab the now required authenticity_token value from refresh_login_links and use it to properly log in.
+                br.getPage("https://www.viz.com/account/refresh_login_links");
+                final String authenticity_token = br.getRegex("var AUTH_TOKEN\\s*=\\s*\"([^\\\"]*)\";").getMatch(0);
+                br.postPage("https://www." + account.getHoster() + "/account/try_login", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&authenticity_token=" + Encoding.urlEncode(authenticity_token) + "&rem_user=1");
                 final String okay = PluginJSonUtils.getJsonValue(this.br, "ok");
                 if (this.br.getHttpConnection().getResponseCode() != 200 || !"1".equals(okay)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -222,8 +222,8 @@ public class VizCom extends PluginForHost {
             throw e;
         }
         /*
-         * 2017-01-25: Treat all as free accounts - accounts do not have an exact status - users can buy single items which are then unlocked to
-         * view/download in their account.
+         * 2017-01-25: Treat all as free accounts - accounts do not have an exact status - users can buy single items which are then
+         * unlocked to view/download in their account.
          */
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
