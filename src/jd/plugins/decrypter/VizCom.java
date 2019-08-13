@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -30,9 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/(read/)?[^/]+/[^/]+/(?:chapter/|issue/|product/|manga/product/|manga/product/digital/)\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/(read/)?[^/]+/[^/]+/(?:chapter/|issue/|product/|manga/product/|manga/product/digital/|promo/)\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -121,8 +121,8 @@ public class VizCom extends antiDDoSForDecrypt {
     }
 
     public static void accessPage(final Browser br, final String manga_id, final String page) throws Exception {
-        final String page_url = "https://www." + br.getHost() + "/manga/get_manga_url?manga_id=" + manga_id + "&page=" + page + "&device_id=3&loadermax=1";
-        br.getHeaders().put("Referer", "https://www.viz.com/assets/reader-" + System.currentTimeMillis() + ".swf");
+        final String page_url = "https://www." + br.getHost() + "/manga/get_manga_url?manga_id=" + manga_id + "&page=" + page + "&device_id=3";
+        br.getHeaders().put("Referer", br.getURL());
         br.getPage(page_url);
     }
 }
