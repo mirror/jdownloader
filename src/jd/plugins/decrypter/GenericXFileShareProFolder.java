@@ -20,11 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,10 +33,17 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -125,7 +127,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         host = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
         if (host == null) {
             logger.warning("Failure finding HOST : " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setCookie("https://" + host, "lang", "english");
         br.setFollowRedirects(true);
@@ -147,13 +149,20 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     }
                     logger.info("Cannot access folder without login --> Trying to login and retry");
                     final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
+                    if (!(hostPlg instanceof XFileSharingProBasic)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     final Account acc = AccountController.getInstance().getValidAccount(hostPlg);
                     if (acc == null) {
                         throw new AccountRequiredException("Folder not accessible without account");
                     }
                     hostPlg.setBrowser(this.br);
-                    ((org.jdownloader.plugins.components.XFileSharingProBasic) hostPlg).loginWebsite(acc, false);
-                    loggedIN = true;
+                    try {
+                        ((XFileSharingProBasic) hostPlg).loginWebsite(acc, false);
+                        loggedIN = true;
+                    } catch (Exception e) {
+                        ((XFileSharingProBasic) hostPlg).handleAccountException(acc, logger, e);
+                    }
                     continue;
                 } else {
                     /* Folder should be accessible without account --> Step out of loop */
@@ -224,7 +233,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     final DownloadLink dl = createDownloadlink(link);
                     /* Works for e.g. world-files.com, brupload.net */
                     /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
-                    String html_snippet = new Regex(br.toString(), "<TD>\\s.*?.*?" + linkid + ".*?</TD>").getMatch(-1);
+                    String html_snippet = new Regex(br.toString(), "<tr>\\s*<td>\\s*<a[^<]*" + linkid + ".*?</td>\\s*</tr>").getMatch(-1);
                     if (StringUtils.isEmpty(html_snippet)) {
                         /* E.g. up-4.net */
                         /* TODO: Improve this RegEx */
@@ -237,7 +246,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     String html_filename = null;
                     String html_filesize = null;
                     if (html_snippet != null) {
-                        html_filename = new Regex(html_snippet, "target=\"_blank\">([^<>\"]+)</a>").getMatch(0);
+                        html_filename = new Regex(html_snippet, "target=\"_blank\">\\s*([^<>\"]+)\\s*</(a|td)>").getMatch(0);
                         html_filesize = new Regex(html_snippet, "([\\d\\.]+ (?:B|KB|MB|GB))").getMatch(0);
                     }
                     String filename;

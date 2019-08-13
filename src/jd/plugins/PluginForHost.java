@@ -268,7 +268,7 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    public AccountInfo handleAccountException(final Account account, final LogSource logger, Throwable throwable) {
+    public AccountInfo handleAccountException(final Account account, final LogInterface logger, Throwable throwable) {
         final AccountInfo ai;
         if (account.getAccountInfo() != null) {
             ai = account.getAccountInfo();
@@ -277,7 +277,9 @@ public abstract class PluginForHost extends Plugin {
             account.setAccountInfo(ai);
         }
         if (logger != null) {
-            logger.clear();
+            if (logger instanceof LogSource) {
+                ((LogSource) logger).clear();
+            }
             logger.log(throwable);
         }
         if (throwable instanceof NoGateWayException) {

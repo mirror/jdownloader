@@ -297,11 +297,7 @@ public abstract class PluginForDecrypt extends Plugin {
     protected void handleAccountException(Account account, Throwable throwable) throws Exception {
         final PluginForHost plugin = account.getPlugin().getLazyP().newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
         final LogInterface logger = getLogger();
-        if (logger instanceof LogSource) {
-            plugin.handleAccountException(account, (LogSource) logger, throwable);
-        } else {
-            plugin.handleAccountException(account, null, throwable);
-        }
+        plugin.handleAccountException(account, logger, throwable);
     }
 
     public ArrayList<DownloadLink> decryptIt(CrawledLink link) throws Exception {
