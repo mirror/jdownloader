@@ -15,10 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,6 +31,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz", "pornoid.cz" }, urls = { "https?://(?:www\\.)?datoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?", "https?://(?:www\\.)?pornoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?" })
 public class DatoidCz extends antiDDoSForHost {
@@ -160,9 +160,9 @@ public class DatoidCz extends antiDDoSForHost {
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
             logger.info("Only downloadable by Premium Account holders");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (br.containsHTML(">Soubor byl zablokován\\.")) {
+        } else if (br.containsHTML(">\\s*Soubor byl zablokován\\.")) {
             /* 2019-08-12: WTF: Log: 6759186935451 : svn.jdownloader.org/issues/87302 */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Soubor byl zablokován.", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Soubor byl zablokován.", 30 * 60 * 1000l);
         }
         final String continue_url = br.getRegex("class=\"[^\"]*?btn btn-large btn-download detail-download\" href=\"(/f/[^<>\"]+)\"").getMatch(0);
         if (continue_url == null) {
@@ -186,8 +186,7 @@ public class DatoidCz extends antiDDoSForHost {
             }
             if (br.containsHTML("\"error\":\"IP in use\"")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            } else if (br.containsHTML("\"No anonymous free slots\"")
-                    || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
+            } else if (br.containsHTML("\"No anonymous free slots\"") || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
             } else if (br.containsHTML("class=\"hidden big\\-file\"")) {
                 /* 2019-07-31 e.g. "<span class="hidden big-file">Soubory větší než 1 GB můžou stahovat pouze <span" */
@@ -210,21 +209,25 @@ public class DatoidCz extends antiDDoSForHost {
     }
 
     private String loginAPI(final Account account) throws Exception {
-        br.setFollowRedirects(false);
-        getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        try {
-            if (br.containsHTML("\\{\"success\":false\\}")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (account) {
+            br.setFollowRedirects(false);
+            getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            try {
+                if (br.containsHTML("\\{\"success\":false\\}")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final String token = PluginJSonUtils.getJsonValue(br, "token");
+                if (token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                account.setProperty("logintoken", token);
+                return token;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty("logintoken");
+                }
+                throw e;
             }
-            final String token = PluginJSonUtils.getJsonValue(br, "token");
-            if (token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            account.setProperty("logintoken", token);
-            return token;
-        } catch (PluginException e) {
-            account.removeProperty("logintoken");
-            throw e;
         }
     }
 
