@@ -156,6 +156,8 @@ public class WstreamVideo extends XFileSharingProBasic {
             final String[] dlinfo = brc.getRegex("class='[^\\']+' href='[^\\']+'>Download [^<>]+</a>").getColumn(-1);
             String dllink_last = null;
             String filesize_last = null;
+            int qualityMax = 0;
+            int qualityTemp = 0;
             for (final String dlinfoSingle : dlinfo) {
                 final String dllink_temp = new Regex(dlinfoSingle, "href=\\'(http[^\"\\']+)").getMatch(0);
                 if (StringUtils.isEmpty(dllink_temp)) {
@@ -175,8 +177,18 @@ public class WstreamVideo extends XFileSharingProBasic {
                 dllink_last = dllink_temp;
                 filesize_last = new Regex(dlinfoSingle, ">Download [A-Za-z0-9 ]+ (\\d+(?:\\.\\d+)? [A-Za-z]{1,5})\\s*?<").getMatch(0);
                 if (dlinfoSingle.contains("Download Original")) {
-                    dllink = dllink_last;
-                    break;
+                    qualityTemp = 100;
+                } else if (dlinfoSingle.contains("Download Standard")) {
+                    qualityTemp = 50;
+                } else if (dlinfoSingle.contains("Download Mobile")) {
+                    qualityTemp = 10;
+                } else {
+                    /* Unknown quality */
+                    qualityTemp = 1;
+                }
+                if (qualityTemp > qualityMax) {
+                    qualityMax = qualityTemp;
+                    dllink = dllink_temp;
                 }
             }
             if (dllink == null && dllink_last != null) {
@@ -184,7 +196,7 @@ public class WstreamVideo extends XFileSharingProBasic {
                 logger.info("Failed to find highest quality, falling back to (???)");
                 dllink = dllink_last;
             }
-            if (link.getDownloadSize() <= 0 && filesize_last != null) {
+            if (link.getView().getBytesTotal() <= 0 && filesize_last != null) {
                 /*
                  * 2019-06-13: Sure if everything goes as planned this makes no sense BUT in case the download fails to start, now we at
                  * least found our filesize :)
