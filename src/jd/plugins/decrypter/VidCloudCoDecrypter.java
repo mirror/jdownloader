@@ -30,12 +30,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VidcloudCo.VidcloudConfigInterface;
 
-@DecrypterPlugin(revision = "$Revision: 40000 $", interfaceVersion = 2, names = { "vidcloud.xyz" }, urls = { "https?://(?:play\\.)?vidcloud\\.xyz/(watch|stream).+" })
+@DecrypterPlugin(revision = "$Revision: 40000 $", interfaceVersion = 2, names = { "vidcloud.xyz" }, urls = { "https?://(?:play\\.)?vidcloud\\.xyz/(?:watch|stream).+" })
 public class VidCloudCoDecrypter extends PluginForDecrypt {
     public VidCloudCoDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* 2019-08-13: Tags: vidcloud.co */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();

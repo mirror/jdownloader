@@ -22,10 +22,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -46,37 +57,24 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
-    private final String                   noChunks                       = "noChunks";
-    private final String                   normalTraffic                  = "normalTraffic";
-    private final String                   specialTraffic                 = "specialTraffic";
-    private final String                   storageTraffic                 = "storageTraffic";
-    private static final String            CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String            type_storage                   = "https?://storage.+";
-    private static final String            type_torrent                   = "https?://torrent.+";
-    private static final String            API_BASE                       = "http://api.premium.to/";
-    private static final String            API_BASE_STORAGE               = "http://storage.premium.to/api";
-    private static MultiHosterManagement   mhm                            = new MultiHosterManagement("premium.to");
-    private static final ArrayList<String> hosts_regular                  = new ArrayList<String>();
-    private static final ArrayList<String> hosts_storage                  = new ArrayList<String>();
+    private final String                   normalTraffic    = "normalTraffic";
+    private final String                   specialTraffic   = "specialTraffic";
+    private final String                   storageTraffic   = "storageTraffic";
+    private static final String            type_storage     = "https?://storage.+";
+    // private static final String type_torrent = "https?://torrent.+";
+    private static final String            API_BASE         = "http://api.premium.to/";
+    private static final String            API_BASE_STORAGE = "http://storage.premium.to/api";
+    private static MultiHosterManagement   mhm              = new MultiHosterManagement("premium.to");
+    private static final ArrayList<String> hosts_regular    = new ArrayList<String>();
+    private static final ArrayList<String> hosts_storage    = new ArrayList<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(2 * 1000L);
-        this.enablePremium("http://premium.to/");
+        /* 2019-08-13: Not required anymore */
+        // setStartIntervall(2 * 1000L);
+        this.enablePremium("https://premium.to/");
     }
 
     public static interface PremiumDotToConfigInterface extends UsenetAccountConfigInterface {
@@ -131,18 +129,6 @@ public class PremiumTo extends UseNet {
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setAllowedResponseCodes(new int[] { 400 });
         return prepBr;
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
-        if (link != null && "keep2share.cc".equals(link.getHost())) {
-            return 1;
-        } else if (link != null && "share-online.biz".equals(link.getHost())) {
-            /* re admin: only 1 possible */
-            return 1;
-        } else {
-            return super.getMaxSimultanDownload(link, account, proxy);
-        }
     }
 
     @Override
@@ -337,33 +323,8 @@ public class PremiumTo extends UseNet {
             }
             String serverside_filename = link.getStringProperty("serverside_filename", null);
             dl = null;
-            String url = link.getDownloadURL().replaceFirst("https?://", "");
-            /* this here is bullshit... multihoster side should do all the corrections. */
-            /* TODO: Remove these workarounds */
-            if (url.startsWith("http://")) {
-                url = url.substring(7);
-            }
-            if (url.startsWith("www.")) {
-                url = url.substring(4);
-            }
-            if (url.startsWith("depositfiles.com/")) {
-                url = url.replaceFirst("depositfiles.com/", "df.com/");
-            } else if (url.startsWith("filefactory.com/")) {
-                url = url.replaceFirst("filefactory.com/", "ff.com/");
-            }
-            if (url.startsWith("oboom.com/")) {
-                url = url.replaceFirst("oboom.com/#", "oboom.com/");
-            }
-            url = Encoding.urlEncode(url);
-            int connections = getConnections(link.getHost());
-            if (link.getChunks() != -1) {
-                if (connections < 1) {
-                    connections = link.getChunks();
-                }
-            }
-            if (link.getBooleanProperty(noChunks, false)) {
-                connections = 1;
-            }
+            final String url = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+            final int maxConnections = -10;
             String finalURL = null;
             /*
              * 2019-04-15: URLs of some hosts can only be downloaded via storage (= have to be fully downloaded top the servers of this
@@ -420,7 +381,7 @@ public class PremiumTo extends UseNet {
                 /* We might need this information later */
                 link.setProperty("serverside_filename", serverside_filename);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, connections);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, maxConnections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
@@ -451,68 +412,59 @@ public class PremiumTo extends UseNet {
                  */
                 mhm.handleErrorGeneric(account, link, "unknown_dl_error", 2, 5 * 60 * 1000l);
             }
-            try {
-                /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
-                final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
-                if (dl.startDownload() && config.isClearDownloadHistory()) {
-                    String storageID = null;
-                    if (link.getDownloadURL().matches(type_storage)) {
-                        storageID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-                    } else if (serverside_filename != null) {
-                        /*
-                         * 2019-06-05: This is a workaround!! Their API should better return the storageID via 'download.php' (see upper
-                         * code).
-                         */
-                        logger.info("Trying to find storageID");
-                        try {
-                            /* Make sure we're logged-IN via apikey! */
-                            this.getAndStoreAPIKey(account);
-                            br.getPage("https://storage.premium.to/status.php");
-                            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                            final ArrayList<Object> storage_objects = (ArrayList<Object>) entries.get("f");
-                            for (final Object fileO : storage_objects) {
-                                entries = (LinkedHashMap<String, Object>) fileO;
-                                final String serverside_filename_tmp = (String) entries.get("n");
-                                if (StringUtils.equals(serverside_filename_tmp, serverside_filename)) {
-                                    storageID = (String) entries.get("i");
-                                    break;
-                                }
-                            }
-                        } catch (final Throwable e) {
-                        }
-                        if (StringUtils.isEmpty(storageID)) {
-                            logger.warning("Failed to find storageID");
-                        } else {
-                            logger.info("Successfully found storageID");
-                        }
-                    }
-                    boolean success = false;
+            /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
+            final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
+            if (dl.startDownload() && config.isClearDownloadHistory()) {
+                String storageID = null;
+                if (link.getDownloadURL().matches(type_storage)) {
+                    storageID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+                } else if (serverside_filename != null) {
+                    /*
+                     * 2019-06-05: This is a workaround!! Their API should better return the storageID via 'download.php' (see upper code).
+                     */
+                    logger.info("Trying to find storageID");
                     try {
-                        if (!StringUtils.isEmpty(storageID)) {
-                            logger.info("Trying to delete file from storage");
-                            br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + storageID);
-                            /*
-                             * TODO: Check if there is a way to determine for sure whether the deletion was successful or not.
-                             */
-                            if (br.getHttpConnection().getResponseCode() == 200) {
-                                success = true;
+                        /* Make sure we're logged-IN via apikey! */
+                        this.getAndStoreAPIKey(account);
+                        br.getPage("https://storage.premium.to/status.php");
+                        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                        final ArrayList<Object> storage_objects = (ArrayList<Object>) entries.get("f");
+                        for (final Object fileO : storage_objects) {
+                            entries = (LinkedHashMap<String, Object>) fileO;
+                            final String serverside_filename_tmp = (String) entries.get("n");
+                            if (StringUtils.equals(serverside_filename_tmp, serverside_filename)) {
+                                storageID = (String) entries.get("i");
+                                break;
                             }
                         }
                     } catch (final Throwable e) {
-                        /* Don't fail here */
-                        logger.warning("Failed to delete file from storage");
                     }
-                    if (success) {
-                        logger.info("Deletion of downloaded file seems to be successful");
+                    if (StringUtils.isEmpty(storageID)) {
+                        logger.warning("Failed to find storageID");
                     } else {
-                        logger.warning("Deletion of downloaded file seems have failed");
+                        logger.info("Successfully found storageID");
                     }
                 }
-            } catch (final PluginException ex) {
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(noChunks, false) == false) {
-                    link.setProperty(noChunks, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, ex);
+                boolean success = false;
+                try {
+                    if (!StringUtils.isEmpty(storageID)) {
+                        logger.info("Trying to delete file from storage");
+                        br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + storageID);
+                        /*
+                         * TODO: Check if there is a way to determine for sure whether the deletion was successful or not.
+                         */
+                        if (br.getHttpConnection().getResponseCode() == 200) {
+                            success = true;
+                        }
+                    }
+                } catch (final Throwable e) {
+                    /* Don't fail here */
+                    logger.warning("Failed to delete file from storage");
+                }
+                if (success) {
+                    logger.info("Deletion of downloaded file seems to be successful");
+                } else {
+                    logger.warning("Deletion of downloaded file seems have failed");
                 }
             }
         }
@@ -540,6 +492,7 @@ public class PremiumTo extends UseNet {
             }
             final String status = getStorageAPIStatus();
             if (StringUtils.isEmpty(status)) {
+                /* No errors */
                 return;
             }
             if (status.equalsIgnoreCase("In queue")) {
@@ -552,9 +505,7 @@ public class PremiumTo extends UseNet {
         return PluginJSonUtils.getJson(br, "Status");
     }
 
-    /**
-     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -652,20 +603,7 @@ public class PremiumTo extends UseNet {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account != null) {
-            // some routine to check traffic allocations: normalTraffic specialTraffic
-            // if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|filemonkey\\.in|oboom\\.com")) {
-            // We no longer sell Special traffic! Special traffic works only with our Usenet servers and for these 5 filehosts:
-            // uploaded.net,share-online.biz, rapidgator.net, filer.net
-            // special traffic
-            if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|share\\-online\\.biz|rapidgator\\.net|filer\\.net")) {
-                if (account.getLongProperty(specialTraffic, 0) > 0) {
-                    return true;
-                }
-            }
-            /* normal traffic, can include special traffic hosts also... (yes confusing) */
-            if (account.getLongProperty(normalTraffic, 0) > 0) {
-                return true;
-            }
+            return true;
         }
         return false;
     }
@@ -676,18 +614,6 @@ public class PremiumTo extends UseNet {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private int getConnections(String host) {
-        if ("keep2share.cc".equals(host)) {
-            return 1;
-        } else if ("share-online.biz".equals(host)) {
-            // re admin: only 1 possible
-            return 1;
-        } else {
-            // default is up to 10 connections
-            return -10;
-        }
     }
 
     @Override

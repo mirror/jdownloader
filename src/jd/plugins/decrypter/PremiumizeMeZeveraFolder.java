@@ -22,6 +22,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me", "zevera.com" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+", "https?://(?:(?:www|beta)\\.)?zevera\\.com/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+" })
@@ -42,6 +43,18 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         final Account account = accs.get(0);
         final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
         if (nodes == null) {
+            final String status = PluginJSonUtils.getJson(br, "status");
+            if ("error".equals(status)) {
+                /* E.g. "{"status":"error","message":"customer_id and pin param missing or not logged in "}" */
+                logger.info("Either invalid logindata, wrong account (you can only download your own cloud files) OR offline content");
+                final String url_params = new Regex(parameter.getCryptedUrl(), "\\?(.+)").getMatch(0);
+                final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl());
+                if (url_params != null) {
+                    offline.setName(url_params);
+                }
+                ret.add(offline);
+                return ret;
+            }
             return null;
         }
         /* Find path from previous craw process if available. */

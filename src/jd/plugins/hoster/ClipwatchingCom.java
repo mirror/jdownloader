@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VidloxTv extends XFileSharingProBasic {
-    public VidloxTv(final PluginWrapper wrapper) {
+public class ClipwatchingCom extends XFileSharingProBasic {
+    public ClipwatchingCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,14 +36,14 @@ public class VidloxTv extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: Premium untested, set FREE limits<br />
+     * limit-info: 2019-08-13: No limits at all <br />
      * captchatype-info: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidlox.tv", "vidlox.me" });
+        ret.add(new String[] { "clipwatching.com" });
         return ret;
     }
 
