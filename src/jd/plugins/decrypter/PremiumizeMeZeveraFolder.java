@@ -206,7 +206,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         if (!pairingLogin) {
             getData += "&pin=" + Encoding.urlEncode(jd.plugins.hoster.ZeveraCore.getAPIKey(account));
         }
-        if (url_source.contains("folder_id")) {
+        if (StringUtils.containsIgnoreCase(url_source, "folder_id")) {
             /* Folder */
             br.getPage("https://www." + account.getHoster() + "/api/folder/list" + getData);
         } else {
