@@ -6,10 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -24,6 +20,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me", "zevera.com" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+", "https?://(?:(?:www|beta)\\.)?zevera\\.com/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
@@ -202,9 +202,9 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         } else {
             client_id = jd.plugins.hoster.ZeveraCom.getClientIDExt();
         }
-        String getData = "?id=" + itemID;
+        String getData = "?id=" + itemID + "&client_id=" + client_id;
         if (!pairingLogin) {
-            getData += "&client_id=" + client_id;
+            getData += "&pin=" + Encoding.urlEncode(jd.plugins.hoster.ZeveraCore.getAPIKey(account));
         }
         if (url_source.contains("folder_id")) {
             /* Folder */
