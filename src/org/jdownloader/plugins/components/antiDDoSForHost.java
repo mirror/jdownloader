@@ -283,11 +283,26 @@ public abstract class antiDDoSForHost extends PluginForHost {
             } finally {
                 con.disconnect();
             }
+            final boolean updateConnectionOnly;
+            synchronized (requestConnectionOnly) {
+                updateConnectionOnly = !requestConnectionOnly.containsKey(request);
+            }
             try {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.put(request, Boolean.FALSE);
+                    }
+                }
                 antiDDoS(ibr);
                 break;
             } catch (final ConcurrentLockException cle) {
                 continue;
+            } finally {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.remove(request);
+                    }
+                }
             }
         }
         runPostRequestTask(ibr);
@@ -317,12 +332,27 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 // reset request
                 request.resetConnection();
             }
+            final boolean updateConnectionOnly;
+            synchronized (requestConnectionOnly) {
+                updateConnectionOnly = !requestConnectionOnly.containsKey(request);
+            }
             ibr.openRequestConnection(request);
             try {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.put(request, Boolean.TRUE);
+                    }
+                }
                 antiDDoS(ibr, request);
                 break;
             } catch (final ConcurrentLockException cle) {
                 continue;
+            } finally {
+                if (updateConnectionOnly) {
+                    synchronized (requestConnectionOnly) {
+                        requestConnectionOnly.remove(request);
+                    }
+                }
             }
         }
         return ibr.getHttpConnection();
@@ -481,6 +511,28 @@ public abstract class antiDDoSForHost extends PluginForHost {
         concurrentLock.compareAndSet(lockObject, null);
     }
 
+    private final WeakHashMap<GetRequest, HeadRequest> headRequestHierarchyMap = new WeakHashMap<GetRequest, HeadRequest>();
+    private final WeakHashMap<Request, Boolean>        requestConnectionOnly   = new WeakHashMap<Request, Boolean>();
+
+    private HeadRequest getInitialHeadRequest(Request request) {
+        Request source = request;
+        Request next = null;
+        while (true) {
+            synchronized (headRequestHierarchyMap) {
+                next = headRequestHierarchyMap.get(source);
+            }
+            if (next != null) {
+                source = next;
+            } else {
+                if (source instanceof HeadRequest) {
+                    return (HeadRequest) source;
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
@@ -490,7 +542,23 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 if (request != null) {
                     // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest) {
-                        openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                        final GetRequest getRequest = new GetRequest(request);
+                        try {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.put(getRequest, (HeadRequest) request);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.put(getRequest, Boolean.FALSE);
+                            }
+                            openAntiDDoSRequestConnection(ibr, getRequest);
+                        } finally {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.remove(getRequest);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.remove(getRequest);
+                            }
+                        }
                         return;
                     }
                 }
@@ -498,7 +566,23 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 if (request != null) {
                     // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest && isCloudFlareProtectionMode(responseCode)) {
-                        openAntiDDoSRequestConnection(ibr, new GetRequest(request));
+                        final GetRequest getRequest = new GetRequest(request);
+                        try {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.put(getRequest, (HeadRequest) request);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.put(getRequest, Boolean.FALSE);
+                            }
+                            openAntiDDoSRequestConnection(ibr, getRequest);
+                        } finally {
+                            synchronized (headRequestHierarchyMap) {
+                                headRequestHierarchyMap.remove(getRequest);
+                            }
+                            synchronized (requestConnectionOnly) {
+                                requestConnectionOnly.remove(getRequest);
+                            }
+                        }
                         return;
                     }
                     ibr.followConnection();
@@ -560,14 +644,25 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     Thread.sleep(2500);
                     // effectively refresh page!
                     try {
-                        sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
+                        final Request currentRequest = ibr.getRequest();
+                        final HeadRequest initialHeadRequest = getInitialHeadRequest(currentRequest);
+                        final Request nextRequest = currentRequest.cloneRequest();
+                        final boolean openConnection;
+                        synchronized (requestConnectionOnly) {
+                            openConnection = (initialHeadRequest != null && Boolean.TRUE.equals(requestConnectionOnly.get(initialHeadRequest))) || Boolean.TRUE.equals(requestConnectionOnly.containsKey(currentRequest));
                         }
-                        t.printStackTrace();
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                        if (openConnection) {
+                            openAntiDDoSRequestConnection(ibr, nextRequest);
+                        } else {
+                            sendRequest(ibr, nextRequest);
+                        }
+                    } catch (InterruptedException e) {
+                        throw e;
+                    } catch (PluginException e) {
+                        throw e;
+                    } catch (final Exception e) {
+                        // we want to preserve proper exceptions!
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                     }
                     // new sendRequest saves cookie session
                     return;
@@ -582,14 +677,24 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         Thread.sleep(61000);
                         // try again! -NOTE: this isn't stable compliant-
                         try {
-                            sendRequest(ibr, ibr.getRequest().cloneRequest());
-                        } catch (final Exception t) {
-                            // we want to preserve proper exceptions!
-                            if (t instanceof PluginException) {
-                                throw t;
+                            final Request currentRequest = ibr.getRequest();
+                            final HeadRequest initialHeadRequest = getInitialHeadRequest(currentRequest);
+                            final Request nextRequest = currentRequest.cloneRequest();
+                            final boolean openConnection;
+                            synchronized (requestConnectionOnly) {
+                                openConnection = (initialHeadRequest != null && Boolean.TRUE.equals(requestConnectionOnly.get(initialHeadRequest))) || Boolean.TRUE.equals(requestConnectionOnly.containsKey(currentRequest));
                             }
-                            t.printStackTrace();
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                            if (openConnection) {
+                                openAntiDDoSRequestConnection(ibr, nextRequest);
+                            } else {
+                                sendRequest(ibr, nextRequest);
+                            }
+                        } catch (InterruptedException e) {
+                            throw e;
+                        } catch (PluginException e) {
+                            throw e;
+                        } catch (final Exception e) {
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                         }
                         // new sendRequest saves cookie session
                         return;
@@ -605,18 +710,18 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // //]]>
                     // </script>
                 } else {
-                    final Form cloudflare = getCloudflareChallengeForm(ibr);
+                    final Form cloudflareForm = getCloudflareChallengeForm(ibr);
                     final Request originalRequest = ibr.getRequest();
-                    if (responseCode == 403 && cloudflare != null) {
+                    if (responseCode == 403 && cloudflareForm != null) {
                         // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
                         if (acquireLock(lockObject)) {
                             // set boolean value
                             a_captchaRequirement = true;
                             // recapthcha v2
-                            if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                            if (cloudflareForm.containsHTML("class=\"g-recaptcha\"")) {
                                 final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                                 this.setDownloadLink(dllink);
-                                final Form cf = cloudflare;
+                                final Form cf = cloudflareForm;
                                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
                                     @Override
                                     public String getSiteKey() {
@@ -633,26 +738,26 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 if (inValidate(rayId)) {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
-                                cloudflare.put("id", Encoding.urlEncode(rayId));
-                                cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                cloudflareForm.put("id", Encoding.urlEncode(rayId));
+                                cloudflareForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                             }
                             // recapthca v1
-                            else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            else if (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
                                 // they seem to add multiple input fields which is most likely meant to be corrected by js ?
                                 // we will manually remove all those
-                                while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                                    cloudflare.remove("recaptcha_response_field");
+                                while (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
+                                    cloudflareForm.remove("recaptcha_response_field");
                                 }
-                                while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                                    cloudflare.remove("recaptcha_challenge_field");
+                                while (cloudflareForm.hasInputFieldByName("recaptcha_challenge_field")) {
+                                    cloudflareForm.remove("recaptcha_challenge_field");
                                 }
                                 // this one is null, needs to be ""
-                                if (cloudflare.hasInputFieldByName("message")) {
-                                    cloudflare.remove("message");
-                                    cloudflare.put("messsage", "\"\"");
+                                if (cloudflareForm.hasInputFieldByName("message")) {
+                                    cloudflareForm.remove("message");
+                                    cloudflareForm.put("messsage", "\"\"");
                                 }
                                 // recaptcha bullshit,
-                                String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                String apiKey = cloudflareForm.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                                 if (apiKey == null) {
                                     apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                                     if (apiKey == null) {
@@ -668,13 +773,13 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 if (inValidate(response)) {
                                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                                 }
-                                cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                                cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                                cloudflareForm.put("recaptcha_challenge_field", rc.getChallenge());
+                                cloudflareForm.put("recaptcha_response_field", Encoding.urlEncode(response));
                             }
                             if (request != null) {
-                                ibr.openFormConnection(cloudflare);
+                                ibr.openFormConnection(cloudflareForm);
                             } else {
-                                ibr.submitForm(cloudflare);
+                                ibr.submitForm(cloudflareForm);
                             }
                             if (getCloudflareChallengeForm(ibr) != null) {
                                 logger.warning("Wrong captcha");
@@ -686,14 +791,21 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 try {
                                     // resend originalRequest
                                     originalRequest.resetConnection();
-                                    sendRequest(ibr, originalRequest);
-                                } catch (final Exception t) {
-                                    // we want to preserve proper exceptions!
-                                    if (t instanceof PluginException) {
-                                        throw t;
+                                    final boolean openConnection;
+                                    synchronized (requestConnectionOnly) {
+                                        openConnection = Boolean.TRUE.equals(requestConnectionOnly.get(originalRequest));
                                     }
-                                    t.printStackTrace();
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                                    if (openConnection) {
+                                        openAntiDDoSRequestConnection(ibr, originalRequest);
+                                    } else {
+                                        sendRequest(ibr, originalRequest);
+                                    }
+                                } catch (InterruptedException e) {
+                                    throw e;
+                                } catch (PluginException e) {
+                                    throw e;
+                                } catch (final Exception e) {
+                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                                 }
                                 // because next round could be 200 response code, you need to nullify this value here.
                                 a_captchaRequirement = false;
@@ -707,7 +819,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             // we need togo back and re-request!
                             throw new ConcurrentLockException();
                         }
-                    } else if (responseCode == 503 && cloudflare != null) {
+                    } else if (responseCode == 503 && cloudflareForm != null) {
                         // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
                         if (acquireLock(lockObject)) {
                             // 503 response code with javascript math section && with 5 second pause
@@ -746,13 +858,13 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                             final String answer = result.toString();
-                            cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+                            cloudflareForm.getInputFieldByName("jschl_answer").setValue(answer + "");
                             Thread.sleep(5500);
                             // if it works, there should be a redirect.
                             if (request != null) {
-                                ibr.openFormConnection(cloudflare);
+                                ibr.openFormConnection(cloudflareForm);
                             } else {
-                                ibr.submitForm(cloudflare);
+                                ibr.submitForm(cloudflareForm);
                             }
                             /*
                              * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets
@@ -762,17 +874,24 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 try {
                                     // resend originalRequest
                                     originalRequest.resetConnection();
-                                    sendRequest(ibr, originalRequest);
-                                } catch (final Exception t) {
-                                    logger.log(t);
-                                    // we want to preserve proper exceptions!
-                                    if (t instanceof PluginException) {
-                                        throw t;
+                                    final boolean openConnection;
+                                    synchronized (requestConnectionOnly) {
+                                        openConnection = Boolean.TRUE.equals(requestConnectionOnly.get(originalRequest));
                                     }
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
+                                    if (openConnection) {
+                                        openAntiDDoSRequestConnection(ibr, originalRequest);
+                                    } else {
+                                        sendRequest(ibr, originalRequest);
+                                    }
+                                    return;
+                                } catch (InterruptedException e) {
+                                    throw e;
+                                } catch (PluginException e) {
+                                    throw e;
+                                } catch (final Exception e) {
+                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                                 }
                                 // new sendRequest saves cookie session
-                                return;
                             } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                                 // since we might not be following redirect, we need to get this one so we have correct html!
                                 ibr.getPage(ibr.getRedirectLocation());
