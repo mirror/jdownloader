@@ -40,7 +40,7 @@ public class DouploadsNet extends XFileSharingProBasic {
      * captchatype-info: 2019-05-25: reCaptchaV2<br />
      * other:<br />
      */
-    public static List<String[]> getPluginDomains() {
+    private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "douploads.net", "douploads.com" });
@@ -49,16 +49,7 @@ public class DouploadsNet extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null) {
-            return null;
-        } else {
-            final String mapping = this.getMappedHost(getPluginDomains(), host);
-            if (mapping != null) {
-                return mapping;
-            } else {
-                return super.rewriteHost(host);
-            }
-        }
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
