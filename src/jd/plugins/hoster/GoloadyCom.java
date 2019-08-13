@@ -62,12 +62,6 @@ public class GoloadyCom extends PluginForHost {
         return ret;
     }
 
-    /** 2019-08-12: Main domain was changed from speed4up.com to speed4up.net */
-    @Override
-    public String rewriteHost(String host) {
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    }
-
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
