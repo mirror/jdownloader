@@ -55,7 +55,7 @@ public class DropapkCom extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(String host) {
-        return rewriteHost(getPluginDomains(), host, "dropapk.to");
+        return rewriteHost(getPluginDomains(), host);
     }
 
     @Override
