@@ -26,17 +26,22 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -124,12 +129,40 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         }
         br.setCookie("https://" + host, "lang", "english");
         br.setFollowRedirects(true);
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
-            logger.info("Incorrect URL, Invalid user or empty folder");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
+        int counter = 0;
+        final int maxCounter = 1;
+        boolean loggedIN = false;
+        do {
+            try {
+                getPage(parameter);
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
+                    logger.info("Incorrect URL, Invalid user or empty folder");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (br.containsHTML(">\\s*?Guest access not possible")) {
+                    /* 2019-08-13: Rare special case E.g. easybytez.com */
+                    if (loggedIN) {
+                        logger.info("We are loggedIN but still cannot view this folder --> Wrong account or crawler plugin failure");
+                        throw new AccountRequiredException("Folder not accessible with this account");
+                    }
+                    logger.info("Cannot access folder without login --> Trying to login and retry");
+                    final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
+                    final Account acc = AccountController.getInstance().getValidAccount(hostPlg);
+                    if (acc == null) {
+                        throw new AccountRequiredException("Folder not accessible without account");
+                    }
+                    hostPlg.setBrowser(this.br);
+                    ((org.jdownloader.plugins.components.XFileSharingProBasic) hostPlg).loginWebsite(acc, false);
+                    loggedIN = true;
+                    continue;
+                } else {
+                    /* Folder should be accessible without account --> Step out of loop */
+                    break;
+                }
+            } finally {
+                counter++;
+            }
+        } while (counter <= maxCounter);
         /* name isn't needed, other than than text output for fpName. */
         final String username = new Regex(parameter, "/users/([^/]+)").getMatch(0);
         String fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
