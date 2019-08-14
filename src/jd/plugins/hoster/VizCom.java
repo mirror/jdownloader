@@ -101,7 +101,13 @@ public class VizCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
+        /*
+         * 2019-08-14: It seems like they are crypting the images. You can recognize parts of the content but they look more like a puzzle.
+         */
         dllink = br.getRegex("\"(http[^<>\"]+" + page + "\\.jpg?[^<>\"]+)").getMatch(0);
+        if (dllink == null && br.toString().startsWith("http")) {
+            dllink = br.toString();
+        }
         if (dllink == null && this.br.containsHTML("blankpage.jpg")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ("no_auth".equalsIgnoreCase(json_value_data)) {
