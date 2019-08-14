@@ -92,36 +92,38 @@ public class BeegCom extends PluginForHost {
             }
         }
         LinkedHashMap<String, Object> entries;
-        final boolean useAPIv2 = true;
-        if (useAPIv2) {
-            /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
-            br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
-            boolean failure = true;
-            for (final Object videoO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoO;
-                final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
-                final String videoidTemp2 = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
-                if ((videoidTemp != null && videoid.equals(videoidTemp)) || (videoidTemp2 != null && videoid.equals(videoidTemp2))) {
-                    failure = false;
-                    break;
-                }
+        /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
+        br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
+        boolean isV1Video = true;
+        for (final Object videoO : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) videoO;
+            final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
+            final String videoidTemp2 = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
+            if ((videoidTemp != null && videoid.equals(videoidTemp)) || (videoidTemp2 != null && videoid.equals(videoidTemp2))) {
+                isV1Video = false;
+                break;
             }
-            if (failure) {
-                /* This should not happen but it is also a possible offline case! */
-                logger.info("Failed to find data for desired content");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final long v_start = JavaScriptEngineFactory.toLong(entries.get("start"), -1);
-            final long v_end = JavaScriptEngineFactory.toLong(entries.get("end"), -1);
-            if (v_start == -1 || v_end == -1) {
-                /* 2019-07-16: These values are required to call the API to access single objects! */
+        }
+        if (!isV1Video) {
+            /* Example v2video: 1059800872 */
+            if (!entries.containsKey("start") && !entries.containsKey("end")) {
+                /* 2019-08-14: They can be null but they should be present in their json! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=2&s=" + v_start + "&e=" + v_end);
+            String get_parameters = "?v=2";
+            final long v_start = JavaScriptEngineFactory.toLong(entries.get("start"), -1);
+            final long v_end = JavaScriptEngineFactory.toLong(entries.get("end"), -1);
+            if (v_start > -1 && v_end > -1) {
+                /* 2019-07-16: These values are required to call the API to access single objects! */
+                get_parameters += "&s=" + v_start + "&e=" + v_end;
+            }
+            br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + get_parameters);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         } else {
-            /* 2019-07-23: Hmm back from v2 to v1?! */
+            /* Example v1video: 6471530 */
+            logger.info("Failed to find extra data for desired content --> Falling back to apiv1");
             br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=1");
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         }
