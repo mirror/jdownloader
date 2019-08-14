@@ -18,15 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -118,6 +119,15 @@ public class DdlTo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 2;
+    }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+        /* 2019-08-14: Special: This might increase downloadspeed for free users */
+        if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
+            captchaForm.put("adblock_detected", "0");
+        }
+        super.handleCaptcha(link, captchaForm);
     }
 
     private void setConfigElements() {
