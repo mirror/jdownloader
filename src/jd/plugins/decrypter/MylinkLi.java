@@ -22,12 +22,15 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mylink.li" }, urls = { "https?://(?:www\\.)?(?:mylink\\.li|myl\\.li)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mylink.li" }, urls = { "https?://(?:www\\.)?(?:mylink\\.(?:li|how|cx)|myl\\.li)/[A-Za-z0-9]+" })
 public class MylinkLi extends antiDDoSForDecrypt {
     public MylinkLi(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,6 +39,8 @@ public class MylinkLi extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String linkID = new Regex(parameter, "/([A-Za-z0-9]+)$").getMatch(0);
+        br = new Browser();
         br.setFollowRedirects(true);
         if (true) {
             logger.warning("This crawler does not yet work!");
@@ -52,18 +57,49 @@ public class MylinkLi extends antiDDoSForDecrypt {
             logger.warning("Failed to find captchaForm");
             return null;
         }
+        String debug_hash = null;
+        if (captchaForm.hasInputFieldByName("hash")) {
+            debug_hash = captchaForm.getInputFieldByName("hash").getValue();
+        }
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+        captchaForm.remove("submit");
         submitForm(captchaForm);
-        final Form captchaFollowupForm = br.getFormbyProperty("id", "reCaptchaForm");
+        Form captchaFollowupForm = br.getFormbyProperty("id", "reCaptchaForm");
         if (captchaFollowupForm == null) {
             logger.warning("Failed to find captchaFollowupForm");
             return null;
         }
         captchaFollowupForm.put("g-recaptcha-response", recaptchaV2Response);
-        this.sleep(6000, param);
+        // {
+        // /* Debug test */
+        // captchaFollowupForm = new Form();
+        // captchaFollowupForm.setMethod(MethodType.POST);
+        // captchaFollowupForm.put("uri", linkID);
+        // // captchaFollowupForm.put("hash", "");
+        // captchaFollowupForm.put("g-recaptcha-response", recaptchaV2Response);
+        // }
+        this.sleep(5001l, param);
         submitForm(captchaFollowupForm);
-        final Form shareForm = br.getFormbyProperty("id", "share");
+        // if (br.toString().length() < 100) {
+        // /* 2019-08-14: Empty page: Offline or website broken?? Same happens via browser! */
+        // decryptedLinks.add(this.createOfflinelink(parameter));
+        // return decryptedLinks;
+        // }
+        Form shareForm = br.getFormbyProperty("id", "share");
+        {
+            /* Debug test */
+            if (shareForm == null) {
+                shareForm = new Form();
+                shareForm.setMethod(MethodType.POST);
+                shareForm.put("share", "myl.li/" + linkID);
+                shareForm.put("uri", linkID);
+                if (captchaFollowupForm.hasInputFieldByName("hash")) {
+                    debug_hash = captchaFollowupForm.getInputFieldByName("hash").getValue();
+                    shareForm.put("hash", debug_hash);
+                }
+            }
+        }
         if (shareForm == null) {
             logger.warning("Failed to find finalForm");
             return null;
@@ -78,10 +114,17 @@ public class MylinkLi extends antiDDoSForDecrypt {
             if (continueForm == null || goForm != null) {
                 break;
             }
+            {
+                /* Debug test - this should not happen, we should be 'behind' that 2nd captcha Form already! */
+                if (continueForm.containsHTML("reCaptchaForm")) {
+                    continueForm.put("g-recaptcha-response", recaptchaV2Response);
+                }
+            }
             submitForm(continueForm);
         }
         if (goForm == null) {
             logger.warning("Failed to find goForm");
+            return null;
         }
         submitForm(goForm);
         final String finallink = br.getRedirectLocation();
