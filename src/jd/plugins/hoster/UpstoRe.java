@@ -45,6 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -483,7 +484,7 @@ public class UpstoRe extends antiDDoSForHost {
      * @return
      */
     private String[] getLoginCookies() {
-        return new String[] { "usid" };
+        return new String[] { "usid", "upst" };
     }
 
     /**
@@ -494,23 +495,17 @@ public class UpstoRe extends antiDDoSForHost {
      * @author raztoki
      */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {
-        final Cookies cookies = br.getCookies(MAINPAGE);
         // simple math logic here
         int i = 0;
-        if (cookies != null) {
-            for (String loginCookie : getLoginCookies()) {
-                for (final Cookie cookie : cookies.getCookies()) {
-                    if (cookie.getKey().equalsIgnoreCase(loginCookie) && (cookie.getValue() != null || cookie.getValue().length() != 0)) {
-                        i++;
-                    }
-                }
+        for (final String loginCookie : getLoginCookies()) {
+            final String value = br.getCookie(MAINPAGE, loginCookie, Cookies.NOTDELETEDPATTERN);
+            if (StringUtils.isNotEmpty(value)) {
+                i++;
+            } else {
+                return false;
             }
         }
-        if (i != getLoginCookies().length) {
-            return false;
-        } else {
-            return true;
-        }
+        return i == getLoginCookies().length;
     }
 
     private final String premDlLimit = "It is strange, but you have reached a download limit for today";
