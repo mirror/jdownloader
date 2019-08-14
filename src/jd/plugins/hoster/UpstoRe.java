@@ -309,6 +309,7 @@ public class UpstoRe extends antiDDoSForHost {
                 }
                 // goto first page
                 br.setCookie(getHost(), "lang", "en");
+                getPage("https://upstore.net");
                 getPage("https://upstore.net/account/login/");
                 final Form login = br.getFormbyActionRegex(".+/login.*");
                 if (login == null) {
