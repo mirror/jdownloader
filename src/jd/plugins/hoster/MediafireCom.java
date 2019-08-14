@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,13 +59,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.|m\\.|download\\d+\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
@@ -437,15 +437,16 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handlePW(final DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML("dh\\(''\\)")) {
+        if (br.containsHTML("aria\\-labelledby=\"passwordmsg\"")) {
             new PasswordSolver(this, br, downloadLink) {
                 String curPw = null;
 
                 @Override
                 protected void handlePassword(final String password) throws Exception {
                     curPw = password;
-                    final Form form = br.getFormbyProperty("name", "form_password");
+                    final Form form = getPasswordForm();
                     if (form == null) {
+                        logger.warning("Failed to find passwordForm");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     form.put("downloadp", Encoding.urlEncode(curPw));
@@ -454,12 +455,21 @@ public class MediafireCom extends PluginForHost {
 
                 @Override
                 protected boolean isCorrect() {
-                    Form form = br.getFormbyProperty("name", "form_password");
+                    Form form = getPasswordForm();
                     if (form != null) {
                         return false;
                     } else {
                         return true;
                     }
+                }
+
+                protected Form getPasswordForm() {
+                    final Form form = br.getFormbyProperty("name", "download");
+                    if (form != null && !form.containsHTML("aria-labelledby=\"passwordmsg\"")) {
+                        logger.warning("Wrong passwordform(?) --> Returning null");
+                        return null;
+                    }
+                    return form;
                 }
             }.run();
         }

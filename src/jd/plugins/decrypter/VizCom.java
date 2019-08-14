@@ -47,7 +47,12 @@ public class VizCom extends antiDDoSForDecrypt {
         final Regex urlinfo = new Regex(parameter, "([^/]+)/(?:[^/]+)/(\\d+)");
         final String url_name = urlinfo.getMatch(0);
         final String manga_id = urlinfo.getMatch(1);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Sorry, this website is not available in your country.")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Sorry, this website is not available in your country\\.")) {
+            /* GEO-blocked old */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML(">The latest free chapters in your location are available on our partner website")) {
+            /* 2019-08-14: GEO-blocked new */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
