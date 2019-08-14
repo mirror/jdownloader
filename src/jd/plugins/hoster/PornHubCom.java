@@ -99,6 +99,7 @@ public class PornHubCom extends PluginForHost {
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY       = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
+    private final String                          REMOVED_VIDEO             = ">\\s*This video has been removed\\s*<";
 
     @SuppressWarnings("deprecation")
     public PornHubCom(final PluginWrapper wrapper) {
@@ -288,14 +289,11 @@ public class PornHubCom extends PluginForHost {
                 link.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
                 link.setName(html_filename);
                 return AvailableStatus.TRUE;
-            }
-            if (br.containsHTML(html_premium_only)) {
+            } else if (br.containsHTML(html_premium_only)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium only File", PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-            if (br.containsHTML(">This video has been removed<")) {
+            } else if (br.containsHTML(REMOVED_VIDEO)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (source_url == null || html_filename == null) {
+            } else if (source_url == null || html_filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -318,7 +316,11 @@ public class PornHubCom extends PluginForHost {
             if (con.getResponseCode() != 200) {
                 final Map<String, Map<String, String>> qualities = getVideoLinksFree(this, br);
                 if (qualities == null || qualities.size() == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (br.containsHTML(REMOVED_VIDEO)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
                 if (this.dlUrl == null) {
@@ -333,7 +335,7 @@ public class PornHubCom extends PluginForHost {
                     getPage(br, source_url);
                     this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
                     if (this.dlUrl == null) {
-                        if (br.containsHTML(">This video has been removed<")) {
+                        if (br.containsHTML(REMOVED_VIDEO)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else {
                             logger.warning("Failed to get fresh directurl");
