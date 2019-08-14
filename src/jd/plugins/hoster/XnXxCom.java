@@ -20,6 +20,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -87,6 +88,7 @@ public class XnXxCom extends PluginForHost {
         // The regex only takes the short urls but these ones redirect to the real ones to if follow redirects is false the plugin doesn't
         // work at all!
         br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Language", "en-gb");
         br.getPage(downloadLink.getDownloadURL() + "/");
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -103,6 +105,8 @@ public class XnXxCom extends PluginForHost {
             /* Fallback */
             filename = filename_url;
         }
+        filename = Encoding.unicodeDecode(filename);
+        filename = Encoding.htmlDecode(filename);
         if (!br.containsHTML(".mp4")) {
             downloadLink.setFinalFileName(filename.trim() + ".flv");
         } else {
