@@ -49,11 +49,7 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jheberg.net" }, urls = { "" })
 public class JhebergNet extends antiDDoSForHost {
-    private static final String          DOMAIN            = "https://jheberg.net/";
-    private static final String          HOST              = "https://www.jheberg.net/";
-    private static final String          NICE_HOST         = "jheberg.net";
-    private static final String          NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static MultiHosterManagement mhm               = new MultiHosterManagement("jheberg.net");
+    private static MultiHosterManagement mhm = new MultiHosterManagement("jheberg.net");
 
     public JhebergNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,12 +61,11 @@ public class JhebergNet extends antiDDoSForHost {
         return "https://jheberg.net/cgv/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept", "application/json");
-        br.setCookie(DOMAIN, "jlanguage", "en-US");
+        br.setCookie(this.getHost(), "jlanguage", "en-US");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
@@ -105,7 +100,7 @@ public class JhebergNet extends antiDDoSForHost {
         }
         /* We want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().isContentDisposition() || dl.getConnection().getLongContentLength() > 1024 * 1024l) {
             dl.startDownload();
@@ -129,23 +124,23 @@ public class JhebergNet extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        this.br = prepBR(new Browser());
         mhm.runCheck(account, link);
         this.login(account);
         String dllink = null;
         if (false) {
             // reuse doesn't work reliable for me.
-            dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+            dllink = checkDirectLink(link, this.getHost() + "directlink");
         }
         if (dllink == null) {
             /* request Download */
             this.br.setFollowRedirects(true);
-            getPage("https://dashboard.jheberg.net/downloader");
+            getPage("https://dashboard." + this.getHost() + "/downloader");
             final String token = getToken(br);
             if (token == null) {
                 mhm.handleErrorGeneric(account, link, "token_null", 50, 5 * 60 * 1000l);
             }
-            final Request downloader = br.createPostRequest("https://dashboard.jheberg.net/downloader", "csrfmiddlewaretoken=" + token + "&urls[]=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final Request downloader = br.createPostRequest("https://dashboard." + this.getHost() + "/downloader", "csrfmiddlewaretoken=" + token + "&urls[]=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             downloader.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             sendRequest(downloader);
             final HashMap<String, Object> map = JSonStorage.restoreFromString(downloader.getHtmlCode(), TypeRef.HASHMAP);
@@ -161,7 +156,7 @@ public class JhebergNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Hoster is not yet supported");
             } else if (status.longValue() == 200 && url.containsKey("id")) {
                 final String id = (String) url.get("id");
-                final Request backend = br.createGetRequest("https://api.jheberg.net/backend?type=DOWNLOADER");
+                final Request backend = br.createGetRequest("https://api." + this.getHost() + "/backend?type=DOWNLOADER");
                 sendRequest(backend);
                 final List<Object> servers = JSonStorage.restoreFromString(backend.getHtmlCode(), TypeRef.LIST);
                 final Map<String, Object> server = (Map<String, Object>) servers.get(new Random().nextInt(servers.size()));
@@ -200,14 +195,13 @@ public class JhebergNet extends antiDDoSForHost {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account);
-        final Request me = br.createGetRequest("https://api.jheberg.net/me");
+        final Request me = br.createGetRequest("https://api." + this.getHost() + "/me");
         me.getHeaders().put("X-Auth-Token", br.getHostCookie("sessionid"));
-        me.getHeaders().put("Origin", "https://dashboard.jheberg.net");
+        me.getHeaders().put("Origin", "https://dashboard." + this.getHost());
         sendRequest(me);
         final Map<String, Object> map = JSonStorage.restoreFromString(me.getHtmlCode(), TypeRef.HASHMAP);
         final Map<String, Object> subscription = (Map<String, Object>) map.get("subscription");
@@ -227,12 +221,18 @@ public class JhebergNet extends antiDDoSForHost {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
+            ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(20);
+            /*
+             * 2019-08-14: Downloads via free account are not possible - https://dashboard.jheberg.net/downloader will redirect to:
+             * https://dashboard.jheberg.net/premium/
+             */
+            ai.setTrafficLeft(0);
+            account.setMaxSimultanDownloads(0);
         }
-        final Request hoster = br.createGetRequest("https://api.jheberg.net/hoster");
-        hoster.getHeaders().put("Origin", "https://dashboard.jheberg.net");
+        final Request hoster = br.createGetRequest("https://api." + this.getHost() + "/hoster");
+        hoster.getHeaders().put("Origin", "https://dashboard." + this.getHost());
         sendRequest(hoster);
         final List<Object> list = JSonStorage.restoreFromString(hoster.getHtmlCode(), TypeRef.LIST);
         List<String> supportedHosts = new ArrayList<String>();
@@ -275,13 +275,13 @@ public class JhebergNet extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                this.br = newBrowser();
+                this.br = prepBR(new Browser());
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 boolean freshLogin = true;
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
-                    getPage("https://dashboard.jheberg.net/");
+                    getPage("https://dashboard." + this.getHost() + "/");
                     if (br.getHostCookie("sessionid", Cookies.NOTDELETEDPATTERN) == null) {
                         freshLogin = true;
                     } else if (!br.containsHTML("/signout")) {
@@ -291,12 +291,12 @@ public class JhebergNet extends antiDDoSForHost {
                     }
                 }
                 if (freshLogin) {
-                    getPage(HOST + "signin");
+                    getPage("https://www." + this.getHost() + "/signin");
                     final String token = getToken(br);
                     if (token == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    postPage(HOST + "signin", "csrfmiddlewaretoken=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on");
+                    postPage("/signin", "csrfmiddlewaretoken=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on");
                     if (br.getHostCookie("sessionid", Cookies.NOTDELETEDPATTERN) == null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if (!br.containsHTML("/signout")) {
