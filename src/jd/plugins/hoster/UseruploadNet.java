@@ -140,6 +140,7 @@ public class UseruploadNet extends XFileSharingProBasic {
         return -1;
     }
 
+    @Override
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
             captchaForm.remove("");

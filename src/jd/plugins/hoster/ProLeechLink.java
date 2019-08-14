@@ -7,11 +7,14 @@ import java.util.Locale;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.parser.html.Form;
@@ -30,6 +33,7 @@ public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://proleech.link/signup");
+        setConfigElements();
     }
 
     private static MultiHosterManagement mhm = new MultiHosterManagement("proleech.link");
@@ -112,6 +116,7 @@ public class ProLeechLink extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final String activeSubscription = br.getRegex("am-list-subscriptions\">\\s*<li[^<]*>(.*?)</li>").getMatch(0);
+                String accountStatus = null;
                 if (activeSubscription != null) {
                     final String expireDate = new Regex(activeSubscription, "([a-zA-Z]+\\s*\\d+,\\s*\\d{4})").getMatch(0);
                     if (expireDate != null) {
@@ -120,15 +125,39 @@ public class ProLeechLink extends antiDDoSForHost {
                             ai.setValidUntil(validUntil);
                         }
                         account.setType(AccountType.PREMIUM);
+                        accountStatus = "Premium user";
                         account.setConcurrentUsePossible(true);
                         account.setMaxSimultanDownloads(-1);
-                        return;
                     }
                 } else {
                     account.setType(AccountType.FREE);
+                    accountStatus = "Free user";
                     account.setConcurrentUsePossible(true);
-                    account.setMaxSimultanDownloads(0);
-                    ai.setTrafficLeft(0);
+                    if (ai != null) {
+                        getPage("/downloader");
+                        final Regex maxfiles_per_day = br.getRegex("<li>Files per day:\\s*?<b>\\s*?(\\d+)?\\s*?/\\s*?(\\d+)\\s*?</li>");
+                        final String maxfiles_per_day_used = maxfiles_per_day.getMatch(0);
+                        final String maxfiles_per_day_maxvalue = maxfiles_per_day.getMatch(1);
+                        final String max_free_filesize = br.getRegex("<li>Max\\. Filesize: <b>(\\d+ [^<>\"]+)</li>").getMatch(0);
+                        /* ok = "/2" or "1/2", not ok = "2/2" */
+                        if (max_free_filesize != null && (maxfiles_per_day_maxvalue != null || (maxfiles_per_day_used != null && maxfiles_per_day_maxvalue != null && !maxfiles_per_day_maxvalue.equals(maxfiles_per_day_used)))) {
+                            ai.setTrafficLeft(SizeFormatter.getSize(max_free_filesize));
+                            if (maxfiles_per_day_used == null) {
+                                accountStatus += " [x/" + maxfiles_per_day_maxvalue + " links used]";
+                            } else {
+                                accountStatus += " [" + maxfiles_per_day_used + "/" + maxfiles_per_day_maxvalue + " links used]";
+                            }
+                            /* 2019-08-14: Max files per day = 2 so a limit of 1 should be good! */
+                            account.setMaxSimultanDownloads(1);
+                        } else {
+                            account.setMaxSimultanDownloads(0);
+                            ai.setTrafficLeft(0);
+                            accountStatus += " [No downloads possible]";
+                        }
+                    }
+                }
+                if (ai != null) {
+                    ai.setStatus(accountStatus);
                 }
                 account.saveCookies(cookies, "");
             } catch (PluginException e) {
@@ -141,11 +170,12 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
-    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         login(account, null);
         String downloadURL = link.getStringProperty(getHost(), null);
         if (downloadURL != null) {
+            logger.info("Trying to re-use old generated downloadlink");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
             if (!dl.getConnection().isContentDisposition()) {
                 logger.info("Saved downloadurl did not work");
@@ -159,6 +189,19 @@ public class ProLeechLink extends antiDDoSForHost {
             }
         }
         if (downloadURL == null) {
+            logger.info("Trying to generate new downloadlink");
+            final long userDefinedWaitHours = this.getPluginConfig().getLongProperty("DOWNLOADLINK_GENERATION_LIMIT", 0);
+            final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
+            if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
+                final long waittime_until_next_downloadlink_generation_is_allowed = timestamp_next_downloadlink_generation_allowed - System.currentTimeMillis();
+                final String waittime_until_next_downloadlink_generation_is_allowed_Str = TimeFormatter.formatSeconds(waittime_until_next_downloadlink_generation_is_allowed / 1000, 0);
+                logger.info("Next downloadlink generation is allowed in: " + waittime_until_next_downloadlink_generation_is_allowed_Str);
+                /*
+                 * 2019-08-14: Set a small waittime here so links can be tried earlier again - so not set the long waittime
+                 * waittime_until_next_downloadlink_generation_is_allowed!
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
+            }
             final PostRequest post = new PostRequest("https://proleech.link/dl/debrid/deb_process.php");
             post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
             post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -176,6 +219,7 @@ public class ProLeechLink extends antiDDoSForHost {
             if (downloadURL == null) {
                 final String danger = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*(.*?)\\s*</b>").getMatch(0);
                 if (danger != null) {
+                    logger.info("Found errormessage on website:");
                     logger.info(danger);
                 }
                 if (br.containsHTML(">\\s*No link entered\\.?\\s*<")) {
@@ -184,9 +228,12 @@ public class ProLeechLink extends antiDDoSForHost {
                     mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
                 } else if (br.containsHTML(">\\s*Our account has reached traffic limit\\.?\\s*<")) {
                     mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
+                } else if (br.containsHTML(">\\s*This filehost is only enabled in")) {
+                    mhm.putError(account, link, 10 * 60 * 1000l, "This filehost is only available in premium mode");
                 }
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
             }
+            link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
             final boolean isOkay = dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application/force-download"));
             if (!isOkay) {
@@ -225,6 +272,11 @@ public class ProLeechLink extends antiDDoSForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private void setConfigElements() {
+        /* Crawler settings */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "DOWNLOADLINK_GENERATION_LIMIT", "Allow new downloadlink generation every X hours (default = 0 = unlimited/disabled)\r\nThis can save traffic but this can also slow down the download process", 0, 72, 1).setDefaultValue(0));
     }
 
     @Override
