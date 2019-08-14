@@ -5,13 +5,6 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,6 +20,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 39245 $", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -173,19 +173,26 @@ public class ProLeechLink extends antiDDoSForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         login(account, null);
-        String downloadURL = link.getStringProperty(getHost(), null);
-        if (downloadURL != null) {
+        final String generatedDownloadURL = link.getStringProperty(getHost(), null);
+        String downloadURL = null;
+        if (generatedDownloadURL != null) {
             logger.info("Trying to re-use old generated downloadlink");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
-            if (!dl.getConnection().isContentDisposition()) {
-                logger.info("Saved downloadurl did not work");
-                link.removeProperty(getHost());
-                try {
-                    br.followConnection();
-                } catch (final IOException e) {
-                    logger.log(e);
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedDownloadURL, true, 0);
+                if (!dl.getConnection().isContentDisposition()) {
+                    logger.info("Saved downloadurl did not work");
+                    try {
+                        br.followConnection();
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                } else {
+                    downloadURL = generatedDownloadURL;
                 }
-                downloadURL = null;
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                logger.log(e);
             }
         }
         if (downloadURL == null) {
