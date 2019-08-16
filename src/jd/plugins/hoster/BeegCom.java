@@ -56,12 +56,29 @@ public class BeegCom extends PluginForHost {
     private static final String INVALIDLINKS = "http://(www\\.)?beeg\\.com/generator.+";
     private boolean             server_issue = false;
 
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fuid = this.getFID(link);
+        if (fuid != null) {
+            /*
+             * 2019-08-16: Users may sometimes add URLs which are offline via browser but work fine in JD so let's correct these URLs so
+             * that if the user copies them inside JD, they will work fine via browser too!
+             */
+            link.setContentUrl("https://" + this.getHost() + "/" + fuid);
+            link.setLinkID(this.getHost() + "://" + fuid);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         server_issue = false;
-        final String videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String videoid = getFID(link);
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
