@@ -457,6 +457,7 @@ public abstract class SimpleFTP {
                     disconnect();
                 } catch (IOException ignore) {
                 }
+                setPreferedTLSMode(TLS_MODE.NONE);
                 connect(host, port, user, pass, TLS_MODE.NONE);
             } else {
                 throw e;
@@ -1280,8 +1281,18 @@ public abstract class SimpleFTP {
         return getFileInfo_LIST(path);
     }
 
+    protected TLS_MODE preferedTLSMode = TLS_MODE.EXPLICIT_OPTIONAL_CC_DC;
+
+    protected void setPreferedTLSMode(TLS_MODE mode) {
+        if (mode == null) {
+            preferedTLSMode = TLS_MODE.NONE;
+        } else {
+            preferedTLSMode = mode;
+        }
+    }
+
     public TLS_MODE getPreferedTLSMode() {
-        return TLS_MODE.EXPLICIT_OPTIONAL_CC_DC;
+        return preferedTLSMode;
     }
 
     /**
