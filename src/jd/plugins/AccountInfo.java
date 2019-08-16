@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -28,6 +27,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -38,10 +41,6 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property {
     private static final long serialVersionUID       = 1825140346023286206L;
@@ -262,11 +261,6 @@ public class AccountInfo extends Property {
         final long serverTime = getCurrentServerTime(br, formatter, -1);
         if (serverTime > 0) {
             final long a1 = validuntil + (System.currentTimeMillis() - serverTime);
-            if (false) {
-                final Date b1 = new Date(a1);
-                final SimpleDateFormat s = new SimpleDateFormat("dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-                System.out.println("Valid until: " + s.format(b1));
-            }
             setValidUntil(a1);
             return true;
         } else {
@@ -285,7 +279,17 @@ public class AccountInfo extends Property {
      * Tries to convert response Header 'Date' into milliseconds-timestamp. Returns fallback on failure. Usually you'd use
      * System.currentTimeMillis as fallback value.
      */
-    public long getCurrentServerTime(final Browser br, final String formatter, final long fallback) {
+    /**
+     * Please don't put such methods here because it's not possible to properly override them, better place them in Plugin,PluginForHost so
+     * the Plugin can easily modify it
+     * 
+     * @param br
+     * @param formatter
+     * @param fallback
+     * @return
+     */
+    @Deprecated
+    private long getCurrentServerTime(final Browser br, final String formatter, final long fallback) {
         long serverTime = -1;
         if (br != null && br.getHttpConnection() != null) {
             // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time

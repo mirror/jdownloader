@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,6 +55,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
@@ -141,19 +141,20 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected static String[] buildAnnotationNames(List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
+        final List<String> ret = new ArrayList<String>(pluginDomains.size());
         for (final String[] domains : pluginDomains) {
             ret.add(domains[0]);
         }
         return ret.toArray(new String[0]);
     }
 
-    protected static String[] buildSupportedNames(List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
+    protected String[] buildSupportedNames(List<String[]> pluginDomains) {
         for (final String[] domains : pluginDomains) {
-            ret.addAll(Arrays.asList(domains));
+            if (StringUtils.equalsIgnoreCase(getHost(), domains[0])) {
+                return domains;
+            }
         }
-        return ret.toArray(new String[0]);
+        throw new WTFException();
     }
 
     public abstract String getCrawlerLoggerID(CrawledLink link);
