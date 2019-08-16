@@ -1243,6 +1243,10 @@ public class FileFactory extends PluginForHost {
             }
             if (!loggedIN) {
                 logger.info("Performing full login");
+                /*
+                 * 2019-08-16: According to their API documentation, the sessionkey/apikey is valid 15 minutes from its' first generation.
+                 * It will be renewed to 15 minutes every time it gets used!
+                 */
                 this.br.getPage(getApiBase() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
                 apikey = PluginJSonUtils.getJsonValue(this.br, "key");
                 if (apikey != null) {
@@ -1266,14 +1270,7 @@ public class FileFactory extends PluginForHost {
 
     private synchronized String getApiKey(final Account account) throws Exception {
         synchronized (apiAccLock) {
-            String apiKey = account.getStringProperty("apiKey", null);
-            if (apiKey == null) {
-                apiKey = loginAPI(account);
-                if (apiKey == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-            return apiKey;
+            return account.getStringProperty("apiKey", null);
         }
     }
 
@@ -1298,17 +1295,9 @@ public class FileFactory extends PluginForHost {
                 String apiKey = getApiKey(account);
                 ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                 if (sessionKeyInvalid(account, ibr)) {
+                    this.loginAPI(account);
                     apiKey = getApiKey(account);
-                    if (apiKey != null) {
-                        // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
-                        ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                    } else {
-                        if (accountIsPendingDeletion(ibr)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        // failure occurred.
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
+                    ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                 }
                 // account specific errors which could happen at any point in time!
                 if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")) || "719".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
