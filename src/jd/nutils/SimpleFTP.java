@@ -448,13 +448,26 @@ public abstract class SimpleFTP {
     }
 
     public void connect(String host, int port, String user, String pass) throws IOException {
-        connect(host, port, user, pass, getPreferedTLSMode());
+        final TLS_MODE tlsMode = getPreferedTLSMode();
+        try {
+            connect(host, port, user, pass, tlsMode);
+        } catch (IOException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "plaintext") && (TLS_MODE.EXPLICIT_OPTIONAL_CC.equals(tlsMode) || TLS_MODE.EXPLICIT_OPTIONAL_CC_DC.equals(tlsMode))) {
+                try {
+                    disconnect();
+                } catch (IOException ignore) {
+                }
+                connect(host, port, user, pass, TLS_MODE.NONE);
+            } else {
+                throw e;
+            }
+        }
     }
 
     /**
      * Connects to an FTP server and logs in with the supplied username and password.
      */
-    public void connect(String host, int port, String user, String pass, TLS_MODE mode) throws IOException {
+    protected void connect(String host, int port, String user, String pass, TLS_MODE mode) throws IOException {
         if (getControlSocket() != null) {
             throw new IOException("SimpleFTP is already connected. Disconnect first.");
         }
@@ -735,7 +748,7 @@ public abstract class SimpleFTP {
         sendLine("AUTH TLS");
         final String response = readLines(new int[] { 234, 500, 502, 530 }, "AUTH_TLS FAILED");
         if (StringUtils.startsWithCaseInsensitive(response, "234")) {
-            socket = getSSLSocketStreamFactory().create(getControlSocket(), response, getPort(), true, new SSLSocketStreamOptions(isSSLTrustALL()));
+            socket = getSSLSocketStreamFactory().create(getControlSocket(), "", getPort(), true, new SSLSocketStreamOptions(isSSLTrustALL()));
             return true;
         } else {
             return false;
