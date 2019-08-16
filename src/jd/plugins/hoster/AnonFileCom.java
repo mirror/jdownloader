@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,6 +25,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.UnknownHostingScriptCore;
 
 @HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
 public class AnonFileCom extends UnknownHostingScriptCore {

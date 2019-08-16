@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +40,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
@@ -537,16 +537,17 @@ public class SendspaceCom extends PluginForHost {
 
     /** https://www.sendspace.com/dev_method.html?method=auth.checksession */
     private boolean sessionOk() {
-        boolean isOK = false;
         try {
             apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SESSIONKEY);
             if ("ok".equals(get("session"))) {
-                isOK = true;
+                return true;
+            } else {
+                return false;
             }
         } catch (final Exception e) {
-            isOK = false;
+            logger.log(e);
+            return false;
         }
-        return isOK;
     }
 
     private void apiRequest(final String parameter, final String data) throws Exception {
