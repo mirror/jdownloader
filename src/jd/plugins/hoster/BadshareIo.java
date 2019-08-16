@@ -39,7 +39,7 @@ public class BadshareIo extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2<br />
+     * captchatype-info: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
