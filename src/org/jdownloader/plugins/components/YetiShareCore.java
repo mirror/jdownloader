@@ -24,6 +24,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -200,8 +200,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -578,6 +578,8 @@ public class YetiShareCore extends antiDDoSForHost {
                                 }
                             }
                             if (continue_link == null) {
+                                checkErrors(link, account);
+                                logger.warning("Failed to find continue_link");
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
@@ -874,6 +876,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * @throws PluginException
      */
     protected boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
+        final boolean isDownloadable = this.getContinueLink() != null;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         /*
          * 2019-06-12: TODO: E.g. special case: 'error.html?e=File+is+not+publicly+available.' --> File is online but can only be downloaded
@@ -882,8 +885,8 @@ public class YetiShareCore extends antiDDoSForHost {
          * content, it would be available again via the same URL! File-host used for tests: sundryfiles.com.
          */
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
-        final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
-        if (!isFileWebsite || isErrorPage || isOffline) {
+        final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
+        if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
             if (checkErrors) {
                 checkErrors(link, null);
             }

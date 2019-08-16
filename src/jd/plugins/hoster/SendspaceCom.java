@@ -13,11 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,12 +45,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
-
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.sendspace.com/joinpro_pay.html");
@@ -56,16 +55,13 @@ public class SendspaceCom extends PluginForHost {
     }
 
     private final static String SSL_CONNECTION    = "SSL_CONNECTION";
-
     private final String        JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
     // private static final String JDUSERNAME = "cHNwem9ja2Vyc2NlbmVqZA==";
     private String              CURRENTERRORCODE;
     private String              SESSIONTOKEN;
     private String              SESSIONKEY;
-    private static Object       LOCK              = new Object();
     private static Object       ctrlLock          = new Object();
     private static AtomicLong   ctrlLast          = new AtomicLong(0);
-    private String              COOKIE_HOST       = "http://sendspace.com";
 
     // TODO: Add handling for password protected files for handle premium,
     // actually it only works for handle free
@@ -74,7 +70,7 @@ public class SendspaceCom extends PluginForHost {
      */
     /**
      * Usage: create a token, log in and then use the functions via method "apiRequest(String url, String data)
-     * */
+     */
     @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
@@ -127,7 +123,6 @@ public class SendspaceCom extends PluginForHost {
         // return handleOldAvailableStatus(downloadLink);
         // }
         return handleOldAvailableStatus(downloadLink);
-
     }
 
     private AvailableStatus handleOldAvailableStatus(final DownloadLink downloadLink) throws Exception {
@@ -407,12 +402,12 @@ public class SendspaceCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account);
         try {
             apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         } catch (final Exception e) {
             logger.info("Unexpected error while trying to download, maybe old sessionkey, logging in again...");
-            login(account, true);
+            login(account);
             apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         String linkurl = br.getRegex("url=\"(http[^<>\"]*?)\"").getMatch(0);
@@ -435,45 +430,51 @@ public class SendspaceCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 750);
     }
 
-    public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Account account) throws Exception {
+        synchronized (account) {
             try {
-                /** Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                boolean loggedIN = false;
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     SESSIONTOKEN = account.getStringProperty("sessiontoken", null);
                     SESSIONKEY = account.getStringProperty("sessionkey", null);
-                    return;
+                    loggedIN = this.sessionOk();
                 }
-                createSessToken();
-                apiLogin(account.getUser(), account.getPass());
+                if (!loggedIN) {
+                    createSessToken();
+                    apiLogin(account.getUser(), account.getPass());
+                    account.setProperty("sessiontoken", SESSIONTOKEN);
+                    account.setProperty("sessionkey", SESSIONKEY);
+                }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
-                account.setProperty("sessiontoken", SESSIONTOKEN);
-                account.setProperty("sessionkey", SESSIONKEY);
             } catch (final PluginException e) {
-                account.clearCookies("");
-                account.setProperty("sessiontoken", Property.NULL);
-                account.setProperty("sessionkey", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.setProperty("sessiontoken", Property.NULL);
+                    account.setProperty("sessionkey", Property.NULL);
+                }
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
-            login(account, true);
+            login(account);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
-        if ("Lite".equals(get("membership_type"))) {
+        /* If loggedin via older token and not via full login, we need to call this to get accountinfo. */
+        apiLogin(account.getUser(), account.getPass());
+        String accounttype = get("membership_type");
+        if (StringUtils.isEmpty(accounttype) || "Lite".equals(accounttype)) {
             /* Users can't really do anything with free accounts. */
+            account.setType(AccountType.FREE);
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
         } else {
@@ -484,7 +485,6 @@ public class SendspaceCom extends PluginForHost {
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expires));
             } else {
                 apiFailure("membership_ends");
-                account.setValid(false);
                 return ai;
             }
             final String left = get("bandwidth_left");
@@ -492,7 +492,6 @@ public class SendspaceCom extends PluginForHost {
                 ai.setTrafficLeft(Long.parseLong(left));
             } else {
                 apiFailure("bandwidth_left");
-                account.setValid(false);
                 return ai;
             }
         }
@@ -504,8 +503,10 @@ public class SendspaceCom extends PluginForHost {
                 ai.setUsedSpace(Long.parseLong(spaceUsed));
             }
         }
-        ai.setStatus("Account type: " + get("membership_type"));
-        account.setValid(true);
+        if (StringUtils.isEmpty(accounttype)) {
+            accounttype = "Unknown";
+        }
+        ai.setStatus("Account type: " + accounttype);
         return ai;
     }
 
@@ -534,18 +535,18 @@ public class SendspaceCom extends PluginForHost {
         }
     }
 
+    /** https://www.sendspace.com/dev_method.html?method=auth.checksession */
     private boolean sessionOk() {
-        boolean failed = false;
+        boolean isOK = false;
         try {
             apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SESSIONKEY);
+            if ("ok".equals(get("session"))) {
+                isOK = true;
+            }
         } catch (final Exception e) {
-            failed = true;
+            isOK = false;
         }
-        if (!"ok".equals(get("session")) || failed) {
-            return false;
-        } else {
-            return true;
-        }
+        return isOK;
     }
 
     private void apiRequest(final String parameter, final String data) throws Exception {

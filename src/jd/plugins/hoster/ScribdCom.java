@@ -427,7 +427,7 @@ public class ScribdCom extends PluginForHost {
                 }
                 if (!isLoggedin) {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    authenticity_token = createCSRFTOKEN(br);
+                    authenticity_token = createCSRFTOKEN(br, account.getHoster());
                     br.postPage("/login", "authenticity_token=" + authenticity_token + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
                     final String loginstatus = PluginJSonUtils.getJson(br, "login");
                     if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
@@ -450,8 +450,8 @@ public class ScribdCom extends PluginForHost {
         return br.getCookie(br.getHost(), "_scribd_session", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    public static String createCSRFTOKEN(final Browser br) throws IOException, PluginException {
-        br.getPage("https://www." + br.getHost() + "/csrf_token?href=http%3A%2F%2Fwww.scribd.com%2F");
+    public static String createCSRFTOKEN(final Browser br, final String host) throws IOException, PluginException {
+        br.getPage("https://www." + host + "/csrf_token?href=http%3A%2F%2Fwww.scribd.com%2F");
         final String authenticity_token = PluginJSonUtils.getJson(br, "csrf_token");
         if (StringUtils.isEmpty(authenticity_token)) {
             // logger.warning("Failed to find authenticity_token");
