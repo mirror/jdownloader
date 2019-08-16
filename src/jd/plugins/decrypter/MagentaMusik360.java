@@ -7,6 +7,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -62,7 +63,7 @@ public class MagentaMusik360 extends PluginForDecrypt {
                 }
                 final Browser br2 = br.cloneBrowser();
                 br2.getPage(href);
-                final String src = br2.getRegex("src\\s*=\\s*\"(https?://.*?m3u8(\\?yospace=true)?)\"").getMatch(0);
+                final String src = Encoding.htmlOnlyDecode(br2.getRegex("src\\s*=\\s*\"(https?://.*?m3u8(\\?yospace=true)?)\"").getMatch(0));
                 if (src == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
