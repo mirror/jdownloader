@@ -20,14 +20,16 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TinyfilesCom extends XFileSharingProBasic {
@@ -126,6 +128,18 @@ public class TinyfilesCom extends XFileSharingProBasic {
         return null;
     }
 
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(link, account, checkAll);
+        if (new Regex(correctedBR, ">\\s*?File not exists").matches()) {
+            /*
+             * 2019-08-15: Rare error which may sometimes happen after sending F1 Form. The file is not really offline in this case - this
+             * is more likely a serverside bug!
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'File not exists'", 5 * 60 * 1000l);
+        }
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -138,7 +152,7 @@ public class TinyfilesCom extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-f0-9]{24}/\\d+/[^/]+/?|(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?)");
+            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/([a-f0-9]{24}/\\d+/[^/]+/?|(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?)");
         }
         return ret.toArray(new String[0]);
     }

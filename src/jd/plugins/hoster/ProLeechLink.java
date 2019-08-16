@@ -2,8 +2,17 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -20,13 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 39245 $", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -56,14 +58,50 @@ public class ProLeechLink extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, ai);
-        if (!ai.isExpired()) {
+        /* Contains all filehosts available for free account users regardless of their status */
+        String[] filehosts_free = null;
+        /* Contains all filehosts available for premium users and listed as online/working */
+        String[] filehosts_premium_online = null;
+        List<String> filehosts_premium_onlineArray = null;
+        /* Contains all filehosts available for premium users and listed as online/working */
+        List<String> filehosts_free_onlineArray = new ArrayList<String>();
+        {
+            /* Grab free hosts */
+            if (br.getURL() == null || !br.getURL().contains("/downloader")) {
+                this.getPage("/downloader");
+            }
+            final String html_free_filehosts = br.getRegex("<section id=\"content\">.*?Free Filehosters</div>.*?</section>").getMatch(-1);
+            filehosts_free = new Regex(html_free_filehosts, "domain=([^\"]+)").getColumn(0);
+        }
+        {
+            /* Grab premium hosts */
             getPage("/page/hostlist");
-            final String hosts[] = br.getRegex("<td>\\s*\\d+\\s*</td>\\s*<td>\\s*<img[^<]+/?>\\s*([^<]*?)\\s*</td>\\s*<td>\\s*<span\\s*class\\s*=\\s*\"label\\s*label-success\"\\s*>\\s*Online").getColumn(0);
-            if (hosts == null || hosts.length == 0) {
+            filehosts_premium_online = br.getRegex("<td>\\s*\\d+\\s*</td>\\s*<td>\\s*<img[^<]+/?>\\s*([^<]*?)\\s*</td>\\s*<td>\\s*<span\\s*class\\s*=\\s*\"label\\s*label-success\"\\s*>\\s*Online").getColumn(0);
+            if (filehosts_premium_online == null || filehosts_premium_online.length == 0) {
                 logger.warning("Failed to find list of supported hosts");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ai.setMultiHostSupport(this, Arrays.asList(hosts));
+            filehosts_premium_onlineArray = Arrays.asList(filehosts_premium_online);
+        }
+        /* Set supported hosts depending on account type */
+        if (account.getType() == AccountType.PREMIUM && !ai.isExpired()) {
+            /* Premium account - bigger list of supported hosts */
+            ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
+        } else {
+            /* Free & Expired[=Free] accounts - they support much less hosts */
+            if (filehosts_free != null && filehosts_free.length != 0) {
+                /*
+                 * We only see the online status of each host in the big list. Now we have to find out which of all free filehosts are
+                 * currently online/supported.
+                 */
+                for (final String host : filehosts_free) {
+                    if (filehosts_premium_onlineArray.contains(host)) {
+                        /* Filehost should be supported/online --> Add to the list we will later set */
+                        filehosts_free_onlineArray.add(host);
+                    }
+                }
+                ai.setMultiHostSupport(this, filehosts_free_onlineArray);
+            }
         }
         return ai;
     }
@@ -135,21 +173,37 @@ public class ProLeechLink extends antiDDoSForHost {
                     account.setConcurrentUsePossible(true);
                     if (ai != null) {
                         getPage("/downloader");
+                        int maxfiles_per_day_used = 0;
+                        int maxfiles_per_day_maxvalue = 0;
                         final Regex maxfiles_per_day = br.getRegex("<li>Files per day:\\s*?<b>\\s*?(\\d+)?\\s*?/\\s*?(\\d+)\\s*?</li>");
-                        final String maxfiles_per_day_used = maxfiles_per_day.getMatch(0);
-                        final String maxfiles_per_day_maxvalue = maxfiles_per_day.getMatch(1);
+                        final String maxfiles_per_day_usedStr = maxfiles_per_day.getMatch(0);
+                        final String maxfiles_per_day_maxvalueStr = maxfiles_per_day.getMatch(1);
                         final String max_free_filesize = br.getRegex("<li>Max\\. Filesize: <b>(\\d+ [^<>\"]+)</li>").getMatch(0);
+                        if (maxfiles_per_day_usedStr != null) {
+                            maxfiles_per_day_used = Integer.parseInt(maxfiles_per_day_usedStr);
+                        }
+                        if (maxfiles_per_day_maxvalueStr != null) {
+                            maxfiles_per_day_maxvalue = Integer.parseInt(maxfiles_per_day_maxvalueStr);
+                        }
                         /* ok = "/2" or "1/2", not ok = "2/2" */
-                        if (max_free_filesize != null && (maxfiles_per_day_maxvalue != null || (maxfiles_per_day_used != null && maxfiles_per_day_maxvalue != null && !maxfiles_per_day_maxvalue.equals(maxfiles_per_day_used)))) {
-                            ai.setTrafficLeft(SizeFormatter.getSize(max_free_filesize));
-                            if (maxfiles_per_day_used == null) {
-                                accountStatus += " [x/" + maxfiles_per_day_maxvalue + " links used]";
+                        if (max_free_filesize != null && maxfiles_per_day_maxvalue > 0) {
+                            final int files_this_day_remaining = maxfiles_per_day_maxvalue - maxfiles_per_day_used;
+                            if (files_this_day_remaining > 0) {
+                                ai.setTrafficLeft(SizeFormatter.getSize(max_free_filesize));
+                                /* 2019-08-14: Max files per day = 2 so a limit of 1 should be good! */
+                                account.setMaxSimultanDownloads(1);
                             } else {
-                                accountStatus += " [" + maxfiles_per_day_used + "/" + maxfiles_per_day_maxvalue + " links used]";
+                                /*
+                                 * No links remaining --> Display account with ZERO traffic left as it cannot be used to download at the
+                                 * moment!
+                                 */
+                                logger.info("Cannot use free account because the max number of dail downloads has already been reached");
+                                ai.setTrafficLeft(0);
+                                account.setMaxSimultanDownloads(0);
                             }
-                            /* 2019-08-14: Max files per day = 2 so a limit of 1 should be good! */
-                            account.setMaxSimultanDownloads(1);
+                            accountStatus += " [" + files_this_day_remaining + "/" + maxfiles_per_day_maxvalueStr + " daily downloads remaining]";
                         } else {
+                            logger.info("Cannot use free account because we failed to find any information about the current account limits");
                             account.setMaxSimultanDownloads(0);
                             ai.setTrafficLeft(0);
                             accountStatus += " [No downloads possible]";
@@ -229,14 +283,17 @@ public class ProLeechLink extends antiDDoSForHost {
                     logger.info("Found errormessage on website:");
                     logger.info(danger);
                 }
-                if (br.containsHTML(">\\s*No link entered\\.?\\s*<")) {
+                if (br.containsHTML(">\\s*?No link entered\\.?\\s*<")) {
                     mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
-                } else if (br.containsHTML(">\\s*Error getting the link from this account\\.?\\s*<")) {
+                } else if (br.containsHTML(">\\s*?Error getting the link from this account\\.?\\s*<")) {
                     mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
-                } else if (br.containsHTML(">\\s*Our account has reached traffic limit\\.?\\s*<")) {
+                } else if (br.containsHTML(">\\s*?Our account has reached traffic limit\\.?\\s*<")) {
                     mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
-                } else if (br.containsHTML(">\\s*This filehost is only enabled in")) {
+                } else if (br.containsHTML(">\\s*?This filehost is only enabled in")) {
                     mhm.putError(account, link, 10 * 60 * 1000l, "This filehost is only available in premium mode");
+                } else if (br.containsHTML(">\\s*?You can only generate this link during Happy Hours")) {
+                    /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
                 }
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
             }

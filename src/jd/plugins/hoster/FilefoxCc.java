@@ -18,9 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -32,10 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilefoxCc extends XFileSharingProBasic {
@@ -223,106 +222,13 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
-        synchronized (account) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                boolean loggedInViaCookies = false;
-                if (cookies != null) {
-                    br.setCookies(getMainPage(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust cookies without checking as they're still fresh");
-                        return false;
-                    }
-                    logger.info("Verifying login-cookies");
-                    getPage(getMainPage() + "/");
-                    loggedInViaCookies = isLoggedin();
-                }
-                if (loggedInViaCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    logger.info("Performing full login");
-                    br.clearCookies(getMainPage());
-                    getPage(getLoginURL());
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        /* Required for some XFS setups. */
-                        getPage(getMainPage() + "/login");
-                    }
-                    Form loginform = findLoginform(this.br);
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    loginform.put("email", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    /* Handle login-captcha if required */
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    final DownloadLink dl_dummy;
-                    if (dlinkbefore != null) {
-                        dl_dummy = dlinkbefore;
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(dl_dummy);
-                    }
-                    handleCaptcha(dl_dummy, loginform);
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
-                    submitForm(loginform);
-                    if (!isLoggedin()) {
-                        if (correctedBR.contains("op=resend_activation")) {
-                            /* User entered correct logindata but has not activated his account ... */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    // /* 2017-07-25: Special */
-                    // if (!br.getURL().contains("/profile")) {
-                    // getPage("/profile");
-                    // }
-                }
-                account.saveCookies(br.getCookies(getMainPage()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public boolean isLoggedin() {
-        /* 2019-06-13: Special */
-        boolean isLoggedin = super.isLoggedin();
-        final boolean loginError = correctedBR.contains("Incorrect Login or Password");
-        if (isLoggedin && loginError) {
-            /*
-             * Special case: Login redirects to error-site so login-form is not present --> Upper code may think that we're logged-in -->
-             * Correct this
-             */
-            isLoggedin = false;
-        }
-        return isLoggedin;
-    }
-
-    @Override
     public Form findFormF1Premium() throws Exception {
         /* 2019-06-13: Special */
         handleSecurityVerification();
         return super.findFormF1Premium();
     }
 
+    @Override
     public Form findFormDownload1() throws Exception {
         /* 2019-06-13: Special */
         handleSecurityVerification();

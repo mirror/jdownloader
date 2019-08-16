@@ -1354,7 +1354,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 waitTime(link, timeBefore);
                 final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                if (!formCon.getContentType().contains("html")) {
+                if (!formCon.getContentType().contains("text") && formCon.isOK() && formCon.getLongContentLength() > -1) {
                     /* Very rare case - e.g. tiny-files.com */
                     handleDownload(link, account, dllink, formCon.getRequest());
                     return;
@@ -1369,10 +1369,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(link, account, true);
                 dllink = getDllink(link, account);
-                if (StringUtils.isEmpty(dllink) && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                final boolean dlformIsThere = findFormF1() != null;
+                if (StringUtils.isEmpty(dllink) && (!dlformIsThere || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (StringUtils.isEmpty(dllink) && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                } else if (StringUtils.isEmpty(dllink) && dlformIsThere) {
                     dlForm = findFormF1();
                     invalidateLastChallengeResponse();
                     continue;
@@ -1584,19 +1585,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Tries to find 2nd download Form for free download. */
-    public Form findFormF1() {
+    protected Form findFormF1() {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
         final Form[] forms = br.getForms();
-        for (final Form aForm : forms) {
-            final InputField op_field = aForm.getInputFieldByName("op");
+        for (final Form form : forms) {
+            final InputField op_field = form.getInputFieldByName("op");
             /* E.g. name="op" value="download_orig" */
-            if (aForm.containsHTML("btn_download") && op_field != null && op_field.getValue().contains("download_")) {
-                dlForm = aForm;
+            if (form.containsHTML("method_") && op_field != null && op_field.getValue().contains("download")) {
+                dlForm = form;
                 break;
             }
         }
-        /* Nothing found? Fallback to standard download handling! */
+        /* Nothing found? Fallback to simpler handling - this is more likely to pickup a wrong Form! */
         if (dlForm == null) {
             dlForm = br.getFormbyProperty("name", "F1");
         }
@@ -1729,10 +1730,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null || acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
+            /* Anonymous downloads & Free account downloads may have captchas */
             return true;
         } else {
-            /* Premium accounts do not have captchas */
+            /* Premium accounts don't have captchas */
             return false;
         }
     }
@@ -2255,7 +2256,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503. <br />
-     * checkAll: If enabled, ,this will also check for wrong password, wrong captcha and 'Skipped countdown' errors.
+     * checkAll: If enabled, ,this will also check for wrong password, wrong captcha and 'Skipped countdown' errors. <br/>
+     * TODO: If account != null: Consider setting account traffic to 0 on reached downloadlink
      */
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
@@ -2459,7 +2461,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 apikey = this.findAPIKey(br.toString());
             } catch (final Throwable e) {
-                logger.info("Failed to find apikey (with Exception), continuing via website");
+                /*
+                 * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot rely
+                 * on it working so we need that website fallback!
+                 */
+                logger.info("Failed to find apikey (with Exception) --> Continuing via website");
                 e.printStackTrace();
             }
             if (apikey != null) {
@@ -2533,6 +2539,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
             }
             final boolean supports_precise_expire_date = this.supports_precise_expire_date();
+            long currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
             if (supports_precise_expire_date) {
                 /*
                  * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g.
@@ -2546,6 +2553,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         /* Skip failures due to timeout or bad http error-responses */
                         continue;
                     }
+                    /* We want to be exact - get current server time for every loop! */
+                    currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
                     final String preciseExpireHTML = new Regex(correctedBR, "<div class=\"accexpire\"[^>]+>.*?</div>").getMatch(-1);
                     String expireSecond = new Regex(preciseExpireHTML, "Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
                     if (StringUtils.isEmpty(expireSecond)) {
@@ -2577,7 +2586,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         if (!StringUtils.isEmpty(tmpsec)) {
                             seconds = Integer.parseInt(tmpsec);
                         }
-                        expire_milliseconds_precise_to_the_second = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                        expire_milliseconds_precise_to_the_second = currentTime + ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
                     }
                     if (expire_milliseconds_precise_to_the_second > 0) {
                         /* This does not necessarily mean that we will use this found value later! */
@@ -2611,7 +2620,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } else {
                 logger.info("Failed to find any useful expire-date at all");
             }
-            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            if ((expire_milliseconds - currentTime) <= 0) {
                 /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
                 if (expire_milliseconds > 0) {
                     logger.info("Premium expired --> Free account");
@@ -2619,7 +2628,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 setAccountLimitsByType(account, AccountType.FREE);
             } else {
                 /* Expire date is in the future --> It is a premium account */
-                ai.setValidUntil(expire_milliseconds, br);
+                ai.setValidUntil(expire_milliseconds);
                 setAccountLimitsByType(account, AccountType.PREMIUM);
             }
         }
@@ -2724,7 +2733,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
             /* Expire date is in the future --> It is a premium account */
-            ai.setValidUntil(expire_milliseconds_precise_to_the_second, br);
+            ai.setValidUntil(expire_milliseconds_precise_to_the_second);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
         if (!StringUtils.isEmpty(email) && setAndAnonymizeUsername) {
@@ -2884,7 +2893,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (loginform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    if (loginform.hasInputFieldByName("email")) {
+                        /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
+                        loginform.put("email", Encoding.urlEncode(account.getUser()));
+                    } else {
+                        loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    }
                     loginform.put("password", Encoding.urlEncode(account.getPass()));
                     /* Handle login-captcha if required */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
