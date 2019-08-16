@@ -28,10 +28,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -42,6 +38,10 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property {
     private static final long serialVersionUID       = 1825140346023286206L;
@@ -259,21 +259,7 @@ public class AccountInfo extends Property {
             setValidUntil(-1);
             return true;
         }
-        long serverTime = -1;
-        if (br != null && br.getHttpConnection() != null) {
-            // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
-            final String dateString = br.getHttpConnection().getHeaderField("Date");
-            if (dateString != null) {
-                if (StringUtils.isNotEmpty(formatter)) {
-                    serverTime = TimeFormatter.getMilliSeconds(dateString, formatter, Locale.ENGLISH);
-                } else {
-                    final Date date = TimeFormatter.parseDateString(dateString);
-                    if (date != null) {
-                        serverTime = date.getTime();
-                    }
-                }
-            }
-        }
+        final long serverTime = getCurrentServerTime(br, formatter, -1);
         if (serverTime > 0) {
             final long a1 = validuntil + (System.currentTimeMillis() - serverTime);
             if (false) {
@@ -288,6 +274,38 @@ public class AccountInfo extends Property {
             setValidUntil(validuntil);
             return false;
         }
+    }
+
+    /** Wrapper, will use 'EEE, dd MMM yyyy HH:mm:ss z' as formatter value. */
+    public long getCurrentServerTime(final Browser br, final long fallback) {
+        return getCurrentServerTime(br, "EEE, dd MMM yyyy HH:mm:ss z", fallback);
+    }
+
+    /**
+     * Tries to convert response Header 'Date' into milliseconds-timestamp. Returns fallback on failure. Usually you'd use
+     * System.currentTimeMillis as fallback value.
+     */
+    public long getCurrentServerTime(final Browser br, final String formatter, final long fallback) {
+        long serverTime = -1;
+        if (br != null && br.getHttpConnection() != null) {
+            // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
+            final String dateString = br.getHttpConnection().getHeaderField("Date");
+            if (dateString != null) {
+                if (StringUtils.isNotEmpty(formatter) && dateString.matches("[A-Za-z]+, \\d{1,2} [A-Za-z]+ \\d{4} \\d{1,2}:\\d{1,2}:\\d{1,2} [A-Z]+")) {
+                    serverTime = TimeFormatter.getMilliSeconds(dateString, formatter, Locale.ENGLISH);
+                } else {
+                    final Date date = TimeFormatter.parseDateString(dateString);
+                    if (date != null) {
+                        serverTime = date.getTime();
+                    }
+                }
+            }
+        }
+        if (serverTime == -1) {
+            /* Fallback */
+            serverTime = fallback;
+        }
+        return serverTime;
     }
 
     /**
