@@ -282,7 +282,7 @@ public class AccountInfo extends Property {
     /**
      * Please don't put such methods here because it's not possible to properly override them, better place them in Plugin,PluginForHost so
      * the Plugin can easily modify it
-     * 
+     *
      * @param br
      * @param formatter
      * @param fallback
@@ -506,10 +506,10 @@ public class AccountInfo extends Property {
                 final String host = it.next();
                 final String hostParts[] = host.split("\\.");
                 if (hostParts.length == 2) {
-                    final String matcher = ".*(\\\\.|/|\\?:?|\\(|\\|)" + hostParts[0] + "(\\|[^/]*?)?\\\\.(" + hostParts[1] + "|[^\\/)]*" + hostParts[1] + "|[^\\)/]*[a-zA-Z\\.]+\\)[\\?\\.]*" + hostParts[1] + ").*";
+                    final String matcher = ".*(\\\\.|/|\\?:?|\\(|\\||\\\\Q|)" + hostParts[0] + "(\\|[^/]*?)?(\\\\)?.(" + hostParts[1] + "|[^\\/)]*" + hostParts[1] + "|[^\\)/]*[a-zA-Z\\.]+\\)[\\?\\.]*" + hostParts[1] + ").*";
                     final String matcher2;
                     if (hostParts[0].contains("-")) {
-                        matcher2 = ".*(\\\\.|/|\\?:?|\\(|\\|)" + hostParts[0].replace("-", "\\-") + "(\\|[^/]*?)?\\\\.(" + hostParts[1] + "|[^\\/)]*" + hostParts[1] + "|[^\\)/]*[a-zA-Z\\.]+\\)[\\?\\.]*" + hostParts[1] + ").*";
+                        matcher2 = ".*(\\\\.|/|\\?:?|\\(|\\||\\\\Q|)" + hostParts[0].replace("-", "\\-") + "(\\|[^/]*?)?(\\\\)?.(" + hostParts[1] + "|[^\\/)]*" + hostParts[1] + "|[^\\)/]*[a-zA-Z\\.]+\\)[\\?\\.]*" + hostParts[1] + ").*";
                     } else {
                         matcher2 = null;
                     }
@@ -518,7 +518,7 @@ public class AccountInfo extends Property {
                             continue;
                         } else {
                             final String pattern = lazyHostPlugin.getPatternSource();
-                            if (StringUtils.containsIgnoreCase(pattern, hostParts[0]) && (pattern.matches(matcher) || (matcher2 != null && pattern.matches(matcher2)))) {
+                            if (StringUtils.containsIgnoreCase(pattern, host) || (StringUtils.containsIgnoreCase(pattern, hostParts[0]) && (pattern.matches(matcher) || (matcher2 != null && pattern.matches(matcher2))))) {
                                 assignedMultiHostSupport.add(lazyHostPlugin.getHost());
                                 mapping.put(host, lazyHostPlugin.getHost());
                                 it.remove();
