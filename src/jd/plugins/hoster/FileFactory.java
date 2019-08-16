@@ -19,10 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,7 +41,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -51,6 +48,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -65,7 +63,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+(/.*)?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" })
 public class FileFactory extends PluginForHost {
-
     // DEV NOTES
     // other: currently they 302 redirect all non www. to www. which kills most of this plugin.
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
@@ -81,8 +78,6 @@ public class FileFactory extends PluginForHost {
     private final String         LOGIN_ERROR                  = "The email or password you have entered is incorrect";
     private final String         SERVER_DOWN                  = "server hosting the file you are requesting is currently down";
     private final String         CAPTCHALIMIT                 = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
-    private static Object        LOCK                         = new Object();
-    private final String         COOKIE_HOST                  = "http://www.filefactory.com";
     private String               dlUrl                        = null;
     private final String         TRAFFICSHARELINK             = "filefactory.com/trafficshare/";
     private final String         TRAFFICSHARETEXT             = ">Download with FileFactory TrafficShare<";
@@ -91,7 +86,7 @@ public class FileFactory extends PluginForHost {
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/info/premium.php");
+        this.enablePremium("https://" + this.getHost() + "/info/premium.php");
     }
 
     private static AtomicReference<String> agent = new AtomicReference<String>();
@@ -114,9 +109,9 @@ public class FileFactory extends PluginForHost {
         return prepBr;
     }
 
-    public void checkErrors(final boolean freeDownload, final boolean postDownload) throws PluginException {
+    public void checkErrorsWebsite(final boolean freeDownload, final boolean postDownload) throws PluginException {
         if (isPremiumOnly(br)) {
-            throwPremiumRequiredException();
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
         String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
@@ -250,7 +245,7 @@ public class FileFactory extends PluginForHost {
                     Account n = it.next();
                     if (n.isEnabled() && n.isValid()) {
                         try {
-                            login(n, false, br);
+                            loginWebsite(n, false, br);
                             loggedIn = true;
                         } catch (Exception e) {
                         }
@@ -274,7 +269,7 @@ public class FileFactory extends PluginForHost {
                 final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
                 int index = 0;
                 while (true) {
-                    br.getPage(COOKIE_HOST + "/account/tools/link-checker.php");
+                    br.getPage("https://" + this.getHost() + "/account/tools/link-checker.php");
                     links.clear();
                     while (true) {
                         if (index == urls.length || links.size() > 100) {
@@ -361,16 +356,14 @@ public class FileFactory extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         if (!isMail(account.getUser())) {
             ai.setStatus("Please enter your E-Mail address as username!");
-            account.setValid(false);
             return ai;
         }
         if (useAPI.get()) {
             ai = fetchAccountInfo_API(account, ai);
         } else {
             try {
-                login(account, true, br);
+                loginWebsite(account, true, br);
             } catch (final PluginException e) {
-                account.setValid(false);
                 return ai;
             }
             if (!br.getURL().endsWith("/account/")) {
@@ -380,9 +373,9 @@ public class FileFactory extends PluginForHost {
             if (!br.containsHTML("title=\"(Premium valid until|Lifetime Member)") && !br.containsHTML("<strong>Lifetime</strong>")) {
                 ai.setStatus("Registered (free) User");
                 ai.setUnlimitedTraffic();
-                account.setProperty("free", true);
+                account.setType(AccountType.FREE);
             } else {
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
                 if (br.containsHTML(">Lifetime Member<") || br.containsHTML("<strong>Lifetime</strong>")) {
                     ai.setValidUntil(-1);
                     ai.setStatus("Lifetime User");
@@ -430,7 +423,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/legal/terms.php";
+        return "https://" + this.getHost() + "/legal/terms.php";
     }
 
     @Override
@@ -469,13 +462,13 @@ public class FileFactory extends PluginForHost {
                 // first load js
                 Object result = engine.eval("function g(){return " + eval[1] + "} g();");
                 final String link = "/file" + result + eval[4];
-                br.getPage(COOKIE_HOST + link);
+                br.getPage("https://" + this.getHost() + link);
                 final String[] row = br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
                 result = engine.eval(row[1] + row[3] + " ();");
                 if (result.toString().startsWith("http")) {
                     url = result + "";
                 } else {
-                    url = COOKIE_HOST + result;
+                    url = "https://" + this.getHost() + result;
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -512,7 +505,7 @@ public class FileFactory extends PluginForHost {
                 br.setFollowRedirects(true);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlUrl, true, 1);
             } else {
-                checkErrors(true, false);
+                checkErrorsWebsite(true, false);
                 if (br.containsHTML(PASSWORDPROTECTED)) {
                     if (passCode == null) {
                         passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -551,7 +544,7 @@ public class FileFactory extends PluginForHost {
                     if (skipAds != null) {
                         br.getPage(skipAds);
                     }
-                    checkErrors(true, false);
+                    checkErrorsWebsite(true, false);
                     String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                     if (wait != null) {
                         waittime = Long.parseLong(wait) * 1000l;
@@ -581,7 +574,7 @@ public class FileFactory extends PluginForHost {
             // Prüft ob content disposition header da sind
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
-                checkErrors(true, true);
+                checkErrorsWebsite(true, true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode != null) {
@@ -626,8 +619,8 @@ public class FileFactory extends PluginForHost {
             if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
                 handleTrafficShare(downloadLink, account);
             } else {
-                login(account, false, br);
-                if (account.getBooleanProperty("free")) {
+                loginWebsite(account, false, br);
+                if (AccountType.FREE == account.getType()) {
                     br.setFollowRedirects(true);
                     br.getPage(downloadLink.getDownloadURL());
                     if (checkShowFreeDialog(getHost())) {
@@ -651,7 +644,7 @@ public class FileFactory extends PluginForHost {
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finallink, true, 0);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
-                        checkErrors(false, true);
+                        checkErrorsWebsite(false, true);
                         String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
                         if (red == null) {
                             red = br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
@@ -747,7 +740,7 @@ public class FileFactory extends PluginForHost {
         if (url.startsWith("http")) {
             return url;
         }
-        return COOKIE_HOST + url;
+        return "https://" + this.getHost() + url;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -755,46 +748,28 @@ public class FileFactory extends PluginForHost {
         return false;
     }
 
-    private void login(final Account account, final boolean force, final Browser lbr) throws Exception {
-        synchronized (LOCK) {
-            // Load cookies
+    private void loginWebsite(final Account account, final boolean force, final Browser lbr) throws Exception {
+        synchronized (account) {
             try {
                 setBrowserExclusive();
                 prepBrowser(lbr);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            lbr.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 lbr.getHeaders().put("Accept-Encoding", "gzip");
                 lbr.setFollowRedirects(true);
-                lbr.getPage(COOKIE_HOST + "/member/signin.php");
+                lbr.getPage("https://" + this.getHost() + "/member/signin.php");
                 lbr.postPage("/member/signin.php", "loginEmail=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&Submit=Sign+In");
-                if (lbr.containsHTML(LOGIN_ERROR) || lbr.getCookie(COOKIE_HOST, "auth") == null || "deleted".equalsIgnoreCase(lbr.getCookie(COOKIE_HOST, "auth")) || (lbr.getURL() != null && lbr.getURL().contains("/error.php?code=152"))) {
+                if (lbr.containsHTML(LOGIN_ERROR) || lbr.getCookie(lbr.getHost(), "auth") == null || "deleted".equalsIgnoreCase(lbr.getCookie(lbr.getHost(), "auth")) || (lbr.getURL() != null && lbr.getURL().contains("/error.php?code=152"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = lbr.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", null);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 if (StringUtils.containsIgnoreCase(lbr.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(lbr.getURL(), "code=105")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -944,13 +919,13 @@ public class FileFactory extends PluginForHost {
         link.setProperty("retry_701", Property.NULL);
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account account) {
+        if (account == null) {
             /* no account, yes we can expect captcha */
             return false;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (AccountType.FREE == account.getType()) {
             /* free accounts also have captchas */
             return false;
         }
@@ -962,7 +937,7 @@ public class FileFactory extends PluginForHost {
         return fuid;
     }
 
-    private String getApi() {
+    private String getApiBase() {
         if (Application.getJavaVersion() < Application.JAVA17) {
             return "http://api.filefactory.com/v1";
         } else {
@@ -1014,7 +989,7 @@ public class FileFactory extends PluginForHost {
                 }
                 // lets remove last ","
                 sb.replace(sb.length() - 1, sb.length(), "");
-                getPage(br, getApi() + "/getFileInfo?" + sb, account);
+                getPage(br, getApiBase() + "/getFileInfo?" + sb, account);
                 for (final DownloadLink dl : links) {
                     // password is last value in fuid response, needed because filenames or other values could contain }. It then returns
                     // invalid response.
@@ -1075,7 +1050,7 @@ public class FileFactory extends PluginForHost {
             logger.finer("setConstants = Traffic Share Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         } else {
             if (account != null) {
-                if (account.getBooleanProperty("free", false)) {
+                if (AccountType.FREE == account.getType()) {
                     // free account
                     chunks = 1;
                     resumes = false;
@@ -1108,7 +1083,7 @@ public class FileFactory extends PluginForHost {
         if (dllink == null) {
             if (downloadLink.getBooleanProperty("premiumRequired", false) && isFree) {
                 // free dl isn't possible, place before passwordRequired!
-                throwPremiumRequiredException();
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             if (downloadLink.getBooleanProperty("passwordRequired", false)) {
                 // dl requires pre download password
@@ -1121,7 +1096,7 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
-            getPage(br, getApi() + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
+            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
             if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":701")) {
                 // {"type":"error","message":"Error generating download link. Please try again","code":701}
                 // TODO: remove this when retry count comes back!
@@ -1135,7 +1110,7 @@ public class FileFactory extends PluginForHost {
                 }
             } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":708")) {
                 // {"type":"error","message":"This file can only be downloaded by Premium members","code":708}
-                throwPremiumRequiredException();
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":712")) {
                 // 712 ERR_API_FILE_INVALID
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1228,14 +1203,14 @@ public class FileFactory extends PluginForHost {
             downloadLink.setProperty(dlRedirects, urls);
         }
         if (!con.isContentDisposition()) {
-            checkErrors(isFree, true);
+            checkErrorsWebsite(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             // this shouldn't happen anymore!
             br.followConnection();
-            checkErrors(isFree, true);
+            checkErrorsWebsite(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // add download slot
@@ -1250,26 +1225,42 @@ public class FileFactory extends PluginForHost {
 
     private static Object apiAccLock = new Object();
 
-    private String loginKey(final Account account) throws Exception {
+    private String loginAPI(final Account account) throws Exception {
         synchronized (apiAccLock) {
-            final Browser nbr = new Browser();
-            prepApiBrowser(nbr);
-            nbr.getPage(getApi() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
-            final String apiKey = PluginJSonUtils.getJsonValue(nbr, "key");
-            if (apiKey != null) {
-                account.setProperty("apiKey", apiKey);
-                return apiKey;
+            prepApiBrowser(this.br);
+            /* First try to login with previous session/apikey */
+            String apikey = this.getApiKey(account);
+            boolean loggedIN = false;
+            if (!StringUtils.isEmpty(apikey)) {
+                logger.info("Trying to re-use previous apikey");
+                this.br.getPage(getApiBase() + "/getMemberInfo?key=" + apikey);
+                loggedIN = !sessionKeyInvalid(account, this.br);
+                if (loggedIN) {
+                    logger.info("Successfully loggedin via previous apikey");
+                } else {
+                    logger.info("Failed to login via previous apikey");
+                }
             }
-            if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "type")) && ("705".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "706".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")))) {
-                // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
-                // 706 ERR_API_LOGIN_FAILED Login details were incorrect
-                // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!loggedIN) {
+                logger.info("Performing full login");
+                this.br.getPage(getApiBase() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
+                apikey = PluginJSonUtils.getJsonValue(this.br, "key");
+                if (apikey != null) {
+                    account.setProperty("apiKey", apikey);
+                    return apikey;
+                }
+                if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "type")) && ("705".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "code")) || "706".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "code")) || "707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "code")))) {
+                    // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
+                    // 706 ERR_API_LOGIN_FAILED Login details were incorrect
+                    // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg(this.br), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (accountIsPendingDeletion(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (isPendingDeletion(nbr)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            return apikey;
         }
     }
 
@@ -1277,7 +1268,7 @@ public class FileFactory extends PluginForHost {
         synchronized (apiAccLock) {
             String apiKey = account.getStringProperty("apiKey", null);
             if (apiKey == null) {
-                apiKey = loginKey(account);
+                apiKey = loginAPI(account);
                 if (apiKey == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -1291,7 +1282,7 @@ public class FileFactory extends PluginForHost {
         return ibr;
     }
 
-    private boolean isPendingDeletion(Browser br) {
+    private boolean accountIsPendingDeletion(Browser br) {
         if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(br.getURL(), "code=105")) {
             return true;
         }
@@ -1305,14 +1296,14 @@ public class FileFactory extends PluginForHost {
         if (account != null) {
             synchronized (apiAccLock) {
                 String apiKey = getApiKey(account);
-                ibr.getPage(url + (url.matches("(" + getApi() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                if (sessionKeyInValid(account, ibr)) {
+                ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                if (sessionKeyInvalid(account, ibr)) {
                     apiKey = getApiKey(account);
                     if (apiKey != null) {
                         // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
-                        ibr.getPage(url + (url.matches("(" + getApi() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                        ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                     } else {
-                        if (isPendingDeletion(ibr)) {
+                        if (accountIsPendingDeletion(ibr)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                         // failure occurred.
@@ -1346,8 +1337,10 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private boolean sessionKeyInValid(final Account account, final Browser ibr) {
-        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("710".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")) || "711".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
+    private boolean sessionKeyInvalid(final Account account, final Browser ibr) {
+        final String response_type = PluginJSonUtils.getJsonValue(ibr, "type");
+        final String errorcodeStr = PluginJSonUtils.getJsonValue(ibr, "code");
+        if ("error".equalsIgnoreCase(response_type) && ("710".equalsIgnoreCase(errorcodeStr) || "711".equalsIgnoreCase(errorcodeStr))) {
             // 710 ERR_API_SESS_KEY_INVALID The session key has expired or is invalid. Please obtain a new one via getSessionKey.
             // 711 ERR_API_LOGIN_EXPIRED The session key has expired. Please obtain a new one via getSessionKey.
             account.setProperty("apiKey", Property.NULL);
@@ -1358,39 +1351,32 @@ public class FileFactory extends PluginForHost {
     }
 
     private AccountInfo fetchAccountInfo_API(final Account account, final AccountInfo ai) throws Exception {
-        if (account.getPass() == null || "".equals(account.getPass())) {
-            account.setValid(false);
+        if (StringUtils.isEmpty(account.getPass())) {
             return ai;
         }
-        loginKey(account);
-        getPage(br, getApi() + "/getMemberInfo", account);
+        loginAPI(account);
+        if (br.getURL() == null || !br.getURL().contains("/getMemberInfo")) {
+            /* E.g. on full login we've already done this API call before! */
+            getPage(br, getApiBase() + "/getMemberInfo", account);
+        }
         final String expire = PluginJSonUtils.getJsonValue(br, "expiryMs");
         final String type = PluginJSonUtils.getJsonValue(br, "accountType");
         if ("premium".equalsIgnoreCase(type)) {
-            account.setProperty("free", false);
+            account.setType(AccountType.PREMIUM);
             account.setProperty("totalMaxSim", 20);
+            account.setMaxSimultanDownloads(20);
             ai.setStatus("Premium Account");
             if (expire != null) {
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
             }
         } else {
-            account.setProperty("free", true);
+            account.setType(AccountType.FREE);
             account.setProperty("totalMaxSim", 20);
+            account.setMaxSimultanDownloads(20);
             ai.setStatus("Free Account");
             ai.setUnlimitedTraffic();
         }
         return ai;
-    }
-
-    private void throwPremiumRequiredException() throws PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
     }
 
     private AvailableStatus getAvailableStatus(DownloadLink link) {
