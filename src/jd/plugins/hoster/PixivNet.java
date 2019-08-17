@@ -18,13 +18,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -37,11 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
 public class PixivNet extends PluginForHost {
@@ -212,8 +212,8 @@ public class PixivNet extends PluginForHost {
                     if (!check) {
                         return;
                     } else {
-                        br.getPage("http://www." + account.getHoster() + "/");
-                        if (isLoggedinHtml(br)) {
+                        br.getPage("https://www." + account.getHoster() + "/");
+                        if (isLoggedIN(br)) {
                             /* Refresh loggedin timestamp */
                             account.saveCookies(br.getCookies(account.getHoster()), "");
                             return;
@@ -221,11 +221,15 @@ public class PixivNet extends PluginForHost {
                     }
                     /* Full login required */
                 }
-                br.getPage("https://accounts." + account.getHoster() + "/login?lang=ru&source=pc&view_type=page&ref=wwwtop_accounts_index");
-                final String postkey = br.getRegex("name=\"post_key\" value=\"([a-f0-9]+)\"").getMatch(0);
-                if (postkey == null) {
+                br.getPage("https://accounts." + account.getHoster() + "/login?lang=en&source=pc&view_type=page&ref=wwwtop_accounts_index");
+                final Form loginform = br.getFormbyActionRegex(".*/login");
+                if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                // final String postkey = br.getRegex("name=\"post_key\" value=\"([a-f0-9]+)\"").getMatch(0);
+                // if (postkey == null) {
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // }
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 final String recaptchaResponse;
                 if (plugin instanceof PluginForHost) {
@@ -249,7 +253,10 @@ public class PixivNet extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage("https://accounts." + account.getHoster() + "/api/login?lang=ru", "captcha=&g_recaptcha_response=&recaptcha_v3_token=" + Encoding.urlEncode(recaptchaResponse) + "&post_key=" + postkey + "&source=pc&ref=wwwtop_accounts_index&return_to=https%3A%2F%2Fwww.pixiv.net%2F&pixiv_id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                loginform.put("pixiv_id", account.getUser());
+                loginform.put("password", account.getPass());
+                loginform.put("recaptcha_v3_token", recaptchaResponse);
+                br.submitForm(loginform);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
                 if (br.getCookie(account.getHoster(), "device_token") == null || "true".equals(error)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -268,7 +275,7 @@ public class PixivNet extends PluginForHost {
         }
     }
 
-    public static boolean isLoggedinHtml(final Browser br) {
+    public static boolean isLoggedIN(final Browser br) {
         return br.containsHTML("logout\\.php");
     }
 

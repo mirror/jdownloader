@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,12 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
@@ -163,6 +163,10 @@ public class FileBitPl extends PluginForHost {
                 }
             }
         }
+        /*
+         * 2019-08-17: It is especially important to try to re-use generated downloadurls in this case because they will charge the complete
+         * traffic of a file once you add an URL to their download-queue.
+         */
         String dllink = checkDirectLink(link, "filebitpldirectlink");
         if (StringUtils.isEmpty(dllink)) {
             /* request Download */
@@ -188,12 +192,20 @@ public class FileBitPl extends PluginForHost {
         this.loginAPI(account, false);
         br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         handleAPIErrors(br, account, link);
+        /*
+         * 2019-08-17: TODO: Consider saving- and re-using this fileID. Keep in mind that if e.g. the download permanently fails serverside,
+         * we have to re-add our link and get a new ID otherwise we may never be able to download files which e.g. fail serverside on the
+         * first attempt!
+         */
         final String fileId = PluginJSonUtils.getJson(br, "fileId");
         if (StringUtils.isEmpty(fileId)) {
             /* This should never happen */
             mhm.handleErrorGeneric(account, link, "fileidnull", 20);
         }
         int loop = 0;
+        int lastProgressValue = 0;
+        int timesWithoutProgressChange = 0;
+        final int timesWithoutProgressChangeMax = 10;
         boolean serverDownloadFinished = false;
         do {
             if (isAbort()) {
@@ -214,20 +226,36 @@ public class FileBitPl extends PluginForHost {
                 break;
             } else {
                 /* Progress is only available when status == 2 */
-                String progress = PluginJSonUtils.getJson(br, "progress");
+                int progressTemp = 0;
+                String progressStr = PluginJSonUtils.getJson(br, "progress");
                 String info = PluginJSonUtils.getJson(br, "info");
                 if (StringUtils.isEmpty(info)) {
                     info = "File is in queue to be prepared";
                 }
                 info += ": %s%%";
-                if (StringUtils.isEmpty(progress)) {
-                    progress = "0";
+                if (StringUtils.isEmpty(progressStr)) {
+                    progressStr = "0";
                 }
-                info = String.format(info, progress);
+                if (progressStr.matches("\\d+")) {
+                    progressTemp = Integer.parseInt(progressStr);
+                }
+                if (progressTemp == lastProgressValue) {
+                    timesWithoutProgressChange++;
+                    logger.info("No progress change: " + timesWithoutProgressChange);
+                } else {
+                    lastProgressValue = progressTemp;
+                    /* Reset counter */
+                    timesWithoutProgressChange = 0;
+                }
+                info = String.format(info, progressStr);
                 sleep(5000l, link, info);
                 loop++;
             }
-        } while (!serverDownloadFinished && loop <= 200);
+            if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
+                logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
+                break;
+            }
+        } while (!serverDownloadFinished && loop <= 200 && !this.isAbort());
         if (!serverDownloadFinished) {
             /* Rare case */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted");
@@ -252,18 +280,23 @@ public class FileBitPl extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (!!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return dllink;

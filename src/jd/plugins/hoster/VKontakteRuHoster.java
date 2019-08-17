@@ -69,6 +69,8 @@ import jd.utils.locale.JDL;
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
+    /* 2019-08-17: E.g. used for plugin settings */
+    public static String        STATIC_HOST                                                                 = "vkontakte.ru";
     private static final String DOMAIN                                                                      = "vk.com";
     private static final String TYPE_AUDIOLINK                                                              = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                                              = "https?://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
@@ -985,7 +987,7 @@ public class VKontakteRuHoster extends PluginForHost {
      */
     public static String photoGetFinalFilename(final String photo_id, String finalfilename, final String directlink) throws MalformedURLException {
         final String url_filename = directlink != null ? getFileNameFromURL(new URL(directlink)) : null;
-        final PluginForHost plg = JDUtilities.getPluginForHost("vk.com");
+        final PluginForHost plg = JDUtilities.getPluginForHost(STATIC_HOST);
         if (finalfilename != null) {
             /* Do nothing - final filename has already been set (usually this is NOT the case). */
         } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
