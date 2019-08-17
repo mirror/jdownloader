@@ -52,23 +52,29 @@ public class PicstateCom extends PluginForHost {
         return "http://picstate.com/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/view") || !br.containsHTML("image_container")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
         String filename = null;
+        final Regex dlinfo = br.getRegex("<img src=\"(http[^\"]+)\" alt=\"([^\"]+)\" />");
+        dllink = br.getRegex("\"(https?://[^/]+/files/[A-Za-z0-9\\-_]+/[^\"]+)\"").getMatch(0);
+        if (dllink == null) {
+            /* 2019-08-17: New */
+            dllink = dlinfo.getMatch(0);
+        }
+        filename = dlinfo.getMatch(1);
         if (filename == null) {
+            /* Fallback */
             filename = url_filename;
         }
-        dllink = br.getRegex("\"(https?://[^/]+/files/[A-Za-z0-9\\-_]+/[^\"]+)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

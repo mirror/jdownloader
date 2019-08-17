@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -22,6 +21,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,16 +29,24 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://[\\w\\.]*?filefactory\\.com/(folder|f)/[\\w]+" })
-public class FlFctrFldr extends PluginForDecrypt {
-
-    public FlFctrFldr(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(?:www\\.)?filefactory\\.com/((?:folder|f)/[\\w]+|share/fi[a-z0-9,:]+)" })
+public class FilefactoryComFolder extends PluginForDecrypt {
+    public FilefactoryComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        if (parameter.matches(".+/share/fi.+")) {
+            /* 2019-08-17: New type of folder which contains all fileIDs inside URL */
+            final String[] fileIDs = new Regex(parameter, "fi:([a-z0-9]+)").getColumn(0);
+            for (final String fileid : fileIDs) {
+                final String url = "http://www." + this.getHost() + "/file/" + fileid;
+                decryptedLinks.add(this.createDownloadlink(url));
+            }
+            return decryptedLinks;
+        }
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=1");
         if (br.getRedirectLocation() != null) {
@@ -51,9 +59,7 @@ public class FlFctrFldr extends PluginForDecrypt {
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             return new ArrayList<DownloadLink>();
         }
-
         final String fpName = br.getRegex("<h1>Files in <span>(.*?)</span>").getMatch(0);
-
         int maxPagenum = 1;
         final String maxPage = br.getRegex("data\\-paginator\\-totalPages=\"(\\d+)\"").getMatch(0);
         if (maxPage != null) {
@@ -84,5 +90,4 @@ public class FlFctrFldr extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -50,6 +50,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -128,7 +129,7 @@ public class FileFactory extends PluginForHost {
             }
         }
         final int errTries = 4;
-        final int errCode = (!inValidate(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
+        final int errCode = (!StringUtils.isEmpty(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
         final String errRetry = "retry_" + errCode;
         final int tri = this.getDownloadLink().getIntegerProperty(errRetry, 0) + 1;
         this.getDownloadLink().setProperty(errRetry, (tri >= errTries ? 0 : tri));
@@ -146,19 +147,19 @@ public class FileFactory extends PluginForHost {
                         String tmpmin = new Regex(wt2, "(\\d+)\\s+min(ute)?s?").getMatch(0);
                         String tmpsec = new Regex(wt2, "(\\d+)\\s+sec(ond)?s?").getMatch(0);
                         long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                        if (!inValidate(tmpYears)) {
+                        if (!StringUtils.isEmpty(tmpYears)) {
                             years = Integer.parseInt(tmpYears);
                         }
-                        if (!inValidate(tmpdays)) {
+                        if (!StringUtils.isEmpty(tmpdays)) {
                             days = Integer.parseInt(tmpdays);
                         }
-                        if (!inValidate(tmphrs)) {
+                        if (!StringUtils.isEmpty(tmphrs)) {
                             hours = Integer.parseInt(tmphrs);
                         }
-                        if (!inValidate(tmpmin)) {
+                        if (!StringUtils.isEmpty(tmpmin)) {
                             minutes = Integer.parseInt(tmpmin);
                         }
-                        if (!inValidate(tmpsec)) {
+                        if (!StringUtils.isEmpty(tmpsec)) {
                             seconds = Integer.parseInt(tmpsec);
                         }
                         waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
@@ -221,6 +222,100 @@ public class FileFactory extends PluginForHost {
         }
         if (br.containsHTML(DBCONNECTIONFAILED)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+        }
+    }
+
+    /** Handles errors according to: https://api.filefactory.com/#appendix-error-matrix */
+    private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
+        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "type"))) {
+            final String errorcodeStr = PluginJSonUtils.getJsonValue(this.br, "code");
+            String errormessage = getErrormsgAPI(this.br);
+            if (StringUtils.isEmpty(errormessage)) {
+                errormessage = "Unknown API error";
+            }
+            final int errorcode = Integer.parseInt(errorcodeStr);
+            switch (errorcode) {
+            case 700:
+                /* This should never happen */
+                // ERR_API_INVALID_METHOD
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 701:
+                /* This should never happen */
+                // ERR_API_INTERNAL_ERROR
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 702:
+                /* This should never happen */
+                // ERR_API_REQ_MALFORMED
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 703:
+                /* This should never happen */
+                // ERR_API_REQ_MISSING_PARAM
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 704:
+                /* This should never happen */
+                // ERR_API_REQ_LIMIT
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 705:
+                // 705 ERR_API_LOGIN_ATTEMPTS
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 706:
+                // 706 ERR_API_LOGIN_FAILED
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 707:
+                // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 708:
+                // ERR_API_PREMIUM_REQUIRED
+                throw new AccountRequiredException();
+            case 709:
+                /* This should never happen */
+                // ERR_API_SESS_KEY_MISSING
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 710:
+                /* This should never happen */
+                // ERR_API_SESS_KEY_INVALID
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 711:
+                /* This should never happen */
+                // ERR_API_SESS_KEY_EXPIRED
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 712:
+                // ERR_API_FILE_INVALID
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 713:
+                // ERR_API_FILE_OFFLINE --> The requested file is temporarily unavailable due to system maintenance, etc
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 714:
+                // ERR_API_FILE_SERVER_LOAD
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            case 715:
+                // ERR_API_PASSWORD_REQUIRED
+                /* This gets handled in another place */
+                break;
+            case 716:
+                // ERR_API_PASSWORD_INVALID
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            case 717:
+                // ERR_API_PASSWORD_ATTEMPTS --> Too many failed password attempts. Try again in 5 minutes
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 6 * 60 * 1001l);
+            case 718:
+                // 718 ERR_API_IP_SUSPENDED
+                if (account != null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errormessage);
+                }
+            case 719:
+                // 719 ERR_API_ACCOUNT_SUSPENDED
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            default:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+            }
+        }
+        if (accountIsPendingDeletion(this.br)) {
+            /* 2019-08-17: No sure whether this is still required & up-to-date */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -497,11 +592,22 @@ public class FileFactory extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        final String directlinkproperty;
+        if (account == null) {
+            directlinkproperty = "directurl_free";
+        } else if (account.getType() == AccountType.PREMIUM) {
+            directlinkproperty = "directurl_account_premium";
+        } else {
+            directlinkproperty = "directurl_account_free";
+        }
+        if (StringUtils.isEmpty(dlUrl)) {
+            dlUrl = this.checkDirectLink(downloadLink, directlinkproperty);
+        }
         String passCode = downloadLink.getStringProperty("pass", null);
         try {
             long waittime;
             if (dlUrl != null) {
-                logger.finer("DIRECT free-download");
+                logger.finer("DIRECT free-download (or saved directurl)");
                 br.setFollowRedirects(true);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlUrl, true, 1);
             } else {
@@ -519,13 +625,13 @@ public class FileFactory extends PluginForHost {
                     }
                 }
                 // new 20130911
-                String dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
+                dlUrl = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                 String timer = br.getRegex("<div id=\"countdown_clock\" data-delay=\"(\\d+)").getMatch(0);
                 if (timer != null) {
                     sleep(Integer.parseInt(timer) * 1001, downloadLink);
                 }
-                if (dllink != null) {
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                if (dlUrl != null) {
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlUrl, true, 1);
                 } else {
                     // old
                     String urlWithFilename = null;
@@ -552,8 +658,8 @@ public class FileFactory extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
                         }
                     }
-                    String downloadUrl = getUrl();
-                    if (downloadUrl == null) {
+                    dlUrl = getUrl();
+                    if (dlUrl == null) {
                         logger.warning("getUrl is broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -568,7 +674,7 @@ public class FileFactory extends PluginForHost {
                     waittime += 1000;
                     sleep(waittime, downloadLink);
                     br.setFollowRedirects(true);
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, downloadUrl);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlUrl);
                 }
             }
             // Prüft ob content disposition header da sind
@@ -1072,93 +1178,63 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void handleDownload_API(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, false);
-        fuid = getFUID(downloadLink);
+        fuid = getFUID(link);
         prepApiBrowser(br);
-        reqFileInformation(downloadLink, account);
-        String passCode = downloadLink.getStringProperty("pass", null);
-        // error handling can be within redirects.
+        reqFileInformation(link, account);
+        String passCode = link.getStringProperty("pass", null);
+        final String directlinkproperty;
+        if (account == null) {
+            directlinkproperty = "directurl_free";
+        } else if (account.getType() == AccountType.PREMIUM) {
+            directlinkproperty = "directurl_account_premium";
+        } else {
+            directlinkproperty = "directurl_account_free";
+        }
         br.setFollowRedirects(true);
+        this.dllink = this.checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            if (downloadLink.getBooleanProperty("premiumRequired", false) && isFree) {
+            if (link.getBooleanProperty("premiumRequired", false) && isFree) {
                 // free dl isn't possible, place before passwordRequired!
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
-            if (downloadLink.getBooleanProperty("passwordRequired", false)) {
+            if (link.getBooleanProperty("passwordRequired", false)) {
                 // dl requires pre download password
-                if (inValidate(passCode)) {
-                    passCode = Plugin.getUserInput("Password Required!", downloadLink);
+                if (StringUtils.isEmpty(passCode)) {
+                    passCode = Plugin.getUserInput("Password Required!", link);
                 }
-                if (inValidate(passCode)) {
+                if (StringUtils.isEmpty(passCode)) {
                     logger.info("User has entered blank password!");
-                    downloadLink.setProperty("pass", Property.NULL);
+                    link.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
-            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
-            if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":701")) {
-                // {"type":"error","message":"Error generating download link. Please try again","code":701}
-                // TODO: remove this when retry count comes back!
-                int r = downloadLink.getIntegerProperty("retry_701", 0);
-                if (r == 4) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
-                } else {
-                    r++;
-                    downloadLink.setProperty("retry_701", r);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":708")) {
-                // {"type":"error","message":"This file can only be downloaded by Premium members","code":708}
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":712")) {
-                // 712 ERR_API_FILE_INVALID
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":713")) {
-                // 713 ERR_API_FILE_OFFLINE
-                // {"type":"error","message":"File is temporarily unavailable due to system maintenance","code":713}
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":714")) {
-                // 714 ERR_API_FILE_SERVER_LOAD || free account == too many ppl dling
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l);
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":715")) {
-                // 715 ERR_API_PASSWORD_REQUIRED
-                // this should not happen as we have a check in linkgrabber... would only be a problem if linkgrabber info was incorrect.
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":716")) {
-                // 716 ERR_API_PASSWORD_INVALID
-                logger.info("Invalid password!");
-                downloadLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
-            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":717")) {
-                // 717 ERR_API_PASSWORD_ATTEMPTS
-                logger.info("Invalid password! Too many incorrect guesses");
-                downloadLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 5 * 60 * 1001);
-            }
+            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!StringUtils.isEmpty(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             final String linkType = PluginJSonUtils.getJsonValue(br, "linkType");
-            if (inValidate(dllink)) {
+            if (StringUtils.isEmpty(dllink)) {
+                logger.warning("Failed to find final downloadlink");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if ("trafficshare".equalsIgnoreCase(linkType)) {
                 setConstants(account, true);
             }
             String delay = PluginJSonUtils.getJsonValue(br, "delay");
-            if (!inValidate(passCode)) {
-                downloadLink.setProperty("pass", passCode);
+            if (!StringUtils.isEmpty(passCode)) {
+                link.setDownloadPassword(passCode);
             }
-            if (!inValidate(delay)) {
+            if (!StringUtils.isEmpty(delay)) {
                 final int s = Integer.parseInt(delay);
-                sleep((s * 1001) + 1111, downloadLink);
+                sleep((s * 1001) + 1111, link);
             }
         }
-        dllink = dllink.replace("\\", "");
-        handleDL(downloadLink, account);
+        handleDL(link, account, directlinkproperty);
     }
 
     private static final String dlRedirects = "dlRedirects";
 
-    private void handleDL(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void handleDL(final DownloadLink link, final Account account, final String directlinkproperty) throws Exception {
         /*
          * Since I fixed the download core setting correct redirect referrer I can no longer use redirect header to determine error code for
          * max connections. This is really only a problem with media files as filefactory redirects to /stream/ directly after code=\d+
@@ -1200,19 +1276,20 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (!urls.isEmpty()) {
-            downloadLink.setProperty(dlRedirects, urls);
+            link.setProperty(dlRedirects, urls);
         }
         if (!con.isContentDisposition()) {
             checkErrorsWebsite(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             // this shouldn't happen anymore!
             br.followConnection();
             checkErrorsWebsite(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setProperty(directlinkproperty, dllink);
         // add download slot
         controlSlot(+1, account);
         try {
@@ -1223,10 +1300,33 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private static Object apiAccLock = new Object();
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("text") || !con.isOK() || !con.isContentDisposition()) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return dllink;
+    }
 
     private String loginAPI(final Account account) throws Exception {
-        synchronized (apiAccLock) {
+        synchronized (account) {
             prepApiBrowser(this.br);
             /* First try to login with previous session/apikey */
             String apikey = this.getApiKey(account);
@@ -1253,25 +1353,14 @@ public class FileFactory extends PluginForHost {
                     account.setProperty("apiKey", apikey);
                     return apikey;
                 }
-                if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "type")) && ("705".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "code")) || "706".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "code")) || "707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "code")))) {
-                    // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
-                    // 706 ERR_API_LOGIN_FAILED Login details were incorrect
-                    // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg(this.br), PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (accountIsPendingDeletion(this.br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                checkErrorsAPI(null, account);
             }
             return apikey;
         }
     }
 
     private synchronized String getApiKey(final Account account) throws Exception {
-        synchronized (apiAccLock) {
-            return account.getStringProperty("apiKey", null);
-        }
+        return account.getStringProperty("apiKey", null);
     }
 
     private Browser prepApiBrowser(final Browser ibr) {
@@ -1291,32 +1380,17 @@ public class FileFactory extends PluginForHost {
 
     private void getPage(final Browser ibr, final String url, final Account account) throws Exception {
         if (account != null) {
-            synchronized (apiAccLock) {
-                String apiKey = getApiKey(account);
+            synchronized (account) {
+                final String apiKey = getApiKey(account);
                 ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                if (sessionKeyInvalid(account, ibr)) {
-                    this.loginAPI(account);
-                    apiKey = getApiKey(account);
-                    ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                }
-                // account specific errors which could happen at any point in time!
-                if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")) || "719".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
-                    // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-                    // 719 ERR_API_ACCOUNT_SUSPENDED The account being used has been suspended
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(ibr), PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
             }
         } else {
             ibr.getPage(url);
         }
-        // error handling for generic errors which could occur at any point in time!
-        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "type")) && ("718".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
-            // 718 ERR_API_IP_SUSPENDED The IP Address initiating the request has been suspended
-            throw new PluginException(LinkStatus.ERROR_FATAL, "\r\n" + errorMsg(ibr));
-        }
+        this.checkErrorsAPI(null, account);
     }
 
-    private String errorMsg(final Browser ibr) {
+    private String getErrormsgAPI(final Browser ibr) {
         final String message = PluginJSonUtils.getJsonValue(ibr, "message");
         if (message != null) {
             logger.warning(message);
@@ -1379,22 +1453,6 @@ public class FileFactory extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private static Object CTRLLOCK = new Object();

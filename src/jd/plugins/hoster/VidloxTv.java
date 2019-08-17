@@ -114,4 +114,10 @@ public class VidloxTv extends XFileSharingProBasic {
         /* 2019-08-13: Special */
         return true;
     }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_via_embedded_video() {
+        /* 2019-08-17: Special and experimental. Disable this if it slows down the linkcheck too much! */
+        return true;
+    }
 }

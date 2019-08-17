@@ -96,16 +96,16 @@ public class BadshareIo extends YetiShareCore {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 2;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
