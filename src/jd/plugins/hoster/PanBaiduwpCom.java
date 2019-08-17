@@ -83,10 +83,10 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
         final String origurl_uk = link.getStringProperty("origurl_uk", null);
         final String origurl_shareid = link.getStringProperty("origurl_shareid", null);
-        final boolean compatible_by_basic_data = !StringUtils.isEmpty(shorturl_id) || (!StringUtils.isEmpty(origurl_uk) && !StringUtils.isEmpty(origurl_shareid));
+        final boolean required_data_is_available = !StringUtils.isEmpty(shorturl_id) || (!StringUtils.isEmpty(origurl_uk) && !StringUtils.isEmpty(origurl_shareid));
         final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
         final boolean urlCompatible_by_position = positionarrayCommaSeparated != null;
-        return compatible_by_basic_data && (urlCompatible_by_hash || urlCompatible_by_position);
+        return required_data_is_available && (urlCompatible_by_hash || urlCompatible_by_position);
     }
 
     @Override
