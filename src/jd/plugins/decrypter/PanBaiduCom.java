@@ -163,15 +163,15 @@ public class PanBaiduCom extends PluginForDecrypt {
          * 2019-07-23: Important: RegEx from current URL as this value may change when accessing the URL which the user has added (redirect)
          */
         String shorturl_id = new Regex(br.getURL(), "(?:/s/|surl=)([A-Za-z0-9-_]+)").getMatch(0);
-        if (shorturl_id == null) {
-            /* This should never happen */
-            logger.warning("Failed to find shorturl_id");
-            return;
-        }
         uk = br.getRegex("\"uk\":(\\d+),").getMatch(0);
         String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
         if (br.getURL().contains("/share/init")) {
+            if (shorturl_id == null) {
+                /* This should never happen */
+                logger.warning("Failed to find shorturl_id");
+                return;
+            }
             if (br.getURL().matches(TYPE_FOLDER_GENERAL) || br.getURL().matches(TYPE_FOLDER_NORMAL)) {
                 uk = new Regex(br.getURL(), "uk=(\\d+)").getMatch(0);
                 shareid = new Regex(br.getURL(), "shareid=(\\d+)").getMatch(0);
@@ -336,6 +336,10 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (StringUtils.isEmpty(path)) {
                 /* Nothing to grab */
                 logger.info("path is empty");
+                return;
+            } else if (StringUtils.isEmpty(shorturl_id)) {
+                /* This should never happen */
+                logger.info("shorturl_id is empty");
                 return;
             }
             subdir_link = "https://pan.baidu.com/s/" + shorturl_id + "#dir/path=" + URLEncode.encodeURIComponent(path) + "?positionarray=" + Encoding.urlEncode(position_arrayStr_current);

@@ -81,9 +81,12 @@ public class PanBaiduwpCom extends antiDDoSForHost {
         final String positionarrayCommaSeparated = link.getStringProperty("positionarray", null);
         final String internal_md5hash = link.getStringProperty("internal_md5hash", null);
         final String shorturl_id = link.getStringProperty("shorturl_id", null);
+        final String origurl_uk = link.getStringProperty("origurl_uk", null);
+        final String origurl_shareid = link.getStringProperty("origurl_shareid", null);
+        final boolean compatible_by_basic_data = !StringUtils.isEmpty(shorturl_id) || (!StringUtils.isEmpty(origurl_uk) && !StringUtils.isEmpty(origurl_shareid));
         final boolean urlCompatible_by_hash = internal_md5hash != null && shorturl_id != null;
         final boolean urlCompatible_by_position = positionarrayCommaSeparated != null;
-        return urlCompatible_by_hash || urlCompatible_by_position;
+        return compatible_by_basic_data && (urlCompatible_by_hash || urlCompatible_by_position);
     }
 
     @Override
@@ -125,7 +128,9 @@ public class PanBaiduwpCom extends antiDDoSForHost {
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        final String shorturl_id = link.getStringProperty("shorturl_id", null);
+        final String shorturl_id = link.getStringProperty("shorturl_id", "");
+        final String origurl_uk = link.getStringProperty("origurl_uk", null);
+        final String origurl_shareid = link.getStringProperty("origurl_shareid", null);
         /* In over 99% of all cases, we should already have the correct password here! */
         String passCode = link.getDownloadPassword();
         int counter = 0;
@@ -135,7 +140,11 @@ public class PanBaiduwpCom extends antiDDoSForHost {
                 /* Password was incorrect or not given on the first try? Ask the user! */
                 passCode = getUserInput("Password?", link);
             }
-            getPage("https://" + this.getHost() + "/s/?surl=" + shorturl_id + "&pwd=" + Encoding.urlEncode(passCode));
+            String getdata = "?surl=" + shorturl_id + "&pwd=" + Encoding.urlEncode(passCode);
+            if (origurl_uk != null && origurl_shareid != null) {
+                getdata += "&uk=" + origurl_uk + "&shareid=" + origurl_shareid;
+            }
+            getPage("https://" + this.getHost() + "/s/" + getdata);
             counter++;
             failed = br.containsHTML("class=\"modal\\-title\">请输入提取码<");
         } while (counter <= 2 && failed);
