@@ -74,7 +74,7 @@ public class TwitterCom extends PluginForHost {
     private boolean              geo_blocked               = false;
     private boolean              server_issues             = false;
     private String               tweetid                   = null;
-    private static String        guest_token               = null;
+    private String               guest_token               = null;
 
     private void setconstants(final DownloadLink dl) {
         dllink = null;
