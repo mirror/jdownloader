@@ -126,8 +126,8 @@ public class VizCom extends antiDDoSForDecrypt {
     }
 
     public static void accessPage(final Browser br, final String manga_id, final String page) throws Exception {
-        final String page_url = "https://www." + br.getHost() + "/manga/get_manga_url?manga_id=" + manga_id + "&page=" + page + "&device_id=3";
-        br.getHeaders().put("Referer", br.getURL());
+        final String page_url = "https://www." + br.getHost() + "/manga/get_manga_url?manga_id=" + manga_id + "&page=" + page + "&device_id=3&loadermax=1";
+        br.getHeaders().put("Referer", "https://www.viz.com/assets/reader-" + System.currentTimeMillis() + ".swf");
         br.getPage(page_url);
     }
 }
