@@ -292,7 +292,7 @@ public class ToutDebridEu extends antiDDoSForHost {
             final Form login = br.getFormbyActionRegex(".*login\\.php.*");
             if (br.getHttpConnection().getResponseCode() == 403) {
                 /* 2019-08-19: This happens quite often - they got heavy server issues! */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server error 403", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server error 403", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (login == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
