@@ -117,7 +117,7 @@ public class FileBitPl extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
+        /* this should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -134,7 +134,7 @@ public class FileBitPl extends PluginForHost {
             }
             br.followConnection();
             if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
-                mhm.handleErrorGeneric(account, link, "dlerror_known", 20);
+                mhm.handleErrorGeneric(account, link, "dlerror_known_but_unsure", 20);
             }
             mhm.handleErrorGeneric(account, link, "dlerror_unknown", 50);
         }
@@ -190,80 +190,126 @@ public class FileBitPl extends PluginForHost {
 
     private String getDllinkAPI(final Account account, final DownloadLink link) throws Exception {
         this.loginAPI(account, false);
-        br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-        handleAPIErrors(br, account, link);
-        /*
-         * 2019-08-17: TODO: Consider saving- and re-using this fileID. Keep in mind that if e.g. the download permanently fails serverside,
-         * we have to re-add our link and get a new ID otherwise we may never be able to download files which e.g. fail serverside on the
-         * first attempt!
-         */
-        final String fileId = PluginJSonUtils.getJson(br, "fileId");
-        if (StringUtils.isEmpty(fileId)) {
-            /* This should never happen */
-            mhm.handleErrorGeneric(account, link, "fileidnull", 20);
+        long total_numberof_waittime_loops_for_current_fileID = 0;
+        final long max_total_numberof_waittime_loops_for_current_fileID = 200;
+        String fileID = link.getStringProperty("filebitpl_fileid", null);
+        if (!StringUtils.isEmpty(fileID)) {
+            /*
+             * 2019-08-19: If a downloadlink has previously been created successfully with that fileID and upper handling fails to re-use
+             * that generated directURL, re-using the old fileID to generate a new downloadurl will not use up any traffic of the users'
+             * account either!!
+             */
+            logger.info("Found saved fileID:  + fileID");
+            logger.info("--> We've tried to download this URL before --> Trying to re-use old fileID as an attempt not to waste any traffic (this multihoster has a bad traffic-counting-system)");
+            total_numberof_waittime_loops_for_current_fileID = link.getLongProperty("filebitpl_fileid_total_numberof_waittime_loops", 0);
+            logger.info("Stored fileID already went through serverside-download-loops in the past for x-times: " + total_numberof_waittime_loops_for_current_fileID);
+        } else {
+            /* This initiates a serverside download. The user will be charged for the full amount of traffic immediately! */
+            logger.info("Failed to find any old fileID --> Initiating a new serverside queue-download");
+            br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            handleAPIErrors(br, account, link);
+            /*
+             * 2019-08-17: TODO: Consider saving- and re-using this fileID. Keep in mind that if e.g. the download permanently fails
+             * serverside, we have to re-add our link and get a new ID otherwise we may never be able to download files which e.g. fail
+             * serverside on the first attempt!
+             */
+            fileID = PluginJSonUtils.getJson(br, "fileId");
+            if (StringUtils.isEmpty(fileID)) {
+                /* This should never happen */
+                logger.warning("Failed to find fileID");
+                mhm.handleErrorGeneric(account, link, "fileidnull", 20);
+            }
+            /* Save this ID so that in case of an error or aborted downloads we can re-use it without wasting the users' traffic. */
+            link.setProperty("filebitpl_fileid", fileID);
         }
         int loop = 0;
         int lastProgressValue = 0;
         int timesWithoutProgressChange = 0;
         final int timesWithoutProgressChangeMax = 10;
         boolean serverDownloadFinished = false;
-        do {
-            if (isAbort()) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + sessionID + "&fileId=" + fileId);
-            final String error = PluginJSonUtils.getJson(br, "error");
-            final String errno = PluginJSonUtils.getJson(br, "errno");
-            if ("1".equals(error)) {
-                if ("207".equals(errno)) {
-                    mhm.putError(account, link, 30 * 60 * 1000l, "Not enough traffic");
+        try {
+            do {
+                if (isAbort()) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String status = PluginJSonUtils.getJson(br, "status");
-            serverDownloadFinished = "3".equals(status);
-            if (serverDownloadFinished) {
-                break;
-            } else {
-                /* Progress is only available when status == 2 */
-                int progressTemp = 0;
-                String progressStr = PluginJSonUtils.getJson(br, "progress");
-                String info = PluginJSonUtils.getJson(br, "info");
-                if (StringUtils.isEmpty(info)) {
-                    info = "File is in queue to be prepared";
+                br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + sessionID + "&fileId=" + fileID);
+                final String error = PluginJSonUtils.getJson(br, "error");
+                final String errno = PluginJSonUtils.getJson(br, "errno");
+                if ("1".equals(error)) {
+                    if ("207".equals(errno)) {
+                        mhm.putError(account, link, 30 * 60 * 1000l, "Not enough traffic");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                info += ": %s%%";
-                if (StringUtils.isEmpty(progressStr)) {
-                    progressStr = "0";
-                }
-                if (progressStr.matches("\\d+")) {
-                    progressTemp = Integer.parseInt(progressStr);
-                }
-                if (progressTemp == lastProgressValue) {
-                    timesWithoutProgressChange++;
-                    logger.info("No progress change: " + timesWithoutProgressChange);
+                final String status = PluginJSonUtils.getJson(br, "status");
+                serverDownloadFinished = "3".equals(status);
+                if (serverDownloadFinished) {
+                    break;
                 } else {
-                    lastProgressValue = progressTemp;
-                    /* Reset counter */
-                    timesWithoutProgressChange = 0;
+                    /* Progress is only available when status == 2 */
+                    int progressTemp = 0;
+                    String progressStr = PluginJSonUtils.getJson(br, "progress");
+                    String info = PluginJSonUtils.getJson(br, "info");
+                    if (StringUtils.isEmpty(info)) {
+                        info = "File is in queue to be prepared";
+                    }
+                    info += ": %s%%";
+                    if (StringUtils.isEmpty(progressStr)) {
+                        progressStr = "0";
+                    }
+                    if (progressStr.matches("\\d+")) {
+                        progressTemp = Integer.parseInt(progressStr);
+                    }
+                    if (progressTemp == lastProgressValue) {
+                        timesWithoutProgressChange++;
+                        logger.info("No progress change in loop number: " + timesWithoutProgressChange);
+                    } else {
+                        lastProgressValue = progressTemp;
+                        /* Reset counter */
+                        timesWithoutProgressChange = 0;
+                    }
+                    info = String.format(info, progressStr);
+                    sleep(5000l, link, info);
+                    loop++;
                 }
-                info = String.format(info, progressStr);
-                sleep(5000l, link, info);
-                loop++;
+                if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
+                    logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
+                    break;
+                }
+                logger.info("total_numberof_waittime_loops_for_current_fileID: " + total_numberof_waittime_loops_for_current_fileID);
+                total_numberof_waittime_loops_for_current_fileID++;
+            } while (!serverDownloadFinished && loop <= 200 && !this.isAbort());
+        } finally {
+            if (total_numberof_waittime_loops_for_current_fileID >= max_total_numberof_waittime_loops_for_current_fileID) {
+                /*
+                 * Too many attempts for current fileID --> Next retry will create a new fileID which will charge the full amount of traffic
+                 * for this file (again).
+                 */
+                logger.info("Reached max_total_numberof_waittime_loops_for_current_fileID --> Resetting fileid and filebitpl_fileid_total_numberof_waittime_loops for future retries");
+                logger.info("Next attempt will charge traffic again");
+                link.removeProperty("filebitpl_fileid");
+                link.removeProperty("filebitpl_fileid_total_numberof_waittime_loops");
+            } else if (loop > 0) {
+                /*
+                 * Only display this logger and save filebitpl_fileid_total_numberof_waittime_loops if we did over 0 loops for this
+                 * download-attempt!
+                 */
+                logger.info("Current fileID went through this many loops: " + total_numberof_waittime_loops_for_current_fileID);
+                link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", total_numberof_waittime_loops_for_current_fileID);
             }
-            if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
-                logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
-                break;
-            }
-        } while (!serverDownloadFinished && loop <= 200 && !this.isAbort());
+        }
         if (!serverDownloadFinished) {
             /* Rare case */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted", 5 * 60 * 1000l);
         }
         // final String expires = getJson("expires");
         return PluginJSonUtils.getJson(this.br, "downloadurl");
     }
 
+    /**
+     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br>
+     * DO NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
+     */
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         this.loginWebsite(account);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -456,6 +502,7 @@ public class FileBitPl extends PluginForHost {
                 sessionID = account.getStringProperty("sessionid");
                 final long session_expire = account.getLongProperty("sessionexpire", 0);
                 if (force || sessionID == null || System.currentTimeMillis() > session_expire) {
+                    logger.info("Performing full login");
                     br.getPage(API_BASE + "?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
                     handleAPIErrors(br, account, null);
                     sessionID = PluginJSonUtils.getJson(this.br, "sessident");
@@ -466,8 +513,11 @@ public class FileBitPl extends PluginForHost {
                     /* According to API documentation, sessionIDs are valid for 60 minutes */
                     account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
                     account.setProperty("sessionid", sessionID);
+                } else {
+                    logger.info("Trusting stored sessionID");
                 }
             } catch (final PluginException e) {
+                e.printStackTrace();
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.removeProperty("sessionid");
                 }
@@ -543,22 +593,6 @@ public class FileBitPl extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException, InterruptedException {
         String statusCode = br.getRegex("\"errno\":(\\d+)").getMatch(0);
         if (statusCode == null && br.containsHTML("\"result\":true")) {
@@ -574,14 +608,17 @@ public class FileBitPl extends PluginForHost {
             case 0:
                 /* Everything ok */
                 break;
+            case 99:
+                /* Function not found (should never happen) */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 200:
-                /* SessionID expired */
+                /* SessionID expired --> Refresh on next full login */
                 statusMessage = "Invalid sessionID";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 201:
-                /* MOCH server maintenance -> Disable for 5 minutes */
+                /* MOCH server maintenance */
                 statusMessage = "Server maintenance";
-                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, downloadLink, "server_maintenance", 10);
             case 202:
                 /* Login/PW missing (should never happen) */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -593,7 +630,7 @@ public class FileBitPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 207:
                 /* Custom API error */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 210:
                 /* Link offline */
                 statusMessage = "Link offline";
@@ -601,11 +638,11 @@ public class FileBitPl extends PluginForHost {
             case 211:
                 /* Host not supported -> Remove it from hostList */
                 statusMessage = "Host not supported";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, downloadLink, "hoster_unsupported", 5);
             case 212:
                 /* Host offline -> Disable for 5 minutes */
                 statusMessage = "Host offline";
-                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, downloadLink, "hoster_offline", 5);
             default:
                 /* unknown error, do not try again with this multihoster */
                 statusMessage = "Unknown API error code, please inform JDownloader Development Team";
