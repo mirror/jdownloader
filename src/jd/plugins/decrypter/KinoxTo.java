@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www\\.)?(?:kinox|kinos)\\.(?:am|cloud|fun|fyi|gratis|io|lol|me|mobi|nu|pe|sg|sh|si|sx|to|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www[0-9]*\\.)?(?:kinox|kinos)\\.(?:am|cloud|fun|fyi|gratis|io|lol|me|mobi|nu|pe|sg|sh|si|sx|to|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
     public KinoxTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,7 +73,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
                 final String[] season_episodes = season[0].split(",");
                 for (final String episode : season_episodes) {
                     if (this.isAbort()) {
-                        logger.info("Decryption aborted by user");
+                        getLogger().info("Decryption aborted by user");
                         return decryptedLinks;
                     }
                     /* Crawl Season --> Find episodes */
@@ -94,6 +94,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
     private void decryptMirrors(List<DownloadLink> decryptedLinks, Browser br2, final String season_number, final String episode) throws Exception {
         final String[] mirrors = br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0);
         if (mirrors == null || mirrors.length == 0) {
+            getLogger().info("No mirrors found.");
             // throw new DecrypterException("Decrypter broken"); // Link doesn't always exist
             return;
         }
@@ -109,7 +110,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
         for (final String mirror : mirrors) {
             /* Crawl Mirrors --> Find directlinks */
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
+                getLogger().info("Decryption aborted by user");
                 return;
             }
             final String hoster_id = new Regex(mirror, "Hoster_(\\d+)").getMatch(0);
@@ -121,6 +122,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
                 } else {
                     // regex pattern needs updating..
                     System.out.println("errrrrrrrrrrror");
+                    getLogger().warning("Mirror regex pattern needs updating.");
                 }
             }
             if (hoster_id == null || mirror_id == null) {
@@ -135,6 +137,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
             getPage(br3, geturl);
             String finallink = PluginJSonUtils.getJson(br3, "Stream");
             if (finallink == null) {
+                getLogger().info("Unable to determine a link for mirror.");
                 return;
             }
             finallink = new Regex(finallink, "(?:href|src)\\s*=\\s*('|\"|)(.*?)\\1").getMatch(1);
