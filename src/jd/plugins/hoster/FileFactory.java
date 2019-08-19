@@ -29,14 +29,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -61,6 +53,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+(/.*)?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" })
 public class FileFactory extends PluginForHost {
@@ -1349,7 +1349,7 @@ public class FileFactory extends PluginForHost {
                  */
                 this.br.getPage(getApiBase() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
                 apikey = PluginJSonUtils.getJsonValue(this.br, "key");
-                if (apikey != null) {
+                if (StringUtils.isNotEmpty(apikey)) {
                     account.setProperty("apiKey", apikey);
                     return apikey;
                 }
@@ -1359,8 +1359,10 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private synchronized String getApiKey(final Account account) throws Exception {
-        return account.getStringProperty("apiKey", null);
+    private String getApiKey(final Account account) throws Exception {
+        synchronized (account) {
+            return account.getStringProperty("apiKey", null);
+        }
     }
 
     private Browser prepApiBrowser(final Browser ibr) {
@@ -1371,11 +1373,11 @@ public class FileFactory extends PluginForHost {
     private boolean accountIsPendingDeletion(Browser br) {
         if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(br.getURL(), "code=105")) {
             return true;
-        }
-        if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "code=152") || StringUtils.containsIgnoreCase(br.getURL(), "code=152")) {
+        } else if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "code=152") || StringUtils.containsIgnoreCase(br.getURL(), "code=152")) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     private void getPage(final Browser ibr, final String url, final Account account) throws Exception {
