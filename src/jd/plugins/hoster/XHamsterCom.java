@@ -56,7 +56,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.(com|xxx|desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx|desi)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,8 +104,8 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE = "(?i).+m\\.xhamster\\.com/.+";
-    private static final String TYPE_EMBED  = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
+    private static final String TYPE_MOBILE = "(?i).+m\\.xhamster\\.(?:com|xxx|desi)/.+";
+    private static final String TYPE_EMBED  = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx|desi)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
     private static Object       ctrlLock    = new Object();
     private final String        recaptchav2 = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
@@ -129,10 +129,10 @@ public class XHamsterCom extends PluginForHost {
         if (dl.getDownloadURL().matches(TYPE_EMBED)) {
             fid = new Regex(dl.getDownloadURL(), "(\\d+)").getMatch(0);
         } else if (dl.getDownloadURL().matches(TYPE_MOBILE)) {
-            fid = new Regex(dl.getDownloadURL(), "xhamster\\.com/[^/]+/(\\d+)").getMatch(0);
+            fid = new Regex(dl.getDownloadURL(), "xhamster\\.(?:com|xxx|desi)/[^/]+/(\\d+)").getMatch(0);
             if (fid == null) {
                 /* 2018-07-19: New */
-                fid = new Regex(dl.getDownloadURL(), "xhamster\\.com/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
+                fid = new Regex(dl.getDownloadURL(), "xhamster\\.(?:com|xxx|desi)/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
             }
         } else {
             fid = new Regex(dl.getDownloadURL(), "movies/(\\d+)/").getMatch(0);
@@ -150,7 +150,7 @@ public class XHamsterCom extends PluginForHost {
     private String getLinkpart(final DownloadLink dl) {
         String linkpart = null;
         if (dl.getDownloadURL().matches(TYPE_MOBILE)) {
-            linkpart = new Regex(dl.getDownloadURL(), "xhamster\\.com/[^/]+/(.+)").getMatch(0);
+            linkpart = new Regex(dl.getDownloadURL(), "xhamster\\.(?:com|xxx|desi)/[^/]+/(.+)").getMatch(0);
         } else if (!dl.getDownloadURL().matches(TYPE_EMBED)) {
             linkpart = new Regex(dl.getDownloadURL(), "videos/([\\w\\-]+\\-\\d+)").getMatch(0);
         }
@@ -204,8 +204,8 @@ public class XHamsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // embeded correction --> Usually not needed
-            if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
-                String realpage = br.getRegex("main_url=(http[^\\&]+)").getMatch(0);
+            if (downloadLink.getDownloadURL().matches(".*?\\.(com|xxx|desi)/xembed.php.*")) {
+                String realpage = br.getRegex("main_url=(https?[^\\&]+)").getMatch(0);
                 if (realpage != null) {
                     downloadLink.setUrlDownload(Encoding.htmlDecode(realpage));
                     br.getPage(downloadLink.getDownloadURL());
@@ -288,7 +288,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getSiteTitle() {
-        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(\\.com)?</title>").getMatch(0);
+        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(\\.com|\\.xxx|\\.desi)?</title>").getMatch(0);
         return title;
     }
 
@@ -431,11 +431,11 @@ public class XHamsterCom extends PluginForHost {
         if (urlmodeint == 1) {
             /* Example-ID: 1815274, 1980180 */
             final Regex secondway = br.getRegex("\\&srv=(https?[A-Za-z0-9%\\.]+\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
-            String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
+            String server = br.getRegex("\\'srv\\'\\s*:\\s*\\'(.*?)\\'").getMatch(0);
             if (server == null) {
                 server = secondway.getMatch(0);
             }
-            String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+            String file = br.getRegex("\\'file\\'\\s*:\\s*\\'(.*?)\\'").getMatch(0);
             if (file == null) {
                 file = secondway.getMatch(1);
             }
@@ -452,7 +452,7 @@ public class XHamsterCom extends PluginForHost {
         } else {
             /* E.g. url_mode == 3 */
             /* Example-ID: 685813 */
-            String flashvars = br.getRegex("flashvars: \"([^<>\"]*?)\"").getMatch(0);
+            String flashvars = br.getRegex("flashvars\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
             ret = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\" class=\"mp4Thumb\"").getMatch(0);
             if (ret == null) {
                 ret = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
@@ -469,7 +469,7 @@ public class XHamsterCom extends PluginForHost {
                 flashvars = flashvars.replace("\\", "");
                 final String[] qualities2 = { "1080p", "720p", "480p", "360p", "240p" };
                 for (final String quality : qualities2) {
-                    ret = new Regex(flashvars, "\"" + quality + "\":\\[\"(https?[^<>\"]*?)\"\\]").getMatch(0);
+                    ret = new Regex(flashvars, "\"" + quality + "\"\\s*:\\s*\\[\"(https?[^<>\"]*?)\"\\]").getMatch(0);
                     if (ret != null) {
                         break;
                     }
