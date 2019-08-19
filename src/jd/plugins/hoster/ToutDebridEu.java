@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -189,25 +190,41 @@ public class ToutDebridEu extends antiDDoSForHost {
          */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.containsHTML("/gerador")) {
-            getPage("/gerador");
+        if (!br.containsHTML("/debrideur")) {
+            getPage("/debrideur");
         }
         final boolean isPremium = br.containsHTML("Compte:\\s*?<b>Premium</b>");
         ArrayList<String> supportedHosts = new ArrayList<String>();
+        /* 2019-08-19: Free Accounts are also allowed to download but there are only about 10 supported hosts for them. */
+        final String[] hostlist = br.getRegex("icones/([^<>\"\\']+)\\.[a-z0-9]+\"").getColumn(0);
+        if (hostlist != null) {
+            supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
+        }
         if (isPremium) {
             account.setType(AccountType.PREMIUM);
             final String daysLeft = br.getRegex("Restant\\s*?:\\s*?<b>(\\d+) jours</b>").getMatch(0);
             if (daysLeft != null) {
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(daysLeft) * 24 * 60 * 1000, br);
             }
-            final String[] hostlist = br.getRegex("icones/([^<>\"\\']+)\\.[a-z0-9]+\"").getColumn(0);
-            if (hostlist != null) {
-                supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
-            }
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
-            ai.setTrafficLeft(0);
+            long traffic_per_hour = 0;
+            int links_per_hour = 0;
+            final String traffic_per_hourStr = br.getRegex("<b>Traffic:</b>([^<>\"]+)par jour <BR>").getMatch(0);
+            if (traffic_per_hourStr != null) {
+                traffic_per_hour = SizeFormatter.getSize(traffic_per_hourStr);
+            }
+            final String links_per_hourStr = br.getRegex("<b>Nombre:</b>\\s*(\\d+)\\s*liens par jour").getMatch(0);
+            if (links_per_hourStr != null) {
+                links_per_hour = Integer.parseInt(links_per_hourStr);
+            }
+            if (links_per_hour > 0 && traffic_per_hour > 0) {
+                ai.setTrafficLeft(traffic_per_hour);
+            } else {
+                ai.setTrafficLeft(0);
+            }
+            ai.setStatus("Free Account [" + links_per_hourStr + " links per hour]");
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
@@ -273,6 +290,10 @@ public class ToutDebridEu extends antiDDoSForHost {
             }
             getPage(PROTOCOL + this.getHost() + "/login");
             final Form login = br.getFormbyActionRegex(".*login\\.php.*");
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /* 2019-08-19: This happens quite often - they got heavy server issues! */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server error 403", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             if (login == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
