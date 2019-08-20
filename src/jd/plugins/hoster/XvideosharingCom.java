@@ -152,9 +152,9 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_api() {
+    protected boolean supports_api_only_mode() {
         /* 2019-07-10: Special: For testing purposes */
-        return super.supports_api();
+        return super.supports_api_only_mode();
     }
 
     /** 2019-02-08: Special */

@@ -118,7 +118,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     private static final String  type_normal              = "^https?://[^/]+/(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
     private static final String  type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
     /* Rare case. Example: thisvid.com */
-    private static final String  type_normal_without_fuid = "^https://[^/]+/videos/([a-z0-9\\-]+)/?$";
+    private static final String  type_normal_without_fuid = ".+/videos/([a-z0-9\\-]+)/?$";
     private static final String  type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /* E.g. sex3.com */
     public static final String   type_only_numbers        = "^https?://[^/]+/(?:video/)?(\\d+)/$";

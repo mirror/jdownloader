@@ -102,4 +102,9 @@ public class FastfileCc extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
+
+    @Override
+    protected boolean prefer_account_info_via_api_in_website_mode_if_apikey_is_found() {
+        return false;
+    }
 }

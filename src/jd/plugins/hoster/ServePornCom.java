@@ -62,16 +62,15 @@ public class ServePornCom extends antiDDoSForHost {
         return "http://www.bubbaporn.com/disclamer/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "(?:/video(?:s?/)?|/filme/)(.+?)/?$").getMatch(0);
+        final String url_filename = new Regex(downloadLink.getPluginPatternMatcher(), "(?:/video(?:s?/)?|/filme/|/filmy/|/films/)(.+?)/?$").getMatch(0);
         if (url_filename != null && !downloadLink.isNameSet()) {
             downloadLink.setName(url_filename + ".flv");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<source src=\"https:///videos/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -86,32 +85,33 @@ public class ServePornCom extends antiDDoSForHost {
         if (dllink == null) {
             dllink = br.getRegex("src=\"([^\"]*?//cdn[^\"]+)\"").getMatch(0);
         }
-        if (filename == null || dllink == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + dllink);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext = ".mp4";
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
