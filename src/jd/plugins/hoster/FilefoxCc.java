@@ -23,6 +23,8 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -41,6 +43,17 @@ public class FilefoxCc extends XFileSharingProBasic {
     public FilefoxCc(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
+        this.setConfigElements();
+    }
+
+    @Override
+    public Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
+        final String custom_referer = this.getPluginConfig().getStringProperty("CUSTOM_REFERER", null);
+        if (!StringUtils.isEmpty(custom_referer)) {
+            prepBr.getHeaders().put("Referer", custom_referer);
+        }
+        return prepBr;
     }
 
     /**
@@ -262,5 +275,16 @@ public class FilefoxCc extends XFileSharingProBasic {
                 br.setFollowRedirects(redirectSetting);
             }
         }
+    }
+
+    @Override
+    protected boolean allows_multiple_login_attempts_in_one_go() {
+        /* 2019-08-20: Special */
+        return true;
+    }
+
+    private void setConfigElements() {
+        /* 2019-08-20: This host maybe grants (free-)users with special Referer values better downloadspeeds. */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "CUSTOM_REFERER", "Set custom Referer here").setDefaultValue(null));
     }
 }

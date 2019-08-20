@@ -188,15 +188,17 @@ public class TwitterCom extends PluginForHost {
                     if (!StringUtils.isEmpty(errormessage)) {
                         logger.info("Errormessage: " + errormessage);
                     }
-                    if (errorcode.equals("353")) {
-                        if (guest_token != null) {
-                            /* Reset token and force usage of a new token for the next try */
-                            logger.info("Possible token failure, retrying");
-                            guest_token = null;
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 353");
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 30 * 60 * 1000l);
-                        }
+                    if (errorcode.equals("239")) {
+                        /*
+                         * 2019-08-20: {"errors":[{"code":239,"message":"Bad guest token."}]}
+                         */
+                        logger.info("Possible token failure 239, retrying");
+                        guest_token = null;
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
+                    } else if (errorcode.equals("353")) {
+                        logger.info("Possible token failure 353, retrying");
+                        guest_token = null;
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
                     } else {
                         logger.warning("Unknown error");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

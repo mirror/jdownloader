@@ -113,17 +113,17 @@ public class BeegCom extends PluginForHost {
         br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
-        boolean isV1Video = true;
+        boolean useApiV1 = true;
         for (final Object videoO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) videoO;
             final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
             final String videoidTemp2 = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             if ((videoidTemp != null && videoid.equals(videoidTemp)) || (videoidTemp2 != null && videoid.equals(videoidTemp2))) {
-                isV1Video = false;
+                useApiV1 = false;
                 break;
             }
         }
-        if (!isV1Video) {
+        if (!useApiV1) {
             /* Example v2video: 1059800872 */
             if (!entries.containsKey("start") && !entries.containsKey("end")) {
                 /* 2019-08-14: They can be null but they should be present in their json! */
@@ -137,8 +137,15 @@ public class BeegCom extends PluginForHost {
                 get_parameters += "&s=" + v_start + "&e=" + v_end;
             }
             br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + get_parameters);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        } else {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2019-08-20: Ultimate fallback */
+                logger.info("Video is offline according to APIv2 --> Trying APIv1");
+                useApiV1 = true;
+            } else {
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            }
+        }
+        if (useApiV1) {
             /* Example v1video: 6471530 */
             logger.info("Failed to find extra data for desired content --> Falling back to apiv1");
             br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=1");

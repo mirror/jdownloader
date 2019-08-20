@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?xvideos\\.com/(?:profiles|pornstar-channels|amateur-channels|channels)/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
 public class XvideosComProfile extends PluginForDecrypt {
@@ -71,6 +72,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         short pageNum = 0;
         int decryptedLinksNum;
+        final boolean fast_linkcheck = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getBooleanProperty("ENABLE_FAST_LINKCHECK", true);
         do {
             if (this.isAbort()) {
                 return;
@@ -106,8 +108,10 @@ public class XvideosComProfile extends PluginForDecrypt {
                     final String url_name = new Regex(singleLink, "/\\d+/(?:THUMBNUM/)?(.+)").getMatch(0);
                     final String name_temp;
                     final DownloadLink dl = createDownloadlink(singleLink);
-                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                    dl.setAvailable(true);
+                    if (fast_linkcheck) {
+                        /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                        dl.setAvailable(true);
+                    }
                     fp.add(dl);
                     dl.setLinkID(linkid);
                     if (url_name != null) {

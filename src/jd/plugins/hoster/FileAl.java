@@ -97,7 +97,7 @@ public class FileAl extends XFileSharingProBasic {
         /* 2019-05-03: Special */
         final Form loginform = super.findLoginform(br);
         if (loginform != null) {
-            /* This may help to reduce login-captchas */
+            /* This may help to reduce login-captchas / required full login attempts */
             loginform.remove("bind_to_ip");
             loginform.put("bind_to_ip", "0");
         }

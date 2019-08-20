@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
@@ -49,15 +48,14 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            APIKEY             = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
-    private static final String                            API_BASE           = "https://filebit.pl/api/index.php";
-    private String                                         sessionID          = null;
+    private static final String          APIKEY    = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
+    private static final String          API_BASE  = "https://filebit.pl/api/index.php";
+    private String                       sessionID = null;
     /*
      * 2018-02-13: Their API is broken and only returns 404. Support did not respond which is why we now have website- and API support ...
      */
-    private static final boolean                           USE_API            = true;
-    private static MultiHosterManagement                   mhm                = new MultiHosterManagement("filebit.pl");
+    private static final boolean         USE_API   = true;
+    private static MultiHosterManagement mhm       = new MultiHosterManagement("filebit.pl");
 
     public FileBitPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -148,21 +146,7 @@ public class FileBitPl extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         /*
          * 2019-08-17: It is especially important to try to re-use generated downloadurls in this case because they will charge the complete
          * traffic of a file once you add an URL to their download-queue.
