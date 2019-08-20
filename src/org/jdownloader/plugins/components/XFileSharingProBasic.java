@@ -40,7 +40,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -420,10 +419,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
+     * 2019-08-20: Some XFS websites are supported via another API via play.google.com/store/apps/details?id=com.zeuscloudmanager --> This
+     * has nothing todo with the official XFS API! </br>
      * Example: xvideosharing.com, flix555.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
      * default: false
      */
     protected boolean supports_api() {
+        return false;
+    }
+
+    /**
+     * 2019-08-20: Some websites' login will fail on the first attempt even with correct logindata. On the 2nd attempt a captcha will be
+     * required and then the login should work. </br>
+     * default = false
+     */
+    protected boolean allows_multiple_login_attempts_in_one_go() {
         return false;
     }
 
@@ -433,19 +443,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *          example true: uploadrar.com
      */
     protected boolean preDownloadWaittimeSkippable() {
-        return false;
-    }
-
-    /**
-     * TODO: 2019-05-09: Consider removing this as it has not been used in a single plugin! <br />
-     *
-     * @return true: Wait a forced amount of pre-download-waittime even if no waittime is found in html code. Code will make sure that the
-     *         found waittime is between waitsecondsmin and waitsecondsmax. <br />
-     *         If that is NOT the case, waitsecondsforced will be used as pre-download-waittime instead. <br />
-     *         false: Only wait pre-download-waittime if waittime is found in html. <br />
-     *         default: false
-     */
-    protected boolean forcePreDownloadWaittime() {
         return false;
     }
 
@@ -1333,7 +1330,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(link, account, false);
                 /* Okay we finally have no idea what happened ... */
-                handlePluginBroken(link, "dlform_f1_null", 3);
+                logger.warning("Failed to find F1 dlForm via findFormF1");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Define how many forms deep do we want to try? */
             int repeat = 2;
@@ -1398,7 +1396,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final String q = videoinfo.getMatch(1);
             final String hash = videoinfo.getMatch(2);
             if (StringUtils.isEmpty(q) || StringUtils.isEmpty(hash)) {
-                handlePluginBroken(link, "video_highest_quality_download_failure", 3);
+                logger.warning("Failed to find required parameters");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             getPage("/dl?op=download_orig&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
             dllink = this.getDllink(link, account);
@@ -1407,7 +1406,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 dllink = new Regex(correctedBR, "<a href=\"(http[^\"]+)\">Direct Download Link</a>").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
-                handlePluginBroken(link, "video_highest_quality_download_failure_dllink_null", 3);
+                logger.info("Failed to find final downloadurl");
             }
         }
         return dllink;
@@ -2068,7 +2067,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     * Handles pre download (pre-captcha) waittime.
      */
     protected void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
         /* Ticket Time */
@@ -2397,32 +2396,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
-     * error.
-     *
-     * @param dl
-     *            : The DownloadLink
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    protected void handlePluginBroken(final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        final String host = this.getHost();
-        int timesFailed = dl.getIntegerProperty(host + "failedtimes_" + error, 0);
-        if (timesFailed <= maxRetries) {
-            logger.info(error + " -> Retrying");
-            timesFailed++;
-            dl.setProperty(host + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
-        } else {
-            logger.info(error + " -> Plugin is broken");
-            dl.setProperty(host + "failedtimes_" + error, Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
     protected boolean supports_lifetime_account() {
         return false;
     }
@@ -2445,9 +2418,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        /* Only access URL if we haven't accessed it before already. */
-        if (br.getURL() == null || !br.getURL().contains("/?op=my_account")) {
-            getPage(this.getMainPage() + "/?op=my_account");
+        final String account_info_url_relative = getRelativeAccountInfoURL();
+        /*
+         * Only access URL if we haven't accessed it before already. Some sites will redirect to their Account-Info page right after
+         * logging-in or our login-function when it is verifying cookies and not performing a full login.
+         */
+        if (br.getURL() == null || !br.getURL().contains(account_info_url_relative)) {
+            getPage(this.getMainPage() + account_info_url_relative);
         }
         {
             /*
@@ -2499,15 +2476,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        String availabletraffic = regExTrafficLeft();
+        String trafficLeftStr = regExTrafficLeft();
         /* Example non english: brupload.net */
-        final boolean userHasUnlimitedTraffic = availabletraffic != null && availabletraffic.matches(".*?nlimited|Ilimitado.*?");
-        if (availabletraffic != null && !userHasUnlimitedTraffic && !availabletraffic.equalsIgnoreCase("Mb")) {
-            availabletraffic.trim();
+        final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?nlimited|Ilimitado.*?");
+        if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
+            trafficLeftStr = Encoding.htmlDecode(trafficLeftStr);
+            trafficLeftStr.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
             long trafficLeft = 0;
-            if (!availabletraffic.startsWith("-")) {
-                trafficLeft = (SizeFormatter.getSize(availabletraffic));
+            if (!trafficLeftStr.startsWith("-")) {
+                trafficLeft = (SizeFormatter.getSize(trafficLeftStr));
             } else {
                 /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
                 trafficLeft = 0;
@@ -2624,6 +2602,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
                 if (expire_milliseconds > 0) {
                     logger.info("Premium expired --> Free account");
+                } else {
+                    logger.info("Account is a FREE account as no expiredate has been found");
                 }
                 setAccountLimitsByType(account, AccountType.FREE);
             } else {
@@ -2809,7 +2789,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Tries to find available traffic-left value inside html code. */
     protected String regExTrafficLeft() {
         /* Traffic can also be negative! */
-        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*:?\\s*</TD>\\s*<TD>\\s*<b>\\s*([^<>\"']+)\\s*</b>").getMatch(0);
+        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*:?\\s*</TD>\\s*<TD>\\s*(?:<b>)?\\s*([^<>\"']+)").getMatch(0);
         if (availabletraffic == null) {
             /* 2019-02-11: For newer XFS versions */
             availabletraffic = new Regex(this.correctedBR, ">\\s*Traffic available(?:\\s*today)?\\s*</div>\\s*<div class=\"txt\\d+\">\\s*([^<>\"]+)\\s*<").getMatch(0);
@@ -2856,10 +2836,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return ret;
     }
 
+    /** Returns the full URL to the page which should contain the loginForm. */
     public String getLoginURL() {
         return getMainPage() + "/login.html";
     }
 
+    /**
+     * Returns the relative URL to the page which should contain all account information (account type, expiredate, apikey, remaining
+     * traffic).
+     */
+    protected String getRelativeAccountInfoURL() {
+        return "/?op=my_account";
+    }
+
+    /**
+     * @param force
+     *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
+     *            false = Set stored cookies and trust them if they're not older than 300000l
+     *
+     */
     public boolean loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -2868,56 +2863,74 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedInViaCookies = false;
                 if (cookies != null) {
+                    logger.info("Stored login-Cookies are available");
                     br.setCookies(getMainPage(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust cookies without checking as they're still fresh");
+                        logger.info("Trust login-cookies without checking as they should still be fresh");
                         return false;
                     }
                     logger.info("Verifying login-cookies");
-                    getPage(getMainPage() + "/");
+                    getPage(getMainPage() + getRelativeAccountInfoURL());
                     loggedInViaCookies = isLoggedin();
                 }
                 if (loggedInViaCookies) {
                     /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
                     logger.info("Successfully logged in via cookies");
                 } else {
-                    logger.info("Performing full login");
+                    /*
+                     * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a
+                     * captcha. Example: filejoker.net
+                     */
+                    int login_counter = 0;
+                    final int login_counter_max = 2;
                     br.clearCookies(getMainPage());
                     getPage(getLoginURL());
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        /* Required for some XFS setups. */
-                        getPage(getMainPage() + "/login");
-                    }
-                    Form loginform = findLoginform(this.br);
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (loginform.hasInputFieldByName("email")) {
-                        /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
-                        loginform.put("email", Encoding.urlEncode(account.getUser()));
-                    } else {
-                        loginform.put("login", Encoding.urlEncode(account.getUser()));
-                    }
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    /* Handle login-captcha if required */
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    final DownloadLink dl_dummy;
-                    if (dlinkbefore != null) {
-                        dl_dummy = dlinkbefore;
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(dl_dummy);
-                    }
-                    handleCaptcha(dl_dummy, loginform);
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
-                    submitForm(loginform);
+                    do {
+                        login_counter++;
+                        logger.info("Performing full login attempt: " + login_counter);
+                        if (br.getHttpConnection().getResponseCode() == 404) {
+                            /* Required for some XFS setups - use as common fallback. */
+                            getPage(getMainPage() + "/login");
+                        }
+                        Form loginform = findLoginform(this.br);
+                        if (loginform == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (loginform.hasInputFieldByName("email")) {
+                            /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
+                            loginform.put("email", Encoding.urlEncode(account.getUser()));
+                        } else {
+                            loginform.put("login", Encoding.urlEncode(account.getUser()));
+                        }
+                        loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        /* Handle login-captcha if required */
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        handleCaptcha(dl_dummy, loginform);
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        submitForm(loginform);
+                        if (!this.allows_multiple_login_attempts_in_one_go()) {
+                            break;
+                        }
+                    } while (!this.isLoggedin() && login_counter <= login_counter_max);
                     if (!this.isLoggedin()) {
                         if (correctedBR.contains("op=resend_activation")) {
-                            /* User entered correct logindata but has not activated his account ... */
+                            /* User entered correct logindata but hasn't activated his account yet ... */
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                        if (this.allows_multiple_login_attempts_in_one_go()) {
+                            logger.info("Login failed although there were two attempts");
+                        } else {
+                            logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
                         }
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -2931,6 +2944,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 account.saveCookies(br.getCookies(getMainPage()), "");
                 return true;
             } catch (final PluginException e) {
+                e.printStackTrace();
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
@@ -3266,7 +3280,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             br.followConnection();
             correctBR();
             checkServerErrors();
-            handlePluginBroken(link, "dllinknofile", 3);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadlink did not lead to downloadable content");
         }
     }
 
