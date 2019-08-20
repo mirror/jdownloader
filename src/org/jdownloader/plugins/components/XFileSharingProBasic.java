@@ -415,7 +415,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
      * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
-     * This(=API enabled) is a rare case! <br />
+     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br>
      * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
@@ -424,8 +424,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Example: xvideosharing.com, flix555.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
      * default: false
      */
-    protected boolean supports_api() {
+    protected boolean supports_api_only_mode() {
         return false;
+    }
+
+    /**
+     * Also see documentation of supports_api. </br>
+     * This basically allows fetchAccountInfoWebsite to find- and use an apikey and then return fetchAccountInfoAPI instead. </br>
+     * While this is a good idea in general, using the API can also come with some disadvantages: At the moment (2019-08-20), the API will
+     * never return any 'traffic left' value even if the website displays that (example: fastfile.cc)! </br>
+     * default: true
+     */
+    protected boolean prefer_account_info_via_api_in_website_mode_if_apikey_is_found() {
+        return true;
     }
 
     /**
@@ -2407,7 +2418,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai;
-        if (this.supports_api()) {
+        if (this.supports_api_only_mode()) {
             ai = this.fetchAccountInfoAPI(this.br, account, true);
         } else {
             ai = this.fetchAccountInfoWebsite(account);
@@ -2427,44 +2438,47 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             getPage(this.getMainPage() + account_info_url_relative);
         }
         {
-            /*
-             * 2019-07-11: apikey handling - prefer that instead of website.
-             */
-            String apikey = null;
-            try {
+            if (prefer_account_info_via_api_in_website_mode_if_apikey_is_found()) {
                 /*
-                 * 2019-08-13: Do not hand over corrected_br as source as correctBR() might remove important parts of the html and because
-                 * XFS owners will usually not add html traps into the html of accounts we can use the original unmodified html here.
+                 * 2019-07-11: apikey handling - prefer that instead of website if allowed.
                  */
-                apikey = this.findAPIKey(br.toString());
-            } catch (final Throwable e) {
-                /*
-                 * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot rely
-                 * on it working so we need that website fallback!
-                 */
-                logger.info("Failed to find apikey (with Exception) --> Continuing via website");
-                e.printStackTrace();
-            }
-            if (apikey != null) {
-                /*
-                 * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way
-                 * to get account information.
-                 */
-                logger.info("Found apikey --> Trying to get accountinfo via API");
-                account.setProperty("apikey", apikey);
-                boolean api_success = false;
+                String apikey = null;
                 try {
-                    ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
-                    api_success = true;
+                    /*
+                     * 2019-08-13: Do not hand over corrected_br as source as correctBR() might remove important parts of the html and
+                     * because XFS owners will usually not add html traps into the html of accounts we can use the original unmodified html
+                     * here.
+                     */
+                    apikey = this.findAPIKey(br.toString());
                 } catch (final Throwable e) {
+                    /*
+                     * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot
+                     * rely on it working so we need that website fallback!
+                     */
+                    logger.info("Failed to find apikey (with Exception) --> Continuing via website");
                     e.printStackTrace();
                 }
-                if (api_success) {
-                    logger.info("Successfully found accountinfo via API");
-                    return ai;
-                } else {
-                    /* 2019-07-11: It can happen that the API does not work although an apikey is provided. Example: uploadocean.com */
-                    logger.warning("Failed to find accountinfo via API; probably serverside API failure --> Falling back to website handling");
+                if (apikey != null) {
+                    /*
+                     * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable
+                     * way to get account information.
+                     */
+                    logger.info("Found apikey --> Trying to get accountinfo via API");
+                    account.setProperty("apikey", apikey);
+                    boolean api_success = false;
+                    try {
+                        ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
+                        api_success = true;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                    if (api_success) {
+                        logger.info("Successfully found accountinfo via API");
+                        return ai;
+                    } else {
+                        /* 2019-07-11: It can happen that the API does not work although an apikey is provided. Example: uploadocean.com */
+                        logger.warning("Failed to find accountinfo via API; probably serverside API failure --> Falling back to website handling");
+                    }
                 }
             }
         }
@@ -3113,7 +3127,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(dllink)) {
                 /* TODO: 2019-07-11: Consider using this over normal linkcheck whenever possible */
                 // requestFileInformationAPI(link, account);
-                if (this.supports_api()) {
+                if (this.supports_api_only_mode()) {
                     /* 2019-05-30: So far this has only been tested with videohosts */
                     /* https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities */
                     getPage(this.getMainPage() + "/api/file/direct_link?key=" + getAPIKey(account) + "&file_code=" + this.fuid);

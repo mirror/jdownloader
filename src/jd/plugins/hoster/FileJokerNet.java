@@ -345,7 +345,6 @@ public class FileJokerNet extends XFileSharingProBasic {
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         ai.setTrafficLeft(trafficleft * 1024 * 1024);
-        /* 2019-05-30: TODO: Add support for lifetime accounts */
         if (expire_milliseconds_precise_to_the_second <= currentTime) {
             if (expire_milliseconds_precise_to_the_second > 0) {
                 /*
