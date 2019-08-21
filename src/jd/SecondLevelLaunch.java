@@ -288,14 +288,12 @@ public class SecondLevelLaunch {
         try {
             // Ensure that proxyVole uses Rhino and not the build-in engines.
             // Rhino is Sandboxed by JSRhinoPermissionRestricter
-        	/*
             PacProxySelector.SCRIPT_ENGINE_FACTORY = new PACScriptEngineFactory() {
                 @Override
                 public PacScriptParser selectEngine(PacProxySelector selector, PacScriptSource pacSource) throws ProxyEvaluationException {
                     return new RhinoPacScriptParser(pacSource);
                 }
             };
-            */
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
