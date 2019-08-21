@@ -363,25 +363,31 @@ abstract public class ZeveraCore extends UseNet {
             ai.setUsedSpace((long) Double.parseDouble(space_used));
         }
         /* E.g. free account: "premium_until":false */
+        final long currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
         final long premium_until = (premium_until_str != null && premium_until_str.matches("\\d+")) ? Long.parseLong(premium_until_str) * 1000 : 0;
-        if (premium_until > System.currentTimeMillis()) {
+        if (premium_until > currentTime) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
-            if (!StringUtils.isEmpty(fair_use_used_str)) {
-                final double d = Double.parseDouble(fair_use_used_str);
-                final int fairUsagePercent = (int) (d * 100.0);
-                if (fairUsagePercent >= 100) {
-                    /* Fair use limit reached --> No traffic left, no downloads possible at the moment */
-                    ai.setTrafficLeft(0);
-                    ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "% (limit reached)");
-                } else {
-                    ai.setUnlimitedTraffic();
-                    ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "%");
-                }
-            } else {
-                /* This should never happen */
-                ai.setStatus("Premium | Fair usage: unknown");
+            if (isBoosterPointsUnlimitedTrafficWorkaroundActive(account)) {
+                ai.setStatus("Premium | Unlimited Traffic Booster workaround enabled");
                 ai.setUnlimitedTraffic();
+            } else {
+                if (!StringUtils.isEmpty(fair_use_used_str)) {
+                    final double d = Double.parseDouble(fair_use_used_str);
+                    final int fairUsagePercent = (int) (d * 100.0);
+                    if (fairUsagePercent >= 100) {
+                        /* Fair use limit reached --> No traffic left, no downloads possible at the moment */
+                        ai.setTrafficLeft(0);
+                        ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "% (limit reached)");
+                    } else {
+                        ai.setUnlimitedTraffic();
+                        ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "%");
+                    }
+                } else {
+                    /* This should never happen */
+                    ai.setStatus("Premium | Fair usage: unknown");
+                    ai.setUnlimitedTraffic();
+                }
             }
             ai.setValidUntil(premium_until);
         } else {
@@ -752,6 +758,18 @@ abstract public class ZeveraCore extends UseNet {
 
     /** Indicates whether or not the new 'pairing' login is supported: https://alexbilbie.com/2016/04/oauth-2-device-flow-grant/ */
     public boolean supportsPairingLogin(final Account account) {
+        return false;
+    }
+
+    /**
+     * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * Remove this workaround once Premiumize has integrated their booster points into their API.
+     */
+    public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
         return false;
     }
 
