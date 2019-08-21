@@ -2848,12 +2848,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * @param force
+     * @param validateCookies
      *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
      *            false = Set stored cookies and trust them if they're not older than 300000l
      *
      */
-    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
+    public boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 /* Load cookies */
@@ -2863,7 +2863,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (cookies != null) {
                     logger.info("Stored login-Cookies are available");
                     br.setCookies(getMainPage(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         logger.info("Trust login-cookies without checking as they should still be fresh");
                         return false;

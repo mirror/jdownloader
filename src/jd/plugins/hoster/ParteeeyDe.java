@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -67,7 +68,7 @@ public class ParteeeyDe extends PluginForHost {
         dllink = null;
         server_issues = false;
         final String fid = getFID(link);
-        link.setLinkID(fid);
+        link.setLinkID(this.getHost() + "://" + fid);
         this.setBrowserExclusive();
         prepBR(this.br);
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -88,59 +89,69 @@ public class ParteeeyDe extends PluginForHost {
              */
             dllink = "https://www." + this.getHost() + "/galerie/datei/herunterladen/" + fid;
         } else {
-            /* 2016-08-21: Set width & height to higher values so that we get the max quality possible. */
-            this.br.postPage("https://www." + this.getHost() + "/Ajax/mulFileInfo", "filId=" + fid + "&width=5000&height=5000&filIdPrevious=&filIdNext=");
-            try {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                dllink = (String) entries.get("path");
-            } catch (final Throwable e) {
+            final boolean grabAjax = false;
+            if (grabAjax) {
+                /* 2016-08-21: Set width & height to higher values so that we get the max quality possible. */
+                this.br.postPage("https://www." + this.getHost() + "/Ajax/mulFileInfo", "filId=" + fid + "&width=5000&height=5000&filIdPrevious=&filIdNext=");
+                try {
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    dllink = (String) entries.get("path");
+                } catch (final Throwable e) {
+                }
+            } else {
+                /*
+                 * 2019-08-21: These images seem to have a slightly better quality than via ajax request (also the downloadlink extracted
+                 * via ajax request will contain the String '/tumbnail/'.)
+                 */
+                br.getPage("https://www.parteeey.de/galerie/datei?p=" + fid);
+                dllink = br.getRegex("<meta property=\"og:image\" content=\"(https?://[^\"]+)\">").getMatch(0);
             }
-            if (dllink == null) {
+            if (!StringUtils.isEmpty(dllink)) {
                 if (url_thumb != null && !url_thumb.startsWith("http")) {
                     url_thumb = "https://www." + this.getHost() + "/" + url_thumb;
                 }
-                dllink = url_thumb;
+                /* 2019-08-21: Only prefer thumbnail download if it is available in higher quality than 'original'. */
+                // dllink = url_thumb;
             } else {
                 if (!dllink.startsWith("http") && !dllink.startsWith("/")) {
                     dllink = "https://www." + this.getHost() + "/" + dllink;
                 }
             }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
-        final String url_filename = getFilenameFromDirecturl(dllink);
-        if (url_filename != null) {
-            filename = url_filename;
-        } else if (filename_decrypter != null) {
-            filename = filename_decrypter;
-            if (!filename.endsWith(default_extension)) {
-                filename += default_extension;
-            }
-        } else {
-            filename = fid + default_extension;
-        }
-        link.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            con = this.br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+        if (!StringUtils.isEmpty(dllink)) {
+            final String url_filename = getFilenameFromDirecturl(dllink);
+            if (url_filename != null) {
+                filename = url_filename;
+            } else if (filename_decrypter != null) {
+                filename = filename_decrypter;
+                if (!filename.endsWith(default_extension)) {
+                    filename += default_extension;
+                }
             } else {
-                server_issues = true;
+                filename = fid + default_extension;
             }
-            link.setProperty("directlink", dllink);
-        } finally {
+            link.setFinalFileName(filename);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = this.br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+                link.setProperty("directlink", dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        return new Regex(dl.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
     }
 
     @Override
@@ -174,40 +185,27 @@ public class ParteeeyDe extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "https://www.parteeey.de/";
-    private static Object       LOCK     = new Object();
-
     public static void login(Browser br, final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 prepBR(br);
+                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                boolean loggedIN = false;
                 if (cookies != null) {
-                    br.setCookies(MAINPAGE, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
+                    br.setCookies(account.getHoster(), cookies);
                     br.getPage("https://www." + account.getHoster());
-                    if (br.containsHTML("class=\"navbar\\-user\\-info\"")) {
-                        /* Cookies refreshed/re-used successfully - let's save them again to refresh the timestamp. */
-                        account.saveCookies(br.getCookies(MAINPAGE), "");
-                        return;
-                    }
-                    /* Something failed - reset Browser and perform a full login. */
-                    br = prepBR(new Browser());
+                    loggedIN = isLoggedin(br);
                 }
-                br.setFollowRedirects(true);
-                br.postPage("https://www." + account.getHoster() + "/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || !br.containsHTML("/logout\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedIN) {
+                    /* Perform full login */
+                    br.postPage("https://www." + account.getHoster() + "/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || !isLoggedin(br)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -215,21 +213,22 @@ public class ParteeeyDe extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    public static boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout\"");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
