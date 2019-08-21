@@ -979,10 +979,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
 
         if (!formattedFileName.contains("*title*")) {
-            return "Custom filename pattern is missing *title*.";
-        }
-        if (!formattedFileName.contains("*ext*")) {
-            return "Custom filename pattern is missing *ext*.";
+            return "Custom filename pattern for thumbnail is missing *title*.";
         }
 
         final String date = downloadLink.getStringProperty("date", null);
@@ -996,13 +993,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         		formattedFileName = formattedFileName.replace("*date*", "");
         	}
         }
-        if (formattedFileName.contains("*ext*")) {
-        	if (date != null) {
-        		formattedFileName = formattedFileName.replace("*ext*", ext);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*ext*", "");
-        	}
-        }
 
         // Insert title at the end to prevent errors with tags
         if (title != null) {
@@ -1011,6 +1001,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             formattedFileName = formattedFileName.replace("*title*", "missing_title");
         }
 
+        if (ext != null) {
+        	formattedFileName = formattedFileName + "." + ext; 
+        }
+        
 	    return formattedFileName;
     }
     
@@ -1028,15 +1022,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         if (!formattedFileName.contains("*title*")) {
             return "Custom filename pattern is missing *title*.";
         }
-        if (!formattedFileName.contains("*ext*")) {
-            return "Custom filename pattern is missing *ext*.";
-        }
 
         final String date = downloadLink.getStringProperty("date", null);
     	final String title = downloadLink.getStringProperty("title", null);
     	final String vpi = downloadLink.getStringProperty("vpi", null);
-    	final String libelle = downloadLink.getStringProperty("versionLibelle", null);
-    	final String shortlibelle = downloadLink.getStringProperty("versionShortLibelle", null);
+    	final String language = downloadLink.getStringProperty("versionLibelle", null);
+    	final String shortlanguage = downloadLink.getStringProperty("versionShortLibelle", null);
     	final String resolution = downloadLink.getStringProperty("resolution", null);
     	final String bitrate = downloadLink.getStringProperty("bitrate", null);
     	final String ext = downloadLink.getStringProperty("ext", null);
@@ -1055,18 +1046,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         		formattedFileName = formattedFileName.replace("*vpi*", "");
         	}
         }
-        if (formattedFileName.contains("*libelle*")) {
+        if (formattedFileName.contains("*language*")) {
         	if (date != null) {
-        		formattedFileName = formattedFileName.replace("*libelle*", libelle);
+        		formattedFileName = formattedFileName.replace("*language*", language);
         	} else {
-        		formattedFileName = formattedFileName.replace("*libelle*", "");
+        		formattedFileName = formattedFileName.replace("*language*", "");
         	}
         }
-        if (formattedFileName.contains("*shortlibelle*")) {
+        if (formattedFileName.contains("*shortlanguage*")) {
         	if (date != null) {
-        		formattedFileName = formattedFileName.replace("*shortlibelle*", shortlibelle);
+        		formattedFileName = formattedFileName.replace("*shortlanguage*", shortlanguage);
         	} else {
-        		formattedFileName = formattedFileName.replace("*shortlibelle*", "");
+        		formattedFileName = formattedFileName.replace("*shortlanguage*", "");
         	}
         }
         if (formattedFileName.contains("*resolution*")) {
@@ -1083,13 +1074,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         		formattedFileName = formattedFileName.replace("*bitrate*", "");
         	}
         }
-        if (formattedFileName.contains("*ext*")) {
-        	if (date != null) {
-        		formattedFileName = formattedFileName.replace("*ext*", ext);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*ext*", "");
-        	}
-        }
 
         // Insert title at the end to prevent errors with tags
         if (title != null) {
@@ -1098,6 +1082,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             formattedFileName = formattedFileName.replace("*title*", "missing_title");
         }
 
+        if (ext != null) {
+        	formattedFileName = formattedFileName + "." + ext; 
+        }
+        
 	    return formattedFileName;
     }
 

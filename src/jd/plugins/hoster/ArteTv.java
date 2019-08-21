@@ -83,9 +83,9 @@ public class ArteTv extends PluginForHost {
     public static final boolean default_LOAD_LANGUAGE_POLISH          = true;
     public static final boolean default_LOAD_LANGUAGE_ITALIAN         = true;
     public static final boolean default_LOAD_LANGUAGE_SPANISH         = true;
-    public static final String  default_CUSTOM_FILE_NAME_PATTERN      = "*date*_arte_*title*_*vpi*__*libelle*_*shortlibelle*_*resolution*_*bitrate*.*ext*";
+    public static final String  default_CUSTOM_FILE_NAME_PATTERN      = "*date*_arte_*title*_*vpi*__*language*_*shortlanguage*_*resolution*_*bitrate*";
     public static final String  default_CUSTOM_PACKAGE_NAME_PATTERN   = "*date*_arte_*title*";
-    public static final String  default_CUSTOM_THUMBNAIL_NAME_PATTERN = "*title*.*ext*";
+    public static final String  default_CUSTOM_THUMBNAIL_NAME_PATTERN = "*title*";
     private String              dllink                                = null;
     private String              quality_intern                        = null;
 
@@ -445,6 +445,17 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGE_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_PACKAGE_NAME_PATTERN", "Muster für Paketname:")).setDefaultValue(default_CUSTOM_PACKAGE_NAME_PATTERN));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILE_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_FILE_NAME_PATTERN", "Muster für Dateiname:")).setDefaultValue(default_CUSTOM_FILE_NAME_PATTERN));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_THUMBNAIL_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_THUMBNAIL_NAME_PATTERN", "Muster für Thumbnail-Dateiname:")).setDefaultValue(default_CUSTOM_THUMBNAIL_NAME_PATTERN));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Explanation of the available tags:\r\n");
+        sb.append("*title* = Title of the video\r\n");
+        sb.append("*date* = Date when the video aired - YYYY-MM-DD\r\n");
+        sb.append("*vpi* = ID of the video\r\n");
+        sb.append("*language* = Language of the video\r\n");
+        sb.append("*shortlanguage* = Short formatted language of the video\r\n");
+        sb.append("*resolution* = Size of video eg. 640x480\r\n");
+        sb.append("*bitrate* = Bitrate of video in kbit/s eg. 2200\r\n");
+        sb.append("For package and thumbnail names only *title* and *date* is available.");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Sonstiges:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Thumbnail laden?")).setDefaultValue(false));
