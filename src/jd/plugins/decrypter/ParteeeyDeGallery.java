@@ -51,12 +51,15 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         try {
-            jd.plugins.hoster.ParteeeyDe.login(this.br, aa);
+            jd.plugins.hoster.ParteeeyDe.login(this.br, aa, true);
         } catch (final Throwable e) {
-            logger.info("Login failure");
+            logger.info("Login failure, cannot crawl anything from this host without account");
             return decryptedLinks;
         }
-        /* Show 1000 links per page --> Usually we'll only get one page no matter how big a gallery is. */
+        /*
+         * Show 1000 links per page --> Usually we'll only get one page no matter how big a gallery is and big galleries will usually only
+         * have to up to 150 items.
+         */
         final String parameter = param.toString() + "?oF=f.date&oD=asc&eP=1000";
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Seite nicht gefunden<")) {
@@ -110,6 +113,9 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 if (url_thumb == null) {
                     url_thumb = new Regex(html, "<img data\\-src=\"(http[^<>\"]+)\"").getMatch(0);
                 }
+                if (url_thumb == null) {
+                    url_thumb = new Regex(html, "\"(https?://[^<>\"]*/thumbnails/[^<>\"]*)\"").getMatch(0);
+                }
                 if (linkid == null) {
                     return null;
                 }
@@ -129,6 +135,7 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 dl.setName(finalname);
                 dl.setProperty("decrypterfilename", finalname);
                 dl.setProperty("thumburl", url_thumb);
+                dl.setProperty("galleryid", galleryID);
                 dl.setContentUrl(contenturl);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
