@@ -21,6 +21,7 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
@@ -113,21 +114,34 @@ public class PremiumizeMe extends ZeveraCore {
             public String getEnablePairingLogin_label() {
                 return "Enable pairing login (BETA)?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
             }
+
+            public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
+                return "Enable booster points unlimited traffic workaround for this account? \r\nThis is only for owners of booster-points! \r\nMore information: premiumize.me/booster";
+            }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
 
+        @AboutConfig
         @DefaultBooleanValue(false)
         @Order(10)
         boolean isAllowFreeAccountDownloads();
 
         void setAllowFreeAccountDownloads(boolean b);
 
+        @AboutConfig
         @DefaultBooleanValue(false)
         @Order(20)
         boolean isEnablePairingLogin();
 
         void setEnablePairingLogin(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(30)
+        boolean isEnableBoosterPointsUnlimitedTrafficWorkaround();
+
+        void setEnableBoosterPointsUnlimitedTrafficWorkaround(boolean b);
     };
 
     @Override
@@ -142,12 +156,12 @@ public class PremiumizeMe extends ZeveraCore {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enablepairinglogin".equals(keyHandler.getKey());
+                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enablepairinglogin".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"allowfreeaccountdownloads".equals(keyHandler.getKey()) && !"enablepairinglogin".equals(keyHandler.getKey());
+                return !"allowfreeaccountdownloads".equals(keyHandler.getKey()) && !"enablepairinglogin".equals(keyHandler.getKey()) && !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
             }
 
             @Override
@@ -191,6 +205,15 @@ public class PremiumizeMe extends ZeveraCore {
     @Override
     public boolean supportsPairingLogin(final Account account) {
         if (this.getAccountJsonConfig(account).isEnablePairingLogin()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
+        if (this.getAccountJsonConfig(account).isEnableBoosterPointsUnlimitedTrafficWorkaround()) {
             return true;
         } else {
             return false;

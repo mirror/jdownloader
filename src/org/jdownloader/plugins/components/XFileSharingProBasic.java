@@ -28,7 +28,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -426,17 +425,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected boolean supports_api_only_mode() {
         return false;
-    }
-
-    /**
-     * Also see documentation of supports_api. </br>
-     * This basically allows fetchAccountInfoWebsite to find- and use an apikey and then return fetchAccountInfoAPI instead. </br>
-     * While this is a good idea in general, using the API can also come with some disadvantages: At the moment (2019-08-20), the API will
-     * never return any 'traffic left' value even if the website displays that (example: fastfile.cc)! </br>
-     * default: true
-     */
-    protected boolean prefer_account_info_via_api_in_website_mode_if_apikey_is_found() {
-        return true;
     }
 
     /**
@@ -841,8 +829,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Used by getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html <br / TODO: 2019-07-04: Merge
-     * this with getFilesizeViaAvailablecheckAlt <br/>
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br>
      * - If used for single URLs inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
      * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
@@ -1664,14 +1651,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
      * [NOT html]).
      */
-    public String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    protected final String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
-            final String ret = checkDirectLinkAndSetFilesize(downloadLink, dllink, false);
+            final String ret = checkDirectLinkAndSetFilesize(link, dllink, false);
             if (ret != null) {
                 return ret;
             } else {
-                downloadLink.removeProperty(property);
+                link.removeProperty(property);
                 return null;
             }
         }
@@ -1689,7 +1676,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @param setFilesize
      *            : true = setVerifiedFileSize filesize if directurl is really downloadable
      */
-    public String checkDirectLinkAndSetFilesize(final DownloadLink link, final String directurl, final boolean setFilesize) {
+    private final String checkDirectLinkAndSetFilesize(final DownloadLink link, final String directurl, final boolean setFilesize) {
         if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http")) {
             return null;
         } else {
@@ -1774,13 +1761,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    protected String getDllink(DownloadLink downloadLink, Account account) {
-        return getDllink(downloadLink, account, this.br, correctedBR);
+    protected String getDllink(final DownloadLink link, final Account account) {
+        return getDllink(link, account, this.br, correctedBR);
     }
 
     /** Function to find the final downloadlink. */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    protected String getDllink(final DownloadLink downloadLink, final Account account, final Browser br, String src) {
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = br.getRedirectLocation();
         if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
             // dllink = new Regex(src, "(\"|')(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")\\1").getMatch(1);
@@ -2437,59 +2424,44 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (br.getURL() == null || !br.getURL().contains(account_info_url_relative)) {
             getPage(this.getMainPage() + account_info_url_relative);
         }
+        boolean api_success = false;
         {
-            if (prefer_account_info_via_api_in_website_mode_if_apikey_is_found()) {
+            /*
+             * 2019-07-11: apikey handling - prefer that instead of website if allowed.
+             */
+            String apikey = null;
+            try {
                 /*
-                 * 2019-07-11: apikey handling - prefer that instead of website if allowed.
+                 * 2019-08-13: Do not hand over corrected_br as source as correctBR() might remove important parts of the html and because
+                 * XFS owners will usually not add html traps into the html of accounts we can use the original unmodified html here.
                  */
-                String apikey = null;
+                apikey = this.findAPIKey(br.toString());
+            } catch (final Throwable e) {
+                /*
+                 * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot rely
+                 * on it working so we need that website fallback!
+                 */
+                logger.info("Failed to find apikey (with Exception) --> Continuing via website");
+                e.printStackTrace();
+            }
+            if (apikey != null) {
+                /*
+                 * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way
+                 * to get account information.
+                 */
+                logger.info("Found apikey --> Trying to get accountinfo via API");
+                /* Save apikey for possible future usage */
+                account.setProperty("apikey", apikey);
                 try {
-                    /*
-                     * 2019-08-13: Do not hand over corrected_br as source as correctBR() might remove important parts of the html and
-                     * because XFS owners will usually not add html traps into the html of accounts we can use the original unmodified html
-                     * here.
-                     */
-                    apikey = this.findAPIKey(br.toString());
+                    ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
+                    api_success = true;
                 } catch (final Throwable e) {
-                    /*
-                     * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot
-                     * rely on it working so we need that website fallback!
-                     */
-                    logger.info("Failed to find apikey (with Exception) --> Continuing via website");
                     e.printStackTrace();
-                }
-                if (apikey != null) {
-                    /*
-                     * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable
-                     * way to get account information.
-                     */
-                    logger.info("Found apikey --> Trying to get accountinfo via API");
-                    account.setProperty("apikey", apikey);
-                    boolean api_success = false;
-                    try {
-                        ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
-                        api_success = true;
-                    } catch (final Throwable e) {
-                        e.printStackTrace();
-                    }
-                    if (api_success) {
-                        logger.info("Successfully found accountinfo via API");
-                        return ai;
-                    } else {
-                        /* 2019-07-11: It can happen that the API does not work although an apikey is provided. Example: uploadocean.com */
-                        logger.warning("Failed to find accountinfo via API; probably serverside API failure --> Falling back to website handling");
-                    }
+                    logger.warning("Failed to find accountinfo via API even though apikey is given; probably serverside API failure --> Falling back to website handling");
                 }
             }
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
+        /* 2019-08-21: Available traffic is never given via API so we'll have to check for it via website. */
         String trafficLeftStr = regExTrafficLeft();
         /* Example non english: brupload.net */
         final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?nlimited|Ilimitado.*?");
@@ -2498,11 +2470,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             trafficLeftStr.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
             long trafficLeft = 0;
-            if (!trafficLeftStr.startsWith("-")) {
-                trafficLeft = (SizeFormatter.getSize(trafficLeftStr));
-            } else {
+            if (trafficLeftStr.startsWith("-")) {
                 /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
                 trafficLeft = 0;
+            } else {
+                trafficLeft = (SizeFormatter.getSize(trafficLeftStr));
             }
             /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
             final String usableBandwidth = br.getRegex("Usable Bandwidth\\s*<span.*?>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
@@ -2512,6 +2484,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setTrafficLeft(trafficLeft);
         } else {
             ai.setUnlimitedTraffic();
+        }
+        if (api_success) {
+            logger.info("Successfully found accountinfo via API");
+            return ai;
+        }
+        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
+            /* free users it's provided by default */
+            ai.setUsedSpace(space[0] + " " + space[1]);
+        } else if ((space != null && space.length != 0) && space[0] != null) {
+            /* premium users the Mb value isn't provided for some reason... */
+            ai.setUsedSpace(space[0] + "Mb");
         }
         if (supports_lifetime_account() && is_lifetime_account()) {
             ai.setValidUntil(-1);
@@ -3353,18 +3337,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && link != null) {
-            /* Reset directurl-properties in stable, NOT in dev mode */
-            /*
-             * TODO 2019-04-05: Either just don't do this or find a better solution for this. This will cause unnecessary captchas and will
-             * just waste the users' hard work of generating direct-URLs (e.g. entering captchas). I have never seen a situation in which
-             * one of our plugins e.g. looped forever because of bad directlink handling. This plugin is designed to verify directlinks and
-             * automatically delete that property once a directlink is not valid anymore!
-             */
-            link.removeProperty("freelink2");
-            link.removeProperty("premlink");
-            link.removeProperty("freelink");
-        }
+        /* 2019-08-21: Do not reset directurls at all */
+        // if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && link != null) {
+        // /* Reset directurl-properties in stable, NOT in dev mode */
+        // /*
+        // * TODO 2019-04-05: Either just don't do this or find a better solution for this. This will cause unnecessary captchas and will
+        // * just waste the users' hard work of generating direct-URLs (e.g. entering captchas). I have never seen a situation in which
+        // * one of our plugins e.g. looped forever because of bad directlink handling. This plugin is designed to verify directlinks and
+        // * automatically delete that property once a directlink is not valid anymore!
+        // */
+        // link.removeProperty("freelink2");
+        // link.removeProperty("premlink");
+        // link.removeProperty("freelink");
+        // }
     }
 
     @Override
