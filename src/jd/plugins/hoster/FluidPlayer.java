@@ -16,10 +16,10 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net", "hotclips24.com", "pornclipsxxx.com" }, urls = { "https?://(?:www\\.)?free-sex-video\\.net/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?hotclips24\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?pornclipsxxx\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net", "hotclips24.com", "pornclipsxxx.com", "al4a.com" }, urls = { "https?://(?:www\\.)?free-sex-video\\.net/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?hotclips24\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?pornclipsxxx\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?al4a\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
 public class FluidPlayer extends PluginForHost {
     public FluidPlayer(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,9 +42,10 @@ public class FluidPlayer extends PluginForHost {
     // other:
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;   // https://svn.jdownloader.org/issues/83286
+    private static final int     free_maxchunks    = 1;    // https://svn.jdownloader.org/issues/83286
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -80,7 +81,7 @@ public class FluidPlayer extends PluginForHost {
         }
         dllink = br.getRegex("'(?:file|video)'\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):\\s*(\"|')(http[^<>\"]*?)\\1").getMatch(1);
+            dllink = br.getRegex("\\s+(?:file|url):\\s*(\"|')(http[^<>\"]*?)\\1").getMatch(1);
             if (dllink == null) {
                 dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);
                 if (dllink == null) {
@@ -98,46 +99,50 @@ public class FluidPlayer extends PluginForHost {
                 }
             }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+                /* 2019-08-21: Not required */
+                // link.setProperty("directlink", dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
