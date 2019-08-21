@@ -115,7 +115,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String hybridAPIUrl = null;
-        String date_formatted = "-";
+        String dateFormatted = "-";
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -369,7 +369,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String vdb = (String) videoJsonPlayer.get("VDB");
                 final String vpi = (String) videoJsonPlayer.get("VPI");
                 if ((vru != null && vra != null) || vdb != null) {
-                    date_formatted = formatDate(vra);
+                    dateFormatted = formatDate(vra);
                     /*
                      * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
                      * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
@@ -392,7 +392,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
                 /* One packagename for every language */
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(date_formatted + "_arte_" + title);
+                fp.setName(getFormattedFilePackageName(dateFormatted, title));
                 for (final Object o : vsr_quals) {
                     foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
@@ -443,27 +443,36 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                                 if (container.getHeight() > 0) {
                                     height = container.getHeight();
                                 }
-                                String videoresolution = "";
+                                String videoResolution = "";
                                 if (height != null && width != null) {
-                                    videoresolution = width + "x" + height;
+                                    videoResolution = width + "x" + height;
                                 }
                                 final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
                                 if (!results.containsKey(linkID)) {
                                     final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
-                                    final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
-                                    link.setFinalFileName(filename);
                                     link.setContentUrl(parameter);
                                     link._setFilePackage(fp);
                                     link.setProperty("versionCode", versionCode);
                                     link.setProperty("directURL", container.getDownloadurl());
-                                    link.setProperty("directName", filename);
+                                    link.setProperty("date", dateFormatted);
+                                    link.setProperty("title", title);
+                                    link.setProperty("vpi", vpi);
+                                    link.setProperty("versionLibelle", versionLibelle);
+                                    link.setProperty("versionShortLibelle", versionShortLibelle);
                                     link.setProperty("quality_intern", quality_intern);
                                     link.setProperty("langShort", selectedLanguage);
                                     link.setProperty("mainlink", parameter);
                                     link.setProperty("apiurl", apiurl);
                                     link.setProperty("width", width);
                                     link.setProperty("height", height);
+                                    link.setProperty("resolution", videoResolution);
                                     link.setProperty("bitrate", videoBitrate);
+                                    link.setProperty("ext", "mp4");
+                                    
+                                    final String filename = getFormattedFileName(link);
+                                    link.setProperty("directName", filename);
+                                    link.setFinalFileName(filename);
+                                    
                                     if (vra != null && vru != null) {
                                         link.setProperty("VRA", convertDateFormat(vra));
                                         link.setProperty("VRU", convertDateFormat(vru));
@@ -481,7 +490,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     } else {
                         final Object widtho = qualitymap.get("width");
                         final Object heighto = qualitymap.get("height");
-                        String videoresolution = "";
+                        String videoResolution = "";
                         Number width = null;
                         Number height = null;
                         final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
@@ -489,7 +498,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                             /* These parameters are available in 95+% of all cases! */
                             width = ((Number) qualitymap.get("width"));
                             height = ((Number) qualitymap.get("height"));
-                            videoresolution = width + "x" + height;
+                            videoResolution = width + "x" + height;
                         }
                         final String quality_intern = "http_" + videoBitrate;
                         if (!cfg.getBooleanProperty(quality_intern, true)) {
@@ -506,20 +515,29 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
                         if (!results.containsKey(linkID)) {
                             final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
-                            final String filename = date_formatted + "_arte_" + title + "_" + vpi + "_" + "_" + versionLibelle + "_" + versionShortLibelle + "_" + videoresolution + "_" + videoBitrate + ".mp4";
-                            link.setFinalFileName(filename);
                             link.setContentUrl(parameter);
                             link._setFilePackage(fp);
                             link.setProperty("versionCode", versionCode);
                             link.setProperty("directURL", url);
-                            link.setProperty("directName", filename);
+                            link.setProperty("date", dateFormatted);
+                            link.setProperty("title", title);
+                            link.setProperty("vpi", vpi);
+                            link.setProperty("versionLibelle", versionLibelle);
+                            link.setProperty("versionShortLibelle", versionShortLibelle);
                             link.setProperty("quality_intern", quality_intern);
                             link.setProperty("langShort", selectedLanguage);
                             link.setProperty("mainlink", parameter);
                             link.setProperty("apiurl", apiurl);
                             link.setProperty("width", width);
                             link.setProperty("height", height);
+                            link.setProperty("resolution", videoResolution);
                             link.setProperty("bitrate", videoBitrate);
+                            link.setProperty("ext", "mp4");
+                            
+                            final String filename = getFormattedFileName(link);
+                            link.setProperty("directName", filename);
+                            link.setFinalFileName(filename);
+                            
                             if (vra != null && vru != null) {
                                 link.setProperty("VRA", convertDateFormat(vra));
                                 link.setProperty("VRU", convertDateFormat(vru));
@@ -566,12 +584,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             /* Check if user wants to download the thumbnail as well. */
             if (cfg.getBooleanProperty(THUMBNAIL, true) && thumbnailUrl != null) {
                 final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
-                link.setFinalFileName(title + ".jpg");
+                link.setProperty("date", dateFormatted);
+                link.setProperty("title", title);
+                link.setProperty("ext", "jpg");
+                
+                final String filename = getFormattedThumbnailName(link);
+                link.setProperty("directName", filename);
+                link.setFinalFileName(filename);
                 decryptedLinks.add(link);
             }
             if (decryptedLinks.size() > 0) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(date_formatted + "_arte_" + title);
+                fp.setName(getFormattedFilePackageName(dateFormatted, title));
                 fp.addLinks(decryptedLinks);
             }
         } catch (final Exception e) {
@@ -910,6 +934,171 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
+    }
+    
+    private String getFormattedFilePackageName(final String date, final String title) {
+        @SuppressWarnings("deprecation")
+		final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+    	
+        String formattedPackageName = cfg.getStringProperty(
+        		jd.plugins.hoster.ArteTv.CUSTOM_PACKAGE_NAME_PATTERN,
+        		jd.plugins.hoster.ArteTv.default_CUSTOM_PACKAGE_NAME_PATTERN);
+        if (formattedPackageName == null || formattedPackageName.equals("")) {
+            formattedPackageName = jd.plugins.hoster.ArteTv.default_CUSTOM_PACKAGE_NAME_PATTERN;
+        }
+
+        if (!formattedPackageName.contains("*title*")) {
+            return "Custom filename pattern is missing *title*.";
+        }
+
+        if (formattedPackageName.contains("*date*")) {
+        	if (date != null) {
+        		formattedPackageName = formattedPackageName.replace("*date*", date);
+        	} else {
+        		formattedPackageName = formattedPackageName.replace("*date*", "");
+        	}
+        }
+        if (title != null) {
+            formattedPackageName = formattedPackageName.replace("*title*", title);
+        } else {
+            formattedPackageName = formattedPackageName.replace("*title*", "missing_title");
+        }
+
+	    return formattedPackageName;
+    }
+    
+    private String getFormattedThumbnailName(final DownloadLink downloadLink) {
+        @SuppressWarnings("deprecation")
+		final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+    	
+        String formattedFileName = cfg.getStringProperty(
+        		jd.plugins.hoster.ArteTv.CUSTOM_THUMBNAIL_NAME_PATTERN,
+        		jd.plugins.hoster.ArteTv.default_CUSTOM_THUMBNAIL_NAME_PATTERN);
+        if (formattedFileName == null || formattedFileName.equals("")) {
+            formattedFileName = jd.plugins.hoster.ArteTv.default_CUSTOM_THUMBNAIL_NAME_PATTERN;
+        }
+
+        if (!formattedFileName.contains("*title*")) {
+            return "Custom filename pattern is missing *title*.";
+        }
+        if (!formattedFileName.contains("*ext*")) {
+            return "Custom filename pattern is missing *ext*.";
+        }
+
+        final String date = downloadLink.getStringProperty("date", null);
+    	final String title = downloadLink.getStringProperty("title", null);
+    	final String ext = downloadLink.getStringProperty("ext", null);
+    	
+        if (formattedFileName.contains("*date*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*date*", date);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*date*", "");
+        	}
+        }
+        if (formattedFileName.contains("*ext*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*ext*", ext);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*ext*", "");
+        	}
+        }
+
+        // Insert title at the end to prevent errors with tags
+        if (title != null) {
+            formattedFileName = formattedFileName.replace("*title*", title);
+        } else {
+            formattedFileName = formattedFileName.replace("*title*", "missing_title");
+        }
+
+	    return formattedFileName;
+    }
+    
+    private String getFormattedFileName(final DownloadLink downloadLink) {
+        @SuppressWarnings("deprecation")
+		final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+    	
+        String formattedFileName = cfg.getStringProperty(
+        		jd.plugins.hoster.ArteTv.CUSTOM_FILE_NAME_PATTERN,
+        		jd.plugins.hoster.ArteTv.default_CUSTOM_FILE_NAME_PATTERN);
+        if (formattedFileName == null || formattedFileName.equals("")) {
+            formattedFileName = jd.plugins.hoster.ArteTv.default_CUSTOM_FILE_NAME_PATTERN;
+        }
+
+        if (!formattedFileName.contains("*title*")) {
+            return "Custom filename pattern is missing *title*.";
+        }
+        if (!formattedFileName.contains("*ext*")) {
+            return "Custom filename pattern is missing *ext*.";
+        }
+
+        final String date = downloadLink.getStringProperty("date", null);
+    	final String title = downloadLink.getStringProperty("title", null);
+    	final String vpi = downloadLink.getStringProperty("vpi", null);
+    	final String libelle = downloadLink.getStringProperty("versionLibelle", null);
+    	final String shortlibelle = downloadLink.getStringProperty("versionShortLibelle", null);
+    	final String resolution = downloadLink.getStringProperty("resolution", null);
+    	final String bitrate = downloadLink.getStringProperty("bitrate", null);
+    	final String ext = downloadLink.getStringProperty("ext", null);
+    	
+        if (formattedFileName.contains("*date*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*date*", date);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*date*", "");
+        	}
+        }
+        if (formattedFileName.contains("*vpi*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*vpi*", vpi);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*vpi*", "");
+        	}
+        }
+        if (formattedFileName.contains("*libelle*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*libelle*", libelle);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*libelle*", "");
+        	}
+        }
+        if (formattedFileName.contains("*shortlibelle*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*shortlibelle*", shortlibelle);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*shortlibelle*", "");
+        	}
+        }
+        if (formattedFileName.contains("*resolution*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*resolution*", resolution);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*resolution*", "");
+        	}
+        }
+        if (formattedFileName.contains("*bitrate*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*bitrate*", bitrate);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*bitrate*", "");
+        	}
+        }
+        if (formattedFileName.contains("*ext*")) {
+        	if (date != null) {
+        		formattedFileName = formattedFileName.replace("*ext*", ext);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*ext*", "");
+        	}
+        }
+
+        // Insert title at the end to prevent errors with tags
+        if (title != null) {
+            formattedFileName = formattedFileName.replace("*title*", title);
+        } else {
+            formattedFileName = formattedFileName.replace("*title*", "missing_title");
+        }
+
+	    return formattedFileName;
     }
 
     /* NO OVERRIDE!! */

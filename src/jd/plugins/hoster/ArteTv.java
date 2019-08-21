@@ -41,47 +41,53 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "http://arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://concert\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://creative\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://future\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://cinema\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://theoperaplatform\\.eu\\.artejd_decrypted_jd/\\d+", "http://info\\.arte\\.tv\\.artejd_decrypted_jd/\\d+" })
 public class ArteTv extends PluginForHost {
-    public static final String  V_NORMAL                           = "V_NORMAL_RESET_2019_01_23";
-    public static final String  V_SUBTITLED                        = "V_SUBTITLED_RESET_2019_01_23";
-    public static final String  V_SUBTITLE_DISABLED_PEOPLE         = "V_SUBTITLE_DISABLED_PEOPLE_RESET_2019_01_23";
-    public static final String  V_AUDIO_DESCRIPTION                = "V_AUDIO_DESCRIPTION_RESET_2019_01_23";
-    private static final String http_300                           = "http_300";
-    private static final String http_800                           = "http_800";
-    private static final String http_1500                          = "http_1500";
-    private static final String http_2200                          = "http_2200";
-    private static final String hls                                = "hls";
-    /* creative.arte.tv extern qualities */
-    private static final String http_extern_1000                   = "http_extern_1000";
-    private static final String hls_extern_250                     = "hls_extern_250";
-    private static final String hls_extern_500                     = "hls_extern_500";
-    private static final String hls_extern_1000                    = "hls_extern_1000";
-    private static final String hls_extern_2000                    = "hls_extern_2000";
-    private static final String hls_extern_4000                    = "hls_extern_4000";
-    public static final String  LOAD_LANGUAGE_URL                  = "LOAD_LANGUAGE_URL_RESET_2019_01_23";
-    private static final String LOAD_BEST                          = "LOAD_BEST";
-    public static final String  LOAD_LANGUAGE_GERMAN               = "LOAD_LANGUAGE_GERMAN_RESET_2019_01_23";
-    public static final String  LOAD_LANGUAGE_FRENCH               = "LOAD_LANGUAGE_FRENCH_RESET_2019_01_23";
-    public static final String  LOAD_LANGUAGE_ENGLISH              = "LOAD_LANGUAGE_ENGLISH_RESET_2019_01_23";
-    public static final String  LOAD_LANGUAGE_POLISH               = "LOAD_LANGUAGE_POLISH_RESET_2019_01_23";
-    public static final String  LOAD_LANGUAGE_ITALIAN              = "LOAD_LANGUAGE_ITALIAN_RESET_2019_01_23";
-    public static final String  LOAD_LANGUAGE_SPANISH              = "LOAD_LANGUAGE_SPANISH_RESET_2019_01_23";
-    private static final String THUMBNAIL                          = "THUMBNAIL";
-    private static final String FAST_LINKCHECK                     = "FAST_LINKCHECK";
-    private static final String TYPE_GUIDE                         = "http://www\\.arte\\.tv/guide/[a-z]{2}/.+";
-    private static final String TYPE_CONCERT                       = "http://(www\\.)?concert\\.arte\\.tv/.+";
-    public static final boolean default_V_NORMAL                   = true;
-    public static final boolean default_V_SUBTITLED                = true;
-    public static final boolean default_V_SUBTITLE_DISABLED_PEOPLE = true;
-    public static final boolean default_V_AUDIO_DESCRIPTION        = true;
-    public static final boolean default_LOAD_LANGUAGE_URL          = false;
-    public static final boolean default_LOAD_LANGUAGE_GERMAN       = true;
-    public static final boolean default_LOAD_LANGUAGE_FRENCH       = true;
-    public static final boolean default_LOAD_LANGUAGE_ENGLISH      = true;
-    public static final boolean default_LOAD_LANGUAGE_POLISH       = true;
-    public static final boolean default_LOAD_LANGUAGE_ITALIAN      = true;
-    public static final boolean default_LOAD_LANGUAGE_SPANISH      = true;
-    private String              dllink                             = null;
-    private String              quality_intern                     = null;
+    public static final String  V_NORMAL                              = "V_NORMAL_RESET_2019_01_23";
+    public static final String  V_SUBTITLED                           = "V_SUBTITLED_RESET_2019_01_23";
+    public static final String  V_SUBTITLE_DISABLED_PEOPLE            = "V_SUBTITLE_DISABLED_PEOPLE_RESET_2019_01_23";
+    public static final String  V_AUDIO_DESCRIPTION                   = "V_AUDIO_DESCRIPTION_RESET_2019_01_23";
+    private static final String http_300                              = "http_300";
+    private static final String http_800                              = "http_800";
+    private static final String http_1500                             = "http_1500";
+    private static final String http_2200                             = "http_2200";
+    private static final String hls                                   = "hls";
+    /* creative.arte.tv extern qualities */ 
+    private static final String http_extern_1000                      = "http_extern_1000";
+    private static final String hls_extern_250                        = "hls_extern_250";
+    private static final String hls_extern_500                        = "hls_extern_500";
+    private static final String hls_extern_1000                       = "hls_extern_1000";
+    private static final String hls_extern_2000                       = "hls_extern_2000";
+    private static final String hls_extern_4000                       = "hls_extern_4000";
+    public static final String  LOAD_LANGUAGE_URL                     = "LOAD_LANGUAGE_URL_RESET_2019_01_23";
+    private static final String LOAD_BEST                             = "LOAD_BEST";
+    public static final String  LOAD_LANGUAGE_GERMAN                  = "LOAD_LANGUAGE_GERMAN_RESET_2019_01_23";
+    public static final String  LOAD_LANGUAGE_FRENCH                  = "LOAD_LANGUAGE_FRENCH_RESET_2019_01_23";
+    public static final String  LOAD_LANGUAGE_ENGLISH                 = "LOAD_LANGUAGE_ENGLISH_RESET_2019_01_23";
+    public static final String  LOAD_LANGUAGE_POLISH                  = "LOAD_LANGUAGE_POLISH_RESET_2019_01_23";
+    public static final String  LOAD_LANGUAGE_ITALIAN                 = "LOAD_LANGUAGE_ITALIAN_RESET_2019_01_23";
+    public static final String  LOAD_LANGUAGE_SPANISH                 = "LOAD_LANGUAGE_SPANISH_RESET_2019_01_23";
+    public static final String  CUSTOM_FILE_NAME_PATTERN              = "CUSTOM_FILE_NAME_PATTERN";
+    public static final String  CUSTOM_PACKAGE_NAME_PATTERN           = "CUSTOM_PACKAGE_NAME_PATTERN";
+    public static final String  CUSTOM_THUMBNAIL_NAME_PATTERN         = "CUSTOM_THUMBNAIL_NAME_PATTERN";
+    private static final String THUMBNAIL                             = "THUMBNAIL";
+    private static final String FAST_LINKCHECK                        = "FAST_LINKCHECK";
+    private static final String TYPE_GUIDE                            = "http://www\\.arte\\.tv/guide/[a-z]{2}/.+";
+    private static final String TYPE_CONCERT                          = "http://(www\\.)?concert\\.arte\\.tv/.+";
+    public static final boolean default_V_NORMAL                      = true;
+    public static final boolean default_V_SUBTITLED                   = true;
+    public static final boolean default_V_SUBTITLE_DISABLED_PEOPLE    = true;
+    public static final boolean default_V_AUDIO_DESCRIPTION           = true;
+    public static final boolean default_LOAD_LANGUAGE_URL             = false;
+    public static final boolean default_LOAD_LANGUAGE_GERMAN          = true;
+    public static final boolean default_LOAD_LANGUAGE_FRENCH          = true;
+    public static final boolean default_LOAD_LANGUAGE_ENGLISH         = true;
+    public static final boolean default_LOAD_LANGUAGE_POLISH          = true;
+    public static final boolean default_LOAD_LANGUAGE_ITALIAN         = true;
+    public static final boolean default_LOAD_LANGUAGE_SPANISH         = true;
+    public static final String  default_CUSTOM_FILE_NAME_PATTERN      = "*date*_arte_*title*_*vpi*__*libelle*_*shortlibelle*_*resolution*_*bitrate*.*ext*";
+    public static final String  default_CUSTOM_PACKAGE_NAME_PATTERN   = "*date*_arte_*title*";
+    public static final String  default_CUSTOM_THUMBNAIL_NAME_PATTERN = "*title*.*ext*";
+    private String              dllink                                = null;
+    private String              quality_intern                        = null;
 
     @SuppressWarnings("deprecation")
     public ArteTv(PluginWrapper wrapper) {
@@ -150,7 +156,7 @@ public class ArteTv extends PluginForHost {
                 final long contentLength = con.getLongContentLength();
                 if (con.isOK() && !con.getContentType().contains("html")) {
                     if (contentLength > 1000) {
-                        /* Only show filesize if we're sure that it definitly is a file. */
+                        /* Only show filesize if we're sure that it definitely is a file. */
                         downloadLink.setDownloadSize(contentLength);
                     }
                 } else {
@@ -434,6 +440,11 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_POLISH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_POLISH", "Sprachausgabe Polnisch laden?")).setDefaultValue(default_LOAD_LANGUAGE_POLISH).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_ITALIAN, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_ITALIAN", "Sprachausgabe Italienisch laden?")).setDefaultValue(default_LOAD_LANGUAGE_ITALIAN).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_SPANISH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_SPANISH", "Sprachausgabe Spanisch laden?")).setDefaultValue(default_LOAD_LANGUAGE_SPANISH).setEnabledCondidtion(cfge, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Paket- und Dateinamen:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGE_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_PACKAGE_NAME_PATTERN", "Muster für Paketname:")).setDefaultValue(default_CUSTOM_PACKAGE_NAME_PATTERN));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILE_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_FILE_NAME_PATTERN", "Muster für Dateiname:")).setDefaultValue(default_CUSTOM_FILE_NAME_PATTERN));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_THUMBNAIL_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_THUMBNAIL_NAME_PATTERN", "Muster für Thumbnail-Dateiname:")).setDefaultValue(default_CUSTOM_THUMBNAIL_NAME_PATTERN));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Sonstiges:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Thumbnail laden?")).setDefaultValue(false));
