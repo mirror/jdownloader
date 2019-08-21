@@ -1040,35 +1040,35 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         	}
         }
         if (formattedFileName.contains("*vpi*")) {
-        	if (date != null) {
+        	if (vpi != null) {
         		formattedFileName = formattedFileName.replace("*vpi*", vpi);
         	} else {
         		formattedFileName = formattedFileName.replace("*vpi*", "");
         	}
         }
         if (formattedFileName.contains("*language*")) {
-        	if (date != null) {
+        	if (language != null) {
         		formattedFileName = formattedFileName.replace("*language*", language);
         	} else {
         		formattedFileName = formattedFileName.replace("*language*", "");
         	}
         }
         if (formattedFileName.contains("*shortlanguage*")) {
-        	if (date != null) {
+        	if (shortlanguage != null) {
         		formattedFileName = formattedFileName.replace("*shortlanguage*", shortlanguage);
         	} else {
         		formattedFileName = formattedFileName.replace("*shortlanguage*", "");
         	}
         }
         if (formattedFileName.contains("*resolution*")) {
-        	if (date != null) {
+        	if (resolution != null) {
         		formattedFileName = formattedFileName.replace("*resolution*", resolution);
         	} else {
         		formattedFileName = formattedFileName.replace("*resolution*", "");
         	}
         }
         if (formattedFileName.contains("*bitrate*")) {
-        	if (date != null) {
+        	if (bitrate != null) {
         		formattedFileName = formattedFileName.replace("*bitrate*", bitrate);
         	} else {
         		formattedFileName = formattedFileName.replace("*bitrate*", "");
