@@ -1761,7 +1761,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    protected String getDllink(final DownloadLink link, final Account account) {
+    private final String getDllink(final DownloadLink link, final Account account) {
         return getDllink(link, account, this.br, correctedBR);
     }
 
@@ -2486,7 +2486,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         }
         if (api_success) {
-            logger.info("Successfully found accountinfo via API");
+            logger.info("Successfully found AccountInfo via API");
             return ai;
         }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
@@ -2685,17 +2685,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             currentTime = System.currentTimeMillis();
         }
+        /*
+         * 2019-05-30: Seems to be a typo by the guy who develops the XFS script in the early versions of thei "API mod" :D 2019-07-28: Typo
+         * is fixed in newer XFSv3 versions - still we'll keep both versions in just to make sure it will always work ...
+         */
         String expireStr = (String) entries.get("premim_expire");
         if (StringUtils.isEmpty(expireStr)) {
             /* Try this too in case he corrects his mistake. */
             expireStr = (String) entries.get("premium_expire");
         }
+        /*
+         * 2019-08-22: For newly created free accounts, an expire-date will always be given, even if the account has never been a premium
+         * account. This expire-date will usually be the creation date of the account then --> Handling will correctly recognize it as a
+         * free account!
+         */
         if (expireStr != null && expireStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         /*
-         * 2019-05-30: TODO: Try to find out where to find traffic limitations in json (videohosts will usually not have any traffic
-         * limitations!)
+         * 2019-08-22: Sadly there is no "traffic_left" value given. Upper handling will try to find it via website. Because we access
+         * account-info page anyways during account-check we at least don't have to waste another http-request for that.
          */
         ai.setUnlimitedTraffic();
         /* 2019-05-30: TODO: Add support for lifetime accounts */
@@ -2722,17 +2731,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             account.setUser(email);
         }
         {
-            /* Now set unnecessary information */
+            /* Now set less relevant information */
             final long balance = JavaScriptEngineFactory.toLong(entries.get("balance"), 0);
             /* 2019-07-26: values can also be "inf" for "Unlimited": "storage_left":"inf" */
             // final long storage_left = JavaScriptEngineFactory.toLong(entries.get("storage_left"), 0);
             final long storage_used = JavaScriptEngineFactory.toLong(entries.get("storage_used"), 0);
-            /*
-             * 2019-05-30: Seems to be a typo by the guy who develops the XFS script :D. For newly created free accounts, an expire-date
-             * will also always be given even if the account has never been a premium account. This expire-date will usually be the creation
-             * date of the account then --> Handling will correctly recognize it as a free account! 2019-07-28: Typo is fixed in newer XFSv3
-             * versions - still we'll keep both versions in just to make sure ...
-             */
             ai.setUsedSpace(storage_used);
             ai.setAccountBalance(balance);
         }

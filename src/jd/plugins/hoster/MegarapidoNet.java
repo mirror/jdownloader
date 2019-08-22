@@ -56,9 +56,6 @@ public class MegarapidoNet extends antiDDoSForHost {
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int             ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String          default_UA                   = "JDownloader";
-    private Account                      currAcc                      = null;
-    private DownloadLink                 currDownloadLink             = null;
-    private static Object                LOCK                         = new Object();
     private int                          statuscode                   = 0;
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("megarapido.net");
 
@@ -88,11 +85,6 @@ public class MegarapidoNet extends antiDDoSForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
-    }
-
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) {
@@ -120,19 +112,18 @@ public class MegarapidoNet extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
         mhm.runCheck(account, link);
-        login();
+        login(account);
         String dllink = checkDirectLink(link, DIRECTLINK);
         if (dllink == null) {
             final Form form = new Form();
             form.setAction("/api/generator/generate");
             form.put("link", Encoding.urlEncode(link.getPluginPatternMatcher()));
-            formAPISafe(form);
+            formAPISafe(form, link, account);
             dllink = PluginJSonUtils.getJson(br, "link");
             if (dllink == null || dllink.length() > 500) {
                 /* Should never happen */
-                mhm.handleErrorGeneric(currAcc, currDownloadLink, "dllinknull", 5);
+                mhm.handleErrorGeneric(account, link, "dllinknull", 5);
             }
         }
         handleDL(account, link, dllink);
@@ -157,8 +148,8 @@ public class MegarapidoNet extends antiDDoSForHost {
                 }
                 br.followConnection();
                 updatestatuscode();
-                handleAPIErrors();
-                mhm.handleErrorGeneric(currAcc, currDownloadLink, "unknowndlerror", 5);
+                handleAPIErrors(account, link);
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", 5);
             }
             dl.startDownload();
         } catch (final Exception e) {
@@ -173,18 +164,19 @@ public class MegarapidoNet extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
@@ -193,11 +185,12 @@ public class MegarapidoNet extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
         final AccountInfo ai = new AccountInfo();
-        login();
+        login(account);
         final String date = PluginJSonUtils.getJson(br, "data_final_premium");
         if (StringUtils.isEmpty(date)) {
+            /* 2019-08-22: This should always be given */
+            logger.warning("Expiredate is missing");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Failed to find expiredate", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         ai.setValidUntil(TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH), br);
@@ -241,47 +234,41 @@ public class MegarapidoNet extends antiDDoSForHost {
         return ai;
     }
 
-    private void login() throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account) throws Exception {
+        synchronized (account) {
             try {
                 br = newBrowser();
-                final Cookies cookies = currAcc.loadCookies("");
+                final Cookies cookies = account.loadCookies("");
+                boolean loggedIN = false;
                 if (cookies != null) {
+                    logger.info("Trying to login via cookies");
                     br.setCookies(PRIMARYURL, cookies);
                     br.getPage(PRIMARYURL + "/api/login/signed_in");
                     // should have json...
-                    if (!isCookiesSessionInvalid()) {
-                        /* Existing cookies are valid --> Save new timestamp */
-                        // try {
-                        // /*
-                        // * 2019-03-01: Attempt to solve issues with quickly expiring cookies resulting in frequent login captchas:
-                        // * Access website (not via API) to get cookies which eventually only browsers would get.
-                        // */
-                        // getAPISafe("/gerador-premium");
-                        // } catch (final Throwable e) {
-                        // }
-                        currAcc.saveCookies(br.getCookies(PRIMARYURL), "");
-                        return;
+                    loggedIN = !isCookiesSessionInvalid();
+                }
+                if (!loggedIN) {
+                    logger.info("Performing full login");
+                    getAPISafe(PRIMARYURL + "/login", null, account);
+                    final Form f = new Form();
+                    f.setAction("/api/login/sign_in");
+                    f.put("email", Encoding.urlEncode(account.getUser()));
+                    f.put("password", Encoding.urlEncode(account.getPass()));
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), this.getHost(), true);
+                    this.setDownloadLink(dummyLink);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lel6CQUAAAAANRfiz7Kh8rdyzHgh4An39DbHb67").getToken();
+                    f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    formAPISafe(f, null, account);
+                    if ("Email ou senha inválidos".equals(br.toString())) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                    br.clearCookies(PRIMARYURL);
                 }
-                getAPISafe(PRIMARYURL + "/login");
-                final Form f = new Form();
-                f.setAction("/api/login/sign_in");
-                f.put("email", Encoding.urlEncode(currAcc.getUser()));
-                f.put("password", Encoding.urlEncode(currAcc.getPass()));
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), this.getHost(), true);
-                this.setDownloadLink(dummyLink);
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lel6CQUAAAAANRfiz7Kh8rdyzHgh4An39DbHb67").getToken();
-                f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                formAPISafe(f);
-                if ("Email ou senha inválidos".equals(br.toString())) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                currAcc.saveCookies(br.getCookies(PRIMARYURL), "");
+                account.saveCookies(br.getCookies(PRIMARYURL), "");
             } catch (final PluginException e) {
-                currAcc.clearCookies("");
+                e.printStackTrace();
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -292,50 +279,57 @@ public class MegarapidoNet extends antiDDoSForHost {
         return result;
     }
 
-    private void getAPISafe(final String accesslink) throws Exception {
+    private void getAPISafe(final String accesslink, final DownloadLink link, final Account account) throws Exception {
         getPage(accesslink);
         updatestatuscode();
-        handleAPIErrors();
+        handleAPIErrors(account, link);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws Exception {
+    private void postAPISafe(final String accesslink, final String postdata, final DownloadLink link, final Account account) throws Exception {
         postPage(accesslink, postdata);
         updatestatuscode();
-        handleAPIErrors();
+        handleAPIErrors(account, link);
     }
 
-    private void formAPISafe(final Form form) throws Exception {
+    private void formAPISafe(final Form form, final DownloadLink link, final Account account) throws Exception {
         submitForm(form);
         updatestatuscode();
-        handleAPIErrors();
+        handleAPIErrors(account, link);
     }
 
     /**
      * 0 = everything ok, 1-99 = "error"-errors
      */
     private void updatestatuscode() {
-        final String error = br.getRegex("class=alert-message error > ([^<>]*?)</div>").getMatch(0);
+        String error = br.getRegex("class=alert-message error > ([^<>]*?)</div>").getMatch(0);
+        if (error == null) {
+            /* 2019-08-22: Website may respond with only an errormessage as plaintext, no json or html code at all */
+            error = br.toString();
+        }
         if (error != null) {
             if (error.contains("Desculpe-nos, no momento o servidor")) {
                 statuscode = 1;
-            } else {
-                statuscode = 666;
+            } else if (error.contains("Seu gerador premium está zerado, por favor, compre um de nossos planos")) {
+                statuscode = 2;
             }
         } else {
             statuscode = 0;
         }
     }
 
-    private void handleAPIErrors() throws PluginException, InterruptedException {
+    private void handleAPIErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         switch (statuscode) {
         case 0:
             /* Everything ok */
             break;
         case 1:
             /* Host currently not supported --> deactivate it for some hours. */
-            mhm.putError(currAcc, currDownloadLink, 3 * 60 * 1000l, "Host is currently not supported");
+            mhm.putError(account, link, 3 * 60 * 1000l, "Host is currently not supported");
+        case 2:
+            /* 2019-08-22: (Free-Account)Traffic empty (??) */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "No (Free-)Account traffic available anymore", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         default:
-            mhm.handleErrorGeneric(currAcc, currDownloadLink, "unknowndlerror", 50, 5 * 60 * 1000l);
+            break;
         }
     }
 

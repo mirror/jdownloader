@@ -99,6 +99,7 @@ public class NeodebridCom extends PluginForHost {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
+            this.loginAPI(account);
             getAPISafe(API_BASE + "/download?token=" + this.getApiToken(account) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
             dllink = PluginJSonUtils.getJsonValue(br, "download");
             if (StringUtils.isEmpty(dllink)) {
@@ -163,7 +164,7 @@ public class NeodebridCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         loginAPI(account);
-        if (br.getURL() == null || !br.getURL().contains("/info")) {
+        if (br.getURL() == null || !br.getURL().contains("/info?token")) {
             br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
         }
         final String expireTimestampStr = PluginJSonUtils.getJson(br, "timestamp");
@@ -188,7 +189,10 @@ public class NeodebridCom extends PluginForHost {
         } else {
             ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftStr));
         }
-        /* Continue via API */
+        /*
+         * Get list of supported hosts. Sadly they do not display free/premium hosts but always return all supported hosts. On their website
+         * there are two lists: https://neodebrid.com/status
+         */
         br.getPage(API_BASE + "/status");
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -263,11 +267,16 @@ public class NeodebridCom extends PluginForHost {
                 if (errorStr.equalsIgnoreCase("Filehost not supported.")) {
                     mhm.putError(account, link, 5 * 60 * 1000l, errorStr);
                 } else if (errorStr.equalsIgnoreCase("Token not found.")) {
-                    logger.info("api_token has expired");
+                    logger.info("api_token has expired --> Deleting it - and trying again");
                     account.removeProperty("api_token");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (errorStr.equalsIgnoreCase("User not premium.")) {
+                    logger.info("User has a free account and plugin tried to download from premium-only host");
+                    account.removeProperty("api_token");
+                    mhm.putError(account, link, 5 * 60 * 1000l, "This host is not supported via free account");
                 }
             }
+            logger.info("Unknown API error happened");
             mhm.handleErrorGeneric(account, link, "generic_api_error", 50, 5 * 60 * 1000l);
         }
     }
