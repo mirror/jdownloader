@@ -17,14 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KenfilesCom extends XFileSharingProBasic {
@@ -126,12 +127,12 @@ public class KenfilesCom extends XFileSharingProBasic {
 
     /** Function to find the final downloadlink. */
     @Override
-    public String getDllink(DownloadLink link, Account account) {
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, final String src) {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?kfs\\.space)(:\\d{1,4})?/(files|d|p|f|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(src, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?kfs\\.space)(:\\d{1,4})?/(files|d|p|f|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                final String cryptedScripts[] = new Regex(src, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         dllink = decodeDownloadLink(crypted);

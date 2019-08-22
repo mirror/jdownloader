@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosharingCom extends XFileSharingProBasic {
@@ -152,18 +152,22 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_api_only_mode() {
-        /* 2019-07-10: Special: For testing purposes */
-        return super.supports_api_only_mode();
+    public boolean isLoggedin() {
+        /* 2019-08-22: Special */
+        boolean loggedIN = super.isLoggedin();
+        if (loggedIN) {
+            /*
+             * They do not necessarily invalidate their old login cookies which means template code might fail to recognize that we're NOT
+             * loggedIN!
+             */
+            loggedIN = this.findLoginform(this.br) == null;
+        }
+        return loggedIN;
     }
-
-    /** 2019-02-08: Special */
-    @Override
-    public String getDllink(DownloadLink link, Account account) {
-        String dllink = super.getDllink(link, account);
-        // if (StringUtils.isEmpty(dllink)) {
-        // dllink = new Regex(super.correctedBR, "\"(https?://[^\"]+v\\.mp4)\"").getMatch(0);
-        // }
-        return dllink;
-    }
+    /* 2019-08-22: Commented-out - this was only for testing! */
+    // @Override
+    // protected boolean supports_api_only_mode() {
+    // /* 2019-07-10: Special: For testing purposes */
+    // return true;
+    // }
 }

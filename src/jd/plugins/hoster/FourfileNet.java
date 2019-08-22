@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -92,7 +93,8 @@ public class FourfileNet extends XFileSharingProBasic {
         return false;
     }
 
-    @Overrideprotected boolean supports_availablecheck_filesize_html() {
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
         /* 2019-02-21: Special */
         return false;
     }
@@ -104,11 +106,11 @@ public class FourfileNet extends XFileSharingProBasic {
     }
 
     @Override
-    public String getDllink(DownloadLink link, Account account) {
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, final String src) {
         /* 2019-02-21: Special */
-        String dllink = super.getDllink(link, account);
+        String dllink = super.getDllink(link, account, br, src);
         if (StringUtils.isEmpty(dllink)) {
-            dllink = new Regex(correctedBR, "id=\"direct_link\"[^<>]*?>\\s*?<a href=\"(http[^\"]+)\"").getMatch(0);
+            dllink = new Regex(src, "id=\"direct_link\"[^<>]*?>\\s*<a href=\"(http[^\"]+)\"").getMatch(0);
         }
         return dllink;
     }

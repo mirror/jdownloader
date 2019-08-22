@@ -36,7 +36,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * mods: Special XFS derivate which supports a special API used by some hosts. <br />
      */
     @Override
-    protected String getDllink(final DownloadLink downloadLink, final Account account, final Browser br, final String src) {
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, final String src) {
         /* 2019-08-21: Special for novafile.com & filejoker.net */
         String dllink = new Regex(src, "\"(https?://f?s\\d+[^/]+/[^\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
@@ -47,7 +47,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         }
         if (StringUtils.isEmpty(dllink)) {
             /* Fallback to template handling */
-            dllink = super.getDllink(downloadLink, account, br, src);
+            dllink = super.getDllink(link, account, br, src);
         }
         return dllink;
     }
