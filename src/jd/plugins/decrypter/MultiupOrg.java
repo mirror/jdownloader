@@ -161,34 +161,48 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
+    private String multiNewsWorkaround = null;
+
     @Override
     protected void getPage(String page) throws Exception {
-        super.getPage(page);
-        if (br.containsHTML("<title>Redirect</title>")) {
-            final String location = br.getRegex("window\\.opener\\.location\\s*=\\s*'([^']+)'\\s*;").getMatch(0);
-            if (location != null) {
-                if (StringUtils.containsIgnoreCase(location, "multinews.me")) {
-                    getPage(page);
-                } else {
-                    getPage(location);
-                }
-            } else {
-                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url\\s*=\\s*([^<>\"]+)\"").getMatch(0);
-                if (redirect != null) {
-                    if (StringUtils.containsIgnoreCase(redirect, "multinews.me")) {
-                        getPage(page);
-                    } else if (!StringUtils.endsWithCaseInsensitive(page, redirect)) {
-                        final String waitStr = br.getRegex("content=\"(\\d+)").getMatch(0);
-                        int wait = 10;
-                        if (waitStr != null) {
-                            wait = Integer.parseInt(waitStr);
-                        }
-                        Thread.sleep(wait * 1001l);
-                        getPage(redirect);
+        final boolean workaround = multiNewsWorkaround == null;
+        try {
+            if (workaround) {
+                multiNewsWorkaround = page;
+            }
+            super.getPage(page);
+            if (br.containsHTML("<title>Redirect</title>")) {
+                final String location = br.getRegex("window\\.opener\\.location\\s*=\\s*'([^']+)'\\s*;").getMatch(0);
+                if (location != null) {
+                    Thread.sleep(1000);
+                    if (StringUtils.containsIgnoreCase(location, "multinews.me")) {
+                        getPage(multiNewsWorkaround);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        getPage(location);
+                    }
+                } else {
+                    final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url\\s*=\\s*([^<>\"]+)\"").getMatch(0);
+                    if (redirect != null) {
+                        if (StringUtils.containsIgnoreCase(redirect, "multinews.me")) {
+                            Thread.sleep(1000);
+                            getPage(multiNewsWorkaround);
+                        } else if (!StringUtils.endsWithCaseInsensitive(page, redirect)) {
+                            final String waitStr = br.getRegex("content=\"(\\d+)").getMatch(0);
+                            int wait = 10;
+                            if (waitStr != null) {
+                                wait = Integer.parseInt(waitStr);
+                            }
+                            Thread.sleep(wait * 1001l);
+                            getPage(redirect);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
+            }
+        } finally {
+            if (workaround) {
+                multiNewsWorkaround = null;
             }
         }
     }
