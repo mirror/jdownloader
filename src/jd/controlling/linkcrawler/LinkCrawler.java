@@ -1,7 +1,6 @@
 package jd.controlling.linkcrawler;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -36,17 +35,11 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Authentication;
-import jd.http.AuthenticationFactory;
 import jd.http.Browser;
-import jd.http.CallbackAuthenticationFactory;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.URLUserInfoAuthentication;
-import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -65,8 +58,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -77,19 +68,10 @@ import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -103,7 +85,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.translate._JDT;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -559,6 +540,28 @@ public class LinkCrawler {
         }
     }
 
+    protected final AtomicReference<LazyCrawlerPlugin> lazyDeepDecryptHelper = new AtomicReference<LazyCrawlerPlugin>();
+
+    protected LazyCrawlerPlugin getDeepCrawlingPlugin() {
+        if (parentCrawler != null) {
+            return parentCrawler.getDeepCrawlingPlugin();
+        } else {
+            LazyCrawlerPlugin ret = lazyDeepDecryptHelper.get();
+            if (ret == null) {
+                final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
+                final ListIterator<LazyCrawlerPlugin> it = lazyCrawlerPlugins.listIterator();
+                while (it.hasNext()) {
+                    final LazyCrawlerPlugin pDecrypt = it.next();
+                    if (StringUtils.equals("LinkCrawlerDeepHelper", pDecrypt.getDisplayName())) {
+                        lazyDeepDecryptHelper.set(pDecrypt);
+                        return pDecrypt;
+                    }
+                }
+            }
+            return ret;
+        }
+    }
+
     public LinkCrawler(final boolean connectParentCrawler, final boolean avoidDuplicates) {
         setFilter(defaultFilterFactory());
         final LinkCrawlerThread thread = getCurrentLinkCrawlerThread();
@@ -992,136 +995,66 @@ public class LinkCrawler {
         return null;
     }
 
-    protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, CrawledLink source) throws IOException {
-        return openCrawlDeeperConnection(br, source, 0);
-    }
-
-    protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, CrawledLink source, int round) throws IOException {
-        final HashSet<String> loopAvoid = new HashSet<String>();
-        if (round == 0) {
-            final CrawledLink sourceLink = source.getSourceLink();
-            if (sourceLink != null && StringUtils.startsWithCaseInsensitive(sourceLink.getURL(), "http")) {
-                br.setCurrentURL(sourceLink.getURL());
+    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, Browser br, CrawledLink source) throws Exception {
+        final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
+        if (lazyC == null) {
+            throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
+        }
+        final PluginForDecrypt wplg = lazyC.newInstance(getPluginClassLoaderChild());
+        final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
+        final LogInterface logger = br.getLogger();
+        wplg.setBrowser(br);
+        wplg.init();
+        LogInterface oldLogger = null;
+        boolean oldVerbose = false;
+        boolean oldDebug = false;
+        wplg.setLogger(logger);
+        /* now we run the plugin and let it find some links */
+        final LinkCrawlerThread lct = getCurrentLinkCrawlerThread();
+        Object owner = null;
+        LinkCrawler previousCrawler = null;
+        try {
+            if (lct != null) {
+                /* mark thread to be used by decrypter plugin */
+                owner = lct.getCurrentOwner();
+                lct.setCurrentOwner(wplg);
+                previousCrawler = lct.getCurrentLinkCrawler();
+                lct.setCurrentLinkCrawler(this);
+                /* save old logger/states */
+                oldLogger = lct.getLogger();
+                oldDebug = lct.isDebug();
+                oldVerbose = lct.isVerbose();
+                /* set new logger and set verbose/debug true */
+                lct.setLogger(logger);
+                lct.setVerbose(true);
+                lct.setDebug(true);
+            }
+            final long startTime = System.currentTimeMillis();
+            try {
+                wplg.setCrawler(this);
+                wplg.setLinkCrawlerGeneration(generation);
+                final LinkCrawler pluginNextLinkCrawler = wplg.getCustomNextCrawler();
+                if (pluginNextLinkCrawler != null) {
+                    nextLinkCrawler.set(pluginNextLinkCrawler);
+                }
+                return ((LinkCrawlerDeepHelperInterface) wplg).openConnection(br, source);
+            } finally {
+                /* close the logger */
+                wplg.setLinkCrawlerGeneration(null);
+                wplg.setCurrentLink(null);
+                final long endTime = System.currentTimeMillis() - startTime;
+                lazyC.updateCrawlRuntime(endTime);
+            }
+        } finally {
+            if (lct != null) {
+                /* reset thread to last known used state */
+                lct.setCurrentOwner(owner);
+                lct.setCurrentLinkCrawler(previousCrawler);
+                lct.setLogger(oldLogger);
+                lct.setVerbose(oldVerbose);
+                lct.setDebug(oldDebug);
             }
         }
-        Request request = new GetRequest(source.getURL());
-        loopAvoid.add(request.getUrl());
-        URLConnectionAdapter connection = null;
-        for (int i = 0; i < 10; i++) {
-            final List<AuthenticationFactory> authenticationFactories = new ArrayList<AuthenticationFactory>();
-            if (request.getURL().getUserInfo() != null) {
-                authenticationFactories.add(new URLUserInfoAuthentication());
-            }
-            authenticationFactories.addAll(AuthenticationController.getInstance().getSortedAuthenticationFactories(request.getURL(), null));
-            authenticationFactories.add(new CallbackAuthenticationFactory() {
-                protected Authentication remember = null;
-
-                @Override
-                protected Authentication askAuthentication(Browser browser, Request request, final String realm) {
-                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT.T.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
-                    loginDialog.setTimeout(60 * 1000);
-                    final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
-                    if (handle.getCloseReason() == CloseReason.OK) {
-                        final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, handle.getUsername(), handle.getPassword()).buildAuthentication(browser, request);
-                        addAuthentication(ret);
-                        if (handle.isRememberSelected()) {
-                            remember = ret;
-                        }
-                        return ret;
-                    } else {
-                        return null;
-                    }
-                }
-
-                @Override
-                public boolean retry(Authentication authentication, Browser browser, Request request) {
-                    if (containsAuthentication(authentication) && remember == authentication && request.getAuthentication() == authentication && !requiresAuthentication(request)) {
-                        final AuthenticationInfo auth = new AuthenticationInfo();
-                        auth.setRealm(authentication.getRealm());
-                        auth.setUsername(authentication.getUsername());
-                        auth.setPassword(authentication.getPassword());
-                        auth.setHostmask(authentication.getHost());
-                        auth.setType(Type.HTTP);
-                        AuthenticationController.getInstance().add(auth);
-                    }
-                    return super.retry(authentication, browser, request);
-                }
-            });
-            authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
-                if (connection != null) {
-                    connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
-                    try {
-                        br.followConnection();
-                    } catch (IOException e) {
-                        if (br.getLogger() != null) {
-                            br.getLogger().log(e);
-                        }
-                    }
-                }
-                br.setCustomAuthenticationFactory(authenticationFactory);
-                connection = br.openRequestConnection(request);
-                if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
-                    if (connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
-                        return openCrawlDeeperConnection(source, br, connection, round);
-                    }
-                    continue authLoop;
-                } else if (connection.isOK()) {
-                    break authLoop;
-                } else {
-                    return openCrawlDeeperConnection(source, br, connection, round);
-                }
-            }
-            final String location = request.getLocation();
-            if (location != null) {
-                try {
-                    br.followConnection();
-                } catch (IOException e) {
-                    if (br.getLogger() != null) {
-                        br.getLogger().log(e);
-                    }
-                }
-                if (loopAvoid.add(location) == false) {
-                    return openCrawlDeeperConnection(source, br, connection, round);
-                }
-                request = br.createRedirectFollowingRequest(request);
-            } else {
-                return openCrawlDeeperConnection(source, br, connection, round);
-            }
-        }
-        return openCrawlDeeperConnection(source, br, connection, round);
-    }
-
-    protected URLConnectionAdapter openCrawlDeeperConnection(CrawledLink source, Browser br, URLConnectionAdapter urlConnection, int round) throws IOException {
-        if (round <= 2 && urlConnection != null) {
-            if (round < 2 && (urlConnection.isOK() || urlConnection.getResponseCode() == 404) && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
-                final Cookies cookies = br.getCookies(br.getBaseURL());
-                for (final Cookie cookie : cookies.getCookies()) {
-                    if (StringUtils.contains(cookie.getKey(), "incap_ses")) {
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            urlConnection.disconnect();
-                            throw new IOException(e);
-                        }
-                        break;
-                    }
-                }
-                if (round < 1) {
-                    br.setCurrentURL(source.getURL());
-                } else {
-                    br.setCurrentURL(URLHelper.parseLocation(new URL(source.getURL()), "/"));
-                }
-                urlConnection.disconnect();
-                return openCrawlDeeperConnection(br, source, round + 1);
-            }
-            final LinkCollectingJob job = source.getSourceJob();
-            if (job != null && job.getCustomSourceUrl() != null) {
-                br.setCurrentURL(job.getCustomSourceUrl());
-                urlConnection.disconnect();
-                return openCrawlDeeperConnection(br, source, round + 1);
-            }
-        }
-        return urlConnection;
     }
 
     protected boolean isCrawledLinkDuplicated(Map<String, Object> map, CrawledLink link) {
@@ -1308,7 +1241,7 @@ public class LinkCrawler {
                                 }
                             }
                         }
-                        final URLConnectionAdapter connection = openCrawlDeeperConnection(br, source);
+                        final URLConnectionAdapter connection = openCrawlDeeperConnection(generation, br, source);
                         if (setCookies != null && matchingRule.isUpdateCookies()) {
                             final Cookies cookies = br.getCookies(source.getURL());
                             final List<String[]> currentCookies = new ArrayList<String[]>();
