@@ -47,6 +47,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.RequestHistory.TYPE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
@@ -283,26 +284,14 @@ public abstract class antiDDoSForHost extends PluginForHost {
             } finally {
                 con.disconnect();
             }
-            final boolean updateConnectionOnly;
-            synchronized (requestConnectionOnly) {
-                updateConnectionOnly = !requestConnectionOnly.containsKey(request);
-            }
+            final RequestHistory history = RequestHistory.addToCurrentThread(ibr, request, TYPE.FULL);
             try {
-                if (updateConnectionOnly) {
-                    synchronized (requestConnectionOnly) {
-                        requestConnectionOnly.put(request, Boolean.FALSE);
-                    }
-                }
                 antiDDoS(ibr);
                 break;
             } catch (final ConcurrentLockException cle) {
                 continue;
             } finally {
-                if (updateConnectionOnly) {
-                    synchronized (requestConnectionOnly) {
-                        requestConnectionOnly.remove(request);
-                    }
-                }
+                RequestHistory.removeFromCurrentThread(history);
             }
         }
         runPostRequestTask(ibr);
@@ -332,27 +321,17 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 // reset request
                 request.resetConnection();
             }
-            final boolean updateConnectionOnly;
-            synchronized (requestConnectionOnly) {
-                updateConnectionOnly = !requestConnectionOnly.containsKey(request);
-            }
-            ibr.openRequestConnection(request);
+            final RequestHistory history = RequestHistory.addToCurrentThread(ibr, request, TYPE.OPEN);
             try {
-                if (updateConnectionOnly) {
-                    synchronized (requestConnectionOnly) {
-                        requestConnectionOnly.put(request, Boolean.TRUE);
-                    }
+                ibr.openRequestConnection(request);
+                try {
+                    antiDDoS(ibr, request);
+                    break;
+                } catch (final ConcurrentLockException cle) {
+                    continue;
                 }
-                antiDDoS(ibr, request);
-                break;
-            } catch (final ConcurrentLockException cle) {
-                continue;
             } finally {
-                if (updateConnectionOnly) {
-                    synchronized (requestConnectionOnly) {
-                        requestConnectionOnly.remove(request);
-                    }
-                }
+                RequestHistory.removeFromCurrentThread(history);
             }
         }
         return ibr.getHttpConnection();
@@ -511,28 +490,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
         concurrentLock.compareAndSet(lockObject, null);
     }
 
-    private final WeakHashMap<GetRequest, HeadRequest> headRequestHierarchyMap = new WeakHashMap<GetRequest, HeadRequest>();
-    private final WeakHashMap<Request, Boolean>        requestConnectionOnly   = new WeakHashMap<Request, Boolean>();
-
-    private HeadRequest getInitialHeadRequest(Request request) {
-        Request source = request;
-        Request next = null;
-        while (true) {
-            synchronized (headRequestHierarchyMap) {
-                next = headRequestHierarchyMap.get(source);
-            }
-            if (next != null) {
-                source = next;
-            } else {
-                if (source instanceof HeadRequest) {
-                    return (HeadRequest) source;
-                } else {
-                    return null;
-                }
-            }
-        }
-    }
-
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
@@ -543,22 +500,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest) {
                         final GetRequest getRequest = new GetRequest(request);
-                        try {
-                            synchronized (headRequestHierarchyMap) {
-                                headRequestHierarchyMap.put(getRequest, (HeadRequest) request);
-                            }
-                            synchronized (requestConnectionOnly) {
-                                requestConnectionOnly.put(getRequest, Boolean.FALSE);
-                            }
-                            openAntiDDoSRequestConnection(ibr, getRequest);
-                        } finally {
-                            synchronized (headRequestHierarchyMap) {
-                                headRequestHierarchyMap.remove(getRequest);
-                            }
-                            synchronized (requestConnectionOnly) {
-                                requestConnectionOnly.remove(getRequest);
-                            }
-                        }
+                        openAntiDDoSRequestConnection(ibr, getRequest);
                         return;
                     }
                 }
@@ -567,22 +509,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // used soley by openAntiDDoSRequestConnection, when open connection is used.
                     if (request instanceof HeadRequest && isCloudFlareProtectionMode(responseCode)) {
                         final GetRequest getRequest = new GetRequest(request);
-                        try {
-                            synchronized (headRequestHierarchyMap) {
-                                headRequestHierarchyMap.put(getRequest, (HeadRequest) request);
-                            }
-                            synchronized (requestConnectionOnly) {
-                                requestConnectionOnly.put(getRequest, Boolean.FALSE);
-                            }
-                            openAntiDDoSRequestConnection(ibr, getRequest);
-                        } finally {
-                            synchronized (headRequestHierarchyMap) {
-                                headRequestHierarchyMap.remove(getRequest);
-                            }
-                            synchronized (requestConnectionOnly) {
-                                requestConnectionOnly.remove(getRequest);
-                            }
-                        }
+                        openAntiDDoSRequestConnection(ibr, getRequest);
                         return;
                     }
                     ibr.followConnection();
@@ -645,13 +572,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // effectively refresh page!
                     try {
                         final Request currentRequest = ibr.getRequest();
-                        final HeadRequest initialHeadRequest = getInitialHeadRequest(currentRequest);
                         final Request nextRequest = currentRequest.cloneRequest();
-                        final boolean openConnection;
-                        synchronized (requestConnectionOnly) {
-                            openConnection = (initialHeadRequest != null && Boolean.TRUE.equals(requestConnectionOnly.get(initialHeadRequest))) || Boolean.TRUE.equals(requestConnectionOnly.containsKey(currentRequest));
-                        }
-                        if (openConnection) {
+                        if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
                             openAntiDDoSRequestConnection(ibr, nextRequest);
                         } else {
                             sendRequest(ibr, nextRequest);
@@ -678,13 +600,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         // try again! -NOTE: this isn't stable compliant-
                         try {
                             final Request currentRequest = ibr.getRequest();
-                            final HeadRequest initialHeadRequest = getInitialHeadRequest(currentRequest);
                             final Request nextRequest = currentRequest.cloneRequest();
-                            final boolean openConnection;
-                            synchronized (requestConnectionOnly) {
-                                openConnection = (initialHeadRequest != null && Boolean.TRUE.equals(requestConnectionOnly.get(initialHeadRequest))) || Boolean.TRUE.equals(requestConnectionOnly.containsKey(currentRequest));
-                            }
-                            if (openConnection) {
+                            if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
                                 openAntiDDoSRequestConnection(ibr, nextRequest);
                             } else {
                                 sendRequest(ibr, nextRequest);
@@ -791,11 +708,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 try {
                                     // resend originalRequest
                                     originalRequest.resetConnection();
-                                    final boolean openConnection;
-                                    synchronized (requestConnectionOnly) {
-                                        openConnection = Boolean.TRUE.equals(requestConnectionOnly.get(originalRequest));
-                                    }
-                                    if (openConnection) {
+                                    if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
                                         openAntiDDoSRequestConnection(ibr, originalRequest);
                                     } else {
                                         sendRequest(ibr, originalRequest);
@@ -874,11 +787,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 try {
                                     // resend originalRequest
                                     originalRequest.resetConnection();
-                                    final boolean openConnection;
-                                    synchronized (requestConnectionOnly) {
-                                        openConnection = Boolean.TRUE.equals(requestConnectionOnly.get(originalRequest));
-                                    }
-                                    if (openConnection) {
+                                    if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
                                         openAntiDDoSRequestConnection(ibr, originalRequest);
                                     } else {
                                         sendRequest(ibr, originalRequest);

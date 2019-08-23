@@ -69,6 +69,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
             param.setCryptedUrl(parameter);
         }
+        getPage(parameter);
         getPage(parameter.replace("/en/download/", "/en/mirror/"));
         final String webSiteFilename = getWebsiteFileName(br);
         if (!StringUtils.isEmpty(webSiteFilename)) {
@@ -172,7 +173,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                     getPage(location);
                 }
             } else {
-                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(/[^<>\"]+)\"").getMatch(0);
+                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url\\s*=\\s*([^<>\"]+)\"").getMatch(0);
                 if (redirect != null) {
                     if (StringUtils.containsIgnoreCase(redirect, "multinews.me")) {
                         getPage(page);

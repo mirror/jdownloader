@@ -179,7 +179,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             ((jd.plugins.hoster.XHamsterCom) hostPlugin).setBrowser(br);
             ((jd.plugins.hoster.XHamsterCom) hostPlugin).login(aa, force);
         } catch (final PluginException e) {
-            aa.setValid(false);
+            handleAccountException(aa, e);
             return false;
         }
         return true;
