@@ -65,7 +65,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.(?:com|ch|sh)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "https?://kissasian\\.(?:com|ch|sh)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
 public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -139,7 +139,10 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         } else {
-            title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
+            title = br.getRegex("<title>\\s*(.*?)\\s*-\\s*Watch\\s*\\1[^<]*</title>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<title>\\s*Watch\\s*(.*?)\\s*</title>").getMatch(0);
+            }
             if (title == null) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
