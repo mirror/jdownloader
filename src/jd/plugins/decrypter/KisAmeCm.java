@@ -28,6 +28,20 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
+import org.jdownloader.plugins.components.RefreshSessionLink;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,26 +60,12 @@ import jd.plugins.PluginException;
 import jd.utils.JDHexUtils;
 import jd.utils.RazStringBuilder;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
-import org.jdownloader.plugins.components.RefreshSessionLink;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 /**
  *
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "https?://kissasian\\.(?:com|ch|sh)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:kisscartoon\\.(?:me|io)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissmanga.com" }, urls = { "https?://(?:www\\.)?kiss-?anime\\.(?:com|to|ru|ws)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissasian\\.(?:com|ch|sh|video)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?(?:kisscartoon\\.(?:me|io|is)|kimcartoon\\.me)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://(?:www\\.)?kissmanga\\.com/Manga/.+\\?id=\\d+" })
 public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -141,7 +141,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
         } else {
             title = br.getRegex("<title>\\s*(.*?)\\s*-\\s*Watch\\s*\\1[^<]*</title>").getMatch(0);
             if (title == null) {
-                title = br.getRegex("<title>\\s*Watch\\s*(.*?)\\s*</title>").getMatch(0);
+                title = br.getRegex("<title>\\s*(?:Kiss\\w+\\s*-?\\s*)?\\s*Watch\\s*(.*?)\\s*</title>").getMatch(0);
             }
             if (title == null) {
                 decryptedLinks.add(createOfflinelink(parameter));
