@@ -49,6 +49,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             /* Fallback to template handling */
             dllink = super.getDllink(link, account, br, src);
         }
+        if (account != null && !StringUtils.isEmpty(dllink)) {
+            /* Set timestamp of last download on account - this might be useful later for our Free-Account handling */
+            account.setProperty("lastdownload_timestamp_website", System.currentTimeMillis());
+        }
         return dllink;
     }
 
@@ -99,7 +103,6 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     protected boolean allows_multiple_login_attempts_in_one_go() {
-        /* 2019-08-20: Special */
         return true;
     }
 
@@ -107,7 +110,11 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     private static final String PROPERTY_SESSIONID = "zeus_cloud_sessionid";
     private static final String PROPERTY_EMAIL     = "email";
 
-    /** Turns on/off special API for (Free-)Account Login & Download */
+    /**
+     * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
+     * issues/complicated handling which is required for website login and download! </br>
+     * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
+     */
     protected boolean useAPIZeusCloudManager() {
         return true;
     }
@@ -238,6 +245,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
              */
             checkErrorsAPIZeusCloudManager(link, account);
             dllink = PluginJSonUtils.getJson(br, "direct_link");
+            if (!StringUtils.isEmpty(dllink)) {
+                /* Set timestamp of last download on account - this might be useful later for our Free-Account handling */
+                account.setProperty("lastdownload_timestamp_api", System.currentTimeMillis());
+            }
         }
         this.handleDownload(link, account, dllink, null);
     }
@@ -350,14 +361,22 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             } else if (error.equalsIgnoreCase("Skipped countdown")) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL);
+            } else if (error.equalsIgnoreCase("hack activity detected")) {
+                /*
+                 * 2019-08-23: filejoker.net - basically an IP-block - login is blocked until user tries with new IP. It should work again
+                 * then! This can be triggered by messing with their website, frequently logging-in (creating new login-sessions) and trying
+                 * again with new Cloudflare-cookies frequently.
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Try again with new IP: API error '" + error + "'", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
                 /* This should not happen. If it does, improve errorhandling! */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error");
+                logger.warning("Unknown API error");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown API error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         } else if (!StringUtils.isEmpty(message)) {
             if (message.contains("This file can only be downloaded by Premium")) {
                 /*
-                 * 2019-08-21: E.g. {"file_size":"500000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx",
+                 * 2019-08-21: novafile.com: E.g. {"file_size":"500000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx",
                  * "message":"<strong>This file can only be downloaded by Premium Members 400 MB.<br>Become a <a href='#tariffs'>Premium Member</a> and download any files instantly at maximum speed!</strong>"
                  * }
                  */
@@ -375,5 +394,13 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     private final void invalidateAPIZeusCloudManagerSession(final Account account) throws PluginException {
         account.removeProperty(PROPERTY_SESSIONID);
         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid sessionid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+        /* 2019-08-23: Debugtest */
+        // link.removeProperty("freelink2");
+        // link.removeProperty("premlink");
+        // link.removeProperty("freelink");
     }
 }
