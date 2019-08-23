@@ -71,7 +71,6 @@ public class XHamsterCom extends PluginForHost {
     private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean  default_allow_multihoster_usage = false;
     private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
-    private static final String   DOMAIN_CURRENT                  = "xhamster.com";
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
     private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p" };
@@ -104,13 +103,14 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE = "(?i).+m\\.xhamster\\.(?:com|xxx|desi)/.+";
-    private static final String TYPE_EMBED  = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx|desi)/x?embed\\.php\\?video=\\d+$";
-    private static final String NORESUME    = "NORESUME";
-    private static Object       ctrlLock    = new Object();
-    private final String        recaptchav2 = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
-    private String              dllink      = null;
-    private String              vq          = null;
+    private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.(?:com|xxx|desi)/.+";
+    private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx|desi)/x?embed\\.php\\?video=\\d+$";
+    private static final String NORESUME       = "NORESUME";
+    private static Object       ctrlLock       = new Object();
+    private final String        recaptchav2    = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
+    private String              dllink         = null;
+    private String              vq             = null;
+    private static final String DOMAIN_CURRENT = "xhamster.com";
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -180,7 +180,6 @@ public class XHamsterCom extends PluginForHost {
             br.setFollowRedirects(true);
             prepBr();
             /* quick fix to force old player */
-            br.setCookie(MAINPAGE, "playerVer", "old");
             String filename = null;
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
@@ -584,11 +583,8 @@ public class XHamsterCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "https://xhamster.com";
-    private static Object       LOCK     = new Object();
-
     public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             // used in finally to restore browser redirect status.
             final boolean frd = br.isFollowingRedirects();
             try {
@@ -596,30 +592,33 @@ public class XHamsterCom extends PluginForHost {
                 prepBr();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("https://" + account.getHoster() + "/");
+                    final String currentDomain = br.getHost();
+                    br.setCookies(currentDomain, cookies, true);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
                     /* Try to avoid login cookie whenever possible! */
-                    br.getPage("https://" + account.getHoster() + "/");
+                    br.getPage("https://" + currentDomain + "/");
                     if (isLoggedInHTML(br)) {
                         /* Save new cookie timestamp */
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(currentDomain), "");
                         return;
                     }
                     /* Reset Browser */
-                    br.clearCookies(br.getHost());
+                    br.clearCookies(null);
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://xhamster.com/login");
+                final String currentDomain = br.getHost();
                 if (htmlIsOldDesign(br)) {
                     final Form login = br.getFormbyProperty("name", "loginForm");
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     /* set action, website changes action in js! */
-                    login.setAction("https://xhamster.com/ajax/login.php");
+                    login.setAction(br.getURL("/ajax/login.php").toExternalForm());
                     Browser br = this.br.cloneBrowser();
                     final long now = System.currentTimeMillis();
                     final String xsid;
@@ -633,10 +632,10 @@ public class XHamsterCom extends PluginForHost {
                     }
                     // set in login form and cookie to the correct section
                     login.put("stats", Encoding.urlEncode(xsid));
-                    br.setCookie(MAINPAGE, "xsid", xsid);
+                    br.setCookie(currentDomain, "xsid", xsid);
                     // now some other fingerprint set via js, again cookie and login form
                     final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
-                    br.setCookie(MAINPAGE, "fingerprint", fingerprint);
+                    br.setCookie(currentDomain, "fingerprint", fingerprint);
                     login.put("fingerprint", fingerprint);
                     login.put("username", Encoding.urlEncode(account.getUser()));
                     login.put("password", Encoding.urlEncode(account.getPass()));
@@ -673,14 +672,14 @@ public class XHamsterCom extends PluginForHost {
                         br.postPageRaw("/x-api", requestData + ",\"captcha\":\"" + recaptchaV2Response + "\"}}]");
                     }
                 }
-                if (br.getCookie(MAINPAGE, "UID") == null || br.getCookie(MAINPAGE, "_id") == null) {
+                if (br.getCookie(currentDomain, "UID", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(currentDomain, "_id", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(currentDomain), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -734,8 +733,8 @@ public class XHamsterCom extends PluginForHost {
         if (account.getCookiesTimeStamp("") != 0 && (System.currentTimeMillis() - 6 * 3480000l <= account.getCookiesTimeStamp(""))) {
             login(account, false);
             // because we have used cached login, we should verify that the cookie is still valid...
-            br.getPage(MAINPAGE);
-            if (br.getCookie(MAINPAGE, "UID") == null || br.getCookie(MAINPAGE, "_id") == null) {
+            br.getPage(br.getBaseURL());
+            if (br.getCookie(br.getBaseURL(), "UID", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(br.getBaseURL(), "_id", Cookies.NOTDELETEDPATTERN) == null) {
                 // we should assume cookie is invalid, and perform a full login!
                 br = new Browser();
                 login(account, true);
@@ -756,8 +755,11 @@ public class XHamsterCom extends PluginForHost {
         doFree(link);
     }
 
-    private void prepBr() {
-        br.setCookie(MAINPAGE, "lang", "en");
+    protected void prepBr() {
+        for (String host : new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi" }) {
+            br.setCookie(host, "lang", "en");
+            br.setCookie(host, "playerVer", "old");
+        }
         br.setAllowedResponseCodes(new int[] { 410, 423, 452 });
     }
 
