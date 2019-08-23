@@ -112,7 +112,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                     if (finalURL == null) {
                         finalURL = brc.getRegex("http-equiv\\s*=\\s*\"refresh\"\\s*content\\s*=\\s*\"[^\"]*url\\s*=\\s*(.*?)\"").getMatch(0);
                         if (finalURL != null) {
-                            if (retry && StringUtils.contains(finalURL, "multinews.me")) {
+                            if (retry && StringUtils.containsIgnoreCase(finalURL, "multinews.me")) {
                                 // first/randomly opens sort of *show some ads* website, on retry the real destination is given
                                 retry = false;
                                 brc.getPage(singleLink);
@@ -158,6 +158,38 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    @Override
+    protected void getPage(String page) throws Exception {
+        super.getPage(page);
+        if (br.containsHTML("<title>Redirect</title>")) {
+            final String location = br.getRegex("window\\.opener\\.location\\s*=\\s*'([^']+)'\\s*;").getMatch(0);
+            if (location != null) {
+                if (StringUtils.containsIgnoreCase(location, "multinews.me")) {
+                    getPage(page);
+                } else {
+                    getPage(location);
+                }
+            } else {
+                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(/[^<>\"]+)\"").getMatch(0);
+                if (redirect != null) {
+                    if (StringUtils.containsIgnoreCase(redirect, "multinews.me")) {
+                        getPage(page);
+                    } else if (!StringUtils.endsWithCaseInsensitive(page, redirect)) {
+                        final String waitStr = br.getRegex("content=\"(\\d+)").getMatch(0);
+                        int wait = 10;
+                        if (waitStr != null) {
+                            wait = Integer.parseInt(waitStr);
+                        }
+                        Thread.sleep(wait * 1001l);
+                        getPage(redirect);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+        }
     }
 
     private String getFileSize(String parameter) throws Exception {
