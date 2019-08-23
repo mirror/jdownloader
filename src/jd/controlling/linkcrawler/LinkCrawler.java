@@ -36,8 +36,6 @@ import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -417,7 +415,7 @@ public class LinkCrawler {
 
     private static final Object LINKCRAWLERRULESLOCK = new Object();
 
-    protected void setLinkCrawlerRuleCookies(final long ruleID, final List<String[]> setCookies) {
+    public void setLinkCrawlerRuleCookies(final long ruleID, final List<String[]> setCookies) {
         boolean refresh = false;
         try {
             synchronized (LINKCRAWLERRULESLOCK) {
@@ -442,7 +440,7 @@ public class LinkCrawler {
         }
     }
 
-    protected List<String[]> getLinkCrawlerRuleCookies(final long ruleID) {
+    public List<String[]> getLinkCrawlerRuleCookies(final long ruleID) {
         synchronized (LINKCRAWLERRULESLOCK) {
             final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
             if (rules == null) {
@@ -552,7 +550,7 @@ public class LinkCrawler {
                 final ListIterator<LazyCrawlerPlugin> it = lazyCrawlerPlugins.listIterator();
                 while (it.hasNext()) {
                     final LazyCrawlerPlugin pDecrypt = it.next();
-                    if (StringUtils.equals("LinkCrawlerDeepHelper", pDecrypt.getDisplayName())) {
+                    if (StringUtils.equals("linkcrawlerdeephelper", pDecrypt.getDisplayName())) {
                         lazyDeepDecryptHelper.set(pDecrypt);
                         return pDecrypt;
                     }
@@ -995,14 +993,22 @@ public class LinkCrawler {
         return null;
     }
 
-    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, Browser br, CrawledLink source) throws Exception {
+    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
         if (lazyC == null) {
             throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
         }
         final PluginForDecrypt wplg = lazyC.newInstance(getPluginClassLoaderChild());
         final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
-        final LogInterface logger = br.getLogger();
+        final LogInterface logger;
+        if (matchingRule != null && matchingRule.isLogging()) {
+            logger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
+            br.setVerbose(true);
+            br.setDebug(true);
+        } else {
+            logger = LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost()));
+        }
+        br.setLogger(logger);
         wplg.setBrowser(br);
         wplg.init();
         LogInterface oldLogger = null;
@@ -1037,13 +1043,16 @@ public class LinkCrawler {
                 if (pluginNextLinkCrawler != null) {
                     nextLinkCrawler.set(pluginNextLinkCrawler);
                 }
-                return ((LinkCrawlerDeepHelperInterface) wplg).openConnection(br, source);
+                return ((LinkCrawlerDeepHelperInterface) wplg).openConnection(matchingRule, br, source);
             } finally {
                 /* close the logger */
                 wplg.setLinkCrawlerGeneration(null);
                 wplg.setCurrentLink(null);
                 final long endTime = System.currentTimeMillis() - startTime;
                 lazyC.updateCrawlRuntime(endTime);
+                if (logger instanceof ClosableLogInterface) {
+                    ((ClosableLogInterface) logger).close();
+                }
             }
         } finally {
             if (lct != null) {
@@ -1219,39 +1228,7 @@ public class LinkCrawler {
                         }
                     } else {
                         br = new Browser();
-                        br.addAllowedResponseCodes(500);
-                        if ((matchingRule != null && matchingRule.isLogging()) || LogController.getInstance().isDebugMode()) {
-                            br.setDebug(true);
-                            br.setVerbose(true);
-                            if (matchingRule != null) {
-                                br.setLogger(LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId()));
-                            } else {
-                                br.setLogger(LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost())));
-                            }
-                        }
-                        final List<String[]> setCookies = matchingRule != null ? getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
-                        if (setCookies != null) {
-                            for (final String cookie[] : setCookies) {
-                                if (cookie != null) {
-                                    if (cookie.length == 1) {
-                                        br.setCookie(source.getURL(), cookie[0], null);
-                                    } else if (cookie.length > 1) {
-                                        br.setCookie(source.getURL(), cookie[0], cookie[1]);
-                                    }
-                                }
-                            }
-                        }
-                        final URLConnectionAdapter connection = openCrawlDeeperConnection(generation, br, source);
-                        if (setCookies != null && matchingRule.isUpdateCookies()) {
-                            final Cookies cookies = br.getCookies(source.getURL());
-                            final List<String[]> currentCookies = new ArrayList<String[]>();
-                            for (final Cookie cookie : cookies.getCookies()) {
-                                if (!cookie.isExpired()) {
-                                    currentCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
-                                }
-                            }
-                            setLinkCrawlerRuleCookies(matchingRule.getId(), currentCookies);
-                        }
+                        final URLConnectionAdapter connection = openCrawlDeeperConnection(generation, matchingRule, br, source);
                         final CrawledLink deeperSource;
                         final String[] sourceURLs;
                         if (StringUtils.equals(connection.getRequest().getUrl(), source.getURL())) {

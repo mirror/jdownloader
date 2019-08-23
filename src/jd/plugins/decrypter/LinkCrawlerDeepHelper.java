@@ -11,6 +11,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerDeepHelperInterface;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
@@ -44,7 +45,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.translate._JDT;
 
-@DecrypterPlugin(revision = "$Revision: 40857 $", interfaceVersion = 3, names = { "LinkCrawlerDeepHelper" }, urls = { "" })
+@DecrypterPlugin(revision = "$Revision: 40857 $", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
 public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCrawlerDeepHelperInterface {
     public LinkCrawlerDeepHelper(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,8 +57,32 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
     }
 
     @Override
-    public URLConnectionAdapter openConnection(Browser br, CrawledLink source) throws Exception {
-        return openCrawlDeeperConnection(br, source, 0);
+    public URLConnectionAdapter openConnection(LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
+        br.addAllowedResponseCodes(500);
+        final List<String[]> setCookies = matchingRule != null ? getCrawler().getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
+        if (setCookies != null) {
+            for (final String cookie[] : setCookies) {
+                if (cookie != null) {
+                    if (cookie.length == 1) {
+                        br.setCookie(source.getURL(), cookie[0], null);
+                    } else if (cookie.length > 1) {
+                        br.setCookie(source.getURL(), cookie[0], cookie[1]);
+                    }
+                }
+            }
+        }
+        final URLConnectionAdapter ret = openCrawlDeeperConnection(br, source, 0);
+        if (matchingRule != null && matchingRule.isUpdateCookies()) {
+            final Cookies cookies = br.getCookies(source.getURL());
+            final List<String[]> currentCookies = new ArrayList<String[]>();
+            for (final Cookie cookie : cookies.getCookies()) {
+                if (!cookie.isExpired()) {
+                    currentCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
+                }
+            }
+            getCrawler().setLinkCrawlerRuleCookies(matchingRule.getId(), currentCookies);
+        }
+        return ret;
     }
 
     protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, CrawledLink source, int round) throws Exception {
@@ -117,9 +142,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
                     try {
                         br.followConnection();
                     } catch (IOException e) {
-                        if (br.getLogger() != null) {
-                            br.getLogger().log(e);
-                        }
+                        getLogger().log(e);
                     }
                 }
                 br.setCustomAuthenticationFactory(authenticationFactory);
@@ -140,9 +163,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
                 try {
                     br.followConnection();
                 } catch (IOException e) {
-                    if (br.getLogger() != null) {
-                        br.getLogger().log(e);
-                    }
+                    getLogger().log(e);
                 }
                 if (loopAvoid.add(location) == false) {
                     return openCrawlDeeperConnection(source, br, connection, round);
