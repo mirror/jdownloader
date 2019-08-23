@@ -157,20 +157,14 @@ public class FileJokerNet extends XFileSharingProBasicSpecialFilejoker {
     @Override
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-08-15: Special */
+        final String waitMsg = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait|Wait .*? to download for free)[^<>]+)").getMatch(0);
         super.checkErrors(link, account, checkAll);
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|Wait .*? to download for free)").matches()) {
+        if (waitMsg != null) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
-            String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs == null) {
-                tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            }
-            String tmpmin = new Regex(wait, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin == null) {
-                tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            }
-            String tmpsec = new Regex(wait, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(wait, "\\s+(\\d+)\\s+days?").getMatch(0);
+            final String tmphrs = new Regex(waitMsg, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            final String tmpmin = new Regex(waitMsg, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            final String tmpsec = new Regex(waitMsg, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            final String tmpdays = new Regex(waitMsg, "\\s+(\\d+)\\s+days?").getMatch(0);
             int waittime;
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime RegExes seem to be broken - using default waittime");
