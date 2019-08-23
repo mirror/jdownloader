@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,14 +33,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -96,22 +91,6 @@ public class TwitchTv extends PluginForHost {
     private final static String PARTNUMBERFORMAT          = "PARTNUMBERFORMAT";
     private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
     private String              dllink                    = null;
-
-    private Browser ajaxSubmitForm(final Form form) throws Exception {
-        final Browser ret = br.cloneBrowser();
-        ret.setAllowedResponseCodes(new int[] { 400 });
-        final Request request = ret.createFormRequest(form);
-        request.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        for (InputField inputField : form.getInputFields()) {
-            if ("authenticity_token".equals(inputField.getProperty("id", null))) {
-                request.getHeaders().put("X-CSRF-Token", Encoding.htmlDecode(URLDecoder.decode(inputField.getValue(), "UTF-8")));
-                break;
-            }
-        }
-        ret.getPage(request);
-        return ret;
-    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {

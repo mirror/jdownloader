@@ -61,9 +61,13 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
 
     private Browser ajaxGetPage(final String string) throws IOException {
         final Browser ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Accept", "application/vnd.twitchtv.v3+json");
-        ajax.getHeaders().put("Referer", "https://api.twitch.tv/crossdomain/receiver.html?v=2");
+        // https://dev.twitch.tv/docs/v5/
+        // For client IDs created on or after May 31, 2019, the only available version of the Kraken API is v5. For client IDs created prior
+        // to May 31, 2019, use the application/vnd.twitchtv.v5+json header on your requests to access v5 of the Kraken API.
+        ajax.getHeaders().put("Accept", "application/vnd.twitchtv.v5+json");
+        ajax.getHeaders().put("Referer", "https://www.twitch.tv");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Origin", "https://www.twitch.tv");
         ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.clientID);
         if (userApiToken != null) {
             ajax.getHeaders().put("Twitch-Api-Token", userApiToken);
@@ -278,7 +282,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
                 // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
-                Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
+                Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/videos/v" + vid);
                 if (ajax.getHttpConnection().getResponseCode() == 404) {
                     // offline
                     final String message = PluginJSonUtils.getJsonValue(ajax, "message");
