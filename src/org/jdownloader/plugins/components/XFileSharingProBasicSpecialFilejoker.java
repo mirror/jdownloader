@@ -3,11 +3,6 @@ package org.jdownloader.plugins.components;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -23,6 +18,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
@@ -95,8 +95,11 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 securityVerification.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.setFollowRedirects(true);
-                super.submitForm(securityVerification);
-                br.setFollowRedirects(redirectSetting);
+                try {
+                    super.submitForm(securityVerification);
+                } finally {
+                    br.setFollowRedirects(redirectSetting);
+                }
             }
         }
     }
@@ -112,8 +115,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
-     * issues/complicated handling which is required for website login and download! </br>
-     * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
+     * issues/complicated handling which is required for website login and download! </br> Sidenote: API Cookies will work fine for the
+     * website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
     protected boolean useAPIZeusCloudManager() {
         return true;
@@ -376,8 +379,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         } else if (!StringUtils.isEmpty(message)) {
             if (message.contains("This file can only be downloaded by Premium")) {
                 /*
-                 * 2019-08-21: novafile.com: E.g. {"file_size":"500000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx",
-                 * "message":"<strong>This file can only be downloaded by Premium Members 400 MB.<br>Become a <a href='#tariffs'>Premium Member</a> and download any files instantly at maximum speed!</strong>"
+                 * 2019-08-21: novafile.com: E.g. {"file_size":"500000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx", "message":
+                 * "<strong>This file can only be downloaded by Premium Members 400 MB.<br>Become a <a href='#tariffs'>Premium Member</a> and download any files instantly at maximum speed!</strong>"
                  * }
                  */
                 throw new AccountRequiredException();
