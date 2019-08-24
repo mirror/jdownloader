@@ -432,8 +432,9 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), V_AUDIO_DESCRIPTION, JDL.L("plugins.hoster.arte.V_AUDIO_DESCRIPTION", "Audio Deskription")).setDefaultValue(default_V_AUDIO_DESCRIPTION));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Sprachversionen:"));
-        final ConfigEntry cfge = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_URL, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_URL", "Sprachausgabe der URL laden (je nach dem, ob '/de/' oder '/fr/' im eingefügten Link steht)?\r\n<html><b>WICHTIG: Falls nur eine Sprachversion verfügbar ist, aber beide ausgewählt sind kann es passieren, dass diese doppelt (als deutsch und französisch gleicher Inhalt mit verschiedenen Dateinamen) im Linkgrabber landet!</b></html>")).setDefaultValue(default_LOAD_LANGUAGE_URL);
+        final ConfigEntry cfge = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_URL, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_URL", "Sprachausgabe der URL laden?\r\n<html><nobr>Dies ist abhängig davon, ob bspw. '/de/' oder '/fr/' im eingefügten Link steht</nobr></html>")).setDefaultValue(default_LOAD_LANGUAGE_URL);
         getConfig().addEntry(cfge);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "<html><b>WICHTIG: Falls nur eine Sprachversion verfügbar ist, aber beide ausgewählt sind kann es passieren, dass diese doppelt (als deutsch und französisch gleicher Inhalt mit verschiedenen Dateinamen) im Linkgrabber landet!</b></html>"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_GERMAN, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_GERMAN", "Sprachausgabe Deutsch laden?")).setDefaultValue(default_LOAD_LANGUAGE_GERMAN).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_FRENCH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_FRENCH", "Sprachausgabe Französisch laden?")).setDefaultValue(default_LOAD_LANGUAGE_FRENCH).setEnabledCondidtion(cfge, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_LANGUAGE_ENGLISH, JDL.L("plugins.hoster.arte.LOAD_LANGUAGE_ENGLISH", "Sprachausgabe Englisch laden?")).setDefaultValue(default_LOAD_LANGUAGE_ENGLISH).setEnabledCondidtion(cfge, false));
@@ -447,18 +448,25 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_THUMBNAIL_NAME_PATTERN, JDL.L("plugins.hoster.arte.CUSTOM_THUMBNAIL_NAME_PATTERN", "Muster für Thumbnail-Dateiname:")).setDefaultValue(default_CUSTOM_THUMBNAIL_NAME_PATTERN));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
-        sb.append("*title* = Title of the video\r\n");
-        sb.append("*date* = Date when the video aired - YYYY-MM-DD\r\n");
-        sb.append("*vpi* = ID of the video\r\n");
-        sb.append("*language* = Language of the video\r\n");
-        sb.append("*shortlanguage* = Short formatted language of the video\r\n");
-        sb.append("*resolution* = Size of video eg. 640x480\r\n");
-        sb.append("*bitrate* = Bitrate of video in kbit/s eg. 2200\r\n");
-        sb.append("For package and thumbnail names only *title* and *date* is available.");
+        sb.append("<html><table>");
+        sb.append("<tr><td>*title* </td><td>:</td><td>Title of the video</td></tr>");
+        sb.append("<tr><td>*date* </td><td>:</td><td>Date when the video aired formatted as YYYY-MM-DD, e.g. 2018-12-31</td></tr>");
+        sb.append("<tr><td>*vpi* </td><td>:</td><td>ID of the video</td></tr>");
+        sb.append("<tr><td>*language* </td><td>:</td><td>Language of the video, e.g. Deutsch</td></tr>");
+        sb.append("<tr><td>*shortlanguage* </td><td>:</td><td>Short formatted language of the video, e.g. DE</td></tr>");
+        sb.append("<tr><td>*resolution* </td><td>:</td><td>Size of video in pixel (width x height), e.g. 1280x720</td></tr>");
+        sb.append("<tr><td>*width* </td><td>:</td><td>Width of video in pixel, e.g. 1280</td></tr>");
+        sb.append("<tr><td>*height* </td><td>:</td><td>Height of video in pixel, e.g. 720</td></tr>");
+        sb.append("<tr><td>*bitrate* </td><td>:</td><td>Bitrate of video in kbit/s, e.g. 2200</td></tr>");
+        sb.append("<tr><td>*ext* </td><td>:</td><td>File-extension (optional), e.g. mp4 or jpg</td></tr>");
+        sb.append("</table>");
+        sb.append("For package and thumbnail patterns only *title* and *date* are available.");
+        sb.append("</html>");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Sonstiges:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Thumbnail laden?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.arte.fastlinkcheck", "Schnellen Linkcheck aktivieren?\r\n<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.arte.fastlinkcheck", "Schnellen Linkcheck aktivieren?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "<html><b>WICHTIG: Dadurch erscheinen die Links schneller im Linkgrabber, aber die Dateigröße wird erst beim Downloadstart (oder manuellem Linkcheck) angezeigt.</b></html>"));
     }
 }
