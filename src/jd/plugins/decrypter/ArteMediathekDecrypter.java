@@ -1001,8 +1001,17 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             formattedFileName = formattedFileName.replace("*title*", "missing_title");
         }
 
-        if (ext != null) {
-        	formattedFileName = formattedFileName + "." + ext; 
+        // Extension will be either replaced according to tag or if not given, appended
+        if (formattedFileName.contains("*ext*")) {
+        	if (ext != null) {
+        		formattedFileName = formattedFileName.replace("*ext*", ext);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*ext*", "");
+        	}
+        } else {
+	        if (ext != null) {
+	        	formattedFileName = formattedFileName + "." + ext; 
+	        }
         }
         
 	    return formattedFileName;
@@ -1029,6 +1038,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     	final String language = downloadLink.getStringProperty("versionLibelle", null);
     	final String shortlanguage = downloadLink.getStringProperty("versionShortLibelle", null);
     	final String resolution = downloadLink.getStringProperty("resolution", null);
+    	final String height = downloadLink.getStringProperty("height", null);
+    	final String width = downloadLink.getStringProperty("width", null);
     	final String bitrate = downloadLink.getStringProperty("bitrate", null);
     	final String ext = downloadLink.getStringProperty("ext", null);
     	
@@ -1067,6 +1078,20 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         		formattedFileName = formattedFileName.replace("*resolution*", "");
         	}
         }
+        if (formattedFileName.contains("*height*")) {
+        	if (height != null) {
+        		formattedFileName = formattedFileName.replace("*height*", height);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*height*", "");
+        	}
+        }
+        if (formattedFileName.contains("*width*")) {
+        	if (width != null) {
+        		formattedFileName = formattedFileName.replace("*width*", width);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*width*", "");
+        	}
+        }
         if (formattedFileName.contains("*bitrate*")) {
         	if (bitrate != null) {
         		formattedFileName = formattedFileName.replace("*bitrate*", bitrate);
@@ -1082,8 +1107,17 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             formattedFileName = formattedFileName.replace("*title*", "missing_title");
         }
 
-        if (ext != null) {
-        	formattedFileName = formattedFileName + "." + ext; 
+        // Extension will be either replaced according to tag or if not given, appended
+        if (formattedFileName.contains("*ext*")) {
+        	if (ext != null) {
+        		formattedFileName = formattedFileName.replace("*ext*", ext);
+        	} else {
+        		formattedFileName = formattedFileName.replace("*ext*", "");
+        	}
+        } else {
+	        if (ext != null) {
+	        	formattedFileName = formattedFileName + "." + ext; 
+	        }
         }
         
 	    return formattedFileName;
