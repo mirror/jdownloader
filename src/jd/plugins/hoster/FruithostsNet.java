@@ -23,7 +23,7 @@ import jd.plugins.HostPlugin;
 
 import org.jdownloader.plugins.components.FruithostedCDN;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com" }, urls = { "https?://(?:www\\.)?fruithosts\\.net/(?:f|embed)/([a-z0-9]+)(/[^/]+)?", "https?://(?:www\\.)?streamango\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com" }, urls = { "https?://(?:www\\.)?fruithosts\\.net/(?:f|embed)/([a-z0-9]+)(/[a-zA-Z0-9_\\-]+)?", "https?://(?:www\\.)?streamango\\.com/(?:f|embed)/([a-z0-9]+)(/[a-zA-Z0-9_\\-]+)?" })
 public class FruithostsNet extends FruithostedCDN {
     public FruithostsNet(final PluginWrapper wrapper) {
         super(wrapper);
