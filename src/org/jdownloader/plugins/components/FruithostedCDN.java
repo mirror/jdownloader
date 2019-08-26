@@ -15,15 +15,10 @@ package org.jdownloader.plugins.components;
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,6 +37,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class FruithostedCDN extends antiDDoSForHost {
     public FruithostedCDN(PluginWrapper wrapper) {
@@ -150,7 +152,7 @@ public class FruithostedCDN extends antiDDoSForHost {
                     sb.append(getDownloadLinkID(dl));
                     sb.append(",");
                 }
-                getPage(br, getAPIBase() + "/file/info?file=" + URLEncode.encodeURIComponent(sb.toString()));
+                getPage(br, URLHelper.parseLocation(new URL(getAPIBase()), "/file/info?file=" + URLEncode.encodeURIComponent(sb.toString())));
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 entries = (LinkedHashMap<String, Object>) entries.get("result");
                 LinkedHashMap<String, Object> finfo;
@@ -235,7 +237,7 @@ public class FruithostedCDN extends antiDDoSForHost {
         String dllink = null;
         final Form ticketForm = new Form();
         /* TODO: Add more errorhandling */
-        ticketForm.setAction(getAPIBase() + "file/dlticket");
+        ticketForm.setAction(URLHelper.parseLocation(new URL(getAPIBase()), "/file/dlticket"));
         ticketForm.setMethod(MethodType.GET);
         ticketForm.put("file", getDownloadLinkID(downloadLink));
         if (acc != null) {
@@ -390,7 +392,7 @@ public class FruithostedCDN extends antiDDoSForHost {
                  * 2019-01-01: API Login requires special name/password which can be found here: http://fruithosts.net/account#usersettings
                  * --> FTP/API Information
                  */
-                getPage(getAPIBase() + "/account/info?login=" + acc.getUser() + "&key=" + Encoding.urlEncode(acc.getPass()));
+                getPage(URLHelper.parseLocation(new URL(getAPIBase()), "/account/info?login=" + acc.getUser() + "&key=" + Encoding.urlEncode(acc.getPass())));
                 try {
                     handleErrorsAPI();
                 } catch (final PluginException e) {
@@ -511,6 +513,6 @@ public class FruithostedCDN extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        return null;
+        return AvailableStatus.UNCHECKED;
     }
 }

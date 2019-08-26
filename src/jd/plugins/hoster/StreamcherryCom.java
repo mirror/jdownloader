@@ -23,7 +23,7 @@ import jd.plugins.HostPlugin;
 
 import org.jdownloader.plugins.components.FruithostedCDN;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/([a-z0-9]+)(/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamcherry.com" }, urls = { "https?://(?:www\\.)?streamcherry\\.com/(?:f|embed)/([a-z0-9]+)(/[a-zA-Z0-9_\\-]+)?" })
 public class StreamcherryCom extends FruithostedCDN {
     public StreamcherryCom(final PluginWrapper wrapper) {
         super(wrapper);
