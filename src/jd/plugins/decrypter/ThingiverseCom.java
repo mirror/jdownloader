@@ -1,9 +1,19 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -11,12 +21,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision: 41147 $", interfaceVersion = 2, names = { "thingiverse.com" }, urls = { "https?://(www\\.)?thingiverse\\.com/(thing:\\d+|make:\\d+|[^/]+/(about|designs|collections(/[^/]+)?|makes|likes))" })
+@DecrypterPlugin(revision = "$Revision: 41147 $", interfaceVersion = 2, names = { "thingiverse.com" }, urls = { "https?://(www\\.)?thingiverse\\.com/(thing:\\d+|make:\\d+|[^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things))" })
 public class ThingiverseCom extends antiDDoSForDecrypt {
     public ThingiverseCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -27,12 +34,18 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         String fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
-        if (new Regex(br.getURL(), "/[^/]+/(about|designs|collections(/[^/]+)?|makes|likes)").matches()) {
-            // TODO add support for user-abouts/designs/collections/makes/likes, collections may have individual ones
-            // requires post requests to ajax api (pagination)
-            // please don't use wide/open pattern but try to make it as fine as possible
-            // TODO: /groups/XY , /groups/XY/things , /groups/XY/about
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (new Regex(br.getURL(), "/[^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)").matches()) {
+            // -------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------
+            // TODO: RegExes currently don't work for example https://www.thingiverse.com/groups/engineering/things
+            // -------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------
+            String[] links = getAPISearchLinks(br);
+            if (links != null && links.length > 0) {
+                for (String link : links) {
+                    decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
+                }
+            }
         } else if (StringUtils.containsIgnoreCase(br.getURL(), "/thing:")) {
             // a thing
             final String thingID = new Regex(br.getURL(), "thing:(\\d+).*").getMatch(0);
@@ -60,5 +73,30 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String[] getAPISearchLinks(Browser br) throws Exception {
+        final String sourceData = PluginJSonUtils.getJsonNested(br, "data").replace("\"source_data\":", "");
+        LinkedHashMap<String, String> searchValues = new ObjectMapper().readValue(sourceData, LinkedHashMap.class);
+        String[] results = null;
+        if (searchValues != null && searchValues.keySet().size() > 0) {
+            searchValues.put("page", "1");
+            searchValues.put("per_page", "999999999");
+            Browser br2 = br.cloneBrowser();
+            String postURL = br2.getURL("/ajax/user/designs").toString();
+            PostRequest post = new PostRequest(postURL);
+            UrlQuery postQuery = new UrlQuery();
+            for (String key : searchValues.keySet()) {
+                post.addVariable(key, String.valueOf(searchValues.get(key)));
+                postQuery.add(key, String.valueOf(searchValues.get(key)));
+            }
+            post.getHeaders().put("Origin", "https://www.thingiverse.com");
+            post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+            br2.setRequest(post);
+            postPage(br2, postURL, postQuery.toString());
+            results = br2.getRegex("a href=\"([^\"]+)\" class=\"card-img-holder").getColumn(0);
+        }
+        return results;
     }
 }
