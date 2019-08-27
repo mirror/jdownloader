@@ -379,7 +379,9 @@ public class DebridLinkFr extends PluginForHost {
                     mhm.handleErrorGeneric(account, link, "api_error_" + error, 3, 5 * 60 * 1000l);
                 } else if ("maxLinkHost".equals(error)) {
                     // max link limit reached, see linkLimit
-                    mhm.handleErrorGeneric(account, link, "api_error_" + error, 3, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, link, "api_error_" + error, 5, 5 * 60 * 1000l);
+                } else if ("maxDataHost".equals(error)) {
+                    mhm.handleErrorGeneric(account, link, "api_error_" + error, 5, 5 * 60 * 1000l);
                 } else if ("maxLink".equals(error)) {
                     // this is for any hoster, so can't effectively use account. temp disable?
                     throw new AccountUnavailableException("Download limit reached", 1 * 60 * 60 * 1001l);
@@ -480,18 +482,15 @@ public class DebridLinkFr extends PluginForHost {
         }
         String dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
         if (dllink == null) {
-            logger.warning("Unhandled download error on Service Provider:");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Failed to find dllink");
+            mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             errHandling(account, link, true);
-            if (br.containsHTML("<img src='http://debrid-link\\.fr/images/logo\\.png")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            }
             logger.warning("Unhandled download error on Service Provider side:");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            mhm.handleErrorGeneric(account, link, "final_downloadurl_isnot_a_file", 50, 5 * 60 * 1000l);
         }
         dl.startDownload();
     }

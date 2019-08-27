@@ -408,7 +408,7 @@ abstract public class ZeveraCore extends UseNet {
         }
         if (account.getType() == AccountType.FREE && supportsFreeMode(account)) {
             /* Display info-dialog regarding free account usage */
-            handleFreeModeLoginDialog("https://www." + account.getHoster() + "/free");
+            handleFreeModeLoginDialog(account, "https://www." + account.getHoster() + "/free");
         }
         if (directdl != null) {
             list.addAll(directdl);
@@ -418,14 +418,14 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @SuppressWarnings("deprecation")
-    private void handleFreeModeLoginDialog(final String url) {
-        final boolean showAlways = false;
+    private void handleFreeModeLoginDialog(final Account account, final String url) {
+        final boolean showAlways = true;
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
             if (showAlways || config.getBooleanProperty("featuredialog_login_Shown_2019_07_01", Boolean.FALSE) == false) {
                 if (showAlways || config.getProperty("featuredialog_login_Shown_2019_07_02") == null) {
-                    showFreeModeLoginInformation(url);
+                    showFreeModeLoginInformation(account, url);
                 } else {
                     config = null;
                 }
@@ -442,7 +442,10 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    private Thread showFreeModeLoginInformation(final String url) throws Exception {
+    private Thread showFreeModeLoginInformation(final Account account, final String url) throws Exception {
+        if (!displayFreeAccountDownloadDialogs(account)) {
+            return null;
+        }
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -479,26 +482,28 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @SuppressWarnings("deprecation")
-    private void handleFreeModeDownloadDialog(final String url) {
-        final boolean showAlways = true;
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (showAlways || config.getBooleanProperty("featuredialog_download_Shown_2019_07_1", Boolean.FALSE) == false) {
-                if (showAlways || config.getProperty("featuredialog_download_Shown_2019_07_2") == null) {
-                    showFreeModeDownloadInformation(url);
+    private void handleFreeModeDownloadDialog(final Account account, final String url) {
+        if (displayFreeAccountDownloadDialogs(account)) {
+            final boolean showAlways = false;
+            SubConfiguration config = null;
+            try {
+                config = getPluginConfig();
+                if (showAlways || config.getBooleanProperty("featuredialog_download_Shown_2019_07_1", Boolean.FALSE) == false) {
+                    if (showAlways || config.getProperty("featuredialog_download_Shown_2019_07_2") == null) {
+                        showFreeModeDownloadInformation(url);
+                    } else {
+                        config = null;
+                    }
                 } else {
                     config = null;
                 }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog_download_Shown_2019_07_1", Boolean.TRUE);
-                config.setProperty("featuredialog_download_Shown_2019_07_2", "shown");
-                config.save();
+            } catch (final Throwable e) {
+            } finally {
+                if (config != null) {
+                    config.setProperty("featuredialog_download_Shown_2019_07_1", Boolean.TRUE);
+                    config.setProperty("featuredialog_download_Shown_2019_07_2", "shown");
+                    config.save();
+                }
             }
         }
     }
@@ -762,6 +767,15 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
+     */
+    public boolean displayFreeAccountDownloadDialogs(final Account account) {
+        return false;
+    }
+
+    /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
      * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
      * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
@@ -806,7 +820,7 @@ abstract public class ZeveraCore extends UseNet {
                 if (account != null && account.getType() == AccountType.FREE && this.supportsFreeMode(account)) {
                     /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
                     message = "Premium required or activate free mode via premiumize.me/free";
-                    handleFreeModeDownloadDialog("https://www." + this.br.getHost() + "/free");
+                    handleFreeModeDownloadDialog(account, "https://www." + this.br.getHost() + "/free");
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 30 * 60 * 1000l);
                 } else {
                     message = "Traffic empty or fair use limit reached?";

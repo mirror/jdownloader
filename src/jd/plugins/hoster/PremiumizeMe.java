@@ -118,6 +118,10 @@ public class PremiumizeMe extends ZeveraCore {
             public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
                 return "Enable booster points unlimited traffic workaround for this account? \r\nThis is only for owners of booster-points! \r\nMore information: premiumize.me/booster";
             }
+
+            public String getDisplayFreeAccountDownloadDialogs_label() {
+                return "Display info-dialogs for enabled 'Free-Account-Download of cached files' Feature?";
+            }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
@@ -142,6 +146,13 @@ public class PremiumizeMe extends ZeveraCore {
         boolean isEnableBoosterPointsUnlimitedTrafficWorkaround();
 
         void setEnableBoosterPointsUnlimitedTrafficWorkaround(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isDisplayFreeAccountDownloadDialogs();
+
+        void setDisplayFreeAccountDownloadDialogs(boolean b);
     };
 
     @Override
@@ -156,12 +167,12 @@ public class PremiumizeMe extends ZeveraCore {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enablepairinglogin".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
+                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enablepairinglogin".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey()) || "displayfreeaccountdownloaddialogs".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"allowfreeaccountdownloads".equals(keyHandler.getKey()) && !"enablepairinglogin".equals(keyHandler.getKey()) && !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
+                return !"allowfreeaccountdownloads".equals(keyHandler.getKey()) && !"enablepairinglogin".equals(keyHandler.getKey()) && !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey()) && !"displayfreeaccountdownloaddialogs".equals(keyHandler.getKey());
             }
 
             @Override
@@ -214,6 +225,15 @@ public class PremiumizeMe extends ZeveraCore {
     @Override
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
         if (this.getAccountJsonConfig(account).isEnableBoosterPointsUnlimitedTrafficWorkaround()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean displayFreeAccountDownloadDialogs(final Account account) {
+        if (this.getAccountJsonConfig(account).isDisplayFreeAccountDownloadDialogs()) {
             return true;
         } else {
             return false;

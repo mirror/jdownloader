@@ -103,10 +103,21 @@ public class BestdebridCom extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
-            getAPISafe(API_BASE + "/generateLink?auth=" + Encoding.urlEncode(this.getApiKey(account)) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
+            /* 2019-08-27: Test-code regarding Free Account download which is only possible via website. */
+            final boolean use_website_for_free_account_downloads = false;
+            if (account.getType() == AccountType.FREE && use_website_for_free_account_downloads) {
+                this.br.postPage("https://bestdebrid.com/api/v1/generateLink", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=&boxlinklist=0");
+                dllink = PluginJSonUtils.getJsonValue(br, "link");
+                if (!StringUtils.isEmpty(dllink) && !dllink.startsWith("http") && !dllink.startsWith("/")) {
+                    dllink = "https://" + this.getHost() + "/" + dllink;
+                }
+            } else {
+                this.br.getPage(API_BASE + "/generateLink?auth=" + Encoding.urlEncode(this.getApiKey(account)) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            }
+            handleAPIErrors(this.br, account, link);
             dllink = PluginJSonUtils.getJsonValue(br, "link");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
@@ -116,7 +127,7 @@ public class BestdebridCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection(true);
-            handleKnownErrors(this.br, account, link);
+            handleAPIErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 5 * 60 * 1000l);
         }
         this.dl.startDownload();
@@ -195,8 +206,13 @@ public class BestdebridCom extends PluginForHost {
                  * ones these are. In the "Informations" tab there is a list of "Free hosters": https://bestdebrid.com/downloader (more
                  * precise: https://bestdebrid.com/info.php) For now, we will simply set the free account traffic to ZERO.
                  */
-                ai.setTrafficLeft(0);
-                // account.setMaxSimultanDownloads(1);
+                // ai.setTrafficLeft(0);
+                ai.setUnlimitedTraffic();
+                /*
+                 * 2019-08-37: Free-Account Downloads via API are not possible. Allow them anyways just in case this changes in the future.
+                 */
+                account.setMaxSimultanDownloads(1);
+                statusAcc += " [Downloads are only possible via browser]";
             }
         } else {
             account.setType(AccountType.PREMIUM);
@@ -247,8 +263,20 @@ public class BestdebridCom extends PluginForHost {
             // final String downsincedate = (String)entries.get("downsincedate");
             final String status = (String) entries.get("status");
             /* 2019-07-12: TLDs are missing - admin has been advised to change this! */
-            final String host = (String) entries.get("name");
+            String host = (String) entries.get("name");
             if (!StringUtils.isEmpty(host) && "up".equalsIgnoreCase(status)) {
+                /* 2019-08-27: Some workarounds for some bad given hostnames without TLD */
+                if (host.equalsIgnoreCase("openload")) {
+                    /*
+                     * 2019-08-27: Workaround for openload because we support "openload.cc" and "openload.co" (along with many more domains
+                     * of them) and it may be unclear what's ment so this is to make sure that the correct openload host gets recognized.
+                     */
+                    host = "openload.co";
+                } else if (host.equalsIgnoreCase("free")) {
+                    host = "dl.free.fr";
+                } else if (host.equalsIgnoreCase("load")) {
+                    host = "load.to";
+                }
                 supportedhostslist.add(host);
             }
         }
@@ -268,7 +296,7 @@ public class BestdebridCom extends PluginForHost {
                     /* E.g. {"error":"bad username OR bad password"} */
                     final String fail_reason = PluginJSonUtils.getJson(br, "message");
                     if (!StringUtils.isEmpty(fail_reason)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Reason: " + fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -288,23 +316,53 @@ public class BestdebridCom extends PluginForHost {
         }
     }
 
+    // private void loginWebsite(final Account account) throws IOException, PluginException {
+    // synchronized (account) {
+    // try {
+    // br.setFollowRedirects(true);
+    // final Cookies cookies = account.loadCookies("");
+    // boolean loggedIN = false;
+    // if (cookies != null) {
+    // br.setCookies(br.getHost(), cookies);
+    // br.getPage("https://" + this.getHost() + "/");
+    // loggedIN = this.isLoggedinWebsite();
+    // }
+    // if (!loggedIN) {
+    // br.getPage("https://" + this.getHost() + "/");
+    // br.postPage("https://" + this.getHost() + "/ajax/login.php?type=login" + Encoding.urlEncode(this.getApiKey(account)), "username=" +
+    // Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha=");
+    // if (!this.isLoggedinWebsite()) {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // }
+    // }
+    // account.saveCookies(br.getCookies(this.getHost()), "");
+    // } catch (PluginException e) {
+    // e.printStackTrace();
+    // if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+    // account.clearCookies("");
+    // }
+    // throw e;
+    // }
+    // }
+    // }
+    //
+    // private boolean isLoggedinWebsite() {
+    // return br.getCookie(this.getHost(), "SID", Cookies.NOTDELETEDPATTERN) != null;
+    // }
     private String getApiKey(final Account account) {
         return account.getPass();
     }
 
-    /** getPage with errorhandling */
-    private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        this.br.getPage(accesslink);
-        handleKnownErrors(this.br, account, link);
-    }
-
-    private void handleKnownErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         final String status = PluginJSonUtils.getJson(br, "error");
         final String errorStr = PluginJSonUtils.getJson(br, "message");
         if (status != null && !"0".equals(status)) {
             if (errorStr != null) {
                 if (errorStr.equalsIgnoreCase("Bad token (expired, invalid)")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (errorStr.equalsIgnoreCase("You need to be Premium to use our API.")) {
+                    /* 2019-08-27: Happens when you try to download via API via free account */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorStr, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             }
             mhm.handleErrorGeneric(account, link, "generic_api_error", 50, 5 * 60 * 1000l);

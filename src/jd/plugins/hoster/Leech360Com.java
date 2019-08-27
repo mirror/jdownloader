@@ -50,15 +50,14 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leech360.com" }, urls = { "" })
 public class Leech360Com extends PluginForHost {
     /* Connection limits */
-    private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final String          PROPERTY_API_TOKEN        = "api_login_token";
-    private final String                 default_UA                = "JDownloader";
-    private static final boolean         USE_API                   = true;
-    private final String                 website_html_loggedin     = "id=\"linkpass\"";
-    private static Object                LOCK                      = new Object();
-    private String                       currAPIToken              = null;
-    private static MultiHosterManagement mhm                       = new MultiHosterManagement("leech360.com");
+    private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final String          PROPERTY_API_TOKEN           = "api_login_token";
+    private static final boolean         USE_API                      = true;
+    private static final boolean         api_supports_free_accounts   = false;
+    private static final boolean         allow_free_account_downloads = false;
+    private String                       currAPIToken                 = null;
+    private static MultiHosterManagement mhm                          = new MultiHosterManagement("leech360.com");
 
     public Leech360Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,7 +71,7 @@ public class Leech360Com extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", default_UA);
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
     }
@@ -123,7 +122,7 @@ public class Leech360Com extends PluginForHost {
     private String getDllink(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
-            if (USE_API) {
+            if (USE_API && (account.getType() == AccountType.PREMIUM || api_supports_free_accounts)) {
                 dllink = getDllinkAPI(account, link);
             } else {
                 dllink = getDllinkWebsite(account, link);
@@ -151,7 +150,6 @@ public class Leech360Com extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isOK() || dl.getConnection().getLongContentLength() == -1) {
                 br.followConnection();
-                updatestatuscode();
                 handleAPIErrors(this.br, account, link);
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 3 * 60 * 1000l);
             }
@@ -205,7 +203,7 @@ public class Leech360Com extends PluginForHost {
          * might have stopped premium lifetime sales already as that has never been a good idea for any (M)OCH.
          */
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        loginWebsite(account, true);
         /*
          * Use 2nd browser object as we already got the page containing our supported hosts inside the login process and we do not want to
          * access it twice.
@@ -230,9 +228,18 @@ public class Leech360Com extends PluginForHost {
             final long trafficLeft = trafficMax - trafficUsed;
             ai.setTrafficLeft(trafficLeft);
             ai.setTrafficMax(trafficMax);
-        } else {
+        } else if (account.getType() == AccountType.PREMIUM) {
             /* Fallback */
             ai.setUnlimitedTraffic();
+        } else {
+            /* Set traffic for ZERO for free accounts if we failed to find it */
+            logger.info("Failed to find traffic_left --> Setting free account traffic to ZERO");
+            ai.setTrafficLeft(0);
+        }
+        if (account.getType() == AccountType.FREE && !allow_free_account_downloads) {
+            logger.info("Free account downloads are impossible --> Setting free account traffic to ZERO");
+            ai.setStatus(ai.getStatus() + " [Downloads only possibla via browser]");
+            ai.setTrafficLeft(0);
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final boolean userHasPremium = userOwnsPremiumAccount(account);
@@ -281,15 +288,9 @@ public class Leech360Com extends PluginForHost {
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, false);
-        final String error_message = PluginJSonUtils.getJson(br, "error_message");
-        if (StringUtils.containsIgnoreCase(error_message, "API only support for PREMIUM")) {
-            loginWebsite(account, true);
-            /* No additional check required as it's clear that this is a free account */
-            // if (br.containsHTML(">Free Member<")) {
-            account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
-            ai.setTrafficLeft(0);
-            return ai;
+        if (isFreeAccountsForbiddenViaAPI()) {
+            logger.info("User added FREE account which is not supported via API");
+            return fetchAccountInfoWebsite(account);
         }
         this.getAPISafe("https://" + account.getHoster() + "/api/get_userinfo?token=" + Encoding.urlEncode(this.currAPIToken), account, null);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -358,89 +359,91 @@ public class Leech360Com extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            /* Load cookies */
-            br.setCookiesExclusive(true);
-            this.br = prepBR(this.br);
-            if (USE_API) {
-                loginAPI(account, force);
-            } else {
-                loginWebsite(account, force);
-            }
+        /* Load cookies */
+        br.setCookiesExclusive(true);
+        this.br = prepBR(this.br);
+        if (USE_API) {
+            loginAPI(account, force);
+        } else {
+            loginWebsite(account, force);
         }
     }
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
-        try {
-            final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
-                this.br.setCookies(this.getHost(), cookies);
-                /*
-                 * Even though login is forced first check if our cookies are still valid --> If not, force login!
-                 */
-                br.getPage("https://" + this.getHost());
-                if (br.containsHTML(website_html_loggedin)) {
-                    return;
+        synchronized (account) {
+            try {
+                final Cookies cookies = account.loadCookies("");
+                boolean isLoggedin = false;
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    /*
+                     * Even though login is forced first check if our cookies are still valid --> If not, force login!
+                     */
+                    br.getPage("https://" + this.getHost());
+                    isLoggedin = this.isLoggedIN();
                 }
-                /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                this.br = prepBR(new Browser());
-            }
-            br.getPage("https://" + this.getHost() + "/sign-in.html");
-            String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-            this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData, account, null);
-            if (!br.containsHTML(website_html_loggedin)) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!isLoggedin) {
+                    logger.info("Performing full website-login");
+                    br.getPage("https://" + this.getHost() + "/sign-in.html");
+                    String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                    this.postAPISafe("https://" + this.getHost() + "/sign-in.html", postData, account, null);
+                    if (!this.isLoggedIN()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
             }
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
-        } catch (final PluginException e) {
-            account.clearCookies("");
-            throw e;
         }
+    }
+
+    private boolean isLoggedIN() {
+        return br.containsHTML("id=\"linkpass\"");
     }
 
     private void loginAPI(final Account account, final boolean force) throws Exception {
-        this.currAPIToken = account.getStringProperty(PROPERTY_API_TOKEN);
-        final long token_valid_until = account.getLongProperty("api_login_token_valid_until", 0);
-        if (this.currAPIToken != null && token_valid_until > System.currentTimeMillis()) {
-            /* Token should still be valid, let's blindly trust it! */
-            return;
+        synchronized (account) {
+            this.currAPIToken = account.getStringProperty(PROPERTY_API_TOKEN);
+            final long token_valid_until = account.getLongProperty("api_login_token_valid_until", 0);
+            if (this.currAPIToken != null && token_valid_until > System.currentTimeMillis()) {
+                /* Token should still be valid, let's blindly trust it! */
+                return;
+            }
+            /* Full login (generate new token) */
+            this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, null);
+            this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
+            if (isFreeAccountsForbiddenViaAPI()) {
+                /* Special state */
+                return;
+            } else if (StringUtils.isEmpty(this.currAPIToken)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
+            /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
+            /*
+             * TODO: Ask admin to return timestamp here. This way, he can adjust the validity of the token without us needing to change our
+             * code.
+             */
+            account.setProperty("api_login_token_valid_until", System.currentTimeMillis() + 8 * 60 * 1000);
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
-        /* Full login (generate new token) */
-        this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, null);
-        this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
-        final String error_message = PluginJSonUtils.getJson(br, "error_message");
-        if (StringUtils.isEmpty(this.currAPIToken)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
-        /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
-        /*
-         * TODO: Ask admin to return timestamp here. This way, he can adjust the validity of the token without us needing to change our
-         * code.
-         */
-        account.setProperty("api_login_token_valid_until", System.currentTimeMillis() + 8 * 60 * 1000);
-        account.saveCookies(this.br.getCookies(this.getHost()), "");
+    }
+
+    private boolean isFreeAccountsForbiddenViaAPI() {
+        return br.containsHTML("The caller does not have permission, API only support for PREMIUM\\.");
     }
 
     private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        br.setAllowedResponseCodes(400);
+        br.setAllowedResponseCodes(new int[] { 400 });
         br.getPage(accesslink);
-        updatestatuscode();
         handleAPIErrors(this.br, account, link);
     }
 
     private void postAPISafe(final String accesslink, final String postdata, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
         br.postPage(accesslink, postdata);
-        updatestatuscode();
         handleAPIErrors(this.br, account, link);
-    }
-
-    /** Keep this for possible future API implementation */
-    private void updatestatuscode() {
     }
 
     /**
@@ -450,23 +453,21 @@ public class Leech360Com extends PluginForHost {
      */
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         final String errorBooleanStr = PluginJSonUtils.getJson(br, "error");
-        final String errorMessage = PluginJSonUtils.getJson(br, "error_message");
-        if ("true".equalsIgnoreCase(errorBooleanStr) && !StringUtils.isEmpty(errorMessage)) {
-            if (StringUtils.equalsIgnoreCase("Free members do not support API.", errorMessage) || StringUtils.equalsIgnoreCase("API only support for PREMIUM", errorMessage)) {
-                /* Gets handled somewhere else! */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (link == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
-            } else if ("Invalid token".equalsIgnoreCase(errorMessage)) {
+        final String errormsg = PluginJSonUtils.getJson(br, "error_message");
+        if ("true".equalsIgnoreCase(errorBooleanStr) && !StringUtils.isEmpty(errormsg)) {
+            if ("Invalid token".equalsIgnoreCase(errormsg)) {
                 /* TODO_ check */
                 /* Reset token and retry via full login. */
                 link.setProperty(PROPERTY_API_TOKEN, Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "API token invalid");
-            } else if (errorMessage.matches("Sorry our .+ has reach bandwidth limit, please try again after few hours")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API token invalid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (errormsg.equalsIgnoreCase("Invalid Username or Password.")) {
+                /* Invalid logindata */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errormsg.matches("Sorry our .+ has reach bandwidth limit, please try again after few hours")) {
                 /* 2019-07-23: e.g. "Sorry our filer.net has reach bandwidth limit, please try again after few hours" */
                 mhm.putError(account, link, 10 * 60 * 1000l, "Bandwidth limit reached");
+            } else if (isFreeAccountsForbiddenViaAPI()) {
+                /* Ignore this one as it is handled elsewhere */
             } else {
                 /* E.g. "error_message":"Could not connect to download server, please try again!" */
                 mhm.handleErrorGeneric(account, link, "unknown_error_state", 50, 3 * 60 * 1000l);
