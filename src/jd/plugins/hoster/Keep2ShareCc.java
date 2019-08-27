@@ -69,7 +69,7 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public String[] siteSupportedNames() {
         // keep2.cc no dns
-        return new String[] { "keep2share.cc", "k2s.cc", "keep2s.cc", "k2share.cc", "keep2share.com" };
+        return new String[] { "keep2share.cc", "k2s.cc", "keep2s.cc", "k2share.cc", "keep2share.com", "keep2share" };
     }
 
     @Override

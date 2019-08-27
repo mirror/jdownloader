@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicknuploadOrg extends XFileSharingProBasic {
@@ -53,7 +53,16 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
+        final String[] supported_names_official = buildSupportedNames(getPluginDomains());
+        final String[] supported_names_full = new String[supported_names_official.length + 1];
+        int position = 0;
+        for (final String supported_name : supported_names_official) {
+            supported_names_full[position] = supported_name;
+            position++;
+        }
+        /* 2019-08-27: For multihoster 'missing TLD handling' */
+        supported_names_full[position] = "clicknupload";
+        return supported_names_full;
     }
 
     public static String[] getAnnotationUrls() {

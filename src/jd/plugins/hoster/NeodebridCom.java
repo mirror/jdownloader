@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -29,6 +30,8 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -41,15 +44,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodebrid.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodebrid.com" }, urls = { "https?://(?:www\\.)?neodebrid\\.com/dl/([A-Z0-9]+)" })
 public class NeodebridCom extends PluginForHost {
     /** Tags: cocoleech.com */
-    private static final String          API_BASE            = "https://neodebrid.com/api/v2";
-    private static MultiHosterManagement mhm                 = new MultiHosterManagement("neodebrid.com");
-    private static final int             defaultMAXDOWNLOADS = -1;
-    /** 2019-07-05: In my tests, neither chunkload nor resume were possible (premium account!) */
-    private static final int             defaultMAXCHUNKS    = 1;
-    private static final boolean         defaultRESUME       = false;
+    private static final String          API_BASE                   = "https://neodebrid.com/api/v2";
+    private static final boolean         api_supports_free_accounts = false;
+    private static MultiHosterManagement mhm                        = new MultiHosterManagement("neodebrid.com");
+    private static final int             defaultMAXDOWNLOADS        = -1;
+    /** 2019-08-26: In my tests, neither chunkload nor resume were possible (premium account!) */
+    private static final boolean         account_premium_resume     = false;
+    private static final int             account_premium_maxchunks  = 1;
+    /** 2019-08-26: TODO: Check/update these Free Account limits */
+    private static final boolean         account_FREE_resume        = true;
+    private static final int             account_FREE_maxchunks     = 0;
 
     @SuppressWarnings("deprecation")
     public NeodebridCom(PluginWrapper wrapper) {
@@ -62,52 +69,98 @@ public class NeodebridCom extends PluginForHost {
         return "https://neodebrid.com/tos";
     }
 
-    private Browser newBrowser() {
+    private Browser newBrowserAPI() {
         br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private Browser newBrowserWebsite() {
+        br = new Browser();
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account == null) {
-            /* without account its not possible to download the link */
-            return false;
-        } else {
-            return true;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        newBrowserWebsite();
+        br.getPage(link.getPluginPatternMatcher());
+        if (this.isOffline(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String filename = br.getRegex("<b>Filename\\s*:\\s*</b>([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = getFID(link);
+        }
+        String filesize = br.getRegex("<b>Filesize\\s*:\\s*</b>([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        handleDLSelfhosted(null, link);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        requestFileInformation(link);
+        handleDLSelfhosted(account, link);
     }
 
-    private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, this.getHost() + "directlink");
-        br.setFollowRedirects(true);
+    private void handleDLSelfhosted(final Account account, final DownloadLink link) throws Exception {
+        String dllink = checkDirectLink(link, this.getHost() + "directurl_selfhosted");
         if (dllink == null) {
-            this.loginAPI(account);
-            getAPISafe(API_BASE + "/download?token=" + this.getApiToken(account) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
-            dllink = PluginJSonUtils.getJsonValue(br, "download");
-            if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
-            }
+            dllink = getDllinkWebsiteCaptcha(account, link);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, account_FREE_maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                /* 2019-08-26: This happens quite often! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+            }
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadlink did not lead to downloadable content");
+        }
+        this.dl.startDownload();
+    }
+
+    private void handleDLMultihoster(final Account account, final DownloadLink link, final String dllink) throws Exception {
+        if (StringUtils.isEmpty(dllink)) {
+            mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
+        }
+        link.setProperty(this.getHost() + "directlink", dllink);
+        final boolean resume;
+        final int maxchunks;
+        if (account.getType() == AccountType.FREE) {
+            resume = account_premium_resume;
+            maxchunks = account_premium_maxchunks;
+        } else {
+            resume = account_FREE_resume;
+            maxchunks = account_FREE_maxchunks;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection(true);
             /* 402 - Payment required */
@@ -116,7 +169,7 @@ public class NeodebridCom extends PluginForHost {
                 account.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            handleKnownErrors(this.br, account, link);
+            handleErrorsAPI(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }
         this.dl.startDownload();
@@ -129,9 +182,87 @@ public class NeodebridCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        this.br = newBrowserAPI();
         mhm.runCheck(account, link);
-        handleDL(account, link);
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
+        br.setFollowRedirects(true);
+        if (dllink == null) {
+            if (account.getType() == AccountType.FREE && !api_supports_free_accounts) {
+                /* first try to get saved directurl */
+                dllink = this.checkDirectLink(link, this.getHost() + "directurl_selfhosted");
+                if (dllink == null) {
+                    dllink = generateDllinkWebsiteFreeMode(account, link);
+                }
+            } else {
+                dllink = getDllinkAPI(account, link);
+            }
+        }
+        handleDLMultihoster(account, link, dllink);
+    }
+
+    /** Generated downloadlinks via API. */
+    private String getDllinkAPI(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        br.setFollowRedirects(true);
+        this.loginAPI(account);
+        getAPISafe(API_BASE + "/download?token=" + this.getApiToken(account) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
+        return PluginJSonUtils.getJsonValue(br, "download");
+    }
+
+    /** Generates downloadlinks via website. */
+    private String generateDllinkWebsiteFreeMode(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        newBrowserWebsite();
+        /* 2019-08-24: Not required */
+        // this.loginAPI(account);
+        /* Try to re-use previously generated URLs so we're not wasting traffic! */
+        String internal_url = link.getStringProperty(this.getHost() + "selfhosted_free_download_url", null);
+        boolean generate_new_internal_url = internal_url == null;
+        if (internal_url != null) {
+            br.getPage(internal_url);
+            generate_new_internal_url = this.isOffline(this.br);
+        }
+        if (generate_new_internal_url) {
+            logger.info("Generating new directurl");
+            br.getPage("https://" + this.getHost() + "/process?link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            internal_url = br.getRegex("(https?://[^/]+/dl/[A-Z0-9]+)").getMatch(0);
+            if (StringUtils.isEmpty(internal_url)) {
+                logger.warning("Failed to find generated 'internal_url'");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setProperty(this.getHost() + "selfhosted_free_download_url", internal_url);
+            this.br.getPage(internal_url);
+        } else {
+            logger.info("Re-using previously generated- and saved directurl");
+        }
+        return getDllinkWebsiteCaptcha(account, link);
+    }
+
+    private String getDllinkWebsiteCaptcha(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        /* 2019-08-24: Login is not required */
+        // this.loginAPI(account);
+        Form captchaform = br.getFormbyActionRegex(".*/redirect.*");
+        if (captchaform == null) {
+            /* Fallback */
+            captchaform = br.getForm(0);
+        }
+        if (captchaform == null) {
+            logger.warning("captchaform is null");
+        }
+        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+        captchaform.put("g-recaptcha-response", recaptchaV2Response);
+        br.setFollowRedirects(false);
+        br.submitForm(captchaform);
+        final String dllink = br.getRedirectLocation();
+        if (!StringUtils.isEmpty(dllink)) {
+            /* Store directurl */
+            link.setProperty(this.getHost() + "directurl_selfhosted", dllink);
+        }
+        return dllink;
+    }
+
+    private boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Link not found, please re-generate your link");
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -161,7 +292,7 @@ public class NeodebridCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
+        this.br = newBrowserAPI();
         final AccountInfo ai = new AccountInfo();
         loginAPI(account);
         if (br.getURL() == null || !br.getURL().contains("/info?token")) {
@@ -169,16 +300,47 @@ public class NeodebridCom extends PluginForHost {
         }
         final String expireTimestampStr = PluginJSonUtils.getJson(br, "timestamp");
         /* 2019-07-05: Will usually return 'Unlimited' for premium accounts and 'XX GB' for free accounts */
-        final String traffic_leftStr = PluginJSonUtils.getJson(br, "traffic_left");
+        String traffic_leftStr = PluginJSonUtils.getJson(br, "traffic_left");
         long validuntil = 0;
+        int filesPerDayLeft = 0;
         if (expireTimestampStr != null && expireTimestampStr.matches("\\d+")) {
             validuntil = Long.parseLong(expireTimestampStr) * 1000l;
         }
         if (validuntil < System.currentTimeMillis()) {
+            /* 2019-08-26: API will always return static value '1 GB' trafficleft for free accounts which is wrong! */
+            /*
+             * 2019-08-26: FREE (account) Limits are based on IP which means it makes no difference whether we download without account or
+             * with a free account!
+             */
+            final boolean enable_free_account_traffic_workaround = true;
+            String accountStatus = "Free account";
+            if (enable_free_account_traffic_workaround) {
+                /* Try to find correct 'trafficleft' value via website. */
+                this.br.getPage("https://" + this.getHost() + "/home");
+                final Regex filesLeftRegex = br.getRegex(">Files per day :</b>\\s*(\\d+)\\s*/\\s*(\\d+)\\s*<br>");
+                final Regex trafficRegex = br.getRegex(">Traffic :</b>\\s*([^<>\"]+)\\s*/\\s*([^<>\"]+)<");
+                final String trafficLeftStrTmp = trafficRegex.getMatch(0);
+                final String trafficMaxStrTmp = trafficRegex.getMatch(1);
+                final String filesPerDayUsedStr = filesLeftRegex.getMatch(0);
+                final String filesPerDayMaxStr = filesLeftRegex.getMatch(1);
+                if (filesPerDayMaxStr != null && filesPerDayUsedStr != null) {
+                    filesPerDayLeft = Integer.parseInt(filesPerDayMaxStr) - Integer.parseInt(filesPerDayUsedStr);
+                } else {
+                    filesPerDayLeft = 0;
+                }
+                if (trafficLeftStrTmp != null && trafficMaxStrTmp != null) {
+                    traffic_leftStr = trafficLeftStrTmp;
+                    ai.setTrafficMax(trafficMaxStrTmp);
+                }
+                accountStatus += " [" + filesPerDayLeft + " files per day left today]";
+            }
             account.setType(AccountType.FREE);
-            ai.setStatus("Free account");
+            ai.setStatus(accountStatus);
             // account.setMaxSimultanDownloads(1);
         } else {
+            /* Premium */
+            /* Premium has unlimited files per day */
+            filesPerDayLeft = -1;
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
@@ -187,7 +349,12 @@ public class NeodebridCom extends PluginForHost {
         if ("Unlimited".equalsIgnoreCase(traffic_leftStr)) {
             ai.setUnlimitedTraffic();
         } else {
-            ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftStr));
+            if (filesPerDayLeft == 0) {
+                logger.info("Setting ZERO trafficleft because filesPerDayLeft is 0");
+                ai.setTrafficLeft(0);
+            } else {
+                ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftStr));
+            }
         }
         /*
          * Get list of supported hosts. Sadly they do not display free/premium hosts but always return all supported hosts. On their website
@@ -256,10 +423,10 @@ public class NeodebridCom extends PluginForHost {
     /** getPage with errorhandling */
     private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
         this.br.getPage(accesslink);
-        handleKnownErrors(this.br, account, link);
+        handleErrorsAPI(this.br, account, link);
     }
 
-    private void handleKnownErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+    private void handleErrorsAPI(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         final String status = PluginJSonUtils.getJson(br, "status");
         final String errorStr = PluginJSonUtils.getJson(br, "reason");
         if (!"success".equalsIgnoreCase(status)) {
@@ -279,6 +446,10 @@ public class NeodebridCom extends PluginForHost {
             logger.info("Unknown API error happened");
             mhm.handleErrorGeneric(account, link, "generic_api_error", 50, 5 * 60 * 1000l);
         }
+    }
+
+    private void handleErrorsWebsite(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        /** 2019-08-24: TODO */
     }
 
     @Override
