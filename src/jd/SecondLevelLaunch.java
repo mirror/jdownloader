@@ -36,6 +36,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
 
+import javax.net.ssl.SSLException;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
@@ -82,6 +83,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -635,7 +637,14 @@ public class SecondLevelLaunch {
                         HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
                         LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: UJCECheck was not successful! Java-" + javaVersion);
                     } else {
-                        LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory! Java-" + javaVersion);
+                        try {
+                            // synology has broken/incomplete java packages that are missing ECDHE_ECDSA
+                            JavaSSLSocketStreamFactory.isCipherSuiteSupported(new String[] { "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256" });
+                            LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory! Java-" + javaVersion);
+                        } catch (final SSLException e) {
+                            HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
+                            LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: " + e + "! Java-" + javaVersion);
+                        }
                     }
                 } catch (final Throwable e) {
                     LoggerFactory.getDefaultLogger().log(e);
