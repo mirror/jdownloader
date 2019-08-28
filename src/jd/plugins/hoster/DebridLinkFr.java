@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -41,6 +37,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class DebridLinkFr extends PluginForHost {
@@ -476,13 +476,15 @@ public class DebridLinkFr extends PluginForHost {
         final String resume = PluginJSonUtils.getJsonValue(br, "resume");
         if (chunk != null && !"0".equals(chunk)) {
             maxChunks = -Integer.parseInt(chunk);
+            logger.info("CustomMaxChunks:" + maxChunks);
         }
         if (link.getLinkStatus().getRetryCount() >= 3) {
-            logger.info("Too many failures --> Trying again with max. 2 chunks");
-            maxChunks = -2;
+            maxChunks = Math.max(-2, maxChunks);
+            logger.info("Too many failures --> Trying again with max. " + maxChunks + " chunks");
         }
         if (resume != null) {
             resumes = Boolean.parseBoolean(resume);
+            logger.info("CustomResume:" + resumes);
         }
         String dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
         if (dllink == null) {

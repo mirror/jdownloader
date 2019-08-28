@@ -45,9 +45,15 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     public List<AbstractNode> getAbstractNodes(long[] linkIds, long[] packageIds) {
-        final ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
+        ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
         if ((packageIds != null && packageIds.length > 0) || (linkIds != null && linkIds.length > 0)) {
             convertIdsToObjects(ret, linkIds, packageIds);
+            if (ret.size() == 0) {
+                /*
+                 * workaround for webinterface that sent parameters in wrong order
+                 */
+                convertIdsToObjects(ret, packageIds, linkIds);
+            }
         }
         return ret;
     }
