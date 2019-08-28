@@ -223,10 +223,11 @@ public class NeodebridCom extends PluginForHost {
         if (generate_new_internal_url) {
             logger.info("Generating new directurl");
             br.getPage("https://" + this.getHost() + "/process?link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            handleErrorsWebsite(br, account, link);
             internal_url = br.getRegex("(https?://[^/]+/dl/[A-Z0-9]+)").getMatch(0);
             if (StringUtils.isEmpty(internal_url)) {
                 logger.warning("Failed to find generated 'internal_url'");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find generated 'internal_url' or unknown error occured");
             } else if (isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -450,6 +451,9 @@ public class NeodebridCom extends PluginForHost {
 
     private void handleErrorsWebsite(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         /** 2019-08-24: TODO */
+        if (br.containsHTML("Error: Maximum filesize for free users")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Max freeuser filesize reached");
+        }
     }
 
     @Override

@@ -13,16 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,10 +32,9 @@ import jd.plugins.PluginForDecrypt;
 
 /**
  * @author raztoki
- * */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prialepaste.com", "anonymizer.link" }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})", "https?://[\\w\\.]*anonymizer\\.link/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" }) 
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prialepaste.com", "anonymizer.link" }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})", "https?://[\\w\\.]*anonymizer\\.link/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" })
 public class PrlPstCm extends PluginForDecrypt {
-
     public PrlPstCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,8 +57,15 @@ public class PrlPstCm extends PluginForDecrypt {
             // /p/uid support
             br.getPage(parameter);
             if (br.containsHTML("Entrada no existe!")) {
-                logger.info("Not a valid URL, or plugin could be broken, please confirm in your personal Web Browser! " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
+            }
+            final Form captchaform = br.getFormbyProperty("class", "recaptcha-form");
+            if (captchaform != null) {
+                /* 2019-08-28: New: URLs can be captcha protected */
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                captchaform.put("g-recaptcha-response", recaptchaV2Response);
+                br.submitForm(captchaform);
             }
             String filter = br.getRegex("<table[^>]+>(.*?)</table>").getMatch(0);
             if (filter == null) {
@@ -73,7 +81,6 @@ public class PrlPstCm extends PluginForDecrypt {
                 // not finding links isn't a error!
             }
         }
-
         return decryptedLinks;
     }
 
@@ -81,5 +88,4 @@ public class PrlPstCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

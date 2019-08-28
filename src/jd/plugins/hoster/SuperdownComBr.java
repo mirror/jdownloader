@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -41,17 +40,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "https?://[\\w]+\\.superdown\\.com\\.br/(?:superdown/)?\\w+/[a-zA-Z0-9]+/\\d+/\\S+" })
 public class SuperdownComBr extends antiDDoSForHost {
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            DOMAIN             = "https://superdown.com.br/";
-    private static final String                            NICE_HOST          = "superdown.com.br";
-    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private final String                                   html_loggedin      = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
-    private static Object                                  LOCK               = new Object();
+    private static MultiHosterManagement mhm           = new MultiHosterManagement("superdown.com.br");
+    private final String                 html_loggedin = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
+    private static Object                LOCK          = new Object();
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,7 +65,7 @@ public class SuperdownComBr extends antiDDoSForHost {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCustomCharset("utf-8");
-            prepBr.setCookie(DOMAIN, "locale", "en");
+            prepBr.setCookie(this.getHost(), "locale", "en");
             prepBr.setFollowRedirects(true);
         }
         return prepBr;
@@ -172,71 +168,14 @@ public class SuperdownComBr extends antiDDoSForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        int maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks, true);
+        link.setProperty(this.getHost() + "directlink", dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0, true);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            logger.info(NICE_HOST + ": Unknown download error");
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
+            mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
         }
-        try {
-            link.setProperty("usedPlugin", getHost());
-            if (!dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                logger.info("Download failed -> Maybe re-trying with only 1 chunk");
-                /* unknown error, we disable multiple chunks */
-                disableChunkload(link);
-                logger.info("Download failed -> Retry with 1 chunk did not solve the problem");
-            }
-        } catch (final PluginException e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-            /* This may happen if the downloads stops at 99,99% - a few retries usually help in this case */
-            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
-                logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
-                logger.info("DOWNLOAD_INCOMPLETE -> Maybe re-trying with only 1 chunk");
-                /* unknown error, we disable multiple chunks */
-                disableChunkload(link);
-                logger.info("DOWNLOAD_INCOMPLETE -> Retry with 1 chunk did not solve the problem");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 5) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", timesFailed);
-                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - Retrying!");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_dl_incomplete");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", Property.NULL);
-                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
-            }
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(SuperdownComBr.NOCHUNKS, false) == false) {
-                link.setProperty(SuperdownComBr.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        link.setProperty("usedPlugin", getHost());
+        dl.startDownload();
     }
 
     @Override
@@ -246,24 +185,9 @@ public class SuperdownComBr extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
-        showMessage(link, "Task 1: Generating Link");
+        mhm.runCheck(account, link);
         login(account, false);
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
@@ -280,17 +204,7 @@ public class SuperdownComBr extends antiDDoSForHost {
                 handleSpecificErrors(link, account);
             }
             if (dllink == null || (dllink != null && dllink.length() > 500)) {
-                logger.info(NICE_HOST + ": Unknown error");
-                int timesFailed = link.getIntegerProperty("NICE_HOSTproperty + timesfailed_dllinknull", 0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", Property.NULL);
-                    logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
@@ -339,15 +253,6 @@ public class SuperdownComBr extends antiDDoSForHost {
             }
         }
         return dllink;
-    }
-
-    private void disableChunkload(final DownloadLink dl) throws PluginException {
-        /* unknown error, we disable multiple chunks */
-        if (dl.getBooleanProperty(SuperdownComBr.NOCHUNKS, false) == false) {
-            dl.setProperty(SuperdownComBr.NOCHUNKS, Boolean.valueOf(true));
-            dl.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
     }
 
     @Override
@@ -416,22 +321,6 @@ public class SuperdownComBr extends antiDDoSForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -471,11 +360,7 @@ public class SuperdownComBr extends antiDDoSForHost {
                 }
                 postPage("/login", postData);
                 if (!br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -491,8 +376,5 @@ public class SuperdownComBr extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        if (link != null) {
-            link.setProperty(NOCHUNKS, Property.NULL);
-        }
     }
 }
