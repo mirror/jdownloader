@@ -41,8 +41,14 @@ public class FileJokerNet extends XFileSharingProBasicSpecialFilejoker {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
         this.setConfigElements();
-        /* 2019-08-20: Without this, users might experience 503 errors via API and captchas via website */
-        this.setStartIntervall(2000l);
+        /* 2019-08-20: Without this, users might experience 503 errors via API and captchas via website. Website is more strict than API! */
+        if (useAPIZeusCloudManager()) {
+            /* 2019-08-28: Tested - this should avoid 503 errors completely */
+            this.setStartIntervall(2000l);
+        } else {
+            /* 2019-08-28: Tested - this should avoid 'site-verification' captchas completely! */
+            this.setStartIntervall(8000l);
+        }
     }
 
     @Override

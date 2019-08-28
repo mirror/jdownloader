@@ -3,8 +3,14 @@ package org.jdownloader.plugins.components;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -18,11 +24,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
@@ -115,8 +116,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
-     * issues/complicated handling which is required for website login and download! </br> Sidenote: API Cookies will work fine for the
-     * website too so if enabled- and later disabled, login-captchas should still be avoided!
+     * issues/complicated handling which is required for website login and download! </br>
+     * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
     protected boolean useAPIZeusCloudManager() {
         return true;
@@ -143,6 +144,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         boolean loggedIN = false;
         String sessionid = getAPIZeusCloudManagerSession(account);
         try {
+            String error = null;
             if (!StringUtils.isEmpty(sessionid)) {
                 if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                     /* We trust these cookies as they're not that old --> Do not check them */
@@ -151,14 +153,23 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 }
                 /* First check if old session is still valid */
                 getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
+                error = PluginJSonUtils.getJson(br, "error");
                 /* Check for e.g. "{"error":"invalid session"}" */
-                loggedIN = StringUtils.isEmpty(PluginJSonUtils.getJson(br, "error"));
+                /*
+                 * 2019-08-28: Errors may happen at this stage but we only want to perform a full login if we're absolutely sure that our
+                 * current sessionID is invalid!
+                 */
+                if (!"invalid session".equalsIgnoreCase(error)) {
+                    loggedIN = true;
+                    this.checkErrorsAPIZeusCloudManager(null, account);
+                }
             }
             if (!loggedIN) {
                 getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + String.format(getRelativeAPILoginParamsFormatAPIZeusCloudManager(), Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass())));
-                final String error = PluginJSonUtils.getJson(br, "error");
                 sessionid = PluginJSonUtils.getJson(br, "session");
-                if (!StringUtils.isEmpty(error) || StringUtils.isEmpty(sessionid)) {
+                error = PluginJSonUtils.getJson(br, "error");
+                this.checkErrorsAPIZeusCloudManager(null, account);
+                if (StringUtils.isEmpty(sessionid)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.setProperty("zeus_cloud_sessionid", sessionid);
@@ -221,7 +232,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         /* Important! Set fuid as we do not check availibility via website via requestFileInformationWebsite! */
         this.fuid = getFUIDFromURL(link);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String dllink = checkDirectLink(link, directlinkproperty);
+        String dllink = checkDirectLinkAPIZeusCloudManager(link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
             final String sessionid = this.getAPIZeusCloudManagerSession(account);
             this.getPage(this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=download1&session=" + sessionid + "&file_code=" + fuid);
@@ -254,6 +265,55 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             }
         }
         this.handleDownload(link, account, dllink, null);
+    }
+
+    protected final String checkDirectLinkAPIZeusCloudManager(final DownloadLink link, final String property) {
+        /* 2019-08-28: Special */
+        final String directurl = link.getStringProperty(property, null);
+        if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http")) {
+            return null;
+        } else {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
+                /* For video streams we often don't get a Content-Disposition header. */
+                // final boolean isFile = con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "video") ||
+                // StringUtils.containsIgnoreCase(con.getContentType(), "audio") || StringUtils.containsIgnoreCase(con.getContentType(),
+                // "application");
+                /*
+                 * 2019-08-28: contentDisposition is always there plus invalid URLs might have: Content-Type: application/octet-stream -->
+                 * 'application' as Content-Type is no longer an indication that we can expect a file!
+                 */
+                final boolean isFile = con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "video") || StringUtils.containsIgnoreCase(con.getContentType(), "audio");
+                if (con.getResponseCode() == 503) {
+                    /* Ok */
+                    /*
+                     * Too many connections but that does not mean that our directlink is invalid. Accept it and if it still returns 503 on
+                     * download-attempt this error will get displayed to the user - such directlinks should work again once there are less
+                     * active connections to the host!
+                     */
+                    logger.info("directurl lead to 503 | too many connections");
+                    return directurl;
+                } else if (!con.getContentType().contains("html") && con.getLongContentLength() > -1 && con.isOK() && isFile) {
+                    return directurl;
+                } else {
+                    /* Failure */
+                }
+            } catch (final Exception e) {
+                /* Failure */
+                logger.log(e);
+            } finally {
+                if (con != null) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            return null;
+        }
     }
 
     @Override
