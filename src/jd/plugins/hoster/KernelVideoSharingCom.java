@@ -776,31 +776,18 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (url_source == null) {
             return null;
         }
-        String fuid = regexFUIDSpecial(url_source);
-        if (fuid == null) {
-            if (url_source.matches(type_only_numbers)) {
-                fuid = new Regex(url_source, type_only_numbers).getMatch(0);
-            } else if (url_source.matches(type_embedded)) {
-                fuid = new Regex(url_source, type_embedded).getMatch(0);
-            } else if (url_source.matches(type_normal_fuid_at_end)) {
-                fuid = new Regex(url_source, type_normal_fuid_at_end).getMatch(1);
-            } else if (url_source.matches(type_normal)) {
-                fuid = new Regex(url_source, type_normal).getMatch(0);
-            } else if (br != null) {
-                /* Rare case: No fuid given inside URL so we can try to find it via embed URL inside html. Example: thisvid.com */
-                fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
-            }
-        }
-        return fuid;
-    }
-
-    /** For special cases */
-    public static String regexFUIDSpecial(final String url_source) {
         String fuid = null;
-        final String special_xcum_com = "https?://[^/]+/v/(\\d+).*";
-        if (url_source.matches(special_xcum_com)) {
-            /* 2019-08-28: E.g. xcum.com */
-            fuid = new Regex(url_source, special_xcum_com).getMatch(0);
+        if (url_source.matches(type_only_numbers)) {
+            fuid = new Regex(url_source, type_only_numbers).getMatch(0);
+        } else if (url_source.matches(type_embedded)) {
+            fuid = new Regex(url_source, type_embedded).getMatch(0);
+        } else if (url_source.matches(type_normal_fuid_at_end)) {
+            fuid = new Regex(url_source, type_normal_fuid_at_end).getMatch(1);
+        } else if (url_source.matches(type_normal)) {
+            fuid = new Regex(url_source, type_normal).getMatch(0);
+        } else if (br != null) {
+            /* Rare case: No fuid given inside URL so we can try to find it via embed URL inside html. Example: thisvid.com */
+            fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
         }
         return fuid;
     }
