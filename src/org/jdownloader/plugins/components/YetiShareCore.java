@@ -1132,12 +1132,12 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             getPage("/upgrade.html");
             /* If the premium account is expired we'll simply accept it as a free account. */
-            String expireStr = br.getRegex("Reverts To Free Account\\s*:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            String expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</td>\\s*<td>\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expireStr == null) {
                 expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</span>\\s*<input[^>]*value\\s*=\\s*\"(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
                 if (expireStr == null) {
                     /* More wide RegEx to be more language independant (e.g. required for freefile.me) */
-                    expireStr = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+                    expireStr = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
                 }
             }
             if (expireStr == null) {

@@ -25,6 +25,8 @@ import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -56,28 +58,34 @@ public class FourShareVn extends PluginForHost {
         return super.rewriteHost(host);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         prepBR();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.containsHTML(">FID Không hợp lệ\\!|file not found|(F|f)ile (này)? đã bị xóa|File không tồn tại?| Error: FileLink da bi xoa|>Xin lỗi Bạn, file này không còn tồn tại|File suspended:") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title> 4Share\\.vn \\-([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>Download ([^<>\"]+) \\| 4share\\.vn\\s*</title>").getMatch(0);
         }
-        final String filesize = br.getRegex(">\\s*Kích thước\\s*:\\s*<strong>\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*</strong>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex(">\\s*Kích thước\\s*:\\s*<strong>\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*</strong>").getMatch(0);
+        if (filesize == null) {
+            /* 2019-08-28 */
+            filesize = br.getRegex("</h1>\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
         }
-        link.setName(filename.trim());
+        if (filename != null) {
+            link.setName(filename.trim());
+        }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String md5 = br.getRegex("MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
         }
         return AvailableStatus.TRUE;
     }
@@ -128,7 +136,6 @@ public class FourShareVn extends PluginForHost {
         return 5;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -142,12 +149,19 @@ public class FourShareVn extends PluginForHost {
         // }
         // sleep(wait * 1001l, downloadLink);
         for (int i = 0; i <= 3; i++) {
+            Form captchaform = br.getFormbyKey("free_download");
+            if (captchaform == null) {
+                captchaform = new Form();
+                captchaform.setMethod(MethodType.POST);
+                captchaform.put("free_download", "");
+            }
             final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
             final String recaptchaV2Response = rc2.getToken();
             if (recaptchaV2Response == null) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            br.postPage(downloadLink.getDownloadURL(), "submit=DOWNLOAD+FREE&g-recaptcha-response=" + recaptchaV2Response);
+            captchaform.put("g-recaptcha-response", recaptchaV2Response);
+            br.submitForm(captchaform);
             dllink = br.getRedirectLocation();
             if (dllink == null && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 continue;
