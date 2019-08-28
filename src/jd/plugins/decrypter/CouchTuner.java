@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41172 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|watch-online\\.xyz|couchtuner\\.(?:cloud|click))|2mycouchtuner\\.me/.*" })
+@DecrypterPlugin(revision = "$Revision: 41172 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:watch-online\\.xyz|couchtuner\\.(?:cloud|click|website)|2mycouchtuner\\.me|mycouchtuner\\.li)/.*" })
 public class CouchTuner extends antiDDoSForDecrypt {
     public CouchTuner(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,10 +39,13 @@ public class CouchTuner extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         String page = br.toString();
-        String fpName = br.getRegex("<meta (?:name|property)=\"og:(?:title|description)\" content=[\"'](?:Watch ?)?(?:Couchtuner ?)?(?:Series ?)?([^<>\"]*?)(?: ?(?:online for free|Online Free at|Online \\|))").getMatch(0);
-        String[][] links = br.getRegex("<strong>Watch it here[\r\t\n ]*:</strong>[\r\t\n ]*</span>[\r\t\n ]*<a href=\"([^\"\']+)\"").getMatches();
+        String fpName = br.getRegex("(?:og:)?(?:title|description)\" content=[\"'](?:\\s*Watch\\s*)?([^\"\']+)(?:\\s+online streaming free|\\s+Online\\s+\\|\\s+Couchtuner)").getMatch(0);
+        String[][] links = br.getRegex("<strong>Watch it here\\s*:</strong>\\s*</span>\\s*<a href=\"([^\"\']+)\"").getMatches();
         if (links == null || links.length == 0) {
-            links = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatches();
+            links = br.getRegex("Watch [iI]t [hH]ere\\s*:\\s*</span>&nbsp;\\s+<a href=\"([^\"]+)\"").getMatches();
+        }
+        if (links == null || links.length == 0) {
+            links = br.getRegex("<iframe[^>]+src=[\"\']([^\"\']+)[\"\']").getMatches();
         }
         if (links == null || links.length == 0) {
             links = br.getRegex("<a[\r\\n ]+href=\"([^\"]+)\" rel=\"bookmark\">").getMatches();
@@ -51,7 +54,8 @@ public class CouchTuner extends antiDDoSForDecrypt {
             links = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"[^>]*>").getMatches();
         }
         for (String[] link : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
+            link[0] = Encoding.htmlDecode(link[0]).replaceAll("^//", "https://");
+            decryptedLinks.add(createDownloadlink(link[0]));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
