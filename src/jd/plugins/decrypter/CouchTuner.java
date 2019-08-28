@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 40396 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|watch-online\\.xyz|couchtuner\\.(?:cloud|click))/.*" })
+@DecrypterPlugin(revision = "$Revision: 41172 $", interfaceVersion = 2, names = { "couchtuner.cloud" }, urls = { "https?://(www\\.)?(?:freetvonline\\.xyz|watch-online\\.xyz|couchtuner\\.(?:cloud|click))|2mycouchtuner\\.me/.*" })
 public class CouchTuner extends antiDDoSForDecrypt {
     public CouchTuner(PluginWrapper wrapper) {
         super(wrapper);
