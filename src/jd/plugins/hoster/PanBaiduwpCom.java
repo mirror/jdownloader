@@ -107,6 +107,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        logger.info("Trying to download content of original-contentURL: " + link.getContentUrl());
         this.br = prepBR(this.br);
         mhm.runCheck(account, link);
         login(account, false);
@@ -299,7 +300,7 @@ public class PanBaiduwpCom extends antiDDoSForHost {
             }
         }
         final String[] newsubfoldersHTMLs = getSubfolderHTMLSnippets();
-        if (subfoldersHTMLs == null) {
+        if (newsubfoldersHTMLs == null) {
             return null;
         } else if (newsubfoldersHTMLs.equals(subfoldersHTMLs)) {
             /* Prevent endless loops */

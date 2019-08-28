@@ -457,12 +457,14 @@ abstract public class ZeveraCore extends UseNet {
                         message += "Ab sofort kannst du diesen Anbieter auch mit einem kostenlosen Account verwenden!\r\n";
                         message += "Mehr infos dazu findest du unter:\r\n" + new URL(url) + "\r\n";
                         message += "Beim ersten Downloadversuch wird ein Info-Dialog mit weiteren Informationen erscheinen.\r\n";
+                        message += "Du kannst diese Info-Dialoge in den Plugin-Einstellungen deaktivieren\r\n";
                     } else {
                         title = br.getHost() + " allows free downloads from now on";
                         message += "Hello dear " + br.getHost() + " user\r\n";
                         message += "From now on this service allows downloads via free account.\r\n";
                         message += "More information:\r\n" + new URL(url) + "\r\n";
                         message += "On the first download attempt, a window with more detailed information will be displayed.\r\n";
+                        message += "You can turn off these dialogs via Plugin Settings\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(1 * 60 * 1000);
@@ -526,6 +528,7 @@ abstract public class ZeveraCore extends UseNet {
                         }
                         message += "Starte die Downloads danach erneut um zu sehen, ob deine Downloadlinks die Bedingungen eines kostenlosen Downloads erfüllen.\r\n";
                         message += "Sobald du das Limit erreicht hast, musst du den Free Mode wieder über die oben gezeigte URL aktivieren.\r\n";
+                        message += "Du kannst diese Info-Dialoge in den Plugin-Einstellungen deaktivieren\r\n";
                     } else {
                         title = br.getHost() + " wants to start a free download";
                         message += "Hello dear " + host + " user\r\n";
@@ -536,6 +539,7 @@ abstract public class ZeveraCore extends UseNet {
                         }
                         message += "Restart your downloads afterwards to see whether your downloadlinks meet the requirements to be downloadable via free account.\r\n";
                         message += "Once you've reached the free account downloadlimit, you will have to re-activate free mode via the previously mentioned URL.\r\n";
+                        message += "You can turn off these dialogs via Plugin Settings\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(2 * 60 * 1000);
