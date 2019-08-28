@@ -477,6 +477,10 @@ public class DebridLinkFr extends PluginForHost {
         if (chunk != null && !"0".equals(chunk)) {
             maxChunks = -Integer.parseInt(chunk);
         }
+        if (link.getLinkStatus().getRetryCount() >= 3) {
+            logger.info("Too many failures --> Trying again with max. 2 chunks");
+            maxChunks = -2;
+        }
         if (resume != null) {
             resumes = Boolean.parseBoolean(resume);
         }
