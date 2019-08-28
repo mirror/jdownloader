@@ -2785,7 +2785,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Tries to find available traffic-left value inside html code. */
     protected String regExTrafficLeft() {
         /* Traffic can also be negative! */
-        String availabletraffic = new Regex(this.correctedBR, "Traffic available(?: today)?[^<>]*:?\\s*</TD>\\s*<TD[^>]*?>\\s*(?:<b>)?\\s*([^<>\"']+)").getMatch(0);
+        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*:?</TD>\\s*<TD[^>]*?>\\s*(?:<b>)?\\s*([^<>\"']+)").getMatch(0);
         if (availabletraffic == null) {
             /* 2019-02-11: For newer XFS versions */
             availabletraffic = new Regex(this.correctedBR, ">\\s*Traffic available(?:\\s*today)?\\s*</div>\\s*<div class=\"txt\\d+\">\\s*([^<>\"]+)\\s*<").getMatch(0);
