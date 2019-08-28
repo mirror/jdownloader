@@ -21,6 +21,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -40,12 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,12 +84,21 @@ public class SpankBangCom extends PluginForDecrypt {
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
         parameter = param.toString().replaceAll("https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "https://spankbang.com/").replace("/embed/", "/video/");
         br.setFollowRedirects(true);
-        br.setCookie("http://spankbang.com/", "country", "GB");
+        /* www = English language */
+        br.setCookie(this.getHost(), "language", "www");
         br.getHeaders().put("Accept-Language", "en");
+        br.setAllowedResponseCodes(new int[] { 503 });
         getPage(parameter);
         logger.info(br.toString());
         if (isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (isPrivate(this.br)) {
+            decryptedLinks.add(createOfflinelink(parameter, "PRIVATE_VIDEO"));
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
+            logger.info("Server error 503: Cannot crawl new URLs at the moment");
+            decryptedLinks.add(createOfflinelink(parameter, "SERVER_ERROR_503"));
             return decryptedLinks;
         }
         /* Decrypt start */
@@ -241,6 +250,10 @@ public class SpankBangCom extends PluginForDecrypt {
 
     public static boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*this video is (no longer available|private|under review)|>\\s*este vídeo já não está disponível") || !br.getURL().contains("/video");
+    }
+
+    public static boolean isPrivate(final Browser br) {
+        return br.containsHTML("this video is private\\.?\\s*<");
     }
 
     /**

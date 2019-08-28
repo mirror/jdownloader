@@ -25,6 +25,12 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -36,18 +42,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "http://(www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "https?://(?:www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
 public class IgnCom extends PluginForDecrypt {
     public IgnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_NEW = "http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+";
+    private static final String TYPE_NEW = ".+ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -58,8 +59,7 @@ public class IgnCom extends PluginForDecrypt {
         String fpName;
         if (parameter.matches(TYPE_NEW)) {
             if (br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             fpName = this.br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
@@ -70,25 +70,48 @@ public class IgnCom extends PluginForDecrypt {
             fpName = Encoding.htmlDecode(fpName).trim();
             // final String json = br.getRegex("data-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
             // final String json = br.getRegex("data-settings=\"(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
-            String json = br.getRegex("video&quot;:(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
-            if (json == null) {
+            // String json = br.getRegex("video&quot;:(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
+            final String json_single_video = br.getRegex("<script type=\"application/ld\\+json\">(\\{\"contentUrl\".*?)</script>").getMatch(0);
+            final String json = br.getRegex("<script id=\"__NEXT_DATA__\" type=\"application/json\">(.*?)</script>").getMatch(0);
+            if (json == null && json_single_video == null) {
                 return null;
             }
-            json = Encoding.htmlDecode(json);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            /* HLS */
-            // final String hls = (String) entries.get("m3uUrl");
-            final ArrayList<Object> renditions = (ArrayList) entries.get("assets");
-            for (final Object rendition : renditions) {
-                entries = (LinkedHashMap<String, Object>) rendition;
-                final String finallink = (String) entries.get("url");
-                final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), -1));
-                if (finallink == null || height.equals("-1")) {
-                    continue;
+            LinkedHashMap<String, Object> entries = null;
+            if (json_single_video != null) {
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_single_video);
+                final String finallink = (String) entries.get("contentUrl");
+                if (StringUtils.isEmpty(finallink)) {
+                    return null;
                 }
                 final DownloadLink dlink = createDownloadlink("directhttp://" + finallink);
-                dlink.setFinalFileName(fpName + "_" + height + ".mp4");
+                dlink.setFinalFileName(fpName + ".mp4");
                 decryptedLinks.add(dlink);
+            } else {
+                // json = Encoding.htmlDecode(json);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps");
+                final Object videoO = entries.get("video");
+                if (videoO == null) {
+                    /* 2019-08-28: E.g. readable article or livestream */
+                    logger.info("Failed to find any downloadable content");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                entries = (LinkedHashMap<String, Object>) videoO;
+                /* HLS */
+                // final String hls = (String) entries.get("m3uUrl");
+                final ArrayList<Object> renditions = (ArrayList) entries.get("assets");
+                for (final Object rendition : renditions) {
+                    entries = (LinkedHashMap<String, Object>) rendition;
+                    final String finallink = (String) entries.get("url");
+                    final String height = Long.toString(JavaScriptEngineFactory.toLong(entries.get("height"), -1));
+                    if (finallink == null || height.equals("-1")) {
+                        continue;
+                    }
+                    final DownloadLink dlink = createDownloadlink("directhttp://" + finallink);
+                    dlink.setFinalFileName(fpName + "_" + height + ".mp4");
+                    decryptedLinks.add(dlink);
+                }
             }
         } else {
             if (br.containsHTML("No htmlCode read")) {

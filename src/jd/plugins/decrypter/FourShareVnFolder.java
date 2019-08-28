@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -62,12 +63,17 @@ public class FourShareVnFolder extends PluginForDecrypt {
         if (filter != null && filter.length > 0) {
             for (final String f : filter) {
                 String folder_path = null;
-                final String url = new Regex(f, "('|\")((?:https?://(?:up\\.)?4share\\.vn)?/(?:d/[a-f0-9]{16}|f/[a-f0-9]{16}/.*?))\\1").getMatch(1);
+                final String url = new Regex(f, "('|\")((?:https?://(?:up\\.)?4share\\.vn)?/(?:d/[a-f0-9]{16}|f/[a-f0-9]{16}(?:/.*?)?))\\1").getMatch(1);
                 if (url == null) {
                     continue;
                 }
-                String item_name = new Regex(f, ">\\s*([^<]+)\\s*</a>").getMatch(0);
+                /* 2019-08-28 */
+                String item_name = new Regex(f, "title=\\'([^<>\"\\']+)\\'").getMatch(0);
+                if (StringUtils.isEmpty(item_name)) {
+                    item_name = new Regex(f, ">\\s*([^<]+)\\s*</a>").getMatch(0);
+                }
                 if (item_name != null) {
+                    /* Old */
                     item_name = Encoding.htmlDecode(item_name).trim();
                 }
                 final String size = new Regex(f, ">\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*<").getMatch(0);

@@ -31,6 +31,7 @@ public class SmvTo extends PornEmbedParser {
 
     /* DEV NOTES */
     /* Porn_plugin */
+    /* Tags: 2019-08-28: toukoucity.to */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();

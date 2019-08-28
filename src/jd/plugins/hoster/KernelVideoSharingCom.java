@@ -76,7 +76,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
                 "https?://(?:www\\.)?kvs\\-demo\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?hotmovs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cartoontube\\.xxx/(?:video\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "https?://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/?", "https?://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/?",
-                "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?", "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?pornpillow\\.com/\\d+/[^/]+\\.html", "https?://(?:www\\.)?anon\\-v\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?faptube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?",
+                "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?", "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?pornpillow\\.com/\\d+/[^/]+\\.html", "https?://(?:www\\.)?anon\\-v\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?faptube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/(?:videos|goto)/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?javwhores\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?analdin\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?onlygayvideo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?thisvid\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?xozilla\\.com/videos/\\d+/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?porndr\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/",
                 "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?xfig\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?momvids\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?babestube\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?videogirls\\.tv/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
@@ -178,13 +178,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         String filename = regexFilenameAuto(br, link);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
             /* Definitly offline - set url filename to avoid bad names! */
-            if (!this.inValidate(filename_url)) {
+            if (!StringUtils.isEmpty(filename_url)) {
                 link.setName(filename_url);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.inValidate(filename_url)) {
-            /* This should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /*
          * 2019-07-25: Set fuid again here because for some hosts they're not given inside the URL which the user has added but rather
@@ -210,10 +207,12 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             /* Fallback */
             ext = ".mp4";
         }
-        if (!filename.endsWith(ext)) {
+        if (!StringUtils.isEmpty(filename) && !filename.endsWith(ext)) {
             filename += ext;
         }
-        link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
         // this prevents another check when download is about to happen! -raztoki
         if (download_started) {
             return AvailableStatus.TRUE;
@@ -777,22 +776,31 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (url_source == null) {
             return null;
         }
-        String fuid;
-        /* Find 'real' filename and the one inside our URL. */
-        if (url_source.matches(type_only_numbers)) {
-            fuid = new Regex(url_source, type_only_numbers).getMatch(0);
-        } else if (url_source.matches(type_embedded)) {
-            fuid = new Regex(url_source, type_embedded).getMatch(0);
-        } else if (url_source.matches(type_normal_fuid_at_end)) {
-            fuid = new Regex(url_source, type_normal_fuid_at_end).getMatch(1);
-        } else if (url_source.matches(type_normal)) {
-            fuid = new Regex(url_source, type_normal).getMatch(0);
-        } else if (br != null) {
-            /* Rare case: No fuid given inside URL so we can try to find it via embed URL inside html. Example: thisvid.com */
-            fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
-        } else {
-            /* Rare case */
-            fuid = null;
+        String fuid = regexFUIDSpecial(url_source);
+        if (fuid == null) {
+            if (url_source.matches(type_only_numbers)) {
+                fuid = new Regex(url_source, type_only_numbers).getMatch(0);
+            } else if (url_source.matches(type_embedded)) {
+                fuid = new Regex(url_source, type_embedded).getMatch(0);
+            } else if (url_source.matches(type_normal_fuid_at_end)) {
+                fuid = new Regex(url_source, type_normal_fuid_at_end).getMatch(1);
+            } else if (url_source.matches(type_normal)) {
+                fuid = new Regex(url_source, type_normal).getMatch(0);
+            } else if (br != null) {
+                /* Rare case: No fuid given inside URL so we can try to find it via embed URL inside html. Example: thisvid.com */
+                fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
+            }
+        }
+        return fuid;
+    }
+
+    /** For special cases */
+    public static String regexFUIDSpecial(final String url_source) {
+        String fuid = null;
+        final String special_xcum_com = "https?://[^/]+/v/(\\d+).*";
+        if (url_source.matches(special_xcum_com)) {
+            /* 2019-08-28: E.g. xcum.com */
+            fuid = new Regex(url_source, special_xcum_com).getMatch(0);
         }
         return fuid;
     }
@@ -880,6 +888,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
             }
+        } else if (br.getHost().equalsIgnoreCase("bravoporn.com")) {
+            /* 2019-08-28 */
+            filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
         } else {
             filename = null;
         }
