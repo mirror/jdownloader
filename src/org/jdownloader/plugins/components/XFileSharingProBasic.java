@@ -670,7 +670,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * 2019-05-15: This can check availability via '/embed' URL. <br />
      * Only call this if isVideohoster_2 is set to true.
      */
-    protected final void requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+    protected void requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         /*
          * Some video sites contain their directurl right on the first page - let's use this as an indicator and assume that the file is
          * online if we find a directurl. This also speeds-up linkchecking! Example: uqload.com
@@ -1564,7 +1564,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    /** Tries to find 1st download Form for free download. */
+    /** Tries to find 1st download Form for free(and Free-Account) download. */
     public Form findFormDownload1() throws Exception {
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
         if (download1 != null) {
@@ -1581,7 +1581,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return download1;
     }
 
-    /** Tries to find 2nd download Form for free download. */
+    /** Tries to find 2nd download Form for free(and Free-Account) download. */
     protected Form findFormF1() {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
@@ -1676,7 +1676,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @param setFilesize
      *            : true = setVerifiedFileSize filesize if directurl is really downloadable
      */
-    private final String checkDirectLinkAndSetFilesize(final DownloadLink link, final String directurl, final boolean setFilesize) {
+    protected final String checkDirectLinkAndSetFilesize(final DownloadLink link, final String directurl, final boolean setFilesize) {
         if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http")) {
             return null;
         } else {
@@ -1980,13 +1980,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * would probably make this more reliable.
          */
         /* Ticket Time */
-        String waitStr = new Regex(correctedBR, "id=\"countdown_str\"[^>]*?>[^<>\"]*?<span id=\"[^<>\"]+\"(?:[^<>]+)?>(?:\\s+)?(\\d+)(?:\\s+)?</span>").getMatch(0);
-        if (waitStr == null) {
-            waitStr = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
-        if (waitStr == null) {
-            waitStr = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
-        }
+        String waitStr = new Regex(correctedBR, "id=(?:\"|\\')countdown_str(?:\"|\\')[^>]*>[^<>]*<span id=[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
         if (waitStr == null) {
             waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
         }
@@ -2269,7 +2263,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (correctedBR.contains("\">Skipped countdown<")) {
+            if (new Regex(correctedBR, ">\\s*Skipped countdown\\s*<").matches()) {
+                /* 2019-08-28: e.g. "<br><b class="err">Skipped countdown</b><br>" */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
         }

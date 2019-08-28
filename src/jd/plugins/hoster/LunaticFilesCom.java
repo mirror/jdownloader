@@ -18,17 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LunaticFilesCom extends XFileSharingProBasic {
@@ -41,7 +43,7 @@ public class LunaticFilesCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * captchatype-info: 2019-08-28: reCaptchaV2<br />
      * other:<br />
      */
     public static String[] getAnnotationNames() {
@@ -142,5 +144,25 @@ public class LunaticFilesCom extends XFileSharingProBasic {
          * values - XFS template might gets upgraded in the future for better handling of this case!
          */
         return SizeFormatter.formatBytes(trafficleft);
+    }
+
+    @Override
+    protected Form findFormF1() {
+        Form dlForm = null;
+        /* First try to find Form for video hosts with multiple qualities. */
+        final Form[] forms = br.getForms();
+        for (final Form form : forms) {
+            final InputField op_field = form.getInputFieldByName("op");
+            /* E.g. name="op" value="download_orig" */
+            if (form.containsHTML("method_") && op_field != null && op_field.getValue().contains("download2")) {
+                dlForm = form;
+                break;
+            }
+        }
+        if (dlForm == null) {
+            /* Fallback to template handling */
+            dlForm = super.findFormF1();
+        }
+        return dlForm;
     }
 }
