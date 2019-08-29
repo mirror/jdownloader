@@ -143,6 +143,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
             }
         }
         if (crawlFolderNew) {
+            /* 2019-08-30: New handling - consider removing the old code */
             this.crawlFolderNew();
             return decryptedLinks;
         }
