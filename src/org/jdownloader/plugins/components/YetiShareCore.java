@@ -253,7 +253,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed (e.g. badshare.io).
+     * This is only rarely needed (e.g. badshare.io). </br>
+     * default = false
      */
     protected boolean enforce_old_login_method() {
         return false;
