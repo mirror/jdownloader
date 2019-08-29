@@ -67,12 +67,13 @@ public class FShareVn extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME                = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS             = -3;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
-    /** Use mobile API for different things? */
-    private static final boolean use_api_for_premium_account_downloads = true;
+    /** 2019-08-29: Disabled API as a workaround. TODO: Fix issues and enable it again! */
+    /** We can use mobile API for different things */
+    private static final boolean use_api_for_premium_account_downloads = false;
     /** 2019-05-08: API works for free- and premium accounts! */
-    private static final boolean use_api_for_free_account_downloads    = true;
+    private static final boolean use_api_for_free_account_downloads    = false;
     /** 2019-07-16: From now on we are able to get account information via API! */
-    private static final boolean use_api_for_login_fetch_account_info  = true;
+    private static final boolean use_api_for_login_fetch_account_info  = false;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -634,6 +635,7 @@ public class FShareVn extends PluginForHost {
                      * dummy URL. 404 = token is VALID[returns correct offline-state for our dummy-URL], 400 = token is INVALID and full
                      * login is required!, 201 = token is valid but session_id (cookie) is wrong/expired --> Full login required
                      */
+                    /* 2019-08-29: TODO: Try GET /api/user/get */
                     final PostRequest loginCheckReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/fileops/get", String.format("{\"token\":\"%s\",\"url\":\"%s\"}", token, "https://www.fshare.vn/file/JDTESTJDJDJD"));
                     br.openRequestConnection(loginCheckReq);
                     if (br.getHttpConnection().getResponseCode() == 404) {
