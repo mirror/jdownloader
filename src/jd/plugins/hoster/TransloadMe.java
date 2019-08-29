@@ -20,6 +20,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,12 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "" })
 public class TransloadMe extends PluginForHost {
@@ -201,6 +201,11 @@ public class TransloadMe extends PluginForHost {
             if ("5".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (!"0".equals(result)) {
+                final String error = PluginJSonUtils.getJson(br, "error");
+                if (error != null) {
+                    /* 2019-08-30: Hmm seems like their API is dead as it always returns error 6 */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "API error: " + error + " [Website might be dead]", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Balance left in USD */
