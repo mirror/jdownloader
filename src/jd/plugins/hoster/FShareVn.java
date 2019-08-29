@@ -345,7 +345,7 @@ public class FShareVn extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 201, 400 });
         /*
          * 2019-08-29: Do not use this User-Agent anymore as their API will return error 407 then! Keep in mind that unsupported User-Agents
-         * might also lead to errorcode 403!
+         * might also lead to errorcodes 403 or 407!
          */
         // br.getHeaders().put("User-Agent", "okhttp/3.6.0");
     }
