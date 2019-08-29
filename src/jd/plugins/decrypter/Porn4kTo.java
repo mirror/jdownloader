@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,12 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "https?://(?:www\\.)?xxx-blog\\.to/[a-z0-9\\-]+" })
-public class XXXBlg extends antiDDoSForDecrypt {
-
-    public XXXBlg(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn4k.to" }, urls = { "https?://(?:www\\.)?(?:xxx-blog|porn4k)\\.to/[a-z0-9\\-]+" })
+public class Porn4kTo extends antiDDoSForDecrypt {
+    public Porn4kTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -54,7 +52,7 @@ public class XXXBlg extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("xxx-blog.to", "porn4k.to");
         final ArrayList<String> pwList = new ArrayList<String>();
         pwList.add("xxx-blog.dl.am");
         pwList.add("xxx-blog.org");
@@ -63,14 +61,18 @@ public class XXXBlg extends antiDDoSForDecrypt {
         // crapola
         br.setCookie(Browser.getHost(parameter), "hasVsitedSite", "yes");
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
-            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "xxx-blog\\.to/(.+)").getMatch(0), null));
+        final String url_name = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read")) {
+            decryptedLinks.add(createOfflinelink(parameter, url_name, null));
             return decryptedLinks;
         }
-
-        String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
+        String fpname = br.getRegex("<title>(.*?) - Porn4k\\.to").getMatch(0);
         if (fpname == null) {
             fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
+        }
+        if (fpname == null) {
+            /* Fallback */
+            fpname = url_name;
         }
         String pagepiece = br.getRegex("<div class=\"entry\">(.*?)</article>").getMatch(0);
         if (pagepiece == null) {
@@ -100,7 +102,7 @@ public class XXXBlg extends antiDDoSForDecrypt {
                 continue;
             }
             for (final String link : links) {
-                if (link.matches("https?://(?:www\\.)?xxx\\-blog\\.to/.+")) {
+                if (new Regex(link, this.getSupportedLinks()).matches()) {
                     continue;
                 }
                 final DownloadLink dlink = createDownloadlink(link);
@@ -111,13 +113,11 @@ public class XXXBlg extends antiDDoSForDecrypt {
                 logger.info("Failed to find any downloadable content");
                 return decryptedLinks;
             }
-
             if (fpname != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpname.trim());
                 fp.addLinks(decryptedLinks);
             }
-
         }
         return decryptedLinks;
     }
@@ -126,5 +126,4 @@ public class XXXBlg extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

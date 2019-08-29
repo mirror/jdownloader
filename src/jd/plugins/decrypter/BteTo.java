@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "https?://(?:www\\.)?byte\\.to/(?:category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "https?://(?:www\\.)?byte\\.to/(?:category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)|https?://byte\\.to/go\\.php\\?hash=.+" })
 public class BteTo extends PluginForDecrypt {
-
     public BteTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,9 +36,20 @@ public class BteTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(".+go\\.php.+")) {
+            /* 2019-08-29: Single redirect URLs */
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                return null;
+            }
+            decryptedLinks.add(this.createDownloadlink(finallink));
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Es existiert kein Eintrag mit der ID")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Es existiert kein Eintrag mit der ID")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -60,7 +69,6 @@ public class BteTo extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -68,5 +76,4 @@ public class BteTo extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

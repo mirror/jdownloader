@@ -114,6 +114,12 @@ public class BadshareIo extends YetiShareCore {
         return false;
     }
 
+    @Override
+    protected boolean enforce_old_login_method() {
+        /* 2019-08-29: Special */
+        return true;
+    }
+
     public String[] scanInfo(final String[] fileInfo) {
         /* 2019-087-16: Special */
         fileInfo[0] = br.getRegex("<h4>([^<>\"]+)<").getMatch(0);

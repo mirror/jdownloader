@@ -13,13 +13,15 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,27 +39,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip-account.ru" }, urls = { "" })
 public class VipAccountRu extends PluginForHost {
-
-    private static final String                            DOMAIN                       = "http://vip-account.ru/";
-    private static final String                            NICE_HOST                    = "vip-account.ru";
-    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
-
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String                                   default_UA                   = "JDownloader";
     private final String                                   html_loggedin                = "action=logout\"";
-
     private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
-    private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
@@ -120,7 +111,6 @@ public class VipAccountRu extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -136,9 +126,8 @@ public class VipAccountRu extends PluginForHost {
                 }
             }
         }
-
         login(account, false);
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             this.getAPISafe("http://vip-account.ru/engine/ajax/check/core.php?url=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = this.br.getRegex("\"links\":\\[\"(http:[^<>\"]*?)\"\\]").getMatch(0);
@@ -153,32 +142,16 @@ public class VipAccountRu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        boolean resume = ACCOUNT_PREMIUM_RESUME;
-        if (link.getBooleanProperty(NORESUME, false)) {
-            resume = false;
-            link.setProperty(NORESUME, Boolean.valueOf(false));
+        link.setProperty(this.getHost() + "directlink", dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        final String contenttype = dl.getConnection().getContentType();
+        if (contenttype.contains("html")) {
+            br.followConnection();
+            updatestatuscode();
+            handleAPIErrors(this.br);
+            handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getResponseCode() == 416) {
-                logger.info("Resume impossible, disabling it for the next try");
-                link.setChunksProgress(null);
-                link.setProperty(NORESUME, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
-                br.followConnection();
-                updatestatuscode();
-                handleAPIErrors(this.br);
-                handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
-            }
-            this.dl.startDownload();
-        } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-            throw e;
-        }
+        this.dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -254,7 +227,6 @@ public class VipAccountRu extends PluginForHost {
             }
             ai.setMultiHostSupport(this, supportedHosts);
         }
-
         return ai;
     }
 
@@ -265,30 +237,23 @@ public class VipAccountRu extends PluginForHost {
                 br.setCookiesExclusive(true);
                 this.br = newBrowser();
                 final Cookies cookies = account.loadCookies("");
+                boolean loggedin = false;
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (force) {
-                        /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                        br.getPage("http://vip-account.ru/vip_check/");
-                        if (br.containsHTML(html_loggedin)) {
-                            return;
-                        }
-                        /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                        if (br.getCookies(DOMAIN) != null) {
-                            br.clearCookies(DOMAIN);
-                        }
-                    } else {
-                        return;
-                    }
+                    /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
+                    br.getPage("https://vip-account.ru/vip_check/");
+                    loggedin = br.containsHTML(html_loggedin);
                 }
-                String postData = "login=submit&login_name=" + Encoding.urlEncode(currAcc.getUser()) + "&login_password=" + Encoding.urlEncode(currAcc.getPass());
-                this.postAPISafe("http://vip-account.ru/", postData);
-                final String userLanguage = System.getProperty("user.language");
-                if (!this.br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(userLanguage)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedin) {
+                    String postData = "login=submit&login_name=" + Encoding.urlEncode(currAcc.getUser()) + "&login_password=" + Encoding.urlEncode(currAcc.getPass());
+                    this.postAPISafe("https://vip-account.ru/", postData);
+                    final String userLanguage = System.getProperty("user.language");
+                    if (!this.br.containsHTML(html_loggedin)) {
+                        if ("de".equalsIgnoreCase(userLanguage)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -361,16 +326,16 @@ public class VipAccountRu extends PluginForHost {
      *            : Max retries before out of date error is thrown
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long waittime) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        int timesFailed = this.currDownloadLink.getIntegerProperty(this.getHost() + "failedtimes_" + error, 0);
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            logger.info(this.getHost() + ": " + error + " -> Retrying");
             timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            this.currDownloadLink.setProperty(this.getHost() + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            this.currDownloadLink.setProperty(this.getHost() + "failedtimes_" + error, Property.NULL);
+            logger.info(this.getHost() + ": " + error + " -> Disabling current host");
             tempUnavailableHoster(waittime);
         }
     }
@@ -382,5 +347,4 @@ public class VipAccountRu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

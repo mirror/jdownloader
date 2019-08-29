@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,11 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
@@ -241,12 +241,15 @@ public class JetloadNet extends PluginForHost {
             br.getPage(dllink);
             checkFFmpeg(link, "Download a HLS Stream");
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
+            if (hlsbest == null && br.containsHTML("#EXT-X-ENDLIST")) {
+                /* 2019-08-29: New */
+                dllink = br.getURL();
+            } else if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 dllink = hlsbest.getDownloadurl();
-                dl = new HLSDownloader(link, br, dllink);
             }
+            dl = new HLSDownloader(link, br, dllink);
         } else {
             /* HTTP download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);

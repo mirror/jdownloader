@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.YetiShareCore;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -74,36 +75,36 @@ public class DebridPl extends YetiShareCore {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -120,5 +121,36 @@ public class DebridPl extends YetiShareCore {
             super.scanInfo(fileInfo);
         }
         return fileInfo;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
+            getPage("/account_home.html");
+        }
+        /* 2019-08-28: Alternative place to find expire-date: https://debrid.pl/account_edit.html */
+        final String daysLeftStr = br.getRegex("Pozostało dni premium\\s*:\\s*(\\d+)").getMatch(0);
+        final long currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
+        long expireTimestamp = 0;
+        if (daysLeftStr != null) {
+            expireTimestamp = System.currentTimeMillis() + Long.parseLong(daysLeftStr) * 24 * 60 * 60 * 1000;
+        }
+        final boolean isPremium = expireTimestamp > currentTime;
+        if (!isPremium) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
+            /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) account");
+        } else {
+            ai.setValidUntil(expireTimestamp, br);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            ai.setStatus("Premium account");
+        }
+        ai.setUnlimitedTraffic();
+        return ai;
     }
 }

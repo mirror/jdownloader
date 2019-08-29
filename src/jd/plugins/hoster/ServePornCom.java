@@ -78,6 +78,10 @@ public class ServePornCom extends antiDDoSForHost {
         if (filename == null) {
             filename = url_filename;
         }
+        if (filename == null) {
+            /* Last chance fallback */
+            filename = new Regex(downloadLink.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0);
+        }
         dllink = br.getRegex("url: '(https?://[^/]+/[^<>\"']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("url: '(https?://cdn[^/]+/[^<>\"']*?\\.(?:flv|mp4)[^<>\"/]*?)'").getMatch(0);
