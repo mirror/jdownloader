@@ -16,9 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -47,8 +50,8 @@ public class FourSharedComFolder extends PluginForDecrypt {
     private String                  sid                         = null;
     private String                  host                        = null;
     private String                  uid                         = null;
-    private String                  fid                         = null;
-    private String                  fname                       = null;
+    private String                  folderID                    = null;
+    private String                  foldername                  = null;
     private String                  parameter                   = null;
     private String                  pass                        = null;
     private Browser                 br2                         = new Browser();
@@ -66,17 +69,20 @@ public class FourSharedComFolder extends PluginForDecrypt {
             final String pagenumber = new Regex(parameter, "\\.com/[^/]+/[A-Za-z0-9\\-_]+/(\\d+/)[A-Za-z0-9\\-_]+").getMatch(0);
             parameter = parameter.replace(pagenumber, "");
         }
+        final boolean crawlFolderNew = true;
         host = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         uid = new Regex(parameter, "\\.com/(dir|folder|minifolder)/(.+)").getMatch(1);
-        fid = new Regex(parameter, "\\.com/(?:dir|folder|minifolder)/([^/]+)").getMatch(0);
-        fname = new Regex(parameter, "\\.com/(?:dir|folder|minifolder)/[^/]+/([^/]+)").getMatch(0);
-        parameter = new Regex(parameter, "(https?://(?:www\\.)?4shared(?:\\-china)?\\.com/)").getMatch(0);
-        parameter = parameter + "folder/" + uid;
+        folderID = new Regex(parameter, "\\.com/(?:dir|folder|minifolder)/([^/]+)").getMatch(0);
+        foldername = new Regex(parameter, "\\.com/(?:dir|folder|minifolder)/[^/]+/([^/]+)").getMatch(0);
+        if (!crawlFolderNew) {
+            parameter = new Regex(parameter, "(https?://(?:www\\.)?4shared(?:\\-china)?\\.com/)").getMatch(0);
+            parameter = parameter + "folder/" + uid;
+        }
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "4langcookie", "en");
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
-        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted") || br.containsHTML("This folder is no longer available because of a claim")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted") || br.containsHTML("This folder is no longer available because of a claim")) {
             logger.info("Link offline: " + parameter);
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
@@ -101,7 +107,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
             if (form == null) {
                 form = new Form();
                 form.setMethod(MethodType.POST);
-                form.put("dirId", fid);
+                form.put("dirId", folderID);
             }
             if (form == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -130,6 +136,10 @@ public class FourSharedComFolder extends PluginForDecrypt {
                     }
                 }
             }
+        }
+        if (crawlFolderNew) {
+            this.crawlFolderNew();
+            return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)\\- 4shared</title>").getMatch(0);
         if (fpName == null) {
@@ -169,7 +179,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
                 }
                 if (pagecounter > 1) {
                     logger.info("Decrypting page " + pagecounter + " of " + pagemax);
-                    br.getPage("http://www.4shared.com/folder/" + this.fid + "/" + pagecounter + "/" + this.fname + ".html?detailView=false&sortAsc=true&sortsMode=NAME");
+                    br.getPage("http://www.4shared.com/folder/" + this.folderID + "/" + pagecounter + "/" + this.foldername + ".html?detailView=false&sortAsc=true&sortsMode=NAME");
                 }
                 final String subfolder_html = br.getRegex("id=\"folderContent\"(.*?)class=\"simplePagerAndUpload\"").getMatch(0);
                 String[] linkInfo = br.getRegex("<tr align=\"center\">(.*?)</tr>").getColumn(0);
@@ -220,7 +230,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
                         }
                     }
                 }
-                if (fid == null || fname == null) {
+                if (folderID == null || foldername == null) {
                     /* Emergency exit */
                     break;
                 }
@@ -238,6 +248,79 @@ public class FourSharedComFolder extends PluginForDecrypt {
 
     private boolean folderNeedsPassword() {
         return br.containsHTML("jsCheckAndStoreFolderPassword");
+    }
+
+    /** 2019-08-29: New */
+    private void crawlFolderNew() throws Exception {
+        br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept", "text/html, */*; q=0.01");
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String currentDirID = null;
+        if (this.parameter.matches(".+/(folder|minifolder)/\\d+.*")) {
+            /* Old type without the new required ID --> Change to new type, access URL and find ID in html code */
+            br.getPage(parameter.replaceAll("/(folder|minifolder)/", "/dir/"));
+        } else if (this.parameter.matches(".+/(folder|minifolder)/.*")) {
+            currentDirID = new Regex(parameter, "/(?:folder|minifolder)/([^/]+)").getMatch(0);
+        }
+        if (currentDirID == null) {
+            currentDirID = br.getRegex("var currentDirId\\s*=\\s*'([^<>\"']+)';").getMatch(0);
+        }
+        if (StringUtils.isEmpty(currentDirID)) {
+            return;
+        }
+        br2.postPage("https://www." + this.getHost() + "/web/accountActions/changeDir", "dirId=" + currentDirID);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br2.toString());
+        final String curdirName = (String) entries.get("curdirName");
+        FilePackage fp = null;
+        if (!StringUtils.isEmpty(curdirName)) {
+            fp = FilePackage.getInstance();
+            fp.setName(curdirName);
+        }
+        String subFolderPath = getAdoptedCloudFolderStructure();
+        if (subFolderPath == null) {
+            subFolderPath = curdirName;
+        }
+        entries = (LinkedHashMap<String, Object>) entries.get("info");
+        final ArrayList<Object> dirs = (ArrayList<Object>) entries.get("dirs");
+        final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
+        for (final Object fileO : files) {
+            entries = (LinkedHashMap<String, Object>) fileO;
+            final String fileid = (String) entries.get("id");
+            if (StringUtils.isEmpty(fileid)) {
+                continue;
+            }
+            String filename = (String) entries.get("name");
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            final String contentURL = "https://www." + this.getHost() + "/file/" + fileid + "/" + filename + ".html";
+            final DownloadLink dl = createDownloadlink(contentURL);
+            dl.setAvailable(true);
+            if (!StringUtils.isEmpty(filename)) {
+                filename = Encoding.htmlDecode(filename);
+                dl.setName(filename);
+            }
+            if (filesize > 0) {
+                dl.setDownloadSize(filesize);
+            }
+            if (!StringUtils.isEmpty(subFolderPath)) {
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderPath);
+            }
+            if (fp != null) {
+                dl._setFilePackage(fp);
+            }
+            decryptedLinks.add(dl);
+        }
+        for (final Object dirO : dirs) {
+            entries = (LinkedHashMap<String, Object>) dirO;
+            final String folderid = (String) entries.get("id");
+            String foldername = (String) entries.get("name");
+            final String contentURL = "https://www." + this.getHost() + "/file/" + folderid + "/" + foldername + ".html";
+            final DownloadLink dl = createDownloadlink(contentURL);
+            if (!StringUtils.isEmpty(foldername)) {
+                foldername = Encoding.htmlDecode(foldername);
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderPath + "/" + foldername);
+            }
+            decryptedLinks.add(dl);
+        }
     }
 
     private void parsePage(final String offset) throws Exception {
