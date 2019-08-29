@@ -23,7 +23,6 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.JDHash;
@@ -72,17 +71,9 @@ public class MediafireComFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        subFolder = "";
-        CrawledLink current = getCurrentLink();
-        while (current != null) {
-            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-                if (path != null) {
-                    subFolder = path;
-                }
-                break;
-            }
-            current = current.getSourceLink();
+        subFolder = getAdoptedCloudFolderStructure();
+        if (subFolder == null) {
+            subFolder = "";
         }
         parameter = parameter.replaceAll("(&.+)", "");
         this.setBrowserExclusive();
