@@ -216,7 +216,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?/?/?(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+)\"").getMatch(0);
+        externID = br.getRegex("\"((?:https?:)?/?/?(?:www\\.)?xhamster\\.(?:com|xxx|desi)/(?:x?embed\\.php\\?video=|embed/)\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
