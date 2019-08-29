@@ -28,13 +28,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -49,6 +42,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(syncvideoimport_beitrag_\\d+|[a-z0-9\\-]+)", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -358,20 +358,26 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 grabDownloadUrlsPossible = ((Boolean) downloadAllowed_o).booleanValue();
             }
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("priorityList");
-            final Object subtitleO = JavaScriptEngineFactory.walkJson(entries, "captions/{0}/uri");
-            url_subtitle = subtitleO != null ? (String) subtitleO : null;
-            if (this.url_subtitle != null & this.grabSubtitles) {
-                /* Grab the filesize here once so if the user adds many links, JD will not check the same subtitle URL multiple times. */
-                URLConnectionAdapter con = null;
-                try {
-                    con = this.br.openHeadConnection(this.url_subtitle);
-                    if (!con.getContentType().contains("html")) {
-                        filesizeSubtitle = con.getLongContentLength();
-                    }
-                } finally {
+            final Object captions = JavaScriptEngineFactory.walkJson(entries, "captions");
+            if (grabSubtitles && (captions instanceof List) && ((List<?>) captions).size() > 0) {
+                // "captions" : []
+                final Object subtitleO = JavaScriptEngineFactory.walkJson(entries, "captions/{0}/uri");
+                url_subtitle = subtitleO != null ? (String) subtitleO : null;
+                if (this.url_subtitle != null) {
+                    /* Grab the filesize here once so if the user adds many links, JD will not check the same subtitle URL multiple times. */
+                    URLConnectionAdapter con = null;
                     try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
+                        con = this.br.openHeadConnection(this.url_subtitle);
+                        if (con.isOK() && !con.getContentType().contains("html")) {
+                            filesizeSubtitle = con.getLongContentLength();
+                        }
+                    } finally {
+                        if (con != null) {
+                            try {
+                                con.disconnect();
+                            } catch (final Throwable e) {
+                            }
+                        }
                     }
                 }
             }
