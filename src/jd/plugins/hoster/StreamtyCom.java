@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.FruithostedCDN;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -23,21 +26,38 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fruithosts.net", "streamango.com" }, urls = { "https?://(?:www\\.)?fruithosts\\.net/(?:f|embed|e)/([a-z0-9]+)(/[a-zA-Z0-9_\\-]+)?", "https?://(?:www\\.)?streamangos?\\.com/(?:f|embed|e)/([a-z0-9]+)(/[a-zA-Z0-9_\\-]+)?" })
-public class FruithostsNet extends FruithostedCDN {
-    public FruithostsNet(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class StreamtyCom extends XFileSharingProBasic {
+    public StreamtyCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://fruithosts.net/register");
+        this.enablePremium(super.getPurchasePremiumURL());
+    }
+
+    /**
+     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
+     * mods: See overridden functions<br />
+     * limit-info:<br />
+     * captchatype-info: 2019-08-29: null<br />
+     * other:<br />
+     */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "streamty.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public String getAPIBase() {
-        return "https://api.fruithosted.net";
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://fruithosts.net/tos";
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -54,7 +74,8 @@ public class FruithostsNet extends FruithostedCDN {
         }
     }
 
-    public int getDownloadModeMaxChunks(final Account account, DownloadLink downloadlink) {
+    @Override
+    public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 0;
@@ -68,7 +89,7 @@ public class FruithostsNet extends FruithostedCDN {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
 

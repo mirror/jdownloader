@@ -17,6 +17,11 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,11 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
     public FastShareCz(PluginWrapper wrapper) {
@@ -43,6 +43,7 @@ public class FastShareCz extends antiDDoSForHost {
         this.enablePremium("https://fastshare.cz/cenik_cs");
     }
 
+    /* Tags: 2019-08-29: dinoshare.cz */
     @Override
     protected boolean useRUA() {
         return true;

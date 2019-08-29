@@ -36,6 +36,8 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -1397,11 +1399,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.warning("Failed to find required parameters");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            getPage("/dl?op=download_orig&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
-            dllink = this.getDllink(link, account);
+            /* 2019-08-29: This may sometimes happen e.g. deltabit.co */
+            this.waitTime(link, System.currentTimeMillis());
+            final Browser brc = br.cloneBrowser();
+            getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
+            /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
+            final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
+            if (download1 != null) {
+                this.submitForm(brc, download1);
+                /*
+                 * 2019-08-29: TODO: A 'checkErrors' is supposed to be here but at the moment not possible if we do not use our 'standard'
+                 * browser
+                 */
+            }
+            dllink = this.getDllink(link, account, brc, brc.toString());
             if (StringUtils.isEmpty(dllink)) {
                 /* 2019-05-30: Test - worked for: xvideosharing.com */
-                dllink = new Regex(correctedBR, "<a href=\"(https?[^\"]+)\">Direct Download Link</a>").getMatch(0);
+                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\">Direct Download Link</a>").getMatch(0);
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2019-08-29: Test - worked for: deltabit.co */
+                dllink = new Regex(brc.toString(), Pattern.compile("\"(https?://[^/]+/[a-z0-9]{60}/[^\"]+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.info("Failed to find final downloadurl");
@@ -1618,12 +1636,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * corresponding filesize if given.
      */
     protected final String getHighestQualityHTML() {
-        final String[] videoQualities = new Regex(correctedBR, "<tr>[^\r\n\t]*?download_video\\([^\r\n\t]*?</tr>").getColumn(-1);
+        final String[] videoQualities = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
         long widthMax = 0;
         long widthTmp = 0;
         String targetHTML = null;
         for (final String videoQualityHTML : videoQualities) {
-            final String filesizeTmpStr = new Regex(videoQualityHTML, "<td>(\\d+)x\\d+, \\d+[^<>\"]+</td>").getMatch(0);
+            final String filesizeTmpStr = regexFilesizeFromVideoDownloadHTML(videoQualityHTML);
             if (filesizeTmpStr != null) {
                 widthTmp = SizeFormatter.getSize(filesizeTmpStr);
                 if (widthTmp > widthMax) {
@@ -1632,6 +1650,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } else {
                 /* This should not happen */
+                logger.warning("Failed to find highest quality video download html --> Returning the first one");
+                targetHTML = videoQualityHTML;
                 break;
             }
         }
@@ -1644,7 +1664,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected final String getHighestVideoQualityFilesize() {
         final String highestVideoQualityHTML = getHighestQualityHTML();
-        return new Regex(highestVideoQualityHTML, "<td>\\d+x\\d+\\s*,\\s*(\\d+[^<>\"]+)</td>").getMatch(0);
+        return regexFilesizeFromVideoDownloadHTML(highestVideoQualityHTML);
+    }
+
+    private final String regexFilesizeFromVideoDownloadHTML(final String html) {
+        return new Regex(html, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
     }
 
     /**
@@ -1950,7 +1974,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String finallink = null;
         if (decoded != null) {
             /* Open regex is possible because in the unpacked JS there are usually only 1-2 URLs. */
-            finallink = new Regex(decoded, "(?:\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4))(?:\"|')").getMatch(0);
+            finallink = new Regex(decoded, "(?:\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4|m3u8))(?:\"|')").getMatch(0);
             if (finallink == null) {
                 /* Maybe rtmp */
                 finallink = new Regex(decoded, "(?:\"|')(rtmp://[^<>\"']*?mp4:[^<>\"']+)(?:\"|')").getMatch(0);
@@ -3172,7 +3196,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    protected void handleDownload(final DownloadLink link, final Account account, final String dllink, final Request req) throws Exception {
+    protected void handleDownload(final DownloadLink link, final Account account, String dllink, final Request req) throws Exception {
         final boolean resume = this.isResumeable(link, account);
         final int maxChunks = getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
@@ -3236,6 +3260,29 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     /* start the dl */
                     ((RTMPDownload) dl).startDownload();
+                } finally {
+                    /* remove download slot */
+                    if (account == null) {
+                        controlFree(-1);
+                    }
+                }
+            } else if (dllink.contains(".m3u8")) {
+                /* 2019-08-29: HLS download - more and more streaming-hosts have this (example: streamty.com) */
+                this.getPage(dllink);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                if (hlsbest == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown HLS streaming error");
+                }
+                dllink = hlsbest.getDownloadurl();
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, dllink);
+                try {
+                    /* add a download slot */
+                    if (account == null) {
+                        controlFree(+1);
+                    }
+                    /* start the dl */
+                    dl.startDownload();
                 } finally {
                     /* remove download slot */
                     if (account == null) {

@@ -40,6 +40,13 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        while (true) {
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(this.getHost())) {
+                br.followRedirect();
+            } else {
+                break;
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;

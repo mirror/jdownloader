@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2016  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -26,25 +26,44 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class BeeloadCom extends XFileSharingProBasic {
-    public BeeloadCom(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class BoostfilesNet extends YetiShareCore {
+    public BoostfilesNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
+     * DEV NOTES YetiShare<br />
+     ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2019-07-03: No limits at all <br />
-     * captchatype-info: 2019-07-03: reCaptchaV2 (and no captcha at all for videostreams)<br />
-     * other:<br />
+     * limit-info:<br />
+     * captchatype-info: 2019-08-29: reCaptchaV2<br />
+     * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "beeload.com" });
+        ret.add(new String[] { "boostfiles.net" });
         return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String[]> pluginDomains = getPluginDomains();
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -61,7 +80,6 @@ public class BeeloadCom extends XFileSharingProBasic {
         }
     }
 
-    @Override
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
@@ -76,11 +94,10 @@ public class BeeloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public int getMaxSimultaneousFreeAnonymousDownloads() {
+    public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
         return -1;
     }
@@ -88,18 +105,5 @@ public class BeeloadCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 }

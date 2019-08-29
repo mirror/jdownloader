@@ -96,8 +96,8 @@ public class YetiShareCore extends antiDDoSForHost {
      * other: Last compatible YetiShareBasic Version: YetiShareBasic 1.2.0-psp<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/admin/api_documentation.php#account-info Examples for websites which have the API enabled (but not
-     * necessarily unlocked for all users, usually only special-uploaders): zippy4share.com, userscdn.com. Insufficient rights will mostly
-     * result in response: "response": "Your account level does not have access to the file upload API. Please contact site support for more
+     * necessarily unlocked for all users, usually only special-uploaders): userscdn.com. Insufficient rights will mostly result in
+     * response: "response": "Your account level does not have access to the file upload API. Please contact site support for more
      * information."
      */
     @Override
@@ -246,6 +246,19 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
+    /** TODO: See fetchAccountInfoAPI */
+    protected boolean supports_api() {
+        return false;
+    }
+
+    /**
+     * Enforces old, non-ajax login-method. </br>
+     * This is only rarely needed (e.g. badshare.io).
+     */
+    protected boolean enforce_old_login_method() {
+        return false;
+    }
+
     /**
      * When checking previously generated direct-URLs, this will count as an open connection so if the host only supports one connection at
      * a time, trying to download such an URL immediately after the check will result in an error so this is the time we wait before trying
@@ -288,8 +301,6 @@ public class YetiShareCore extends antiDDoSForHost {
             } else {
                 getPage(link.getPluginPatternMatcher());
                 if (isWaitBetweenDownloadsURL()) {
-                    return AvailableStatus.TRUE;
-                } else if (new Regex(br.getURL(), Pattern.compile(".*?e=Error%3A\\+Could\\+not\\+open\\+file\\+for\\+reading.*?", Pattern.CASE_INSENSITIVE)).matches()) {
                     return AvailableStatus.TRUE;
                 } else if (isPremiumOnlyURL()) {
                     return AvailableStatus.TRUE;
@@ -474,18 +485,21 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                 }
             }
-            if (continue_link == null) {
+            if (StringUtils.isEmpty(continue_link)) {
                 checkErrors(link, account);
+                continue_link = getContinueLink();
             }
             /* Passwords are usually before waittime. */
             handlePassword(link);
             /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
             final int startValue = 1;
+            /* loopLog holds information about the continue_link of each loop so afterwards we get an overview via logger */
+            String loopLog = continue_link;
             for (int i = startValue; i <= 5; i++) {
                 logger.info("Handling pre-download page #" + i);
                 timeBeforeCaptchaInput = System.currentTimeMillis();
-                if (continue_link == null || i > startValue) {
-                    continue_link = getContinueLink();
+                if (i > startValue) {
+                    loopLog += " --> " + continue_link;
                 }
                 if (isDownloadlink(continue_link)) {
                     /*
@@ -497,6 +511,12 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else {
                     /* 2019-07-05: continue_form without captcha is a rare case. Example-site: freefile.me */
                     Form continue_form = br.getFormbyActionRegex(".+pt=.+");
+                    if (continue_form == null) {
+                        continue_form = br.getFormByInputFieldKeyValue("submitted", "1");
+                    }
+                    if (continue_form == null) {
+                        continue_form = br.getFormbyKey("submitted");
+                    }
                     if (!StringUtils.isEmpty(continue_link) && continue_form == null) {
                         continue_form = new Form();
                         continue_form.setMethod(MethodType.GET);
@@ -516,6 +536,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
+                        loopLog += " --> reCaptchaV2";
                         captcha = true;
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         success = true;
@@ -530,6 +551,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         success = false;
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        loopLog += " --> SolvemediaCaptcha";
                         captcha = true;
                         success = false;
                         logger.info("Detected captcha method \"solvemedia\" for this host");
@@ -554,53 +576,55 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue_form.setMethod(MethodType.POST);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                     } else if (continue_form != null && continue_form.getMethod() == MethodType.POST) {
+                        loopLog += " --> Form_POST";
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput);
                         /* Use URL instead of Form - it is all we need! */
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
                     } else {
-                        if (!isDownloadlink(continue_link)) {
-                            br.setFollowRedirects(false);
-                            waitTime(link, timeBeforeCaptchaInput);
-                            br.getPage(continue_link);
-                            while (true) {
-                                final String redirect = this.br.getRedirectLocation();
-                                if (redirect != null) {
-                                    if (isDownloadlink(redirect)) {
-                                        continue_link = redirect;
-                                        break;
-                                    } else {
-                                        br.followRedirect();
-                                    }
-                                } else {
-                                    continue_link = getDllink(br);
+                        if (continue_link == null) {
+                            checkErrors(link, account);
+                            logger.warning("Failed to find continue_link");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.setFollowRedirects(false);
+                        waitTime(link, timeBeforeCaptchaInput);
+                        getPage(continue_link);
+                        /* Loop to handle redirects */
+                        while (true) {
+                            final String redirect = this.br.getRedirectLocation();
+                            if (redirect != null) {
+                                if (isDownloadlink(redirect)) {
+                                    continue_link = redirect;
                                     break;
+                                } else {
+                                    br.followRedirect();
                                 }
-                            }
-                            if (continue_link == null) {
-                                checkErrors(link, account);
-                                logger.warning("Failed to find continue_link");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            } else {
+                                continue_link = this.getContinueLink();
+                                break;
                             }
                         }
-                        success = true;
-                        waitTime(link, timeBeforeCaptchaInput);
-                        /* Use URL instead of Form - it is all we need! */
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                        br.setFollowRedirects(true);
+                        continue;
                     }
                 }
                 checkResponseCodeErrors(dl.getConnection());
                 if (dl.getConnection().isContentDisposition()) {
                     success = true;
+                    loopLog += " --> " + dl.getConnection().getURL().toString();
                     break;
                 }
                 br.followConnection();
+                /* Get new continue_link for the next run */
+                continue_link = getContinueLink();
                 checkErrors(link, account);
                 if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Wrong captcha");
                     continue;
                 }
             }
+            logger.info("loopLog: " + loopLog);
         }
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
@@ -629,7 +653,7 @@ public class YetiShareCore extends antiDDoSForHost {
             continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("(?:\"|\\')(https?://(?:www\\.)?[^/]+/[^<>\"\\']*?pt=[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+            continue_link = br.getRegex("(https?://[^/]+/[^<>\"\\':]*pt=[^<>\"\\']*)(?:\"|\\')").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = getDllink();
@@ -648,6 +672,7 @@ public class YetiShareCore extends antiDDoSForHost {
     // private String getStreamUrl(final Browser br) {
     // return br.getRegex("file\\s*?:\\s*?\"(https?://[^<>\"]+)\"").getMatch(0);
     // }
+    /** 2019-08-29: Never call this directly - always call it via getContinueLink!! */
     private String getDllink() {
         return getDllink(this.br);
     }
@@ -798,7 +823,8 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
-        } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
+        } else if (new Regex(br.getURL(), Pattern.compile(".*e=.*Could\\+not\\+open\\+file\\+for\\+reading.*", Pattern.CASE_INSENSITIVE)).matches()) {
+            // https://debrid.pl/error.html?e=B%C5%82%C4%85d%3A+Could+not+open+file+for+reading.
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         } else if (isWaitBetweenDownloadsURL()) {
             /*
@@ -1009,7 +1035,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     logger.info("Performing full login");
                     getPage(this.getProtocol() + this.getHost() + "/login.html");
                     Form loginform;
-                    if (br.containsHTML("flow\\-login\\.js")) {
+                    if (br.containsHTML("flow\\-login\\.js") && !enforce_old_login_method()) {
                         final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                         /* New (ajax) login method - mostly used - example: iosddl.net */
                         logger.info("Using new login method");
@@ -1116,6 +1142,14 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (supports_api()) {
+            return fetchAccountInfoAPI(account);
+        } else {
+            return fetchAccountInfoWebsite(account);
+        }
+    }
+
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
@@ -1166,6 +1200,11 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         return ai;
+    }
+
+    /** 2019-08-28: TODO: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 */
+    protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        return null;
     }
 
     protected long parseExpireTimeStamp(Account account, final String expireString) {

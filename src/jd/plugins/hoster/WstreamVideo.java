@@ -139,7 +139,12 @@ public class WstreamVideo extends XFileSharingProBasic {
     public String checkOfficialVideoDownload(final DownloadLink link, final Account account) throws Exception {
         /* 2019-06-27: Special - used for ALL download modes (including premium!) */
         String dllink = null;
-        if (br.containsHTML("https://download\\.wstream\\.video/" + this.fuid)) {
+        final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;URL=(https[^<>\"]+)\">").getMatch(0);
+        if (redirect != null) {
+            this.getPage(redirect);
+        }
+        final boolean force_download_attempt = true;
+        if (br.containsHTML("https://download\\.wstream\\.video/" + this.fuid) || force_download_attempt) {
             logger.info("Attempting official video download");
             final Browser brc = br.cloneBrowser();
             this.getPage(brc, "https://download.wstream.video/" + this.fuid);
@@ -163,7 +168,7 @@ public class WstreamVideo extends XFileSharingProBasic {
                 if (StringUtils.isEmpty(dllink_temp)) {
                     continue;
                 }
-                boolean dllinkValid = dllink_temp.contains(".mp4");
+                boolean dllinkValid = dllink_temp.contains(".mp4") || dllink_temp.contains(".mkv") || dllink_temp.contains(link.getName());
                 // for (final String host : hosts) {
                 // if (dllink_temp.contains(host)) {
                 // dllinkValid = true;
