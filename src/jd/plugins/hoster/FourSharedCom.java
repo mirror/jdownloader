@@ -23,6 +23,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,8 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music|mobile)/.+?/.*|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+" })
 public class FourSharedCom extends PluginForHost {
@@ -137,7 +137,7 @@ public class FourSharedCom extends PluginForHost {
                 if (fixLink) {
                     String id = new Regex(link.getDownloadURL(), "\\.com/download/(.*?)/").getMatch(0);
                     if (id != null) {
-                        link.setUrlDownload("http://www.4shared.com/file/" + id);
+                        link.setUrlDownload("https://www.4shared.com/file/" + id);
                     }
                 }
             } else {
@@ -148,7 +148,7 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.4shared.com/terms.jsp";
+        return "https://www.4shared.com/terms.jsp";
     }
 
     private String getStreamLinks() {
@@ -579,7 +579,6 @@ public class FourSharedCom extends PluginForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
         if (true) {
@@ -710,6 +709,10 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) {
                     // json
                     filename = PluginJSonUtils.getJsonValue(br, "filename");
+                }
+                if (filename == null) {
+                    /* 2019-08-30 */
+                    filename = br.getRegex("data-cp-fileName=\"([^<>\"]+)\"").getMatch(0);
                 }
                 /* Here, extension might be missing */
                 if (filename == null) {

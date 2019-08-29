@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Random;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -103,6 +104,10 @@ public class FourSharedComFolder extends PluginForDecrypt {
         }
         /* Important: Make sure this check is language independant! */
         if (folderNeedsPassword()) {
+            /*
+             * 2019-08-30: Check if password protected folders still exist. At least via free account I was not able to password-protect a
+             * self created folder!!
+             */
             Form form = br.getFormbyProperty("name", "theForm");
             if (form == null) {
                 form = new Form();
@@ -268,6 +273,10 @@ public class FourSharedComFolder extends PluginForDecrypt {
         if (StringUtils.isEmpty(currentDirID)) {
             return;
         }
+        /*
+         * 2019-08-30: Seems like there is no pagination at all and rthis request will always return ALL objects of one folder no matter how
+         * many that are. Tested up to 300 objects.
+         */
         br2.postPage("https://www." + this.getHost() + "/web/accountActions/changeDir", "dirId=" + currentDirID);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br2.toString());
         final String curdirName = (String) entries.get("curdirName");
@@ -291,12 +300,18 @@ public class FourSharedComFolder extends PluginForDecrypt {
             }
             String filename = (String) entries.get("name");
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-            final String contentURL = "https://www." + this.getHost() + "/file/" + fileid + "/" + filename + ".html";
+            final String contentURL = "https://www." + this.getHost() + "/file/" + fileid + "/" + URLEncode.encodeURIComponent(filename) + ".html";
             final DownloadLink dl = createDownloadlink(contentURL);
+            /*
+             * 2019-08-30: This is actually not true - files inside folders crawler this way can also be offline but crawling them would
+             * take very long so let's set them online here anyways.
+             */
             dl.setAvailable(true);
             if (!StringUtils.isEmpty(filename)) {
                 filename = Encoding.htmlDecode(filename);
                 dl.setName(filename);
+                /* Filenames are hard to parse via website --> By setting them here we can be sure to always have good filenames! */
+                dl.setProperty("decrypterfilename", filename);
             }
             if (filesize > 0) {
                 dl.setDownloadSize(filesize);
@@ -311,9 +326,10 @@ public class FourSharedComFolder extends PluginForDecrypt {
         }
         for (final Object dirO : dirs) {
             entries = (LinkedHashMap<String, Object>) dirO;
+            // final long foldersize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             final String folderid = (String) entries.get("id");
             String foldername = (String) entries.get("name");
-            final String contentURL = "https://www." + this.getHost() + "/file/" + folderid + "/" + foldername + ".html";
+            final String contentURL = "https://www." + this.getHost() + "/folder/" + folderid + "/" + URLEncode.encodeURIComponent(foldername) + ".html";
             final DownloadLink dl = createDownloadlink(contentURL);
             if (!StringUtils.isEmpty(foldername)) {
                 foldername = Encoding.htmlDecode(foldername);
