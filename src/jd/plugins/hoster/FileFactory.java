@@ -294,7 +294,9 @@ public class FileFactory extends PluginForHost {
                 break;
             case 716:
                 // ERR_API_PASSWORD_INVALID
-                link.setDownloadPassword(null);
+                if (link != null) {
+                    link.setDownloadPassword(null);
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
             case 717:
                 // ERR_API_PASSWORD_ATTEMPTS --> Too many failed password attempts. Try again in 5 minutes
@@ -538,9 +540,9 @@ public class FileFactory extends PluginForHost {
     }
 
     public String getUrl() throws Exception {
-        String url = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
+        String url = br.getRegex("\"(https?://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
         if (url == null) {
-            url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         // New
         if (url == null) {
@@ -625,7 +627,7 @@ public class FileFactory extends PluginForHost {
                     }
                 }
                 // new 20130911
-                dlUrl = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
+                dlUrl = br.getRegex("\"(https?://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                 String timer = br.getRegex("<div id=\"countdown_clock\" data-delay=\"(\\d+)").getMatch(0);
                 if (timer != null) {
                     sleep(Integer.parseInt(timer) * 1001, downloadLink);
@@ -646,7 +648,7 @@ public class FileFactory extends PluginForHost {
                     }
                     br.getPage(urlWithFilename);
                     // Sometimes there is an ad
-                    final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
+                    final String skipAds = br.getRegex("\"(https?://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
                     if (skipAds != null) {
                         br.getPage(skipAds);
                     }
@@ -741,7 +743,7 @@ public class FileFactory extends PluginForHost {
                     String finallink = br.getRedirectLocation();
                     // No directlink
                     if (finallink == null) {
-                        finallink = br.getRegex("\"(http://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
+                        finallink = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                     }
                     if (finallink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1408,7 +1410,9 @@ public class FileFactory extends PluginForHost {
         if ("error".equalsIgnoreCase(response_type) && ("710".equalsIgnoreCase(errorcodeStr) || "711".equalsIgnoreCase(errorcodeStr))) {
             // 710 ERR_API_SESS_KEY_INVALID The session key has expired or is invalid. Please obtain a new one via getSessionKey.
             // 711 ERR_API_LOGIN_EXPIRED The session key has expired. Please obtain a new one via getSessionKey.
-            account.setProperty("apiKey", Property.NULL);
+            synchronized (account) {
+                account.setProperty("apiKey", Property.NULL);
+            }
             return true;
         } else {
             return false;
