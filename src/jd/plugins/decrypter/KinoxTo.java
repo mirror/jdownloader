@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www[0-9]*\\.)?kino[xyzs]\\.(?:am|cloud|fun|fyi|gratis|io|lol|me|mobi|nu|pe|sg|sh|si|sx|to|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www[0-9]*\\.)?kino[xyzs]\\.(?:ai|am|click|cloud|club|digital|direct|express|fun|fyi|gratis|io|lol|me|mobi|nu|pe|party|pub|sg|sh|si|space|sx|to|tube|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
     public KinoxTo(PluginWrapper wrapper) {
         super(wrapper);
