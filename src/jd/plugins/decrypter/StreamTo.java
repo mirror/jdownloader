@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -31,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40115 $", interfaceVersion = 3, names = { "stream.to" }, urls = { "https?://(?:www\\.)?stream\\.to/(?:[a-z]+/)?(?:series|episode|movie)/.*" })
+@DecrypterPlugin(revision = "$Revision: 41162 $", interfaceVersion = 3, names = { "stream.to" }, urls = { "https?://(?:www\\.)?stream\\.to/(?:[a-z]+/)?(?:series|episode|movie)/.*" })
 public class StreamTo extends PluginForDecrypt {
     private String[] videoDetail;
 
@@ -47,52 +48,56 @@ public class StreamTo extends PluginForDecrypt {
         br.getPage(parameter);
         String itemID = br.getRegex("https?://(?:www\\.)?stream\\.to/[a-z]+/[a-z]+/([0-9]+).*").getMatch(0);
         String fpName = br.getRegex("<title>([^<]+) auf [a-zA-Z]+\\.[a-zA-Z]+").getMatch(0);
-        String[][] links = br.getRegex("<a title=\"[^\"]+\" href=\"([^\"]+)\" id=\"[^\"]+\" class=\"btn-eps ep-item\">").getMatches();
-        // If there's no episode links, we'Re dealing with a single episode or movie and need to harvest the player embed HTML.
+        String[][] links = br.getRegex("<a[^>]+title=\"[^\"]+\"[^>]+href=\"([^\"]+)\"[^>]+id=\"[^\"]+\"[^>]+class=\"btn-eps ep-item").getMatches();
+        // If there's no episode links, we're dealing with a single episode or movie and need to harvest the player embed HTML.
         if (links != null && links.length > 0) {
             for (String[] link : links) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
             }
         } else {
-            String playerURL = "https://stream.to/ajax/load_player/" + itemID;
+            String playerURL = br.getURL("/ajax/load_player/" + itemID).toString();
             Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             String playerHTML = br2.getPage(playerURL);
-            String[][] videoDetails = br2.getRegex("<a title=\"[^\"]+\"[^\"]+href=\"[^\"]+\"[^\"]+id=\"([^\"]+)\"[^\"]+data-id=\"([^\"]+)\"[^\"]+data-server=\"([^\"]+)\"[^\"]+data-index=\"([^\"]+)\"[^\"]+class=\"btn-eps ep-item[^\"]*\">").getMatches();
-            for (String[] videoDetail : videoDetails) {
-                String videoOutURL = "/en/out/" + videoDetail[0];
-                String videoHTML = br2.getPage(videoOutURL);
-                if (br.getRedirectLocation() != null) {
-                    links[links.length][0] = br.getRedirectLocation();
-                } else {
-                    videoHTML = videoHTML;
-                    Form captcha = br2.getForm(0);
-                    String sitekey = new Regex(videoHTML, "grecaptcha.execute\\('([^']+)'").getMatch(0);
-                    if (sitekey != null) {
-                        String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
-                            @Override
-                            public TYPE getType() {
-                                return TYPE.INVISIBLE;
-                            }
-                        }.getToken();
-                        captcha.put("typ", "v3");
-                        captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
-                        videoHTML = br2.submitForm(captcha);
-                        captcha = br2.getForm(0);
-                        String sitekey2 = new Regex(videoHTML, "'sitekey'\\: '([^']+)'").getMatch(0);
-                        if (sitekey2 != null) {
-                            recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey2) {
+            String[][] videoDetails = br2.getRegex("<a[^>]+title=\"[^\"]+\"[^>]+href=\"[^\"]+\"[^>]+id=\"(link-[^\"]+)\"[^>]+class=\"btn-eps ep-item").getMatches();
+            if (videoDetails != null && videoDetails.length > 0) {
+                for (String[] videoDetail : videoDetails) {
+                    String videoOutURL = br.getURL("/en/out/" + videoDetail[0]).toString();
+                    String videoHTML = br2.getPage(videoOutURL);
+                    String videoURL = null;
+                    if (br2.getRedirectLocation() != null || !StringUtils.containsIgnoreCase(br2.getURL(), this.getHost())) {
+                        videoURL = br2.getRedirectLocation() == null ? br2.getURL() : br2.getRedirectLocation();
+                        decryptedLinks.add(createDownloadlink(videoURL));
+                    } else {
+                        Form captcha = br2.getForm(0);
+                        String sitekey = new Regex(videoHTML, "grecaptcha.execute\\('([^']+)'").getMatch(0);
+                        if (sitekey != null) {
+                            String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
                                 @Override
                                 public TYPE getType() {
                                     return TYPE.INVISIBLE;
                                 }
                             }.getToken();
-                            captcha.put("typ", "v2");
+                            captcha.put("typ", "v3");
                             captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
                             videoHTML = br2.submitForm(captcha);
-                            String videoURL = new Regex(videoHTML, "name=\"og:url\" content=\"([^\"]+)\">").getMatch(0);
-                            if (videoURL != null) {
-                                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(videoURL)));
+                            captcha = br2.getForm(0);
+                            String sitekey2 = new Regex(videoHTML, "'sitekey'\\: '([^']+)'").getMatch(0);
+                            if (sitekey2 != null) {
+                                recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey2) {
+                                    @Override
+                                    public TYPE getType() {
+                                        return TYPE.INVISIBLE;
+                                    }
+                                }.getToken();
+                                captcha.put("typ", "v2");
+                                captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
+                                videoHTML = br2.submitForm(captcha);
+                                videoURL = new Regex(videoHTML, "name=\"og:url\" content=\"([^\"]+)\">").getMatch(0);
+                                if (videoURL != null) {
+                                    videoURL = Encoding.htmlDecode(videoURL);
+                                    decryptedLinks.add(createDownloadlink(videoURL));
+                                }
                             }
                         }
                     }
