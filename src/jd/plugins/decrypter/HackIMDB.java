@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -24,10 +26,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40016 $", interfaceVersion = 2, names = { "hackimdb.com" }, urls = { "https?://(www\\.)?hackimdb\\.com/title/[a-zA-Z0-9]+" })
-public class HackIMDB extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 41201 $", interfaceVersion = 2, names = { "hackimdb.com" }, urls = { "https?://(www\\.)?hackimdb\\.com/title/[a-zA-Z0-9]+" })
+public class HackIMDB extends antiDDoSForDecrypt {
     public HackIMDB(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -36,11 +37,13 @@ public class HackIMDB extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        String page = br.getPage(parameter);
-        String fpName = br.getRegex("<meta (?:name|property)=\"og:title\" content=[\"']([^<>\"]*?) Watch Full Movie").getMatch(0);
-        String[][] links = br.getRegex("<iframe[^>]*src=\"([^\"]+)\"[^>]*>").getMatches();
-        for (String[] link : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.urlEncode(link[0])));
+        getPage(parameter);
+        String fpName = br.getRegex("<meta (?:name|property)=\"og:title\" content=[\"'](?:Watch\\s+)?([^\"]+)\\s+online free").getMatch(0);
+        String[] links = br.getRegex("<div id=\"tab\\d*\"\\s*>\\s*<div class=\"movieplay\">\\s*<iframe[^>]*src=\"([^\"]+)\"[^>]*>").getColumn(0);
+        if (links != null && links.length > 0) {
+            for (String link : links) {
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
