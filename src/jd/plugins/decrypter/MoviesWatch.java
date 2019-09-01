@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40332 $", interfaceVersion = 2, names = { "123movieswatch.fun" }, urls = { "https?://www\\.?123movieswatch\\.fun/(film|ref).+" })
+@DecrypterPlugin(revision = "$Revision: 40332 $", interfaceVersion = 2, names = { "123movieswatch.fun" }, urls = { "https?://www\\.?(?:123movieswatch\\.fun|123movies\\.fish)/(film|ref).+" })
 public class MoviesWatch extends PluginForDecrypt {
     public MoviesWatch(PluginWrapper wrapper) {
         super(wrapper);
