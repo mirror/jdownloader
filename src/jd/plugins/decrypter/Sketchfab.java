@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 40882 $", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(www\\.)?sketchfab\\.com/3d-models/.*" })
+@DecrypterPlugin(revision = "$Revision: 41201 $", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(www\\.)?sketchfab\\.com/3d-models/.+" })
 public class Sketchfab extends antiDDoSForDecrypt {
     public Sketchfab(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,13 +38,12 @@ public class Sketchfab extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
         String fpName = null;
         if (br.containsHTML("<div class=\"viewer-viewport\">")) {
             fpName = br.getRegex("class=\"model-name__label\">([^<]+)</span").getMatch(0);
-            String[][] links = br.getRegex("(http[^#;]+ile.osgjs.gz)").getMatches();
-            if (links != null && links.length > 0) {
-                String decodedLink = br.getURL(Encoding.htmlDecode(links[0][0])).toString().replace("file.osgjs.gz", "model_file.bin.gz");
+            String archiveLink = br.getRegex("(http[^#;]+ile.osgjs.gz)").getMatch(0);
+            if (archiveLink != null && archiveLink.length() > 0) {
+                String decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString().replace("file.osgjs.gz", "model_file.bin.gz");
                 decryptedLinks.add(createDownloadlink(decodedLink));
             }
         }
