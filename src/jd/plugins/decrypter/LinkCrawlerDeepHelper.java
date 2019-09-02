@@ -138,9 +138,8 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             });
             authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
-                    connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
                     try {
-                        br.followConnection();
+                        br.followConnection(true);
                     } catch (IOException e) {
                         getLogger().log(e);
                     }
@@ -150,8 +149,9 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
                 if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
                     if (connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
                         return openCrawlDeeperConnection(source, br, connection, round);
+                    } else {
+                        continue authLoop;
                     }
-                    continue authLoop;
                 } else if (connection.isOK()) {
                     break authLoop;
                 } else {
@@ -161,14 +161,15 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             final String location = request.getLocation();
             if (location != null) {
                 try {
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     getLogger().log(e);
                 }
                 if (loopAvoid.add(location) == false) {
                     return openCrawlDeeperConnection(source, br, connection, round);
+                } else {
+                    request = br.createRedirectFollowingRequest(request);
                 }
-                request = br.createRedirectFollowingRequest(request);
             } else {
                 return openCrawlDeeperConnection(source, br, connection, round);
             }
@@ -177,7 +178,9 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
     }
 
     protected URLConnectionAdapter openCrawlDeeperConnection(CrawledLink source, Browser br, URLConnectionAdapter urlConnection, int round) throws Exception {
-        if (round <= 2 && urlConnection != null) {
+        if (urlConnection != null && getCrawler().getDeepInspector().looksLikeDownloadableContent(urlConnection)) {
+            return urlConnection;
+        } else if (round <= 2 && urlConnection != null) {
             if (round < 2 && (urlConnection.isOK() || urlConnection.getResponseCode() == 404) && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
                 final Cookies cookies = br.getCookies(br.getBaseURL());
                 for (final Cookie cookie : cookies.getCookies()) {

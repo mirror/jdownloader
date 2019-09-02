@@ -2711,16 +2711,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                         rule.setRule(RULE.DIRECTHTTP);
                                                         lc.addLinkCrawlerRule(rule);
                                                     }
-                                                    try {
-                                                        urlConnection.disconnect();
-                                                    } catch (Throwable e) {
-                                                    }
-                                                    final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                                                    final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, urlConnection);
-                                                    if (direct != null) {
-                                                        ret.add(direct);
-                                                    }
-                                                    return ret;
                                                 } else {
                                                     final String fileName = Plugin.getFileNameFromURL(url);
                                                     final String fileExtension = Files.getExtension(fileName);
@@ -2732,18 +2722,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                             rule.setRule(RULE.DIRECTHTTP);
                                                             lc.addLinkCrawlerRule(rule);
                                                         }
-                                                        try {
-                                                            urlConnection.disconnect();
-                                                        } catch (Throwable e) {
-                                                        }
-                                                        final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-                                                        final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, urlConnection);
-                                                        if (direct != null) {
-                                                            ret.add(direct);
-                                                        }
-                                                        return ret;
                                                     }
                                                 }
+                                                urlConnection.disconnect();
+                                                final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                                                final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, urlConnection);
+                                                if (direct != null) {
+                                                    ret.add(direct);
+                                                }
+                                                return ret;
                                             }
                                         }
                                         return defaultDeepInspector.deepInspect(lc, generation, br, urlConnection, link);
