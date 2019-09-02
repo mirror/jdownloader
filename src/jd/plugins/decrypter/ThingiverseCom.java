@@ -23,7 +23,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision: 41147 $", interfaceVersion = 2, names = { "thingiverse.com" }, urls = { "https?://(www\\.)?thingiverse\\.com/(thing:\\d+|make:\\d+|[^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things))" })
+@DecrypterPlugin(revision = "$Revision: 41202 $", interfaceVersion = 2, names = { "thingiverse.com" }, urls = { "https?://(www\\.)?thingiverse\\.com/(thing:\\d+|make:\\d+|[^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)" })
 public class ThingiverseCom extends antiDDoSForDecrypt {
     public ThingiverseCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -34,7 +34,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         String fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
-        if (new Regex(br.getURL(), "/[^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)").matches()) {
+        if (new Regex(br.getURL(), "/([^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)").matches()) {
             // -------------------------------------------------------------------------------------------------------
             // -------------------------------------------------------------------------------------------------------
             // TODO: RegExes currently don't work for example https://www.thingiverse.com/groups/engineering/things
@@ -76,26 +76,29 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
     }
 
     private String[] getAPISearchLinks(Browser br) throws Exception {
-        final String sourceData = PluginJSonUtils.getJsonNested(br, "data").replace("\"source_data\":", "");
-        LinkedHashMap<String, String> searchValues = new ObjectMapper().readValue(sourceData, LinkedHashMap.class);
         String[] results = null;
-        if (searchValues != null && searchValues.keySet().size() > 0) {
-            searchValues.put("page", "1");
-            searchValues.put("per_page", "999999999");
-            Browser br2 = br.cloneBrowser();
-            String postURL = br2.getURL("/ajax/user/designs").toString();
-            PostRequest post = new PostRequest(postURL);
-            UrlQuery postQuery = new UrlQuery();
-            for (String key : searchValues.keySet()) {
-                post.addVariable(key, String.valueOf(searchValues.get(key)));
-                postQuery.add(key, String.valueOf(searchValues.get(key)));
+        String sourceData = PluginJSonUtils.getJsonNested(br, "data");
+        sourceData = new Regex(sourceData, "(\\{[^\\}]+\\})").getMatch(0);
+        if (sourceData != null) {
+            LinkedHashMap<String, String> searchValues = new ObjectMapper().readValue(sourceData, LinkedHashMap.class);
+            if (searchValues != null && searchValues.keySet().size() > 0) {
+                searchValues.put("page", "1");
+                searchValues.put("per_page", "999999999");
+                Browser br2 = br.cloneBrowser();
+                String postURL = br2.getURL(searchValues.get("source")).toString();
+                PostRequest post = new PostRequest(postURL);
+                UrlQuery postQuery = new UrlQuery();
+                for (String key : searchValues.keySet()) {
+                    post.addVariable(key, String.valueOf(searchValues.get(key)));
+                    postQuery.add(key, String.valueOf(searchValues.get(key)));
+                }
+                post.getHeaders().put("Origin", "https://www.thingiverse.com");
+                post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+                br2.setRequest(post);
+                postPage(br2, postURL, postQuery.toString());
+                results = br2.getRegex("a href=\"([^\"]+)\" class=\"card-img-holder").getColumn(0);
             }
-            post.getHeaders().put("Origin", "https://www.thingiverse.com");
-            post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-            br2.setRequest(post);
-            postPage(br2, postURL, postQuery.toString());
-            results = br2.getRegex("a href=\"([^\"]+)\" class=\"card-img-holder").getColumn(0);
         }
         return results;
     }
