@@ -483,9 +483,12 @@ public class FileBitPl extends PluginForHost {
                         try {
                             br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
                             handleAPIErrors(br, account, null);
-                            logger.info("Validated stored sessionID");
-                            account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
-                            return;
+                            sessionID = account.getStringProperty("sessionid");
+                            if (!StringUtils.isEmpty(sessionID)) {
+                                logger.info("Validated stored sessionID");
+                                account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
+                                return;
+                            }
                         } catch (PluginException e) {
                             logger.log(e);
                         }
