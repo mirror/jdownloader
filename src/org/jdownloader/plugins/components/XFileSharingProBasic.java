@@ -1797,7 +1797,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             // }
             if (dllink == null) {
                 /* Finally try without hardcoded domains */
-                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.']+") + ")(\"|')(\\s+|\\s*>|\\s*;)").getMatch(0);
+                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.']+") + ")(\"|')(\\s+|\\s*>|\\s*\\)|\\s*;)").getMatch(0);
             }
             // if (dllink == null) {
             // /* Try short version */

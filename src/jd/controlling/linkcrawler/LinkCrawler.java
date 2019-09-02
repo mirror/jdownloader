@@ -1,6 +1,7 @@
 package jd.controlling.linkcrawler;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -1246,7 +1247,16 @@ public class LinkCrawler {
                             crawl(generation, followRedirectLinks);
                         } else {
                             final LinkCrawlerDeepInspector lDeepInspector = getDeepInspector();
-                            final List<CrawledLink> inspectedLinks = lDeepInspector.deepInspect(this, generation, br, connection, deeperSource);
+                            final List<CrawledLink> inspectedLinks;
+                            try {
+                                inspectedLinks = lDeepInspector.deepInspect(this, generation, br, connection, deeperSource);
+                            } catch (final IOException e) {
+                                final LogInterface log = br.getLogger();
+                                if (log != null) {
+                                    log.log(e);
+                                }
+                                throw e;
+                            }
                             /*
                              * downloadable content, we use directhttp and distribute the url
                              */
@@ -3801,13 +3811,14 @@ public class LinkCrawler {
                                 if (br.containsHTML("<!DOCTYPE html>") || (br.containsHTML("</html") && br.containsHTML("<html"))) {
                                     return null;
                                 }
-                            } catch (final Throwable e) {
+                            } catch (final IOException e) {
+                                final LogInterface log = br.getLogger();
+                                if (log != null) {
+                                    log.log(e);
+                                }
                             }
                         }
-                        try {
-                            urlConnection.disconnect();
-                        } catch (Throwable e) {
-                        }
+                        urlConnection.disconnect();
                         final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
                         final CrawledLink direct = createDirectHTTPCrawledLink(link, urlConnection);
                         if (direct != null) {
@@ -3816,8 +3827,18 @@ public class LinkCrawler {
                         return ret;
                     }
                 }
-                br.followConnection();
-                return null;
+                if (looksLikeDownloadableContent(urlConnection)) {
+                    urlConnection.disconnect();
+                    final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+                    final CrawledLink direct = createDirectHTTPCrawledLink(link, urlConnection);
+                    if (direct != null) {
+                        ret.add(direct);
+                    }
+                    return ret;
+                } else {
+                    br.followConnection();
+                    return null;
+                }
             }
         };
     }
