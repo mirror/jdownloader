@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +39,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FileBitPl extends PluginForHost {
@@ -173,7 +173,7 @@ public class FileBitPl extends PluginForHost {
     }
 
     private String getDllinkAPI(final Account account, final DownloadLink link) throws Exception {
-        this.loginAPI(account, false);
+        this.loginAPI(account);
         long total_numberof_waittime_loops_for_current_fileID = 0;
         final long max_total_numberof_waittime_loops_for_current_fileID = 200;
         String fileID = link.getStringProperty("filebitpl_fileid", null);
@@ -284,8 +284,8 @@ public class FileBitPl extends PluginForHost {
     }
 
     /**
-     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br>
-     * DO NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
+     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br> DO
+     * NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
      */
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         this.loginWebsite(account);
@@ -337,7 +337,7 @@ public class FileBitPl extends PluginForHost {
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account, true);
+        loginAPI(account);
         br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
         handleAPIErrors(br, account, null);
         account.setConcurrentUsePossible(true);
@@ -472,20 +472,35 @@ public class FileBitPl extends PluginForHost {
     // loginWebsite(account);
     // }
     // }
-    private void loginAPI(final Account account, final boolean force) throws IOException, PluginException, InterruptedException {
+    private void loginAPI(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
                 newBrowserAPI();
                 sessionID = account.getStringProperty("sessionid");
                 final long session_expire = account.getLongProperty("sessionexpire", 0);
-                if (force || StringUtils.isEmpty(sessionID) || System.currentTimeMillis() > session_expire) {
+                if (StringUtils.isEmpty(sessionID) || System.currentTimeMillis() > session_expire) {
+                    if (!StringUtils.isEmpty(sessionID)) {
+                        try {
+                            br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
+                            handleAPIErrors(br, account, null);
+                            logger.info("Validated stored sessionID");
+                            account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
+                            return;
+                        } catch (PluginException e) {
+                            logger.log(e);
+                        }
+                    }
                     logger.info("Performing full login");
                     br.getPage(API_BASE + "?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
                     handleAPIErrors(br, account, null);
                     sessionID = PluginJSonUtils.getJson(this.br, "sessident");
                     if (StringUtils.isEmpty(sessionID)) {
-                        /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (br.getHttpConnection().getResponseCode() == 500) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        } else {
+                            /* This should never happen */
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                     /* According to API documentation, sessionIDs are valid for 60 minutes */
                     account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
@@ -494,7 +509,6 @@ public class FileBitPl extends PluginForHost {
                     logger.info("Trusting stored sessionID");
                 }
             } catch (final PluginException e) {
-                e.printStackTrace();
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     dumpSessionID(account);
                 }
@@ -575,7 +589,7 @@ public class FileBitPl extends PluginForHost {
     }
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        String statusCode = br.getRegex("\"errno\":(\\d+)").getMatch(0);
+        String statusCode = br.getRegex("\"errno\"\\s*:\\s*(\\d+)").getMatch(0);
         if (statusCode == null && br.containsHTML("\"result\":true")) {
             statusCode = "999";
         } else if (statusCode == null) {
@@ -592,6 +606,9 @@ public class FileBitPl extends PluginForHost {
             case 99:
                 /* Function not found (should never happen) */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            case 100:
+                dumpSessionID(account);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 200:
                 /* SessionID expired --> Refresh on next full login */
                 statusMessage = "Invalid sessionID";
