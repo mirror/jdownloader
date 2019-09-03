@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,7 +26,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn4k.to" }, urls = { "https?://(?:www\\.)?(?:xxx-blog|porn4k)\\.to/[a-z0-9\\-]+" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn4k.to" }, urls = { "https?://(?:www\\.)?(?:xxx-blog|porn4k)\\.to/(?!wp-content)[a-z0-9\\-]+" })
 public class Porn4kTo extends antiDDoSForDecrypt {
     public Porn4kTo(PluginWrapper wrapper) {
         super(wrapper);
