@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,10 +26,9 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40114 $", interfaceVersion = 3, names = { "entervideo.net" }, urls = { "https?://(www\\.)?entervideo\\.net/watch/.*" })
-public class EnterVideo extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 41212 $", interfaceVersion = 2, names = { "entervideo.net" }, urls = { "https?://(www\\.)?entervideo\\.net/watch/.*" })
+public class EnterVideo extends antiDDoSForDecrypt {
     public EnterVideo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,11 +38,13 @@ public class EnterVideo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         String videoBlock = br.getRegex("<video id=\"player\"[^>]+>(.*)</video>").getMatch(0);
         String[][] links = new Regex(videoBlock, "src=\"([^\"]+)\"").getMatches();
         for (String[] link : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
+            DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link[0]));
+            dl.setProperty("Referer", parameter);
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
