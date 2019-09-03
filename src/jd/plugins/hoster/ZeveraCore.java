@@ -580,10 +580,12 @@ abstract public class ZeveraCore extends UseNet {
         if (supportsPairingLogin(account)) {
             /* 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
             try {
+                boolean has_tried_old_token = false;
                 final long token_valid_until = account.getLongProperty("token_valid_until", 0);
                 if (System.currentTimeMillis() > token_valid_until) {
                     logger.info("Token has expired");
                 } else if (setAuthHeader(br, account)) {
+                    has_tried_old_token = true;
                     callAPI(br, account, "/api/account/info");
                     if (isLoggedIn(br)) {
                         return;
@@ -626,7 +628,16 @@ abstract public class ZeveraCore extends UseNet {
                 final String token_expires_in = PluginJSonUtils.getJson(br, "expires_in");
                 final String token_type = PluginJSonUtils.getJson(br, "token_type");
                 if (!success) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "User did not confirm pairing code!\r\nDo not close the pairing dialog until you've confirmed the code via browser!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    final String errormsg = "User did not confirm pairing code!\r\nDo not close the pairing dialog until you've confirmed the code via browser!";
+                    if (has_tried_old_token) {
+                        /*
+                         * Don't display permanent error if we still have an old token. Maybe something else has failed and the old token
+                         * will work fine again on the next try.
+                         */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 } else if (!"bearer".equals(token_type)) {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported token_type", PluginException.VALUE_ID_PREMIUM_DISABLE);

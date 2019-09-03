@@ -1411,11 +1411,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             dllink = this.getDllink(link, account, brc, brc.toString());
             if (StringUtils.isEmpty(dllink)) {
                 /* 2019-05-30: Test - worked for: xvideosharing.com */
-                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\">Direct Download Link</a>").getMatch(0);
+                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 /* 2019-08-29: Test - worked for: deltabit.co */
-                dllink = new Regex(brc.toString(), Pattern.compile("\"(https?://[^/]+/[a-z0-9]{60}/[^\"]+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                dllink = regexVideoStreamDownloadURL(brc.toString());
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.info("Failed to find final downloadurl");
@@ -1876,11 +1876,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 continue;
                             }
                         }
-                        System.out.println("WTF");
                         if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
-                            continue;
-                        } else if (dllink_temp.contains(".m3u8")) {
-                            /* Skip hls */
                             continue;
                         }
                         if (quality_temp > quality_best) {
@@ -1897,7 +1893,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             if (StringUtils.isEmpty(dllink)) {
                 /* 2019-07-04: Examplehost: vidoza.net */
-                dllink = new Regex(src, "(https?://[^/]+[^\"\\']+[a-z0-9]{60}/v\\.mp4)").getMatch(0);
+                dllink = regexVideoStreamDownloadURL(src);
             }
             if (StringUtils.isEmpty(dllink)) {
                 final String check = new Regex(src, "file\\s*:\\s*\"(https?[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
@@ -1937,10 +1933,20 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return dllink;
     }
 
+    private final String regexVideoStreamDownloadURL(final String src) {
+        String dllink = new Regex(src, Pattern.compile("(https?://[^/]+[^\"]+[a-z0-9]{60}/v\\.mp4)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (StringUtils.isEmpty(dllink)) {
+            /* Wider attempt */
+            dllink = new Regex(src, Pattern.compile("\"(https?://[^/]+/[a-z0-9]{60}/[^\"]+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        return dllink;
+    }
+
     /**
      * Returns URL to the video thumbnail. <br />
      * This might sometimes be useful when VIDEOHOSTER or VIDEOHOSTER_2 handling is used.
      */
+    @Deprecated
     public String getVideoThumbnailURL(final String src) {
         String url_thumbnail = new Regex(src, "image\\s*:\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(url_thumbnail)) {
@@ -2877,7 +2883,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean loggedInViaCookies = false;
+                boolean validatedCookies = false;
                 if (cookies != null) {
                     logger.info("Stored login-Cookies are available");
                     br.setCookies(getMainPage(), cookies);
@@ -2888,9 +2894,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(getMainPage() + getRelativeAccountInfoURL());
-                    loggedInViaCookies = isLoggedin();
+                    validatedCookies = isLoggedin();
                 }
-                if (loggedInViaCookies) {
+                if (validatedCookies) {
                     /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
                     logger.info("Successfully logged in via cookies");
                 } else {
@@ -2978,7 +2984,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * It seems like all or most of all XFS websites support this way of logging-in - even websites which were never officially supported
      * via XFS app (e.g. fileup.cc).
      */
-    protected final boolean loginAPP(final Account account, final boolean force) throws Exception {
+    protected final boolean loginAPP(final Account account, boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setHeader("User-Agent", "XFS-Mobile");
@@ -2987,9 +2993,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedInViaCookies = false;
+                /* 2019-08-29: Cookies will become invalid very soon so let's always verify them! */
+                verifyCookies = true;
                 if (cookies != null) {
                     br.setCookies(getMainPage(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !verifyCookies) {
                         /* We trust these cookies as they're not that old --> Do not check them */
                         logger.info("Trust cookies without checking as they're still fresh");
                         return false;
