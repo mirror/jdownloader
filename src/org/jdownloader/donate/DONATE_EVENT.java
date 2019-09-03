@@ -5,11 +5,25 @@ import java.util.GregorianCalendar;
 
 import javax.swing.Icon;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
 public enum DONATE_EVENT {
+    DEBUG(IconKey.ICON_CONSOLE) {
+        @Override
+        public boolean isNow() {
+            return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        }
+
+        final long timeStamp = System.currentTimeMillis();
+
+        @Override
+        public String getID() {
+            return name() + "." + timeStamp;
+        }
+    },
     NEWYEARSEVE(IconKey.ICON_CHAMPAGNE) {
         @Override
         public boolean isNow() {

@@ -9,14 +9,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.Icon;
 import javax.swing.Timer;
 
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.TabHeader;
+
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.donate.DONATE_EVENT;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.TabHeader;
 
 public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
     /**
@@ -88,8 +88,8 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             }
 
             @Override
-            public void mouseClicked(MouseEvent e) {
-                new DonateAction().actionPerformed(null);
+            public void mouseClicked(MouseEvent me) {
+                new DonateAction(event.get()).actionPerformed(new ActionEvent(me.getSource(), me.getID(), me.paramString()));
             }
 
             @Override
@@ -103,10 +103,10 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             }
 
             @Override
-            public void mousePressed(MouseEvent e) {
+            public void mousePressed(MouseEvent me) {
                 flashFlag.set(false);
                 CFG_GUI.CFG.setDonationNotifyID(event.get().getID());
-                new DonateAction().actionPerformed(null);
+                new DonateAction(event.get()).actionPerformed(new ActionEvent(me.getSource(), me.getID(), me.paramString()));
             }
 
             @Override
