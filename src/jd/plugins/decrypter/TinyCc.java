@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,14 +24,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tiny.cc" }, urls = { "http://(www\\.)?tiny\\.cc/[0-9a-zA-Z]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tiny.cc" }, urls = { "https?://(www\\.)?tiny\\.cc/[0-9a-zA-Z]+" })
 public class TinyCc extends PluginForDecrypt {
-
     public TinyCc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?tiny\\.cc/(url|example|help|tools|qrcodes|api|contact|terms|domains|app)";
+    private static final String INVALIDLINKS = "https?://(www\\.)?tiny\\.cc/(url|example|help|tools|qrcodes|api|contact|terms|domains|app)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -60,10 +58,7 @@ public class TinyCc extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
-
 }
