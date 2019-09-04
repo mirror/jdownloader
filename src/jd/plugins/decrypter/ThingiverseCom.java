@@ -35,11 +35,6 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         getPage(param.getCryptedUrl());
         String fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
         if (new Regex(br.getURL(), "/([^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)").matches()) {
-            // -------------------------------------------------------------------------------------------------------
-            // -------------------------------------------------------------------------------------------------------
-            // TODO: RegExes currently don't work for example https://www.thingiverse.com/groups/engineering/things
-            // -------------------------------------------------------------------------------------------------------
-            // -------------------------------------------------------------------------------------------------------
             String[] links = getAPISearchLinks(br);
             if (links != null && links.length > 0) {
                 for (String link : links) {
