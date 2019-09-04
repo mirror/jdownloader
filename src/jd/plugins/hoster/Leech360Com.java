@@ -22,12 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,12 +41,20 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leech360.com" }, urls = { "" })
 public class Leech360Com extends PluginForHost {
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final String          PROPERTY_API_TOKEN           = "api_login_token";
+    private static final String          PROPERTY_API_TOKEN_VALID     = "api_login_token_valid_until";
+    private static final String          PROPERTY_LOGIN_METHOD        = "login_method";
     private static final boolean         USE_API                      = true;
     private static final boolean         api_supports_free_accounts   = false;
     private static final boolean         allow_free_account_downloads = false;
@@ -110,8 +112,8 @@ public class Leech360Com extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = prepBR(this.br);
         mhm.runCheck(account, link);
-        login(account, false);
-        String dllink = getDllink(account, link);
+        final String method = login(account, false);
+        String dllink = getDllink(account, link, method);
         if (StringUtils.isEmpty(dllink)) {
             /* E.g. (website) "error_message":"some.filehost current offline or not support this time!" */
             mhm.handleErrorGeneric(account, link, "dllinknull", 50, 3 * 60 * 1000l);
@@ -119,13 +121,15 @@ public class Leech360Com extends PluginForHost {
         handleDL(account, link, dllink);
     }
 
-    private String getDllink(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+    private String getDllink(final Account account, final DownloadLink link, final String method) throws IOException, PluginException, InterruptedException {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
-            if (USE_API && (account.getType() == AccountType.PREMIUM || api_supports_free_accounts)) {
+            if (StringUtils.equalsIgnoreCase("website", method)) {
+                dllink = getDllinkWebsite(account, link);
+            } else if (StringUtils.equalsIgnoreCase("api", method)) {
                 dllink = getDllinkAPI(account, link);
             } else {
-                dllink = getDllinkWebsite(account, link);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return dllink;
@@ -287,8 +291,8 @@ public class Leech360Com extends PluginForHost {
     @SuppressWarnings("unchecked")
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, false);
-        if (isFreeAccountsForbiddenViaAPI()) {
+        final String method = login(account, false);
+        if (StringUtils.equalsIgnoreCase("website", method)) {
             logger.info("User added FREE account which is not supported via API");
             return fetchAccountInfoWebsite(account);
         }
@@ -358,18 +362,21 @@ public class Leech360Com extends PluginForHost {
         return acctype.equals(AccountType.PREMIUM) || acctype.equals(AccountType.LIFETIME);
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    private String login(final Account account, final boolean force) throws Exception {
         /* Load cookies */
         br.setCookiesExclusive(true);
         this.br = prepBR(this.br);
+        String method = null;
         if (USE_API) {
-            loginAPI(account, force);
-        } else {
-            loginWebsite(account, force);
+            method = loginAPI(account, force);
         }
+        if (method == null) {
+            method = loginWebsite(account, force);
+        }
+        return method;
     }
 
-    private void loginWebsite(final Account account, final boolean force) throws Exception {
+    private String loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 final Cookies cookies = account.loadCookies("");
@@ -391,9 +398,14 @@ public class Leech360Com extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                account.setProperty(PROPERTY_LOGIN_METHOD, "website");
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return "website";
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty(PROPERTY_LOGIN_METHOD);
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -403,31 +415,46 @@ public class Leech360Com extends PluginForHost {
         return br.containsHTML("id=\"linkpass\"");
     }
 
-    private void loginAPI(final Account account, final boolean force) throws Exception {
+    private String loginAPI(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            this.currAPIToken = account.getStringProperty(PROPERTY_API_TOKEN);
-            final long token_valid_until = account.getLongProperty("api_login_token_valid_until", 0);
-            if (this.currAPIToken != null && token_valid_until > System.currentTimeMillis()) {
-                /* Token should still be valid, let's blindly trust it! */
-                return;
+            try {
+                this.currAPIToken = account.getStringProperty(PROPERTY_API_TOKEN);
+                final long token_valid_until = account.getLongProperty(PROPERTY_API_TOKEN_VALID, 0);
+                if (this.currAPIToken != null && token_valid_until > System.currentTimeMillis()) {
+                    account.setProperty(PROPERTY_LOGIN_METHOD, "api");
+                    /* Token should still be valid, let's blindly trust it! */
+                    return "api";
+                }
+                /* Full login (generate new token) */
+                this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, null);
+                this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
+                if (isFreeAccountsForbiddenViaAPI()) {
+                    account.removeProperty(PROPERTY_LOGIN_METHOD);
+                    account.removeProperty(PROPERTY_API_TOKEN);
+                    /* Special state */
+                    return null;
+                } else if (StringUtils.isEmpty(this.currAPIToken)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.setProperty(PROPERTY_LOGIN_METHOD, "api");
+                account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
+                /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
+                /*
+                 * TODO: Ask admin to return timestamp here. This way, he can adjust the validity of the token without us needing to change
+                 * our code.
+                 */
+                account.setProperty(PROPERTY_API_TOKEN_VALID, System.currentTimeMillis() + 8 * 60 * 1000);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return "api";
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.removeProperty(PROPERTY_LOGIN_METHOD);
+                    account.removeProperty(PROPERTY_API_TOKEN);
+                    account.removeProperty(PROPERTY_API_TOKEN_VALID);
+                }
+                throw e;
             }
-            /* Full login (generate new token) */
-            this.getAPISafe("https://" + account.getHoster() + "/api/get_token?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, null);
-            this.currAPIToken = PluginJSonUtils.getJson(this.br, "token");
-            if (isFreeAccountsForbiddenViaAPI()) {
-                /* Special state */
-                return;
-            } else if (StringUtils.isEmpty(this.currAPIToken)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            account.setProperty(PROPERTY_API_TOKEN, this.currAPIToken);
-            /* 2017-11-16: According to API docmentation, these tokens are valid for 10 minutes so let's trust them for 8 minutes. */
-            /*
-             * TODO: Ask admin to return timestamp here. This way, he can adjust the validity of the token without us needing to change our
-             * code.
-             */
-            account.setProperty("api_login_token_valid_until", System.currentTimeMillis() + 8 * 60 * 1000);
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
     }
 

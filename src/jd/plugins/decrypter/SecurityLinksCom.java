@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(?:www\\.)?security-links\\.com/(?:\\d+/(\\S+)|[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "https?://(?:www\\.)?security-links\\.com/(?:\\d+/(\\S+)|[A-Za-z0-9]+)" })
 public class SecurityLinksCom extends PluginForDecrypt {
     public SecurityLinksCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +48,7 @@ public class SecurityLinksCom extends PluginForDecrypt {
                     char ch = decode.charAt(index);
                     sb.append(Character.toChars(ch - 1));
                 }
-                if (sb.toString().matches("(?i)(?:http|ftp).+")) {
+                if (sb.toString().matches("(?i)(?:https?|ftp).+")) {
                     decryptedLinks.add(createDownloadlink(sb.toString()));
                     return decryptedLinks;
                 }
@@ -63,7 +63,7 @@ public class SecurityLinksCom extends PluginForDecrypt {
         }
         if (br.containsHTML("\"generate\\.php\"")) {
             for (int i = 0; i <= 3; i++) {
-                final String code = getCaptchaCode("http://security-links.com/generate.php", param);
+                final String code = getCaptchaCode("https://security-links.com/generate.php", param);
                 br.postPage(br.getURL(), "submit_1=Valider&secure=" + Encoding.urlEncode(code));
                 if (br.containsHTML("\"generate\\.php\"")) {
                     continue;
@@ -86,7 +86,7 @@ public class SecurityLinksCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String[] links = br.getRegex("\\d+\\| <a href='(http[^<>\"]*?)'").getColumn(0);
+        String[] links = br.getRegex("\\d+\\| <a href='(https?[^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) {
             // for /\\d+/[A-Za-z0-9:;]+/[A-Za-z0-9:;]+
             final String filter = br.getRegex("<div id=\"hideshow\".*?</div>").getMatch(-1);

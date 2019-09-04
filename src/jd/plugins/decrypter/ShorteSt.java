@@ -40,7 +40,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
     // add new domains here.
-    private static final String[] domains = { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "clkme.in", "destyy.com", "festyy.com", "corneey.com", "gestyy.com", "ceesty.com" };
+    private static final String[] domains = { "sh.st", "viid.me", "wiid.me", "skiip.me", "clkme.me", "clkmein.com", "clkme.in", "destyy.com", "festyy.com", "corneey.com", "gestyy.com", "ceesty.com", "destyy.com" };
 
     public ShorteSt(PluginWrapper wrapper) {
         super(wrapper);
