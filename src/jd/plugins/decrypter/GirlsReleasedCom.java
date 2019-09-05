@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision: 41211 $", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
+@DecrypterPlugin(revision = "$Revision: 41230 $", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
 public class GirlsReleasedCom extends antiDDoSForDecrypt {
     public GirlsReleasedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -112,7 +112,6 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         final Browser br2 = br.cloneBrowser();
         String apiResult = null;
         final PostRequest post = new PostRequest(postURL);
-        post.getHeaders().put("Origin", "https://openloadtvstream.me");
         post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         post.setContentType("application/json");
         post.setPostDataString(payload);
