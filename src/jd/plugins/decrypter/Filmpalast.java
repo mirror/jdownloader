@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40104 $", interfaceVersion = 3, names = { "filmpalast.to" }, urls = { "https?://(www\\.)?filmpalast\\.to/stream/.*" })
+@DecrypterPlugin(revision = "$Revision: 41218 $", interfaceVersion = 3, names = { "filmpalast.to" }, urls = { "https?://(www\\.)?filmpalast\\.to/stream/.*" })
 public class Filmpalast extends PluginForDecrypt {
     public Filmpalast(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,8 +38,8 @@ public class Filmpalast extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String fpName = br.getRegex("<meta name=\"title\" content=\"(?:Serie|Film) ([^\"]+) kostenlos online").getMatch(0);
-        String[][] links = br.getRegex("<a class=\"[^\"]*iconPlay[^\"]*\"[^>]*href=\"([^\"]+)\"[^>]*>").getMatches();
+        String fpName = br.getRegex("<title>(?:Serie|Film)\\s*([^<]+)\\s*kostenlos online in HD anschauen").getMatch(0);
+        String[][] links = br.getRegex("data-player-url=\"([^\"]+)\"").getMatches();
         for (String[] link : links) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
         }
