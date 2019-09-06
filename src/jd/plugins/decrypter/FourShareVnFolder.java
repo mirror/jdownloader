@@ -45,7 +45,7 @@ public class FourShareVnFolder extends PluginForDecrypt {
         br.setConnectTimeout(2 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("File suspended:") || br.containsHTML("\\[Empty Folder\\]") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
+        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("File suspended:") || br.containsHTML(">\\s*Empty folder") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
