@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -103,7 +102,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         synchronized (account) {
             br = new Browser();
             final AccountInfo ac = new AccountInfo();
-            login(account, force);
+            loginAPI(account, force);
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
             }
@@ -115,7 +114,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
             } else if ("expired".equalsIgnoreCase(expire)) {
                 /* Free account = also expired */
                 account.setType(AccountType.FREE);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your account is a paid(premium) account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* 2019-09-05: Free Accounts are supported from now on */
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your
+                // account is a paid(premium) account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 ac.setValidUntil(Long.parseLong(expire) * 1000);
                 account.setType(AccountType.PREMIUM);
@@ -213,7 +214,32 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 supportedHosts.add(host);
             }
             account.setProperty("accountProperties", con);
-            final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
+            // final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
+            if (AccountType.FREE == account.getType()) {
+                /* Try to find Free Account limits to display them properly */
+                try {
+                    this.getPage("/download");
+                    /*
+                     * 2019-09-05: Free Accounts must be verified via mail or they cannot download anything. E.g.
+                     * "</i>Account Status : Unverified. Please verify your email OR purchase <a href="/myaccount/
+                     * extend">an Elite account</a> in order to start download." OR
+                     * ">Activation code has been blocked due to violation of our terms of service. Buy Elite membership in order to Download."
+                     */
+                    final Regex remainingURLS = br.getRegex("id=\"linkleft\">(\\d+)</span> out of (\\d+) premium link");
+                    final String remainingDailyURLsStr = remainingURLS.getMatch(0);
+                    final String maxDailyURLsStr = remainingURLS.getMatch(1);
+                    final int remainingURLs = Integer.parseInt(remainingDailyURLsStr);
+                    if (remainingURLs == 0) {
+                        /* 0 links left for today --> ZERO trafficleft */
+                        ac.setTrafficLeft(0);
+                    }
+                    ac.setStatus(String.format("Free Account [%s of %s daily links left]", remainingDailyURLsStr, maxDailyURLsStr));
+                } catch (final Throwable e) {
+                    logger.info("Failed to find free Account limits --> Setting ZERO trafficleft");
+                    ac.setTrafficLeft(0);
+                    ac.setStatus("Free Account [Failed to find number of URLs left]");
+                }
+            }
             return ac;
         }
     }
@@ -343,8 +369,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         }
     }
 
-    /** no override to keep plugin compatible to old stable */
-    @SuppressWarnings("deprecation")
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         long tt = link.getLongProperty("filezize", -1);
@@ -361,28 +386,37 @@ public class LinkSnappyCom extends antiDDoSForHost {
             dllink = (attemptDownload(account) ? dllink : null);
         }
         if (dllink == null) {
-            boolean hasValidatedCookies = this.login(account, false);
-            /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
-            link.setProperty("linksnappycomdirectlink", Property.NULL);
-            final String genLinks = "https://" + this.getHost() + "/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}");
-            for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
-                getPage(genLinks);
-                final String message = PluginJSonUtils.getJsonValue(br, "error");
-                if (isLoginSessionExpired(message)) {
-                    if (hasValidatedCookies) {
-                        // we already logged in seconds earlier... continuously re-logging in is pointless.
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Logged in multiple times in sucession, and session automatically expired. Please report to LinkSnappy.");
-                    }
-                    this.login(account, true);
-                    hasValidatedCookies = true;
+            if (AccountType.FREE == account.getType()) {
+                /* Free Account download - not possible via API! */
+                loginWebsite(account);
+                getPage("https://" + this.getHost() + "/api/linkfree?genLinks={%22link%22%20:%20%22" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "%22,%20%22type%22%20:%20%22%22,%20%22linkpass%22%20:%20%22%22}");
+                /* Returns same json as API which means we can use the same code to try to start the download! */
+                attemptDownload(account);
+            } else {
+                /* Premium account download */
+                boolean hasValidatedCookies = this.loginAPI(account, false);
+                /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
+                link.setProperty("linksnappycomdirectlink", Property.NULL);
+                final String genLinks = "https://" + this.getHost() + "/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "\"}");
+                for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     getPage(genLinks);
+                    final String message = PluginJSonUtils.getJsonValue(br, "error");
+                    if (isLoginSessionExpired(message)) {
+                        if (hasValidatedCookies) {
+                            // we already logged in seconds earlier... continuously re-logging in is pointless.
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Logged in multiple times in sucession, and session automatically expired. Please report to LinkSnappy.");
+                        }
+                        this.loginAPI(account, true);
+                        hasValidatedCookies = true;
+                        getPage(genLinks);
+                    }
+                    if (!attemptDownload(account)) {
+                        // we should have short wait period between retries.
+                        sleep(5000l, link, "Failed, will retry shortly");
+                        continue;
+                    }
+                    break;
                 }
-                if (!attemptDownload(account)) {
-                    // we should have short wait period between retries.
-                    sleep(5000l, link, "Failed, will retry shortly");
-                    continue;
-                }
-                break;
             }
             handleDownloadErrors(account);
         }
@@ -478,28 +512,27 @@ public class LinkSnappyCom extends antiDDoSForHost {
         }
     }
 
-    private void setDownloadConstants(final Account account, final DownloadLink link) {
-        final String dl_host = link.getDefaultPlugin().getHost();
-        final Object ret = account.getProperty("accountProperties", null);
-        if (ret != null && ret instanceof HashMap) {
-            @SuppressWarnings("unchecked")
-            final HashMap<String, HashMap<String, Object>> ap = (HashMap<String, HashMap<String, Object>>) ret;
-            final HashMap<String, Object> h = ap.get(dl_host);
-            if (h == null) {
-                // return defaults
-                return;
-            }
-            final int c = h.containsKey("chunks") ? ((Number) h.get("chunks")).intValue() : chunks;
-            chunks = (c > 1 ? -c : c);
-            final Boolean r = (Boolean) (h.containsKey("resumes") ? h.get("resumes") : resumes);
-            if (Boolean.FALSE.equals(r) && chunks == 1) {
-                resumes = r;
-            } else {
-                resumes = true;
-            }
-        }
-    }
-
+    // private void setDownloadConstants(final Account account, final DownloadLink link) {
+    // final String dl_host = link.getDefaultPlugin().getHost();
+    // final Object ret = account.getProperty("accountProperties", null);
+    // if (ret != null && ret instanceof HashMap) {
+    // @SuppressWarnings("unchecked")
+    // final HashMap<String, HashMap<String, Object>> ap = (HashMap<String, HashMap<String, Object>>) ret;
+    // final HashMap<String, Object> h = ap.get(dl_host);
+    // if (h == null) {
+    // // return defaults
+    // return;
+    // }
+    // final int c = h.containsKey("chunks") ? ((Number) h.get("chunks")).intValue() : chunks;
+    // chunks = (c > 1 ? -c : c);
+    // final Boolean r = (Boolean) (h.containsKey("resumes") ? h.get("resumes") : resumes);
+    // if (Boolean.FALSE.equals(r) && chunks == 1) {
+    // resumes = r;
+    // } else {
+    // resumes = true;
+    // }
+    // }
+    // }
     private int dlResponseCode = -1;
 
     private boolean attemptDownload(final Account account) throws Exception {
@@ -551,6 +584,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
                          */
                         account.getAccountInfo().setExpired(true);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else if (new Regex(err, "Please upgrade to Elite membership").matches()) {
+                        /* 2019-09-05: Free Account daily downloadlimit reached */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else {
                         logger.warning("Possible unknown API error occured: " + err);
                     }
@@ -626,7 +662,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
      *            false = Set stored cookies and trust them if they're not older than 300000l
      *
      */
-    private boolean login(final Account account, final boolean validateCookies) throws Exception {
+    private boolean loginAPI(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             br = new Browser();
             br.setCookiesExclusive(true);
@@ -668,6 +704,23 @@ public class LinkSnappyCom extends antiDDoSForHost {
             }
             return validatedCookies;
         }
+    }
+
+    private boolean loginWebsite(final Account account) throws Exception {
+        /* 2019-09-05: API cookies and website cookies are the same and can be used for both! */
+        boolean validatedCookies = this.loginAPI(account, false);
+        if (!validatedCookies) {
+            br.getPage("https://" + this.getHost());
+            validatedCookies = this.isLoggedinWebsite();
+            if (!validatedCookies) {
+                this.loginAPI(account, true);
+            }
+        }
+        return validatedCookies;
+    }
+
+    private boolean isLoggedinWebsite() {
+        return br.getCookie(this.getHost(), "Auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "username", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override

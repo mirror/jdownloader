@@ -734,44 +734,43 @@ public class TvnowDe extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 String authtoken = account.getStringProperty("authtoken", null);
                 String userID = account.getStringProperty("userid", null);
+                boolean loggedIN = false;
                 /* Always try to re-use sessions! */
                 if (cookies != null && authtoken != null && userID != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     setLoginHeaders(this.br, authtoken);
                     /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
-                    br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=id,status");
-                    final String useridTmp = PluginJSonUtils.getJson(br, "id");
-                    if (useridTmp != null && useridTmp.matches("\\d+") && br.getHttpConnection().getResponseCode() != 401) {
-                        return;
+                    br.getPage("https://my-prod.tvnow.de/api/subscription");
+                    loggedIN = !br.toString().trim().equalsIgnoreCase("invalid token");
+                }
+                if (!loggedIN) {
+                    logger.info("Performing full login");
+                    /* 2019-01-16: This is skippable */
+                    // br.getPage("https://my." + this.getHost() + "/login");
+                    prepBRAPI(br);
+                    br.getHeaders().put("Origin", "https://my.tvnow.de");
+                    /* 2019-03-04: Workaround for backslashes inside passwords */
+                    final String postdata = "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass().replace("\\", "\\\\") + "\"}";
+                    final PostRequest loginReq = br.createJSonPostRequest(API_BASE + "/backend/login?fields=[%22*%22,%22user%22,[%22receiveInsiderEmails%22,%22receiveMarketingEmails%22,%22marketingsettingsDone%22,%22receiveGroupMarketingEmails%22,%22receiveRTLIIMarketingEmails%22]]", postdata);
+                    br.openRequestConnection(loginReq);
+                    br.loadConnection(null);
+                    /*
+                     * This token is a set of base64 strings separated by dots which contains more json which contains some information
+                     * about the account and some more tokens (again base64)
+                     */
+                    authtoken = PluginJSonUtils.getJson(br, "token");
+                    userID = PluginJSonUtils.getJson(br, "id");
+                    final String clientID = PluginJSonUtils.getJson(br, "clientId");
+                    final String ck = PluginJSonUtils.getJson(br, "ck");
+                    if (authtoken == null || userID == null || clientID == null || ck == null) {
+                        /* E.g. wrong logindata: {"error":{"code":401,"message":"backend.user.authentication.failed"}} */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    /* Full login required - cleanup old cookies / headers */
-                    br = new Browser();
+                    /* Important header! */
+                    setLoginHeaders(this.br, authtoken);
+                    account.setProperty("userid", userID);
+                    account.setProperty("authtoken", authtoken);
                 }
-                /* 2019-01-16: This is skippable */
-                // br.getPage("https://my." + this.getHost() + "/login");
-                prepBRAPI(br);
-                br.getHeaders().put("Origin", "https://my.tvnow.de");
-                /* 2019-03-04: Workaround for backslashes inside passwords */
-                final String postdata = "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass().replace("\\", "\\\\") + "\"}";
-                final PostRequest loginReq = br.createJSonPostRequest(API_BASE + "/backend/login?fields=[%22*%22,%22user%22,[%22receiveInsiderEmails%22,%22receiveMarketingEmails%22,%22marketingsettingsDone%22,%22receiveGroupMarketingEmails%22,%22receiveRTLIIMarketingEmails%22]]", postdata);
-                br.openRequestConnection(loginReq);
-                br.loadConnection(null);
-                /*
-                 * This token is a set of base64 strings separated by dots which contains more json which contains some information about
-                 * the account and some more tokens (again base64)
-                 */
-                authtoken = PluginJSonUtils.getJson(br, "token");
-                userID = PluginJSonUtils.getJson(br, "id");
-                final String clientID = PluginJSonUtils.getJson(br, "clientId");
-                final String ck = PluginJSonUtils.getJson(br, "ck");
-                if (authtoken == null || userID == null || clientID == null || ck == null) {
-                    /* E.g. wrong logindata: {"error":{"code":401,"message":"backend.user.authentication.failed"}} */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                /* Important header! */
-                setLoginHeaders(this.br, authtoken);
-                account.setProperty("userid", userID);
-                account.setProperty("authtoken", authtoken);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -790,26 +789,54 @@ public class TvnowDe extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final String userID = account.getStringProperty("userid", null);
-        br.getPage(API_BASE + "/users/" + userID + "/transactions?fields=*,paymentPaytype.*,paymentPaytype.format.*,paymentTransaction.*,paymentTransaction.paymentProvider&filter=%7B%22ContainerId%22:0%7D");
+        // final String userID = account.getStringProperty("userid", null);
+        if (br.getURL() == null || !br.getURL().contains("/api/subscription")) {
+            br.getPage("https://my-prod.tvnow.de/api/subscription");
+        }
         /** We can get A LOT of information here ... but we really only want to know if we have a free- or a premium account. */
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        final Object currentSubscriptionPackage = JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        if (currentSubscriptionPackage != null) {
+            /*
+             * Old handling because before, they would list an Array of packages from which we only required the current one (the first
+             * one)!
+             */
+            entries = (LinkedHashMap<String, Object>) currentSubscriptionPackage;
+        }
         long expiredateTimestamp = 0;
-        if (entries != null) {
-            final String expiredateStr = (String) entries.get("endDate");
-            final String createdateStr = (String) entries.get("created");
-            expiredateTimestamp = !StringUtils.isEmpty(expiredateStr) ? TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
-            if (!StringUtils.isEmpty(createdateStr)) {
-                ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY));
-            }
-            final String nextBillingDate = (String) entries.get("nextBillingDate");
-            if (StringUtils.isNotEmpty(nextBillingDate)) {
-                final long nextBilling = TimeFormatter.getMilliSeconds(nextBillingDate, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY);
-                expiredateTimestamp = Math.max(expiredateTimestamp, nextBilling);
+        final String productName = (String) entries.get("productName");
+        final String expiredateStr = (String) entries.get("endDate");
+        final String createdateStr = (String) entries.get("created");
+        if (expiredateStr != null) {
+            if (expiredateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                expiredateTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd", Locale.GERMANY);
+            } else {
+                expiredateTimestamp = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY);
             }
         }
-        if (expiredateTimestamp < System.currentTimeMillis()) {
+        expiredateTimestamp = !StringUtils.isEmpty(expiredateStr) ? TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY) : 0;
+        if (!StringUtils.isEmpty(createdateStr)) {
+            if (createdateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd", Locale.GERMANY));
+            } else {
+                ai.setCreateTime(TimeFormatter.getMilliSeconds(createdateStr, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY));
+            }
+        }
+        /*
+         * 2019-09-06: nextBillingDate will never be null - for free accounts, it will be the date of registration + 1 year so we cannot
+         * only rely on this value to differ between free- and premium accounts!
+         */
+        final String nextBillingDate = (String) entries.get("nextBillingDate");
+        if (StringUtils.isNotEmpty(nextBillingDate)) {
+            final long nextBilling;
+            if (nextBillingDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                nextBilling = TimeFormatter.getMilliSeconds(nextBillingDate, "yyyy-MM-dd", Locale.GERMANY);
+            } else {
+                nextBilling = TimeFormatter.getMilliSeconds(nextBillingDate, "yyyy-MM-dd HH:mm:ss", Locale.GERMANY);
+            }
+            expiredateTimestamp = Math.max(expiredateTimestamp, nextBilling);
+        }
+        if (expiredateTimestamp < System.currentTimeMillis() || "FREE".equalsIgnoreCase(productName)) {
             account.setType(AccountType.FREE);
             /*
              * 2019-02-05: Free accounts do not have any advantages over anonymous streaming - also, login is not used for downloading
