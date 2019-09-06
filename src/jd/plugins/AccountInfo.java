@@ -399,8 +399,10 @@ public class AccountInfo extends Property {
                                                 if (list == null) {
                                                     list = new ArrayList<LazyHostPlugin>();
                                                     map.put(nonTldHost, list);
+                                                    list.add(lazyHostPlugin);
+                                                } else if (!list.contains(lazyHostPlugin)) {
+                                                    list.add(lazyHostPlugin);
                                                 }
-                                                list.add(lazyHostPlugin);
                                             }
                                         }
                                     }
