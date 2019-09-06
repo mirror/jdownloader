@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URLDecoder;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,7 +47,6 @@ public class VivoSx extends antiDDoSForHost {
     /* Similar: shared.sx, vivo.sx */
     private static final String domain = "shared.sx";
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -81,32 +82,54 @@ public class VivoSx extends antiDDoSForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = br.getRegex("(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
-            if (dllink == null) {
-                /* 2016-10-24 */
-                // dllink = br.getRegex("Core\\.InitializeStream\\s*\\('([^']+)'").getMatch(0);
-                dllink = br.getRegex("data-stream=\"([^\"]+)\"").getMatch(0); // 2018-11-11
-                if (dllink != null) {
-                    dllink = Encoding.Base64Decode(dllink);
-                    // dllink = PluginJSonUtils.unescape(dllink);
-                    // dllink = new Regex(dllink, "(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
+            final String source = br.getRegex("Core\\.InitializeStream\\s*\\(\\s*\\{[^)}]*source\\s*:\\s*'(.*?)'").getMatch(0);
+            if (source != null) {
+                final String toNormalize = URLDecoder.decode(source, "UTF-8");
+                final StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < toNormalize.length(); i++) {
+                    final char c = toNormalize.charAt(i);
+                    if (c != ' ') {
+                        int t = c + 47;
+                        if (126 < t) {
+                            t = t - 94;
+                        }
+                        sb.append(Character.toString((char) t));
+                    }
+                }
+                if (!StringUtils.startsWithCaseInsensitive(sb.toString(), "http")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    dllink = sb.toString();
                 }
             }
             if (dllink == null) {
-                final String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"([^<>\"]*?)\"").getMatch(0);
-                final String expires = br.getRegex("type=\"hidden\" name=\"expires\" value=\"([^<>\"]*?)\"").getMatch(0);
-                final String timestamp = br.getRegex("type=\"hidden\" name=\"timestamp\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (hash == null || timestamp == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String postData = "hash=" + hash + "&timestamp=" + timestamp;
-                if (expires != null) {
-                    postData += "&expires=" + expires;
-                }
-                postPage(br, br.getURL(), postData);
-                dllink = br.getRegex("class=\"stream-content\" data-url=\"(http[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
                 if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /* 2016-10-24 */
+                    // dllink = br.getRegex("Core\\.InitializeStream\\s*\\('([^']+)'").getMatch(0);
+                    dllink = br.getRegex("data-stream=\"([^\"]+)\"").getMatch(0); // 2018-11-11
+                    if (dllink != null) {
+                        dllink = Encoding.Base64Decode(dllink);
+                        // dllink = PluginJSonUtils.unescape(dllink);
+                        // dllink = new Regex(dllink, "(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
+                    }
+                }
+                if (dllink == null) {
+                    final String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    final String expires = br.getRegex("type=\"hidden\" name=\"expires\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    final String timestamp = br.getRegex("type=\"hidden\" name=\"timestamp\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    if (hash == null || timestamp == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String postData = "hash=" + hash + "&timestamp=" + timestamp;
+                    if (expires != null) {
+                        postData += "&expires=" + expires;
+                    }
+                    postPage(br, br.getURL(), postData);
+                    dllink = br.getRegex("class=\"stream-content\" data-url=\"(https?[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
@@ -117,6 +140,7 @@ public class VivoSx extends antiDDoSForHost {
             brc.getHeaders().put("", "");
             postPage(brc, "/request", "action=view&abs=false&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         } catch (final Throwable e) {
+            logger.log(e);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
