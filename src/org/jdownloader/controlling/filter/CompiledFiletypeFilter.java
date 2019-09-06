@@ -304,6 +304,7 @@ public class CompiledFiletypeFilter {
         MP1,
         MP2,
         MPA,
+        MIDI("midi?"),
         OMG,
         OMF,
         SND,

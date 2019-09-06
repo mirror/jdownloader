@@ -20,6 +20,11 @@ public class DonateAction extends CustomizableAppAction {
     private static final long serialVersionUID = -4559644534638870038L;
     final String              iconKey;
 
+    public DonateAction() {
+        // required by MenuManager
+        this(DONATE_EVENT.getNow());
+    }
+
     public DonateAction(final DONATE_EVENT event) {
         if (event != null && event.getIconKey() != null) {
             iconKey = event.getIconKey();
