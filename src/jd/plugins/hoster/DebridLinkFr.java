@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -37,10 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class DebridLinkFr extends PluginForHost {
@@ -465,7 +465,7 @@ public class DebridLinkFr extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    /** no override to keep plugin compatible to old stable */
+    @Override
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
@@ -497,6 +497,21 @@ public class DebridLinkFr extends PluginForHost {
             errHandling(account, link, true);
             logger.warning("Unhandled download error on Service Provider side:");
             mhm.handleErrorGeneric(account, link, "final_downloadurl_isnot_a_file", 50, 5 * 60 * 1000l);
+        }
+        /*
+         * 2019-09-06: They sometimes return wrong final filenames e.g. for vidoza.net filenames will all get changed to "video.mp4". This
+         * is a small workaround. In general, it prefers the filenames of the original plugin if they're longer.
+         */
+        String final_filename = null;
+        final String previous_filename = link.getName();
+        final String this_filename = getFileNameFromHeader(dl.getConnection());
+        if (previous_filename != null && this_filename != null && (this_filename.length() < previous_filename.length() || link.getHost().contains("vidoza"))) {
+            final_filename = previous_filename;
+        } else {
+            final_filename = this_filename;
+        }
+        if (final_filename != null) {
+            link.setFinalFileName(final_filename);
         }
         dl.startDownload();
     }
