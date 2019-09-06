@@ -10,7 +10,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomix.info " }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com)/gallery/[a-zA-Z0-9\\-_]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomix.info " }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com/gallery)/[a-zA-Z0-9\\-_]+/" })
 public class PornComixInfo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
