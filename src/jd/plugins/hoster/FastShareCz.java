@@ -17,11 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +30,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
@@ -123,6 +123,11 @@ public class FastShareCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String dllink = br.getRedirectLocation();
+        if (dllink != null && canHandle(dllink)) {
+            // eg redirect http->https or cut of ref parameter
+            br.getPage(dllink);
+            dllink = br.getRedirectLocation();
+        }
         if (dllink == null) {
             /*
              * E.g.
@@ -234,6 +239,11 @@ public class FastShareCz extends antiDDoSForHost {
         }
         /* Maybe user has direct downloads active */
         String dllink = br.getRedirectLocation();
+        if (dllink != null && canHandle(dllink)) {
+            // eg redirect http->https or cut of ref parameter
+            br.getPage(dllink);
+            dllink = br.getRedirectLocation();
+        }
         if (dllink == null) {
             /* Direct downloads inactive --> We have to find the final downloadlink */
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);

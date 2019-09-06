@@ -28,18 +28,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -64,6 +52,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -244,8 +244,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         (yyyy-MM-dd) which is less precise. <br />
      *         default: true
      */
-    protected boolean supports_precise_expire_date() {
-        return true;
+    protected String[] supports_precise_expire_date() {
+        return new String[] { "/?op=payments", "/upgrade" };
     }
 
     /**
@@ -383,12 +383,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
-     * <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
-     * <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -416,13 +414,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
      * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
-     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br>
-     * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
+     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br> Sadly, it seems like their
+     * linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
      * 2019-08-20: Some XFS websites are supported via another API via play.google.com/store/apps/details?id=com.zeuscloudmanager --> This
-     * has nothing todo with the official XFS API! </br>
-     * Example: xvideosharing.com, flix555.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
+     * has nothing todo with the official XFS API! </br> Example: xvideosharing.com, flix555.com, uploadocean.com[2019-07-11: uploadocean
+     * API is broken] <br />
      * default: false
      */
     protected boolean supports_api_only_mode() {
@@ -431,8 +429,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * 2019-08-20: Some websites' login will fail on the first attempt even with correct logindata. On the 2nd attempt a captcha will be
-     * required and then the login should work. </br>
-     * default = false
+     * required and then the login should work. </br> default = false
      */
     protected boolean allows_multiple_login_attempts_in_one_go() {
         return false;
@@ -831,8 +828,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Used by getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br>
-     * - If used for single URLs inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br> - If used for single URLs
+     * inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
      * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
     public boolean massLinkcheckerWebsite(final DownloadLink[] urls, final boolean setWeakFilename) {
@@ -1150,10 +1147,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Often used as fallback if o.g. officially only logged-in users can see filesize or filesize is not given in html code for whatever
      * reason.<br />
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
-     * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
-     * it)!<br />
-     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
-     * In case there is no filesize given, offline status will still be recognized! <br/>
+     * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports it)!<br />
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br> In
+     * case there is no filesize given, offline status will still be recognized! <br/>
      *
      * @return isOnline
      */
@@ -2536,20 +2532,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 expireStr += " 23:59:59";
                 expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
             }
-            final boolean supports_precise_expire_date = this.supports_precise_expire_date();
+            final String[] supports_precise_expire_date = this.supports_precise_expire_date();
             long currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
-            if (supports_precise_expire_date) {
+            if (supports_precise_expire_date != null && supports_precise_expire_date.length > 0) {
                 /*
                  * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g.
                  * 'flashbit.cc', Case [1] e.g. takefile.link, example website which has no precise expiredate at all: anzfile.net
                  */
-                final String[] paymentURLs = new String[] { "/?op=payments", "/upgrade" };
-                for (final String paymentURL : paymentURLs) {
-                    try {
-                        getPage(paymentURL);
-                    } catch (final Throwable e) {
-                        /* Skip failures due to timeout or bad http error-responses */
+                for (final String paymentURL : supports_precise_expire_date) {
+                    if (StringUtils.isEmpty(paymentURL)) {
                         continue;
+                    } else {
+                        try {
+                            getPage(paymentURL);
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                            /* Skip failures due to timeout or bad http error-responses */
+                            continue;
+                        }
                     }
                     /* We want to be exact - get current server time for every loop! */
                     currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
@@ -3405,17 +3405,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports embedding videos. <br />
-     * Example: uqload.com</br>
-     * Do not override - at least try to avoid having to!!
+     * Example: uqload.com</br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohosterEmbed() {
         return isVideohosterEmbed() || new Regex(correctedBR, "/embed-" + this.fuid + "\\.html").matches();
     }
 
     /**
-     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
-     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
-     * Do not override - at least try to avoid having to!!
+     * Decides whether to enforce a filename with a '.mp4' ending or not. </br> Names are either enforced if the configuration of the script
+     * implies this or if it detects that embedding videos is possible. </br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohoster_enforce_video_filename() {
         return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
@@ -3432,8 +3430,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
-     * Example: uploadboy.com</br>
-     * Do not override - at least try to avoid having to!!
+     * Example: uploadboy.com</br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
