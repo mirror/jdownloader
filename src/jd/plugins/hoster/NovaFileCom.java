@@ -375,12 +375,13 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.").setDefaultValue(default_eh));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_API", "Use API? (Recommended!)\r\nIf turned off, website will be used and you might have to enter captchas even in premium mode!").setDefaultValue(true));
     }
 
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
     @Override
     protected boolean useAPIZeusCloudManager() {
-        return true;
+        return this.getPluginConfig().getBooleanProperty("USE_API", true);
     }
 
     @Override

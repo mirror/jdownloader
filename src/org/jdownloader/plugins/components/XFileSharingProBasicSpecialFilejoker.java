@@ -123,6 +123,11 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         return true;
     }
 
+    /** If enabled, random User-Agent will be used in API mode! */
+    protected boolean useRandomUserAgentAPI() {
+        return false;
+    }
+
     /** Override this depending on host */
     protected String getRelativeAPIBaseAPIZeusCloudManager() {
         return null;
@@ -135,8 +140,23 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /** 2019-08-20: API will also work fine with different User-Agent values. */
     private final Browser prepAPIZeusCloudManager(final Browser br) {
-        br.getHeaders().put("User-Agent", "okhttp/3.8.0");
+        if (!this.useRandomUserAgentAPI()) {
+            br.getHeaders().put("User-Agent", "okhttp/3.8.0");
+        }
+        /* 2019-09-07: Seems like sometimes they're blocking User-Agents and they will then return error 418 */
+        br.setAllowedResponseCodes(new int[] { 418 });
         return br;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        if (useAPIZeusCloudManager()) {
+            /* For API mode */
+            return useRandomUserAgentAPI();
+        } else {
+            /* For website mode */
+            return super.useRUA();
+        }
     }
 
     private final boolean loginAPIZeusCloudManager(final Browser br, final Account account, final boolean force) throws Exception {
@@ -159,7 +179,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  * 2019-08-28: Errors may happen at this stage but we only want to perform a full login if we're absolutely sure that our
                  * current sessionID is invalid!
                  */
-                if (!"invalid session".equalsIgnoreCase(error)) {
+                if (!"invalid session".equalsIgnoreCase(error) && br.getHttpConnection().getResponseCode() == 200) {
                     loggedIN = true;
                     this.checkErrorsAPIZeusCloudManager(null, account);
                 }
