@@ -29,6 +29,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -254,25 +255,38 @@ public class PixaBayCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
+                /* 2019-09-07: If life was always as simple as that ... :D */
+                br.setCookie(this.getHost(), "is_human", "1");
+                // br.setCookie(this.getHost(), "lang", "de");
+                br.setCookie(this.getHost(), "client_width", "1920");
+                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                boolean loggedIN = false;
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    return;
+                    br.getPage("https://" + this.getHost() + "/de/accounts/media/");
+                    loggedIN = this.isLoggedIN();
                 }
-                br.setFollowRedirects(true);
-                br.postPage("https://pixabay.com/accounts/login/", "next=%2Fen%2Faccounts%2Fmedia%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!this.br.containsHTML("/accounts/logout/\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedIN) {
+                    logger.info("Performing full login");
+                    br.getPage("https://" + this.getHost() + "/accounts/login/");
+                    final Form loginform = br.getFormbyKey("password");
+                    if (loginform == null) {
+                        logger.warning("Failed to find loginform");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginform.put("username", account.getUser());
+                    loginform.put("password", account.getPass());
+                    if (loginform.getAction() != null && loginform.getAction().equals(".")) {
+                        loginform.setAction(br.getURL());
+                    }
+                    br.submitForm(loginform);
+                    if (!isLoggedIN()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -281,6 +295,10 @@ public class PixaBayCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIN() {
+        return br.containsHTML("/accounts/logout/\"");
     }
 
     @SuppressWarnings("deprecation")
