@@ -100,8 +100,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     private AccountInfo api_fetchAccountInfo(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            br = new Browser();
             final AccountInfo ac = new AccountInfo();
+            br = new Browser();
             loginAPI(account, force);
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
@@ -112,7 +112,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 /* 2018-01-15: Lifetime accounts have an expire date near the max unix timestamp (thus we do not display it) */
                 account.setType(AccountType.LIFETIME);
             } else if ("expired".equalsIgnoreCase(expire)) {
-                /* Free account = also expired */
+                /* Free account which has never been premium = also "expired" */
                 account.setType(AccountType.FREE);
                 /* 2019-09-05: Free Accounts are supported from now on */
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your
@@ -240,6 +240,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     ac.setStatus("Free Account [Failed to find number of URLs left]");
                 }
             }
+            ac.setMultiHostSupport(this, supportedHosts);
             return ac;
         }
     }

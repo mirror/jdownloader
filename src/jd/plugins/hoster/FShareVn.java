@@ -600,8 +600,6 @@ public class FShareVn extends PluginForHost {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
-                    account.clearCookies("apicookies");
-                    account.removeProperty("token");
                 }
                 throw e;
             }
@@ -685,7 +683,6 @@ public class FShareVn extends PluginForHost {
                 return token;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
                     account.clearCookies("apicookies");
                     account.removeProperty("token");
                 }
