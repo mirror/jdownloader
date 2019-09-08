@@ -2626,7 +2626,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Add current time to parsed value */
                 expire_milliseconds_precise_to_the_second += currentTime;
             }
-            if (expire_milliseconds_from_expiredate > 0) {
+            if (expire_milliseconds_precise_to_the_second > 0) {
                 logger.info("Using precise expire-date");
                 expire_milliseconds = expire_milliseconds_precise_to_the_second;
             } else if (expire_milliseconds_from_expiredate > 0) {
