@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41221 $", interfaceVersion = 3, names = { "vidcloud.icu" }, urls = { "https?://(www\\d*\\.)?vidcloud\\.icu/(videos/|streaming\\.php\\?|download\\?).+" })
+@DecrypterPlugin(revision = "$Revision: 41221 $", interfaceVersion = 3, names = { "vidcloud.icu" }, urls = { "https?://(www\\d*\\.)?(?:vidcloud\\.icu|k-vid\\.net)/(?:videos/|streaming\\.php\\?|download\\?).+" })
 public class VidCloudIcu extends antiDDoSForDecrypt {
     public VidCloudIcu(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +42,7 @@ public class VidCloudIcu extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String fpName = br.getRegex("<title>Watch\\s+([^\"]+)\\sat Vidcloud").getMatch(0);
+        String fpName = br.getRegex("<title>Watch\\s+([^\"]+)(?:\\sat Vidcloud)").getMatch(0);
         String[] links = null;
         if (parameter.contains("streaming.php")) {
             String[] activeLinks = br.getRegex("(?:file: \"|window.urlVideo = ')([^\"']+)[\"\']").getColumn(0);
