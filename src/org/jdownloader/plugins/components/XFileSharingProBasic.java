@@ -2541,9 +2541,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g.
                  * 'flashbit.cc', Case [1] e.g. takefile.link, example website which has no precise expiredate at all: anzfile.net
                  */
-                List<String> paymentURLs = new ArrayList<String>();
+                final List<String> paymentURLs;
                 final String last_working_payment_url = this.getPluginConfig().getStringProperty("property_last_working_payment_url", null);
                 if (last_working_payment_url != null) {
+                    paymentURLs = new ArrayList<String>();
                     logger.info("Found stored last_working_payment_url --> Trying this first in an attempt to save http requests: " + last_working_payment_url);
                     paymentURLs.add(last_working_payment_url);
                     /* Add all remaining URLs, start with the last working one */
