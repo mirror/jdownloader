@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -26,6 +27,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -57,6 +59,24 @@ public class EasyBytezCom extends XFileSharingProBasic {
     protected String[] supports_precise_expire_date() {
         /* 2019-09-06: Disabled upon admin request - not supported */
         return null;
+    }
+
+    private static AtomicLong LASTREQUESTFILEINFORMATION        = new AtomicLong(0);
+    private final int         waitBetweenRequestFileInformation = 250;
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        synchronized (LASTREQUESTFILEINFORMATION) {
+            try {
+                final long last = System.currentTimeMillis() - LASTREQUESTFILEINFORMATION.get();
+                if (last < waitBetweenRequestFileInformation && last >= 0) {
+                    Thread.sleep(waitBetweenRequestFileInformation - last);
+                }
+                return super.requestFileInformation(link);
+            } finally {
+                LASTREQUESTFILEINFORMATION.set(System.currentTimeMillis());
+            }
+        }
     }
 
     @Override
