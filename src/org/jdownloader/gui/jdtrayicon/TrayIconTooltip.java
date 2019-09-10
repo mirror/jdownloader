@@ -41,6 +41,7 @@ public class TrayIconTooltip extends JWindowTooltip {
     private JLabel            lblProgress;
 
     public TrayIconTooltip() {
+        setName("JDownloader");
     }
 
     protected void addContent(JPanel panel) {

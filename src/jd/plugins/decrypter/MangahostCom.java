@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost(?:-?br)?\\.(?:com|net|me|org|cc)|mangahosts\\.com|mangahost1\\.com|yesmangas\\.net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost(?:-?br)?\\.(?:com|net|me|org|cc)|mangahosts\\.com|mangahost1\\.com|yesmangas\\.net|mangahosted.com)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
 public class MangahostCom extends antiDDoSForDecrypt {
     public MangahostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +37,7 @@ public class MangahostCom extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "mangahost.cc", "yesmangas.net", "mangahosts.com", "mangahost1.com" };
+        return new String[] { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "mangahost.cc", "yesmangas.net", "mangahosts.com", "mangahost1.com", "mangahosted.com" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

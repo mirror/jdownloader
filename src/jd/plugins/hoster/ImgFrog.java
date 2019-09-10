@@ -13,7 +13,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision: 36569 $", interfaceVersion = 2, names = { "imgfrog.cf" }, urls = { "https?://imgfrog\\.cf/i/[a-zA-Z0-9\\-_]+\\.[a-zA-Z0-9]{4,}" })
+@HostPlugin(revision = "$Revision: 36569 $", interfaceVersion = 2, names = { "imgfrog.cf" }, urls = { "https?://imgfrog\\.(?:cf|pw)/i/[a-zA-Z0-9\\-_]+\\.[a-zA-Z0-9]{4,}" })
 public class ImgFrog extends antiDDoSForHost {
     public ImgFrog(PluginWrapper wrapper) {
         super(wrapper);

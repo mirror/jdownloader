@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.AlphaComposite;
@@ -47,6 +46,11 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
@@ -63,40 +67,26 @@ import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
-
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
 public final class TrayIconPopup extends ExtJFrame implements MouseListener {
-
     private static final long serialVersionUID  = 2623190748929934409L;
-
     // private JPanel entryPanel;
     // private JPanel quickConfigPanel;
     // private JPanel bottomPanel;
     private boolean           enteredPopup;
-
     private boolean           hideThreadrunning = false;
-
     // private JPanel exitPanel;
     // private java.util.List<AbstractButton> resizecomps;
-
     private transient Thread  hideThread;
-
     private TrayExtension     extension;
-
     private static final int  ICON_SIZE         = 20;
-
     private long              visibleUntil      = -1;
 
     public void setVisible(boolean b) {
         if (isVisible() && !b) {
             visibleUntil = System.currentTimeMillis();
         }
-
         super.setVisible(b);
     }
 
@@ -107,6 +97,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
 
     public TrayIconPopup(TrayExtension trayExtension) {
         super();
+        setTitle("JDownloader");
         setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
         this.extension = trayExtension;
         // resizecomps = new ArrayList<AbstractButton>();
@@ -124,7 +115,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
         content.add(header = new JButton("<html><b>" + JDUtilities.getJDTitle(0) + "</b></html>"), "align center");
         header.setBorderPainted(false);
         header.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 JDGui.getInstance().setWindowToTray(false);
@@ -153,15 +143,10 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                 if (menudata._getValidateException() != null) {
                     continue;
                 }
-
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
-
                     bt = new JToggleButton() {
-
                         protected void paintComponent(Graphics g) {
-
                             super.paintComponent(g);
-
                             Graphics2D g2 = (Graphics2D) g;
                             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                             g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -171,7 +156,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             g2.fillPolygon(new int[] { getWidth() - 5, getWidth() - 5 - 6, getWidth() - 5 - 6 }, new int[] { getHeight() / 2, getHeight() / 2 - 4, getHeight() / 2 + 4 }, 3);
                         }
                     };
-
                     bt.setText(menudata.getName());
                     bt.setOpaque(false);
                     bt.setContentAreaFilled(false);
@@ -185,7 +169,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                                 return;
                             }
                             root = new ExtPopupMenu();
-
                             new MenuBuilder(MenuManagerMainToolbar.getInstance(), root, (MenuContainer) menudata) {
                                 protected void addAction(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                     final JComponent ret = inst.addTo(root);
@@ -198,7 +181,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                                         });
                                     }
                                 }
-
                             }.run();
                             Object src = e.getSource();
                             if (e.getSource() instanceof Component) {
@@ -207,7 +189,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                                 Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                                 root.show(button, button.getWidth(), -insets.top);
                             }
-
                         }
                     });
                     bt.setIcon(MenuItemData.getIcon(menudata.getIconKey(), ICON_SIZE));
@@ -218,7 +199,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     bt.addMouseListener(new HoverEffect(bt));
                     final AbstractButton finalBt = bt;
                     bt.addMouseListener(new MouseListener() {
-
                         private Timer timer;
 
                         @Override
@@ -247,9 +227,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
 
                         @Override
                         public void mouseEntered(MouseEvent e) {
-
                             timer = new Timer(500, new ActionListener() {
-
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
                                     finalBt.doClick();
@@ -257,7 +235,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             });
                             timer.setRepeats(false);
                             timer.start();
-
                         }
 
                         @Override
@@ -269,7 +246,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                         }
                     });
                     content.add(bt);
-
                     continue;
                 } else if (menudata instanceof MenuLink) {
                     final JComponent item = menudata.createItem();
@@ -279,9 +255,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                         }
                     }
                     content.add(item, "");
-
                 } else if (menudata.getActionData() != null && menudata.getActionData()._isValidDataForCreatingAnAction()) {
-
                     action = menudata.createAction();
                     if (!action.isVisible()) {
                         continue;
@@ -293,9 +267,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     }
                     content.add(getMenuEntry(action));
                     last = menudata;
-
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -309,7 +281,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
         // content.add(new JSeparator(), "growx, spanx");
         // content.add(exitPanel);
         //
-
         content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
         // Dimension size = new Dimension(getPreferredSize().width, resizecomps.get(0).getPreferredSize().height);
         // for (AbstractButton c : resizecomps) {
@@ -373,7 +344,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     }
 
     private AbstractButton getMenuEntry(AppAction action) {
-
         AbstractButton b = createButton(action);
         if (action instanceof ExitToolbarAction) {
             b.addActionListener(new ActionListener() {
@@ -396,21 +366,17 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
             bt.setOpaque(false);
             bt.setContentAreaFilled(false);
             bt.setBorderPainted(false);
-
             bt.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     hideThreadrunning = false;
                     TrayIconPopup.this.dispose();
                 }
             });
-
             Icon icon;
-
             bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, ICON_SIZE));
             bt.setRolloverIcon(icon);
             bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, ICON_SIZE));
             bt.setRolloverSelectedIcon(icon);
-
             bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             bt.setFocusPainted(false);
             bt.setHorizontalAlignment(JButton.LEFT);
@@ -419,7 +385,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
             return bt;
         } else {
             // we use a JToggleButton here, because JToggle buttons seem to have a different left icon gap the jbuttons
-
             JToggleButton bt = new JToggleButton(action);
             bt.setOpaque(false);
             bt.setContentAreaFilled(false);
@@ -430,7 +395,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     TrayIconPopup.this.dispose();
                 }
             });
-
             Icon actionIcon = action.getIcon(ICON_SIZE);
             if (actionIcon != null) {
                 bt.setIcon(actionIcon);
@@ -469,5 +433,4 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     public boolean hasBeenRecentlyActive() {
         return isVisible() || System.currentTimeMillis() - visibleUntil < 10 * 1000;
     }
-
 }

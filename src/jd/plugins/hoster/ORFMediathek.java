@@ -177,15 +177,19 @@ public class ORFMediathek extends PluginForHost {
         }
         if ("hls".equals(downloadLink.getStringProperty("delivery"))) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br, dllink));
+            br.setFollowRedirects(true);
+            br.getPage(dllink);
+            final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (StringUtils.containsIgnoreCase(best.getDownloadurl(), "geoprotection_")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dl = new HLSDownloader(downloadLink, br, best.getDownloadurl());
             dl.startDownload();
         } else if ("hds".equals(downloadLink.getStringProperty("delivery"))) {
+            br.setFollowRedirects(true);
             br.getPage(dllink);
-            br.followRedirect();
             final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
             if (all == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -195,7 +199,16 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             hit.write(downloadLink);
-            final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
+            final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL()) {
+                @Override
+                protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection) throws IOException, PluginException {
+                    if (StringUtils.containsIgnoreCase(connection.getRequest().getUrl(), "geoprotection_")) {
+                        connection.disconnect();
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    return super.onNextFragment(connection);
+                }
+            };
             this.dl = dl;
             dl.setEstimatedDuration(hit.getDuration());
             dl.startDownload();

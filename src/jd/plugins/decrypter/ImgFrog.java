@@ -13,7 +13,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40452 $", interfaceVersion = 3, names = { "imgfrog.cf" }, urls = { "https?://imgfrog\\.cf/a/[a-zA-Z0-9\\-_]+\\.[a-zA-Z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision: 40452 $", interfaceVersion = 3, names = { "imgfrog.cf" }, urls = { "https?://imgfrog\\.(?:cf|pw)/a/[a-zA-Z0-9\\-_]+\\.[a-zA-Z0-9]{4,}" })
 public class ImgFrog extends antiDDoSForDecrypt {
     public ImgFrog(PluginWrapper wrapper) {
         super(wrapper);
@@ -30,7 +30,7 @@ public class ImgFrog extends antiDDoSForDecrypt {
             final String title = br.getRegex("<strong\\s*data-text\\s*=\\s*\"album-name\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
             int page = 1;
             while (true) {
-                final String images[][] = br.getRegex("<a\\s*href\\s*=\\s*\"\\s*(https?://imgfrog.cf/i/[^\"]*)\"[^<>]*>\\s*([^<>]*?)\\s*</a>").getMatches();
+                final String images[][] = br.getRegex("<a\\s*href\\s*=\\s*\"\\s*(https?://imgfrog.(?:cf|pw)/i/[^\"]*)\"[^<>]*>\\s*([^<>]*?)\\s*</a>").getMatches();
                 if (images == null || images.length == 0) {
                     if (page > 1) {
                         break;

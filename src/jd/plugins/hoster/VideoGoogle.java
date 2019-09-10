@@ -142,13 +142,20 @@ public class VideoGoogle extends PluginForHost {
                     }
                 }
                 if (fileName == null) {
+                    final String id = new Regex(con.getRequest().getUrl(), "id=(.*?)($|&)").getMatch(0);
+                    final String itag = new Regex(con.getRequest().getUrl(), "itag=(.*?)($|&)").getMatch(0);
                     fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
                     if (fileName == null) {
-                        fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
-                        final String ext = Files.getExtension(fileName);
-                        final ExtensionsFilterInterface compiledExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
-                        if (compiledExt == null || !(compiledExt instanceof CompiledFiletypeFilter.VideoExtensions)) {
-                            fileName = null;
+                        if (id != null && itag != null) {
+                            final String ext = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getContentType());
+                            fileName = "contentongoogle_" + id + "_" + itag + "." + ext;
+                        } else {
+                            fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
+                            final String ext = Files.getExtension(fileName);
+                            final ExtensionsFilterInterface compiledExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                            if (compiledExt == null || !(compiledExt instanceof CompiledFiletypeFilter.VideoExtensions)) {
+                                fileName = null;
+                            }
                         }
                     }
                     fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);

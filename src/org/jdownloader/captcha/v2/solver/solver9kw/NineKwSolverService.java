@@ -61,7 +61,8 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
                 @Override
                 public boolean isEnabled() {
-                    return config.isEnabled() || config.ismouse() || config.ispuzzle();
+                    // text or mouse or puzzle
+                    return config.isEnabledGlobally() && (config.isEnabled() || config.ismouse() || config.ispuzzle());
                 }
 
                 @Override
@@ -148,15 +149,20 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabledGlobally() && (config.ismouse() || config.isEnabled());
+        return config.isEnabledGlobally() && (config.ispuzzle() || config.ismouse() || config.isEnabled());
     }
 
     @Override
     public void setEnabled(boolean b) {
-        config.setEnabledGlobally(b);
-        if (isEnabled() != b) {
-            config.setmouse(b);
-            config.setEnabled(b);
+        if (b) {
+            config.setEnabledGlobally(true);
+            if (config.isEnabled() == config.ispuzzle() == config.ismouse() == false) {
+                config.setEnabled(b);
+                config.setmouse(b);
+                config.setpuzzle(b);
+            }
+        } else {
+            config.setEnabledGlobally(false);
         }
     }
 
