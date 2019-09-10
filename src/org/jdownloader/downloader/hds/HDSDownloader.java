@@ -49,7 +49,6 @@ import org.jdownloader.translate._JDT;
  *
  */
 public class HDSDownloader extends DownloadInterface {
-
     private static final int                        PACKAGE_AUDIO          = 0x08;
     private static final int                        PACKAGE_VIDEO          = 0x09;
     private static final int                        PACKAGE_SCRIPT         = 0x12;
@@ -61,20 +60,16 @@ public class HDSDownloader extends DownloadInterface {
     private static final int                        FRAME_TYPE_INFO        = 0x05;
     private static final int                        FLV_PACKET_HEADER_SIZE = 11;
     private static final byte[]                     FLV_HEADER             = new byte[] { 'F', 'L', 'V', 0x01, 0x05, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00 };
-
     private DataInputStream                         stream;
     private boolean                                 finished;
-
     private boolean                                 aacHeaderWritten       = false;
     private boolean                                 avcHeaderWritten       = false;
     private final Browser                           sourceBrowser;
     private final String                            fragmentBaseURL;
     private final AtomicInteger                     fragmentIndex          = new AtomicInteger(1);
-
     private ByteBuffer                              buffer;
     private final AtomicLong                        bytesWritten           = new AtomicLong(0);
     private final DownloadLinkDownloadable          downloadable;
-
     private long                                    startTimeStamp         = -1;
     private final LogInterface                      logger;
     private URLConnectionAdapter                    currentConnection;
@@ -150,7 +145,6 @@ public class HDSDownloader extends DownloadInterface {
                 if (buffertoWrite != null) {
                     buffertoWrite.flip();
                     outStream.write(buffertoWrite.array(), 0, buffertoWrite.remaining());
-
                 }
             }
         } finally {
@@ -181,7 +175,6 @@ public class HDSDownloader extends DownloadInterface {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Preprocessor (Encryption?) is not supported " + (type & 0x1F) + "(" + type + ")", 24 * 60 * 60 * 1000l);
             }
             type = type & 0x1F;
-
             buffer.clear();
             // DataSize UI24 Length of the message. Number of bytes after
             // StreamID to end of packet (Equal to packet length –
@@ -221,7 +214,6 @@ public class HDSDownloader extends DownloadInterface {
                 // 0 = 8-bit samples
                 // 1 = 16-bit samples
                 final int soundSize = (frameInfo & 0x2) >>> 1;
-
                 final int SoundType = (frameInfo & 0x1);
                 switch (codecId) {
                 case AudioTag.AAC:
@@ -239,7 +231,6 @@ public class HDSDownloader extends DownloadInterface {
                         }
                         aacHeaderWritten = true;
                         // System.out.println("Writing AAC sequence header");
-
                     }
                     handlePayload(dataSize, payloadToRead);
                     return buffer;
@@ -281,7 +272,6 @@ public class HDSDownloader extends DownloadInterface {
                     // not required or supported)
                     final int avcType = stream.readUnsignedByte();
                     payloadToRead -= write(avcType);
-
                     if (avcType == AVC_SEQUENCE_HEADER) {
                         if (avcHeaderWritten) {
                             // System.out.println("Skipping AVC sequence header");
@@ -291,7 +281,6 @@ public class HDSDownloader extends DownloadInterface {
                         avcHeaderWritten = true;
                         // System.out.println("Writing AVC sequence header");
                     }
-
                     handlePayload(dataSize, payloadToRead);
                     return buffer;
                 default:
@@ -372,7 +361,7 @@ public class HDSDownloader extends DownloadInterface {
         }
         updateFileSizeEstimation();
         final Browser br = sourceBrowser.cloneBrowser();
-        currentConnection = br.openGetConnection(buildFragmentURL(fragmentIndex.getAndIncrement()));
+        currentConnection = onNextFragment(br.openGetConnection(buildFragmentURL(fragmentIndex.getAndIncrement())));
         if (currentConnection.getResponseCode() == 200) {
             if (inputStream == null) {
                 inputStream = new MeteredThrottledInputStream(new F4vInputStream(currentConnection), new AverageSpeedMeter(10));
@@ -393,6 +382,10 @@ public class HDSDownloader extends DownloadInterface {
         }
     }
 
+    protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection) throws IOException, PluginException {
+        return connection;
+    }
+
     private int readInt24() throws IOException {
         int ch1 = stream.read();
         int ch2 = stream.read();
@@ -405,7 +398,6 @@ public class HDSDownloader extends DownloadInterface {
 
     private int writeInt24(final int i) throws IOException {
         return writeBytes((byte) (i >>> 16), (byte) (i >>> 8), (byte) i);
-
     }
 
     private int write(int i) throws IOException {
@@ -414,7 +406,6 @@ public class HDSDownloader extends DownloadInterface {
 
     private int writeBytes(byte... bytes) throws IOException {
         buffer.put(bytes);
-
         return bytes.length;
     }
 
@@ -451,7 +442,6 @@ public class HDSDownloader extends DownloadInterface {
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
@@ -621,5 +611,4 @@ public class HDSDownloader extends DownloadInterface {
     public boolean isResumedDownload() {
         return false;
     }
-
 }

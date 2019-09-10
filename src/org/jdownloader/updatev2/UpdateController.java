@@ -8,10 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -72,7 +71,7 @@ public class UpdateController implements UpdateCallbackInterface {
      * {@link #getInstance()}.
      */
     private UpdateController() {
-        confirmedThreads = new HashSet<Thread>();
+        confirmedThreads = new WeakHashMap<Thread, Object>();
         eventSender = new UpdaterEventSender();
         logger = LogController.getInstance().getLogger(UpdateController.class.getName());
         settings = JsonConfig.create(UpdateSettings.class);
@@ -88,19 +87,19 @@ public class UpdateController implements UpdateCallbackInterface {
         return installedRevisionJD;
     }
 
-    private UpdateHandler      handler;
-    private boolean            running;
-    private HashSet<Thread>    confirmedThreads;
-    private String             appid;
-    private String             updaterid;
-    private UpdaterEventSender eventSender;
-    private Icon               statusIcon;
-    private String             statusLabel;
-    private double             statusProgress      = -1;
-    private volatile boolean   hasPendingUpdates   = false;
-    private int                installedRevisionJDU;
-    private int                installedRevisionJD;
-    public static final int    DEBUG_SELFTEST_PORT = System.getProperty("DEBUG_SELFTEST") == null ? -1 : Integer.parseInt(System.getProperty("DEBUG_SELFTEST"));
+    private UpdateHandler                     handler;
+    private boolean                           running;
+    private final WeakHashMap<Thread, Object> confirmedThreads;
+    private String                            appid;
+    private String                            updaterid;
+    private UpdaterEventSender                eventSender;
+    private Icon                              statusIcon;
+    private String                            statusLabel;
+    private double                            statusProgress      = -1;
+    private volatile boolean                  hasPendingUpdates   = false;
+    private int                               installedRevisionJDU;
+    private int                               installedRevisionJD;
+    public static final int                   DEBUG_SELFTEST_PORT = System.getProperty("DEBUG_SELFTEST") == null ? -1 : Integer.parseInt(System.getProperty("DEBUG_SELFTEST"));
 
     public UpdateHandler getHandler() {
         return handler;
@@ -127,21 +126,14 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     private synchronized boolean isThreadConfirmed() {
-        return confirmedThreads.contains(Thread.currentThread());
+        return confirmedThreads.containsKey(Thread.currentThread());
     }
 
     private synchronized void setUpdateConfirmed(boolean b) {
         if (b) {
-            confirmedThreads.add(Thread.currentThread());
+            confirmedThreads.put(Thread.currentThread(), this);
         } else {
             confirmedThreads.remove(Thread.currentThread());
-        }
-        // cleanup
-        for (Iterator<Thread> it = confirmedThreads.iterator(); it.hasNext();) {
-            Thread th = it.next();
-            if (!th.isAlive()) {
-                it.remove();
-            }
         }
     }
 

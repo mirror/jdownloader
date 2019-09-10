@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,23 +37,40 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.eu" }, urls = { "" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tout-debrid.ch" }, urls = { "" })
 public class ToutDebridEu extends antiDDoSForHost {
     private static final String          PROTOCOL                  = "https://";
     /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
     /* 2019-07-25: According to reports, using multiple chunks will often lead to disconnects */
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 1;
-    private static MultiHosterManagement mhm                       = new MultiHosterManagement("tout-debrid.eu");
+    private static MultiHosterManagement mhm                       = new MultiHosterManagement("tout-debrid.ch");
 
     public ToutDebridEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://tout-debrid.eu/offres");
+        this.enablePremium("http://tout-debrid.ch/offres");
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null) {
+            return getHost();
+        } else if (host.equals("tout-debrid.ch") || host.equals("tout-debrid.eu")) {
+            return getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @Override
     public String getAGBLink() {
-        return "http://tout-debrid.eu/faq";
+        return "http://tout-debrid.ch/faq";
     }
 
     private Browser prepBR(final Browser br) {

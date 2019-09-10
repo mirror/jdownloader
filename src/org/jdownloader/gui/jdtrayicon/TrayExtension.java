@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Color;
@@ -123,9 +122,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }
             throw new StartException("Tray isn't supported!");
         }
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 new EDTRunner() {
                     @Override
@@ -160,19 +157,12 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private TrayIconPopup                       trayIconPopup;
-
     private TrayIcon                            trayIcon;
-
     private JFrame                              guiFrame;
-
-    private TrayIconTooltip                     trayIconTooltip;
-
+    private volatile TrayIconTooltip            trayIconTooltip = null;
     private TrayMouseAdapter                    ma;
-
     private ExtensionConfigPanel<TrayExtension> configPanel;
-
     private long                                lastCloseRequest;
-
     private boolean                             asking;
 
     public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
@@ -210,7 +200,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public void initGUI(final boolean startup) {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 new EDTRunner() {
                     @Override
@@ -264,7 +253,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             trayIcon.setImageAutoSize(true);
                             trayIcon.addActionListener(TrayExtension.this);
                             ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
-                            trayIconTooltip = new TrayIconTooltip();
                             LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
                             if (guiFrame == null) {
                                 guiFrame = JDGui.getInstance().getMainFrame();
@@ -275,7 +263,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                         public void componentShown(ComponentEvent e) {
                                             if (getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled()) {
                                                 new EDTRunner() {
-
                                                     @Override
                                                     protected void runInEDT() {
                                                         removeTrayIcon();
@@ -321,11 +308,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             * 
+                             *
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             * 
+                             *
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             * 
+                             *
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -348,11 +335,19 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public void mouseExited(MouseEvent e) {
-        trayIconTooltip.hideTooltip();
+        hideTrayIconToolTip();
+    }
+
+    private void hideTrayIconToolTip() {
+        final TrayIconTooltip ltrayIconTooltip = trayIconTooltip;
+        trayIconTooltip = null;
+        if (ltrayIconTooltip != null) {
+            ltrayIconTooltip.hideTooltip();
+        }
     }
 
     public void mousePressed(MouseEvent e) {
-        trayIconTooltip.hideTooltip();
+        hideTrayIconToolTip();
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
@@ -474,6 +469,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         if (trayIconPopup != null && trayIconPopup.isVisible()) {
             return;
+        }
+        if (trayIconTooltip == null) {
+            trayIconTooltip = new TrayIconTooltip();
         }
         trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
     }
@@ -693,5 +691,4 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public boolean isActive() {
         return trayIconPopup != null && trayIconPopup.hasBeenRecentlyActive();
     }
-
 }
