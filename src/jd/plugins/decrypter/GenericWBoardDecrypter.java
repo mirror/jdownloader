@@ -67,16 +67,16 @@ public class GenericWBoardDecrypter extends antiDDoSForDecrypt {
         } else {
             final String title = br.getRegex("<title>\\s*([^<]+)\\s*&(?:r|l)aquo;").getMatch(0);
             final String[] links = br.getRegex("href\\s*=\\s*\"(/link/([^\"]+))\"").getColumn(0);
-            if (links == null) {
+            if (links == null || links.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String password = br.getRegex(">\\s*Passwort:\\s*</div>\\s*<div class=\"ui2\">\\s*([^<]+)\\s*</div>").getMatch(0);
             if (password == null) {
                 password = br.getRegex("<span>\\s*Passwor(?:d|t):\\s*</span>\\s*(.*?)\\s*<").getMatch(0);
             }
-            for (String link : links) {
-                link = br.getURL(Encoding.htmlDecode(link)).toString();
-                final DownloadLink downloadLink = createDownloadlink(link);
+            for (final String link : links) {
+                final String url = br.getURL(Encoding.htmlDecode(link)).toString();
+                final DownloadLink downloadLink = createDownloadlink(url);
                 if (StringUtils.isNotEmpty(password) && !StringUtils.equalsIgnoreCase(password, "Kein Passwort")) {
                     downloadLink.setSourcePluginPasswordList(new ArrayList<String>(Arrays.asList(password)));
                 }
