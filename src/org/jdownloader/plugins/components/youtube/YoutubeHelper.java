@@ -825,27 +825,55 @@ public class YoutubeHelper {
     }
 
     public class StreamMap {
-        public StreamMap(String map, String src2) {
+        public StreamMap(String map, String src) {
             this.mapData = map;
-            this.src = src2;
+            this.src = src;
+        }
+
+        public StreamMap(YoutubeStreamData streamData, String src) {
+            this.streamData = streamData;
+            this.src = src;
         }
 
         @Override
         public String toString() {
-            return mapData + " (" + src + ")";
+            if (mapData != null) {
+                return mapData + " (" + src + ")";
+            } else {
+                return streamData + " (" + src + ")";
+            }
         }
 
         @Override
         public int hashCode() {
-            return mapData.hashCode();
+            if (mapData != null) {
+                return mapData.hashCode();
+            } else {
+                return streamData.itag.hashCode();
+            }
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof StreamMap)) {
+            if (obj == null) {
+                return false;
+            } else if (obj == this) {
+                return true;
+            } else if (!(obj instanceof StreamMap)) {
+                return false;
+            } else if (mapData != null && ((StreamMap) obj).mapData != null) {
+                return StringUtils.equalsIgnoreCase(mapData, ((StreamMap) obj).mapData);
+            } else if (streamData != null && ((StreamMap) obj).streamData != null) {
+                return streamData.itag == ((StreamMap) obj).streamData.itag;
+            } else {
                 return false;
             }
-            return ((StreamMap) obj).mapData.equals(mapData);
+        }
+
+        private YoutubeStreamData streamData = null;
+
+        public YoutubeStreamData getStreamData() {
+            return streamData;
         }
 
         private String mapData;
@@ -1434,6 +1462,7 @@ public class YoutubeHelper {
         videoInfo = new HashMap<String, String>();
         vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
         this.handleContentWarning(br);
+        collectMapsFromPlayerResponse(ytPlayerConfig != null ? (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/player_response") : null, br.getURL());
         collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
         Browser apiBrowser = null;
         apiBrowser = br.cloneBrowser();
@@ -1555,10 +1584,9 @@ public class YoutubeHelper {
         doFeedScan();
         doUserAPIScan();
         fmtLoop: for (StreamMap fmt : fmtMaps) {
-            boolean fmtChecked = false;
-            for (final String line : fmt.mapData.split(",")) {
+            if (fmt.streamData != null) {
                 try {
-                    final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
+                    final YoutubeStreamData match = fmt.streamData;
                     if (isStreamDataAllowed(match)) {
                         if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
                             continue;
@@ -1571,7 +1599,27 @@ public class YoutubeHelper {
                         lst.add(match);
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    logger.log(e);
+                }
+            }
+            if (StringUtils.isNotEmpty(fmt.mapData)) {
+                for (final String line : fmt.mapData.split(",")) {
+                    try {
+                        final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
+                        if (isStreamDataAllowed(match)) {
+                            if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
+                                continue;
+                            }
+                            StreamCollection lst = ret.get(match.getItag());
+                            if (lst == null) {
+                                lst = new StreamCollection();
+                                ret.put(match.getItag(), lst);
+                            }
+                            lst.add(match);
+                        }
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
                 }
             }
         }
@@ -1670,6 +1718,8 @@ public class YoutubeHelper {
                             handleQuery(representation, ret, url, query, mpdUrl);
                         }
                     }
+                } catch (InterruptedException e) {
+                    throw e;
                 } catch (BrowserException e) {
                     logger.log(e);
                 } catch (Throwable e) {
@@ -1824,6 +1874,70 @@ public class YoutubeHelper {
         }
     }
 
+    private YoutubeStreamData convert(Map<String, Object> entry, final String src) {
+        if (entry != null) {
+            final String url = (String) entry.get("url");
+            final Long width = JavaScriptEngineFactory.toLong(entry.get("width"), -1);
+            final Long height = JavaScriptEngineFactory.toLong(entry.get("height"), -1);
+            final Long contentLength = JavaScriptEngineFactory.toLong(entry.get("contentLength"), -1);
+            final Long bitrate = JavaScriptEngineFactory.toLong(entry.get("bitrate"), -1);
+            final Long itagID = JavaScriptEngineFactory.toLong(entry.get("itag"), -1);
+            final Long fps = JavaScriptEngineFactory.toLong(entry.get("fps"), -1);
+            final String projectionType = (String) entry.get("projectionType");
+            final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, vid.date);
+            final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
+            if (height > 0) {
+                ret.setHeight(height.intValue());
+            }
+            if (width > 0) {
+                ret.setWidth(width.intValue());
+            }
+            if (fps > 0) {
+                ret.setFps(fps.toString());
+            }
+            if (contentLength > 0) {
+                ret.setContentLength(contentLength.longValue());
+            }
+            if (bitrate > 0) {
+                ret.setBitrate(bitrate.intValue());
+            }
+            if (StringUtils.equalsIgnoreCase(projectionType, "RECTANGULAR")) {
+                ret.setProjectionType(0);
+            } else {
+                // TODO
+            }
+            return ret;
+        }
+        return null;
+    }
+
+    private void collectMapsFromPlayerResponse(String playerResponse, String src) {
+        if (playerResponse != null) {
+            final Map<String, Object> map = JSonStorage.restoreFromString(playerResponse, TypeRef.HASHMAP);
+            final Map<String, Object> streamingData = (Map<String, Object>) map.get("streamingData");
+            if (adaptiveFmtsEnabled && streamingData.containsKey("adaptiveFormats")) {
+                final List<Map<String, Object>> adaptiveFormats = (List<Map<String, Object>>) streamingData.get("adaptiveFormats");
+                final String dataSrc = "new_adaptive_fmts_map." + src;
+                for (final Map<String, Object> format : adaptiveFormats) {
+                    final YoutubeStreamData data = convert(format, dataSrc);
+                    if (data != null) {
+                        fmtMaps.add(new StreamMap(data, dataSrc));
+                    }
+                }
+            }
+            if (fmtMapEnabled && streamingData.containsKey("formats")) {
+                final List<Map<String, Object>> formats = (List<Map<String, Object>>) streamingData.get("formats");
+                final String dataSrc = "new_fmt_stream_map." + src;
+                for (final Map<String, Object> format : formats) {
+                    final YoutubeStreamData data = convert(format, dataSrc);
+                    if (data != null) {
+                        fmtMaps.add(new StreamMap(data, dataSrc));
+                    }
+                }
+            }
+        }
+    }
+
     private void collectMapsFromVideoInfo(String queryString, String src) throws MalformedURLException {
         UrlQuery map = Request.parseQuery(queryString);
         for (Entry<String, String> es : map.toMap().entrySet()) {
@@ -1833,6 +1947,9 @@ public class YoutubeHelper {
         if (StringUtils.isNotEmpty(ttsurl)) {
             subtitleUrls.add(ttsurl);
         }
+        if (videoInfo.containsKey("player_response")) {
+            collectMapsFromPlayerResponse(videoInfo.get("player_response"), src);
+        }
         final String captionTracks = new Regex(videoInfo.get("player_response"), "captionTracks\"\\s*:(\\[.*?\\])\\s*,").getMatch(0);
         if (StringUtils.isNotEmpty(captionTracks)) {
             subtitleUrls.add(Encoding.unicodeDecode(captionTracks));
@@ -1841,16 +1958,18 @@ public class YoutubeHelper {
             String adaptive_fmts = videoInfo.get("adaptive_fmts");
             if (StringUtils.isNotEmpty(adaptive_fmts)) {
                 // adaptive_fmts = Encoding.urlDecode(adaptive_fmts, false);
-                System.out.println("Add adaptive_fmts VI - " + adaptive_fmts);
-                fmtMaps.add(new StreamMap(adaptive_fmts, "adaptive_fmts." + src));
+                if (fmtMaps.add(new StreamMap(adaptive_fmts, "adaptive_fmts." + src))) {
+                    logger.info("Add adaptive_fmts VI - " + adaptive_fmts);
+                }
             }
         }
         if (fmtMapEnabled) {
             String url_encoded_fmt_stream_map = videoInfo.get("url_encoded_fmt_stream_map");
             if (StringUtils.isNotEmpty(url_encoded_fmt_stream_map)) {
                 // url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
-                System.out.println("Add url_encoded_fmt_stream_map VI - " + url_encoded_fmt_stream_map);
-                fmtMaps.add(new StreamMap(url_encoded_fmt_stream_map, "url_encoded_fmt_stream_map." + src));
+                if (fmtMaps.add(new StreamMap(url_encoded_fmt_stream_map, "url_encoded_fmt_stream_map." + src))) {
+                    logger.info("Add url_encoded_fmt_stream_map VI - " + url_encoded_fmt_stream_map);
+                }
             }
         }
         // if StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true"), the manifest url uses a unknown signature.

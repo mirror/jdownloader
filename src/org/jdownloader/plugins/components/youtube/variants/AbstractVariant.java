@@ -310,7 +310,9 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
     public static AbstractVariant get(VariantBase base, YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
         AbstractVariant v = get(base.name());
-        v.fill(vid, audio, video, data);
+        if (v != null) {
+            v.fill(vid, audio, video, data);
+        }
         return v;
     }
 
@@ -352,6 +354,9 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         HashSet<String> dupes = new HashSet<String>();
         for (VariantBase b : VariantBase.values()) {
             AbstractVariant var = AbstractVariant.get(b);
+            if (var == null) {
+                continue;
+            }
             if (dupes.add(dupeid(var))) {
                 sorted.add((var));
             }
