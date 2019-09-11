@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,6 +26,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -98,7 +98,12 @@ public class DdlTo extends XFileSharingProBasic {
     public int getMaxDownloadSelect() {
         final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(maxSimultaneousDownloads_LIMIT, 0);
         try {
-            return Integer.parseInt(maxSimultaneousDownloads[chosenDownloadLimit]);
+            final String value = maxSimultaneousDownloads[chosenDownloadLimit];
+            if ("DEFAULT".equals(value)) {
+                return 1;
+            } else {
+                return Integer.parseInt(value);
+            }
         } catch (final Throwable e) {
             /* Return default limit */
             logger.log(e);

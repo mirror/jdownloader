@@ -76,6 +76,7 @@ public class WeTransferCom extends PluginForHost {
         if (recipient_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
         final Map<String, Object> map = new HashMap<String, Object>();
         map.put("security_hash", security_hash);
         map.put("file_ids", Arrays.asList(new String[] { id_single }));
@@ -85,6 +86,9 @@ public class WeTransferCom extends PluginForHost {
         final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + id_main + "/download")));
         post.getHeaders().put("Accept", "application/json");
         post.getHeaders().put("Content-Type", "application/json");
+        if (csrfToken != null) {
+            post.getHeaders().put("X-CSRF-Token", csrfToken);
+        }
         post.setPostDataString(JSonStorage.toString(map));
         br.getPage(post);
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
