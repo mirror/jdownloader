@@ -163,7 +163,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         return testInstance;
     }
 
-    private ArrayList<PackagizerRule> readConfig() {
+    private synchronized ArrayList<PackagizerRule> readConfig() {
         ArrayList<PackagizerRule> list = new ArrayList<PackagizerRule>();
         if (config == null) {
             return list;
@@ -275,8 +275,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             ruleListHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
                 @Override
                 public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                    list = readConfig();
-                    update();
+                    setList(readConfig());
                 }
 
                 @Override
@@ -286,7 +285,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
                 @Override
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
-                    save(list);
+                    synchronized (PackagizerController.this) {
+                        save(list);
+                    }
                 }
 
                 @Override
