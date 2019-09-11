@@ -78,10 +78,17 @@ public class YoutubeStreamData {
     private int    width;
     private String fps;
     private int    projectionType;
-    private String qualityLabel;
     private String src;
     private long   contentLength = -1;
     private int    bitrate       = -1;
+
+    public void setContentLength(long contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public void setBitrate(int bitrate) {
+        this.bitrate = bitrate;
+    }
 
     public String getSrc() {
         return src;
@@ -108,10 +115,6 @@ public class YoutubeStreamData {
                 }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
-            }
-            this.qualityLabel = query.get("quality_label");
-            if (qualityLabel == null) {
-                qualityLabel = query.get("quality");
             }
             String v = query.get("projection_type");
             projectionType = v == null ? -1 : Integer.parseInt(v);

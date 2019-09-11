@@ -4,7 +4,7 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
 import org.jdownloader.translate._JDT;
 
-public enum Projection implements LabelInterface,TooltipInterface {
+public enum Projection implements LabelInterface, TooltipInterface {
     ANAGLYPH_3D {
         @Override
         public String getLabel() {
@@ -49,5 +49,4 @@ public enum Projection implements LabelInterface,TooltipInterface {
             return _JDT.T.Projection_Spherical3D_tt();
         }
     };
-
 }
