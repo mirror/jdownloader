@@ -1918,6 +1918,7 @@ public class YoutubeHelper {
             final Long bitrate = JavaScriptEngineFactory.toLong(entry.get("bitrate"), -1);
             final Long itagID = JavaScriptEngineFactory.toLong(entry.get("itag"), -1);
             final Long fps = JavaScriptEngineFactory.toLong(entry.get("fps"), -1);
+            final String stereoLayout = (String) entry.get("stereoLayout");
             final String projectionType = (String) entry.get("projectionType");
             final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, vid.date);
             final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
@@ -1936,10 +1937,16 @@ public class YoutubeHelper {
             if (bitrate > 0) {
                 ret.setBitrate(bitrate.intValue());
             }
+            // stereoLayout:STEREO_LAYOUT_LEFT_RIGHT
+            // projectionType:RECTANGULAR,MESH,EQUIRECTANGULAR
             if (StringUtils.equalsIgnoreCase(projectionType, "RECTANGULAR")) {
                 ret.setProjectionType(0);
-            } else {
+            } else if (StringUtils.equalsIgnoreCase(projectionType, "MESH")) {
                 // TODO
+            } else if (StringUtils.equalsIgnoreCase(projectionType, "EQUIRECTANGULAR")) {
+                // TODO
+            } else {
+                System.out.println("TODO");
             }
             return ret;
         }
