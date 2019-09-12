@@ -22,18 +22,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.RequestHistory.TYPE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -53,6 +41,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.RequestHistory.TYPE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -427,6 +428,15 @@ public abstract class antiDDoSForHost extends PluginForHost {
         }
     }
 
+    @Override
+    public boolean isAccountLoginCaptchaChallenge(DownloadLink link, Challenge<?> c) {
+        if (antiDDosCaptcha.get() == 0) {
+            return super.isAccountLoginCaptchaChallenge(link, c);
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Performs Cloudflare, Incapsula, Sucuri requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
@@ -637,20 +647,26 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             a_captchaRequirement = true;
                             // recapthcha v2
                             if (cloudflareForm.containsHTML("class=\"g-recaptcha\"")) {
-                                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                                this.setDownloadLink(dllink);
-                                final Form cf = cloudflareForm;
-                                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-                                    @Override
-                                    public String getSiteKey() {
-                                        return getSiteKey(cf.getHtmlCode());
-                                    }
+                                final String recaptchaV2Response;
+                                final DownloadLink existingDownloadLink = getDownloadLink();
+                                try {
+                                    final DownloadLink dllink = new DownloadLink(this, (existingDownloadLink != null ? existingDownloadLink.getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                                    this.setDownloadLink(dllink);
+                                    final Form cf = cloudflareForm;
+                                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+                                        @Override
+                                        public String getSiteKey() {
+                                            return getSiteKey(cf.getHtmlCode());
+                                        }
 
-                                    @Override
-                                    public String getSecureToken() {
-                                        return getSecureToken(cf.getHtmlCode());
-                                    }
-                                }.getToken();
+                                        @Override
+                                        public String getSecureToken() {
+                                            return getSecureToken(cf.getHtmlCode());
+                                        }
+                                    }.getToken();
+                                } finally {
+                                    setDownloadLink(existingDownloadLink);
+                                }
                                 // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
                                 final String rayId = getRayID(ibr);
                                 if (inValidate(rayId)) {
@@ -954,9 +970,15 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     a_captchaRequirement = true;
                     // recaptcha v2
                     if (ifr.containsHTML("class=\"g-recaptcha\"")) {
-                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                        this.setDownloadLink(dllink);
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ifr).getToken();
+                        final DownloadLink existingDownloadLink = getDownloadLink();
+                        final String recaptchaV2Response;
+                        try {
+                            final DownloadLink dllink = new DownloadLink(this, (existingDownloadLink != null ? existingDownloadLink.getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                            this.setDownloadLink(dllink);
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ifr).getToken();
+                        } finally {
+                            setDownloadLink(existingDownloadLink);
+                        }
                         ifr.postPage("/_Incapsula_Resource?SWCGHOEL=v2", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                         if (ifr.containsHTML("class=\"g-recaptcha\"")) {
                             logger.warning("Wrong captcha");

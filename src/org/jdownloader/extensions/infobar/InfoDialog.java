@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.infobar;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -137,7 +138,11 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         lblHelp.setHorizontalAlignment(JLabel.CENTER);
         lblHelp.setToolTipText(T.T.jd_plugins_optional_infobar_InfoDialog_help_tooltip2());
         final JPanel panel = new JPanel(new MigLayout("ins 6, wrap 1", "[grow,fill,250]"));
-        panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
+        Color background = getBackground();
+        if (background == null) {
+            background = new Color(255, 255, 255);
+        }
+        panel.setBorder(BorderFactory.createLineBorder(background.darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
         panel.add(lblProgress, "split 2");
         panel.add(lblETA);

@@ -1,5 +1,8 @@
 package org.jdownloader.extensions.infobar;
 
+import jd.SecondLevelLaunch;
+import jd.plugins.AddonPanel;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -20,18 +23,13 @@ import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 
-import jd.SecondLevelLaunch;
-import jd.plugins.AddonPanel;
-
 public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler, GenericConfigEventListener<Boolean> {
-
     @Override
     public boolean isDefaultEnabled() {
         return false;
     }
 
     private InfoDialog                             infoDialog;
-
     private ExtensionConfigPanel<InfoBarExtension> configPanel;
 
     public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
@@ -44,21 +42,17 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     public InfoBarExtension() throws StartException {
         setTitle(T.jd_plugins_optional_infobar_jdinfobar());
-
     }
 
     public Class<EnableInfoBarGuiAction> getShowGuiAction() {
         return EnableInfoBarGuiAction.class;
-
     }
 
     public void setGuiEnable(boolean b) {
         if (b) {
-
             if (infoDialog == null) {
                 infoDialog = new InfoDialog(this);
                 infoDialog.setEnableDropLocation(getSettings().isDragAndDropEnabled());
-
             }
             infoDialog.showDialog();
         } else {
@@ -67,7 +61,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             }
         }
         getSettings().setWindowVisible(b);
-
     }
 
     @Override
@@ -96,17 +89,14 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             throw new StartException("Not available in Headless Mode");
         }
         LogController.CL().info("InfoBar: OK");
-
         MenuManagerMainmenu.getInstance().registerExtender(this);
         MenuManagerMainToolbar.getInstance().registerExtender(this);
-
         CFG_INFOBAR.WINDOW_VISIBLE.getEventSender().addListener(this, true);
         onConfigValueModified(null, null);
     }
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-
         if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(mr);
         } else if (manager instanceof MenuManagerMainmenu) {
@@ -122,14 +112,12 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         windows.add(EnableInfoBarGuiAction.class);
         container.add(windows);
         return container;
-
     }
 
     private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
         OptionalContainer opt = new OptionalContainer(false);
         opt.add(EnableInfoBarGuiAction.class);
         return opt;
-
     }
 
     @Override
@@ -144,7 +132,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     protected void initExtension() throws StartException {
-
         configPanel = new InfoBarConfigPanel(this);
     }
 
@@ -154,23 +141,16 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         setGuiEnable(CFG_INFOBAR.WINDOW_VISIBLE.isEnabled());
-
                     }
-
                 };
             }
         });
-
     }
-
 }
