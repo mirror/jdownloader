@@ -20,6 +20,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -28,9 +31,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?fshare\\.vn/folder/([A-Z0-9]+)" })
 public class FShareVnFolder extends PluginForDecrypt {
@@ -67,25 +67,37 @@ public class FShareVnFolder extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             for (final Object linkO : ressourcelist) {
-                final Map<String, Object> entries2 = (Map<String, Object>) linkO;
+                final Map<String, Object> linkInfo = (Map<String, Object>) linkO;
                 // final String path = (String) entries2.get("path");
-                final String linkcode = (String) entries2.get("linkcode");
+                final String linkcode = (String) linkInfo.get("linkcode");
                 if (dupe.add(linkcode)) {
-                    final String filename = (String) entries2.get("name");
-                    final long filesize = JavaScriptEngineFactory.toLong(entries2.get("size"), 0);
+                    final String mimetype = (String) linkInfo.get("mimetype");
+                    final String filename = (String) linkInfo.get("name");
+                    String currentFolderPath = (String) linkInfo.get("path");
+                    final long size = JavaScriptEngineFactory.toLong(linkInfo.get("size"), 0);
                     if (StringUtils.isEmpty(linkcode)) {
                         /* This should never happen */
                         continue;
                     }
-                    final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/file/" + linkcode);
-                    dl.setLinkID(linkcode);
-                    if (filesize > 0) {
-                        /* Should always be the case. */
-                        dl.setDownloadSize(filesize);
+                    final DownloadLink dl;
+                    if (mimetype == null && size == 0) {
+                        /* Folder */
+                        dl = this.createDownloadlink("https://www." + this.getHost() + "/folder/" + linkcode);
+                        if (StringUtils.isEmpty(currentFolderPath)) {
+                            /* Workaround for bad serverside information */
+                            currentFolderPath = filename;
+                        }
+                    } else {
+                        /* File */
+                        dl = this.createDownloadlink("https://www." + this.getHost() + "/file/" + linkcode);
+                        dl.setDownloadSize(size);
+                        dl.setName(filename);
+                        dl.setAvailable(true);
+                        dl._setFilePackage(fp);
                     }
-                    dl.setName(filename);
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
+                    if (!StringUtils.isEmpty(currentFolderPath)) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentFolderPath);
+                    }
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
