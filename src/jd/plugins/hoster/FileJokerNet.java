@@ -224,13 +224,19 @@ public class FileJokerNet extends XFileSharingProBasicSpecialFilejoker {
     private void setConfigElements() {
         /* 2019-08-20: This host grants (free-)users with special Referer values better downloadspeeds. */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "CUSTOM_REFERER", "Set custom Referer here").setDefaultValue(null));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_API", "Use API? (Recommended!)\r\nIf turned off, website will be used and you might have to enter captchas even in premium mode!").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, "Use API? (Recommended!)\r\nIf turned off, website will be used and you might have to enter captchas even in premium mode!").setDefaultValue(true));
     }
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
 
     @Override
     protected boolean useAPIZeusCloudManager() {
-        return this.getPluginConfig().getBooleanProperty("USE_API", true);
+        return this.getPluginConfig().getBooleanProperty(XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, true);
+    }
+
+    @Override
+    protected boolean tryAPILoginInWebsiteMode() {
+        /* 2019-09-12: Verified and working */
+        return true;
     }
 
     @Override
