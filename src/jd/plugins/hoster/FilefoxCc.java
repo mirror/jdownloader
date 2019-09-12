@@ -231,7 +231,8 @@ public class FilefoxCc extends XFileSharingProBasic {
 
     @Override
     public String getLoginURL() {
-        return super.getMainPage();
+        /* 2019-09-12: Mainpage will also immediately display login mask but /login is safer! */
+        return super.getMainPage() + "/login";
     }
 
     @Override

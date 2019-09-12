@@ -10,6 +10,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -52,7 +53,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         }
         if (account != null && !StringUtils.isEmpty(dllink)) {
             /* Set timestamp of last download on account - this might be useful later for our Free-Account handling */
-            account.setProperty("lastdownload_timestamp_website", System.currentTimeMillis());
+            account.setProperty(PROPERTY_LASTDOWNLOAD_WEBSITE, System.currentTimeMillis());
         }
         return dllink;
     }
@@ -111,8 +112,14 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
-    private static final String PROPERTY_SESSIONID = "zeus_cloud_sessionid";
-    private static final String PROPERTY_EMAIL     = "email";
+    private static final String PROPERTY_SESSIONID                              = "cookie_zeus_cloud_sessionid";
+    private static final String PROPERTY_EMAIL                                  = "cookie_email";
+    private static final String PROPERTY_USERNAME                               = "cookie_username";
+    private static final String PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE = "timestamp_last_api_login_failure_in_website_mode";
+    private static final String PROPERTY_LASTDOWNLOAD_API                       = "lastdownload_timestamp_api";
+    private static final String PROPERTY_LASTDOWNLOAD_WEBSITE                   = "lastdownload_timestamp_website";
+    private static final String PROPERTY_COOKIES_API                            = "PROPERTY_COOKIES_API";
+    public static final String  PROPERTY_SETTING_USE_API                        = "USE_API_2019_09";
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
@@ -125,6 +132,15 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /** If enabled, random User-Agent will be used in API mode! */
     protected boolean useRandomUserAgentAPI() {
+        return false;
+    }
+
+    /**
+     * API login may avoid the need of login captchas. If enabled, ZeusCloudManagerAPI login will be tried even if API is disabled and
+     * resulting cookies will be used in website mode. Only enable this if tested! </br>
+     * default = false
+     */
+    protected boolean tryAPILoginInWebsiteMode() {
         return false;
     }
 
@@ -181,18 +197,38 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  */
                 if (!"invalid session".equalsIgnoreCase(error) && br.getHttpConnection().getResponseCode() == 200) {
                     loggedIN = true;
-                    this.checkErrorsAPIZeusCloudManager(null, account);
+                    this.checkErrorsAPIZeusCloudManager(this.br, null, account);
                 }
             }
             if (!loggedIN) {
                 getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + String.format(getRelativeAPILoginParamsFormatAPIZeusCloudManager(), Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass())));
                 sessionid = PluginJSonUtils.getJson(br, "session");
                 error = PluginJSonUtils.getJson(br, "error");
-                this.checkErrorsAPIZeusCloudManager(null, account);
+                this.checkErrorsAPIZeusCloudManager(this.br, null, account);
                 if (StringUtils.isEmpty(sessionid)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.setProperty("zeus_cloud_sessionid", sessionid);
+            }
+            account.setProperty(PROPERTY_SESSIONID, sessionid);
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                try {
+                    /*
+                     * Check if API cookies and website cookies are the same --> If so, delete both so that they will not be checked again
+                     * in website mode! Cookies from website may slightly differ (they will e.g. contain language cookie) which is why we
+                     * compare simply via sessionid ("xfss") cookie!
+                     */
+                    final Cookies cookies_website = account.loadCookies("");
+                    final Cookies cookies_api = account.loadCookies(PROPERTY_COOKIES_API);
+                    final String sessionid_website = cookies_website.get("xfss").getValue();
+                    final String sessionid_api = cookies_api.get("xfss").getValue();
+                    if (sessionid_website.equals(sessionid_api)) {
+                        account.clearCookies("");
+                        account.clearCookies(PROPERTY_COOKIES_API);
+                    }
+                } catch (final Throwable eCookiesClearFailure) {
+                    /* Usually NPE because of missing values */
+                }
             }
         } finally {
             convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
@@ -213,6 +249,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         final String server_timeStr = (String) entries.get("server_time");
         long expire_milliseconds_precise_to_the_second = 0;
         final String email = (String) entries.get("usr_email");
+        final String username = (String) entries.get("usr_login");
         final long currentTime;
         if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -240,27 +277,30 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             ai.setValidUntil(expire_milliseconds_precise_to_the_second);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
-        if (email != null) {
+        if (!StringUtils.isEmpty(email)) {
             account.setProperty(PROPERTY_EMAIL, email);
+        }
+        if (!StringUtils.isEmpty(username)) {
+            account.setProperty(PROPERTY_USERNAME, username);
         }
         convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
         return ai;
     }
 
-    private final void handlePremiumAPIZeusCloudManager(final DownloadLink link, final Account account) throws Exception {
-        loginAPIZeusCloudManager(this.br, account, false);
+    private final void handlePremiumAPIZeusCloudManager(final Browser br, final DownloadLink link, final Account account) throws Exception {
+        loginAPIZeusCloudManager(br, account, false);
         /* Important! Set fuid as we do not check availibility via website via requestFileInformationWebsite! */
         this.fuid = getFUIDFromURL(link);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = checkDirectLinkAPIZeusCloudManager(link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
             final String sessionid = this.getAPIZeusCloudManagerSession(account);
-            this.getPage(this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=download1&session=" + sessionid + "&file_code=" + fuid);
+            this.getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=download1&session=" + sessionid + "&file_code=" + fuid);
             /*
              * 2019-08-21: Example response (free account download):
              * {"download_id":"xxxxxxxx","file_size":"200000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx","countdown":"90"}
              */
-            checkErrorsAPIZeusCloudManager(link, account);
+            checkErrorsAPIZeusCloudManager(this.br, link, account);
             final String download_id = PluginJSonUtils.getJson(br, "download_id");
             final String waittimeSecondsStr = PluginJSonUtils.getJson(br, "countdown");
             if (StringUtils.isEmpty(download_id)) {
@@ -271,17 +311,17 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 final int waittimeSeconds = Integer.parseInt(waittimeSecondsStr);
                 this.sleep(waittimeSeconds * 1001l, link);
             }
-            this.getPage(this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=download2&session=" + sessionid + "&file_code=" + fuid + "&download_id=" + download_id);
+            this.getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=download2&session=" + sessionid + "&file_code=" + fuid + "&download_id=" + download_id);
             /*
              * 2019-08-21: Example response (free account download):
              * {"file_size":"200000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx",
              * "message":"Wait 5 hours 12 minutes 46 seconds to download for free."}
              */
-            checkErrorsAPIZeusCloudManager(link, account);
+            checkErrorsAPIZeusCloudManager(this.br, link, account);
             dllink = PluginJSonUtils.getJson(br, "direct_link");
             if (!StringUtils.isEmpty(dllink)) {
                 /* Set timestamp of last download on account - this might be useful later for our Free-Account handling */
-                account.setProperty("lastdownload_timestamp_api", System.currentTimeMillis());
+                account.setProperty(PROPERTY_LASTDOWNLOAD_API, System.currentTimeMillis());
             }
         }
         this.handleDownload(link, account, dllink, null);
@@ -339,7 +379,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (useAPIZeusCloudManager()) {
-            handlePremiumAPIZeusCloudManager(link, account);
+            handlePremiumAPIZeusCloudManager(this.br, link, account);
         } else {
             super.handlePremium(link, account);
         }
@@ -350,13 +390,25 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * download via website right away.
      */
     private final void convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(final Account account, final String sessionid) {
-        this.br.setCookie(account.getHoster(), "xfss", sessionid);
+        final Browser dummyBR = new Browser();
+        dummyBR.setCookie(account.getHoster(), "xfss", sessionid);
         final String email = account.getStringProperty(PROPERTY_EMAIL, null);
+        final String username = account.getStringProperty(PROPERTY_USERNAME, null);
         if (!StringUtils.isEmpty(email)) {
-            account.setProperty(PROPERTY_EMAIL, email);
-            this.br.setCookie(br.getHost(), "email", email);
+            /* 2019-09-12: E.g. required for filejoker.net */
+            dummyBR.setCookie(account.getHoster(), "email", email);
         }
-        account.saveCookies(br.getCookies(account.getHoster()), "");
+        if (!StringUtils.isEmpty(username)) {
+            /* 2019-09-12: E.g. required for novafile.com */
+            dummyBR.setCookie(account.getHoster(), "login", username);
+        }
+        /*
+         * 2019-09-12: E.g.filejoker.net website needs xfss and email cookies, novafile.com needs xfss and login cookies. Both websites will
+         * also work when xfss, email AND login cookies are present all together!
+         */
+        final Cookies cookies = dummyBR.getCookies(account.getHoster());
+        account.saveCookies(cookies, "");
+        account.saveCookies(cookies, PROPERTY_COOKIES_API);
     }
 
     @Override
@@ -373,11 +425,48 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         if (useAPIZeusCloudManager()) {
             return loginAPIZeusCloudManager(this.br, account, force);
         } else {
+            final long timestamp_last_api_login_failure_in_website_mode = account.getLongProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, 0);
+            boolean try_api_login_in_website_mode = tryAPILoginInWebsiteMode();
+            if (try_api_login_in_website_mode) {
+                final long api_login_retry_limit = 24 * 60 * 60 * 1000l;
+                final long timestamp_api_login_retry_allowed = timestamp_last_api_login_failure_in_website_mode + api_login_retry_limit;
+                if (System.currentTimeMillis() < timestamp_api_login_retry_allowed) {
+                    final long time_until_new_api_login_in_website_mode_allowed = timestamp_api_login_retry_allowed - System.currentTimeMillis();
+                    logger.info("try_api_login is not allowed because API login attempt  failed recently - retry allowed in: " + TimeFormatter.formatMilliSeconds(time_until_new_api_login_in_website_mode_allowed, 0));
+                    try_api_login_in_website_mode = false;
+                }
+            }
+            if (try_api_login_in_website_mode) {
+                logger.info("Trying API in website as an attempt to avoid login captchas");
+                try {
+                    /*
+                     * Use a new Browser instance as we do not want to continue via API afterwards thus we do not want to have API
+                     * headers/cookies!
+                     */
+                    final Browser apiBR = new Browser();
+                    /* Do not only call login as we need the email/username cookie which we only get when obtaining AccountInfo! */
+                    // loginAPIZeusCloudManager(apiBR, account, force);
+                    fetchAccountInfoAPIZeusCloudManager(apiBR, account);
+                    logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
+                } catch (final Throwable e) {
+                    logger.warning("API login failed --> Falling back to website");
+                    account.setProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, System.currentTimeMillis());
+                }
+            }
             return super.loginWebsite(account, force);
         }
     }
 
-    private final void checkErrorsAPIZeusCloudManager(final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
+    @Override
+    public String getLoginURL() {
+        /*
+         * 2019-09-12: filejoker.net will redirect to /login on /login.html request but novafile.com will redirect to mainpage thus template
+         * loginWebsite handling will fail. Both use /login so this will work for both!
+         */
+        return getMainPage() + "/login";
+    }
+
+    private final void checkErrorsAPIZeusCloudManager(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         final String error = PluginJSonUtils.getJson(br, "error");
         final String message = PluginJSonUtils.getJson(br, "message");
         /* 2019-08-21: Special: Waittime errormessage can be in "error" or in "message". */
@@ -471,7 +560,15 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     private final String getAPIZeusCloudManagerSession(final Account account) {
-        return account.getStringProperty(PROPERTY_SESSIONID, null);
+        String api_sessionid = account.getStringProperty(PROPERTY_SESSIONID, null);
+        /* 2019-09-12: Indeed website xfss cookie will also work as API sessionid but let's not use that for now! */
+        // if (api_sessionid == null) {
+        // final Cookies cookies = account.loadCookies("");
+        // if (cookies != null) {
+        // api_sessionid = cookies.get("xfss").getValue();
+        // }
+        // }
+        return api_sessionid;
     }
 
     private final void invalidateAPIZeusCloudManagerSession(final Account account) throws PluginException {
