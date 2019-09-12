@@ -249,8 +249,11 @@ public class YoutubeClipData {
                 }
             }
             if (valid) {
-                VariantInfo vi = new VariantInfo(AbstractVariant.get(v, this, audio, video, data), audio, video, data);
-                ret.add(vi);
+                final AbstractVariant abstractVariant = AbstractVariant.get(v, this, audio, video, data);
+                if (abstractVariant != null) {
+                    final VariantInfo vi = new VariantInfo(abstractVariant, audio, video, data);
+                    ret.add(vi);
+                }
             }
         }
         return ret;

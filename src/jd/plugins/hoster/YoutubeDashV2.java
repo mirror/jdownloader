@@ -2237,7 +2237,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             List<LinkVariant> ret = new ArrayList<LinkVariant>();
             String[] variantIds = getVariantsIDList(downloadLink);
             for (String s : variantIds) {
-                AbstractVariant vv = AbstractVariant.get(s);
+                final AbstractVariant vv = AbstractVariant.get(s);
                 if (vv != null) {
                     ret.add(vv);
                 }

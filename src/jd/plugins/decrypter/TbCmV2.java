@@ -429,6 +429,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                 }
             } catch (Exception e) {
+                logger.log(e);
                 String emsg = null;
                 try {
                     emsg = e.getMessage().toString();

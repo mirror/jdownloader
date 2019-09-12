@@ -309,11 +309,13 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public static AbstractVariant get(VariantBase base, YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
-        AbstractVariant v = get(base.name());
+        final AbstractVariant v = get(base.name());
         if (v != null) {
             v.fill(vid, audio, video, data);
+            return v;
+        } else {
+            return null;
         }
-        return v;
     }
 
     protected abstract void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data);
