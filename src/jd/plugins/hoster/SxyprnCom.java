@@ -1,9 +1,5 @@
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -13,6 +9,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?(yourporn\\.sexy|sxyprn\\.com)/post/[a-fA-F0-9]{13}\\.html" })
 public class SxyprnCom extends antiDDoSForHost {
@@ -49,58 +49,63 @@ public class SxyprnCom extends antiDDoSForHost {
         if (title == null || br.getHost().equals("youporn.com")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setFinalFileName(title.trim() + ".mp4");
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(title.trim() + ".mp4");
+        }
         String fid = new Regex(link.getLinkID(), "//([a-z0-9]+)").getMatch(0);
         authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
         json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
         String vnfo = PluginJSonUtils.getJsonValue(json, fid);
         if (vnfo == null && json != null) {
-            String ids[] = new Regex(json, "\"([a-z0-9]*?)\"").getColumn(0);
+            final String ids[] = new Regex(json, "\"([a-z0-9]*?)\"").getColumn(0);
             for (final String id : ids) {
                 vnfo = PluginJSonUtils.getJsonValue(json, id);
-                // logger.info("id: " + id + ", vnfo: " + vnfo);
-                getDllink(link, vnfo, id);
+                dllink = getDllink(link, vnfo);
                 if (dllink != null) {
                     break;
                 }
             }
         } else {
-            // logger.info("vnfo: " + vnfo);
-            getDllink(link, vnfo, fid);
+            dllink = getDllink(link, vnfo);
         }
         return AvailableStatus.TRUE;
     }
 
-    private String getDllink(final DownloadLink link, final String vnfo, final String id) throws Exception {
-        // -> vnfo: /cdn/c7/01Uyjzhs_RNzj8vcmiwHFA/1542522740/653bsds8d0gb1es6od71k4c0fdp/85mbqe8fk1m6eba8o9cd1ah94ep.mp4
-        final String items[][] = new Regex(vnfo, "/cdn/([^/]+)/([^/]+)/([^/]+)/([^/]+)").getMatches();
-        if (items != null && items.length > 0 && authorid != null) {
-            for (final String item[] : items) {
-                dllink = "https://" + item[0] + ".trafficdeposit.com/video/" + item[1] + "/" + item[2] + "/" + item[3] + "/" + authorid + "/" + id + ".mp4";
-                // logger.info("dllink: " + dllink);
-            }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    private long ssut51(final String input) {
+        final String num = input.replaceAll("[^0-9]", "");
+        long ret = 0;
+        for (int i = 0; i < num.length(); i++) {
+            ret += Long.parseLong(String.valueOf(num.charAt(i)), 10);
         }
-        if (link.getVerifiedFileSize() == -1) {
-            final Browser brc = br.cloneBrowser();
-            final URLConnectionAdapter con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+        return ret;
+    }
+
+    private String getDllink(final DownloadLink link, final String vnfo) throws Exception {
+        final String tmp[] = vnfo.split("/");
+        tmp[1] += "8";
+        tmp[5] = String.valueOf((Long.parseLong(tmp[5]) - (ssut51(tmp[6]) + ssut51(tmp[7]))));
+        final String url = "/" + StringUtils.join(tmp, "/");
+        Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(false);
+        brc.getPage(url);
+        final String redirect = brc.getRedirectLocation();
+        if (redirect != null && link.getVerifiedFileSize() == -1) {
+            brc = br.cloneBrowser();
+            final URLConnectionAdapter con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(redirect));
             try {
                 if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
-                } else {
-                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    dllink = null;
+                    return redirect;
                 }
             } finally {
                 con.disconnect();
             }
         }
-        if (dllink == null && items.length > 0) {
-            /* Rare case (e.g. all video sources lead to http responsecode 404) */
-            server_issue = true;
+        if (redirect == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return redirect;
         }
-        return dllink;
     }
 
     @Override
@@ -121,7 +126,7 @@ public class SxyprnCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
