@@ -22,6 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -39,21 +43,20 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)|https?://(?:www\\.)?realitykings\\.com/tour/video/watch/\\d+/(?:[a-z0-9\\-_]+/?)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?realitykings\\.com/(?:video/(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?|scene/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:www\\.)?realitykings\\.com/tour/video/watch/\\d+/(?:[a-z0-9\\-_]+/?)?" })
 public class RealityKingsCom extends PluginForDecrypt {
     public RealityKingsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_VIDEO            = "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:full|watch)/\\d+(?:/[a-z0-9\\-_]+/?)?";
-    private static final String TYPE_PHOTO            = "https?://(?:new\\.)?members\\.realitykings\\.com/video/pics/\\d+(?:/[a-z0-9\\-_]+/?)?";
-    private static final String TYPE_MEMBER           = "https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)";
+    private static final String TYPE_VIDEO            = "https?://.+/(?:full|watch|scene)/\\d+(?:/[a-z0-9\\-_]+/?)?";
+    private static final String TYPE_PHOTO            = "https?://[^/]+/video/pics/\\d+(?:/[a-z0-9\\-_]+/?)?";
+    private static final String TYPE_MEMBER           = "https?://[^/]*site\\-ma\\./(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)";
     private static final String TYPE_VIDEO_FREE       = ".+/tour/video/watch/.+";
     public static String        DOMAIN_BASE           = "realitykings.com";
-    public static String        DOMAIN_PREFIX_PREMIUM = "members.";
+    public static String        DOMAIN_PREFIX_PREMIUM = "site-ma.";
     private final List<String>  all_known_qualities   = Arrays.asList("GRAB_1080", "GRAB_3000", "GRAB_1500", "GRAB_800", "GRAB_mp4v_480", "GRAB_mp4v_320", "GRAB_3gp");
+    private static final String host_decrypted        = "realitykingsdecrypted://";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -82,104 +85,43 @@ public class RealityKingsCom extends PluginForDecrypt {
             }
         } else {
             fid = new Regex(parameter, "/(\\d+)/").getMatch(0);
-            String title;
+            /* 2019-09-12: TODO: Fix packagename */
+            String title = fid;
             if (isVideoURL(parameter)) {
+                final LinkedHashMap<String, DownloadLink> foundQualities;
+                final boolean useAPI = true;
                 if (loggedin) {
-                    br.getPage(getVideoUrlPremium(fid));
+                    if (useAPI) {
+                        foundQualities = crawlVideoAPI(fid);
+                    } else {
+                        br.getPage(getVideoUrlPremium(fid));
+                        foundQualities = crawlVideoWebsite(fid);
+                    }
                 } else {
-                    br.getPage(getVideoUrlFree(fid));
-                }
-                if (isOffline(this.br)) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
-                }
-                title = getTitle();
-                if (title == null) {
-                    /* Fallback to id from inside url */
-                    title = fid;
-                }
-                final String format_filename = "%s_%s%s";
-                final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
-                final String[] dlinfo = htmldownload != null ? htmldownload.split("</a>") : null;
-                if (dlinfo != null) {
-                    List<String> all_selected_qualities = new ArrayList<String>();
-                    for (final String possibleQuality : all_known_qualities) {
-                        if (cfg.getBooleanProperty(possibleQuality, true)) {
-                            all_selected_qualities.add(possibleQuality);
-                        }
-                    }
-                    if (all_selected_qualities.size() == 0) {
-                        logger.info("User selected nothing --> Grabbing ALL qualities");
-                        all_selected_qualities = all_known_qualities;
-                    }
-                    for (final String video : dlinfo) {
-                        final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
-                        final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
-                        final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
-                        final String quality_url = dlurl != null ? new Regex(dlurl, "/\\d+/([^/]+)/?$").getMatch(0) : null;
-                        if (dlurl == null || quality == null || quality_url == null) {
-                            continue;
-                        }
-                        if (!all_selected_qualities.contains("GRAB_" + quality_url)) {
-                            /* Skip unwanted content */
-                            continue;
-                        }
-                        final String ext;
-                        if ("3gp".equalsIgnoreCase(quality_url)) {
-                            /* Special case */
-                            ext = ".3gp";
-                        } else {
-                            ext = ".mp4";
-                        }
-                        final DownloadLink dl = this.createDownloadlink(br.getURL(dlurl).toString());
-                        if (filesize != null) {
-                            dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                            dl.setAvailable(true);
-                        }
-                        dl.setName(String.format(format_filename, title, quality, ext));
-                        dl.setProperty("fid", fid);
-                        dl.setProperty("quality", quality);
-                        decryptedLinks.add(dl);
+                    if (useAPI) {
+                        foundQualities = crawlVideoAPI(fid);
+                    } else {
+                        br.getPage(getVideoUrlFree(fid));
+                        foundQualities = crawlVideoWebsite(fid);
                     }
                 }
-                if (decryptedLinks.size() == 0) {
-                    /* This should only happen with free account mode or no account at all (trailer download). */
-                    logger.info("No official downloads available --> Downloading streams (adding all regardless of quality selection)");
-                    final String json = this.br.getRegex("streams\\s*?:\\s*?(\\{.*?\\})\\s+").getMatch(0);
-                    if (json == null) {
-                        return null;
+                List<String> all_selected_qualities = new ArrayList<String>();
+                for (final String possibleQuality : all_known_qualities) {
+                    if (cfg.getBooleanProperty(possibleQuality, true)) {
+                        all_selected_qualities.add(possibleQuality);
                     }
-                    final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(json);
-                    int bitrate_max = 0;
-                    int bitrate_temp = 0;
-                    DownloadLink downloadlink_quality_BEST = null;
-                    final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
-                    final String ext = ".mp4";
-                    while (it.hasNext()) {
-                        final Entry<String, Object> entry = it.next();
-                        final String quality_key = entry.getKey();
-                        final String quality_url = (String) entry.getValue();
-                        final DownloadLink dl = this.createDownloadlink(quality_url.replaceAll("https?://", host_decrypted));
-                        dl.setName(String.format(format_filename, title, quality_key, ext));
-                        dl.setProperty("fid", fid);
-                        dl.setProperty("quality", quality_key);
-                        if (!loggedin) {
-                            dl.setProperty("free_downloadable", true);
-                        }
-                        decryptedLinks.add(dl);
-                        if (quality_key.matches("\\d+")) {
-                            bitrate_temp = Integer.parseInt(quality_key);
-                            if (bitrate_temp > bitrate_max) {
-                                bitrate_max = bitrate_temp;
-                                downloadlink_quality_BEST = dl;
-                            }
-                        }
-                    }
-                    /* Not logged in --> Usually only trailer / MOCH download --> Add BEST only */
-                    if (!loggedin && downloadlink_quality_BEST != null) {
-                        logger.info("Trailer download: Adding BEST quality only");
-                        decryptedLinks.clear();
-                        decryptedLinks.add(downloadlink_quality_BEST);
+                }
+                if (all_selected_qualities.size() == 0) {
+                    logger.info("User selected nothing --> Grabbing ALL qualities");
+                    all_selected_qualities = all_known_qualities;
+                }
+                final Iterator<Entry<String, DownloadLink>> iterator = foundQualities.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, DownloadLink> entry = iterator.next();
+                    final String qualityKey = entry.getKey();
+                    /* Add all selected and unknown qualities */
+                    if (foundQualities.containsKey(qualityKey) || !all_known_qualities.contains(qualityKey)) {
+                        decryptedLinks.add(entry.getValue());
                     }
                 }
             } else if (parameter.matches(TYPE_PHOTO)) {
@@ -214,6 +156,129 @@ public class RealityKingsCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    /** 2019-09-12: NEW */
+    private LinkedHashMap<String, DownloadLink> crawlVideoAPI(final String videoID) throws Exception {
+        final LinkedHashMap<String, DownloadLink> foundQualities = new LinkedHashMap<String, DownloadLink>();
+        br.getPage("https://site-api.project1service.com/v2/releases/" + videoID);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("result");
+        String title = (String) entries.get("title");
+        if (StringUtils.isEmpty(title)) {
+            title = videoID;
+        }
+        final String format_filename = "%s_%s.mp4";
+        entries = (LinkedHashMap<String, Object>) entries.get("videos");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "full/files");
+        LinkedHashMap<String, Object> videoInfo = null;
+        final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<String, Object> entry = iterator.next();
+            videoInfo = (LinkedHashMap<String, Object>) entry.getValue();
+            String format = (String) videoInfo.get("format");
+            final long filesize = JavaScriptEngineFactory.toLong(videoInfo.get("sizeBytes"), 0);
+            videoInfo = (LinkedHashMap<String, Object>) videoInfo.get("urls");
+            String downloadurl = (String) videoInfo.get("download");
+            if (StringUtils.isEmpty(downloadurl)) {
+                /* Fallback to stream-URL */
+                downloadurl = (String) videoInfo.get("view");
+            }
+            if (StringUtils.isEmpty(downloadurl)) {
+                continue;
+            } else if (StringUtils.isEmpty(format) || !format.matches("\\d+p")) {
+                /* Skip invalid entries and hls and dash streams */
+                continue;
+            }
+            /* 1080p --> 1080 */
+            format = format.replace("p", "");
+            /* TODO: Fix this */
+            final DownloadLink dl = this.createDownloadlink(downloadurl.replaceAll("https?://", host_decrypted));
+            dl.setName(String.format(format_filename, title, format));
+            dl.setProperty("fid", videoID);
+            dl.setProperty("quality", format);
+            if (filesize > 0) {
+                dl.setDownloadSize(filesize);
+            }
+            /* 2019-09-12: We know for sure that all items we found here are online! */
+            dl.setAvailable(true);
+            // if (!loggedin) {
+            // dl.setProperty("free_downloadable", true);
+            // }
+            foundQualities.put("GRAB_" + format, dl);
+        }
+        return foundQualities;
+    }
+
+    /** 2019-09-12: OLD */
+    private LinkedHashMap<String, DownloadLink> crawlVideoWebsite(final String videoID) throws Exception {
+        final LinkedHashMap<String, DownloadLink> foundQualities = new LinkedHashMap<String, DownloadLink>();
+        if (isOffline(this.br)) {
+            return foundQualities;
+        }
+        String title = getTitle();
+        if (title == null) {
+            /* Fallback to id from inside url */
+            title = videoID;
+        }
+        final String format_filename = "%s_%s%s";
+        final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
+        final String[] dlinfo = htmldownload != null ? htmldownload.split("</a>") : null;
+        if (dlinfo != null) {
+            for (final String video : dlinfo) {
+                final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
+                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
+                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
+                final String quality_url = dlurl != null ? new Regex(dlurl, "/\\d+/([^/]+)/?$").getMatch(0) : null;
+                if (dlurl == null || quality == null || quality_url == null) {
+                    continue;
+                }
+                final String ext;
+                if ("3gp".equalsIgnoreCase(quality_url)) {
+                    /* Special case */
+                    ext = ".3gp";
+                } else {
+                    ext = ".mp4";
+                }
+                final DownloadLink dl = this.createDownloadlink(br.getURL(dlurl).toString());
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    dl.setAvailable(true);
+                }
+                dl.setName(String.format(format_filename, title, quality, ext));
+                dl.setProperty("fid", videoID);
+                dl.setProperty("quality", quality);
+                foundQualities.put(quality_url, dl);
+            }
+        }
+        if (foundQualities.isEmpty()) {
+            /* This should only happen with free account mode or no account at all (trailer download). */
+            logger.info("No official downloads available --> Downloading streams (adding all regardless of quality selection)");
+            final String json = this.br.getRegex("streams\\s*?:\\s*?(\\{.*?\\})\\s+").getMatch(0);
+            if (json == null) {
+                return null;
+            }
+            final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(json);
+            int bitrate_max = 0;
+            int bitrate_temp = 0;
+            DownloadLink downloadlink_quality_BEST = null;
+            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+            final String ext = ".mp4";
+            while (it.hasNext()) {
+                final Entry<String, Object> entry = it.next();
+                final String quality_key = entry.getKey();
+                final String quality_url = (String) entry.getValue();
+                final DownloadLink dl = this.createDownloadlink(quality_url.replaceAll("https?://", host_decrypted));
+                dl.setName(String.format(format_filename, title, quality_key, ext));
+                dl.setProperty("fid", videoID);
+                dl.setProperty("quality", quality_key);
+                // if (!loggedin) {
+                // dl.setProperty("free_downloadable", true);
+                // }
+                foundQualities.put(quality_key, dl);
+            }
+        }
+        return foundQualities;
     }
 
     private String getTitle() {

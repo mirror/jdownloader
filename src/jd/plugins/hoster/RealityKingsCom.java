@@ -15,8 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -25,7 +30,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -37,13 +41,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|realitykingsdecrypted://.+" })
 public class RealityKingsCom extends PluginForHost {
@@ -75,6 +74,12 @@ public class RealityKingsCom extends PluginForHost {
         return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.RealityKingsCom.DOMAIN_BASE);
     }
 
+    public static Browser prepBRAPI(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 400 });
+        return br;
+    }
+
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("realitykingsdecrypted://", "http://"));
     }
@@ -104,7 +109,7 @@ public class RealityKingsCom extends PluginForHost {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
             } else {
-                if (link.getDownloadURL().matches(type_premium_pic)) {
+                if (link.getPluginPatternMatcher().matches(type_premium_pic)) {
                     /* Refresh directurl */
                     final String number_formatted = link.getStringProperty("picnumber_formatted", null);
                     if (fid == null || number_formatted == null) {
@@ -216,8 +221,10 @@ public class RealityKingsCom extends PluginForHost {
                      */
                     br.setCookies(account.getHoster(), cookies);
                     if (StringUtils.containsIgnoreCase(account.getStringProperty(MEMBER_DOMAIN, null), "members.")) {
+                        /* Old */
                         br.getPage("https://members.realitykings.com/");
                     } else {
+                        /* 2019-09-12: new */
                         br.getPage("https://site-ma.realitykings.com");
                     }
                     if (StringUtils.containsIgnoreCase(br.getURL(), "/access/login")) {
@@ -225,32 +232,30 @@ public class RealityKingsCom extends PluginForHost {
                         br = prepBR(new Browser());
                         account.clearCookies("");
                     } else {
+                        /* Set API header in case we're performing API requests later */
+                        setAPIHeader(br);
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         logger.info("Cookie login successful");
                         return;
                     }
                 }
-                br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
-                Form loginForm = br.getFormbyActionRegex("/access/submit");
-                if (loginForm == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginForm.put("username", Encoding.urlEncode(account.getUser()));
-                loginForm.put("password", Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
-                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                    loginForm.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
-                    loginForm.put("ecaptcha_response_field", Encoding.urlEncode(code));
-                }
-                br.submitForm(loginForm);
-                final String redirect_http = br.getRedirectLocation();
-                if (redirect_http != null) {
-                    br.getPage(redirect_http);
+                final boolean useWebsiteAPILogin = true;
+                if (useWebsiteAPILogin) {
+                    loginWebsiteAPI(br, account, false);
+                } else {
+                    /* Old handling */
+                    br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
+                    Form loginForm = br.getFormbyActionRegex("/access/submit");
+                    if (loginForm == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginForm.put("username", Encoding.urlEncode(account.getUser()));
+                    loginForm.put("password", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(loginForm);
+                    final String redirect_http = br.getRedirectLocation();
+                    if (redirect_http != null) {
+                        br.getPage(redirect_http);
+                    }
                 }
                 Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
@@ -287,6 +292,64 @@ public class RealityKingsCom extends PluginForHost {
         }
     }
 
+    private boolean setAPIHeader(final Browser br) {
+        final String instance_token = br.getCookie(br.getHost(), "instance_token");
+        final String access_token_ma = br.getCookie(getHost(), "access_token_ma");
+        boolean foundCookie = false;
+        if (instance_token != null) {
+            br.getHeaders().put("Instance", instance_token);
+            foundCookie = true;
+        }
+        if (access_token_ma != null) {
+            br.getHeaders().put("Authorization", access_token_ma);
+            foundCookie = true;
+        }
+        br.getHeaders().put("Origin", "https://site-ma.realitykings.com");
+        return foundCookie;
+    }
+
+    public void loginWebsiteAPI(final Browser br, final Account account, final boolean force) throws Exception {
+        prepBRAPI(br);
+        br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + "site-ma.realitykings.com/login");
+        final String json = br.getRegex("window\\.__JUAN.rawInstance\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
+        /* 2019-09-12: Their json contains multiple site-keys! Be sure to grab the correct one!! */
+        final String recaptchaSiteKey = PluginJSonUtils.getJson(json, "siteKey");
+        br.getHeaders().put("Content-Type", "application/json");
+        setAPIHeader(br);
+        final String successUrl = "https://" + br.getHost(true) + "/access/success";
+        final String failureUrl = "https://" + br.getHost(true) + "/access/failure";
+        String recaptchaV2Response = "";
+        if (!StringUtils.isEmpty(recaptchaSiteKey)) {
+            /* Handle login-captcha if required */
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            final DownloadLink dl_dummy;
+            if (dlinkbefore != null) {
+                dl_dummy = dlinkbefore;
+            } else {
+                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                this.setDownloadLink(dl_dummy);
+            }
+            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, recaptchaSiteKey).getToken();
+            if (dlinkbefore != null) {
+                this.setDownloadLink(dlinkbefore);
+            }
+        }
+        final String postData = "{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"googleReCaptchaResponse\":\"" + recaptchaV2Response + "\",\"successUrl\":\"" + successUrl + "\",\"failureUrl\":\"" + failureUrl + "\"}";
+        /* 2019-09-12: This action can be found in their html inside json: dataApiUrl */
+        br.postPageRaw("https://site-api.project1service.com/v1/authenticate/redirect", postData);
+        final String authenticationUrl = PluginJSonUtils.getJson(br, "authenticationUrl");
+        /*
+         * 2019-09-12: E.g. [{ "code": 1000, "message": "Input validation errors.", "errors": [{ "code": 1700, "message":
+         * "Recaptcha verification failed.", "field": "googleReCaptchaResponse" }]}]
+         */
+        // final String code = PluginJSonUtils.getJson(br, "code");
+        if (StringUtils.isEmpty(authenticationUrl)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /* This shall redirect us back to where we came from and get us login-cookies then! */
+        br.getPage(authenticationUrl);
+    }
+
     private AccountInfo fetchAccountInfoMembers(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         br.getPage("/member/profile/");
@@ -310,7 +373,6 @@ public class RealityKingsCom extends PluginForHost {
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         return ai;
     }
 
@@ -318,11 +380,8 @@ public class RealityKingsCom extends PluginForHost {
         synchronized (account) {
             try {
                 final AccountInfo ai = new AccountInfo();
-                final GetRequest get = br.createGetRequest("https://site-api.realitykings.com/v1/self");
-                get.getHeaders().put("Authorization", br.getCookie(getHost(), "access_token_ma"));
-                get.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
-                get.getHeaders().put("Origin", "https://site-ma.realitykings.com");
-                br.getPage(get);
+                setAPIHeader(br);
+                br.getPage("https://site-api.project1service.com/v1/self");
                 if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -350,7 +409,6 @@ public class RealityKingsCom extends PluginForHost {
                 account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
                 ai.setUnlimitedTraffic();
-                account.setValid(true);
                 return ai;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

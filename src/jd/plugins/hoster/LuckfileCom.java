@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)\\-([a-z0-9]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)\\-([A-Za-z0-9]+)\\.html" })
 public class LuckfileCom extends PluginForHost {
     public LuckfileCom(PluginWrapper wrapper) {
         super(wrapper);
