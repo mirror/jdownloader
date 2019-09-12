@@ -1876,7 +1876,42 @@ public class YoutubeHelper {
 
     private YoutubeStreamData convert(Map<String, Object> entry, final String src) {
         if (entry != null) {
-            final String url = (String) entry.get("url");
+            if (entry.containsKey("drm_families")) {
+                logger.info("DRM?:" + JSonStorage.toString(entry));
+                return null;
+            }
+            String url = (String) entry.get("url");
+            if (StringUtils.isEmpty(url)) {
+                final String cipher = (String) entry.get("cipher");
+                try {
+                    final UrlQuery query = UrlQuery.parse(cipher);
+                    final String queryURL = URLDecoder.decode(query.get("url"), "UTF-8");
+                    if (query.containsKey("signature")) {
+                        url = queryURL + "&signature=" + query.get("signature");
+                    } else if (query.containsKey("sig")) {
+                        url = queryURL + "&signature=" + query.get("sig");
+                    } else if (query.containsKey("s")) {
+                        String encrypted_sig = query.get("s");
+                        encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
+                        final String signature = this.descrambleSignature(encrypted_sig);
+                        if (query.containsKey("sp")) {
+                            url = queryURL + "&" + query.get("sp") + "=" + signature;
+                        } else {
+                            url = queryURL + "&signature=" + signature;
+                        }
+                    }
+                } catch (PluginException e) {
+                    logger.log(e);
+                    return null;
+                } catch (IOException e) {
+                    logger.log(e);
+                    return null;
+                }
+            }
+            if (StringUtils.isEmpty(url)) {
+                logger.info("URL?:" + JSonStorage.toString(entry));
+                return null;
+            }
             final Long width = JavaScriptEngineFactory.toLong(entry.get("width"), -1);
             final Long height = JavaScriptEngineFactory.toLong(entry.get("height"), -1);
             final Long contentLength = JavaScriptEngineFactory.toLong(entry.get("contentLength"), -1);
@@ -1915,23 +1950,27 @@ public class YoutubeHelper {
         if (playerResponse != null) {
             final Map<String, Object> map = JSonStorage.restoreFromString(playerResponse, TypeRef.HASHMAP);
             final Map<String, Object> streamingData = (Map<String, Object>) map.get("streamingData");
-            if (adaptiveFmtsEnabled && streamingData.containsKey("adaptiveFormats")) {
+            if (adaptiveFmtsEnabled && streamingData != null && streamingData.containsKey("adaptiveFormats")) {
                 final List<Map<String, Object>> adaptiveFormats = (List<Map<String, Object>>) streamingData.get("adaptiveFormats");
-                final String dataSrc = "new_adaptive_fmts_map." + src;
-                for (final Map<String, Object> format : adaptiveFormats) {
-                    final YoutubeStreamData data = convert(format, dataSrc);
-                    if (data != null) {
-                        fmtMaps.add(new StreamMap(data, dataSrc));
+                if (adaptiveFormats != null && adaptiveFormats.size() > 0) {
+                    final String dataSrc = "new_adaptive_fmts_map." + src;
+                    for (final Map<String, Object> format : adaptiveFormats) {
+                        final YoutubeStreamData data = convert(format, dataSrc);
+                        if (data != null) {
+                            fmtMaps.add(new StreamMap(data, dataSrc));
+                        }
                     }
                 }
             }
-            if (fmtMapEnabled && streamingData.containsKey("formats")) {
+            if (fmtMapEnabled && streamingData != null && streamingData.containsKey("formats")) {
                 final List<Map<String, Object>> formats = (List<Map<String, Object>>) streamingData.get("formats");
-                final String dataSrc = "new_fmt_stream_map." + src;
-                for (final Map<String, Object> format : formats) {
-                    final YoutubeStreamData data = convert(format, dataSrc);
-                    if (data != null) {
-                        fmtMaps.add(new StreamMap(data, dataSrc));
+                if (formats != null && formats.size() > 0) {
+                    final String dataSrc = "new_fmt_stream_map." + src;
+                    for (final Map<String, Object> format : formats) {
+                        final YoutubeStreamData data = convert(format, dataSrc);
+                        if (data != null) {
+                            fmtMaps.add(new StreamMap(data, dataSrc));
+                        }
                     }
                 }
             }
