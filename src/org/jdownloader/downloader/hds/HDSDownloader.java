@@ -352,6 +352,31 @@ public class HDSDownloader extends DownloadInterface {
         }
     }
 
+    protected URLConnectionAdapter openConnection(final Browser br, int fragmentIndex) throws IOException, PluginException {
+        return br.openGetConnection(buildFragmentURL(fragmentIndex));
+    }
+
+    protected boolean startNextFragment(int fragmentIndex) {
+        final long lastTimeStampMs = this.lastTimeStampMs.get();
+        if (estimatedDurationSecs > 0 && lastTimeStampMs > 0) {
+            final boolean finished = lastTimeStampMs >= estimatedDurationSecs * 1000;
+            logger.info("nextFragment=" + fragmentIndex + "\tprogress=" + (lastTimeStampMs / 1000) + "/" + estimatedDurationSecs + "(s)\tfinished=" + finished);
+            if (finished) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected Boolean isDownloadComplete() {
+        final long lastTimeStampMs = this.lastTimeStampMs.get();
+        if (estimatedDurationSecs > 0 && lastTimeStampMs > 0) {
+            return lastTimeStampMs >= estimatedDurationSecs * 1000;
+        } else {
+            return null;
+        }
+    }
+
     private InputStream nextFragment() throws IOException, PluginException {
         if (currentConnection != null) {
             currentConnection.disconnect();
@@ -360,29 +385,39 @@ public class HDSDownloader extends DownloadInterface {
             }
         }
         updateFileSizeEstimation();
-        final Browser br = sourceBrowser.cloneBrowser();
-        currentConnection = onNextFragment(br.openGetConnection(buildFragmentURL(fragmentIndex.getAndIncrement())));
-        if (currentConnection.getResponseCode() == 200) {
-            if (inputStream == null) {
-                inputStream = new MeteredThrottledInputStream(new F4vInputStream(currentConnection), new AverageSpeedMeter(10));
-                connectionHandler.addThrottledConnection(inputStream);
-            } else {
-                inputStream.setInputStream(new F4vInputStream(currentConnection));
-            }
-            return inputStream;
+        final int nextFragmentIndex = this.fragmentIndex.getAndIncrement();
+        if (!startNextFragment(nextFragmentIndex)) {
+            return null;
         } else {
-            currentConnection.disconnect();
-            final URLConnectionAdapter missingFrameCheck = br.openGetConnection(buildFragmentURL(fragmentIndex.get() + 1));
-            missingFrameCheck.disconnect();
-            if (missingFrameCheck.getResponseCode() == 200) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final Browser brc = sourceBrowser.cloneBrowser();
+            currentConnection = onNextFragment(openConnection(brc, nextFragmentIndex), nextFragmentIndex);
+            if (currentConnection.getResponseCode() == 200) {
+                if (inputStream == null) {
+                    inputStream = new MeteredThrottledInputStream(new F4vInputStream(currentConnection), new AverageSpeedMeter(10));
+                    connectionHandler.addThrottledConnection(inputStream);
+                } else {
+                    inputStream.setInputStream(new F4vInputStream(currentConnection));
+                }
+                return inputStream;
             } else {
-                return null;
+                currentConnection.disconnect();
+                final int probeFragmentIndex = this.fragmentIndex.get() + 1;
+                final URLConnectionAdapter missingFrameCheck = onNextProbeFragment(openConnection(brc, probeFragmentIndex), probeFragmentIndex);
+                missingFrameCheck.disconnect();
+                if (missingFrameCheck.getResponseCode() == 200) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    return null;
+                }
             }
         }
     }
 
-    protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection) throws IOException, PluginException {
+    protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection, int fragmentIndex) throws IOException, PluginException {
+        return connection;
+    }
+
+    protected URLConnectionAdapter onNextProbeFragment(URLConnectionAdapter connection, int fragmentIndex) throws IOException, PluginException {
         return connection;
     }
 
@@ -540,14 +575,24 @@ public class HDSDownloader extends DownloadInterface {
     private boolean handleErrors() throws PluginException {
         if (externalDownloadStop()) {
             return false;
+        } else if (caughtPluginException != null) {
+            throw caughtPluginException;
         }
-        if (caughtPluginException == null) {
+        final Boolean isDownloadComplete = isDownloadComplete();
+        if (Boolean.FALSE.equals(isDownloadComplete)) {
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+        } else if (outputPartFile.exists()) {
+            downloadable.setLinkStatus(LinkStatus.FINISHED);
+            downloadable.setDownloadBytesLoaded(outputPartFile.length());
+            downloadable.setVerifiedFileSize(outputPartFile.length());
+            return true;
+        } else if (outputCompleteFile.exists()) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);
             downloadable.setDownloadBytesLoaded(outputCompleteFile.length());
             downloadable.setVerifiedFileSize(outputCompleteFile.length());
             return true;
         } else {
-            throw caughtPluginException;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 

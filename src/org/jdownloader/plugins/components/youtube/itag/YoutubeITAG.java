@@ -27,6 +27,9 @@ public enum YoutubeITAG {
     // type=audio%2Fmp4%3B+codecs%3D%22mp4a.40.2%22,
     // url=https%3A%2F%2Fr2---sn-4g5edn7z.googlevideo.com%2Fvideoplayback%3Fid%3Do-AM3XLfNyTxE2x34ifu9haXJBgInh7OqK5HMgIyPhnW9u%26upn%3Del01TRTB5oc%26ipbits%3D0%26key%3Dyt6%26ip%3D79.196.104.182%26pl%3D19%26sver%3D3%26requiressl%3Dyes%26signature%3D21BFCCF29B9EAAF84E6390EB46C4137927D61E8C.0BA2280F90383C044A5045C703DDC27C4902AA3D%26initcwndbps%3D682500%26nh%3DIgpwZjAyLmZyYTE1Kg0yMDkuODUuMTcyLjY3%26sparams%3Dclen%252Cdur%252Cgir%252Cid%252Cinitcwndbps%252Cip%252Cipbits%252Citag%252Clmt%252Cmime%252Cmm%252Cmn%252Cms%252Cmv%252Cnh%252Cpl%252Crequiressl%252Csource%252Cupn%252Cexpire%26fexp%3D9416126%252C9416891%252C9420452%252C9422596%252C9426201%252C9426926%252C9427547%252C9428334%252C9428398%252C9429610%252C9430016%252C9430814%252C9431012%252C9431449%252C9431685%252C9432683%252C9432773%252C9433097%252C9433181%252C9433275%252C9433720%252C9434065%26expire%3D1461080242%26itag%3D327%26mime%3Daudio%252Fmp4%26source%3Dyoutube%26ms%3Dau%26mt%3D1461058587%26mv%3Dm%26clen%3D5616983%26lmt%3D1460754970147370%26gir%3Dyes%26dur%3D174.421%26mm%3D31%26mn%3Dsn-4g5edn7z,
     // itag=327]
+    DASH_AUDIO_384K_DTSE_SPATIAL(325, StreamContainer.DASH_AUDIO, AudioCodec.DTSE_SPATIAL, AudioBitrate.KBIT_384),
+    DASH_AUDIO_384K_EC3_SPATIAL(328, StreamContainer.DASH_AUDIO, AudioCodec.EC3_SPATIAL, AudioBitrate.KBIT_384),
+    DASH_AUDIO_384K_AC3_SPATIAL(380, StreamContainer.DASH_AUDIO, AudioCodec.AC3_SPATIAL, AudioBitrate.KBIT_384),
     DASH_AUDIO_256K_AAC_SPATIAL(327, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_256),
     // https://www.youtube.com/watch?v=Bkb3jX2hBRs
     DASH_AUDIO_192K_AAC_SPATIAL(256, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_192),
@@ -53,8 +56,8 @@ public enum YoutubeITAG {
     DASH_VIDEO_360P_H264(134, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_480P_H264(135, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
     /*
-     * 
-     * 
+     *
+     *
      * Video ID : 1 Format : AVC Format/Info : Advanced Video Codec Format profile : Main@L3 Format settings, CABAC : Yes Format settings,
      * ReFrames : 3 frames Codec ID : avc1 Codec ID/Info : Advanced Video Coding Duration : 6s 773ms Bit rate : 1 063 Kbps Width : 720
      * pixels Height : 480 pixels Display aspect ratio : 3:2 Frame rate mode : Variable Frame rate : 29.970 fps Minimum frame rate : 29.970
