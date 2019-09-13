@@ -1921,6 +1921,10 @@ public class YoutubeHelper {
             final String stereoLayout = (String) entry.get("stereoLayout");
             final String projectionType = (String) entry.get("projectionType");
             final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, vid.date);
+            if (itag == null) {
+                logger.info("UNSUPPORTED/UNKNOWN?:" + JSonStorage.toString(entry));
+                return null;
+            }
             final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
             if (height > 0) {
                 ret.setHeight(height.intValue());
