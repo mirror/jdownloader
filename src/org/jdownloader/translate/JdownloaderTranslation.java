@@ -1037,6 +1037,15 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "AAC Spatial 6 Channel" })
     String AudioCodec_aac_spatial();
 
+    @Default(lngs = { "en" }, values = { "DTSE Spatial 6 Channel" })
+    String AudioCodec_dtse_spatial();
+
+    @Default(lngs = { "en" }, values = { "EC-3 Spatial 6 Channel" })
+    String AudioCodec_ec3_spatial();
+
+    @Default(lngs = { "en" }, values = { "AC-3 Spatial 6 Channel" })
+    String AudioCodec_ac3_spatial();
+
     @Default(lngs = { "en" }, values = { "Opus Spatial 6 Channel" })
     String AudioCodec_opus_spatial();
 

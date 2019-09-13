@@ -78,6 +78,7 @@ import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
@@ -1189,7 +1190,10 @@ public class YoutubeHelper {
             }
         }
         if (vid.date <= 0 && ytInitialData != null) {
-            final String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
+            String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/dateText/simpleText");
+            if (string == null) {
+                string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
+            }
             if (string != null) {
                 // time. just parse for the date pattern(s).
                 String date = new Regex(string, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
@@ -1923,6 +1927,13 @@ public class YoutubeHelper {
             final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, vid.date);
             if (itag == null) {
                 logger.info("UNSUPPORTED/UNKNOWN?:" + JSonStorage.toString(entry));
+                try {
+                    if (!Application.isJared(null)) {
+                        Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
                 return null;
             }
             final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);

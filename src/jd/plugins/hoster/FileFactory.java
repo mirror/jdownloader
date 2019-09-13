@@ -73,6 +73,7 @@ public class FileFactory extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private final String         NO_SLOT                      = ">All free download slots";
+    private final String         PROPERTY_APIKEY              = "apiKey";
     private final String         NO_SLOT_USERTEXT             = "No free slots available";
     private final String         NOT_AVAILABLE                = "class=\"box error\"|have been deleted";
     private final String         SERVERFAIL                   = "(<p>Your download slot has expired\\.|temporarily unavailable)";
@@ -274,10 +275,12 @@ public class FileFactory extends PluginForHost {
             case 710:
                 /* This should never happen */
                 // ERR_API_SESS_KEY_INVALID
+                clearApiKey(account, null);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
             case 711:
                 /* This should never happen */
                 // ERR_API_SESS_KEY_EXPIRED
+                clearApiKey(account, null);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
             case 712:
                 // ERR_API_FILE_INVALID
@@ -1097,7 +1100,7 @@ public class FileFactory extends PluginForHost {
                 }
                 // lets remove last ","
                 sb.replace(sb.length() - 1, sb.length(), "");
-                getPage(br, getApiBase() + "/getFileInfo?" + sb, account);
+                getPage(br, getApiBase() + "/getFileInfo?" + sb, null, account);
                 for (final DownloadLink dl : links) {
                     // password is last value in fuid response, needed because filenames or other values could contain }. It then returns
                     // invalid response.
@@ -1212,7 +1215,7 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
-            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!StringUtils.isEmpty(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
+            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!StringUtils.isEmpty(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), link, account);
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             final String linkType = PluginJSonUtils.getJsonValue(br, "linkType");
             if (StringUtils.isEmpty(dllink)) {
@@ -1336,7 +1339,7 @@ public class FileFactory extends PluginForHost {
             if (!StringUtils.isEmpty(apikey)) {
                 logger.info("Trying to re-use previous apikey");
                 this.br.getPage(getApiBase() + "/getMemberInfo?key=" + apikey);
-                loggedIN = !sessionKeyInvalid(account, this.br);
+                loggedIN = !sessionKeyInvalid(account, this.br, apikey);
                 if (loggedIN) {
                     logger.info("Successfully loggedin via previous apikey");
                 } else {
@@ -1352,7 +1355,7 @@ public class FileFactory extends PluginForHost {
                 this.br.getPage(getApiBase() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authkey=cfbc9099994d3bafd5a5f13c38c542f0");
                 apikey = PluginJSonUtils.getJsonValue(this.br, "key");
                 if (StringUtils.isNotEmpty(apikey)) {
-                    account.setProperty("apiKey", apikey);
+                    account.setProperty(PROPERTY_APIKEY, apikey);
                     return apikey;
                 }
                 checkErrorsAPI(null, account);
@@ -1363,7 +1366,7 @@ public class FileFactory extends PluginForHost {
 
     private String getApiKey(final Account account) throws Exception {
         synchronized (account) {
-            return account.getStringProperty("apiKey", null);
+            return account.getStringProperty(PROPERTY_APIKEY, null);
         }
     }
 
@@ -1382,7 +1385,7 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private void getPage(final Browser ibr, final String url, final Account account) throws Exception {
+    private void getPage(final Browser ibr, final String url, final DownloadLink downloadLink, final Account account) throws Exception {
         if (account != null) {
             synchronized (account) {
                 final String apiKey = getApiKey(account);
@@ -1391,7 +1394,7 @@ public class FileFactory extends PluginForHost {
         } else {
             ibr.getPage(url);
         }
-        this.checkErrorsAPI(null, account);
+        this.checkErrorsAPI(downloadLink, account);
     }
 
     private String getErrormsgAPI(final Browser ibr) {
@@ -1404,15 +1407,28 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private boolean sessionKeyInvalid(final Account account, final Browser ibr) {
+    private boolean clearApiKey(final Account account, final String apiKey) {
+        if (account != null) {
+            synchronized (account) {
+                if (apiKey == null || StringUtils.equals(apiKey, account.getStringProperty(PROPERTY_APIKEY, null))) {
+                    account.removeProperty(PROPERTY_APIKEY);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+    }
+
+    private boolean sessionKeyInvalid(final Account account, final Browser ibr, final String apiKey) {
         final String response_type = PluginJSonUtils.getJsonValue(ibr, "type");
         final String errorcodeStr = PluginJSonUtils.getJsonValue(ibr, "code");
         if ("error".equalsIgnoreCase(response_type) && ("710".equalsIgnoreCase(errorcodeStr) || "711".equalsIgnoreCase(errorcodeStr))) {
             // 710 ERR_API_SESS_KEY_INVALID The session key has expired or is invalid. Please obtain a new one via getSessionKey.
             // 711 ERR_API_LOGIN_EXPIRED The session key has expired. Please obtain a new one via getSessionKey.
-            synchronized (account) {
-                account.setProperty("apiKey", Property.NULL);
-            }
+            clearApiKey(account, apiKey);
             return true;
         } else {
             return false;
@@ -1426,7 +1442,7 @@ public class FileFactory extends PluginForHost {
         loginAPI(account);
         if (br.getURL() == null || !br.getURL().contains("/getMemberInfo")) {
             /* E.g. on full login we've already done this API call before! */
-            getPage(br, getApiBase() + "/getMemberInfo", account);
+            getPage(br, getApiBase() + "/getMemberInfo", null, account);
         }
         final String expire = PluginJSonUtils.getJsonValue(br, "expiryMs");
         final String type = PluginJSonUtils.getJsonValue(br, "accountType");

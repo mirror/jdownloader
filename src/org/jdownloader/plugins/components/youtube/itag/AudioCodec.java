@@ -23,6 +23,21 @@ public enum AudioCodec implements LabelInterface, TooltipInterface {
             return _JDT.T.AudioCodec_aac_spatial();
         }
     },
+    AC3_SPATIAL(null, "AC-3 6Ch") {
+        public String getLabelLong() {
+            return _JDT.T.AudioCodec_ac3_spatial();
+        }
+    },
+    EC3_SPATIAL(null, "EC-3 6Ch") {
+        public String getLabelLong() {
+            return _JDT.T.AudioCodec_ec3_spatial();
+        }
+    },
+    DTSE_SPATIAL(null, "DTSE 6Ch") {
+        public String getLabelLong() {
+            return _JDT.T.AudioCodec_dtse_spatial();
+        }
+    },
     VORBIS_SPATIAL(null, "Vorbis 4Ch") {
         public String getLabelLong() {
             return _JDT.T.AudioCodec_vorbis_spatial();

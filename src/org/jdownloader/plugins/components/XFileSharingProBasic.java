@@ -2924,15 +2924,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     int login_counter = 0;
                     final int login_counter_max = 2;
                     br.clearCookies(getMainPage());
-                    getPage(getLoginURL());
                     do {
                         login_counter++;
                         logger.info("Performing full login attempt: " + login_counter);
+                        getPage(getLoginURL());
                         if (br.getHttpConnection().getResponseCode() == 404) {
                             /* Required for some XFS setups - use as common fallback. */
                             getPage(getMainPage() + "/login");
                         }
-                        Form loginform = findLoginform(this.br);
+                        final Form loginform = findLoginform(this.br);
                         if (loginform == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -2945,15 +2945,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
                         /* Handle login-captcha if required */
                         final DownloadLink dlinkbefore = this.getDownloadLink();
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                            this.setDownloadLink(dl_dummy);
-                        }
-                        handleCaptcha(dl_dummy, loginform);
-                        if (dlinkbefore != null) {
+                        try {
+                            final DownloadLink dl_dummy;
+                            if (dlinkbefore != null) {
+                                dl_dummy = dlinkbefore;
+                            } else {
+                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                this.setDownloadLink(dl_dummy);
+                            }
+                            handleCaptcha(dl_dummy, loginform);
+                        } finally {
                             this.setDownloadLink(dlinkbefore);
                         }
                         submitForm(loginform);
@@ -2983,7 +2984,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 account.saveCookies(br.getCookies(getMainPage()), "");
                 return true;
             } catch (final PluginException e) {
-                e.printStackTrace();
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
