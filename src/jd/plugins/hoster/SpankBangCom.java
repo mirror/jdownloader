@@ -37,6 +37,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 public class SpankBangCom extends antiDDoSForHost {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
         this.setConfigElements();
     }
 
