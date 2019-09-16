@@ -46,13 +46,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
     static {
-        /*
-         * we have to make sure that this property gets set before any network stuff gets loaded!!
-         */
-        if (System.getProperty("java.net.preferIPv4Stack") == null) {
-            // TODO: remove once all IPv6 changes are finished @jiaz
-            System.setProperty("java.net.preferIPv4Stack", "true");
-        }
         if (System.getProperty("org.appwork.LoggerFactory") == null) {
             System.setProperty("org.appwork.LoggerFactory", LogSourceRedirector.class.getName());
         }
