@@ -21,11 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -45,10 +40,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
     private static final String           DOMAIN         = "spankbang.com";
@@ -81,7 +82,7 @@ public class SpankBangCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
+        final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
         parameter = param.toString().replaceAll("https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "https://spankbang.com/").replace("/embed/", "/video/");
         br.setFollowRedirects(true);
         /* www = English language */
