@@ -2927,22 +2927,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     do {
                         login_counter++;
                         logger.info("Performing full login attempt: " + login_counter);
-                        getPage(getLoginURL());
                         if (br.getHttpConnection().getResponseCode() == 404) {
                             /* Required for some XFS setups - use as common fallback. */
                             getPage(getMainPage() + "/login");
                         }
-                        final Form loginform = findLoginform(this.br);
-                        if (loginform == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        Form loginForm = findLoginform(this.br);
+                        if (loginForm == null) {
+                            // some sites (eg filejoker) show login captcha AFTER first login attempt, so only reload getLoginURL(without
+                            // captcha) if required
+                            getPage(getLoginURL());
+                            loginForm = findLoginform(this.br);
+                            if (loginForm == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
-                        if (loginform.hasInputFieldByName("email")) {
+                        if (loginForm.hasInputFieldByName("email")) {
                             /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
-                            loginform.put("email", Encoding.urlEncode(account.getUser()));
+                            loginForm.put("email", Encoding.urlEncode(account.getUser()));
                         } else {
-                            loginform.put("login", Encoding.urlEncode(account.getUser()));
+                            loginForm.put("login", Encoding.urlEncode(account.getUser()));
                         }
-                        loginform.put("password", Encoding.urlEncode(account.getPass()));
+                        loginForm.put("password", Encoding.urlEncode(account.getPass()));
                         /* Handle login-captcha if required */
                         final DownloadLink dlinkbefore = this.getDownloadLink();
                         try {
@@ -2953,11 +2958,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
                                 this.setDownloadLink(dl_dummy);
                             }
-                            handleCaptcha(dl_dummy, loginform);
+                            handleCaptcha(dl_dummy, loginForm);
                         } finally {
                             this.setDownloadLink(dlinkbefore);
                         }
-                        submitForm(loginform);
+                        submitForm(loginForm);
                         if (!this.allows_multiple_login_attempts_in_one_go()) {
                             break;
                         }
