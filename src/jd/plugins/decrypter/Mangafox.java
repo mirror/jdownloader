@@ -67,13 +67,13 @@ public class Mangafox extends PluginForDecrypt {
                         logger.info("Crawling list: " + listname);
                     }
                 }
-                final String[] chapters = new Regex(html, "\"(/manga/[^\"]+/c\\d+/\\d+\\.html)\"").getColumn(0);
+                final String[] chapters = new Regex(html, "\"(/manga/[^\"]+/c[\\d\\.]+/\\d+\\.html)\"").getColumn(0);
                 if (chapters == null || chapters.length == 0) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                for (String chapterurl : chapters) {
-                    chapterurl = "http://" + br.getHost() + chapterurl;
-                    decryptedLinks.add(this.createDownloadlink(chapterurl));
+                for (final String chapterurl : chapters) {
+                    final String chUrl = br.getURL(chapterurl).toString();
+                    decryptedLinks.add(this.createDownloadlink(chUrl));
                 }
             }
             return decryptedLinks;
@@ -94,7 +94,7 @@ public class Mangafox extends PluginForDecrypt {
         String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
         if (title == null) {
             logger.warning("Decrypter broken for: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = Encoding.htmlDecode(title.trim());
         int numberOfPages = 0;
