@@ -24,7 +24,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -89,8 +88,9 @@ public class TvNrkNo extends PluginForHost {
             new_api_base_url = br.getRegex("data-psapi-base-url=\"(http[^\"]+)\"").getMatch(0);
         }
         /* 2019-09-16: Both ways are still working! */
-        final boolean use_new_api = false;
+        final boolean use_new_api = true;
         String series_title = null;
+        String episode_title = null;
         String description = null;
         if (use_new_api) {
             /* 2019-09-16: New */
@@ -111,6 +111,7 @@ public class TvNrkNo extends PluginForHost {
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             series_title = (String) entries.get("seriesTitle");
+            episode_title = (String) entries.get("title");
             description = (String) entries.get("longDescription");
             if (StringUtils.isEmpty(description)) {
                 description = (String) entries.get("shortDescription");
@@ -128,6 +129,7 @@ public class TvNrkNo extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             isAvailable = ((Boolean) entries.get("isAvailable")).booleanValue();
             series_title = (String) entries.get("seriesTitle");
+            episode_title = (String) entries.get("title");
             description = (String) entries.get("description");
         }
         final DecimalFormat df = new DecimalFormat("00");
@@ -136,13 +138,14 @@ public class TvNrkNo extends PluginForHost {
         if (series_title == null) {
             series_title = url_series_title.replace("-", " ");
         }
-        String filename = series_title + "_S" + df.format(url_season_i) + "E" + df.format(url_episode_i) + ".mp4";
+        String filename = series_title + "_S" + df.format(url_season_i) + "E" + df.format(url_episode_i);
+        if (!StringUtils.isEmpty(episode_title)) {
+            filename += " - " + episode_title;
+        }
+        filename += ".mp4";
         if (description != null && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         if (!isAvailable) {
             link.getLinkStatus().setStatusText("Content is not downloadable or has not aired yet");
