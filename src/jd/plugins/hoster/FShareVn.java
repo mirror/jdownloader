@@ -26,6 +26,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,13 +56,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
     private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -73,6 +73,10 @@ public class FShareVn extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
     /** 2019-08-29: Disabled API as a workaround. TODO: Fix issues and enable it again! */
     /** We can use mobile API for different things */
+    /**
+     * 2019-09-16: API is disabled for now as it only returns error 400 and 500 for us. As far as we could find out this is because their
+     * API(-key) is limited to http/2 while we use http/1.
+     */
     private static AtomicBoolean USE_API                               = new AtomicBoolean(false);
     private static final boolean use_api_for_premium_account_downloads = true;
     /** 2019-05-08: API works for free- and premium accounts! */
