@@ -48,14 +48,14 @@ public class TrayIconTooltip extends JWindowTooltip {
         panel.setLayout(new MigLayout("wrap 2", "[fill, grow][fill, grow]"));
         panel.add(new JLabel(_TRAY.T.plugins_optional_trayIcon_downloads()), "spanx 2");
         panel.add(new JLabel(_TRAY.T.plugins_optional_trayIcon_dl_running()), "gapleft 10");
-        panel.add(lblDlRunning = new JLabel(""));
+        panel.add(lblDlRunning = new JLabel("0"));
         panel.add(new JLabel(_TRAY.T.plugins_optional_trayIcon_speed()));
-        panel.add(lblSpeed = new JLabel(""));
+        panel.add(lblSpeed = new JLabel("0 B/s"));
         panel.add(new JLabel(_TRAY.T.plugins_optional_trayIcon_progress()));
-        panel.add(lblProgress = new JLabel(""));
+        panel.add(lblProgress = new JLabel("--.-- Mib / --.-- Mib"));
         panel.add(prgTotal = new JDProgressBar(), "spanx 2");
         panel.add(new JLabel(_TRAY.T.plugins_optional_trayIcon_eta()));
-        panel.add(lblETA = new JLabel(""));
+        panel.add(lblETA = new JLabel("00d:00h:00m:00s"));
     }
 
     @Override

@@ -403,11 +403,12 @@ public class TbCmV2 extends PluginForDecrypt {
             // userworkaround == true == newest to oldest
             // channelworkaround == true == newest to oldest.
         } catch (InterruptedException e) {
+            logger.log(e);
             return decryptedLinks;
         }
         for (YoutubeClipData vid : videoIdsToAdd) {
             if (this.isAbort()) {
-                throw new InterruptedException();
+                return decryptedLinks;
             }
             if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);

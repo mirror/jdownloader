@@ -91,14 +91,19 @@ public abstract class JWindowTooltip extends JWindow {
     private class TooltipUpdater extends Thread implements Runnable {
         public void run() {
             try {
+                boolean updatedFlag = false;
                 pack();
                 setLocation();
                 setVisible(true);
                 toFront();
-                Thread thread = Thread.currentThread();
+                final Thread thread = Thread.currentThread();
                 while (thread == updater.get()) {
                     try {
                         updateContent();
+                        if (updatedFlag == false) {
+                            pack();
+                            updatedFlag = true;
+                        }
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         return;

@@ -24,10 +24,6 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +35,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MediathekProperties;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "mediathek.rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-mediathek.sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "(?:mediathek\\.)?rbb\\-online\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "(?:one\\.)?ard\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "(?:sr\\-mediathek\\.)?sr\\-online\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "checkeins\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
@@ -226,8 +226,8 @@ public class ARDMediathek extends PluginForHost {
         boolean success;
         final String xmlContent = xml.toString();
         /* They got two different subtitle formats */
-        if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
-            success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+        if (xmlContent.contains("<ebuttm:documentEbuttVersion>") || xmlContent.contains("<tts:documentEbuttVersion>")) {
+            success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(this, downloadlink, xmlContent, 0);
         } else {
             int counter = 1;
             BufferedWriter dest;

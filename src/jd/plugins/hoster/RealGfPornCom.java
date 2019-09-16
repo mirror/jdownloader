@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "https?://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "https?://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_%\\.]+\\d+\\.html" })
 public class RealGfPornCom extends PluginForHost {
     public RealGfPornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,13 +61,13 @@ public class RealGfPornCom extends PluginForHost {
         }
         dllink = br.getRegex("<source src='(.*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+            dllink = br.getRegex("\\(\\'file\\',\\'(https?://.*?)\\'\\)").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\\'(http://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
+                dllink = br.getRegex("\\'(https?://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("\\&file=(http://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
+                    dllink = br.getRegex("\\&file=(https?://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("<param name=\"filename\" value=\"(http://.*?)\"").getMatch(0);
+                        dllink = br.getRegex("<param name=\"filename\" value=\"(https?://.*?)\"").getMatch(0);
                         if (dllink == null) {
                             dllink = br.getRegex("file\\s*:\\s*(\"|'|)(https?://.*?)\\1").getMatch(1);
                         }

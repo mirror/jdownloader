@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -161,7 +162,7 @@ public class BrDe extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
-        final boolean success = convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+        final boolean success = convertSubtitleBrOnlineDe(this, downloadlink, xmlContent, 0);
         return success;
     }
 
@@ -170,12 +171,13 @@ public class BrDe extends PluginForHost {
      *
      * @return The success of the conversion.
      */
-    public static boolean convertSubtitleBrOnlineDe(final DownloadLink downloadlink, final String xmlContent, long offset_reduce_milliseconds) {
+    public static boolean convertSubtitleBrOnlineDe(final Plugin plugin, final DownloadLink downloadlink, final String xmlContent, long offset_reduce_milliseconds) {
         final File source = new File(downloadlink.getFileOutput());
-        BufferedWriter dest;
+        final BufferedWriter dest;
         try {
             dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
         } catch (IOException e1) {
+            plugin.getLogger().log(e1);
             return false;
         }
         int counter = 1;
@@ -183,7 +185,7 @@ public class BrDe extends PluginForHost {
         try {
             /* Find hex color text --> code assignments */
             final HashMap<String, String> color_codes = new HashMap<String, String>();
-            final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z0-9]+)\"[^>]+tts:color=\"(#[A-Z0-9]+)\"").getMatches();
+            final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z0-9]+)\"[^>]+(?:tts|ebuttm):color=\"(#[A-Z0-9]+)\"").getMatches();
             if (found_color_codes != null && found_color_codes.length != 0) {
                 for (final String[] color_info : found_color_codes) {
                     color_codes.put(color_info[0], color_info[1]);
@@ -256,6 +258,7 @@ public class BrDe extends PluginForHost {
                 dest.write(text + lineseparator + lineseparator);
             }
         } catch (Exception e) {
+            plugin.getLogger().log(e);
             return false;
         } finally {
             try {
