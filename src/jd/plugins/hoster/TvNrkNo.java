@@ -89,7 +89,7 @@ public class TvNrkNo extends PluginForHost {
             new_api_base_url = br.getRegex("data-psapi-base-url=\"(http[^\"]+)\"").getMatch(0);
         }
         /* 2019-09-16: Both ways are still working! */
-        final boolean use_new_api = true;
+        final boolean use_new_api = false;
         String series_title = null;
         String description = null;
         if (use_new_api) {
