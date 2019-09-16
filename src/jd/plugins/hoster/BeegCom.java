@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -33,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|static|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "https?://(?:www\\.)?beeg\\.com/((?!section|static|tag)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)(?:\\?t=\\d+-\\d+)?" })
 public class BeegCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -45,7 +46,7 @@ public class BeegCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://beeg.com/contacts/";
+        return "https://beeg.com/contacts/";
     }
 
     @Override
@@ -53,7 +54,7 @@ public class BeegCom extends PluginForHost {
         return -1;
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?beeg\\.com/generator.+";
+    private static final String INVALIDLINKS = "https://(www\\.)?beeg\\.com/generator.+";
     private boolean             server_issue = false;
 
     @Override
@@ -70,7 +71,7 @@ public class BeegCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(\\d+)").getMatch(0);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })
@@ -108,33 +109,52 @@ public class BeegCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        LinkedHashMap<String, Object> entries;
-        /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
-        br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
-        boolean useApiV1 = true;
-        for (final Object videoO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoO;
-            final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
-            final String videoidTemp2 = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
-            if ((videoidTemp != null && videoid.equals(videoidTemp)) || (videoidTemp2 != null && videoid.equals(videoidTemp2))) {
-                useApiV1 = false;
-                break;
+        String v_startStr = null;
+        String v_endStr = null;
+        /* 2019-09-16: Sometimes these two values are given inside our URL --> Use them! */
+        final String v_times_information = new Regex(link.getPluginPatternMatcher(), "\\?t=(.+)").getMatch(0);
+        if (v_times_information != null) {
+            final String[] v_times_informationList = v_times_information.split("\\-");
+            if (v_times_informationList.length == 2) {
+                v_startStr = v_times_informationList[0];
+                v_endStr = v_times_informationList[1];
+            }
+        }
+        LinkedHashMap<String, Object> entries = null;
+        boolean useApiV1 = false;
+        if (v_startStr == null && v_endStr == null) {
+            useApiV1 = true;
+            /* 2019-07-16: This basically loads the whole website - we then need to find the element the user wants to download. */
+            br.getPage("//beeg.com/api/v6/" + beegVersion + "/index/main/0/pc");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
+            for (final Object videoO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoO;
+                final String videoidTemp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("svid"), -1));
+                final String videoidTemp2 = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
+                if ((videoidTemp != null && videoid.equals(videoidTemp)) || (videoidTemp2 != null && videoid.equals(videoidTemp2))) {
+                    useApiV1 = false;
+                    /* Example v2video: 1059800872 */
+                    // if (!entries.containsKey("start") && !entries.containsKey("end")) {
+                    // /* 2019-08-14: They can be null but they should be present in their json! */
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // }
+                    final long v_start = JavaScriptEngineFactory.toLong(entries.get("start"), -1);
+                    final long v_end = JavaScriptEngineFactory.toLong(entries.get("end"), -1);
+                    if (v_start > -1 && v_end > -1) {
+                        /* 2019-07-16: These values are required to call the API to access single objects! */
+                        v_startStr = Long.toString(v_start);
+                        v_endStr = Long.toString(v_end);
+                    }
+                    break;
+                }
             }
         }
         if (!useApiV1) {
-            /* Example v2video: 1059800872 */
-            if (!entries.containsKey("start") && !entries.containsKey("end")) {
-                /* 2019-08-14: They can be null but they should be present in their json! */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             String get_parameters = "?v=2";
-            final long v_start = JavaScriptEngineFactory.toLong(entries.get("start"), -1);
-            final long v_end = JavaScriptEngineFactory.toLong(entries.get("end"), -1);
-            if (v_start > -1 && v_end > -1) {
+            if (v_startStr != null && v_endStr != null) {
                 /* 2019-07-16: These values are required to call the API to access single objects! */
-                get_parameters += "&s=" + v_start + "&e=" + v_end;
+                get_parameters += "&s=" + v_startStr + "&e=" + v_endStr;
             }
             br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + get_parameters);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -155,6 +175,9 @@ public class BeegCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = (String) entries.get("title");
+        if (StringUtils.isEmpty(filename)) {
+            filename = videoid;
+        }
         final String[] qualities = { "2160", "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {
             DLLINK = (String) entries.get(quality + "p");
@@ -162,7 +185,7 @@ public class BeegCom extends PluginForHost {
                 break;
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (DLLINK.startsWith("//")) {

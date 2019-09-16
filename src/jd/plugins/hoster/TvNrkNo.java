@@ -139,7 +139,12 @@ public class TvNrkNo extends PluginForHost {
             series_title = url_series_title.replace("-", " ");
         }
         String filename = series_title + "_S" + df.format(url_season_i) + "E" + df.format(url_episode_i);
-        if (!StringUtils.isEmpty(episode_title)) {
+        /*
+         * 2019-09-16: This may sometimes be the case when officially there is no episode title available, then they just put the series
+         * title in the episode title field too ...
+         */
+        final boolean episode_title_is_same_as_series_title = StringUtils.equalsIgnoreCase(episode_title, series_title);
+        if (!StringUtils.isEmpty(episode_title) && !episode_title_is_same_as_series_title) {
             filename += " - " + episode_title;
         }
         filename += ".mp4";
