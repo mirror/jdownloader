@@ -19,15 +19,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -52,6 +49,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
     private final String         SERVERERROR                           = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -69,6 +73,7 @@ public class FShareVn extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
     /** 2019-08-29: Disabled API as a workaround. TODO: Fix issues and enable it again! */
     /** We can use mobile API for different things */
+    private static AtomicBoolean USE_API                               = new AtomicBoolean(false);
     private static final boolean use_api_for_premium_account_downloads = true;
     /** 2019-05-08: API works for free- and premium accounts! */
     private static final boolean use_api_for_free_account_downloads    = true;
@@ -342,7 +347,7 @@ public class FShareVn extends PluginForHost {
     public static void prepBrowserAPI(final Browser br) throws IOException {
         /* Sometime the page is extremely slow! */
         br.setReadTimeout(120 * 1000);
-        br.setAllowedResponseCodes(new int[] { 201, 400 });
+        br.setAllowedResponseCodes(new int[] { 201, 400, 500 });
         /*
          * 2019-08-29: Do not use this User-Agent anymore as their API will return error 407 then! Keep in mind that unsupported User-Agents
          * might also lead to errorcodes 403 or 407!
@@ -375,7 +380,7 @@ public class FShareVn extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
-            if (use_api_for_free_account_downloads) {
+            if (USE_API.get() && use_api_for_free_account_downloads) {
                 logger.info("Free account API download");
                 dllink = this.getDllinkAPI(link, account);
             } else {
@@ -411,7 +416,7 @@ public class FShareVn extends PluginForHost {
     public String getDllinkPremium(final DownloadLink link, final Account account) throws Exception {
         // we get page again, because we do not take directlink from requestfileinfo.
         final String dllink;
-        if (use_api_for_premium_account_downloads) {
+        if (USE_API.get() && use_api_for_premium_account_downloads) {
             dllink = getDllinkAPI(link, account);
         } else {
             dllink = getDllinkPremiumWebsite(link, account);
@@ -667,9 +672,12 @@ public class FShareVn extends PluginForHost {
                 if (!loggedIN) {
                     br.clearCookies(getAPIHost());
                     logger.info("Performing full login");
-                    final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", String.format("{\"user_email\":\"%s\",\"password\":\"%s\",\"app_key\":\"L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn\"}", account.getUser(), account.getPass()));
-                    br.openRequestConnection(loginReq);
-                    br.loadConnection(null);
+                    final Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("user_email", account.getUser());
+                    map.put("password", account.getPass());
+                    map.put("app_key", "L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn");
+                    final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", JSonStorage.toString(map));
+                    br.getPage(loginReq);
                     // final String code = PluginJSonUtils.getJson(br, "code");
                     token = PluginJSonUtils.getJson(br, "token");
                     final String session_id = PluginJSonUtils.getJson(br, "session_id");
@@ -694,7 +702,7 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (use_api_for_login_fetch_account_info) {
+        if (USE_API.get() && use_api_for_login_fetch_account_info) {
             return fetchAccountInfoAPI(account);
         } else {
             return fetchAccountInfoWebsite(account);
