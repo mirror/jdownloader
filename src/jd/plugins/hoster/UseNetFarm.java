@@ -27,7 +27,7 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "usenet.farm" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenet.farm" }, urls = { "" })
 public class UseNetFarm extends UseNet {
     public UseNetFarm(PluginWrapper wrapper) {
         super(wrapper);

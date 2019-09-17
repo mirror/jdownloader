@@ -22,7 +22,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "5eurousenet.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "5eurousenet.com" }, urls = { "" })
 public class FiveEuroUseNetCom extends UseNet {
     public FiveEuroUseNetCom(PluginWrapper wrapper) {
         super(wrapper);

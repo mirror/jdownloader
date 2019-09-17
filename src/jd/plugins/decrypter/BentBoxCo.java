@@ -21,7 +21,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 37334 $", interfaceVersion = 2, names = { "bentbox.co" }, urls = { "https?://(?:www\\.)?bentbox\\.co/box(_view)?\\?[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bentbox.co" }, urls = { "https?://(?:www\\.)?bentbox\\.co/box(_view)?\\?[a-zA-Z0-9]+" })
 public class BentBoxCo extends PluginForDecrypt {
     public BentBoxCo(PluginWrapper wrapper) {
         super(wrapper);

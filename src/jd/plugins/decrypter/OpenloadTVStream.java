@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 40416 $", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openloadtvstream.me" }, urls = { "https?://(www\\.)?openloadtvstream\\.me/(tvshows|movies|episodes)/.+" })
 public class OpenloadTVStream extends antiDDoSForDecrypt {
     public OpenloadTVStream(PluginWrapper wrapper) {
         super(wrapper);

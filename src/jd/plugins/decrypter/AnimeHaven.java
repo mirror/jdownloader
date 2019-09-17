@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 40878 $", interfaceVersion = 2, names = { "animeheaven.es" }, urls = { "https?://(www\\.)?animeheaven\\.es/.*/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animeheaven.es" }, urls = { "https?://(www\\.)?animeheaven\\.es/.*/.*" })
 public class AnimeHaven extends antiDDoSForDecrypt {
     public AnimeHaven(PluginWrapper wrapper) {
         super(wrapper);

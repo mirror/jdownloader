@@ -21,7 +21,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "newsgroupdirect.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newsgroupdirect.com" }, urls = { "" })
 public class NewsGroupDirectCom extends UseNet {
     public NewsGroupDirectCom(PluginWrapper wrapper) {
         super(wrapper);

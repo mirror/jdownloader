@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41201 $", interfaceVersion = 2, names = { "hackimdb.com" }, urls = { "https?://(www\\.)?hackimdb\\.com/title/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hackimdb.com" }, urls = { "https?://(www\\.)?hackimdb\\.com/title/[a-zA-Z0-9]+" })
 public class HackIMDB extends antiDDoSForDecrypt {
     public HackIMDB(PluginWrapper wrapper) {
         super(wrapper);

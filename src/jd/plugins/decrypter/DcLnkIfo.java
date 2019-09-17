@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "dclinks.info" }, urls = { "https?://(?:www\\.)?dclinks\\.info/index\\.php\\?v=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dclinks.info" }, urls = { "https?://(?:www\\.)?dclinks\\.info/index\\.php\\?v=\\d+" })
 public class DcLnkIfo extends PluginForDecrypt {
 
     public DcLnkIfo(PluginWrapper wrapper) {

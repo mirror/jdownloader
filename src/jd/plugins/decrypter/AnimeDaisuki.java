@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 39992 $", interfaceVersion = 2, names = { "animedaisuki.moe" }, urls = { "https?://(www\\.)?animedaisuki\\.moe/(anime|watch)/[0-9]+/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animedaisuki.moe" }, urls = { "https?://(www\\.)?animedaisuki\\.moe/(anime|watch)/[0-9]+/.+" })
 public class AnimeDaisuki extends PluginForDecrypt {
     public AnimeDaisuki(PluginWrapper wrapper) {
         super(wrapper);

@@ -21,7 +21,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision: 40170 $", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(#download#|\\?c=)[A-Za-z0-9]+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(#download#|\\?c=)[A-Za-z0-9]+$" })
 public class GoFileIo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {

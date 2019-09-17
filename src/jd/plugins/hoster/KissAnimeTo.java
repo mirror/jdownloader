@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "kissanime.to" }, urls = { "https?://(www\\.)?51\\.15\\.\\d{1,3}\\.\\d{1,3}(?::\\d+)?/videoplayback\\?[^\"'\\s<>]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kissanime.to" }, urls = { "https?://(www\\.)?51\\.15\\.\\d{1,3}\\.\\d{1,3}(?::\\d+)?/videoplayback\\?[^\"'\\s<>]+" })
 public class KissAnimeTo extends PluginForHost {
 
     // raztoki embed video player template.

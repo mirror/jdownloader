@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40413 $", interfaceVersion = 3, names = { "hentai.animestigma.com" }, urls = { "https?://(?:www\\.)?hentai.animestigma.com.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.animestigma.com" }, urls = { "https?://(?:www\\.)?hentai.animestigma.com.*" })
 public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
     public HentaiAnimestigmaCom(PluginWrapper wrapper) {
         super(wrapper);

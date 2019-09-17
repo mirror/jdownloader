@@ -58,7 +58,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.components.containers.VimeoContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision: 40588 $", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://player\\.vimeo.com/play/\\d+\\?s=\\d+(_\\d+_[a-f0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://player\\.vimeo.com/play/\\d+\\?s=\\d+(_\\d+_[a-f0-9]+)?" })
 public class VimeoComDecrypterPlay extends PluginForDecrypt {
     public VimeoComDecrypterPlay(PluginWrapper wrapper) {
         super(wrapper);

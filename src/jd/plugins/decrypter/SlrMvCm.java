@@ -43,7 +43,7 @@ import jd.plugins.components.PluginJSonUtils;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision:$", interfaceVersion = 3, names = { "solarmoviez.to" }, urls = { "https?://(?:www\\.)?solarmoviez\\.to/movie/(?:[a-zA-Z0-9\\-_]+-\\d+/\\d+-\\d+|[a-zA-Z0-9\\-_]+-\\d+)(?:/watching)?\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "solarmoviez.to" }, urls = { "https?://(?:www\\.)?solarmoviez\\.to/movie/(?:[a-zA-Z0-9\\-_]+-\\d+/\\d+-\\d+|[a-zA-Z0-9\\-_]+-\\d+)(?:/watching)?\\.html" })
 public class SlrMvCm extends antiDDoSForDecrypt implements RefreshSessionLink {
 
     private Browser ajax = null;

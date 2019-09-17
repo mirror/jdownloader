@@ -11,7 +11,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 36558 $", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/)\\d+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/)\\d+/?" })
 public class SimFileShareNet extends PluginForHost {
     public SimFileShareNet(PluginWrapper wrapper) {
         super(wrapper);

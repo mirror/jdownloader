@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41221 $", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(www\\.)?rmz\\.cr/(?:release/)?[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(www\\.)?rmz\\.cr/(?:release/)?[^/]+" })
 public class RmzCr extends antiDDoSForDecrypt {
     public RmzCr(PluginWrapper wrapper) {
         super(wrapper);

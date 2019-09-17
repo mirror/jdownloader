@@ -10,7 +10,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 38424 $", interfaceVersion = 3, names = { "nudogram.com" }, urls = { "https?://(www\\.)?nudogram\\.com/videos/\\d+/[^/]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudogram.com" }, urls = { "https?://(www\\.)?nudogram\\.com/videos/\\d+/[^/]+/" })
 public class NudogramCom extends PluginForHost {
     public NudogramCom(PluginWrapper wrapper) {
         super(wrapper);

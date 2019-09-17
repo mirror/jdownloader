@@ -13,7 +13,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 38918 $", interfaceVersion = 3, names = { "limitsizamca.org" }, urls = { "https?://(?:www\\.)?limitsizamca.org/koruma\\.php\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "limitsizamca.org" }, urls = { "https?://(?:www\\.)?limitsizamca.org/koruma\\.php\\?id=\\d+" })
 public class LimitsizamcaOrg extends antiDDoSForDecrypt {
     public LimitsizamcaOrg(PluginWrapper wrapper) {
         super(wrapper);

@@ -26,7 +26,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision: 40356 $", interfaceVersion = 3, names = {}, urls = {})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AnzfileNet extends XFileSharingProBasic {
     public AnzfileNet(final PluginWrapper wrapper) {
         super(wrapper);

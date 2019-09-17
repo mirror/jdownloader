@@ -29,7 +29,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+" })
 public class PluralsightComDecrypter extends PluginForDecrypt {
     public PluralsightComDecrypter(PluginWrapper wrapper) {
         super(wrapper);

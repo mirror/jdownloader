@@ -19,7 +19,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision: 37876 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "https://(?:\\w+)\\.(?:dlvr1|cloudfront)\\.net/FunimationStoreFront/(?:\\d+)/(?:English|Japanese)/.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funimation.com" }, urls = { "https://(?:\\w+)\\.(?:dlvr1|cloudfront)\\.net/FunimationStoreFront/(?:\\d+)/(?:English|Japanese)/.*" })
 public class FunimationCom extends antiDDoSForHost {
     static private Object                                    lock         = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();

@@ -10,7 +10,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 36558 $", interfaceVersion = 2, names = { "blogger.com" }, urls = { "https?://([a-z0-9\\-]+\\.)?blogger\\.com/video\\.g\\?token=[a-zA-Z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blogger.com" }, urls = { "https?://([a-z0-9\\-]+\\.)?blogger\\.com/video\\.g\\?token=[a-zA-Z0-9\\-_]+" })
 public class BloggerCom extends PluginForDecrypt {
     public BloggerCom(PluginWrapper wrapper) {
         super(wrapper);

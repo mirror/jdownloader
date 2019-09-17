@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41180 $", interfaceVersion = 2, names = { "topdocumentaryfilms.com" }, urls = { "https?://(www\\.)?topdocumentaryfilms\\.com/[^/]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "topdocumentaryfilms.com" }, urls = { "https?://(www\\.)?topdocumentaryfilms\\.com/[^/]+/" })
 public class TopDocumentaryFilmsCom extends antiDDoSForDecrypt {
     public TopDocumentaryFilmsCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: $", interfaceVersion = 3, names = { "thisav.com" }, urls = { "https?://(?:www\\.)?thisav\\.com/video/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thisav.com" }, urls = { "https?://(?:www\\.)?thisav\\.com/video/\\d+/" })
 public class ThisAVCom extends PluginForHost {
     public ThisAVCom(PluginWrapper wrapper) {
         super(wrapper);

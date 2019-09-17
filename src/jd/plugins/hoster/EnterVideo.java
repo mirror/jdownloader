@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author iskelderon
  */
-@HostPlugin(revision = "$Revision: 41213 $", interfaceVersion = 2, names = { "entervideo.net" }, urls = { "https?://(www\\.)?entervideo\\.net/watch/.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "entervideo.net" }, urls = { "https?://(www\\.)?entervideo\\.net/watch/.*" })
 public class EnterVideo extends PluginForHost {
     private String dlink = null;
 

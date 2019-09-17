@@ -10,7 +10,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 36642 $", interfaceVersion = 3, names = { "wnacg.org" }, urls = { "https?://(?:www\\.)?wnacg\\.org/(download|photos)-index-aid-\\d+.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wnacg.org" }, urls = { "https?://(?:www\\.)?wnacg\\.org/(download|photos)-index-aid-\\d+.html" })
 public class WnacgOrg extends PluginForDecrypt {
     public WnacgOrg(PluginWrapper wrapper) {
         super(wrapper);

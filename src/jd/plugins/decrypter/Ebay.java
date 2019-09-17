@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41233 $", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(www\\.)?ebay\\.(?:\\.\\w+)?[\\w]+/itm/[^/]+/\\w+\\?.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(www\\.)?ebay\\.(?:\\.\\w+)?[\\w]+/itm/[^/]+/\\w+\\?.+" })
 public class Ebay extends PluginForDecrypt {
     public Ebay(PluginWrapper wrapper) {
         super(wrapper);

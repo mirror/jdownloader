@@ -18,7 +18,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40753 $", interfaceVersion = 3, names = { "pornroleplay.org" }, urls = { "https?://(\\w+\\.)?pornroleplay.org/\\d+-[a-zA-Z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornroleplay.org" }, urls = { "https?://(\\w+\\.)?pornroleplay.org/\\d+-[a-zA-Z0-9\\-_]+\\.html" })
 public class PornRoleplayOrg extends antiDDoSForDecrypt {
     // finallink will usually be an hotlink.cc URL
     public PornRoleplayOrg(PluginWrapper wrapper) {

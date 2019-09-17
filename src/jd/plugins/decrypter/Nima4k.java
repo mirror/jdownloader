@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40100 $", interfaceVersion = 2, names = { "nima4k.org" }, urls = { "https?://(www\\.)?nima4k\\.org/(release|go)/[0-9]+/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nima4k.org" }, urls = { "https?://(www\\.)?nima4k\\.org/(release|go)/[0-9]+/.+" })
 public class Nima4k extends PluginForDecrypt {
     public Nima4k(PluginWrapper wrapper) {
         super(wrapper);

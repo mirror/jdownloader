@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40332 $", interfaceVersion = 2, names = { "solarmovie.cr" }, urls = { "https?://w+\\d*\\.?solarmovie\\.(?:cr|one)/movie/[\\w-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solarmovie.cr" }, urls = { "https?://w+\\d*\\.?solarmovie\\.(?:cr|one)/movie/[\\w-]+" })
 public class SolarMovieCr extends PluginForDecrypt {
     public SolarMovieCr(PluginWrapper wrapper) {
         super(wrapper);

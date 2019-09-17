@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40413 $", interfaceVersion = 3, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/page/.*|https?://(?:www\\.)?hentaidude.com/\\?tid=.*|^https?://(?:www\\.)?hentaidude\\.com/$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/page/.*|https?://(?:www\\.)?hentaidude.com/\\?tid=.*|^https?://(?:www\\.)?hentaidude\\.com/$" })
 public class HentaiDude extends antiDDoSForDecrypt {
     private final String FASTER_NODLSIZE = "1";
     private final String SLOW_ALLPAGES   = "1";

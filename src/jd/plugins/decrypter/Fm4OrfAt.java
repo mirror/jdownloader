@@ -17,7 +17,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 39249 $", interfaceVersion = 2, names = { "fm4.orf.at" }, urls = { "https?://fm4\\.orf\\.at/player/\\d+/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fm4.orf.at" }, urls = { "https?://fm4\\.orf\\.at/player/\\d+/[a-zA-Z0-9]+" })
 public class Fm4OrfAt extends PluginForDecrypt {
     public Fm4OrfAt(PluginWrapper wrapper) {
         super(wrapper);

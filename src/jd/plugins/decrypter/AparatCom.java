@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 39801 $", interfaceVersion = 3, names = { "aparat.com" }, urls = { "https?://(www\\.)?aparat.com/v/[./]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aparat.com" }, urls = { "https?://(www\\.)?aparat.com/v/[./]+" })
 public class AparatCom extends PluginForDecrypt {
     public AparatCom(PluginWrapper wrapper) {
         super(wrapper);

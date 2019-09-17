@@ -11,7 +11,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 34719 $", interfaceVersion = 2, names = { "megasearch.co" }, urls = { "https?://megasearch\\.co/link/\\d+-[a-zA-Z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megasearch.co" }, urls = { "https?://megasearch\\.co/link/\\d+-[a-zA-Z0-9\\-]+" })
 public class MegaSearchCo extends antiDDoSForDecrypt {
     public MegaSearchCo(PluginWrapper wrapper) {
         super(wrapper);

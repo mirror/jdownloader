@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40024 $", interfaceVersion = 2, names = { "afdah.to" }, urls = { "https?://(www\\.)?afdah\\.to/(watch-(movies|tv-episodes|tv-shows)|embed[0-9]+)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "afdah.to" }, urls = { "https?://(www\\.)?afdah\\.to/(watch-(movies|tv-episodes|tv-shows)|embed[0-9]+)/.*" })
 public class Afdah extends PluginForDecrypt {
     public Afdah(PluginWrapper wrapper) {
         super(wrapper);

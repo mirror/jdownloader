@@ -19,7 +19,7 @@ import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision: 39612 $", interfaceVersion = 3, names = { "hotspot.com.my" }, urls = { "https?://(www\\.)?hotspot\\.com\\.my/newsvideo/(\\d+)/(\\d+)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotspot.com.my" }, urls = { "https?://(www\\.)?hotspot\\.com\\.my/newsvideo/(\\d+)/(\\d+)/.+" })
 public class HotSpotComMy extends antiDDoSForDecrypt {
     public HotSpotComMy(PluginWrapper wrapper) {
         super(wrapper);

@@ -29,7 +29,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision: 36026 $", interfaceVersion = 2, names = { "sendvid.net" }, urls = { "https?://(?:www\\.)?sendvid\\.net/v/[A-Za-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendvid.net" }, urls = { "https?://(?:www\\.)?sendvid\\.net/v/[A-Za-z0-9\\-]+" })
 public class SendVidNet extends antiDDoSForHost {
     public SendVidNet(PluginWrapper wrapper) {
         super(wrapper);

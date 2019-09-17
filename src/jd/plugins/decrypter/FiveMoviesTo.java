@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41168 $", interfaceVersion = 2, names = { "5movies.to" }, urls = { "https?://(www\\.)?5movies\\.to/(movie|tv|directlink)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5movies.to" }, urls = { "https?://(www\\.)?5movies\\.to/(movie|tv|directlink)/.+" })
 public class FiveMoviesTo extends antiDDoSForDecrypt {
     public FiveMoviesTo(PluginWrapper wrapper) {
         super(wrapper);

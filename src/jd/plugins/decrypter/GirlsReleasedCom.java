@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision: 41230 $", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
 public class GirlsReleasedCom extends antiDDoSForDecrypt {
     public GirlsReleasedCom(PluginWrapper wrapper) {
         super(wrapper);

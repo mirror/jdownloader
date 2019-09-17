@@ -22,7 +22,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.net.websocket.ReadWebSocketFrame;
 import org.appwork.utils.net.websocket.WebSocketFrameHeader;
 
-@DecrypterPlugin(revision = "$Revision: 36721 $", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/r/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/r/[A-Za-z0-9\\-_]+" })
 public class VolaFileOrg extends PluginForDecrypt {
     public VolaFileOrg(PluginWrapper wrapper) {
         super(wrapper);

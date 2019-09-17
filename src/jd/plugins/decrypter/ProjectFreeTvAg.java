@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41183 $", interfaceVersion = 2, names = { "projectfreetv.ag" }, urls = { "https?://(www\\d*\\.)?projectfreetv\\.ag/(free|episode|watch)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "projectfreetv.ag" }, urls = { "https?://(www\\d*\\.)?projectfreetv\\.ag/(free|episode|watch)/.*" })
 public class ProjectFreeTvAg extends antiDDoSForDecrypt {
     public ProjectFreeTvAg(PluginWrapper wrapper) {
         super(wrapper);

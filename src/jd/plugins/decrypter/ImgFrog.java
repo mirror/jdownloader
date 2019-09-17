@@ -17,7 +17,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40452 $", interfaceVersion = 3, names = { "imgfrog.pw" }, urls = { "https?://(files\\.)?imgfrog\\.(?:cf|pw)/(a/([a-zA-Z0-9\\-_]+\\.)?[a-zA-Z0-9]{4,}|a/[a-zA-Z0-9\\-_]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgfrog.pw" }, urls = { "https?://(files\\.)?imgfrog\\.(?:cf|pw)/(a/([a-zA-Z0-9\\-_]+\\.)?[a-zA-Z0-9]{4,}|a/[a-zA-Z0-9\\-_]+)" })
 public class ImgFrog extends antiDDoSForDecrypt {
     public ImgFrog(PluginWrapper wrapper) {
         super(wrapper);

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41129 $", interfaceVersion = 2, names = { "cartoonson.tv" }, urls = { "https?://(www[0-9]*\\.)?cartoonson\\.tv/cartoons/(?:watch|view).*/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cartoonson.tv" }, urls = { "https?://(www[0-9]*\\.)?cartoonson\\.tv/cartoons/(?:watch|view).*/.+" })
 public class CartoonsOn extends antiDDoSForDecrypt {
     public CartoonsOn(PluginWrapper wrapper) {
         super(wrapper);

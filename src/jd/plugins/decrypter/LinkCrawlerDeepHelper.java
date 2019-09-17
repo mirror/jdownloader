@@ -45,7 +45,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.translate._JDT;
 
-@DecrypterPlugin(revision = "$Revision: 40857 $", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
 public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCrawlerDeepHelperInterface {
     public LinkCrawlerDeepHelper(PluginWrapper wrapper) {
         super(wrapper);

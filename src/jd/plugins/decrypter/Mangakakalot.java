@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41007 $", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?mangakakalot\\.com/(manga|chapter)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?mangakakalot\\.com/(manga|chapter)/.*" })
 public class Mangakakalot extends antiDDoSForDecrypt {
     public Mangakakalot(PluginWrapper wrapper) {
         super(wrapper);

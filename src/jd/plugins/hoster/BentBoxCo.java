@@ -18,7 +18,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision: 36468 $", interfaceVersion = 3, names = { "bentbox.co" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bentbox.co" }, urls = { "" })
 public class BentBoxCo extends PluginForHost {
     public BentBoxCo(PluginWrapper wrapper) {
         super(wrapper);

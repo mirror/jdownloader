@@ -14,7 +14,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 34719 $", interfaceVersion = 2, names = { "stream-mydirtyhobby.biz" }, urls = { "https?://(stream-mydirtyhobby.biz|(?:old\\.|www\\.)?stream-mdh.se)(/view/.*?/.+|/video/.*?/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream-mydirtyhobby.biz" }, urls = { "https?://(stream-mydirtyhobby.biz|(?:old\\.|www\\.)?stream-mdh.se)(/view/.*?/.+|/video/.*?/.+)" })
 public class StreamMdhBiz extends antiDDoSForDecrypt {
     public StreamMdhBiz(PluginWrapper wrapper) {
         super(wrapper);

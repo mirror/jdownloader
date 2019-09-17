@@ -56,7 +56,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  * @author Neokyuubi
  *
  */
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://app\\.pluralsight\\.com\\/player\\??.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://app\\.pluralsight\\.com\\/player\\??.+" })
 public class PluralsightCom extends PluginForHost {
     private static WeakHashMap<Account, List<Long>> map100PerHour   = new WeakHashMap<Account, List<Long>>();
     private static WeakHashMap<Account, List<Long>> map200Per4Hours = new WeakHashMap<Account, List<Long>>();

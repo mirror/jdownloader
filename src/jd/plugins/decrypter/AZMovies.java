@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40019 $", interfaceVersion = 2, names = { "azmovies.xyz" }, urls = { "https?://(www\\.)?azmovies\\.xyz/watch.php?.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "azmovies.xyz" }, urls = { "https?://(www\\.)?azmovies\\.xyz/watch.php?.+" })
 public class AZMovies extends PluginForDecrypt {
     public AZMovies(PluginWrapper wrapper) {
         super(wrapper);
