@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,10 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40025 $", interfaceVersion = 2, names = { "shaanig.se" }, urls = { "https?://(www\\.)?shaanig\\.se/((series|episode)/)?.*" })
-public class Shaanig extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 40025 $", interfaceVersion = 2, names = { "shaanig.se" }, urls = { "https?://(www\\.)?(?:shaanig\\.se|prfrtv\\.co)/(series|tvshows|episodes?|movies)/.*" })
+public class Shaanig extends antiDDoSForDecrypt {
     public Shaanig(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,25 +38,18 @@ public class Shaanig extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        String page = br.getPage(parameter);
+        getPage(parameter);
         String fpName = br.getRegex("<meta (?:name|property)=\"og:title\" content=[\"'](?:Watch ?)?([^<>\"]*?)(?: Free Online \\| Shaanig)?[\"'] ?/>").getMatch(0);
-        String[][] links = br.getRegex("(?:href|src)=\"(https?://(?:ouo\\.io|linkshrink\\.net|dl[0-9]+\\.serverdl\\.in)/[^\"]+)").getMatches();
-        if (links == null || links.length == 0) {
-            int episodeListStart = page.indexOf("<div id=\"seasons\">");
-            if (episodeListStart < 0) {
-                episodeListStart = page.indexOf("<div id=\"lnk list-downloads\">");
-            }
-            int episodeListEnd = page.indexOf("<div class=\"mvi-content", episodeListStart + 1);
-            if (episodeListEnd < 0) {
-                episodeListEnd = page.indexOf("<div id=\"commentfb", episodeListStart + 1);
-            }
-            if (episodeListEnd > episodeListStart) {
-                String episodeListSnippet = page.substring(episodeListStart + 1, episodeListEnd);
-                links = new Regex(episodeListSnippet, "<a href=\"([^\"]+)\"[^>]*>").getMatches();
-            }
+        String linkBlock = br.getRegex("(<div id=[\'\"]episodes[\'\"].+)<div id=[\'\"](?:cast|trailer|info)[\'\"]").getMatch(0);
+        String[] links = null;
+        if (linkBlock == null || linkBlock.length() == 0) {
+            linkBlock = br.getRegex("(<div class=[\'\"]links_table[\'\"].+)<div class=[\'\"]sbox[\'\"]").getMatch(0);
         }
-        for (String[] link : links) {
-            decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(link[0])).toString()));
+        if (linkBlock != null && linkBlock.length() > 0) {
+            links = new Regex(linkBlock, "href=[\'\"]([^\'\"]+/(?:episodes|links)/[^\'\"]+)[\'\"]").getColumn(0);
+        }
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
