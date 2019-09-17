@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40121 $", interfaceVersion = 3, names = { "s.to" }, urls = { "https?://(?:www\\.)?s\\.to/[^/]+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "s.to" }, urls = { "https?://(?:www\\.)?s\\.to/[^/]+/.*" })
 public class SerienStreamTo extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public SerienStreamTo(final PluginWrapper wrapper) {

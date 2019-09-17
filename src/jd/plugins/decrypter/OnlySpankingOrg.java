@@ -21,7 +21,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40753 $", interfaceVersion = 3, names = { "onlyspanking.org" }, urls = { "https?://(\\w+\\.)?onlyspanking.org/\\d+-[a-zA-Z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onlyspanking.org" }, urls = { "https?://(\\w+\\.)?onlyspanking.org/\\d+-[a-zA-Z0-9\\-_]+\\.html" })
 public class OnlySpankingOrg extends antiDDoSForDecrypt {
     // finallink will usually be an ubiqfile.com URL
     public OnlySpankingOrg(PluginWrapper wrapper) {

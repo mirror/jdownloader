@@ -20,7 +20,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41244 $", interfaceVersion = 3, names = { "warez-world.org", "ddl-mdh.org", "funxd.tv" }, urls = { "https?://(?:www\\.)?warez-world\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?ddl-mdh\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?funxd\\.tv/(?:download/[^/]+|link/\\d+/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "warez-world.org", "ddl-mdh.org", "funxd.tv" }, urls = { "https?://(?:www\\.)?warez-world\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?ddl-mdh\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?funxd\\.tv/(?:download/[^/]+|link/\\d+/\\d+)" })
 public class GenericWBoardDecrypter extends antiDDoSForDecrypt {
     public GenericWBoardDecrypter(PluginWrapper wrapper) {
         super(wrapper);

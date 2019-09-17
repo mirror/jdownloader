@@ -29,7 +29,7 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 34675 $", interfaceVersion = 3, names = { "LinkCrawlerRetry" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "LinkCrawlerRetry" }, urls = { "" })
 public class LinkCrawlerRetry extends PluginForHost {
     public LinkCrawlerRetry(PluginWrapper wrapper) {
         super(wrapper);

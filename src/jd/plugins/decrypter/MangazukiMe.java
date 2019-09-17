@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41268 $", interfaceVersion = 3, names = { "mangazuki.me" }, urls = { "https?://(?:www\\.)?(?:mangazuki\\.me|yomanga\\.info)/manga/[^/]+(?:/\\w+.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangazuki.me" }, urls = { "https?://(?:www\\.)?(?:mangazuki\\.me|yomanga\\.info)/manga/[^/]+(?:/\\w+.+)?" })
 public class MangazukiMe extends antiDDoSForDecrypt {
     public MangazukiMe(PluginWrapper wrapper) {
         super(wrapper);

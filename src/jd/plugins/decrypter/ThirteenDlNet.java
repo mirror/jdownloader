@@ -10,7 +10,7 @@ import jd.plugins.DownloadLink;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "13dl.net" }, urls = { "https?://(www\\.)?13dl\\.(net|link)/wp/(link/.*?url=.+|zip/.*?url=.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "13dl.net" }, urls = { "https?://(www\\.)?13dl\\.(net|link)/wp/(link/.*?url=.+|zip/.*?url=.+)" })
 public class ThirteenDlNet extends antiDDoSForDecrypt {
     public ThirteenDlNet(PluginWrapper wrapper) {
         super(wrapper);

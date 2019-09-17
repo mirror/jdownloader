@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision: 40597 $", interfaceVersion = 2, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/.*([0-9]+|ova)/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentaidude.com" }, urls = { "https?://(?:www\\.)?hentaidude\\.com/.*([0-9]+|ova)/" })
 public class HentaiDudeCom extends antiDDoSForHost {
     public HentaiDudeCom(PluginWrapper wrapper) {
         super(wrapper);

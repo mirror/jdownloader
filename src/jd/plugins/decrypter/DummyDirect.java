@@ -32,7 +32,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 39590 $", interfaceVersion = 3, names = { "dummydirect.jdownloader.org" }, urls = { "https?://dummydirect\\.jdownloader\\.org/[a-f0-9A-F]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummydirect.jdownloader.org" }, urls = { "https?://dummydirect\\.jdownloader\\.org/[a-f0-9A-F]+" })
 public class DummyDirect extends PluginForDecrypt {
     public DummyDirect(final PluginWrapper wrapper) {
         super(wrapper);

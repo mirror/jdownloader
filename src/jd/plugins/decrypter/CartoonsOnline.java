@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision: 41188 $", interfaceVersion = 2, names = { "cartoonsonline.la" }, urls = { "https?://(www\\.)?cartoonsonline\\.la/cartoon/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cartoonsonline.la" }, urls = { "https?://(www\\.)?cartoonsonline\\.la/cartoon/.*" })
 public class CartoonsOnline extends antiDDoSForDecrypt {
     public CartoonsOnline(PluginWrapper wrapper) {
         super(wrapper);

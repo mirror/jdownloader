@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41239 $", interfaceVersion = 3, names = { "dramavery.com" }, urls = { "https?://(?:(?:www|p)\\.)?dramavery\\.com/(?:drama|movie|player)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dramavery.com" }, urls = { "https?://(?:(?:www|p)\\.)?dramavery\\.com/(?:drama|movie|player)/.+" })
 public class DramaVeryCom extends PluginForDecrypt {
     public DramaVeryCom(PluginWrapper wrapper) {
         super(wrapper);

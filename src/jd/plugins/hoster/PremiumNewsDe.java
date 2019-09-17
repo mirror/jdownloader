@@ -15,7 +15,7 @@ import org.appwork.utils.net.usenet.InvalidAuthException;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 37041 $", interfaceVersion = 3, names = { "premiumnews.de" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumnews.de" }, urls = { "" })
 public class PremiumNewsDe extends UseNet {
     public PremiumNewsDe(PluginWrapper wrapper) {
         super(wrapper);

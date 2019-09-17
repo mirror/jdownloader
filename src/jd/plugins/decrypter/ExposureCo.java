@@ -15,7 +15,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "exposure.co" }, urls = { "https?://(?<!www)[a-z0-9]+\\.exposure.co/[a-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exposure.co" }, urls = { "https?://(?<!www)[a-z0-9]+\\.exposure.co/[a-z0-9\\-_]+" })
 public class ExposureCo extends PluginForDecrypt {
     public ExposureCo(PluginWrapper wrapper) {
         super(wrapper);

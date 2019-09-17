@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41218 $", interfaceVersion = 3, names = { "filmpalast.to" }, urls = { "https?://(www\\.)?filmpalast\\.to/stream/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filmpalast.to" }, urls = { "https?://(www\\.)?filmpalast\\.to/stream/.*" })
 public class Filmpalast extends PluginForDecrypt {
     public Filmpalast(PluginWrapper wrapper) {
         super(wrapper);

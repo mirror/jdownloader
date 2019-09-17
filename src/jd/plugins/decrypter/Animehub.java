@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 40182 $", interfaceVersion = 2, names = { "animehub.ac" }, urls = { "https?://(www\\.)?animehub\\.ac/(watch|detail)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animehub.ac" }, urls = { "https?://(www\\.)?animehub\\.ac/(watch|detail)/.+" })
 public class Animehub extends antiDDoSForDecrypt {
     public Animehub(PluginWrapper wrapper) {
         super(wrapper);

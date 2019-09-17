@@ -33,7 +33,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41072 $", interfaceVersion = 2, names = { "watchcartoonsonline.la" }, urls = { "https?://(www[0-9]*\\.)?watchcartoonsonline\\.la/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchcartoonsonline.la" }, urls = { "https?://(www[0-9]*\\.)?watchcartoonsonline\\.la/.+" })
 public class WatchCartoonsOnline extends antiDDoSForDecrypt {
     public WatchCartoonsOnline(PluginWrapper wrapper) {
         super(wrapper);

@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision: 36193 $", interfaceVersion = 2, names = { "139file.com" }, urls = { "https?://(?:www\\.)?139file\\.com/(?:file|down)/[0-9]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "139file.com" }, urls = { "https?://(?:www\\.)?139file\\.com/(?:file|down)/[0-9]+\\.html" })
 public class OnehundredThirtyNineFileCom extends PluginForHost {
     public OnehundredThirtyNineFileCom(PluginWrapper wrapper) {
         super(wrapper);

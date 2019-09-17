@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41073 $", interfaceVersion = 2, names = { "123moviesnew.org" }, urls = { "https?://(www[0-9]*\\.)?123moviesnew\\.org/(?:movies|series|watch).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123moviesnew.org" }, urls = { "https?://(www[0-9]*\\.)?123moviesnew\\.org/(?:movies|series|watch).+" })
 public class OneTwoThreeMovies extends antiDDoSForDecrypt {
     public OneTwoThreeMovies(PluginWrapper wrapper) {
         super(wrapper);

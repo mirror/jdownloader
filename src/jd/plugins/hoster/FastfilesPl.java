@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision: 36397 $", interfaceVersion = 3, names = { "fastfiles.pl" }, urls = { "https?://(?:www\\.)?fastfiles\\.pl/download/\\d+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastfiles.pl" }, urls = { "https?://(?:www\\.)?fastfiles\\.pl/download/\\d+/[^/]+" })
 public class FastfilesPl extends PluginForHost {
     private static final String                            API_BASE                     = "https://fastfiles.pl/api/apidownload.php";
     private static final String                            NICE_HOST                    = "fastfiles.pl";

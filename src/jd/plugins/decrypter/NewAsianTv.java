@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40337 $", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+)" })
 public class NewAsianTv extends PluginForDecrypt {
     public NewAsianTv(PluginWrapper wrapper) {
         super(wrapper);

@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41221 $", interfaceVersion = 3, names = { "vidcloud.icu" }, urls = { "https?://(www\\d*\\.)?(?:vidcloud\\.icu|k-vid\\.net)/(?:videos/|streaming\\.php\\?|download\\?).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.icu" }, urls = { "https?://(www\\d*\\.)?(?:vidcloud\\.icu|k-vid\\.net)/(?:videos/|streaming\\.php\\?|download\\?).+" })
 public class VidCloudIcu extends antiDDoSForDecrypt {
     public VidCloudIcu(PluginWrapper wrapper) {
         super(wrapper);

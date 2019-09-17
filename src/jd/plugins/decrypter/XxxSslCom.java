@@ -23,7 +23,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision: 36935 $", interfaceVersion = 3, names = { "xxxssl.com" }, urls = { "https?://(?:\\w+\\.)?xxxssl\\.com/embed_cdn\\.php\\?video=[^<>]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxssl.com" }, urls = { "https?://(?:\\w+\\.)?xxxssl\\.com/embed_cdn\\.php\\?video=[^<>]+" })
 public class XxxSslCom extends PornEmbedParser {
 
     public XxxSslCom(PluginWrapper wrapper) {

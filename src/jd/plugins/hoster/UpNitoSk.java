@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 31871 $", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "https?://[\\w\\.]*?upnito\\.sk/(download\\.php\\?(dwToken=[a-z0-9]+|file=.+)|subor/[a-z0-9]+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "https?://[\\w\\.]*?upnito\\.sk/(download\\.php\\?(dwToken=[a-z0-9]+|file=.+)|subor/[a-z0-9]+\\.html)" })
 public class UpNitoSk extends PluginForHost {
 
     private static AtomicBoolean wthack = new AtomicBoolean(true);

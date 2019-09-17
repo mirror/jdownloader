@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41082 $", interfaceVersion = 2, names = { "0123moviestv.com" }, urls = { "https?://(www[0-9]*\\.)?0123moviestv\\.com/watch.+/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "0123moviestv.com" }, urls = { "https?://(www[0-9]*\\.)?0123moviestv\\.com/watch.+/.+" })
 public class ZeroToThreeMoviesTV extends antiDDoSForDecrypt {
     public ZeroToThreeMoviesTV(PluginWrapper wrapper) {
         super(wrapper);

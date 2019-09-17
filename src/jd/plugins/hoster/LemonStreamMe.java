@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "streaming.lemonstream.me" }, urls = { "https?://streaming\\.lemonstream\\.me(?::\\d+)?/[a-f0-9]{32,}/[^\"'\\s<>]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streaming.lemonstream.me" }, urls = { "https?://streaming\\.lemonstream\\.me(?::\\d+)?/[a-f0-9]{32,}/[^\"'\\s<>]+" })
 public class LemonStreamMe extends PluginForHost {
 
     // raztoki embed video player template.

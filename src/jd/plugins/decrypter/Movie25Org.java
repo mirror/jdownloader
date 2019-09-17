@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41211 $", interfaceVersion = 3, names = { "movies25.org" }, urls = { "https?://(www\\.)?movies25\\.org/((movie|watch)/)?.+\\.html?.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movies25.org" }, urls = { "https?://(www\\.)?movies25\\.org/((movie|watch)/)?.+\\.html?.*" })
 public class Movie25Org extends antiDDoSForDecrypt {
     public Movie25Org(PluginWrapper wrapper) {
         super(wrapper);

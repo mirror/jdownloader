@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41221 $", interfaceVersion = 3, names = { "putlockers.am" }, urls = { "https?://(www\\d*\\.)?(putlockers\\.am|putlockerhd\\.io)/(watch/|film/|streaming\\.php\\?|load\\.php\\?).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "putlockers.am" }, urls = { "https?://(www\\d*\\.)?(putlockers\\.am|putlockerhd\\.io)/(watch/|film/|streaming\\.php\\?|load\\.php\\?).+" })
 public class PutlockersAm extends PluginForDecrypt {
     public PutlockersAm(PluginWrapper wrapper) {
         super(wrapper);

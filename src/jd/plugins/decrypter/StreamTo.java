@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41162 $", interfaceVersion = 3, names = { "stream.to" }, urls = { "https?://(?:www\\.)?stream\\.to/(?:[a-z]+/)?(?:series|episode|movie)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stream.to" }, urls = { "https?://(?:www\\.)?stream\\.to/(?:[a-z]+/)?(?:series|episode|movie)/.*" })
 public class StreamTo extends PluginForDecrypt {
     private String[] videoDetail;
 

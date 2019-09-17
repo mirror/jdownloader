@@ -36,7 +36,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 35559 $", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+|https?://waaw\\.tv/watch_video\\.php\\?v=[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqq.tv" }, urls = { "https?://(?:www\\.)?hqq\\.(?:tv|watch)/.+|https?://waaw\\.tv/watch_video\\.php\\?v=[A-Za-z0-9]+" })
 public class HqqTv extends antiDDoSForHost {
     public HqqTv(PluginWrapper wrapper) {
         super(wrapper);

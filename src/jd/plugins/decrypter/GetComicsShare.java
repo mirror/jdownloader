@@ -13,7 +13,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 39909 $", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/share/uploads/\\d+/\\d+/[a-zA-Z0-9\\_\\-]+\\.txt" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/share/uploads/\\d+/\\d+/[a-zA-Z0-9\\_\\-]+\\.txt" })
 public class GetComicsShare extends PluginForDecrypt {
     public GetComicsShare(PluginWrapper wrapper) {
         super(wrapper);

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41191 $", interfaceVersion = 2, names = { "classiccinemaonline.com" }, urls = { "https?://(www\\.)?classiccinemaonline\\.com/movie-billboards/[^/]+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "classiccinemaonline.com" }, urls = { "https?://(www\\.)?classiccinemaonline\\.com/movie-billboards/[^/]+/.*" })
 public class ClassicCinemaOnline extends antiDDoSForDecrypt {
     public ClassicCinemaOnline(PluginWrapper wrapper) {
         super(wrapper);

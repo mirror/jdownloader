@@ -17,7 +17,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 39249 $", interfaceVersion = 2, names = { "oe1.orf.at" }, urls = { "https?://oe1\\.orf\\.at/(player|programm)/\\d+/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oe1.orf.at" }, urls = { "https?://oe1\\.orf\\.at/(player|programm)/\\d+/\\d+" })
 public class Oe1OrfAt extends PluginForDecrypt {
     public Oe1OrfAt(PluginWrapper wrapper) {
         super(wrapper);

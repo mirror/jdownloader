@@ -14,7 +14,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 40452 $", interfaceVersion = 3, names = { "share.dmca.gripe" }, urls = { "https?://share\\.dmca\\.gripe/a/[a-zA-Z0-9\\._-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share.dmca.gripe" }, urls = { "https?://share\\.dmca\\.gripe/a/[a-zA-Z0-9\\._-]+" })
 public class ShareDmcaGripe extends antiDDoSForDecrypt {
     public ShareDmcaGripe(PluginWrapper wrapper) {
         super(wrapper);

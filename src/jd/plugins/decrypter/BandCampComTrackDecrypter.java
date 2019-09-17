@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 39491 $", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" })
 public class BandCampComTrackDecrypter extends PluginForDecrypt {
     public BandCampComTrackDecrypter(PluginWrapper wrapper) {
         super(wrapper);

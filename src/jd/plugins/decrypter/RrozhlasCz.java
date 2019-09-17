@@ -11,7 +11,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 37053 $", interfaceVersion = 3, names = { "rozhlas.cz" }, urls = { "https?://([a-z0-9]+\\.)?rozhlas.cz/.+-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rozhlas.cz" }, urls = { "https?://([a-z0-9]+\\.)?rozhlas.cz/.+-\\d+" })
 public class RrozhlasCz extends PluginForDecrypt {
     public RrozhlasCz(PluginWrapper wrapper) {
         super(wrapper);

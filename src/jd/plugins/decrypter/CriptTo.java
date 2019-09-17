@@ -41,7 +41,7 @@ import jd.nutils.encoding.Encoding;
 import org.appwork.utils.StringUtils;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 38918 $", interfaceVersion = 3, names = { "cript.to" }, urls = { "https?://(?:www\\.)?cript\\.to/folder/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cript.to" }, urls = { "https?://(?:www\\.)?cript\\.to/folder/[A-Za-z0-9]+" })
 public class CriptTo extends PluginForDecrypt {
 	private final String NO_SOLVEMEDIA = "1";
 

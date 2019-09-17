@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision: 35304 $", interfaceVersion = 3, names = { "fxpan.com" }, urls = { "https?://(?:www\\.)?fxpan\\.com/(?:file/\\d+|share/[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fxpan.com" }, urls = { "https?://(?:www\\.)?fxpan\\.com/(?:file/\\d+|share/[a-z0-9]+)" })
 public class FxpanCom extends PluginForHost {
     public FxpanCom(PluginWrapper wrapper) {
         super(wrapper);

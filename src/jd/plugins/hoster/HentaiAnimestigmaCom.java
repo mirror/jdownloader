@@ -24,7 +24,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision: 40597 $", interfaceVersion = 2, names = { "hentai.animestigma.com" }, urls = { "https?://(?:www\\.)?.*#hentai.animestigma.com-direct" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai.animestigma.com" }, urls = { "https?://(?:www\\.)?.*#hentai.animestigma.com-direct" })
 public class HentaiAnimestigmaCom extends antiDDoSForHost {
     public HentaiAnimestigmaCom(PluginWrapper wrapper) {
         super(wrapper);

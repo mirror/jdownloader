@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 39992 $", interfaceVersion = 2, names = { "animexd.me" }, urls = { "https?://(www\\.)?animexd\\.me/(anime|watch)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animexd.me" }, urls = { "https?://(www\\.)?animexd\\.me/(anime|watch)/.+" })
 public class AnimexdMe extends PluginForDecrypt {
     public AnimexdMe(PluginWrapper wrapper) {
         super(wrapper);

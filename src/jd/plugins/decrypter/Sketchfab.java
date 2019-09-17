@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: 41201 $", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(www\\.)?sketchfab\\.com/3d-models/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(www\\.)?sketchfab\\.com/3d-models/.+" })
 public class Sketchfab extends antiDDoSForDecrypt {
     public Sketchfab(PluginWrapper wrapper) {
         super(wrapper);

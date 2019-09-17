@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 41234 $", interfaceVersion = 3, names = { "moviedream.ws" }, urls = { "https?://(?:www\\d*\\.)?moviedream\\.ws/(?:serie|film)/\\d+.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviedream.ws" }, urls = { "https?://(?:www\\d*\\.)?moviedream\\.ws/(?:serie|film)/\\d+.+" })
 public class MovieDream extends PluginForDecrypt {
     public MovieDream(PluginWrapper wrapper) {
         super(wrapper);

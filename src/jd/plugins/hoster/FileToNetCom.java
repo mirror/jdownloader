@@ -11,7 +11,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "filetonet.com" }, urls = { "https?://(www\\.)?filetonet\\.com/[a-fA-F0-9]{35}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetonet.com" }, urls = { "https?://(www\\.)?filetonet\\.com/[a-fA-F0-9]{35}" })
 public class FileToNetCom extends PluginForHost {
     public FileToNetCom(PluginWrapper wrapper) {
         super(wrapper);

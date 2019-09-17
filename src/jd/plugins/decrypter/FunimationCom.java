@@ -23,7 +23,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 37916 $", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "funimation.com" }, urls = { "http(?:s)://www.funimation.com/(?:shows/)[-0-9a-zA-Z]+/[-0-9a-zA-Z]+.*" })
 public class FunimationCom extends PluginForDecrypt {
     static private final String SHOWEXPERIENCE_API = "https://www.funimation.com/api/showexperience/";
     static private final String EXPERIENCE_API     = "https://www.funimation.com/api/experience/";
