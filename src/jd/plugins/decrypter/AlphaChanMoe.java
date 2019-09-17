@@ -26,7 +26,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision: svn:revision $", interfaceVersion = 3, names = { "alphachan.moe" }, urls = { "https?://(?:www\\.)?alphachan\\.moe/(?:play2|player)/.+" })
+@DecrypterPlugin(revision = "$Revision: svn:Revision $", interfaceVersion = 3, names = { "alphachan.moe" }, urls = { "https?://(?:www\\.)?alphachan\\.moe/(?:play2|player)/.+" })
 public class AlphaChanMoe extends antiDDoSForDecrypt {
     public AlphaChanMoe(PluginWrapper wrapper) {
         super(wrapper);
