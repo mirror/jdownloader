@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision: svn:Revision $", interfaceVersion = 3, names = { "fenixfansub.com" }, urls = { "https?://(?:www\\.)?fenixfansub\\.com/animes/[^/]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fenixfansub.com" }, urls = { "https?://(?:www\\.)?fenixfansub\\.com/animes/[^/]+/?" })
 public class FenixFansub extends antiDDoSForDecrypt {
     public FenixFansub(PluginWrapper wrapper) {
         super(wrapper);
