@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shaanig.se" }, urls = { "https?://(www\\.)?(?:shaanig\\.se|prfrtv\\.co)/(series|tvshows|episodes?|movies)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shaanig.se" }, urls = { "https?://(www\\.)?(?:shaanig\\.se|prfrtv\\.co)/(?:series|tvshows|episodes?|movies)/.+" })
 public class Shaanig extends antiDDoSForDecrypt {
     public Shaanig(PluginWrapper wrapper) {
         super(wrapper);
