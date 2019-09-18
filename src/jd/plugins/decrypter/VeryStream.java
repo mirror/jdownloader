@@ -16,10 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,37 +24,48 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "verystream.com" }, urls = { "https?://(?:\\w+\\.)?verystream\\.com/(?:e|embed)/.+" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "verystream.com" }, urls = { "https?://(?:www\\.)?(?:verystreams?\\.com?|woof\\.tube)/(?:e|embed/streams?)/([A-Za-z0-9]+)" })
 public class VeryStream extends antiDDoSForDecrypt {
     public VeryStream(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        // video stream is handled by hoster plugin
+        ret.add(createDownloadlink(parameter));
         br.setFollowRedirects(true);
         getPage(parameter);
-        String fpName = br.getRegex("<meta\\s*name\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"([^\"]+)").getMatch(0);
-        String[] links = br.getRegex("<track[^>]+src\\s*=\\s*\"([^\"]+)\"[^>]+kind\\s*=\\s*\"caption").getColumn(0);
+        final String fpName = br.getRegex("<meta\\s*name\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"([^\"]+)").getMatch(0);
+        final String[] captions = br.getRegex("<track[^>]+src\\s*=\\s*\"([^\"]+)\"[^>]+kind\\s*=\\s*\"caption").getColumn(0);
         // NOTE: The video stream is already handled by the hoster plugin, this simply covers the optional subtitle files.
-        if (links != null && links.length > 0) {
-            for (String link : links) {
-                DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
-                if (fpName != null && fpName.length() > 0) {
+        if (captions != null && captions.length > 0) {
+            for (final String caption : captions) {
+                final String url = br.getURL(Encoding.htmlDecode(caption)).toString();
+                final DownloadLink dl = createDownloadlink(url);
+                if (StringUtils.isNotEmpty(fpName)) {
                     String filename = fpName;
                     final String extOld = getFileNameExtensionFromString(filename);
-                    final String extNew = getFileNameExtensionFromString(link);
+                    final String extNew = getFileNameExtensionFromString(url);
                     if (extOld != null && extNew != null) {
                         filename = filename.replaceAll(Pattern.quote(extOld) + "$", extNew);
                         dl.setFinalFileName(filename);
                     }
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
+            }
+            if (StringUtils.isNotEmpty(fpName)) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
+                fp.addLinks(ret);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,24 +27,25 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.controlling.PasswordUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co|controlc\\.com)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)" })
 public class PastedCo extends PluginForDecrypt {
-
     public PastedCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String domains = "(?:tinypaste\\.com|tny\\.cz|pasted\\.co)";
+    private final String domains = "(?:tinypaste\\.com|tny\\.cz|pasted\\.co|controlc\\.com)";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String link = parameter.toString().replaceFirst("tinypaste\\.com/|tny\\.cz/", "pasted.co/");
+        final String link = parameter.toString().replaceFirst("tinypaste\\.com/|tny\\.cz/|pasted.co/", "controlc.com");
         br.getPage(link);
         if (br.containsHTML(">404 - URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
@@ -59,7 +59,7 @@ public class PastedCo extends PluginForDecrypt {
                 }
                 final Form pwform = br.getForm(0);
                 if (pwform == null || id == null) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String pw = getUserInput(null, parameter);
                 pwform.put("password_" + id, pw);
@@ -73,13 +73,13 @@ public class PastedCo extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String pasteFrame = br.getRegex("frameborder='0' id='pasteFrame' src=\"(https?://(?:www\\.)?" + domains + "/.*?)\"").getMatch(0);
+        String pasteFrame = br.getRegex("frameborder='0'\\s*id='pasteFrame'\\s*src\\s*=\\s*\"(https?://(?:www\\.)?" + domains + "/.*?)\"").getMatch(0);
         if (pasteFrame == null) {
             pasteFrame = br.getRegex("\"(https?://(?:www\\.)?" + domains + "/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
         }
         if (pasteFrame == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(pasteFrame.trim());
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
@@ -91,12 +91,13 @@ public class PastedCo extends PluginForDecrypt {
             /* prevent recursion */
             if (element.matches("(?i-).+" + domains + ".+")) {
                 continue;
+            } else {
+                final DownloadLink dl = createDownloadlink(element);
+                if (pws != null && pws.size() > 0) {
+                    dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+                }
+                decryptedLinks.add(dl);
             }
-            final DownloadLink dl = createDownloadlink(element);
-            if (pws != null && pws.size() > 0) {
-                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
-            }
-            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
@@ -105,5 +106,4 @@ public class PastedCo extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
