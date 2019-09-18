@@ -17,18 +17,20 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 5, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" })
-public class NaughtyBlgOrg extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 5, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+/?" })
+public class NaughtyBlgOrg extends antiDDoSForDecrypt {
     private enum Category {
         UNDEF,
         SITERIP,
@@ -53,7 +55,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -61,7 +63,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        this.br.getPage(parameter);
+        getPage(parameter);
         // String content = this.br.getRegex(Pattern.compile("<div id=\"main\\-content\" class=\"main\\-content\\-single\">(.*?)<h3
         // class=\"comments\"", 34)).getMatch(0);
         String contentReleaseName = br.getRegex("<h1 class=\"post\\-title entry\\-title\">(.*?)</h1>").getMatch(0);
@@ -130,11 +132,17 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             }
         }
         if (contentReleaseLinks == null) {
+            contentReleaseLinks = br.getRegex("<div\\s+id\\s*=[^>]*downloadhidden[^>]*>([^$]+)<div[^>]*id\\s*=[^>]*postinfo[^>]*class\\s*=[^>]*categories[^>]*>").getMatch(0);
+        }
+        if (contentReleaseLinks == null) {
             logger.warning("contentReleaseLinks == null");
             return null;
         }
         // final String[] links = new Regex(contentReleaseLinks, "<a href=\"(https?://(www\\.)?[^\"]*?)\"").getColumn(0);
-        final String[] links = new Regex(contentReleaseLinks, "<a href=(.*?) title").getColumn(0);
+        String[] links = new Regex(contentReleaseLinks, "<a href=(.*?) title").getColumn(0);
+        if (links == null) {
+            links = HTMLParser.getHttpLinks(contentReleaseLinks, null);
+        }
         if (links == null || links.length == 0) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
