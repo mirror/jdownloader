@@ -2927,15 +2927,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     do {
                         login_counter++;
                         logger.info("Performing full login attempt: " + login_counter);
-                        if (br.getHttpConnection().getResponseCode() == 404) {
-                            /* Required for some XFS setups - use as common fallback. */
-                            getPage(getMainPage() + "/login");
-                        }
                         Form loginForm = findLoginform(this.br);
                         if (loginForm == null) {
                             // some sites (eg filejoker) show login captcha AFTER first login attempt, so only reload getLoginURL(without
                             // captcha) if required
                             getPage(getLoginURL());
+                            if (br.getHttpConnection().getResponseCode() == 404) {
+                                /* Required for some XFS setups - use as common fallback. */
+                                getPage(getMainPage() + "/login");
+                            }
                             loginForm = findLoginform(this.br);
                             if (loginForm == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
