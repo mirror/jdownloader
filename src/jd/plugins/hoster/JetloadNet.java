@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +31,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
@@ -126,6 +126,10 @@ public class JetloadNet extends PluginForHost {
         }
         if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
             link.setDownloadSize(Long.parseLong(filesize));
+        }
+        final String filestatus = PluginJSonUtils.getJson(br, "file_status");
+        if (StringUtils.equalsIgnoreCase(filestatus, "Deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String encoding_status = PluginJSonUtils.getJson(br, "encoding_status");
         if (StringUtils.equalsIgnoreCase("pending", encoding_status) || StringUtils.equalsIgnoreCase("started", encoding_status)) {
