@@ -40,7 +40,7 @@ import jd.plugins.FilePackage;
  * note: primewire.ag using cloudflare. -raztoki20150225
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(ag|is|life|site|fun)|primewire\\.unblocked\\.cc)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)|http://(?:www\\.)?letmewatchthis\\.lv/movies/view/watch\\-\\d+[A-Za-z0-9\\-]+|https?://(?:www\\.)?primewire\\.(ag|is|life|site|fun)/go.php.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "https?://(?:www\\.)?(?:vodly\\.to|primewire\\.(site|li|ink)|letmewatchthis\\.fun|watchfreemovies\\.ch)/(?:watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+|go\\.php?.+|(tv|movie|watch-tv-shows|watch-movies)/\\d+.+)" })
 public class OneChannelCh extends antiDDoSForDecrypt {
     public OneChannelCh(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,9 +52,9 @@ public class OneChannelCh extends antiDDoSForDecrypt {
         String parameter = param.toString().replace("vodly.to/", "primewire.is/").replace("primewire.ag/", "primewire.is/");
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
+        br.toString();
         String slug = new Regex(parameter, "/([^/]+)$").getMatch(0);
-        String itemID = new Regex(slug.toString(), "([0-9]+)").getMatch(0).toString();
+        String fpName = null;
         if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
             final String[] episodes = br.getRegex("class=\"tv_episode_item\"> <a href=\"(/tv[^<>\"]*?)\"").getColumn(0);
             if (episodes == null || episodes.length == 0) {
@@ -75,9 +75,9 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                 logger.info("Linktype (series overview) is not supported: " + parameter);
                 return decryptedLinks;
             }
-            String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online.*?\\| [^<>\"]*?</title>").getMatch(0);
+            fpName = br.getRegex("<title>Watch ([^<>\"]*?) online.*?\\| [^<>\"]*?</title>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+                fpName = br.getRegex("<meta property=\"og:title\" content=\"(?:Watch\\s+)?([^<>\"]*?)\"[^>]*>").getMatch(0);
             }
             if (parameter.contains("season-") && fpName != null) {
                 final Regex seasonAndEpisode = br.getRegex("<a href=\"/tv\\-[^<>\"/]*?/[^<>\"/]*?\">([^<>\"]*?)</a>[\t\n\r ]+</strong>[\t\n\r ]+> <strong>([^<>\"]*?)</strong>");
@@ -94,27 +94,42 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                 try {
                     engine.eval("var res = " + js + ";");
                     result = (String) engine.get("res");
+                    if (result.contains("p,a,c,k,e,d")) {
+                        engine.eval("var res2 = " + result + ";");
+                        result = (String) engine.get("res2");
+                    }
                     String finallink = new Regex(result, "go\\('(.*?)'\\)").getMatch(0);
                     fpName = new Regex(parameter, "title=([^<>]*?)(&|$)").getMatch(0);
                     fpName = (fpName == null) ? br.getRegex("<title>Watching ([^<>]*?)</title>").getMatch(0) : fpName.replaceAll("(-|_|\\&20)", " ");
-                    decryptedLinks.add(createDownloadlink(finallink));
+                    if (finallink != null) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
                 } catch (final Exception e) {
+                    getLogger().log(e);
                     e.printStackTrace();
                 }
             } else if (br.containsHTML("<div class=\"loader\">") || br.containsHTML("Please Wait! Loading The Links.")) {
                 Browser br2 = br.cloneBrowser();
-                String page2 = br2.getPage("/ajax-78583.php?slug=" + slug + "&cp=7TYP4N");
+                getPage(br2, "/ajax-78583.php?slug=" + slug + "&cp=7TYP4N");
                 String[] links = br2.getRegex("href=\"([^\"]*go\\.php[^\"]*)\"").getColumn(0);
                 for (String singleLink : links) {
                     singleLink = Encoding.htmlDecode(singleLink);
+                    if (singleLink.startsWith("/")) {
+                        singleLink = br2.getURL(singleLink).toString();
+                    }
                     if (!dupe.add(singleLink)) {
                         continue;
                     }
                     decryptedLinks.add(createDownloadlink(singleLink));
                 }
-                page2 = page2;
             } else {
                 String[] links = br.getRegex("(/\\w+\\.php[^\"]*[&?](?:url|link)=[^\"]*?|/(?:external|goto|gohere|go)\\.php[^<>\"]*?)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("<a\\s+href\\s*=\\s*\"([^\"]+)\"[^>]+go_key\\s*=").getColumn(0);
+                }
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("<a\\s+href\\s*=\\s*\"(/goex/[^\"]+)").getColumn(0);
+                }
                 if (links == null || links.length == 0) {
                     if (br.containsHTML("\\'HD Sponsor\\'")) {
                         logger.info("Found no downloadlink in link: " + parameter);
@@ -126,13 +141,19 @@ public class OneChannelCh extends antiDDoSForDecrypt {
                 br.setFollowRedirects(false);
                 for (String singleLink : links) {
                     singleLink = Encoding.htmlDecode(singleLink);
+                    if (singleLink.startsWith("/")) {
+                        singleLink = br.getURL(singleLink).toString();
+                    }
                     if (!dupe.add(singleLink)) {
                         continue;
                     }
                     String finallink;
                     final String b64link = new Regex(singleLink, "[&?](?:url|link)=([^<>\"&]+)").getMatch(0);
-                    if (singleLink.contains("go.php")) {
+                    if (singleLink.contains("go.php") || singleLink.contains("/links/go?")) {
                         final Browser br2 = br.cloneBrowser();
+                        if (singleLink.startsWith("(go.php")) {
+                            singleLink = br.getURL(singleLink).toString();
+                        }
                         getPage(br2, singleLink);
                         finallink = br2.getRedirectLocation() == null ? br2.getURL() : br2.getRedirectLocation();
                     } else if (b64link != null) {
