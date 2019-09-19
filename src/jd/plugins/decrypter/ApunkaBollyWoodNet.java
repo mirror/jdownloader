@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,11 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apunkabollywood.net" }, urls = { "http://(www\\.)?apunkabollywood\\.(net|us)/browser/category/view/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apunkabollywood.net" }, urls = { "http://(www\\.)?apunkabollywood\\.(net|us)/browser/category/view/\\d+" })
 public class ApunkaBollyWoodNet extends PluginForDecrypt {
-
     public ApunkaBollyWoodNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,42 +47,41 @@ public class ApunkaBollyWoodNet extends PluginForDecrypt {
         // ><a href="http://www.apunkabollywood.us/browser/download/get/65152/Track 06 (ApunKaBollywood.com).html"> Track 06 </a><small>(9.5
         // MB)</small>
         final String[][] downloadLinks = br.getRegex("\"(http://(www\\.)?apunkabollywood\\.us/browser/download/get/\\d+/[^<>\"/]*?\\.html)\">([^<>\"]*?)</a><small>\\((\\d+(\\.\\d+)? MB)\\)</small>").getMatches();
-        if ((links == null || links.length == 0) && (downloadLinks == null || downloadLinks.length == 0)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        if (links != null && links.length != 0) {
-            for (final String singleLink : links) {
-                decryptedLinks.add(createDownloadlink(singleLink));
-            }
-        } else if (downloadLinks != null && downloadLinks.length != 0) {
-            final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName("Album: " + new Regex(parameter, "(\\d+)$").getMatch(0));
-            if (fpName != null) {
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-            }
-            for (final String downloadLink[] : downloadLinks) {
-                br.getPage(downloadLink[0]);
-                final String finallink = br.getRegex("<div id=\"DownloadBox\">[\t\n\r ]+<H1><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+        if ((links != null && links.length > 0) || (downloadLinks != null && downloadLinks.length > 0)) {
+            if (links != null && links.length != 0) {
+                for (final String singleLink : links) {
+                    decryptedLinks.add(createDownloadlink(singleLink));
                 }
-                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                dl.setFinalFileName(Encoding.htmlDecode(downloadLink[2].trim()) + ".mp3");
-                dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(downloadLink[3].trim())));
-                dl.setAvailable(true);
-                fp.add(dl);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    // Not available in old Stable
+            } else if (downloadLinks != null && downloadLinks.length != 0) {
+                final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName("Album: " + new Regex(parameter, "(\\d+)$").getMatch(0));
+                if (fpName != null) {
+                    fp.setName(Encoding.htmlDecode(fpName.trim()));
                 }
-                decryptedLinks.add(dl);
+                for (final String downloadLink[] : downloadLinks) {
+                    br.getPage(downloadLink[0]);
+                    final String finallink = br.getRegex("<div id=\"DownloadBox\">[\t\n\r ]+<H1><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                    dl.setFinalFileName(Encoding.htmlDecode(downloadLink[2].trim()) + ".mp3");
+                    dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(downloadLink[3].trim())));
+                    dl.setAvailable(true);
+                    fp.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        // Not available in old Stable
+                    }
+                    decryptedLinks.add(dl);
+                }
             }
+        } else {
+            getLogger().warning("No links found for URL " + parameter);
         }
-
         return decryptedLinks;
     }
 
@@ -92,5 +89,4 @@ public class ApunkaBollyWoodNet extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
