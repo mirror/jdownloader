@@ -1,8 +1,10 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -12,6 +14,19 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -20,7 +35,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,14 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -63,6 +72,13 @@ public class DropboxCom extends PluginForHost {
         void setZipFolderDownloadEnabled(boolean b);
     }
 
+    public static Browser prepBrAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setAllowedResponseCodes(new int[] { 400, 409 });
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     private static final String             TYPE_S                                           = "https?://[^/]+/s/.+";
     private static final String             TYPE_SH                                          = "https?://[^/]+/sh/.+";
     private static Object                   LOCK                                             = new Object();
@@ -70,7 +86,8 @@ public class DropboxCom extends PluginForHost {
     private boolean                         passwordProtected                                = false;
     private String                          url                                              = null;
     private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
-    private BasicAdvancedConfigPluginPanel  configPanel;
+    public static final String              API_BASE                                         = "https://api.dropboxapi.com/2";
+    private static final boolean            USE_API                                          = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -200,9 +217,17 @@ public class DropboxCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (USE_API) {
+            return fetchAccountInfoAPI(account);
+        } else {
+            return fetchAccountInfoWebsite(account);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -212,8 +237,55 @@ public class DropboxCom extends PluginForHost {
             }
         }
         br.setDebug(true);
-        login(account, true);
+        loginWebsite(account, true);
+        /* 2019-09-19: Treat all accounts as FREE accounts */
+        account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) user");
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        this.loginAPI(this.br, account, true);
+        accessAPIAccountInfo(this.br);
+        // if (br.getURL() == null || !br.getURL().contains("/users/get_account")) {
+        // br.postPageRaw(API_BASE + "/users/get_account", "{\"account_id\": \"" + getAPIAccountID(account) + "\"}");
+        // }
+        final boolean account_disabled = "true".equals(PluginJSonUtils.getJson(br, "disabled"));
+        if (account_disabled) {
+            /* 2019-09-19: No idea what this means - probably banned accounts?! */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled/banned by Dropbox", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        /* Make sure we do not store the users' real logindata as he will likely enter them into our login-mask! */
+        account.setUser(null);
+        account.setPass(null);
+        try {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final String given_name = (String) JavaScriptEngineFactory.walkJson(entries, "name/given_name");
+            final String surname = (String) JavaScriptEngineFactory.walkJson(entries, "name/surname");
+            if (!StringUtils.isEmpty(given_name)) {
+                String jd_username = given_name;
+                if (!StringUtils.isEmpty(surname)) {
+                    jd_username += " " + surname.substring(0, 1) + ".";
+                }
+                /* Save this as username - no one can start attacks on stored logindata based on this! */
+                account.setUser(jd_username);
+            }
+            final String account_type = (String) JavaScriptEngineFactory.walkJson(entries, "account_type/.tag");
+            if (!StringUtils.isEmpty(account_type)) {
+                ai.setStatus("Account type: " + account_type);
+            } else {
+                /* Fallback */
+                ai.setStatus("Registered (free) user");
+            }
+            /* 2019-09-19: Treat all accounts as FREE accounts - the Account-Type does not change the download procedure! */
+            account.setType(AccountType.FREE);
+        } catch (final Throwable e) {
+            /* 2019-09-19: On failure: Treat all accounts as FREE accounts */
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) user");
+        }
         ai.setUnlimitedTraffic();
         return ai;
     }
@@ -330,7 +402,7 @@ public class DropboxCom extends PluginForHost {
             }
         } else {
             /* website downloads */
-            login(account, false);
+            loginWebsite(account, false);
             if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
                 dlURL = dlURL + "&dl=1";
             }
@@ -351,7 +423,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     /* is only used for website logins */
-    private void login(final Account account, boolean refresh) throws Exception {
+    private void loginWebsite(final Account account, boolean refresh) throws Exception {
         boolean ok = false;
         synchronized (LOCK) {
             setBrowserExclusive();
@@ -405,6 +477,163 @@ public class DropboxCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    /**
+     * API login: https://www.dropbox.com/developers/documentation/http/documentation#oa2-authorize and
+     * https://www.dropbox.com/developers/reference/oauth-guide
+     */
+    public boolean loginAPI(Browser br, final Account account, boolean validateAuthorization) throws Exception {
+        synchronized (account) {
+            setBrowserExclusive();
+            prepBrAPI(br);
+            boolean loggedIN = false;
+            if (setAPILoginHeaders(br, account)) {
+                accessAPIAccountInfo(br);
+                final String error_summary = PluginJSonUtils.getJson(br, "error_summary");
+                loggedIN = br.getHttpConnection().getResponseCode() == 200 && StringUtils.isEmpty(error_summary);
+            }
+            if (!loggedIN) {
+                /* Important: Without this we may try to login with old auth header which will lead to failure!! */
+                br = prepBrAPI(new Browser());
+                logger.info("Performing full login");
+                String account_id = null;
+                /* Perform full login */
+                final String user_auth_url = "https://www." + account.getHoster() + "/oauth2/authorize?client_id=" + getAPIClientID() + "&response_type=code&force_reapprove=false";
+                showOauthLoginInformation(user_auth_url);
+                final DownloadLink dl_dummy;
+                if (this.getDownloadLink() != null) {
+                    dl_dummy = this.getDownloadLink();
+                } else {
+                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                }
+                final String user_code = getUserInput("Authorization code?", dl_dummy);
+                if (StringUtils.isEmpty(user_code)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authorization code has not been entered", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final Form loginform = new Form();
+                loginform.setMethod(MethodType.POST);
+                loginform.setAction("https://api.dropboxapi.com/oauth2/token");
+                loginform.put("code", user_code);
+                loginform.put("grant_type", "authorization_code");
+                loginform.put("client_id", getAPIClientID());
+                loginform.put("client_secret", getAPISecret());
+                /*
+                 * 2019-09-19: redirect_uri field is not required as we're not yet able to use it, thus we're using 'response_type=code'
+                 * above.
+                 */
+                // loginform.put("redirect_uri", "TODO");
+                br.submitForm(loginform);
+                String access_token = PluginJSonUtils.getJson(br, "access_token");
+                /* This is required to obtain account-information later on! */
+                account_id = PluginJSonUtils.getJson(br, "account_id");
+                /* We do not need this 2nd user-id! */
+                // final String uid = PluginJSonUtils.getJson(br, "uid");
+                if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id)) {
+                    /* 2019-09-19: We do not care about the fail-reason - failure = wrong logindata! */
+                    /* E.g. expired token: {"error_description": "code has expired (within the last hour)", "error": "invalid_grant"} */
+                    final String error_description = PluginJSonUtils.getJson(br, "error_description");
+                    if (!StringUtils.isEmpty(error_description)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid login: " + error_description, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /*
+                 * 2019-09-19: This token should last until the user revokes access! It can even survive password changes if the user wants
+                 * it to! It will even last when a user switches from normal login to 2-factor-authorization!
+                 */
+                account.setProperty("access_token", access_token);
+                if (!StringUtils.isEmpty(account_id)) {
+                    account.setProperty("account_id", account_id);
+                }
+                setAPILoginHeaders(br, account);
+            }
+            return true;
+        }
+    }
+
+    private void accessAPIAccountInfo(final Browser br) throws IOException {
+        /** https://www.dropbox.com/developers/documentation/http/documentation#users-get_current_account */
+        if (br.getURL() == null || !br.getURL().contains("/users/get_current_account")) {
+            /* 'null' is required to send otherwise we'll get an error-response!! */
+            br.postPageRaw(API_BASE + "/users/get_current_account", "null");
+        }
+    }
+
+    /**
+     * @return true = api_token found and set </br>
+     *         false = no api_token found
+     */
+    public static boolean setAPILoginHeaders(final Browser br, final Account account) {
+        final String access_token = getAPIToken(account);
+        if (access_token == null) {
+            return false;
+        }
+        br.getHeaders().put("Authorization", "Bearer " + access_token);
+        br.getHeaders().put("Content-Type", "application/json");
+        return true;
+    }
+
+    private String getAPIAccountID(final Account account) {
+        return account.getStringProperty("account_id", null);
+    }
+
+    public static String getAPIToken(final Account account) {
+        return account.getStringProperty("access_token", null);
+    }
+
+    /** Also called App-key and can be found here: https://www.dropbox.com/developers/apps */
+    private String getAPIClientID() {
+        return "j0mjfuvazxa9ye4";
+    }
+
+    /** Can be found here: https://www.dropbox.com/developers/apps */
+    private String getAPISecret() {
+        /* 2019-09-19: We do not really have good ways to hide such things in the JDownloader project ... */
+        return Encoding.Base64Decode("ZGF3eDYzdmVrdDUybmVo");
+    }
+
+    private Thread showOauthLoginInformation(final String auth_url) {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Dropbox.com - neue Login-Methode";
+                        message += "Hallo liebe(r) Dropbox NutzerIn\r\n";
+                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die Sicherheit zu erhöhen!\r\n";
+                        message += "Um deinen Account weiterhin in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "1. Gehe sicher, dass du im Browser in deinem Dropbox Account eingeloggt bist.\r\n";
+                        message += "2. Öffne diesen Link im Browser falls das nicht automatisch geschieht:\r\n\t'" + auth_url + "'\t\r\n";
+                        message += "3. Gib den Code, der im Browser angezeigt wird hier ein.\r\n";
+                        message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                    } else {
+                        title = "Dropbox.com - New login method";
+                        message += "Hello dear Dropbox user\r\n";
+                        message += "This update has changed the login method of Dropbox in favor of security.\r\n";
+                        message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
+                        message += "1. Make sure that you're logged in your Dropbox account with your default browser.\r\n";
+                        message += "2. Open this URL in your browser if it does not happen automatically:\r\n\t'" + auth_url + "'\t\r\n";
+                        message += "3. Enter the code you see in your browser here.\r\n";
+                        message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(30 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(auth_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     @Override

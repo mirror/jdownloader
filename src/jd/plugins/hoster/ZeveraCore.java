@@ -832,12 +832,24 @@ abstract public class ZeveraCore extends UseNet {
                  * file. 3. User has activated free mode but this file is not allowed to be downloaded via free account.
                  */
                 /* {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
-                if (account != null && account.getType() == AccountType.FREE && this.supportsFreeMode(account)) {
+                if (account != null && account.getType() == AccountType.FREE) {
+                    /* Free */
                     /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
                     message = "Premium required or activate free mode via premiumize.me/free";
-                    handleFreeModeDownloadDialog(account, "https://www." + this.br.getHost() + "/free");
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 30 * 60 * 1000l);
+                    if (this.supportsFreeMode(account)) {
+                        /* Ask user to unlock free account downloads via website */
+                        handleFreeModeDownloadDialog(account, "https://www." + this.br.getHost() + "/free");
+                    } else {
+                        /*
+                         * User has not enabled free account downloads in plugin settings (this is a rare case which may happen in the
+                         * moment when a premium account expires and becomes a free account!)
+                         */
+                        message += " AND via Settings->Plugins->Premiumize.me";
+                    }
+                    mhm.putError(account, link, 5 * 60 * 1000l, message);
+                    // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
                 } else {
+                    /* Premium account - probably no traffic left */
                     message = "Traffic empty or fair use limit reached?";
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
