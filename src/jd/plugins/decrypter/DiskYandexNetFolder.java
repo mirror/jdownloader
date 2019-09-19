@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -38,10 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
     public DiskYandexNetFolder(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private final String        type_yadi_sk_mail  = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
     private final String        type_yadi_sk_album = "https?://(www\\.)?yadi\\.sk/a/[A-Za-z0-9\\-_]+";
     private final String        DOWNLOAD_ZIP       = "DOWNLOAD_ZIP_2";
-    private static final String OFFLINE_TEXT       = "class=\"not\\-found\\-public__caption\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
+    private static final String OFFLINE_TEXT       = "class=\"not\\-found\\-public__caption\"|class=\"error__icon error__icon_blocked\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
     private static final String JSON_TYPE_DIR      = "dir";
     ArrayList<DownloadLink>     decryptedLinks     = new ArrayList<DownloadLink>();
 

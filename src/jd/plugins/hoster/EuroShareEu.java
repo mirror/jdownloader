@@ -17,10 +17,14 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,8 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "https?://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" })
 public class EuroShareEu extends antiDDoSForHost {
@@ -41,9 +44,10 @@ public class EuroShareEu extends antiDDoSForHost {
      * <br />
      * <br />
      */
-    private static final String  containsPassword         = "ERR: Password protected file \\(wrong password\\)\\.";
-    private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
-    private static AtomicInteger maxPrem                  = new AtomicInteger(1);
+    private static final String  containsPassword = "ERR: Password protected file \\(wrong password\\)\\.";
+    private static String        API_BASE         = "https://euroshare.eu/euroshare-api";
+    // private static final String TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
+    private static AtomicInteger maxPrem          = new AtomicInteger(1);
 
     public EuroShareEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,15 +66,15 @@ public class EuroShareEu extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         // start of password handling crapola
-        String pass = downloadLink.getStringProperty("pass");
+        String pass = link.getDownloadPassword();
         if (pass != null) {
-            handlePassword(downloadLink);
-            pass = downloadLink.getStringProperty("pass");
+            handlePassword(link);
+            pass = link.getDownloadPassword();
             if (!pass.equals("")) {
                 logger.info("handlePassword success");
             } else {
@@ -78,54 +82,55 @@ public class EuroShareEu extends antiDDoSForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
         } else {
-            getPage("https://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            getPage(API_BASE + "/?sub=checkfile&file=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("ERR: File does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML(containsPassword)) {
-                downloadLink.getLinkStatus().setStatusText("Pre-download password protection. Please set password!");
-                filename = new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0);
+                link.getLinkStatus().setStatusText("Pre-download password protection. Please set password!");
+                filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
                 if (filename != null) {
                     Encoding.urlDecode(filename, true);
                 }
-                downloadLink.setProperty("pass", "");
+                link.setDownloadPassword(null);
+                ;
                 return AvailableStatus.UNCHECKABLE;
             }
         }
         // end of password handling
         filename = PluginJSonUtils.getJsonValue(this.br, "file_name");
         final String description = PluginJSonUtils.getJsonValue(this.br, "file_description");
-        if (description != null && downloadLink.getComment() == null) {
-            downloadLink.setComment(description);
+        if (description != null && link.getComment() == null) {
+            link.setComment(description);
         }
         final String filesize = PluginJSonUtils.getJsonValue(this.br, "file_size");
         final String md5 = PluginJSonUtils.getJsonValue(this.br, "md5_hash");
-        downloadLink.setFinalFileName(filename);
-        downloadLink.setDownloadSize(Long.parseLong(filesize));
-        downloadLink.setMD5Hash(md5);
+        link.setFinalFileName(filename);
+        link.setDownloadSize(Long.parseLong(filesize));
+        link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
-    private void handlePassword(DownloadLink downloadLink) throws Exception {
-        String pass = downloadLink.getStringProperty("pass");
-        if (pass != null && !pass.equals("")) {
-            getPage("https://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
+    private void handlePassword(DownloadLink link) throws Exception {
+        String pass = link.getDownloadPassword();
+        if (!StringUtils.isEmpty(pass)) {
+            getPage(API_BASE + "/?sub=checkfile&file=" + Encoding.urlEncode(link.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
             if (br.containsHTML(containsPassword)) {
                 // wrong password
-                downloadLink.setProperty("pass", "");
-                handlePassword(downloadLink);
+                link.setDownloadPassword(null);
+                handlePassword(link);
             } else {
                 // password is correct
-                downloadLink.getLinkStatus().setStatusText(null);
+                link.getLinkStatus().setStatusText(null);
             }
         } else {
-            pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
+            pass = Plugin.getUserInput(link.getName() + " is password protected!", link);
             if (pass != null && !pass.equals("")) {
-                downloadLink.setProperty("pass", pass);
-                handlePassword(downloadLink);
+                link.setDownloadPassword(pass);
+                handlePassword(link);
             } else {
                 // not sure how stable works, but jd2 never enters here on cancellation of dialog box
-                downloadLink.setProperty("pass", "");
+                link.setDownloadPassword(null);
             }
         }
     }
@@ -137,11 +142,9 @@ public class EuroShareEu extends antiDDoSForHost {
         maxPrem.set(1);
         try {
             login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+        } catch (final PluginException e) {
+            throw e;
         }
-        account.setValid(true);
         final String expire = PluginJSonUtils.getJsonValue(this.br, "unlimited_download_until");
         // Not sure if this behaviour is correct
         final String availableTraffic = PluginJSonUtils.getJsonValue(this.br, "credit");
@@ -150,7 +153,7 @@ public class EuroShareEu extends antiDDoSForHost {
             maxPrem.set(1);
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
-            account.setProperty("FREE", true);
+            account.setType(AccountType.FREE);
             ai.setUnlimitedTraffic();
         } else {
             /*
@@ -173,7 +176,7 @@ public class EuroShareEu extends antiDDoSForHost {
             maxPrem.set(-1);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
-            account.setProperty("FREE", false);
+            account.setType(AccountType.PREMIUM);
         }
         return ai;
     }
@@ -239,12 +242,13 @@ public class EuroShareEu extends antiDDoSForHost {
         if (br.containsHTML(containsPassword)) {
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
-        if (account.getBooleanProperty("FREE")) {
+        if (account.getType() == AccountType.FREE) {
             doFree(link);
         } else {
-            getPage("https://euroshare.eu/euroshare-api/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
+            getPage(API_BASE + "/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
             final String dllink = PluginJSonUtils.getJsonValue(this.br, "link");
             if (dllink == null) {
+                logger.warning("dllink is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
@@ -259,8 +263,8 @@ public class EuroShareEu extends antiDDoSForHost {
 
     private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        getPage("https://euroshare.eu/euroshare-api/?sub=getaccountdetails&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        /* 2019-09-19: There is no way to save- and re-use any kind of logintoken! We always have to send username and password! */
+        getPage(API_BASE + "/?sub=getaccountdetails&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("(ERR: User does not exist|ERR: Invalid password)")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -272,5 +276,10 @@ public class EuroShareEu extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
     }
 }

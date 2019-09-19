@@ -114,7 +114,7 @@ public class RuTubeRu extends PluginForHost {
         RuTubeVariant var = downloadLink.getVariant(RuTubeVariant.class);
         String dllink = downloadLink.getDownloadURL();
         String regId = "http://video\\.rutube\\.ru/([0-9a-f]{32})";
-        String nextId = new Regex(dllink, regId).getMatch(0);
+        final String nextId = new Regex(dllink, regId).getMatch(0);
         br.setCustomCharset("utf-8");
         /*
          * 2017-02-21: Using User-Agent 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0' will return a different
@@ -122,23 +122,31 @@ public class RuTubeRu extends PluginForHost {
          */
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
         getPage("https://rutube.ru/api/play/trackinfo/" + nextId + "/");
-        if (br.containsHTML("<root><detail>Not found</detail></root>")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
         final XPath xPath = XPathFactory.newInstance().newXPath();
         String filename = getText(doc, xPath, "/root/title");
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Fallback */
+            filename = nextId;
         }
         if (var != null) {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + var.getHeight() + "p" + ".mp4");
         }
-        final String vid = br.getRegex("/embed/(\\d+)").getMatch(0);
-        getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
+        /* 2019-09-19: This value was usually something else than 'nextId' but it seems to be the same now! */
+        final String vid = br.getRegex("/play/embed/([^/<>\"]+)").getMatch(0);
+        if (vid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* 2019-09-19: This request is not required anymore */
+        // getPage("https://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
         // swf requests over json
         Browser ajax = cloneBrowser(br);
-        getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
+        getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
+        // getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" +
+        // Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
         final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
         if (videoBalancer == null) {

@@ -22,6 +22,17 @@ import java.util.LinkedHashMap;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -42,17 +53,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -231,7 +231,7 @@ public class AllDebridCom extends antiDDoSForHost {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = "Alldebrid.com - neue Login-Methode";
                         message += "Hallo liebe(r) alldebrid.com NutzerIn\r\n";
-                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
+                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die Sicherheit zu erhöhen!\r\n";
                         message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
                         message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
                         message += "2. Öffne diesen Link im Browser:\r\n\t'" + pin_url + "'\t\r\n";
@@ -286,7 +286,7 @@ public class AllDebridCom extends antiDDoSForHost {
         // everything is aok
         case -1:
             return;
-            // login related
+        // login related
         case 2:
             throw new AccountInvalidException("Invalid User/Password!");
         case 3:
