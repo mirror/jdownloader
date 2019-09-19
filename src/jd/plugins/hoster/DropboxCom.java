@@ -249,9 +249,6 @@ public class DropboxCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         this.loginAPI(this.br, account, true);
         accessAPIAccountInfo(this.br);
-        // if (br.getURL() == null || !br.getURL().contains("/users/get_account")) {
-        // br.postPageRaw(API_BASE + "/users/get_account", "{\"account_id\": \"" + getAPIAccountID(account) + "\"}");
-        // }
         final boolean account_disabled = "true".equals(PluginJSonUtils.getJson(br, "disabled"));
         if (account_disabled) {
             /* 2019-09-19: No idea what this means - probably banned accounts?! */
