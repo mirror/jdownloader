@@ -62,18 +62,17 @@ public class DropBoxCom extends PluginForDecrypt {
         return DropBoxConfig.class;
     }
 
-    private static final String  TYPE_NORMAL         = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
-    private static final String  TYPE_S_AND_SH       = "https?://[^/]+/((?:s|sh)/.+)";
+    private static final String TYPE_NORMAL         = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
+    private static final String TYPE_S_AND_SH       = "https?://[^/]+/((?:s|sh)/.+)";
     /** 2019-09-20: TODO: Find out what 'sc' means - seems like photo albums */
-    private static final String  TYPE_SC             = "https?://[^/]+/sc/.+";
-    private static final String  TYPE_REDIRECT       = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
-    private static final String  TYPE_SHORT          = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
+    private static final String TYPE_SC             = "https?://[^/]+/sc/.+";
+    private static final String TYPE_REDIRECT       = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_SHORT          = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
     /* Unsupported linktypes which can occur during the decrypt process */
     /* 2019-09-20: Some time ago, these were direct-URLs. Now not anymore. */
-    private static final String  TYPE_DIRECTLINK_OLD = "https?://dl\\.dropboxusercontent.com/s/(.+)";
-    private static final String  TYPE_REFERRAL       = "https?://(www\\.)?dropbox\\.com/referrals/.+";
-    private String               subFolder           = "";
-    private static final boolean USE_API             = true;
+    private static final String TYPE_DIRECTLINK_OLD = "https?://dl\\.dropboxusercontent.com/s/(.+)";
+    private static final String TYPE_REFERRAL       = "https?://(www\\.)?dropbox\\.com/referrals/.+";
+    private String              subFolder           = "";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         subFolder = getAdoptedCloudFolderStructure();
