@@ -56,37 +56,35 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
 public class HighWayMe extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
-    private static final String                            DOMAIN                              = "http://http.high-way.me/api.php";
-    private static final String                            NICE_HOST                           = "high-way.me";
-    private static final String                            NICE_HOSTproperty                   = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME                            = NICE_HOSTproperty + "NORESUME";
-    private static final String                            TYPE_TV                             = ".+high\\-way\\.me/onlinetv\\.php\\?id=.+";
-    private static final String                            TYPE_DIRECT                         = ".+high\\-way\\.me/dlu/[a-z0-9]+/[^/]+";
-    private static final int                               ERRORHANDLING_MAXLOGINS             = 2;
-    private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
-    private static final long                              trust_cookie_age                    = 300000l;
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
+    /* 2019-09-20: Switched from http to https */
+    private static final String                   API_BASE                            = "https://high-way.me/api.php";
+    // private static final String API_BASE = "http://http.high-way.me/api.php";
+    private static MultiHosterManagement          mhm                                 = new MultiHosterManagement("high-way.me");
+    private static final String                   NORESUME                            = "NORESUME";
+    private static final String                   TYPE_TV                             = ".+high\\-way\\.me/onlinetv\\.php\\?id=.+";
+    private static final String                   TYPE_DIRECT                         = ".+high\\-way\\.me/dlu/[a-z0-9]+/[^/]+";
+    private static final int                      ERRORHANDLING_MAXLOGINS             = 2;
+    private static final int                      STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
+    private static final long                     trust_cookie_age                    = 300000l;
     /* Contains <host><Boolean resume possible|impossible> */
-    private static HashMap<String, Boolean>                hostResumeMap                       = new HashMap<String, Boolean>();
+    private static HashMap<String, Boolean>       hostResumeMap                       = new HashMap<String, Boolean>();
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Integer>                hostMaxchunksMap                    = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>       hostMaxchunksMap                    = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
-    private static HashMap<String, Integer>                hostMaxdlsMap                       = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>       hostMaxdlsMap                       = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
-    private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
-    private static HashMap<String, Integer>                hostRabattMap                       = new HashMap<String, Integer>();
-    private static Object                                  UPDATELOCK                          = new Object();
-    private static final int                               defaultMAXCHUNKS                    = -4;
-    private static final boolean                           defaultRESUME                       = false;
-    private int                                            statuscode                          = 0;
-    private Account                                        currAcc                             = null;
-    private DownloadLink                                   currDownloadLink                    = null;
-    private long                                           currentWaittimeOnFailue             = 0;
+    private static HashMap<String, AtomicInteger> hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
+    private static HashMap<String, Integer>       hostRabattMap                       = new HashMap<String, Integer>();
+    private static Object                         UPDATELOCK                          = new Object();
+    private static final int                      defaultMAXCHUNKS                    = -4;
+    private static final boolean                  defaultRESUME                       = false;
+    private int                                   statuscode                          = 0;
 
     public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
     };
@@ -106,12 +104,8 @@ public class HighWayMe extends UseNet {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
         return br;
-    }
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
     }
 
     @Override
@@ -148,8 +142,7 @@ public class HighWayMe extends UseNet {
             String filesize_str;
             String filename = null;
             for (Account acc : accs) {
-                this.currAcc = acc;
-                this.loginSafe(false);
+                this.loginSafe(acc, false);
                 if (check_via_json) {
                     final String json_url = link.getDownloadURL().replaceAll("stream=(?:0|1)", "") + "&json=1";
                     this.br.getPage(json_url);
@@ -262,8 +255,7 @@ public class HighWayMe extends UseNet {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.setConstants(account, link);
-        this.loginSafe(false);
+        this.loginSafe(account, false);
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
@@ -298,26 +290,26 @@ public class HighWayMe extends UseNet {
                 resume = hostResumeMap.get(thishost);
             }
         }
-        if (link.getBooleanProperty(NORESUME, false)) {
+        if (link.getBooleanProperty(this.getHost() + NORESUME, false)) {
             resume = false;
         }
         if (!resume) {
             maxChunks = 1;
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         br.setAllowedResponseCodes(new int[] { 503 });
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         final long responsecode = dl.getConnection().getResponseCode();
         if (responsecode == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
-            link.setProperty(HighWayMe.NORESUME, Boolean.valueOf(true));
+            link.setProperty(this.getHost() + NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         jd.plugins.hoster.SimplyPremiumCom.handle503(this.br, responsecode);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         try {
             controlSlot(+1);
@@ -334,7 +326,6 @@ public class HighWayMe extends UseNet {
         return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
@@ -348,54 +339,58 @@ public class HighWayMe extends UseNet {
                 this.fetchAccountInfo(account);
             }
         }
-        this.setConstants(account, link);
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
         } else {
-            synchronized (UPDATELOCK) {
-                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                if (unavailableMap != null) {
-                    final Long lastUnavailable = unavailableMap.get(link.getHost());
-                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                        final long wait = lastUnavailable - System.currentTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                    } else if (lastUnavailable != null) {
-                        unavailableMap.remove(link.getHost());
-                        if (unavailableMap.size() == 0) {
-                            hostUnavailableMap.remove(account);
-                        }
-                    }
-                }
-            }
-            String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+            mhm.runCheck(account, link);
+            String dllink = checkDirectLink(link, this.getHost() + "directlink");
             if (dllink == null) {
                 /* request creation of downloadlink */
                 br.setFollowRedirects(true);
-                String passCode = Encoding.urlEncode(link.getStringProperty("pass", ""));
-                postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
-                this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
-                if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
-                    /* We alredy tried the saved password --> Ask for PW now */
-                    logger.info("MOCH and download password ...");
-                    passCode = Plugin.getUserInput("Password?", link);
-                    this.getAPISafe("/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
-                    if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
-                        link.setProperty("pass", Property.NULL);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                /* 2019-09-20: Does not matter if this is null! */
+                String passCode = Encoding.urlEncode(link.getDownloadPassword());
+                int counter = 0;
+                do {
+                    if (counter > 0) {
+                        passCode = Plugin.getUserInput("Password?", link);
                     }
-                    /* Seems like the password is valid --> Save it */
-                    link.setProperty("pass", passCode);
+                    getPageAndEnsureLogin(account, "https://high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
+                    counter++;
+                } while (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG && counter <= 2);
+                if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
                 dllink = PluginJSonUtils.getJsonValue(br, "download");
                 if (dllink == null) {
                     logger.warning("Final downloadlink is null");
-                    handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknull", 50, 5 * 60 * 1000l);
                 }
                 dllink = Encoding.htmlDecode(dllink);
             }
             handleDL(account, link, dllink);
         }
+    }
+
+    /**
+     * Performs request first without checking login and if that fails, again with ensuring login! This saves us http requests and time!
+     */
+    private void getPageAndEnsureLogin(final Account account, final String url) throws Exception {
+        boolean verifiedCookies = this.login(account, false);
+        this.br.getPage(url);
+        /** TODO: Add isLoggedIN function and check */
+        if (!verifiedCookies && !this.isLoggedIN()) {
+            logger.info("Retrying with ensured login");
+            verifiedCookies = this.login(account, false);
+            this.br.getPage(url);
+            if (!this.isLoggedIN()) {
+                /* This should never happen! */
+                logger.warning("Potential login failure");
+            }
+        }
+        updatestatuscode();
+        handleAPIErrors(this.br, account);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -417,39 +412,13 @@ public class HighWayMe extends UseNet {
         return dllink;
     }
 
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime);
-        }
-    }
-
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.setConstants(account, null);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
-        this.login(true);
-        getAPISafe(DOMAIN + "?hoster&user");
+        this.login(account, true);
+        getAPISafe(account, API_BASE + "?hoster&user");
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final LinkedHashMap<String, Object> info_account = (LinkedHashMap<String, Object>) entries.get("user");
         final ArrayList<Object> array_hoster = (ArrayList) entries.get("hoster");
@@ -467,7 +436,7 @@ public class HighWayMe extends UseNet {
         if (premium_bis > 0 && premium_traffic_max > 0) {
             ai.setTrafficLeft(premium_traffic);
             ai.setTrafficMax(premium_traffic_max);
-            ai.setValidUntil(premium_bis * 1000);
+            ai.setValidUntil(premium_bis * 1000, this.br);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {
@@ -556,78 +525,69 @@ public class HighWayMe extends UseNet {
     /**
      * Login without errorhandling
      *
+     * @return true = cookies validated </br>
+     *         false = cookies set but not validated
+     *
      * @throws PluginException
      */
-    private void login(final boolean force) throws IOException, PluginException {
-        final Cookies cookies = this.currAcc.loadCookies("");
-        if (cookies != null && !force) {
+    private boolean login(final Account account, final boolean validateCookies) throws IOException, PluginException {
+        final Cookies cookies = account.loadCookies("");
+        boolean loggedIN = false;
+        if (cookies != null) {
             this.br.setCookies(this.getHost(), cookies);
-            if (System.currentTimeMillis() - this.currAcc.getCookiesTimeStamp("") <= trust_cookie_age) {
-                /* We trust these cookies --> Do not check them */
-                return;
+            if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !validateCookies) {
+                /* We trust these (new) cookies --> Do not check them */
+                return false;
             }
-            this.br.getPage(DOMAIN + "?logincheck");
-            if ("true".equals(PluginJSonUtils.getJsonValue(this.br, "loggedin"))) {
-                /* Cookies valid? --> Save them again to renew the last-saved timestamp. */
-                this.currAcc.saveCookies(this.br.getCookies(this.br.getHost()), "");
-                return;
+            this.br.getPage(API_BASE + "?logincheck");
+            loggedIN = this.isLoggedIN();
+        }
+        if (!loggedIN) {
+            logger.info("Performing full login");
+            br.postPage(API_BASE + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+            if (!isLoggedIN()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            /* Cookies not valid anymore --> Perform full login */
         }
-        br.postPage(DOMAIN + "?login", "pass=" + Encoding.urlEncode(this.currAcc.getPass()) + "&user=" + Encoding.urlEncode(this.currAcc.getUser()));
-        if (br.getCookie(br.getURL(), "xf_user") == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        this.currAcc.saveCookies(this.br.getCookies(this.br.getHost()), "");
+        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+        return true;
     }
 
-    /** Login + errorhandling */
-    private void loginSafe(final boolean force) throws IOException, PluginException {
-        login(force);
+    private boolean isLoggedIN() {
+        return br.getCookie(br.getURL(), "xf_user", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    /**
+     * Login + errorhandling
+     *
+     * @throws InterruptedException
+     */
+    private void loginSafe(final Account account, final boolean force) throws IOException, PluginException, InterruptedException {
+        login(account, force);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(this.br, account);
     }
 
-    private void tempUnavailableHoster(long timeout) throws PluginException {
-        if (this.currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        if (this.currentWaittimeOnFailue > 0) {
-            /* API timeout can override default timeout */
-            timeout = this.currentWaittimeOnFailue;
-        }
-        synchronized (UPDATELOCK) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(this.currAcc, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
+    private void getAPISafe(final Account account, final String accesslink) throws IOException, PluginException, InterruptedException {
         int tries = 0;
         do {
             this.br.getPage(accesslink);
-            handleLoginIssues();
+            handleLoginIssues(account);
             tries++;
         } while (tries <= ERRORHANDLING_MAXLOGINS && this.statuscode == 9);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(this.br, account);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+    private void postAPISafe(final Account account, final String accesslink, final String postdata) throws IOException, PluginException, InterruptedException {
         int tries = 0;
         do {
             this.br.postPage(accesslink, postdata);
-            handleLoginIssues();
+            handleLoginIssues(account);
             tries++;
         } while (tries <= ERRORHANDLING_MAXLOGINS && this.statuscode == 9);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(this.br, account);
     }
 
     /**
@@ -635,10 +595,10 @@ public class HighWayMe extends UseNet {
      *
      * @throws PluginException
      */
-    private void handleLoginIssues() throws IOException, PluginException {
+    private void handleLoginIssues(final Account account) throws IOException, PluginException {
         updatestatuscode();
         if (this.statuscode == 9) {
-            this.login(true);
+            this.login(account, true);
             updatestatuscode();
         }
     }
@@ -690,7 +650,7 @@ public class HighWayMe extends UseNet {
      */
     private void controlSlot(final int num) {
         synchronized (UPDATELOCK) {
-            final String currentHost = correctHost(this.currDownloadLink.getHost());
+            final String currentHost = correctHost(this.getDownloadLink().getHost());
             AtomicInteger currentRunningDls = new AtomicInteger(0);
             if (hostRunningDlsNumMap.containsKey(currentHost)) {
                 currentRunningDls = hostRunningDlsNumMap.get(currentHost);
@@ -727,12 +687,9 @@ public class HighWayMe extends UseNet {
         } else {
             statuscode = 0;
         }
-        if (waittime_on_failure != null && waittime_on_failure.matches("\\d+")) {
-            this.currentWaittimeOnFailue = Long.parseLong(waittime_on_failure);
-        }
     }
 
-    private void handleAPIErrors(final Browser br) throws PluginException {
+    private void handleAPIErrors(final Browser br, final Account account) throws PluginException, InterruptedException {
         final String lang = System.getProperty("user.language");
         String statusMessage = null;
         try {
@@ -771,14 +728,14 @@ public class HighWayMe extends UseNet {
             case 6:
                 /* Invalid link --> Disable host */
                 statusMessage = "Invalid link";
-                tempUnavailableHoster(5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "invalid_link", 5, 5 * 60 * 1000l);
             case 7:
                 statusMessage = "Undefined errorstate";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Undefined errorstate");
             case 8:
                 /* Temp error, try again in some minutes */
                 statusMessage = "Temporary error";
-                tempUnavailableHoster(1 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "temporary_error", 5, 5 * 60 * 1000l);
             case 9:
                 /* No account found -> Disable link for 10 minutes */
                 statusMessage = "No account found";
@@ -786,11 +743,11 @@ public class HighWayMe extends UseNet {
             case 10:
                 /* Host offline or invalid url -> Remove host from array of supported hosts */
                 statusMessage = "Invalid link --> Probably unsupported host";
-                tempUnavailableHoster(10 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "invalid_link", 5, 5 * 60 * 1000l);
             case 11:
                 /* Host itself is currently unavailable (maintenance) -> Disable host */
                 statusMessage = "Host itself is currently unavailable";
-                tempUnavailableHoster(10 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "individual_host_unavailable", 5, 5 * 60 * 1000l);
             case 12:
                 /* MOCH itself is under maintenance */
                 if ("de".equalsIgnoreCase(lang)) {
@@ -809,7 +766,7 @@ public class HighWayMe extends UseNet {
                  * hosts.
                  */
                 statusMessage = "Host specified traffic limit has been reached";
-                tempUnavailableHoster(10 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "individual_host_trafficlimit_reached", 5, 5 * 60 * 1000l);
             case 100:
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
@@ -831,11 +788,10 @@ public class HighWayMe extends UseNet {
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknown_api_error", 50, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info(this.getHost() + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
     }
