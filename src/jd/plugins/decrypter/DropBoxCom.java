@@ -125,15 +125,12 @@ public class DropBoxCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlViaAPI(final String parameter) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        /**
-         * TODO: Get and set name of current folder, check pagination, check subfolder-decryption, check subfolder-paths!
-         */
         /*
          * We cannot use the following request because we do not have the folderID at this stage:
          * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_folder_metadata
          */
         /** https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_metadata */
-        /** TODO: Add path and link_pasword fields */
+        /** TODO: Support for password protected URLs via link_pasword field */
         /* To access crawled subfolders, we need the same URL as before but a different 'path' value! */
         final String last_path = getAdoptedCloudFolderStructure();
         /* Just a 2nd variable to make it clear where we started! */
