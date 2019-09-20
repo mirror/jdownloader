@@ -398,8 +398,8 @@ public class HighWayMe extends UseNet {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
+                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
