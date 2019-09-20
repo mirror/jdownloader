@@ -25,6 +25,7 @@ import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -64,12 +65,19 @@ public class DropboxCom extends PluginForHost {
     }
 
     public interface DropboxConfig extends PluginConfigInterface {
+        /** TODO: Remove this old setting + functionality completely! */
+        // @DefaultBooleanValue(false)
+        // @AboutConfig
+        // @DescriptionForConfigEntry("If enabled, the Linkgrabber will offer a zip archive to download folders")
+        // boolean isZipFolderDownloadEnabled();
+        //
+        // void setZipFolderDownloadEnabled(boolean b);
         @DefaultBooleanValue(false)
         @AboutConfig
-        @DescriptionForConfigEntry("If enabled, the Linkgrabber will offer a zip archive to download folders")
-        boolean isZipFolderDownloadEnabled();
+        @DescriptionForConfigEntry("If enabled, API will be used")
+        boolean isUseAPIBETA();
 
-        void setZipFolderDownloadEnabled(boolean b);
+        void setUseAPIBETA(boolean b);
     }
 
     public static Browser prepBrAPI(final Browser br) {
@@ -79,15 +87,18 @@ public class DropboxCom extends PluginForHost {
         return br;
     }
 
-    private static final String             TYPE_S                                           = "https?://[^/]+/s/.+";
-    private static final String             TYPE_SH                                          = "https?://[^/]+/sh/.+";
-    private static Object                   LOCK                                             = new Object();
+    public static boolean useAPI() {
+        return PluginJsonConfig.get(DropboxConfig.class).isUseAPIBETA() && ALLOW_API;
+    }
+
+    public static final String              TYPE_S                                           = "https?://[^/]+/s/.+";
+    public static final String              TYPE_SH_SINGLE_FILE                              = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
     private static HashMap<String, Cookies> accountMap                                       = new HashMap<String, Cookies>();
     private boolean                         passwordProtected                                = false;
     private String                          url                                              = null;
     private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
     public static final String              API_BASE                                         = "https://api.dropboxapi.com/2";
-    private static final boolean            USE_API                                          = false;
+    private static final boolean            ALLOW_API                                        = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -97,8 +108,8 @@ public class DropboxCom extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 429 });
         if (link.getBooleanProperty("decrypted", false)) {
             URLConnectionAdapter con = null;
-            if (link.getPluginPatternMatcher().matches(TYPE_S) || link.getPluginPatternMatcher().matches(TYPE_SH)) {
-                br.setCookie("http://dropbox.com", "locale", "en");
+            if (isSingleFile(this.getRootFolderURL(link, link.getPluginPatternMatcher()))) {
+                br.setCookie("https://dropbox.com", "locale", "en");
                 url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "&dl=1");
                 for (int i = 0; i < 2; i++) {
                     try {
@@ -219,14 +230,13 @@ public class DropboxCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (USE_API) {
+        if (useAPI()) {
             return fetchAccountInfoAPI(account);
         } else {
             return fetchAccountInfoWebsite(account);
         }
     }
 
-    @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         if (!account.getUser().matches(".+@.+\\..+")) {
@@ -262,12 +272,12 @@ public class DropboxCom extends PluginForHost {
             final String given_name = (String) JavaScriptEngineFactory.walkJson(entries, "name/given_name");
             final String surname = (String) JavaScriptEngineFactory.walkJson(entries, "name/surname");
             if (!StringUtils.isEmpty(given_name)) {
-                String jd_username = given_name;
+                String jd_account_manager_username = given_name;
                 if (!StringUtils.isEmpty(surname)) {
-                    jd_username += " " + surname.substring(0, 1) + ".";
+                    jd_account_manager_username += " " + surname.substring(0, 1) + ".";
                 }
                 /* Save this as username - no one can start attacks on stored logindata based on this! */
-                account.setUser(jd_username);
+                account.setUser(jd_account_manager_username);
             }
             final String account_type = (String) JavaScriptEngineFactory.walkJson(entries, "account_type/.tag");
             if (!StringUtils.isEmpty(account_type)) {
@@ -345,8 +355,16 @@ public class DropboxCom extends PluginForHost {
                 url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "&dl=1");
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, 1);
+        handleDownload(link, url, true);
+    }
+
+    private void handleDownload(final DownloadLink link, final String dllink, final boolean resume) throws Exception {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            final URLConnectionAdapter con = dl.getConnection();
+            if (con.getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             br.followConnection();
             logger.warning("Final downloadlink lead to HTML code");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -360,10 +378,11 @@ public class DropboxCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        String dlURL = downloadLink.getPluginPatternMatcher();
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        String dlURL = link.getPluginPatternMatcher();
         boolean resume = true;
         if (dlURL.matches(".*api-content.dropbox.com.*")) {
+            /** 2019-09-20: TODO: Check when this happens, check how to improve this! */
             /* api downloads via tokens */
             resume = false;
             try {
@@ -382,8 +401,8 @@ public class DropboxCom extends PluginForHost {
                 dlURL = dlURL.replaceFirst("://[\\w:]+@", "://");
                 /* remove passphrase from url */
                 dlURL = dlURL.replaceFirst("[\\?&]passphrase=[^&]+", "");
-                String t1 = new Regex(downloadLink.getPluginPatternMatcher(), "://(.*?):.*?@").getMatch(0);
-                String t2 = new Regex(downloadLink.getPluginPatternMatcher(), "://.*?:(.*?)@").getMatch(0);
+                String t1 = new Regex(link.getPluginPatternMatcher(), "://(.*?):.*?@").getMatch(0);
+                String t2 = new Regex(link.getPluginPatternMatcher(), "://.*?:(.*?)@").getMatch(0);
                 if (t1 == null) {
                     t1 = account.getUser();
                 }
@@ -397,32 +416,126 @@ public class DropboxCom extends PluginForHost {
                 logger.log(e);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else if (!useAPI()) {
+            dlURL = getDllinkAccountWebsite(account, link);
         } else {
-            /* website downloads */
-            loginWebsite(account, false);
-            if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
-                dlURL = dlURL + "&dl=1";
+            /* API download - uses different handling + errorhandling! */
+            handleDownloadAccountAPI(account, link);
+            return;
+        }
+        handleDownload(link, dlURL, resume);
+    }
+
+    private String getDllinkAccountWebsite(final Account account, final DownloadLink link) throws Exception {
+        String dlURL = link.getPluginPatternMatcher();
+        /* website downloads */
+        loginWebsite(account, false);
+        if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
+            dlURL = dlURL + "&dl=1";
+        }
+        return dlURL;
+    }
+
+    /** API download (account required) */
+    private void handleDownloadAccountAPI(final Account account, final DownloadLink link) throws Exception {
+        /** TODO: Improve this */
+        this.loginAPI(this.br, account, false);
+        /** TODO: Make sure we always got the right path value! Check this especially for URLs that get added without API! */
+        final String contentURL = getRootFolderURL(link, link.getPluginPatternMatcher());
+        String serverside_path_to_file_relative;
+        if (isSingleFile(contentURL)) {
+            serverside_path_to_file_relative = "null";
+        } else {
+            serverside_path_to_file_relative = link.getStringProperty("serverside_path_to_file_relative", null);
+            if (serverside_path_to_file_relative != null) {
+                /* Fix json */
+                serverside_path_to_file_relative = "\"" + serverside_path_to_file_relative + "\"";
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlURL, resume, 1);
-        final URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() != 200) {
-            con.disconnect();
-            if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (con.getResponseCode() == 401) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+        /** TODO: Add support for password protected content */
+        String download_password = link.getDownloadPassword();
+        // if (download_password == null) {
+        download_password = "";
+        // }
+        /** https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file */
+        final String jsonHeader = "{ \"url\": \"" + contentURL + "\", \"path\":" + serverside_path_to_file_relative + ", \"link_password\":\"" + download_password + "\"  }";
+        br.getHeaders().put("Dropbox-API-Arg", jsonHeader);
+        br.getHeaders().put("Content-Type", "text/plain;charset=UTF-8");
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, "https://content.dropboxapi.com/2/sharing/get_shared_link_file", "", true, 1);
+        final String contenttype = dl.getConnection().getContentType();
+        if (contenttype.contains("html") || contenttype.contains("application/json")) {
+            br.followConnection();
+            /** TODO: Improve errorhandling */
+            final URLConnectionAdapter con = dl.getConnection();
+            handleAPIResponseCodes(con.getResponseCode());
+            br.followConnection();
+            logger.warning("Final downloadlink lead to HTML code");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    /* is only used for website logins */
+    private void handleAPIResponseCodes(final long responsecode) throws PluginException {
+        if (responsecode == 400) {
+            /*
+             * This should never happen but could happen when we e.g. try to download content which does not exist anymore or when we try to
+             * download URLs which have been added via website and not API - sometimes we then use bad parameters to request
+             * fileinfo/downloads!
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 400");
+        } else if (responsecode == 401) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (responsecode == 409) {
+            /* 2019-0920: E.g. "error_summary": "shared_link_not_found/" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private boolean itemHasBeenCrawledViaAPI(final DownloadLink link) {
+        return getRootFolderURL(link, null) != null;
+    }
+
+    /** Returns either the URL to the root folder of our current file or the link that goes to that particular file. */
+    private String getRootFolderURL(final DownloadLink link, final String fallback) {
+        String contentURL = link.getStringProperty("mainlink", null);
+        if (contentURL == null) {
+            /* Fallback for old URLs or such, added without API */
+            contentURL = fallback;
+        }
+        return contentURL;
+    }
+
+    public static boolean isSingleFile(final String url) {
+        if (url.matches(TYPE_S) || url.matches(TYPE_SH_SINGLE_FILE)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Posts json data first without checking login and if that fails, again with ensuring login!
+     */
+    private void postPageRawAndEnsureLogin(final Account account, final String url, final String data) throws Exception {
+        boolean verifiedCookies = this.loginAPI(br, account, false);
+        this.br.postPageRaw(url, data);
+        /** TODO: Add isLoggedIN function and check */
+        if (!verifiedCookies && !this.isLoggedinAPI(this.br)) {
+            logger.info("Retrying with ensured login");
+            verifiedCookies = this.loginAPI(this.br, account, false);
+            this.br.postPageRaw(url, data);
+        }
+    }
+
+    public static String getErrorSummaryField(final Browser br) {
+        return PluginJSonUtils.getJson(br, "error_summary");
+    }
+
+    /** 2019-09-20: Avoid using this. It is outdated - does not support 2FA login and is just bad!! */
+    @Deprecated
     private void loginWebsite(final Account account, boolean refresh) throws Exception {
         boolean ok = false;
-        synchronized (LOCK) {
+        synchronized (account) {
             setBrowserExclusive();
             br.setFollowRedirects(true);
             this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
@@ -486,9 +599,12 @@ public class DropboxCom extends PluginForHost {
             prepBrAPI(br);
             boolean loggedIN = false;
             if (setAPILoginHeaders(br, account)) {
+                final long last_auth_validation = account.getLongProperty("last_auth_validation", 0);
+                if (!validateAuthorization && System.currentTimeMillis() - last_auth_validation <= 300000l) {
+                    return false;
+                }
                 accessAPIAccountInfo(br);
-                final String error_summary = PluginJSonUtils.getJson(br, "error_summary");
-                loggedIN = br.getHttpConnection().getResponseCode() == 200 && StringUtils.isEmpty(error_summary);
+                loggedIN = isLoggedinAPI(br);
             }
             if (!loggedIN) {
                 /* Important: Without this we may try to login with old auth header which will lead to failure!! */
@@ -538,7 +654,9 @@ public class DropboxCom extends PluginForHost {
                 }
                 /*
                  * 2019-09-19: This token should last until the user revokes access! It can even survive password changes if the user wants
-                 * it to! It will even last when a user switches from normal login to 2-factor-authorization!
+                 * it to! It will even last when a user switches from normal login to 2-factor-authorization! Users can open up unlimited(?)
+                 * logins via one Application. If they revoke access for that application, all of them will be gone:
+                 * https://www.dropbox.com/account/security
                  */
                 account.setProperty("access_token", access_token);
                 if (!StringUtils.isEmpty(account_id)) {
@@ -546,8 +664,14 @@ public class DropboxCom extends PluginForHost {
                 }
                 setAPILoginHeaders(br, account);
             }
+            account.setProperty("last_auth_validation", System.currentTimeMillis());
             return true;
         }
+    }
+
+    private boolean isLoggedinAPI(final Browser br) {
+        final String error_summary = getErrorSummaryField(br);
+        return br.getHttpConnection().getResponseCode() == 200 && StringUtils.isEmpty(error_summary);
     }
 
     private void accessAPIAccountInfo(final Browser br) throws IOException {
@@ -563,6 +687,9 @@ public class DropboxCom extends PluginForHost {
      *         false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
+        if (account == null || br == null) {
+            return false;
+        }
         final String access_token = getAPIToken(account);
         if (access_token == null) {
             return false;

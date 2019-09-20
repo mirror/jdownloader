@@ -49,10 +49,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DropboxCom.DropboxConfig;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
     public DropBoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,15 +62,18 @@ public class DropBoxCom extends PluginForDecrypt {
         return DropBoxConfig.class;
     }
 
-    private static final String  TYPE_NORMAL     = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
-    private static final String  TYPE_S_AND_SH   = "https?://[^/]+/((?:s|sh)/.+)";
-    private static final String  TYPE_REDIRECT   = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
-    private static final String  TYPE_SHORT      = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
+    private static final String  TYPE_NORMAL         = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
+    private static final String  TYPE_S_AND_SH       = "https?://[^/]+/((?:s|sh)/.+)";
+    /** 2019-09-20: TODO: Find out what 'sc' means - seems like photo albums */
+    private static final String  TYPE_SC             = "https?://[^/]+/sc/.+";
+    private static final String  TYPE_REDIRECT       = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String  TYPE_SHORT          = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
     /* Unsupported linktypes which can occur during the decrypt process */
-    private static final String  TYPE_DIRECTLINK = "https?://dl\\.dropboxusercontent.com/.+";
-    private static final String  TYPE_REFERRAL   = "https?://(www\\.)?dropbox\\.com/referrals/.+";
-    private String               subFolder       = "";
-    private static final boolean USE_API         = false;
+    /* 2019-09-20: Some time ago, these were direct-URLs. Now not anymore. */
+    private static final String  TYPE_DIRECTLINK_OLD = "https?://dl\\.dropboxusercontent.com/s/(.+)";
+    private static final String  TYPE_REFERRAL       = "https?://(www\\.)?dropbox\\.com/referrals/.+";
+    private String               subFolder           = "";
+    private static final boolean USE_API             = true;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         subFolder = getAdoptedCloudFolderStructure();
@@ -79,15 +81,10 @@ public class DropBoxCom extends PluginForDecrypt {
             subFolder = "";
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("\\?dl=(1|0)", "?");
-        if (parameter.matches(TYPE_S_AND_SH)) {
-            /** 2019-09-19: TODO: This is wrong! It will sometimes recognize folders as single files! Fix this! */
-            decryptedLinks.add(createSingleDownloadLink(parameter));
-            return decryptedLinks;
-        }
+        String parameter = correctAddedURL(param.toString());
         final Account account = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         final boolean canUseAPI = jd.plugins.hoster.DropboxCom.setAPILoginHeaders(this.br, account);
-        if (USE_API && canUseAPI) {
+        if (canUseAPI && jd.plugins.hoster.DropboxCom.useAPI()) {
             /**
              * 2019-09-19: TODO: Check if there is a way to use this part of their API without logging in e.g. general authorization header
              * provided by our official Dropbox developer account! Then make sure we do not run into some kind of rate-limit!
@@ -107,6 +104,26 @@ public class DropBoxCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String correctAddedURL(final String url_original) {
+        String url_new;
+        final String args = new Regex(url_original, "(\\?.+)").getMatch(0);
+        if (args != null) {
+            /* Remove that from our initial URL. */
+            url_new = url_original.replace(args, "");
+        } else {
+            url_new = url_original;
+        }
+        if (url_new.matches(TYPE_DIRECTLINK_OLD)) {
+            url_new = "https://www." + this.getHost() + "/s/" + new Regex(url_new, TYPE_DIRECTLINK_OLD).getMatch(0);
+        }
+        if (!url_new.equals(url_original)) {
+            logger.info("Added URL has been changed: " + url_original + " --> " + url_new);
+        } else {
+            logger.info("Added URL was not changed");
+        }
+        return url_new;
+    }
+
     private ArrayList<DownloadLink> crawlViaAPI(final String parameter) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /**
@@ -117,80 +134,195 @@ public class DropBoxCom extends PluginForDecrypt {
          * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_folder_metadata
          */
         /** https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_metadata */
-        br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", "{\"url\":\"" + parameter + "\"}");
+        /** TODO: Add path and link_pasword fields */
+        /* To access crawled subfolders, we need the same URL as before but a different 'path' value! */
+        final String last_path = getAdoptedCloudFolderStructure();
+        /* Just a 2nd variable to make it clear where we started! */
+        final boolean is_root;
+        boolean is_single_file = false;
+        String path;
+        if (jd.plugins.hoster.DropboxCom.isSingleFile(parameter)) {
+            /* This is crucial!! */
+            path = "null";
+            is_root = true;
+            is_single_file = true;
+        } else {
+            if (last_path != null) {
+                /*
+                 * Important! For the API to accept this we only need the path relative to our last folder so we'll have to filter this out
+                 * of the full path!
+                 */
+                final String path_relative_to_parent_folder = new Regex(last_path, "(/[^/]*)$").getMatch(0);
+                path = path_relative_to_parent_folder;
+                is_root = false;
+            } else {
+                /* Root */
+                path = "/";
+                is_root = true;
+            }
+            /* Fix json value */
+            path = "\"" + path + "\"";
+        }
+        br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", "{\"url\":\"" + parameter + "\",\"path\":" + path + "}");
+        ArrayList<Object> ressourcelist = new ArrayList<Object>();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String error_summary = (String) entries.get("error_summary");
+        final String error_summary = jd.plugins.hoster.DropboxCom.getErrorSummaryField(this.br);
         final String object_type = (String) entries.get(".tag");
         if (!StringUtils.isEmpty(error_summary)) {
             /* 2019-09-198: Typically response 409 with error_summary 'shared_link_access_denied/..' */
             logger.info("Decryption failed because: " + error_summary);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (!"folder".equalsIgnoreCase(object_type)) {
-            logger.warning("Type mismatch");
-            return null;
         }
-        String folderName = (String) entries.get("name");
-        if (StringUtils.isEmpty(folderName)) {
-            /** TODO: Add fallback (folderID) */
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderName);
         String cursor = null;
         boolean has_more = false;
-        br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", "{\"path\":\"\",\"shared_link\": {\"url\":\"" + parameter + "\"}}");
+        final String internal_folder_id = (String) entries.get("id");
+        /* Important! Only fill this in if we have a folder as this may be used later as RELATIVE_DOWNLOAD_FOLDER_PATH! */
+        final String folderName = !is_single_file ? (String) entries.get("name") : null;
+        final String packageName;
+        if (!StringUtils.isEmpty(folderName)) {
+            packageName = folderName;
+        } else {
+            packageName = internal_folder_id;
+        }
+        FilePackage fp = null;
+        /* Do not set packagenames if we only have a single file!! */
+        if (!StringUtils.isEmpty(packageName) && !is_single_file) {
+            fp = FilePackage.getInstance();
+            fp.setName(packageName);
+        }
+        if ("file".equalsIgnoreCase(object_type)) {
+            /* Single file - rare case! */
+            ressourcelist.add(entries);
+        } else {
+            /* Assume we have a folder */
+            /* path_lower = FULL path including current folder - lowercase */
+            // subFolder = (String) entries.get("path_lower");
+            if (path.equals("/") || path.equals("\"/\"")) {
+                /*
+                 * 2019-09-20: For this call, "/" is not accepted to get the root folder although their API 'knows what we want'. This is
+                 * really strange but okay. Error when used with wrong value: "Error in call to API function "files/
+                 * list_folder": request body: path: Specify the root folder as an empty string rather than as "/"."
+                 */
+                path = "\"\"";
+            }
+            br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", "{\"path\":" + path + ",\"shared_link\": {\"url\":\"" + parameter + "\"}}");
+        }
         int page = 0;
         do {
             page++;
             logger.info("Crawling page: " + page);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             cursor = (String) entries.get("cursor");
-            has_more = ((Boolean) entries.get("has_more")).booleanValue();
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("entries");
+            final Object has_moreO = entries.get("has_more");
+            if (has_moreO == null) {
+                has_more = false;
+            } else {
+                has_more = ((Boolean) has_moreO).booleanValue();
+            }
+            final Object entriesO = entries.get("entries");
+            if (entriesO != null) {
+                ressourcelist = (ArrayList<Object>) entries.get("entries");
+            }
             for (final Object folderO : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) folderO;
                 final String type = (String) entries.get(".tag");
                 final String name = (String) entries.get("name");
+                final String serverside_path_full = (String) entries.get("path_display");
                 /**
                  * TODO: Website uses something called 'secureHash' for their public URLs - I was not able to find this anywhere in their
                  * API!
                  */
                 final String id = (String) entries.get("id");
+                /** TODO: Check if files with 'is_downloadable' == false are really not downloadable at all! */
                 // final boolean is_downloadable = ((Boolean)entries.get("is_downloadable")).booleanValue();
                 if (StringUtils.isEmpty(id)) {
                     continue;
                 }
                 final DownloadLink dl;
                 if ("file".equalsIgnoreCase(type)) {
-                    dl = this.createDownloadlink("https://dropboxdecrypted.com/" + id);
+                    if (StringUtils.isEmpty(subFolder)) {
+                        /*
+                         * This may be the case if we jump into a nested folder straight away. We could use the 'path_lower' from the
+                         * 'get_shared_link_metadata' API call but it is lowercase - we want the original path! So let's grab the path by
+                         * filtering out of the full path of the first file-item in our list!
+                         */
+                        subFolder = new Regex(serverside_path_full, "(/[^/]+/.+)/[^/]+$").getMatch(0);
+                        if (StringUtils.isEmpty(subFolder) && !StringUtils.isEmpty(folderName)) {
+                            /* Last chance fallback */
+                            subFolder = "/" + folderName;
+                        }
+                    }
                     final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                    final String content_hash = (String) entries.get("content_hash");
+                    dl = this.createDownloadlink("https://dropboxdecrypted.com/" + id);
+                    /*
+                     * 2019-09-20: In my tests I was not able to make use of this hash - here is some information about it:
+                     * https://www.dropbox.com/developers/reference/content-hash
+                     */
+                    // final String content_hash = (String) entries.get("content_hash");
                     if (size > 0) {
                         dl.setDownloadSize(size);
                     }
-                    if (!StringUtils.isEmpty(content_hash)) {
-                        /** TODO: check if this content_hash is the real file-MD5-hash! */
-                        dl.setMD5Hash(content_hash);
-                    }
                     if (!StringUtils.isEmpty(name)) {
                         dl.setFinalFileName(name);
+                    } else {
+                        /* Fallback - this should never be required! */
+                        dl.setName(id);
                     }
+                    /*
+                     * This is the path we later need to download the file. It always has to be relative to our first added 'root' folder!
+                     */
+                    String serverside_path_to_file_relative;
+                    if (is_root) {
+                        /* Easy - file can be found on /<filename> */
+                        serverside_path_to_file_relative = "/" + name;
+                    } else {
+                        /* E.g. /<rootFolder>/subfolder1/subfolder2/filename.ext --> We need /subfolder1/subfolder2/filename.ext */
+                        serverside_path_to_file_relative = new Regex(serverside_path_full, "(?:/[^/]+)?(.+)$").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(serverside_path_to_file_relative)) {
+                        /* Fallback - This should never happen! */
+                        serverside_path_to_file_relative = serverside_path_full;
+                    }
+                    if (!StringUtils.isEmpty(serverside_path_to_file_relative) && !is_single_file) {
+                        dl.setProperty("serverside_path_to_file_relative", serverside_path_to_file_relative);
+                    }
+                    dl.setProperty("mainlink", parameter);
+                    // dl.setProperty("serverside_path_full", serverside_path_full);
+                    dl.setLinkID(this.getHost() + "://" + id);
+                    /**
+                     * 2019-09-20: TODO: Find out if it is possible to generate URLs which lead to the exact files. At the moment this is a
+                     * huge issue when using their API - it contains other fileIDs so we cannot get to the public contentURLs although they
+                     * do exist!
+                     */
+                    dl.setContentUrl(parameter);
+                    /*
+                     * 2019-09-20: It can happen that single files inside a folder are offline although according to this API they are
+                     * available and downloadable. This is hopefully a rare case. Via browser, these files are simply missing when the
+                     * folder is loaded and will not get displayed at all!
+                     */
                     dl.setAvailable(true);
                 } else {
-                    /* TODO: Add subfolder support */
-                    if (true) {
-                        continue;
-                    }
-                    dl = this.createDownloadlink("");
+                    /*
+                     * Essentially we're adding the same URL to get crawled again but with a different 'path' value so let's modify the URL
+                     * so that it goes back into this crawler!
+                     */
+                    dl = this.createDownloadlink(parameter + "?subfolder_path=" + serverside_path_full, serverside_path_full);
+                }
+                if (fp != null) {
+                    dl._setFilePackage(fp);
                 }
                 decryptedLinks.add(dl);
-                dl._setFilePackage(fp);
                 distribute(dl);
             }
             if (has_more && !StringUtils.isEmpty(cursor)) {
                 /*
                  * They do not use 'classic' pagination but work with tokens so you cannot specify what to grab - you have to go through all
                  * 'pages' to find everything!
+                 */
+                /*
+                 * 2019-09-20: I was not able to test this - tested with an example URL which contained over 1000 items but they all showed
+                 * up on the first page!
                  */
                 br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder/continue", "{\"cursor\":\"" + cursor + "\"}");
             }
@@ -255,7 +387,7 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             if (con.getResponseCode() == 302 && (link.matches(TYPE_REDIRECT) || link.matches(TYPE_SHORT))) {
                 link = br.getRedirectLocation();
-                if (link.matches(TYPE_DIRECTLINK)) {
+                if (link.matches(TYPE_DIRECTLINK_OLD)) {
                     final DownloadLink direct = createDownloadlink("directhttp://" + link);
                     decryptedLinks.add(direct);
                     return decryptedLinks;
@@ -306,19 +438,19 @@ public class DropBoxCom extends PluginForDecrypt {
                 subFolder = Encoding.htmlDecode(fpName.trim());
             }
         }
-        /*
-         * 2017-01-27: This does not work anymore - also their .zip downloads often fail so rather not do this!Decrypt "Download as zip"
-         * link if available and wished by the user
-         */
-        if (br.containsHTML(">Download as \\.zip<") && PluginJsonConfig.get(DropboxConfig.class).isZipFolderDownloadEnabled()) {
-            final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
-            dl.setName(fpName + ".zip");
-            dl.setProperty("decrypted", true);
-            dl.setProperty("type", "zip");
-            dl.setProperty("directlink", link.replaceAll("\\?dl=\\d", "") + "?dl=1");
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
-            decryptedLinks.add(dl);
-        }
+        // /*
+        // * 2017-01-27: This does not work anymore - also their .zip downloads often fail so rather not do this!Decrypt "Download as zip"
+        // * link if available and wished by the user
+        // */
+        // if (br.containsHTML(">Download as \\.zip<") && PluginJsonConfig.get(DropboxConfig.class).isZipFolderDownloadEnabled()) {
+        // final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
+        // dl.setName(fpName + ".zip");
+        // dl.setProperty("decrypted", true);
+        // dl.setProperty("type", "zip");
+        // dl.setProperty("directlink", link.replaceAll("\\?dl=\\d", "") + "?dl=1");
+        // dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+        // decryptedLinks.add(dl);
+        // }
         boolean hasMore = false;
         boolean isShared = false;
         boolean askedUserIfHeWantsSubfolders = false;
@@ -478,8 +610,12 @@ public class DropBoxCom extends PluginForDecrypt {
 
     @Override
     protected DownloadLink createDownloadlink(final String link) {
+        return createDownloadlink(link, this.subFolder);
+    }
+
+    protected DownloadLink createDownloadlink(final String link, final String subFolder) {
         final DownloadLink ret = super.createDownloadlink(link);
-        if (StringUtils.isNotEmpty(subFolder)) {
+        if (!StringUtils.isEmpty(subFolder)) {
             ret.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
         }
         return ret;
@@ -509,7 +645,7 @@ public class DropBoxCom extends PluginForDecrypt {
         final String urlpart = new Regex(parameter, TYPE_S_AND_SH).getMatch(0);
         final DownloadLink dl = createDownloadlink(String.format("https://dropboxdecrypted.com/%s", urlpart));
         dl.setProperty("decrypted", true);
-        if (StringUtils.isNotEmpty(subFolder)) {
+        if (!StringUtils.isEmpty(subFolder)) {
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
         }
         return dl;
