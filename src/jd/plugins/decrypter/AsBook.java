@@ -30,9 +30,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "asbook.info" }, urls = { "https?://(www\\.)?asbook\\.info/[^/]+/?" })
-public class AsBookInfo extends antiDDoSForDecrypt {
-    public AsBookInfo(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "asbook.info" }, urls = { "https?://(www\\.)?(asbook\\.info|asbookonline\\.com)/[^/]+/?" })
+public class AsBook extends antiDDoSForDecrypt {
+    public AsBook(PluginWrapper wrapper) {
         super(wrapper);
     }
 
