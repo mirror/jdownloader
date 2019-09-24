@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -1039,6 +1040,11 @@ public class ScriptEnvironment {
 
             @Override
             protected void modifyTextPane(JTextPane textField) {
+            }
+
+            @Override
+            public ModalityType getModalityType() {
+                return ModalityType.MODELESS;
             }
 
             @Override

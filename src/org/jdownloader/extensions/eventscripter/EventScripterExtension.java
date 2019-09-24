@@ -482,17 +482,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     public void runTest(final EventTrigger eventTrigger, final String name, final String scriptSource) {
-        new Thread("TestRun") {
-            @Override
-            public void run() {
-                ScriptEntry script = new ScriptEntry();
-                script.setEventTrigger(eventTrigger);
-                script.setScript(scriptSource);
-                script.setName(name);
-                script.setEnabled(true);
-                runScript(script, eventTrigger.getTestProperties());
-            }
-        }.start();
+        final ScriptEntry script = new ScriptEntry();
+        script.setEventTrigger(eventTrigger);
+        script.setScript(scriptSource);
+        script.setName(name);
+        script.setEnabled(true);
+        runScript(script, eventTrigger.getTestProperties());
     }
 
     public void runTestCompile(EventTrigger eventTrigger, String script) {
@@ -725,12 +720,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && downloadTableContextMenuButton == script.getEventTrigger() && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("name", name);
                     props.put("icon", iconKey);
                     props.put("shortCutString", shortCutString);
                     props.put("menu", downloadTableContextMenuButton.name());
-                    View view = MainTabbedPane.getInstance().getSelectedView();
+                    final View view = MainTabbedPane.getInstance().getSelectedView();
                     if (view instanceof DownloadsView) {
                         if (downloadTableContextMenuButton == EventTrigger.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON) {
                             props.put("dlSelection", new DownloadlistSelectionSandbox(selectionInfo));
