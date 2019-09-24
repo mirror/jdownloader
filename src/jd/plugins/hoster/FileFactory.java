@@ -227,7 +227,7 @@ public class FileFactory extends PluginForHost {
     }
 
     /** Handles errors according to: https://api.filefactory.com/#appendix-error-matrix */
-    private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
+    private void checkErrorsAPI(final DownloadLink link, final Account account, final String apiKey) throws PluginException {
         if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "type"))) {
             final String errorcodeStr = PluginJSonUtils.getJsonValue(this.br, "code");
             String errormessage = getErrormsgAPI(this.br);
@@ -275,13 +275,13 @@ public class FileFactory extends PluginForHost {
             case 710:
                 /* This should never happen */
                 // ERR_API_SESS_KEY_INVALID
-                clearApiKey(account, null);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+                clearApiKey(account, apiKey);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             case 711:
                 /* This should never happen */
                 // ERR_API_SESS_KEY_EXPIRED
-                clearApiKey(account, null);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+                clearApiKey(account, apiKey);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             case 712:
                 // ERR_API_FILE_INVALID
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -330,7 +330,13 @@ public class FileFactory extends PluginForHost {
             return false;
         }
         if (useAPI.get()) {
-            checkLinks_API(urls, null);
+            final Account account = AccountController.getInstance().getValidAccount(this);
+            final String apiKey = account != null ? getApiKey(account) : null;
+            if (!StringUtils.isEmpty(apiKey)) {
+                checkLinks_API(urls, account, apiKey);
+            } else {
+                checkLinks_API(urls, null, null);
+            }
         }
         if (!useAPI.get()) {
             final Browser br = new Browser();
@@ -340,16 +346,17 @@ public class FileFactory extends PluginForHost {
             boolean loggedIn = false;
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             if (accounts != null && accounts.size() != 0) {
-                Iterator<Account> it = accounts.iterator();
+                final Iterator<Account> it = accounts.iterator();
                 while (it.hasNext()) {
-                    Account n = it.next();
+                    final Account n = it.next();
                     if (n.isEnabled() && n.isValid()) {
                         try {
                             loginWebsite(n, false, br);
                             loggedIn = true;
+                            break;
                         } catch (Exception e) {
+                            logger.log(e);
                         }
-                        break;
                     }
                 }
             }
@@ -359,6 +366,7 @@ public class FileFactory extends PluginForHost {
                     try {
                         requestFileInformation(link);
                     } catch (Throwable e) {
+                        logger.log(e);
                         return false;
                     }
                 }
@@ -424,6 +432,7 @@ public class FileFactory extends PluginForHost {
                     }
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 return false;
             }
         }
@@ -889,9 +898,9 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private AvailableStatus reqFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus reqFileInformation(final DownloadLink link, final Account account, final String apiKey) throws Exception {
         correctDownloadLink(link);
-        if (!checkLinks_API(new DownloadLink[] { link }, account) || !link.isAvailabilityStatusChecked()) {
+        if (!checkLinks_API(new DownloadLink[] { link }, account, apiKey) || !link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -902,12 +911,13 @@ public class FileFactory extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
-        if (!checkLinks_API(new DownloadLink[] { link }, null) || !link.isAvailabilityStatusChecked()) {
-            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        final String apiKey = account != null ? getApiKey(account) : null;
+        if (!StringUtils.isEmpty(apiKey)) {
+            return reqFileInformation(link, account, apiKey);
+        } else {
+            return reqFileInformation(link, null, null);
         }
-        return getAvailableStatus(link);
     }
 
     public AvailableStatus requestFileInformation(final Account account, final DownloadLink downloadLink) throws Exception {
@@ -1056,28 +1066,7 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private boolean checkLinks_API(final DownloadLink[] urls, Account account) {
-        if (account == null) {
-            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
-            Account n = null;
-            if (accounts != null && accounts.size() != 0) {
-                Iterator<Account> it = accounts.iterator();
-                while (it.hasNext()) {
-                    n = it.next();
-                    if (n.isEnabled() && n.isValid()) {
-                        try {
-                            if (getApiKey(n) != null) {
-                                account = n;
-                                break;
-                            } else {
-                                n = null;
-                            }
-                        } catch (Exception e) {
-                        }
-                    }
-                }
-            }
-        }
+    private boolean checkLinks_API(final DownloadLink[] urls, Account account, String apiKey) {
         try {
             final Browser br = new Browser();
             final StringBuilder sb = new StringBuilder();
@@ -1100,7 +1089,16 @@ public class FileFactory extends PluginForHost {
                 }
                 // lets remove last ","
                 sb.replace(sb.length() - 1, sb.length(), "");
-                getPage(br, getApiBase() + "/getFileInfo?" + sb, null, account);
+                try {
+                    getPage(br, getApiBase() + "/getFileInfo?" + sb, null, account, apiKey);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_RETRY) {
+                        logger.log(e);
+                        getPage(br, getApiBase() + "/getFileInfo?" + sb, null, null, null);
+                    } else {
+                        throw e;
+                    }
+                }
                 for (final DownloadLink dl : links) {
                     // password is last value in fuid response, needed because filenames or other values could contain }. It then returns
                     // invalid response.
@@ -1140,6 +1138,7 @@ public class FileFactory extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
+            logger.log(e);
             return false;
         }
         return true;
@@ -1187,7 +1186,19 @@ public class FileFactory extends PluginForHost {
         setConstants(account, false);
         fuid = getFUID(link);
         prepApiBrowser(br);
-        reqFileInformation(link, account);
+        String apiKey = null;
+        if (account != null) {
+            synchronized (account) {
+                apiKey = getApiKey(account);
+                if (StringUtils.isEmpty(apiKey)) {
+                    apiKey = loginAPI(account);
+                }
+            }
+            if (StringUtils.isEmpty(apiKey)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        reqFileInformation(link, account, apiKey);
         String passCode = link.getStringProperty("pass", null);
         final String directlinkproperty;
         if (account == null) {
@@ -1215,7 +1226,7 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
-            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!StringUtils.isEmpty(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), link, account);
+            getPage(br, getApiBase() + "/getDownloadLink?file=" + fuid + (!StringUtils.isEmpty(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), link, account, apiKey);
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             final String linkType = PluginJSonUtils.getJsonValue(br, "linkType");
             if (StringUtils.isEmpty(dllink)) {
@@ -1357,16 +1368,22 @@ public class FileFactory extends PluginForHost {
                 if (StringUtils.isNotEmpty(apikey)) {
                     account.setProperty(PROPERTY_APIKEY, apikey);
                     return apikey;
+                } else {
+                    checkErrorsAPI(null, account, apikey);
                 }
-                checkErrorsAPI(null, account);
             }
             return apikey;
         }
     }
 
-    private String getApiKey(final Account account) throws Exception {
+    private String getApiKey(final Account account) {
         synchronized (account) {
-            return account.getStringProperty(PROPERTY_APIKEY, null);
+            final String ret = account.getStringProperty(PROPERTY_APIKEY, null);
+            if (StringUtils.isEmpty(ret)) {
+                return null;
+            } else {
+                return ret;
+            }
         }
     }
 
@@ -1385,16 +1402,17 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private void getPage(final Browser ibr, final String url, final DownloadLink downloadLink, final Account account) throws Exception {
+    private void getPage(final Browser ibr, final String url, final DownloadLink downloadLink, final Account account, final String apiKey) throws Exception {
         if (account != null) {
-            synchronized (account) {
-                final String apiKey = getApiKey(account);
+            if (StringUtils.isEmpty(apiKey)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
                 ibr.getPage(url + (url.matches("(" + getApiBase() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
             }
         } else {
             ibr.getPage(url);
         }
-        this.checkErrorsAPI(downloadLink, account);
+        this.checkErrorsAPI(downloadLink, account, apiKey);
     }
 
     private String getErrormsgAPI(final Browser ibr) {
@@ -1410,7 +1428,7 @@ public class FileFactory extends PluginForHost {
     private boolean clearApiKey(final Account account, final String apiKey) {
         if (account != null) {
             synchronized (account) {
-                if (apiKey == null || StringUtils.equals(apiKey, account.getStringProperty(PROPERTY_APIKEY, null))) {
+                if (StringUtils.isEmpty(apiKey) || StringUtils.equals(apiKey, account.getStringProperty(PROPERTY_APIKEY, null))) {
                     account.removeProperty(PROPERTY_APIKEY);
                     return true;
                 } else {
@@ -1439,10 +1457,10 @@ public class FileFactory extends PluginForHost {
         if (StringUtils.isEmpty(account.getPass())) {
             return ai;
         }
-        loginAPI(account);
+        final String apiKey = loginAPI(account);
         if (br.getURL() == null || !br.getURL().contains("/getMemberInfo")) {
             /* E.g. on full login we've already done this API call before! */
-            getPage(br, getApiBase() + "/getMemberInfo", null, account);
+            getPage(br, getApiBase() + "/getMemberInfo", null, account, apiKey);
         }
         final String expire = PluginJSonUtils.getJsonValue(br, "expiryMs");
         final String type = PluginJSonUtils.getJsonValue(br, "accountType");
