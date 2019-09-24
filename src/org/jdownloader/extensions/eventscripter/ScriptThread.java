@@ -18,6 +18,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import javax.swing.SwingUtilities;
+
 import jd.http.Browser;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
@@ -114,11 +116,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     @Override
     public void start() {
         super.start();
-        if (isSynchronous()) {
+        if (isSynchronous() && (Application.isHeadless() || !SwingUtilities.isEventDispatchThread())) {
             try {
                 join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                getLogger().log(e);
             }
         }
     }
