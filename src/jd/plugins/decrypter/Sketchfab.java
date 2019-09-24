@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -41,15 +42,26 @@ public class Sketchfab extends antiDDoSForDecrypt {
         String fpName = null;
         if (br.containsHTML("<div class=\"viewer-viewport\">")) {
             fpName = br.getRegex("class=\"model-name__label\">([^<]+)</span").getMatch(0);
+            if (StringUtils.isNotEmpty(fpName)) {
+                fpName = Encoding.htmlDecode(fpName.trim());
+            }
             String archiveLink = br.getRegex("(http[^#;]+ile.osgjs.gz)").getMatch(0);
             if (archiveLink != null && archiveLink.length() > 0) {
-                String decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString().replace("file.osgjs.gz", "model_file.bin.gz");
-                decryptedLinks.add(createDownloadlink(decodedLink));
+                String decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString();
+                DownloadLink dl1 = createDownloadlink(decodedLink);
+                decryptedLinks.add(dl1);
+                decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString().replace("file.osgjs.gz", "model_file.bin.gz");
+                DownloadLink dl2 = createDownloadlink(decodedLink);
+                decryptedLinks.add(dl2);
+                if (StringUtils.isNotEmpty(fpName)) {
+                    dl1.setFinalFileName(fpName + "_file.osgjs");
+                    dl2.setFinalFileName(fpName + "_model_file.bin");
+                }
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
