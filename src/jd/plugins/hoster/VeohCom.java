@@ -30,6 +30,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -48,6 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDHexUtils;
 
@@ -161,265 +163,277 @@ public class VeohCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String permaLinkID = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
-        br.getPage("http://www.veoh.com/rest/v2/execute.xml?method=veoh.video.findByPermalink&apiKey=" + Encoding.Base64Decode(APIKEY) + "&permalink=" + permaLinkID);
-        final String fHash = br.getRegex("fileHash=\"(.*?)\"").getMatch(0);
-        final String videoId = br.getRegex("videoId=\"(\\d+)\"").getMatch(0);
-        final String fileSize = br.getRegex("size=\"(\\d+)\"").getMatch(0);
-        final String ext = br.getRegex("extension=\"(\\.[a-z0-9]+)\"").getMatch(0);
-        String sTime = br.getRegex("timestamp=\"(\\d+)\"").getMatch(0);
-        if (fHash == null || fHash == null || sTime == null || videoId == null || fileSize == null || ext == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        boolean oldDlHandling = fHash.length() < 32;
-        String hexTime = String.format("%08x", Long.parseLong(sTime));
-        if (!oldDlHandling) {
-            downloadLink.setName(downloadLink.getName() + ext);
-            br.setFollowRedirects(true);
-            // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
-            /* generate crypted token (ct=) */
-            final String path = "/veoh/" + permaLinkID + "/" + fHash + ".eveoh";
-            final String cryptedToken = JDHash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
-            final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
-            downloadLink.getLinkStatus().setStatusText("download to initialize ...");
-            br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
-            if (br.getHttpConnection().getResponseCode() == 404 && br.containsHTML("<title>404 Not Found</title>")) {
-                oldDlHandling = true;
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String fid = getFID(link);
+        String dllink = null;
+        if (use_api_for_availablecheck) {
+            /* 2019-09-24: New */
+            dllink = PluginJSonUtils.getJson(br, "HQ");
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = PluginJSonUtils.getJson(br, "Regular");
             }
         }
-        if (!oldDlHandling) {
-            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
-            /* parse piece eids and decrypt it */
-            sTime = br.getRegex("time=\'(\\d+)\'").getMatch(0);
-            if (sTime == null) {
+        if (StringUtils.isEmpty(dllink)) {
+            br.getPage("https://www." + this.getHost() + "/rest/v2/execute.xml?method=veoh.video.findByPermalink&apiKey=" + Encoding.Base64Decode(APIKEY) + "&permalink=" + fid);
+            final String fHash = br.getRegex("fileHash=\"(.*?)\"").getMatch(0);
+            final String videoId = br.getRegex("videoId=\"(\\d+)\"").getMatch(0);
+            final String fileSize = br.getRegex("size=\"(\\d+)\"").getMatch(0);
+            final String ext = br.getRegex("extension=\"(\\.[a-z0-9]+)\"").getMatch(0);
+            String sTime = br.getRegex("timestamp=\"(\\d+)\"").getMatch(0);
+            if (fHash == null || fHash == null || sTime == null || videoId == null || fileSize == null || ext == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String hexvidID = String.format("%08x", Long.parseLong(videoId));
-            final String hexSize = String.format("%08x", Long.parseLong(fileSize));
-            final String templateUrl = br.getRegex("url base=\'(.*?)\'").getMatch(0);
-            hexTime = String.format("%08x", Long.parseLong(sTime));
-            String baseUrl = templateUrl;
-            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-            IV = fHash.substring(0, 16).getBytes();
-            final String[][] content = br.getRegex("<piece eid=\'(.*?)\' a1=\'(.*?)\' a2=\'(.*?)\' a3=\'(.*?)\' />").getMatches();
-            prepareBrowser("veoh-1.3.6 service (NT 6.1; IE 9.0.8112.16421; en-US Windows)");
-            final File tmpFile = new File(downloadLink.getFileOutput() + ".part");
-            /* reset */
-            if (!tmpFile.exists()) {
-                downloadLink.setProperty("bytes_loaded", Long.valueOf(0l));
-                downloadLink.setProperty("parts_finished", Long.valueOf(0l));
-            }
-            /* resuming */
-            BYTESLOADED = (Long) downloadLink.getProperty("bytes_loaded", Long.valueOf(0l));
-            final int resume = Math.round((Long) downloadLink.getProperty("parts_finished", Long.valueOf(0l)));
-            if (resume > 0) {
-                IV = JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(content[resume - 1][0])).substring(32));
-            }
-            int i = 0;
-            /* once init the buffer is enough */
-            BUFFER = new byte[256 * 1024];
-            try {
-                RAFDownload raf = new RAFDownload(this, downloadLink, null);
-                dl = raf;
-                try {
-                    downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
-                } catch (final Throwable e) {
+            boolean oldDlHandling = fHash.length() < 32;
+            String hexTime = String.format("%08x", Long.parseLong(sTime));
+            if (!oldDlHandling) {
+                link.setName(link.getName() + ext);
+                br.setFollowRedirects(true);
+                // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
+                /* generate crypted token (ct=) */
+                final String path = "/veoh/" + fid + "/" + fHash + ".eveoh";
+                final String cryptedToken = JDHash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
+                final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
+                link.getLinkStatus().setStatusText("download to initialize ...");
+                br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
+                if (br.getHttpConnection().getResponseCode() == 404 && br.containsHTML("<title>404 Not Found</title>")) {
+                    oldDlHandling = true;
                 }
-                /* we have to create folder structure */
-                tmpFile.getParentFile().mkdirs();
-                FILEOUT = new BufferedOutputStream(new FileOutputStream(tmpFile, true));
-                for (i = resume; i < content.length; i++) {
-                    final String[] T = content[i];
-                    downloadLink.getLinkStatus().setStatusText("Video Part " + (Integer.valueOf(T[3]) + 1) + " @ " + String.valueOf(content.length) + " in Progress...");
-                    final String pieces = decryptUrl(T, baseUrl, fHash, hexTime, hexvidID, hexSize);
-                    if (pieces == null) {
-                        break;
-                    }
+            }
+            if (!oldDlHandling) {
+                link.setDownloadSize(SizeFormatter.getSize(fileSize));
+                /* parse piece eids and decrypt it */
+                sTime = br.getRegex("time=\'(\\d+)\'").getMatch(0);
+                if (sTime == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String hexvidID = String.format("%08x", Long.parseLong(videoId));
+                final String hexSize = String.format("%08x", Long.parseLong(fileSize));
+                final String templateUrl = br.getRegex("url base=\'(.*?)\'").getMatch(0);
+                hexTime = String.format("%08x", Long.parseLong(sTime));
+                String baseUrl = templateUrl;
+                /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+                IV = fHash.substring(0, 16).getBytes();
+                final String[][] content = br.getRegex("<piece eid=\'(.*?)\' a1=\'(.*?)\' a2=\'(.*?)\' a3=\'(.*?)\' />").getMatches();
+                prepareBrowser("veoh-1.3.6 service (NT 6.1; IE 9.0.8112.16421; en-US Windows)");
+                final File tmpFile = new File(link.getFileOutput() + ".part");
+                /* reset */
+                if (!tmpFile.exists()) {
+                    link.setProperty("bytes_loaded", Long.valueOf(0l));
+                    link.setProperty("parts_finished", Long.valueOf(0l));
+                }
+                /* resuming */
+                BYTESLOADED = (Long) link.getProperty("bytes_loaded", Long.valueOf(0l));
+                final int resume = Math.round((Long) link.getProperty("parts_finished", Long.valueOf(0l)));
+                if (resume > 0) {
+                    IV = JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(content[resume - 1][0])).substring(32));
+                }
+                int i = 0;
+                /* once init the buffer is enough */
+                BUFFER = new byte[256 * 1024];
+                try {
+                    RAFDownload raf = new RAFDownload(this, link, null);
+                    dl = raf;
                     try {
-                        /* always close the existing connection */
-                        DL.disconnect();
+                        link.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
                     } catch (final Throwable e) {
                     }
-                    DL = br.openGetConnection(pieces);
-                    if (DL.getResponseCode() != 200) {
-                        if (DL.getResponseCode() == 500) {
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError(500)", 5 * 60 * 1000l);
-                        } else if (DL.getResponseCode() == 400) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Decrypt failed!");
-                        } else if (DL.getResponseCode() == 404) {
-                            logger.warning("Veohdownload: Video Part " + (i + 1) + " not found! Link: " + downloadLink.getDownloadURL());
-                            FAILCOUNTER += 1;
-                            continue;
-                        }
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    long partSize = DL.getLongContentLength();
-                    try {
-                        if (INPUTSTREAM != null && INPUTSTREAM instanceof org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) {
-                            ((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM).setInputStream(DL.getInputStream());
-                        } else {
-                            INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
-                            dl.getManagedConnetionHandler().addThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
-                        }
-                    } catch (final Throwable e) {
-                        INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
-                        /* 0.95xx comp */
-                    }
-                    try {
-                        int miniblock = 0;
-                        int partEndByte = 0;
-                        while (partSize != 0) {
-                            try {
-                                if (partEndByte > 0) {
-                                    miniblock = INPUTSTREAM.read(BUFFER, 0, (int) Math.min(BYTES2DO, BUFFER.length));
-                                } else {
-                                    miniblock = INPUTSTREAM.read(BUFFER);
-                                }
-                            } catch (final SocketException e2) {
-                                if (!isExternalyAborted()) {
-                                    throw e2;
-                                }
-                                miniblock = -1;
-                                break;
-                            } catch (final ClosedByInterruptException e) {
-                                if (!isExternalyAborted()) {
-                                    logger.severe("Timeout detected");
-                                }
-                                miniblock = -1;
-                                break;
-                            } catch (final AsynchronousCloseException e3) {
-                                if (!isExternalyAborted() && !CONNECTIONCLOSE) {
-                                    throw e3;
-                                }
-                                miniblock = -1;
-                                break;
-                            } catch (final IOException e4) {
-                                if (!isExternalyAborted() && !CONNECTIONCLOSE) {
-                                    throw e4;
-                                }
-                                miniblock = -1;
-                                break;
-                            }
-                            if (miniblock == -1) {
-                                break;
-                            }
-                            BYTES2DO -= miniblock;
-                            partSize -= miniblock;
-                            FILEOUT.write(BUFFER, 0, miniblock);
-                            BYTESLOADED += miniblock;
-                            partEndByte += miniblock;
-                            downloadLink.setDownloadCurrent(BYTESLOADED);
-                            if (partEndByte > 0) {
-                                BYTES2DO = partEndByte + 1;
-                            }
-                        }
-                        if (partSize == 0) {
-                            downloadLink.setProperty("parts_finished", Long.valueOf(T[3]) + 1);
-                        } else {
-                            downloadLink.setProperty("parts_finished", Long.valueOf(T[3]));
-                        }
-                        if (isExternalyAborted()) {
-                            downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
-                            downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                    /* we have to create folder structure */
+                    tmpFile.getParentFile().mkdirs();
+                    FILEOUT = new BufferedOutputStream(new FileOutputStream(tmpFile, true));
+                    for (i = resume; i < content.length; i++) {
+                        final String[] T = content[i];
+                        link.getLinkStatus().setStatusText("Video Part " + (Integer.valueOf(T[3]) + 1) + " @ " + String.valueOf(content.length) + " in Progress...");
+                        final String pieces = decryptUrl(T, baseUrl, fHash, hexTime, hexvidID, hexSize);
+                        if (pieces == null) {
                             break;
                         }
-                        baseUrl = templateUrl;
-                    } finally {
                         try {
+                            /* always close the existing connection */
                             DL.disconnect();
                         } catch (final Throwable e) {
                         }
+                        DL = br.openGetConnection(pieces);
+                        if (DL.getResponseCode() != 200) {
+                            if (DL.getResponseCode() == 500) {
+                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError(500)", 5 * 60 * 1000l);
+                            } else if (DL.getResponseCode() == 400) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Decrypt failed!");
+                            } else if (DL.getResponseCode() == 404) {
+                                logger.warning("Veohdownload: Video Part " + (i + 1) + " not found! Link: " + link.getDownloadURL());
+                                FAILCOUNTER += 1;
+                                continue;
+                            }
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        long partSize = DL.getLongContentLength();
+                        try {
+                            if (INPUTSTREAM != null && INPUTSTREAM instanceof org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) {
+                                ((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM).setInputStream(DL.getInputStream());
+                            } else {
+                                INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
+                                dl.getManagedConnetionHandler().addThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
+                            }
+                        } catch (final Throwable e) {
+                            INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
+                            /* 0.95xx comp */
+                        }
+                        try {
+                            int miniblock = 0;
+                            int partEndByte = 0;
+                            while (partSize != 0) {
+                                try {
+                                    if (partEndByte > 0) {
+                                        miniblock = INPUTSTREAM.read(BUFFER, 0, (int) Math.min(BYTES2DO, BUFFER.length));
+                                    } else {
+                                        miniblock = INPUTSTREAM.read(BUFFER);
+                                    }
+                                } catch (final SocketException e2) {
+                                    if (!isExternalyAborted()) {
+                                        throw e2;
+                                    }
+                                    miniblock = -1;
+                                    break;
+                                } catch (final ClosedByInterruptException e) {
+                                    if (!isExternalyAborted()) {
+                                        logger.severe("Timeout detected");
+                                    }
+                                    miniblock = -1;
+                                    break;
+                                } catch (final AsynchronousCloseException e3) {
+                                    if (!isExternalyAborted() && !CONNECTIONCLOSE) {
+                                        throw e3;
+                                    }
+                                    miniblock = -1;
+                                    break;
+                                } catch (final IOException e4) {
+                                    if (!isExternalyAborted() && !CONNECTIONCLOSE) {
+                                        throw e4;
+                                    }
+                                    miniblock = -1;
+                                    break;
+                                }
+                                if (miniblock == -1) {
+                                    break;
+                                }
+                                BYTES2DO -= miniblock;
+                                partSize -= miniblock;
+                                FILEOUT.write(BUFFER, 0, miniblock);
+                                BYTESLOADED += miniblock;
+                                partEndByte += miniblock;
+                                link.setDownloadCurrent(BYTESLOADED);
+                                if (partEndByte > 0) {
+                                    BYTES2DO = partEndByte + 1;
+                                }
+                            }
+                            if (partSize == 0) {
+                                link.setProperty("parts_finished", Long.valueOf(T[3]) + 1);
+                            } else {
+                                link.setProperty("parts_finished", Long.valueOf(T[3]));
+                            }
+                            if (isExternalyAborted()) {
+                                link.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
+                                link.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                                break;
+                            }
+                            baseUrl = templateUrl;
+                        } finally {
+                            try {
+                                DL.disconnect();
+                            } catch (final Throwable e) {
+                            }
+                        }
+                    }
+                } catch (final InvalidKeyException e) {
+                    try {
+                        FILEOUT.close();
+                    } catch (final Throwable e2) {
+                    }
+                    if (!tmpFile.delete()) {
+                        logger.severe("Could not delete file " + tmpFile);
+                    }
+                    if (e.getMessage().contains("Illegal key size")) {
+                        getPolicyFiles();
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
+                } catch (final Exception e2) {
+                    e2.printStackTrace();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } finally {
+                    try {
+                        dl.getManagedConnetionHandler().removeThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        link.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        DL.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        FILEOUT.close();
+                    } catch (final Throwable e) {
+                    }
+                    setDownloadInterface(null);
+                    // System.out.println("SOLL: " + downloadLink.getDownloadSize()
+                    // +
+                    // " - IST: " + BYTESLOADED);
+                    if (link.getDownloadSize() == BYTESLOADED || i == content.length) {
+                        if (!tmpFile.renameTo(new File(link.getFileOutput()))) {
+                            logger.severe("Could not rename file " + tmpFile + " to " + link.getFileOutput());
+                        }
                     }
                 }
-            } catch (final InvalidKeyException e) {
-                try {
-                    FILEOUT.close();
-                } catch (final Throwable e2) {
-                }
-                if (!tmpFile.delete()) {
-                    logger.severe("Could not delete file " + tmpFile);
-                }
-                if (e.getMessage().contains("Illegal key size")) {
-                    getPolicyFiles();
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
-            } catch (final Exception e2) {
-                e2.printStackTrace();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } finally {
-                try {
-                    dl.getManagedConnetionHandler().removeThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
-                } catch (final Throwable e) {
-                }
-                try {
-                    downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
-                } catch (final Throwable e) {
-                }
-                try {
-                    DL.disconnect();
-                } catch (final Throwable e) {
-                }
-                try {
-                    FILEOUT.close();
-                } catch (final Throwable e) {
-                }
-                setDownloadInterface(null);
-                // System.out.println("SOLL: " + downloadLink.getDownloadSize()
-                // +
-                // " - IST: " + BYTESLOADED);
-                if (downloadLink.getDownloadSize() == BYTESLOADED || i == content.length) {
-                    if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
-                        logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
+                link.getLinkStatus().setStatusText(null);
+                if (!isExternalyAborted()) {
+                    link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                    if (FAILCOUNTER > 0) {
+                        link.getLinkStatus().setStatusText("File(s) not found: " + FAILCOUNTER);
                     }
                 }
-            }
-            downloadLink.getLinkStatus().setStatusText(null);
-            if (!isExternalyAborted()) {
-                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                if (FAILCOUNTER > 0) {
-                    downloadLink.getLinkStatus().setStatusText("File(s) not found: " + FAILCOUNTER);
+            } else {
+                /* decrase Browserrequests */
+                final Browser br2 = br.cloneBrowser();
+                /* webplayer request */
+                br2.getPage("https://www." + this.getHost() + "/static/swf/webplayer/VWPBeacon.swf?port=50246&version=1.2.2.1112");
+                br.getPage("https://www." + this.getHost() + "/rest/v2/execute.xml?apiKey=" + Encoding.Base64Decode("NTY5Nzc4MUUtMUM2MC02NjNCLUZGRDgtOUI0OUQyQjU2RDM2") + "&method=veoh.video.findByPermalink&permalink=" + fid + "&");
+                if (br.containsHTML("(<rsp stat=\"fail\"|\"The video does not exist\"|name=\"YouTube\\.com\" type=\"\")")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            }
-        } else {
-            requestFileInformation(downloadLink);
-            /* decrase Browserrequests */
-            final Browser br2 = br.cloneBrowser();
-            /* webplayer request */
-            br2.getPage("http://www.veoh.com/static/swf/webplayer/VWPBeacon.swf?port=50246&version=1.2.2.1112");
-            final String videoID = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
-            br.getPage("http://www.veoh.com/rest/v2/execute.xml?apiKey=" + Encoding.Base64Decode("NTY5Nzc4MUUtMUM2MC02NjNCLUZGRDgtOUI0OUQyQjU2RDM2") + "&method=veoh.video.findByPermalink&permalink=" + videoID + "&");
-            if (br.containsHTML("(<rsp stat=\"fail\"|\"The video does not exist\"|name=\"YouTube\\.com\" type=\"\")")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* fileextension */
-            if (!downloadLink.getName().matches(".+\\.[\\w]{1,3}$") || !downloadLink.getName().endsWith(ext)) {
-                downloadLink.setFinalFileName(downloadLink.getName() + ext);
-            }
-            /* finallinkparameter */
-            final String fHashPath = br.getRegex("fullHashPath=\"(.*?)\"").getMatch(0);
-            String fHashToken = br.getRegex("fullHashPathToken=\"(.*?)\"").getMatch(0);
-            /* decrypt fHashToken */
-            try {
-                fHashToken = JDCrypt.decrypt(JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(fHashToken))), JDHexUtils.getByteArray(Encoding.Base64Decode("ODY5NGRmY2RkODY0Y2FhYWM4OTAyZDdlYmQwNGVkYWU=")), JDHexUtils.getByteArray(Encoding.Base64Decode("ZmY1N2NlYzMwYWVlYTg5YTBmNTBkYjQxNjRhMWRhNzI=")));
-            } catch (final Throwable e) {
-            }
-            if (fHashPath == null || fHashToken == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("Referer", "http://www.veoh.com/static/swf/veoh/VeohMediaPlayer.swf?v=2012-03-26.2");
-            br.getHeaders().put("x-flash-version", "10,3,183,7");
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, fHashPath + fHashToken, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() != 403) {
-                    br.followConnection();
+                /* fileextension */
+                if (!link.getName().matches(".+\\.[\\w]{1,3}$") || !link.getName().endsWith(ext)) {
+                    link.setFinalFileName(link.getName() + ext);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* finallinkparameter */
+                final String fHashPath = br.getRegex("fullHashPath=\"(.*?)\"").getMatch(0);
+                String fHashToken = br.getRegex("fullHashPathToken=\"(.*?)\"").getMatch(0);
+                /* decrypt fHashToken */
+                try {
+                    fHashToken = JDCrypt.decrypt(JDHexUtils.getByteArray(JDHexUtils.getHexString(Base64.decode(fHashToken))), JDHexUtils.getByteArray(Encoding.Base64Decode("ODY5NGRmY2RkODY0Y2FhYWM4OTAyZDdlYmQwNGVkYWU=")), JDHexUtils.getByteArray(Encoding.Base64Decode("ZmY1N2NlYzMwYWVlYTg5YTBmNTBkYjQxNjRhMWRhNzI=")));
+                } catch (final Throwable e) {
+                }
+                if (fHashPath == null || fHashToken == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getHeaders().put("Referer", "http://www.veoh.com/static/swf/veoh/VeohMediaPlayer.swf?v=2012-03-26.2");
+                br.getHeaders().put("x-flash-version", "10,3,183,7");
+                dllink = fHashPath + fHashToken;
             }
-            dl.startDownload();
         }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() != 403) {
+                br.followConnection();
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private boolean isExternalyAborted() {
@@ -447,19 +461,34 @@ public class VeohCom extends PluginForHost {
         br.getHeaders().put("Referer", null);
     }
 
+    private static final boolean use_api_for_availablecheck = true;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         // Allow +18 videos
         br.setCookie("http://veoh.com/", "confirmedAdult", "true");
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Dieses Video ist nicht mehr verf&uuml;gbar|>Sorry, we couldn\\'t find the video you were looking for)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename;
+        if (use_api_for_availablecheck) {
+            /* 2019-09-24: New */
+            br.getPage("https://www." + this.getHost() + "/watch/getVideo/" + this.getFID(link));
+            final String error = PluginJSonUtils.getJson(br, "error");
+            if (br.getHttpConnection().getResponseCode() == 404 || error != null && !error.equals("null")) {
+                /* E.g. "error":"404-error" */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = PluginJSonUtils.getJson(br, "title");
+        } else {
+            /* Old handling (e.g. fails to find filename) */
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Dieses Video ist nicht mehr verf&uuml;gbar|>Sorry, we couldn\\'t find the video you were looking for)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            // |AnyClip| at line 461 (above) is removed to avoid PluginException
+            filename = br.getRegex("\"title\":\"(.*?)(\\s+RAW)?\"").getMatch(0);
         }
-        // |AnyClip| at line 461 (above) is removed to avoid PluginException
-        String filename = br.getRegex("\"title\":\"(.*?)(\\s+RAW)?\"").getMatch(0);
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             filename = getFID(link);
         }
         String ext = null;

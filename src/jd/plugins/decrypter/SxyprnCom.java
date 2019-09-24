@@ -24,12 +24,19 @@ public class SxyprnCom extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(parameter.getCryptedUrl());
-        final String[][] hits = br.getRegex("href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)[^<>]*?title='(.*?)'").getMatches();
-        for (final String[] hit : hits) {
-            final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
-            link.setName(hit[1].trim() + ".mp4");
-            link.setAvailable(true);
-            ret.add(link);
+        final String[] posts = br.getRegex("(<div class='post_el_small'>.*?</span>\\s*</div>\\s*</a>\\s*</div>)").getColumn(0);
+        for (final String postHTML : posts) {
+            if (!postHTML.contains("post_vid_thumb")) {
+                /* 2019-09-24: Try to skip non-video (e.g. text-only) content */
+                continue;
+            }
+            final String[][] hits = new Regex(postHTML, "href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)[^<>]*?title='(.*?)'").getMatches();
+            for (final String[] hit : hits) {
+                final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
+                link.setName(hit[1].trim() + ".mp4");
+                link.setAvailable(true);
+                ret.add(link);
+            }
         }
         final String pages[] = br.getRegex("<a href=(?:\"|')(/[^/]*?\\.html\\?page=\\d+)").getColumn(0);
         for (final String page : pages) {
