@@ -399,14 +399,19 @@ public class ImgUrCom extends PluginForHost {
             if (image != null) {
                 if (StringUtils.equals("jpeg", image)) {
                     return "jpg";
+                } else {
+                    return image;
                 }
-                return image;
             }
             final String video = new Regex(ret, "video/(.+)").getMatch(0);
             if (video != null) {
                 return video;
             }
-            return ret;
+            if (StringUtils.equals("jpeg", ret)) {
+                return "jpg";
+            } else {
+                return ret;
+            }
         }
         return ".unknown";
     }

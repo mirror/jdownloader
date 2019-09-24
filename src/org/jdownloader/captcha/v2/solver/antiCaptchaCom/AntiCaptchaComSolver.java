@@ -114,7 +114,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                     dataMap = new HashMap<String, Object>();
                     dataMap.put("clientKey", config.getApiKey());
                     dataMap.put("taskId", taskID);
-                    json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult ", JSonStorage.serializeToJson(dataMap));
+                    json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult", JSonStorage.serializeToJson(dataMap));
                     response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                     errorHandling(null, response);
                     logger.info(json);

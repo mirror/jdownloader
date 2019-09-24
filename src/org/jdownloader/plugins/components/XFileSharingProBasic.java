@@ -1705,7 +1705,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
                 /* For video streams we often don't get a Content-Disposition header. */
-                final boolean isFile = con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "video") || StringUtils.containsIgnoreCase(con.getContentType(), "audio") || StringUtils.containsIgnoreCase(con.getContentType(), "application");
+                final boolean isDownload = con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "video") || StringUtils.containsIgnoreCase(con.getContentType(), "audio") || StringUtils.containsIgnoreCase(con.getContentType(), "application");
                 if (con.getResponseCode() == 503) {
                     /* Ok */
                     /*
@@ -1715,11 +1715,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      */
                     logger.info("directurl lead to 503 | too many connections");
                     return directurl;
-                } else if (!con.getContentType().contains("html") && con.getLongContentLength() > -1 && con.isOK() && isFile) {
-                    if (setFilesize) {
-                        link.setVerifiedFileSize(con.getLongContentLength());
+                } else if (!con.getContentType().contains("text") && con.getLongContentLength() > -1 && con.isOK() && isDownload) {
+                    if (/* StringUtils.equalsIgnoreCase(con.getContentType(), "application/octet-stream") && */con.getLongContentLength() < 100) {
+                        throw new Exception("very likely no file but an error message!length=" + con.getLongContentLength());
+                    } else {
+                        if (setFilesize) {
+                            link.setVerifiedFileSize(con.getLongContentLength());
+                        }
+                        return directurl;
                     }
-                    return directurl;
                 } else {
                     /* Failure */
                 }
