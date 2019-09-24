@@ -82,7 +82,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 final String imageTitle = (String) imageJson.get("title");
                 final Boolean hasImage = (Boolean) imageJson.get("has_image");
                 final String playerEmbedded = (String) imageJson.get("player_embedded");
-                if (!inValidate(playerEmbedded)) {
+                if (StringUtils.isNotEmpty(playerEmbedded)) {
                     final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
                     if (results != null) {
                         for (final String result : results) {
@@ -99,10 +99,12 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                                     assetURL = assetURLRoot + assetFileName + "?" + assetFileTimeStamp;
                                 } else if (br2.containsHTML("\"asset_type\":\"pano\"")) {
                                     // Handle 3D panorama images
-                                    assetURL = br2.getRegex("\"[a-z]+_image_url\":\"([^\"]+)\"").getMatch(0);
+                                    assetURL = br2.getRegex("\"[a-z]+_image_url\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+                                } else {
+                                    assetURL = br2.getRegex("src\\s*=\\s*[\"']*([^\"']*)[\"']*").getMatch(0);
                                 }
                             }
-                            if (assetURL != null) {
+                            if (StringUtils.isNotEmpty(assetURL)) {
                                 final DownloadLink dl2 = this.createDownloadlink(assetURL);
                                 fp.add(dl2);
                                 decryptedLinks.add(dl2);
@@ -117,14 +119,14 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     break;
                 }
                 String filename = null;
-                if (!inValidate(imageTitle)) {
+                if (StringUtils.isNotEmpty(imageTitle)) {
                     filename = imageTitle + "_" + fid;
-                } else if (!inValidate(projectTitle)) {
+                } else if (StringUtils.isNotEmpty(projectTitle)) {
                     filename = projectTitle + "_" + fid;
                 } else {
                     filename = fid;
                 }
-                if (!inValidate(full_name)) {
+                if (StringUtils.isNotEmpty(full_name)) {
                     filename = full_name + "_" + filename;
                 }
                 filename = Encoding.htmlDecode(filename);
@@ -147,13 +149,13 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
             }
             String packageName = "";
-            if (!inValidate(full_name)) {
+            if (StringUtils.isNotEmpty(full_name)) {
                 packageName = full_name;
             } else {
                 packageName = project_id;
             }
             if (decryptedLinks.size() > 1) {
-                if (!inValidate(projectTitle)) {
+                if (StringUtils.isNotEmpty(projectTitle)) {
                     packageName = packageName + "-" + projectTitle;
                 }
             }
@@ -187,7 +189,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     final String url_content = "https://artstation.com/artwork/" + id;
                     final DownloadLink dl = createDownloadlink(url_content);
                     String filename;
-                    if (!inValidate(title)) {
+                    if (StringUtils.isNotEmpty(title)) {
                         filename = full_name + "_" + id + "_" + title + ".jpg";
                     } else {
                         filename = full_name + "_" + id + ".jpg";
@@ -215,11 +217,11 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 page++;
             } while (decryptedLinks.size() < entries_total);
             String packageName = "";
-            if (!inValidate(full_name)) {
+            if (StringUtils.isNotEmpty(full_name)) {
                 packageName = full_name;
             }
             if (decryptedLinks.size() > 1) {
-                if (!inValidate(projectTitle)) {
+                if (StringUtils.isNotEmpty(projectTitle)) {
                     packageName = packageName + " " + projectTitle;
                 }
             }
