@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "verystream.com" }, urls = { "https?://(?:www\\.)?(?:verystreams?\\.com?|woof\\.tube)/(?:e|embed/streams?)/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "verystream.com" }, urls = { "https?://(?:www\\.)?(?:verystreams?\\.com?|woof\\.tube)/(?:e|embed|streams?)/([A-Za-z0-9]+)" })
 public class VeryStream extends antiDDoSForDecrypt {
     public VeryStream(PluginWrapper wrapper) {
         super(wrapper);

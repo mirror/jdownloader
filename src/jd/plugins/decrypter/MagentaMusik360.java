@@ -24,7 +24,7 @@ import org.jdownloader.plugins.components.config.MagentaMusik360Config;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magenta-musik-360.de" }, urls = { "https?://(www\\.)?magenta-musik-360\\.de/[a-zA-Z0-9\\-%_]+-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magenta-musik-360.de" }, urls = { "https?://(www\\.)?magenta-musik-360\\.de/(?:[^/]+/)?[a-zA-Z0-9\\-%_]+-\\d+" })
 public class MagentaMusik360 extends PluginForDecrypt {
     public MagentaMusik360(final PluginWrapper wrapper) {
         super(wrapper);
