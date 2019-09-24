@@ -23,12 +23,13 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(www\\.)?sketchfab\\.com/3d-models/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(www\\.)?sketchfab\\.com/3d-models/[^/]+" })
 public class Sketchfab extends antiDDoSForDecrypt {
     public Sketchfab(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,6 +57,21 @@ public class Sketchfab extends antiDDoSForDecrypt {
                 if (StringUtils.isNotEmpty(fpName)) {
                     dl1.setFinalFileName(fpName + "_file.osgjs");
                     dl2.setFinalFileName(fpName + "_model_file.bin");
+                }
+            }
+            String configData = br.getRegex("<div[^>]+id\\s*=\\s*\"js-dom-data-prefetched-data\"[^>]*><!--([^~]+)--></div>").getMatch(0);
+            if (StringUtils.isNotEmpty(configData)) {
+                configData = Encoding.htmlDecode(configData);
+                int stringEnd = configData.indexOf("--></div>");
+                if (stringEnd > 0) {
+                    configData = configData.substring(0, stringEnd);
+                }
+                final String[] links = HTMLParser.getHttpLinks(configData, null);
+                if (links != null && links.length > 0) {
+                    for (String link : links) {
+                        link = Encoding.htmlDecode(link);
+                        decryptedLinks.add(createDownloadlink(link));
+                    }
                 }
             }
         }
