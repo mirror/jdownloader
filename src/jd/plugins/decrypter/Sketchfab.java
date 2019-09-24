@@ -50,14 +50,14 @@ public class Sketchfab extends antiDDoSForDecrypt {
             if (archiveLink != null && archiveLink.length() > 0) {
                 String decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString();
                 DownloadLink dl1 = createDownloadlink(decodedLink);
-                decryptedLinks.add(dl1);
                 decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString().replace("file.osgjs.gz", "model_file.bin.gz");
                 DownloadLink dl2 = createDownloadlink(decodedLink);
-                decryptedLinks.add(dl2);
                 if (StringUtils.isNotEmpty(fpName)) {
                     dl1.setFinalFileName(fpName + "_file.osgjs");
                     dl2.setFinalFileName(fpName + "_model_file.bin");
                 }
+                decryptedLinks.add(dl1);
+                decryptedLinks.add(dl2);
             }
             String configData = br.getRegex("<div[^>]+id\\s*=\\s*\"js-dom-data-prefetched-data\"[^>]*><!--([^~]+)--></div>").getMatch(0);
             if (StringUtils.isNotEmpty(configData)) {
