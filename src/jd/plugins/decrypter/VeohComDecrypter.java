@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,9 +24,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veoh\\.com/((browse/videos/category/.*?/)?watch/[A-Za-z0-9]+|videos/[A-Za-z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "https?://(?:www\\.)?veoh\\.com/(?:(?:browse/videos/category/.*?/)?watch/[A-Za-z0-9]+|videos/[A-Za-z0-9]+)" })
 public class VeohComDecrypter extends PluginForDecrypt {
-
     public VeohComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -55,5 +53,4 @@ public class VeohComDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,11 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drop.me" }, urls = { "https?://(?:www\\.)?drop\\.me/[A-Za-z0-9]+" })
 public class DropMe extends PluginForHost {
-
     public DropMe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,13 +51,13 @@ public class DropMe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"file\">([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+            filename = br.getRegex("class=\"file\">([^<>\"]+)<").getMatch(0);
         }
         String filesize = br.getRegex("Size\\s*?:\\s*?(\\d+(?:\\.\\d{1,2}) [A-Za-z]+)").getMatch(0);
         if (filename == null) {
@@ -148,5 +146,4 @@ public class DropMe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
