@@ -49,6 +49,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DropboxCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
@@ -80,7 +82,6 @@ public class DropBoxCom extends PluginForDecrypt {
             subFolder = "";
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = correctAddedURL(param.toString());
         final Account account = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         final boolean canUseAPI = jd.plugins.hoster.DropboxCom.setAPILoginHeaders(this.br, account);
         if (canUseAPI && jd.plugins.hoster.DropboxCom.useAPI()) {
@@ -90,13 +91,12 @@ public class DropBoxCom extends PluginForDecrypt {
              */
             jd.plugins.hoster.DropboxCom.prepBrAPI(this.br);
             jd.plugins.hoster.DropboxCom.setAPILoginHeaders(this.br, account);
-            decryptedLinks.addAll(crawlViaAPI(parameter));
+            decryptedLinks.addAll(crawlViaAPI(param));
         } else {
-            decryptedLinks.addAll(crawlViaWebsite(parameter));
+            decryptedLinks.addAll(crawlViaWebsite(param));
         }
         if (decryptedLinks.size() == 0) {
-            logger.info("Found nothing to download: " + parameter);
-            final DownloadLink dl = this.createOfflinelink(parameter);
+            final DownloadLink dl = this.createOfflinelink(param.toString());
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -123,7 +123,8 @@ public class DropBoxCom extends PluginForDecrypt {
         return url_new;
     }
 
-    private ArrayList<DownloadLink> crawlViaAPI(final String parameter) throws Exception {
+    private ArrayList<DownloadLink> crawlViaAPI(final CryptedLink param) throws Exception {
+        final String parameter = correctAddedURL(param.toString());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /*
          * We cannot use the following request because we do not have the folderID at this stage:
@@ -159,14 +160,64 @@ public class DropBoxCom extends PluginForDecrypt {
             /* Fix json value */
             path = "\"" + path + "\"";
         }
-        br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", "{\"url\":\"" + parameter + "\",\"path\":" + path + "}");
+        String passCode = null;
+        String error_summary = null;
+        boolean is_password_protected = false;
+        int counter = 0;
+        do {
+            try {
+                if (is_password_protected) {
+                    passCode = getUserInput("Password?", param);
+                } else {
+                    passCode = "";
+                }
+                /*
+                 * 2019-09-24: In theory we could leave out this API request if we know that we have a folder and not only a single file BUT
+                 * when accessing items of a folder it is not possible to get the name of the current folder and we want that - so we'll
+                 * always do this request!
+                 */
+                br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", "{\"url\":\"" + parameter + "\",\"path\":" + path + ",\"link_password\":\"" + passCode + "\"}");
+                error_summary = jd.plugins.hoster.DropboxCom.getErrorSummaryField(this.br);
+                if (error_summary != null && error_summary.contains("shared_link_access_denied")) {
+                    is_password_protected = true;
+                    continue;
+                }
+                // if (br.getHttpConnection().getResponseCode() == 409 && !is_password_protected) {
+                // /** TODO: Remove this */
+                // /*
+                // * 2019-09-23: Probably 'shared_link_access_denied/..' but our URL may be password protected - the API won't let us know
+                // * so we have to use the website here to help us out.
+                // */
+                // try {
+                // final Browser brc = jd.plugins.hoster.DropboxCom.prepBrWebsite(new Browser());
+                // brc.getPage(parameter);
+                // is_password_protected = jd.plugins.hoster.DropboxCom.isPasswordProtectedWebsite(brc);
+                // if (!is_password_protected) {
+                // /* Probably offline */
+                // break;
+                // }
+                // continue;
+                // } catch (final Throwable e) {
+                // e.printStackTrace();
+                // logger.warning("Failure in password-recognization code");
+                // break;
+                // }
+                // }
+                break;
+            } finally {
+                counter++;
+            }
+        } while (is_password_protected && counter <= 3);
         ArrayList<Object> ressourcelist = new ArrayList<Object>();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String error_summary = jd.plugins.hoster.DropboxCom.getErrorSummaryField(this.br);
         final String object_type = (String) entries.get(".tag");
         if (!StringUtils.isEmpty(error_summary)) {
             /* 2019-09-198: Typically response 409 with error_summary 'shared_link_access_denied/..' */
-            logger.info("Decryption failed because: " + error_summary);
+            if (is_password_protected) {
+                logger.info("Decryption failed because of wrong password");
+            } else {
+                logger.info("Decryption failed because: " + error_summary);
+            }
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -188,12 +239,10 @@ public class DropBoxCom extends PluginForDecrypt {
             fp.setName(packageName);
         }
         if ("file".equalsIgnoreCase(object_type)) {
-            /* Single file - rare case! */
+            /* Single file */
             ressourcelist.add(entries);
         } else {
-            /* Assume we have a folder */
-            /* path_lower = FULL path including current folder - lowercase */
-            // subFolder = (String) entries.get("path_lower");
+            /* Folder */
             if (path.equals("/") || path.equals("\"/\"")) {
                 /*
                  * 2019-09-20: For this call, "/" is not accepted to get the root folder although their API 'knows what we want'. This is
@@ -202,7 +251,11 @@ public class DropBoxCom extends PluginForDecrypt {
                  */
                 path = "\"\"";
             }
-            br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", "{\"path\":" + path + ",\"shared_link\": {\"url\":\"" + parameter + "\"}}");
+            /**
+             * 2019-09-24: TODO: 'link_password' does not yet work for this request! Also "recursive":true will not work. Waiting for answer
+             * of their support ...
+             */
+            br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", "{\"path\":" + path + ",\"shared_link\": {\"url\":\"" + parameter + "\"},\"recursive\":false}");
         }
         int page = 0;
         do {
@@ -281,9 +334,13 @@ public class DropBoxCom extends PluginForDecrypt {
                         serverside_path_to_file_relative = serverside_path_full;
                     }
                     if (!StringUtils.isEmpty(serverside_path_to_file_relative) && !is_single_file) {
-                        dl.setProperty("serverside_path_to_file_relative", serverside_path_to_file_relative);
+                        dl.setProperty(DropboxCom.PROPERTY_INTERNAL_PATH, serverside_path_to_file_relative);
                     }
-                    dl.setProperty("mainlink", parameter);
+                    if (!StringUtils.isEmpty(passCode)) {
+                        dl.setDownloadPassword(passCode);
+                        dl.setProperty(DropboxCom.PROPERTY_IS_PASSWORD_PROTECTED, true);
+                    }
+                    dl.setProperty(DropboxCom.PROPERTY_MAINPAGE, parameter);
                     // dl.setProperty("serverside_path_full", serverside_path_full);
                     dl.setLinkID(this.getHost() + "://" + id);
                     /**
@@ -322,15 +379,15 @@ public class DropBoxCom extends PluginForDecrypt {
                  */
                 br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder/continue", "{\"cursor\":\"" + cursor + "\"}");
             }
-        } while (has_more && !StringUtils.isEmpty(cursor));
+        } while (has_more && !StringUtils.isEmpty(cursor) && !this.isAbort());
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlViaWebsite(String link) throws Exception {
+    private ArrayList<DownloadLink> crawlViaWebsite(final CryptedLink param) throws Exception {
         br.setFollowRedirects(false);
-        br.setCookie("https://dropbox.com", "locale", "en");
+        jd.plugins.hoster.DropboxCom.prepBrWebsite(br);
         br.setLoadLimit(br.getLoadLimit() * 4);
-        final String crawl_subfolder_string = new Regex(link, "(\\&crawl_subfolders=(?:true|false))").getMatch(0);
+        final String crawl_subfolder_string = new Regex(param.toString(), "(\\&crawl_subfolders=(?:true|false))").getMatch(0);
         final AtomicReference<FilePackage> currentPackage = new AtomicReference<FilePackage>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
@@ -343,13 +400,18 @@ public class DropBoxCom extends PluginForDecrypt {
                 return super.add(e);
             }
         };
-        link = link.replaceAll("\\?dl=\\d", "");
-        if (crawl_subfolder_string != null) {
-            link = link.replace(crawl_subfolder_string, "");
+        String parameter = correctAddedURL(param.toString());
+        /*
+         * 2019-09-24: isSingleFile may sometimes be wrongt but if our URL contains 'crawl_subfolders=' we know it has been added via
+         * crawler and it is definitely a folder and not a file!
+         */
+        if (DropboxCom.isSingleFile(parameter) && crawl_subfolder_string == null) {
+            decryptedLinks.add(createSingleDownloadLink(parameter));
+            return decryptedLinks;
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link);
+            con = br.openGetConnection(parameter);
             if (con.getResponseCode() == 429) {
                 try {
                     con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
@@ -376,26 +438,26 @@ public class DropBoxCom extends PluginForDecrypt {
                     logger.log(e);
                 }
                 /* Temporarily unavailable links */
-                final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
+                final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
                 dl.setProperty("decrypted", true);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            if (con.getResponseCode() == 302 && (link.matches(TYPE_REDIRECT) || link.matches(TYPE_SHORT))) {
-                link = br.getRedirectLocation();
-                if (link.matches(TYPE_DIRECTLINK_OLD)) {
-                    final DownloadLink direct = createDownloadlink("directhttp://" + link);
+            if (con.getResponseCode() == 302 && (parameter.matches(TYPE_REDIRECT) || parameter.matches(TYPE_SHORT))) {
+                parameter = br.getRedirectLocation();
+                if (parameter.matches(TYPE_DIRECTLINK_OLD)) {
+                    final DownloadLink direct = createDownloadlink("directhttp://" + parameter);
                     decryptedLinks.add(direct);
                     return decryptedLinks;
-                } else if (link.matches(TYPE_S_AND_SH)) {
-                    decryptedLinks.add(createSingleDownloadLink(link));
+                } else if (parameter.matches(TYPE_S_AND_SH)) {
+                    decryptedLinks.add(createSingleDownloadLink(parameter));
                     return decryptedLinks;
-                } else if (link.matches(TYPE_REFERRAL)) {
-                    final DownloadLink dl = this.createOfflinelink(link);
+                } else if (parameter.matches(TYPE_REFERRAL)) {
+                    final DownloadLink dl = this.createOfflinelink(parameter);
                     decryptedLinks.add(dl);
                     return decryptedLinks;
-                } else if (!link.matches(TYPE_NORMAL)) {
-                    logger.warning("Decrypter broken or unsupported redirect-url: " + link);
+                } else if (!parameter.matches(TYPE_NORMAL)) {
+                    logger.warning("Decrypter broken or unsupported redirect-url: " + parameter);
                     return null;
                 }
             }
@@ -406,7 +468,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 br.getPage(redirect);
             }
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
-                final DownloadLink dl = this.createOfflinelink(link);
+                final DownloadLink dl = this.createOfflinelink(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -417,6 +479,35 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             } catch (Throwable e) {
             }
+        }
+        String passCode = null;
+        String password_cookie = null;
+        if (DropboxCom.isPasswordProtectedWebsite(br)) {
+            final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
+            if (content_id == null) {
+                logger.warning("Failed to find content_id");
+                return null;
+            }
+            boolean wrongPass = true;
+            int counter = 0;
+            do {
+                passCode = getUserInput("Password?", param);
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                String post_data = "is_xhr=true&content_id=" + content_id + "&password=" + Encoding.urlEncode(passCode);
+                final String cookie_t = br.getCookie(getHost(), "t");
+                if (cookie_t != null) {
+                    post_data += "&t=" + cookie_t;
+                }
+                br.postPage("/sm/auth", post_data);
+                final String status = PluginJSonUtils.getJson(br, "status");
+                if (!"error".equalsIgnoreCase(status)) {
+                    wrongPass = false;
+                    break;
+                }
+                counter++;
+            } while (wrongPass && counter <= 2);
+            password_cookie = br.getCookie(br.getHost(), "sm_auth");
+            br.getPage(parameter);
         }
         /* Decrypt file- and folderlinks */
         String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
@@ -453,6 +544,14 @@ public class DropBoxCom extends PluginForDecrypt {
         final int page_start = 1;
         int page = page_start;
         String json_source = null;
+        /* Contains information about current folder but not about subfolders and/or files! */
+        final String current_folder_json_source = br.getRegex("InitReact\\.mountComponent\\(mod,\\s*(\\{\"module_name\":\\s*\"modules/clean/react/shared_link_folder.*?\\})\\);").getMatch(0);
+        LinkedHashMap<String, Object> entries = null;
+        if (current_folder_json_source != null) {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(current_folder_json_source);
+            final String currentFolderName = (String) JavaScriptEngineFactory.walkJson(entries, "props/folderSharedLinkInfo/displayName");
+            subFolder += "/" + currentFolderName;
+        }
         do {
             if (page == page_start) {
                 json_source = getSharedJsonSource(br);
@@ -479,13 +578,13 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             /* 2017-01-27 new */
             boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
             final List<Object> ressourcelist_folders = getFoldersList(entries, isShared);
             final List<Object> ressourcelist_files = getFilesList(entries, isShared);
             final boolean isSingleFile = ressourcelist_files != null && ressourcelist_files.size() == 1;
             if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders && !askedUserIfHeWantsSubfolders) {
                 /* Only ask user if we actually have subfolders that can be decrypted! */
-                final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, link, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
+                final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, parameter, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
                     @Override
                     public ModalityType getModalityType() {
                         return ModalityType.MODELESS;
@@ -511,16 +610,23 @@ public class DropBoxCom extends PluginForDecrypt {
                     entries = (LinkedHashMap<String, Object>) o;
                     String url = (String) entries.get("href");
                     if (url == null && isSingleFile) {
-                        url = link;
+                        url = parameter;
                     }
                     final String filename = (String) entries.get("filename");
                     final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-                    if (url == null || url.equals("") || filename == null || filename.equals("")) {
+                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(filename)) {
                         return null;
                     }
                     final DownloadLink dl = createSingleDownloadLink(url);
                     if (filesize > 0) {
                         dl.setDownloadSize(filesize);
+                    }
+                    if (passCode != null) {
+                        dl.setDownloadPassword(passCode);
+                        dl.setProperty(DropboxCom.PROPERTY_IS_PASSWORD_PROTECTED, true);
+                        if (!StringUtils.isEmpty(password_cookie)) {
+                            dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, password_cookie);
+                        }
                     }
                     dl.setName(filename);
                     dl.setAvailable(true);
@@ -529,27 +635,27 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             }
             if (decryptSubfolders) {
-                final String subFolderBase = subFolder;
                 for (final Object o : ressourcelist_folders) {
                     entries = (LinkedHashMap<String, Object>) o;
                     final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
                     String url = (String) entries.get("href");
-                    if (!is_dir || url == null || url.equals("")) {
+                    if (!is_dir || StringUtils.isEmpty(url)) {
                         continue;
                     }
                     url += "&crawl_subfolders=true";
                     final String name = (String) entries.get("filename");
+                    final String currentPath;
                     if (StringUtils.isNotEmpty(name)) {
-                        subFolder = subFolderBase + "/" + name;
+                        currentPath = subFolder + "/" + name;
                     } else {
-                        subFolder = subFolderBase;
+                        currentPath = subFolder;
                     }
-                    final DownloadLink subFolderDownloadLink = this.createDownloadlink(url);
+                    final DownloadLink subFolderDownloadLink = this.createDownloadlink(url, currentPath);
                     decryptedLinks.add(subFolderDownloadLink);
                 }
             }
             page++;
-        } while (hasMore);
+        } while (hasMore && !this.isAbort());
         return decryptedLinks;
     }
 
