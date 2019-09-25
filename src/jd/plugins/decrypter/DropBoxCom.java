@@ -167,8 +167,6 @@ public class DropBoxCom extends PluginForDecrypt {
                 path = null;
                 is_root = true;
             }
-            /* Fix json value */
-            // path = "\"" + path + "\"";
         }
         String passCode = param.getDecrypterPassword();
         String error_summary = null;
