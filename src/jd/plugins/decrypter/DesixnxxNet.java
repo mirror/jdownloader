@@ -24,7 +24,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "https?://(?:www\\.)?desixnxx\\.net/[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "https?://(?:www\\.)?desixnxx2?\\.net/[a-z0-9\\-]+/" })
 public class DesixnxxNet extends PluginForDecrypt {
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +39,7 @@ public class DesixnxxNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* 2017-05-31: Usually openload.co URLs */
-        final String finallink = this.br.getRegex("<iframe src=\"(https?[^<>\"]+)\"").getMatch(0);
+        final String finallink = this.br.getRegex("<iframe src\\s*=\\s*\"(https?[^<>\"]+)\"").getMatch(0);
         if (finallink != null && !finallink.contains("ads-iframe-display")) {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {

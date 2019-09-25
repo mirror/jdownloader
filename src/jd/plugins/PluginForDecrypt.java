@@ -25,6 +25,24 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDistributer;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DecrypterRetryException.RetryReason;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
@@ -65,24 +83,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.ProgressController;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDistributer;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -137,29 +137,8 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * Use this when e.g. crawling folders & subfolders from cloud-services. </br>
-     * Use this to find the last set download e.g. if the first folder is password protected and contains more files/folders they will
-     * usually be protected with the same user but we only want to ask the user for it once.
-     */
-    protected final String getPreSetDownloadLinkPassword() {
-        String linkPassword = null;
-        CrawledLink current = getCurrentLink();
-        while (current != null) {
-            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String currentDownloadLinkLinkPassword = current.getDownloadLink().getDownloadPassword();
-                if (currentDownloadLinkLinkPassword != null) {
-                    linkPassword = currentDownloadLinkLinkPassword;
-                }
-                break;
-            }
-            current = current.getSourceLink();
-        }
-        return linkPassword;
-    }
-
-    /**
-     * Use this when e.g. crawling folders & subfolders from cloud-services. </br>
-     * Use this to find the last path in order to continue to build the path until all subfolders are crawled.
+     * Use this when e.g. crawling folders & subfolders from cloud-services. </br> Use this to find the last path in order to continue to
+     * build the path until all subfolders are crawled.
      */
     protected final String getAdoptedCloudFolderStructure() {
         String subfolderPath = null;
@@ -345,21 +324,25 @@ public abstract class PluginForDecrypt extends Plugin {
         return decryptIt(link.getCryptedLink(), dummyProgressController);
     }
 
-    protected DownloadLink createLinkCrawlerRetry(final CrawledLink link, final RetryReason skipReason, final String message) {
+    protected DownloadLink createLinkCrawlerRetry(final CrawledLink link, final DecrypterRetryException retryException) {
         final LazyHostPlugin plugin = HostPluginController.getInstance().get("LinkCrawlerRetry");
-        if (plugin != null) {
+        if (plugin != null && retryException != null) {
             try {
-                String name = null;
-                try {
-                    name = getFileNameFromURL(new URL(link.getURL()));
-                    if (StringUtils.isEmpty(name)) {
+                String name = retryException.getCustomName();
+                if (StringUtils.isEmpty(name)) {
+                    try {
+                        name = getFileNameFromURL(new URL(link.getURL()));
+                        if (StringUtils.isEmpty(name)) {
+                            name = getHost();
+                        }
+                    } catch (final MalformedURLException e) {
                         name = getHost();
                     }
-                } catch (final MalformedURLException e) {
-                    name = getHost();
                 }
-                final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), skipReason.getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
-                ret.setComment(message);
+                final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), retryException.getReason().getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
+                if (StringUtils.isNotEmpty(retryException.getCustomComment())) {
+                    ret.setComment(retryException.getCustomComment());
+                }
                 ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
                 return ret;
             } catch (UpdateRequiredClassNotFoundException e) {
@@ -369,35 +352,18 @@ public abstract class PluginForDecrypt extends Plugin {
         return null;
     }
 
-    protected ArrayList<DownloadLink> addLinkCrawlerRetryTask(ArrayList<DownloadLink> list, final CrawledLink link, final RetryReason skipReason, final String message) {
+    protected ArrayList<DownloadLink> addLinkCrawlerRetryTask(ArrayList<DownloadLink> results, final CrawledLink link, final DecrypterRetryException retryException) {
         final String[] retryTasks = LinkCrawler.getConfig().getAddRetryCrawlerTasks();
-        if (retryTasks != null && skipReason != null && Arrays.asList(retryTasks).contains(skipReason.name())) {
-            final DownloadLink retry = createLinkCrawlerRetry(link, skipReason, message);
+        if (retryTasks != null && retryException != null && Arrays.asList(retryTasks).contains(retryException.getReason().name())) {
+            final DownloadLink retry = createLinkCrawlerRetry(link, retryException);
             if (retry != null) {
-                if (list == null) {
-                    list = new ArrayList<DownloadLink>();
+                if (results == null) {
+                    results = new ArrayList<DownloadLink>();
                 }
-                list.add(retry);
+                results.add(retry);
             }
         }
-        return list;
-    }
-
-    public static enum RetryReason {
-        CAPTCHA(_JDT.T.decrypter_wrongcaptcha()),
-        NO_ACCOUNT(_JDT.T.decrypter_invalidaccount()),
-        PLUGIN_DEFECT(_JDT.T.decrypter_plugindefect()),
-        PASSWORD(_JDT.T.decrypter_wrongpassword()),
-        HOST(_JDT.T.plugins_errors_hosterproblem());
-        private final String exp;
-
-        private RetryReason(String exp) {
-            this.exp = exp;
-        }
-
-        public String getExplanation(Object requestor) {
-            return exp;
-        }
+        return results;
     }
 
     /**
@@ -413,13 +379,8 @@ public abstract class PluginForDecrypt extends Plugin {
         if (link.getCryptedLink() == null) {
             return null;
         }
-        while (true) {
-            ArrayList<DownloadLink> ret = null;
-            Throwable throwable = null;
-            boolean linkstatusOffline = false;
-            boolean pwfailed = false;
-            boolean captchafailed = false;
-            boolean hostFailed = false;
+        retry: while (true) {
+            ArrayList<DownloadLink> results = null;
             try {
                 challenges = null;
                 setCurrentLink(link);
@@ -434,8 +395,13 @@ public abstract class PluginForDecrypt extends Plugin {
                 br.setVerbose(true);
                 br.setDebug(true);
                 /* now we let the decrypter do its magic */
-                ret = decryptIt(link);
+                results = decryptIt(link);
                 validateLastChallengeResponse();
+                if (results == null && !isAbort()) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    return results;
+                }
             } catch (final Throwable e) {
                 if (logger instanceof LogSource) {
                     if (logger instanceof LogSource) {
@@ -446,72 +412,61 @@ public abstract class PluginForDecrypt extends Plugin {
                         LogSource.exception(logger, e);
                     }
                 }
-                throwable = e;
-                if (isAbort()) {
-                    throwable = null;
-                } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
-                    throwable = null;
-                    hostFailed = true;
-                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.HOST, null);
-                } else if (processCaptchaException(e)) {
-                    /* User entered wrong captcha (too many times) */
-                    throwable = null;
-                    captchafailed = true;
-                    String message = null;
-                    if (e instanceof CaptchaException) {
-                        message = ((CaptchaException) e).getSkipRequest().name();
+                try {
+                    if (isAbort()) {
+                        return results;
+                    } else if (e instanceof DecrypterRetryException) {
+                        throw (DecrypterRetryException) e;
+                    } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
+                        throw new DecrypterRetryException(RetryReason.HOST, null, null, e);
+                    } else if (processCaptchaException(e)) {
+                        if (e instanceof CaptchaException) {
+                            throw new DecrypterRetryException(RetryReason.CAPTCHA, ((CaptchaException) e).getSkipRequest().name(), null, e);
+                        } else {
+                            throw new DecrypterRetryException(RetryReason.CAPTCHA, null, null, e);
+                        }
+                    } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
+                        throw new DecrypterRetryException(RetryReason.PASSWORD, null, null, e);
+                    } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, null, null, e);
+                    } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
+                        return results;
+                    } else if (e instanceof PluginException) {
+                        final PluginException pe = (PluginException) e;
+                        switch (pe.getLinkStatus()) {
+                        case LinkStatus.ERROR_PREMIUM:
+                            throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, null, null, e);
+                        case LinkStatus.ERROR_FILE_NOT_FOUND:
+                            throw new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, null, null, e);
+                        case LinkStatus.ERROR_PLUGIN_DEFECT:
+                            throw new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, null, null, e);
+                        case LinkStatus.ERROR_RETRY:
+                            continue retry;
+                        default:
+                            break;
+                        }
                     }
-                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.CAPTCHA, message);
-                } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
-                    /* User entered password captcha (too many times) */
-                    throwable = null;
-                    pwfailed = true;
-                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.PASSWORD, null);
-                } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
-                    throwable = null;
-                    ret = addLinkCrawlerRetryTask(ret, link, RetryReason.NO_ACCOUNT, null);
-                } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
-                    throwable = null;
-                } else if (e instanceof PluginException) {
-                    if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                        throwable = null;
-                        ret = addLinkCrawlerRetryTask(ret, link, RetryReason.NO_ACCOUNT, null);
-                    } else if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                        throwable = null;
-                        linkstatusOffline = true;
-                        ret = addLinkCrawlerRetryTask(ret, link, RetryReason.PLUGIN_DEFECT, null);
-                    } else if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
-                        throwable = null;
-                        linkstatusOffline = true;
-                        ret = onPluginDefect(e, ret, link);
-                    } else if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_RETRY) {
-                        continue;
+                } catch (DecrypterRetryException retryException) {
+                    if (RetryReason.PLUGIN_DEFECT.equals(retryException.getReason())) {
+                        onPluginDefect(retryException, link);
                     }
+                    results = addLinkCrawlerRetryTask(results, link, retryException);
                 }
+                return results;
             } finally {
                 clean();
                 challenges = null;
-            }
-            if ((ret == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed && !linkstatusOffline && !hostFailed) {
-                /*
-                 * null as return value? something must have happened, do not clear log
-                 */
-                ret = onPluginDefect(throwable, ret, link);
-                /* lets forward the log */
                 if (logger instanceof LogSource) {
-                    /* make sure we use the right logger */
-                    ((LogSource) logger).flush();
+                    ((LogSource) logger).clear();
                 }
             }
-            if (logger instanceof LogSource) {
-                /* make sure we use the right logger */
-                ((LogSource) logger).clear();
-            }
-            return ret;
         }
     }
 
-    protected ArrayList<DownloadLink> onPluginDefect(Throwable throwable, ArrayList<DownloadLink> list, CrawledLink link) {
+    protected void onPluginDefect(Throwable throwable, CrawledLink link) {
+        if (logger instanceof LogSource) {
+            ((LogSource) logger).flush();
+        }
         final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
         try {
             errlogger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
@@ -522,7 +477,6 @@ public abstract class PluginForDecrypt extends Plugin {
         } finally {
             errlogger.close();
         }
-        return addLinkCrawlerRetryTask(list, link, RetryReason.PLUGIN_DEFECT, null);
     }
 
     /**

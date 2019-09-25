@@ -22,6 +22,24 @@ public class CrawlerJobSandbox {
         }
     }
 
+    public boolean isAssignJobID() {
+        return job != null && job.isAssignJobID();
+    }
+
+    public void setAssignJobID(boolean b) {
+        if (job != null) {
+            job.setAssignJobID(b);
+        }
+    }
+
+    public String getUUID() {
+        if (job != null) {
+            return job.getUniqueAlltimeID().toString();
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof CrawlerJobSandbox) {

@@ -78,11 +78,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -740,12 +740,13 @@ public class AccountController implements AccountControllerListener, AccountProp
         return getValidAccount(pluginForHost.getHost());
     }
 
-    protected Account getValidAccount(final String host) {
+    public Account getValidAccount(final String host) {
         final List<Account> ret = getValidAccounts(host);
         if (ret != null && ret.size() > 0) {
             return ret.get(0);
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Deprecated

@@ -522,7 +522,8 @@ public class CompiledFiletypeFilter {
         RAW,
         SVG,
         ICO,
-        WEBP;
+        WEBP,
+        MVIEW;
         private final Pattern  pattern;
         private static Pattern allPattern;
 
