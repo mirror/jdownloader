@@ -22,6 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,17 +51,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DropboxCom;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s|sc)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
     public DropBoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,9 +62,9 @@ public class DropBoxCom extends PluginForDecrypt {
         return DropBoxConfig.class;
     }
 
-    private static final String TYPE_NORMAL                = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
-    private static final String TYPE_REDIRECT              = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
-    private static final String TYPE_SHORT                 = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
+    private static final String TYPES_NORMAL               = "https?://(?:www\\.)?dropbox\\.com/(sh|s|sc)/.+";
+    private static final String TYPE_REDIRECT              = "https?://(?:www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_SHORT                 = "https://(?:www\\.)?db\\.tt/[A-Za-z0-9]+";
     /* Unsupported linktypes which can occur during the decrypt process */
     /* 2019-09-20: Some time ago, these were direct-URLs. Now not anymore. */
     private static final String TYPE_DIRECTLINK_OLD        = "https?://dl\\.dropboxusercontent.com/s/(.+)";
@@ -85,7 +85,7 @@ public class DropBoxCom extends PluginForDecrypt {
          */
         final Browser dummy_login_browser = new Browser();
         final boolean canLoginViaAPI = jd.plugins.hoster.DropboxCom.setAPILoginHeaders(dummy_login_browser, account);
-        final boolean urlCanBeCrawledViaAPI = !param.toString().contains("disallow_crawl_via_api=true");
+        final boolean urlCanBeCrawledViaAPI = !param.toString().contains("disallow_crawl_via_api=true") && !param.toString().matches(DropboxCom.TYPE_SC_GALLERY);
         final boolean canUseAPI = canLoginViaAPI && urlCanBeCrawledViaAPI;
         if (canUseAPI && jd.plugins.hoster.DropboxCom.useAPI()) {
             br = dummy_login_browser;
@@ -365,8 +365,9 @@ public class DropBoxCom extends PluginForDecrypt {
                     dl.setLinkID(this.getHost() + "://" + id);
                     /**
                      * 2019-09-20: TODO: Find out if it is possible to generate URLs which lead to the exact files when opening them via
-                     * browser. </br> At the moment this is a huge issue when using their API - it contains other(internal) fileIDs so we
-                     * cannot get to the corresponding public contentURLs although they do exist!
+                     * browser. </br>
+                     * At the moment this is a huge issue when using their API - it contains other(internal) fileIDs so we cannot get to the
+                     * corresponding public contentURLs although they do exist!
                      */
                     dl.setContentUrl(parameter);
                     /*
@@ -422,6 +423,49 @@ public class DropBoxCom extends PluginForDecrypt {
             }
         };
         String parameter = correctAddedURL(param.toString());
+        if (parameter.matches(DropboxCom.TYPE_SC_GALLERY)) {
+            /*
+             * 2019-09-25: Gallerys are rarely used by Dropbox Users. Basically these are folders but we cannot access them like folders and
+             * they cannot be accessed via API(?). Also downloading single objects from galleries works a bit different than files from
+             * folders.
+             */
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                final DownloadLink dl = this.createOfflinelink(parameter);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            String currentGalleryName = null;
+            try {
+                final String gallery_json = br.getRegex("InitReact\\.mountComponent\\(mod,\\s*(\\{.*?\"modules/clean/react/shared_link_collection/app\".*?\\})\\);").getMatch(0);
+                LinkedHashMap<String, Object> galleryInfo = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(gallery_json);
+                galleryInfo = (LinkedHashMap<String, Object>) galleryInfo.get("props");
+                currentGalleryName = (String) JavaScriptEngineFactory.walkJson(galleryInfo, "collection/name");
+                if (!StringUtils.isEmpty(currentGalleryName)) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(currentGalleryName);
+                    currentPackage.set(fp);
+                }
+                final ArrayList<Object> galleryElements = (ArrayList<Object>) galleryInfo.get("collectionFiles");
+                for (final Object galleryO : galleryElements) {
+                    final DownloadLink dl = this.crawlFileObject(galleryO);
+                    if (dl == null) {
+                        continue;
+                    }
+                    decryptedLinks.add(dl);
+                }
+            } catch (final Throwable e) {
+                /* Fallback - add .zip containing all elements of that gallery! This should never happen! */
+                final DownloadLink dl = this.createSingleDownloadLink(parameter);
+                if (currentGalleryName != null) {
+                    dl.setFinalFileName("Gallery - " + currentGalleryName + ".zip");
+                } else {
+                    dl.setFinalFileName("Gallery - " + new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0) + ".zip");
+                }
+                decryptedLinks.add(dl);
+            }
+            return decryptedLinks;
+        }
         /*
          * 2019-09-24: isSingleFile may sometimes be wrongt but if our URL contains 'crawl_subfolders=' we know it has been added via
          * crawler and it is definitely a folder and not a file!
@@ -452,7 +496,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 final DownloadLink dl = this.createOfflinelink(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
-            } else if (!parameter.matches(TYPE_NORMAL)) {
+            } else if (!parameter.matches(TYPES_NORMAL)) {
                 logger.warning("Decrypter broken or unsupported redirect-url: " + parameter);
                 return null;
             }
@@ -609,23 +653,9 @@ public class DropBoxCom extends PluginForDecrypt {
             if (ressourcelist_files != null) {
                 current_numberof_items += ressourcelist_files.size();
                 for (final Object o : ressourcelist_files) {
-                    entries = (LinkedHashMap<String, Object>) o;
-                    String url = (String) entries.get("href");
-                    if (StringUtils.isEmpty(url) && isSingleFileInsideFolder) {
-                        /* Fallback - this should never be required! */
-                        url = parameter;
-                    }
-                    final String filename = (String) entries.get("filename");
-                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(filename)) {
-                        return null;
-                    }
-                    final DownloadLink dl = createSingleDownloadLink(url);
+                    final DownloadLink dl = this.crawlFileObject(o);
                     if (dl == null) {
-                        return null;
-                    }
-                    if (filesize > 0) {
-                        dl.setDownloadSize(filesize);
+                        continue;
                     }
                     if (!StringUtils.isEmpty(passCode)) {
                         dl.setDownloadPassword(passCode);
@@ -638,8 +668,6 @@ public class DropBoxCom extends PluginForDecrypt {
                      * 2019-09-24: All URLs crawled via website crawler count as single files later on if we try to download them via API!
                      */
                     dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
-                    dl.setName(filename);
-                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
             }
@@ -670,6 +698,26 @@ public class DropBoxCom extends PluginForDecrypt {
             page++;
         } while (hasMore && !this.isAbort());
         return decryptedLinks;
+    }
+
+    private DownloadLink crawlFileObject(final Object fileO) {
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) fileO;
+        final String url = (String) entries.get("href");
+        final String filename = (String) entries.get("filename");
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
+        if (StringUtils.isEmpty(url) || StringUtils.isEmpty(filename)) {
+            return null;
+        }
+        final DownloadLink dl = createSingleDownloadLink(url);
+        if (dl == null) {
+            return null;
+        }
+        if (filesize > 0) {
+            dl.setDownloadSize(filesize);
+        }
+        dl.setFinalFileName(filename);
+        dl.setAvailable(true);
+        return dl;
     }
 
     public static List<Object> getFoldersList(Map<String, Object> map, boolean isShared) {

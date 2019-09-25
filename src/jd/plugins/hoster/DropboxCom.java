@@ -14,6 +14,20 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,21 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dropbox\\.com/sc/[^/]+/[^/]+|dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
     public DropboxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,7 +84,7 @@ public class DropboxCom extends PluginForHost {
 
     public static final String              TYPE_S                                           = "https?://[^/]+/(s/.+)";
     public static final String              TYPE_SH                                          = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
-    public static final String              TYPE_SC                                          = "https?://[^/]+/sc/.+";
+    public static final String              TYPE_SC_GALLERY                                  = "https?://[^/]+/sc/.+";
     private static HashMap<String, Cookies> accountMap                                       = new HashMap<String, Cookies>();
     private String                          url                                              = null;
     private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
@@ -115,12 +115,13 @@ public class DropboxCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         prepBrWebsite(br);
+        br.setFollowRedirects(true);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
-         * working just fine!
+         * also handling for 'TYPE_SC' linktype! </br>
+         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
          */
-        if (link.getPluginPatternMatcher().matches(TYPE_SC)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,7 +130,6 @@ public class DropboxCom extends PluginForHost {
             url = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
             for (int i = 0; i < 2; i++) {
                 try {
-                    br.setFollowRedirects(true);
                     con = i == 0 ? br.openHeadConnection(url) : br.openGetConnection(url);
                     if (con.getResponseCode() == 400) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -186,32 +186,21 @@ public class DropboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        String json_source = jd.plugins.decrypter.DropBoxCom.getSharedJsonSource(br);
-        final boolean isShared;
-        if (json_source != null) {
-            isShared = true;
+        if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
+            /* 2019-09-25: Do nothing, trust filename & size which was set in crawler. At this stage we know that the content is online! */
         } else {
-            isShared = false;
-            json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
-        }
-        if (json_source == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        if (link.getPluginPatternMatcher().matches(TYPE_SC)) {
-            /** TODO: Add support for single gallery objects and fix json grabbing */
-            try {
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/collectionSharedLinkInfo");
-                final String filename = (String) entries.get("displayName");
-                if (!StringUtils.isEmpty(filename)) {
-                    link.setFinalFileName("Gallery " + filename + ".zip");
-                }
-            } catch (final Throwable e) {
-                /* Fallback */
-                final String urlpart = new Regex(link.getPluginPatternMatcher(), "/sc/(.+)").getMatch(0);
-                link.setFinalFileName(urlpart + ".zip");
+            String json_source = jd.plugins.decrypter.DropBoxCom.getSharedJsonSource(br);
+            final boolean isShared;
+            if (json_source != null) {
+                isShared = true;
+            } else {
+                isShared = false;
+                json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
             }
-        } else {
+            if (json_source == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
             entries = (Map<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries, isShared).get(0);
             final String filename = (String) entries.get("filename");
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
@@ -327,9 +316,15 @@ public class DropboxCom extends PluginForHost {
          * password again! This is why it is crucial to also check for isPasswordProtectedWebsite here!!
          */
         final boolean resume_supported;
-        if (link.getPluginPatternMatcher().matches(TYPE_SC)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             /* Complete image gallery */
-            resume_supported = false;
+            if (link.getFinalFileName() != null && link.getFinalFileName().endsWith(".zip")) {
+                /* .zip containing all files of that gallery - this may only happen if the single-object crawler fails */
+                resume_supported = false;
+            } else {
+                /* Single object of a gallery (most likely picture or video) */
+                resume_supported = true;
+            }
             final String cookie_t = br.getCookie(this.getHost(), "t");
             if (cookie_t == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -510,9 +505,9 @@ public class DropboxCom extends PluginForHost {
             download_password = "";
         }
         /**
-         * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file </br> There is a serverside bug
-         * which prevents us from downloading password protected content via API. This issue has been submitted to their support 2019-09-23
-         * and we're waiting for a response.
+         * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file </br>
+         * There is a serverside bug which prevents us from downloading password protected content via API. This issue has been submitted to
+         * their support 2019-09-23 and we're waiting for a response.
          */
         final String jsonHeader = "{ \"url\": \"" + contentURL + "\", \"path\":" + serverside_path_to_file_relative + ", \"link_password\":\"" + download_password + "\"  }";
         br.getHeaders().put("Dropbox-API-Arg", jsonHeader);
@@ -792,7 +787,8 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br> false = no api_token found
+     * @return true = api_token found and set </br>
+     *         false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -891,11 +887,11 @@ public class DropboxCom extends PluginForHost {
              * can only be downloaded via API, NOT via website!
              */
             return false;
-        } else if ((useAPI() && account != null) && (isPasswordProtected(link) || link.getPluginPatternMatcher().matches(TYPE_SC))) {
+        } else if ((useAPI() && account != null) && (isPasswordProtected(link) || link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY))) {
             /* API cannot download password protected files and image gallerys atm. */
             /**
-             * 2019-09-25: Due to an API bug, password protected content is NOT downloadable via API at all! </br> TODO: Remove this once
-             * API gets updated and can handle password protected content (bug has been reported to Dropbox support!)
+             * 2019-09-25: Due to an API bug, password protected content is NOT downloadable via API at all! </br>
+             * TODO: Remove this once API gets updated and can handle password protected content (bug has been reported to Dropbox support!)
              */
             return false;
         }
