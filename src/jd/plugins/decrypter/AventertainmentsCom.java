@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.net.URL;
@@ -30,11 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" })
 public class AventertainmentsCom extends PluginForDecrypt {
-
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,7 +39,7 @@ public class AventertainmentsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        final Account aa = AccountController.getInstance().getValidAccount(getHost());
         if (aa != null) {
             jd.plugins.hoster.AventertainmentsCom.login(this.br, aa, false);
         }
@@ -66,13 +63,11 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 fpName = fpName.replace(rubbish, "");
             }
         }
-
         boolean foundScreenshot = false;
         final String screenshot_url_part = this.br.getRegex("imgs\\.aventertainments\\.com/new/bigcover/([A-Za-z0-9\\-_]+\\.jpg)\"").getMatch(0);
         final String[] screenshotRegexes = { "(https?://imgs\\.aventertainments\\.com/[^/]+/screen_shot/[^<>\"\\']+\\.jpg)", "(https?://imgs\\.aventertainments\\.com/(?:[a-z0-9]+)?/?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
         final String[] galleryRegexes = { "(https?://imgs\\.aventertainments\\.com/(?:[a-z0-9]+)?/vodimages/gallery/large/[^<>\"\\']+\\.jpg)" };
         final String[] coverRegexes = { "\"(https?://imgs\\.aventertainments\\.com/(?:[a-z0-9]+)?/bigcover/[^/]+\\.jpg)\"" };
-
         for (final String screenshotRegex : screenshotRegexes) {
             final String[] screenshots = br.getRegex(screenshotRegex).getColumn(0);
             if (screenshots != null && screenshots.length > 0) {
@@ -116,7 +111,6 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 }
             }
         }
-
         if (!foundScreenshot && screenshot_url_part != null) {
             /* E.g. for DVDs these screenshots are officially (without logging in) not available --> We can work around this limitation */
             final String screenshot_directurl = "http://imgs.aventertainments.com/new/screen_shot/" + screenshot_url_part;
@@ -128,7 +122,6 @@ public class AventertainmentsCom extends PluginForDecrypt {
             dl.setProperty("type", "screenshot");
             decryptedLinks.add(dl);
         }
-
         final String[] videos = br.getRegex("(https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx[^<>\"\\']+\\.mp4)").getColumn(0);
         if (videos != null && videos.length > 0) {
             logger.info("Found video download(s)");
@@ -154,14 +147,11 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }

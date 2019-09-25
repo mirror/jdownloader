@@ -330,7 +330,7 @@ public class FileFactory extends PluginForHost {
             return false;
         }
         if (useAPI.get()) {
-            final Account account = AccountController.getInstance().getValidAccount(this);
+            final Account account = AccountController.getInstance().getValidAccount(getHost());
             final String apiKey = account != null ? getApiKey(account) : null;
             if (!StringUtils.isEmpty(apiKey)) {
                 checkLinks_API(urls, account, apiKey);
