@@ -40,7 +40,6 @@ import jd.plugins.Account.AccountPropertyChangeHandler;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountProperty;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -78,11 +77,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
-    };
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -747,11 +746,6 @@ public class AccountController implements AccountControllerListener, AccountProp
         } else {
             return null;
         }
-    }
-
-    @Deprecated
-    public Account getValidAccount(final PluginForDecrypt pluginForDecrypt) {
-        return getValidAccount(pluginForDecrypt.getHost());
     }
 
     public ArrayList<Account> getValidAccounts(final String host) {

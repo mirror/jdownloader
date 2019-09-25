@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.logging2.LogSource;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -19,6 +16,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
 public class PornCom extends PluginForDecrypt {
@@ -33,7 +33,7 @@ public class PornCom extends PluginForDecrypt {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
+        final Account aa = AccountController.getInstance().getValidAccount(getHost());
         if (aa != null) {
             try {
                 jd.plugins.hoster.PornCom.login(br, aa, false);

@@ -50,7 +50,7 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
         if (StringUtils.isEmpty(course)) {
             return ret;
         }
-        Account account = AccountController.getInstance().getValidAccount(this);
+        Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
             try {
                 PluralsightCom.login(account, br, this, false);
