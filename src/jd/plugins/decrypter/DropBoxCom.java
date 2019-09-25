@@ -148,12 +148,13 @@ public class DropBoxCom extends PluginForDecrypt {
         boolean is_single_file = false;
         String path;
         if (jd.plugins.hoster.DropboxCom.isSingleFile(parameter)) {
-            /* This is crucial!! */
-            path = "null";
+            /* This is crucial to access single files!! */
+            path = null;
             is_root = true;
             is_single_file = true;
         } else {
             if (last_path != null) {
+                /* Folder */
                 /*
                  * Important! For the API to accept this we only need the path relative to our last folder so we'll have to filter this out
                  * of the full path!
@@ -162,26 +163,17 @@ public class DropBoxCom extends PluginForDecrypt {
                 path = path_relative_to_parent_folder;
                 is_root = false;
             } else {
-                /* Root */
-                path = "/";
+                /* Folder-root or single file in folder */
+                path = null;
                 is_root = true;
             }
             /* Fix json value */
-            path = "\"" + path + "\"";
+            // path = "\"" + path + "\"";
         }
         String passCode = param.getDecrypterPassword();
         String error_summary = null;
         boolean url_is_password_protected = !StringUtils.isEmpty(passCode);
-        boolean continue_reason = false;
-        /*
-         * 2019-09-24: For single files, we have to set path to "null" but in some cases, we cannot detect single files simply by looking at
-         * the URL. This workaround exists to solve this issue!
-         */
-        final boolean enable_file_folder_workaround = true;
-        /**
-         * 2019-09-24: TODO: 'link_password' does not yet work for this request! Also "recursive":true will not work for the 'list_folder'
-         * request although this would be useful here! Waiting for answer of their support ...
-         */
+        /** 2019-09-25: */
         final boolean enable_password_protected_workaround = true;
         int counter = 0;
         do {
@@ -197,7 +189,12 @@ public class DropBoxCom extends PluginForDecrypt {
                  * when accessing items of a folder it is not possible to get the name of the current folder and we want that - so we'll
                  * always do this request!
                  */
-                br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", "{\"url\":\"" + parameter + "\",\"path\":" + path + ",\"link_password\":\"" + passCode + "\"}");
+                String postdata_get_shared_link_metadata = "{\"url\":\"" + parameter + "\"";
+                if (path != null) {
+                    postdata_get_shared_link_metadata += ",\"path\":\"" + path + "\"";
+                }
+                postdata_get_shared_link_metadata += ",\"link_password\":\"" + passCode + "\"}";
+                br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", postdata_get_shared_link_metadata);
                 error_summary = jd.plugins.hoster.DropboxCom.getErrorSummaryField(this.br);
                 if (error_summary != null) {
                     if (error_summary.contains("shared_link_access_denied")) {
@@ -206,22 +203,13 @@ public class DropBoxCom extends PluginForDecrypt {
                         /* Reset just in case we had a given password and that was wrong. Ask the user for the password now! */
                         passCode = null;
                         continue;
-                    } else if (enable_file_folder_workaround) {
-                        logger.info("Trying file_folder_workaround");
-                        path = "null";
-                        is_root = true;
-                        is_single_file = true;
-                        continue_reason = true;
-                        continue;
                     }
-                } else {
-                    continue_reason = false;
                 }
                 break;
             } finally {
                 counter++;
             }
-        } while ((url_is_password_protected || continue_reason) && counter <= 3);
+        } while (url_is_password_protected && counter <= 3);
         ArrayList<Object> ressourcelist = new ArrayList<Object>();
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String object_type = (String) entries.get(".tag");
@@ -257,23 +245,31 @@ public class DropBoxCom extends PluginForDecrypt {
             ressourcelist.add(entries);
         } else {
             /* Folder */
-            if (path.equals("/") || path.equals("\"/\"")) {
-                /*
-                 * 2019-09-20: For this call, "/" is not accepted to get the root folder although their API 'knows what we want'. This is
-                 * really strange but okay. Error when used with wrong value: "Error in call to API function "files/
-                 * list_folder": request body: path: Specify the root folder as an empty string rather than as "/"."
-                 */
-                path = "\"\"";
-            }
             if (url_is_password_protected && enable_password_protected_workaround) {
-                logger.info("Adding URL again to be crawled via website handling because API has issues with password protected URLs");
+                logger.info("Adding URL again to be crawled via website handling because an API bug prevents downloads of password protected content");
                 final DownloadLink dl = super.createDownloadlink(parameter + "?disallow_crawl_via_api=true");
                 /* We already know the correct password! Store it so we do not have to ask the user again :) */
                 dl.setDownloadPassword(passCode);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", "{\"path\":" + path + ",\"shared_link\": {\"url\":\"" + parameter + "\"},\"recursive\":false}");
+            String postdata_shared_link = "\"shared_link\": {\"url\":\"" + parameter + "\"";
+            if (url_is_password_protected) {
+                postdata_shared_link += ",\"password\":\"" + passCode + "\"";
+            }
+            postdata_shared_link += "}";
+            /* 2019-09-25: Requested 'recursive' to work for shared URLs as well (currently only working for 'local files'). */
+            /* Default API values: recursive=false, include_deleted=false */
+            String postdata_list_folder = "{" + postdata_shared_link + ",\"recursive\":false,\"include_deleted\":false";
+            if (path == null) {
+                /* "" = root of a folder */
+                postdata_list_folder += ",\"path\":\"\"";
+            } else {
+                /* Request specified path */
+                postdata_list_folder += ",\"path\":\"" + path + "\"";
+            }
+            postdata_list_folder += "}";
+            br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", postdata_list_folder);
         }
         int page = 0;
         do {
@@ -363,12 +359,6 @@ public class DropBoxCom extends PluginForDecrypt {
                     dl.setProperty(DropboxCom.PROPERTY_MAINPAGE, parameter);
                     // dl.setProperty("serverside_path_full", serverside_path_full);
                     dl.setLinkID(this.getHost() + "://" + id);
-                    /**
-                     * 2019-09-20: TODO: Find out if it is possible to generate URLs which lead to the exact files when opening them via
-                     * browser. </br>
-                     * At the moment this is a huge issue when using their API - it contains other(internal) fileIDs so we cannot get to the
-                     * corresponding public contentURLs although they do exist!
-                     */
                     dl.setContentUrl(parameter);
                     /*
                      * 2019-09-20: It can happen that single files inside a folder are offline although according to this API they are
