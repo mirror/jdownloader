@@ -55,7 +55,7 @@ public class VoirFilms extends PluginForDecrypt {
                     if (redirect != null) {
                         decryptedLinks.add(createDownloadlink(redirect));
                     } else {
-                        final String refresh = brc.getRegex("<META\\s*HTTP-EQUIV\\s*=\\s*\"Refresh\"\\s*CONTENT\\s*=\"\\d+; URL=(https?://[^<>\"']+)\"").getMatch(0);
+                        final String refresh = brc.getRegex("<META\\s*HTTP-EQUIV\\s*=\\s*\"Refresh\"\\s*CONTENT\\s*=\"\\d+;\\s*URL\\s*=\\s*(https?://[^<>\"']+)\"").getMatch(0);
                         if (refresh != null) {
                             decryptedLinks.add(createDownloadlink(refresh));
                         } else {
