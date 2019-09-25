@@ -14,18 +14,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -44,6 +32,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dropbox\\.com/sc/[^/]+/[^/]+|dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -115,8 +116,8 @@ public class DropboxCom extends PluginForHost {
         prepBrWebsite(br);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br>
-         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
+         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
+         * working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC)) {
             br.getPage(link.getPluginPatternMatcher());
@@ -508,9 +509,9 @@ public class DropboxCom extends PluginForHost {
             download_password = "";
         }
         /**
-         * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file </br>
-         * There is a serverside bug which prevents us from downloading password protected content via API. This issue has been submitted to
-         * their support 2019-09-23 and we're waiting for a response.
+         * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file </br> There is a serverside bug
+         * which prevents us from downloading password protected content via API. This issue has been submitted to their support 2019-09-23
+         * and we're waiting for a response.
          */
         final String jsonHeader = "{ \"url\": \"" + contentURL + "\", \"path\":" + serverside_path_to_file_relative + ", \"link_password\":\"" + download_password + "\"  }";
         br.getHeaders().put("Dropbox-API-Arg", jsonHeader);
@@ -790,8 +791,7 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br>
-     *         false = no api_token found
+     * @return true = api_token found and set </br> false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -820,14 +820,23 @@ public class DropboxCom extends PluginForHost {
     }
 
     /** Also called App-key and can be found here: https://www.dropbox.com/developers/apps */
-    private String getAPIClientID() {
-        return "j0mjfuvazxa9ye4";
+    private String getAPIClientID() throws PluginException {
+        try {
+            final String[] dropBox = (String[]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("DropBox").invoke(null);
+            return dropBox[0];
+        } catch (Throwable e) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+        }
     }
 
     /** Can be found here: https://www.dropbox.com/developers/apps */
-    private String getAPISecret() {
-        /* 2019-09-19: We do not really have good ways to hide such things in the JDownloader project ... */
-        return Encoding.Base64Decode("ZGF3eDYzdmVrdDUybmVo");
+    private String getAPISecret() throws PluginException {
+        try {
+            final String[] dropBox = (String[]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("DropBox").invoke(null);
+            return Encoding.Base64Decode(dropBox[1]);
+        } catch (Throwable e) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+        }
     }
 
     private Thread showOauthLoginInformation(final String auth_url) {
@@ -884,8 +893,8 @@ public class DropboxCom extends PluginForHost {
         } else if ((useAPI() && account != null) && (isPasswordProtected(link) || link.getPluginPatternMatcher().matches(TYPE_SC))) {
             /* API cannot download password protected files and image gallerys atm. */
             /**
-             * 2019-09-25: Due to an API bug, password protected content is NOT downloadable via API at all! </br>
-             * TODO: Remove this once API gets updated and can handle password protected content (bug has been reported to Dropbox support!)
+             * 2019-09-25: Due to an API bug, password protected content is NOT downloadable via API at all! </br> TODO: Remove this once
+             * API gets updated and can handle password protected content (bug has been reported to Dropbox support!)
              */
             return false;
         }
