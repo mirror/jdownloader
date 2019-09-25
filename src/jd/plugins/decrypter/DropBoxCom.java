@@ -40,7 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DropboxCom;
-import jd.utils.JDUtilities;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -79,7 +78,7 @@ public class DropBoxCom extends PluginForDecrypt {
             subFolder = "";
         }
         final ArrayList<DownloadLink> decryptedLinks;
-        final Account account = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
         /*
          * Do not set API headers on main browser object because if we use website crawler for some reason and have API login headers set
          * we'll run into problems for sure!

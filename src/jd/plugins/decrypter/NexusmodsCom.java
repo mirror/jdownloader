@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,6 +34,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)[^/]+/mods/\\d+/?" })
 public class NexusmodsCom extends PluginForDecrypt {
     public NexusmodsCom(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class NexusmodsCom extends PluginForDecrypt {
         ((jd.plugins.hoster.NexusmodsCom) plugin).setLogger(getLogger());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setBrowser(br);
         final String fid = ((jd.plugins.hoster.NexusmodsCom) plugin).getFID(parameter);
-        final Account account = AccountController.getInstance().getValidAccount(plugin);
+        final Account account = AccountController.getInstance().getValidAccount(plugin.getHost());
         if (account != null) {
             try {
                 ((jd.plugins.hoster.NexusmodsCom) plugin).login(account);

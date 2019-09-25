@@ -108,7 +108,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         synchronized (ctrlLock) {
             /* Login if account available */
             final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");
-            Account aa = AccountController.getInstance().getValidAccount(dailymotionHosterplugin);
+            Account aa = AccountController.getInstance().getValidAccount(getHost());
             if (aa != null) {
                 try {
                     ((jd.plugins.hoster.DailyMotionCom) dailymotionHosterplugin).login(aa, this.br);
