@@ -2801,17 +2801,17 @@ public class LinkCrawler {
     private void forwardCryptedLinkInfos(final CrawledLink sourceCrawledLink, final CryptedLink destCryptedLink) {
         if (sourceCrawledLink != null && destCryptedLink != null) {
             String pw = null;
-            final CrawledLink sourceCrawledLink2 = sourceCrawledLink.getSourceLink();
-            if (sourceCrawledLink2 != null && sourceCrawledLink2.getDownloadLink() != null) {
-                pw = sourceCrawledLink2.getDownloadLink().getDownloadPassword();
+            final DownloadLink latestDownloadLink = getLatestDownloadLink(sourceCrawledLink);
+            if (latestDownloadLink != null) {
+                pw = latestDownloadLink.getDownloadPassword();
             }
-            final CryptedLink sourceCryptedLink = getLatestCryptedLink(sourceCrawledLink);
-            if (sourceCryptedLink != null) {
-                if (pw == null) {
-                    pw = sourceCryptedLink.getDecrypterPassword();
+            if (StringUtils.isEmpty(pw)) {
+                final CryptedLink latestCryptedLink = getLatestCryptedLink(sourceCrawledLink);
+                if (latestCryptedLink != null) {
+                    pw = latestCryptedLink.getDecrypterPassword();
                 }
             }
-            if (pw == null && LinkCrawler.this instanceof JobLinkCrawler && ((JobLinkCrawler) LinkCrawler.this).getJob() != null) {
+            if (StringUtils.isEmpty(pw) && LinkCrawler.this instanceof JobLinkCrawler && ((JobLinkCrawler) LinkCrawler.this).getJob() != null) {
                 pw = ((JobLinkCrawler) LinkCrawler.this).getJob().getCrawlerPassword();
             }
             destCryptedLink.setDecrypterPassword(pw);
