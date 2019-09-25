@@ -17,20 +17,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voirfilms.ec" }, urls = { "https?://(?:www\\.)?voirfilms\\.ec/[^/]+\\.html?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voirfilms.ec" }, urls = { "https?://(?:\\w+\\.)?voirfilms\\.ec/[^/]+\\.html?" })
 public class VoirFilms extends PluginForDecrypt {
     public VoirFilms(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,14 +48,23 @@ public class VoirFilms extends PluginForDecrypt {
             for (String link : links) {
                 link = Encoding.htmlDecode(link);
                 if (link.contains("/video.php?")) {
-                    final Browser br2 = br.cloneBrowser();
-                    br2.getPage(link);
-                    String linkRedirect = br2.getRedirectLocation();
-                    String[] contentLinks = HTMLParser.getHttpLinks(StringUtils.valueOrEmpty(br2.getRegex("<meta[^>]+http-equiv\\s*=\\s*\"refresh\"([^>]+)>").getMatch(0)), null);
-                    String linkContent = contentLinks.length > 0 ? contentLinks[0] : null;
-                    link = firstNotEmpty(linkRedirect, linkContent, link);
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(false);
+                    brc.getPage(link);
+                    final String redirect = brc.getRedirectLocation();
+                    if (redirect != null) {
+                        decryptedLinks.add(createDownloadlink(redirect));
+                    } else {
+                        final String refresh = brc.getRegex("<META\\s*HTTP-EQUIV\\s*=\\s*\"Refresh\"\\s*CONTENT\\s*=\"\\d+; URL=(https?://[^<>\"']+)\"").getMatch(0);
+                        if (refresh != null) {
+                            decryptedLinks.add(createDownloadlink(refresh));
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                } else {
+                    decryptedLinks.add(createDownloadlink(link));
                 }
-                decryptedLinks.add(createDownloadlink(link));
             }
         }
         if (fpName != null) {
@@ -65,14 +73,5 @@ public class VoirFilms extends PluginForDecrypt {
             filePackage.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    public static String firstNotEmpty(String... strings) {
-        for (String s : strings) {
-            if (StringUtils.isNotEmpty(s)) {
-                return s;
-            }
-        }
-        return null;
     }
 }
