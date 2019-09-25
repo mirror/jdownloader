@@ -239,6 +239,7 @@ controller_packages_defaultname=Diversos
 convert_CLR_Reconnect_to_jdownloader=Converter script de reconexão Cryptload (*.clr) para o LiveHeader do JDownloader
 decrypter_invalidaccount=Nenhuma conta válida encontrada
 decrypter_plugindefect=Detectar plugin
+decrypter_pluginsettings=Verificar Configurações do Plugin
 decrypter_unknownerror=Erro desconhecido
 decrypter_wrongcaptcha=Código captcha errado
 decrypter_wrongpassword=Senha errada
