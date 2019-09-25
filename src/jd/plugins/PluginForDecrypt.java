@@ -138,6 +138,27 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Use this when e.g. crawling folders & subfolders from cloud-services. </br>
+     * Use this to find the last set download e.g. if the first folder is password protected and contains more files/folders they will
+     * usually be protected with the same user but we only want to ask the user for it once.
+     */
+    protected final String getPreSetDownloadLinkPassword() {
+        String linkPassword = null;
+        CrawledLink current = getCurrentLink();
+        while (current != null) {
+            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
+                final String currentDownloadLinkLinkPassword = current.getDownloadLink().getDownloadPassword();
+                if (currentDownloadLinkLinkPassword != null) {
+                    linkPassword = currentDownloadLinkLinkPassword;
+                }
+                break;
+            }
+            current = current.getSourceLink();
+        }
+        return linkPassword;
+    }
+
+    /**
+     * Use this when e.g. crawling folders & subfolders from cloud-services. </br>
      * Use this to find the last path in order to continue to build the path until all subfolders are crawled.
      */
     protected final String getAdoptedCloudFolderStructure() {
