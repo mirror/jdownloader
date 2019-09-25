@@ -84,9 +84,10 @@ public class DropboxCom extends PluginForHost {
 
     public static final String              TYPE_S                                           = "https?://[^/]+/(s/.+)";
     public static final String              TYPE_SH                                          = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
+    /* 2019-09-26: API does currently not support this kind of URL. A feature request to support those has been forwarded! */
     public static final String              TYPE_SC_GALLERY                                  = "https?://[^/]+/sc/.+";
     private static HashMap<String, Cookies> accountMap                                       = new HashMap<String, Cookies>();
-    private String                          url                                              = null;
+    private String                          dllink                                           = null;
     private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
     public static final String              API_BASE                                         = "https://api.dropboxapi.com/2";
     private static final String             API_BASE_CONTENT                                 = "https://content.dropboxapi.com/2";
@@ -102,7 +103,7 @@ public class DropboxCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        url = null;
+        dllink = null;
         temp_unavailable_file_generates_too_much_traffic = false;
         br = new Browser();
         /*
@@ -127,10 +128,10 @@ public class DropboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            url = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
+            dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
             for (int i = 0; i < 2; i++) {
                 try {
-                    con = i == 0 ? br.openHeadConnection(url) : br.openGetConnection(url);
+                    con = i == 0 ? br.openHeadConnection(dllink) : br.openGetConnection(dllink);
                     if (con.getResponseCode() == 400) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (con.getResponseCode() == 403) {
@@ -144,7 +145,8 @@ public class DropboxCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
                     }
                     if (!con.getContentType().contains("html")) {
-                        link.setProperty("directlink", con.getURL().toString());
+                        dllink = con.getURL().toString();
+                        link.setProperty("directlink", dllink);
                         link.setVerifiedFileSize(con.getLongContentLength());
                         String name = getFileNameFromHeader(con);
                         if (!StringUtils.isEmpty(name)) {
@@ -154,7 +156,8 @@ public class DropboxCom extends PluginForHost {
                         return AvailableStatus.TRUE;
                     }
                     if (br.getURL().contains("/speedbump/")) {
-                        url = br.getURL().replace("/speedbump/", "/speedbump/dl/");
+                        /* 2019-09-26: TODO: Check this - this should only happen for executable files in some cases */
+                        dllink = br.getURL().replace("/speedbump/", "/speedbump/dl/");
                     }
                     if (isPasswordProtectedWebsite(br)) {
                         /* Password handling is located in download handling */
@@ -168,17 +171,12 @@ public class DropboxCom extends PluginForHost {
                     }
                 }
             }
-            url = link.getPluginPatternMatcher();
-            /* Either offline or password protected */
-            br.getPage(url);
             if (this.br.getHttpConnection().getResponseCode() == 429) {
                 /* 2017-01-30 */
                 temp_unavailable_file_generates_too_much_traffic = true;
                 return AvailableStatus.TRUE;
             }
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (this.br.containsHTML("images/sharing/error_")) {
+            if (this.br.containsHTML("images/sharing/error_")) {
                 /* Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (this.br.containsHTML("/images/precaution")) {
@@ -189,26 +187,26 @@ public class DropboxCom extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             /* 2019-09-25: Do nothing, trust filename & size which was set in crawler. At this stage we know that the content is online! */
         } else {
-            String json_source = jd.plugins.decrypter.DropBoxCom.getSharedJsonSource(br);
-            final boolean isShared;
-            if (json_source != null) {
-                isShared = true;
-            } else {
-                isShared = false;
-                json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
-            }
-            if (json_source == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (Map<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries, isShared).get(0);
-            final String filename = (String) entries.get("filename");
-            final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
-            if (filesize > 0) {
-                link.setDownloadSize(filesize);
-            }
-            if (!StringUtils.isEmpty(filename)) {
-                link.setName(filename);
+            try {
+                String json_source = jd.plugins.decrypter.DropBoxCom.getSharedJsonSource(br);
+                final boolean isShared;
+                if (json_source != null) {
+                    isShared = true;
+                } else {
+                    isShared = false;
+                    json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
+                }
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                entries = (Map<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries, isShared).get(0);
+                final String filename = (String) entries.get("filename");
+                final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
+                if (filesize > 0) {
+                    link.setDownloadSize(filesize);
+                }
+                if (!StringUtils.isEmpty(filename)) {
+                    link.setName(filename);
+                }
+            } catch (final Throwable e) {
             }
         }
         return AvailableStatus.TRUE;
@@ -301,8 +299,8 @@ public class DropboxCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         String passCode = link.getDownloadPassword();
-        String t1 = new Regex(link.getPluginPatternMatcher(), "://(.*?):.*?@").getMatch(0);
-        String t2 = new Regex(link.getPluginPatternMatcher(), "://.*?:(.*?)@").getMatch(0);
+        final String t1 = new Regex(link.getPluginPatternMatcher(), "://(.*?):.*?@").getMatch(0);
+        final String t2 = new Regex(link.getPluginPatternMatcher(), "://.*?:(.*?)@").getMatch(0);
         if (t1 != null && t2 != null) {
             handlePremium(link, null);
             return;
@@ -331,6 +329,7 @@ public class DropboxCom extends PluginForHost {
             }
             final Form dlform = new Form();
             dlform.setMethod(MethodType.POST);
+            /** 2019-09-26: TODO: Maybe use this for all types of URLs */
             dlform.setAction("https://www." + this.getHost() + "/sharing/fetch_user_content_link");
             dlform.put("is_xhr", "true");
             dlform.put("t", cookie_t);
@@ -341,8 +340,8 @@ public class DropboxCom extends PluginForHost {
              * https://dl-web.dropbox.com/zip_collection/<value1>/<value2>
              */
             br.submitForm(dlform);
-            url = br.toString();
-            if (!url.startsWith("http")) {
+            dllink = br.toString();
+            if (!dllink.startsWith("http")) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -388,15 +387,15 @@ public class DropboxCom extends PluginForHost {
                 link.setProperty(PROPERTY_PASSWORD_COOKIE, password_cookie);
             }
             link.setDownloadPassword(passCode);
-            this.br.getPage(link.getPluginPatternMatcher());
-            url = br.getURL("?dl=1").toString();
+            this.br.getPage(this.getRootFolderURL(link, link.getPluginPatternMatcher()));
+            dllink = br.getURL("?dl=1").toString();
         } else {
             resume_supported = true;
-            if (url == null) {
-                url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "&dl=1");
+            if (dllink == null) {
+                dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "&dl=1");
             }
         }
-        handleDownload(link, url, resume_supported);
+        handleDownload(link, dllink, resume_supported);
     }
 
     private void handleDownload(final DownloadLink link, final String dllink, final boolean resume) throws Exception {
@@ -472,7 +471,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     private String getDllinkAccountWebsite(final Account account, final DownloadLink link) throws Exception {
-        String dlURL = link.getPluginPatternMatcher();
+        String dlURL = this.getRootFolderURL(link, link.getPluginPatternMatcher());
         /* website downloads */
         loginWebsite(account, false);
         if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
@@ -505,9 +504,7 @@ public class DropboxCom extends PluginForHost {
             download_password = "";
         }
         /**
-         * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file </br>
-         * There is a serverside bug which prevents us from downloading password protected content via API. This issue has been submitted to
-         * their support 2019-09-23 and we're waiting for a response.
+         * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
          */
         final String jsonHeader = "{ \"url\": \"" + contentURL + "\", \"path\":" + serverside_path_to_file_relative + ", \"link_password\":\"" + download_password + "\"  }";
         br.getHeaders().put("Dropbox-API-Arg", jsonHeader);
@@ -519,13 +516,17 @@ public class DropboxCom extends PluginForHost {
             final String error_summary = getErrorSummaryField(this.br);
             if (error_summary.contains("shared_link_access_denied")) {
                 /*
-                 * Request password and check it on the next retry. This is a rare case because at least if the user adds URLÖs via crawler
-                 * + API, he will already have entered the correct password by now!
+                 * Request password and check it on the next retry. This is a rare case because at least if the user adds URLs via crawler +
+                 * API, he will already have entered the correct password by now!
                  */
                 logger.info("URL is either password protected or user is lacking the rights to view it");
                 link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
                 final boolean enable_password_protected_workaround = true;
                 if (enable_password_protected_workaround) {
+                    /**
+                     * 2019-09-25: official Dropbox staff confirmed this API bug: Downloads of password protected content via APIv2 is not
+                     * possible at the moment.
+                     */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rights missing or password protected", 1 * 60 * 60 * 1000l);
                 } else {
                     download_password = getUserInput("Password?", link);
@@ -534,7 +535,6 @@ public class DropboxCom extends PluginForHost {
                 }
             }
             handleAPIErrors();
-            /** TODO: Improve errorhandling */
             final URLConnectionAdapter con = dl.getConnection();
             handleAPIResponseCodes(con.getResponseCode());
             br.followConnection();
@@ -544,13 +544,15 @@ public class DropboxCom extends PluginForHost {
         dl.startDownload();
     }
 
+    /** Handles download-API-errors */
     private void handleAPIErrors() throws PluginException {
         final String error_summary = getErrorSummaryField(this.br);
         if (!StringUtils.isEmpty(error_summary)) {
             if (error_summary.contains("shared_link_not_found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                logger.warning("Unknown API error occured");
+                /* For all other errors, just wait and retry */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error: " + error_summary);
             }
         }
     }
