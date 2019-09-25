@@ -31,7 +31,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.config.BrazzersConfigInterface;
@@ -55,7 +57,8 @@ public class BrazzersCom extends PluginForDecrypt {
         final ArrayList<String> all_selected_qualities = new ArrayList<String>();
         final BrazzersConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.BrazzersConfigInterface.class);
         final String parameter = param.toString();
-        final Account aa = AccountController.getInstance().getValidAccount(getHost());
+        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final Account aa = AccountController.getInstance().getValidAccount(plg.getHost());
         final String fid = new Regex(parameter, "(?:view|hqpics|id|embed|episode)/(\\d+)/?").getMatch(0);
         final boolean grabBEST = cfg.isGrabBESTEnabled();
         final boolean grab1080p = cfg.isGrabHTTPMp4_1080pEnabled();
