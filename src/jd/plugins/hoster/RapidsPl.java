@@ -396,7 +396,9 @@ public class RapidsPl extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                dumpAccountInfos(account);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    dumpAccountInfos(account);
+                }
                 throw e;
             }
         }
