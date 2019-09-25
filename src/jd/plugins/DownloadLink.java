@@ -1034,27 +1034,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
-        final AbstractNodeNotifier pl = propertyListener;
+        final AbstractNodeNotifier pl = getNodeChangeListener();
         if (pl != null) {
             pl.nodeUpdated(this, notify, param);
             return;
-        }
-        final AbstractNodeNotifier pl2 = filePackage;
-        if (pl2 != null) {
-            pl2.nodeUpdated(this, notify, param);
+        } else {
+            final AbstractNodeNotifier pl2 = filePackage;
+            if (pl2 != null) {
+                pl2.nodeUpdated(this, notify, param);
+                return;
+            }
         }
     }
 
     public boolean hasNotificationListener() {
-        AbstractNodeNotifier pl = propertyListener;
-        if (pl != null && pl.hasNotificationListener()) {
-            return true;
-        }
-        pl = filePackage;
-        if (pl != null && pl.hasNotificationListener()) {
-            return true;
-        }
-        return false;
+        final AbstractNodeNotifier pl = getNodeChangeListener();
+        final AbstractNodeNotifier pl2 = filePackage;
+        return (pl != null && pl.hasNotificationListener()) || (pl2 != null && pl2.hasNotificationListener());
     }
 
     public void reset(List<PluginForHost> resetPlugins) {

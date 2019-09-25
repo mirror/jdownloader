@@ -24,24 +24,20 @@ import org.jdownloader.extensions.extraction.ExtractionQueue;
 
 public class LogController extends LogSourceProvider {
     private static final LogController                     INSTANCE = new LogController();
-
     /**
      * GL = Generic Logger, returns a shared Logger for name JDownloader
      */
     public static LogSource                                TRASH    = new LogSource("Trash") {
+                                                                        @Override
+                                                                        public synchronized void log(LogRecord record) {
+                                                                            /* trash */
+                                                                        }
 
-        @Override
-        public synchronized void log(LogRecord record) {
-            /* trash */
-        }
-
-        @Override
-        public String toString() {
-            return "Log > /dev/null!";
-        }
-
-    };
-
+                                                                        @Override
+                                                                        public String toString() {
+                                                                            return "Log > /dev/null!";
+                                                                        }
+                                                                    };
     private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 
     /**
@@ -76,11 +72,12 @@ public class LogController extends LogSourceProvider {
     }
 
     public static LogSource CL(boolean allowRebirthLogger) {
-        LogSource ret = null;
+        final LogSource ret;
         if (allowRebirthLogger && (ret = getRebirthLogger()) != null) {
             return ret;
+        } else {
+            return getInstance().getCurrentClassLogger();
         }
-        return getInstance().getCurrentClassLogger();
     }
 
     public static LogSource getRebirthLogger() {
@@ -123,7 +120,7 @@ public class LogController extends LogSourceProvider {
             }
         }
         if (logger != null && logger instanceof LogSource) {
-            LogSource ret = (LogSource) logger;
+            final LogSource ret = (LogSource) logger;
             return ret;
         }
         return null;
@@ -133,24 +130,27 @@ public class LogController extends LogSourceProvider {
         if (fallbackLogger == null) {
             throw new IllegalArgumentException("fallbackLogger is null");
         }
-        LogInterface ret = getRebirthLogger();
+        final LogInterface ret = getRebirthLogger();
         if (ret == null) {
-            ret = fallbackLogger;
+            return fallbackLogger;
+        } else {
+            return ret;
         }
-        return ret;
     }
 
     public static synchronized void setRebirthLogger(LogSource logger) {
-        Thread currentThread = Thread.currentThread();
-        WeakHashMap<Thread, LogSource> newMap = new WeakHashMap<Thread, LogSource>(map);
-        if (logger == null) {
-            if (newMap.remove(currentThread) == null) {
-                return;
-            }
+        final Thread currentThread = Thread.currentThread();
+        if (logger == null && !map.containsKey(currentThread)) {
+            return;
         } else {
-            newMap.put(currentThread, logger);
+            final WeakHashMap<Thread, LogSource> newMap = new WeakHashMap<Thread, LogSource>(map);
+            if (logger == null) {
+                newMap.remove(currentThread);
+            } else {
+                newMap.put(currentThread, logger);
+            }
+            map = newMap;
         }
-        map = newMap;
     }
 
     @Override
@@ -216,11 +216,9 @@ public class LogController extends LogSourceProvider {
                     }
                 }
             }
-
         };
         ret.setMaxSizeInMemory(256 * 1024);
         ret.setAllowTimeoutFlush(false);
         return ret;
     }
-
 }

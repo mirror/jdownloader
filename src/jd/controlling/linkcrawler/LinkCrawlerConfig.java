@@ -49,7 +49,7 @@ public interface LinkCrawlerConfig extends ConfigInterface {
 
     void setDeepDecryptFileSizeLimit(int l);
 
-    @DefaultStringArrayValue({ "PLUGIN_DEFECT", "CAPTCHA", "NO_ACCOUNT", "PASSWORD" })
+    @DefaultStringArrayValue({ "CAPTCHA", "NO_ACCOUNT", "PLUGIN_DEFECT", "PLUGIN_SETTINGS", "PASSWORD" })
     @AboutConfig
     @DescriptionForConfigEntry("Add a retry task for following crawling errors")
     String[] getAddRetryCrawlerTasks();

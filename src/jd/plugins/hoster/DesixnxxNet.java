@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?desixnxx\\.net/[a-z0-9\\-]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "desixnxxdecrypted://(?:www\\.)?desixnxx2?\\.net/[a-z0-9\\-]+/" })
 public class DesixnxxNet extends PluginForHost {
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);

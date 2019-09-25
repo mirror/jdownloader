@@ -114,6 +114,11 @@ public class Up4everCom extends XFileSharingProBasic {
         return buildSupportedNames(getPluginDomains());
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        return rewriteHost(getPluginDomains(), host, (String[]) null);
+    }
+
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {

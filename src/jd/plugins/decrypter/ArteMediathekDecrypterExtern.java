@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -35,17 +34,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" })
 public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
-
     private static final String           EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
-
     private static final String           TYPE_CREATIVE                               = "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+";
-
     private static final String           V_NORMAL                                    = "V_NORMAL";
     private static final String           V_SUBTITLED                                 = "V_SUBTITLED";
     private static final String           V_SUBTITLE_DISABLED_PEOPLE                  = "V_SUBTITLE_DISABLED_PEOPLE";
@@ -61,16 +56,13 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     private static final String           LOAD_LANGUAGE_FRENCH                        = "LOAD_LANGUAGE_FRENCH";
     private static final String           THUMBNAIL                                   = "THUMBNAIL";
     private static final String           FAST_LINKCHECK                              = "FAST_LINKCHECK";
-
     private static final short            format_intern_german                        = 1;
     private static final short            format_intern_french                        = 2;
     private static final short            format_intern_subtitled                     = 3;
     private static final short            format_intern_subtitled_for_disabled_people = 4;
     private static final short            format_intern_audio_description             = 5;
     private static final short            format_intern_unknown                       = 6;
-
     final String[]                        formats                                     = { http_extern_1000, hls_extern_250, hls_extern_500, hls_extern_1000, hls_extern_2000, hls_extern_4000 };
-
     private final ArrayList<DownloadLink> decryptedLinks                              = new ArrayList<DownloadLink>();
     private String                        parameter;
     private String                        plain_domain_decrypter                      = null;
@@ -94,8 +86,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        /* Load host plugin to access some static methods later */
-        JDUtilities.getPluginForHost("arte.tv");
         int foundFormatsNum = 0;
         parameter = param.toString();
         ArrayList<String> selectedFormats = new ArrayList<String>();
@@ -108,7 +98,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String hybridAPIUrl = null;
         fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -167,7 +156,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                 /* One packagename for every language */
                 fp = FilePackage.getInstance();
                 fp.setName(title);
-
                 for (final Object o : vsr_quals) {
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
                     final String quality = (String) qualitymap.get("quality");
@@ -181,9 +169,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                         continue;
                     }
                     foundFormatsNum++;
-
                 }
-
                 /* Build a list of selected formats */
                 for (final String format : formats) {
                     if (cfg.getBooleanProperty(format, false)) {
@@ -200,17 +186,14 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
                         if (cfg.getBooleanProperty(V_AUDIO_DESCRIPTION, false)) {
                             selectedFormats.add(selectedLanguage + "_5_" + format);
                         }
-
                     }
                 }
             }
-
             /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
             if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
                 title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-
             /* Check if user wants to download the thumbnail as well. */
             if (cfg.getBooleanProperty(THUMBNAIL, false) && thumbnailUrl != null) {
                 final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
@@ -231,7 +214,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             }
             throw e;
         }
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
@@ -270,7 +252,6 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             // "_" + versionLibelle + "_" + versionShortLibelle + "_" + get_user_format_from_format_code(format_code) + "_" +
             // videoresolution + "_" + videoBitrate + ".mp4";
             /* TODO: Add formatted date,versionCode,versionLibelle and versionShortLibelle here */
-
             filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + videoresolution + "_" + videoBitrate + ".mp4";
             link.setFinalFileName(filename);
             link.setContentUrl(parameter);
@@ -281,11 +262,9 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             link.setProperty("langShort", selectedLanguage);
             link.setProperty("mainlink", parameter);
             link.setProperty("apiurl", apiurl);
-
             link.setComment(description);
             link.setContentUrl(sourceURL);
             link.setLinkID(linkid);
-
             if (fastLinkcheck) {
                 link.setAvailable(true);
             }
@@ -320,9 +299,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         linkid = fid + "_" + quality_intern;
         filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
         link.setFinalFileName(filename);
-
         link.setContentUrl(parameter);
-
         link._setFilePackage(fp);
         link.setProperty("directURL", url);
         link.setProperty("directName", filename);

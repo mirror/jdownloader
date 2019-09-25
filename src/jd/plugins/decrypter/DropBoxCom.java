@@ -22,16 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -51,6 +41,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DropboxCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
@@ -170,7 +170,7 @@ public class DropBoxCom extends PluginForDecrypt {
             /* Fix json value */
             path = "\"" + path + "\"";
         }
-        String passCode = getPreSetDownloadLinkPassword();
+        String passCode = param.getDecrypterPassword();
         String error_summary = null;
         boolean url_is_password_protected = !StringUtils.isEmpty(passCode);
         boolean continue_reason = false;
@@ -366,9 +366,8 @@ public class DropBoxCom extends PluginForDecrypt {
                     dl.setLinkID(this.getHost() + "://" + id);
                     /**
                      * 2019-09-20: TODO: Find out if it is possible to generate URLs which lead to the exact files when opening them via
-                     * browser. </br>
-                     * At the moment this is a huge issue when using their API - it contains other(internal) fileIDs so we cannot get to the
-                     * corresponding public contentURLs although they do exist!
+                     * browser. </br> At the moment this is a huge issue when using their API - it contains other(internal) fileIDs so we
+                     * cannot get to the corresponding public contentURLs although they do exist!
                      */
                     dl.setContentUrl(parameter);
                     /*
@@ -470,7 +469,7 @@ public class DropBoxCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String passCode = getPreSetDownloadLinkPassword();
+        String passCode = param.getDecrypterPassword();
         String password_cookie = null;
         if (DropboxCom.isPasswordProtectedWebsite(br)) {
             final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
