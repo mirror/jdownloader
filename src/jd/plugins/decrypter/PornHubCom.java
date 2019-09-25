@@ -71,7 +71,7 @@ public class PornHubCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
         Boolean premium = false;
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
             try {
                 jd.plugins.hoster.PornHubCom.login(this, br, account, false);

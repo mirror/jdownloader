@@ -32,7 +32,7 @@ public class BentBoxCo extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
         final boolean freshLogin;
         if (account != null) {
             try {

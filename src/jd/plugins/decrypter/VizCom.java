@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/(read/)?[^/]+/[^/]+/(?:chapter/|issue/|product/|manga/product/|manga/product/digital/|promo/)\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
@@ -61,7 +61,7 @@ public class VizCom extends antiDDoSForDecrypt {
          * the proper amount of pages, and then only use Length: x pages if var pages = 0
          */
         int accountPages = -1;
-        if (AccountController.getInstance().getValidAccount(this) != null) {
+        if (AccountController.getInstance().getValidAccount(getHost()) != null) {
             String pages = br.getRegex("<strong>Length</strong>\\s*(\\d+)\\s*pages\\s*</div>").getMatch(0);
             if (pages != null) {
                 accountPages = Integer.parseInt(pages);
