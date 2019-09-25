@@ -9,29 +9,19 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "dropbox.com", type = Type.HOSTER)
 public interface DropBoxConfig extends PluginConfigInterface {
+    /** 2019-09-25: Enforced API usage for all users. Consider removing this setting soon. */
     public static class TRANSLATION {
-        public String isIncludeRootSubfolder_label() {
-            return "Include root to subfolder structure";
-        }
-
-        public String isUseAPIBETA_label() {
-            return "[BETA feature] Use API?";
+        public String getUseAPI_label() {
+            return "Use API (in account mode)? [Recommended, changing this setting does not have any effect at the moment!]";
         }
     }
 
     public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
-    /** 2019-09-24: TODO: Remove this setting - first folder IS always root! */
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isIncludeRootSubfolder();
-
-    void setIncludeRootSubfolder(boolean b);
-
     @DefaultBooleanValue(false)
     @AboutConfig
     @DescriptionForConfigEntry("If enabled, API will be used")
-    boolean isUseAPIBETA();
+    boolean isUseAPI();
 
-    void setUseAPIBETA(boolean b);
+    void setUseAPI(boolean b);
 }
