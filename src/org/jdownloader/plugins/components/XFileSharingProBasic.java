@@ -812,12 +812,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             /* Generic failover */
             if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)?(?: |\\&nbsp;)?(KB|MB|GB))").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "(?:\\s+|>|\\(|\")([0-9\\.]+(?:\\s+|\\&nbsp;)?(KB|MB|GB))").getMatch(0);
             }
         }
         /* MD5 is only available in very very rare cases! */
         if (StringUtils.isEmpty(fileInfo[2])) {
-            fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+            fileInfo[2] = new Regex(correctedBR, "<b>\\s*MD5.*?</b>.*?nowrap>\\s*(.*?)\\s*<").getMatch(0);
         }
         return fileInfo;
     }
