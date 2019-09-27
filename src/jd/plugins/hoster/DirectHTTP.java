@@ -76,7 +76,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-        "https?(viajd)?://[\\p{L}\\p{Nd}\\w\\.:\\-@\\[\\]]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+"https?(viajd)?://[\\p{L}\\p{Nd}\\w\\.:\\-@\\[\\]]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
     public static final String ENDINGS               = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String NORESUME              = "nochunkload";
@@ -220,8 +220,6 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         return tmplinks;
     }
-
-    private String contentType = "";
 
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
@@ -637,9 +635,9 @@ public class DirectHTTP extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("auth", basicauth);
-            this.contentType = urlConnection.getContentType();
+            final String contentType = getContentType(urlConnection);
             if (contentType != null) {
-                if (StringUtils.equalsIgnoreCase(contentType, "application/pls") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".mp3")) {
+                if (StringUtils.startsWithCaseInsensitive(contentType, "application/pls") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".mp3")) {
                     this.br.followConnection();
                     final String mp3URL = this.br.getRegex("(https?://.*?\\.mp3)").getMatch(0);
                     if (hasCustomDownloadURL()) {
@@ -676,7 +674,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 return this.requestFileInformation(downloadLink, retry + 1);
             }
-            if (this.contentType != null && (this.contentType.startsWith("text/html") || this.contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
+            if (contentType != null && (contentType.startsWith("text/html") || contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
@@ -744,7 +742,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 /* restore filename from property */
                 String fileName = downloadLink.getStringProperty(FIXNAME, null);
                 if (fileName == null && downloadLink.getBooleanProperty("MOVIE2K", false)) {
-                    final String ext = new Regex(this.contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
+                    final String ext = new Regex(contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
                     fileName = downloadLink.getName() + "." + ext;
                 }
                 if (fileName == null) {
@@ -779,7 +777,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 if (fileName != null) {
                     if (fileName.indexOf(".") < 0) {
-                        final String ext = this.getExtensionFromMimeType(this.contentType);
+                        final String ext = getExtensionFromMimeType(contentType);
                         if (ext != null) {
                             fileName = fileName + "." + ext;
                         }
@@ -872,6 +870,10 @@ public class DirectHTTP extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    protected String getContentType(URLConnectionAdapter urlConnection) {
+        return urlConnection.getContentType();
+    }
+
     private final String IOEXCEPTIONS = "IOEXCEPTIONS";
 
     /**
@@ -880,26 +882,40 @@ public class DirectHTTP extends antiDDoSForHost {
      * @param mimeType
      * @return
      */
-    public static String getExtensionFromMimeType(final String mimeType) {
-        if (mimeType == null) {
+    public static String getExtensionFromMimeType(final String contentType) {
+        if (StringUtils.isEmpty(contentType)) {
             return null;
+        } else {
+            // developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+            final String mimeType = new Regex(contentType, "(\\w+/\\w+)").getMatch(0);
+            final HashMap<String, String> map = new HashMap<String, String>();
+            map.put("image/gif", "gif");
+            map.put("image/jpeg", "jpeg");
+            map.put("image/png", "png");
+            map.put("image/tiff", "tiff");
+            map.put("video/mp4", "mp4");
+            map.put("video/ogg", "ogg");
+            map.put("video/webm", "webm");
+            map.put("audio/mp3", "mp3");
+            map.put("audio/mp4", "mp4");
+            map.put("audio/wav", "wav");
+            map.put("audio/wav", "wav");
+            map.put("text/css", "css");
+            map.put("text/javascript", "js");
+            map.put("text/xml", "xml");
+            map.put("text/html", "html");
+            map.put("text/plain", "txt");
+            map.put("application/gzip", "gz");
+            map.put("application/json", "json");
+            map.put("application/xml", "xml");
+            map.put("application/pdf", "pdf");
+            return map.get(mimeType.toLowerCase(Locale.ENGLISH));
         }
-        final HashMap<String, String> map = new HashMap<String, String>();
-        map.put("image/gif", "gif");
-        map.put("image/jpeg", "jpeg");
-        map.put("image/png", "png");
-        map.put("image/tiff", "tiff");
-        map.put("video/mp4", "mp4");
-        map.put("audio/mp3", "mp3");
-        map.put("application/gzip", "gz");
-        map.put("application/pdf", "pdf");
-        return map.get(mimeType.toLowerCase(Locale.ENGLISH));
     }
 
     @Override
     public void reset() {
         preferHeadRequest = true;
-        contentType = null;
         customDownloadURL = null;
     }
 
