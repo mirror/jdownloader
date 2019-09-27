@@ -239,6 +239,7 @@ controller_packages_defaultname=çeşitli
 convert_CLR_Reconnect_to_jdownloader=Cryptload *.clr Yeniden Bağlanma Betiğini JDownloader LiveHeader Betiğine Dönüştür
 decrypter_invalidaccount=Geçerli hesap bulunamadı
 decrypter_plugindefect=Eklenti Kusuru
+decrypter_pluginsettings=Eklenti Ayarlarını Denetle
 decrypter_unknownerror=Bilinmeyen hata
 decrypter_wrongcaptcha=Yanlış captcha kodu
 decrypter_wrongpassword=Yanlış parola
