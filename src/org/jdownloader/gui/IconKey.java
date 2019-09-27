@@ -136,6 +136,7 @@ public class IconKey {
     public static final String ICON_IMPORT                      = "import";
     public static final String ICON_ORDER                       = "order";
     public static final String ICON_STOPSIGN                    = "stopsign";
+    public static final String ICON_BEER                        = "beer";
     public static final String ICON_BOTTY_HEART                 = "botty/heart";
     public static final String ICON_BOTTY_STOP                  = "botty/stop";
     public static final String ICON_BOTTY_ROBOT_DEL             = "botty/robot_del";
