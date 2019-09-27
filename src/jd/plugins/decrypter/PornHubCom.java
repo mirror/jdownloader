@@ -457,7 +457,7 @@ public class PornHubCom extends PluginForDecrypt {
             parameter = newLink;
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
-        final String username = br.getRegex("class=\"bolded\">([^<>]+)</a>").getMatch(0);
+        final String username = jd.plugins.hoster.PornHubCom.getUserName(this, br);
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
