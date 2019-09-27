@@ -578,6 +578,14 @@ public class ScriptEnvironment {
         }
     }
 
+    public static void lock(String id, boolean global) {
+        // TODO
+    }
+
+    public static void unlock(String id, boolean global) {
+        // TODO
+    }
+
     public static Collection<Class<?>> getRequiredClasses() {
         final ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
         collectClasses(ScriptEnvironment.class, clazzes);
@@ -1025,75 +1033,84 @@ public class ScriptEnvironment {
         }
     }
 
-    private static void showMessageDialog(String string) {
+    private static void showMessageDialog(final String string) {
         final ScriptThread env = getScriptThread();
-        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_LARGE, T.T.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
-            @Override
-            protected int getPreferredWidth() {
-                return 600;
+        final String id = T.T.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel());
+        new Thread(id) {
+            {
+                setDaemon(true);
             }
 
-            @Override
-            public boolean isRemoteAPIEnabled() {
-                return false;
-            }
+            public void run() {
+                UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_LARGE, id, string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
+                    @Override
+                    protected int getPreferredWidth() {
+                        return 600;
+                    }
 
-            @Override
-            protected void modifyTextPane(JTextPane textField) {
-            }
+                    @Override
+                    public boolean isRemoteAPIEnabled() {
+                        return false;
+                    }
 
-            @Override
-            public ModalityType getModalityType() {
-                return ModalityType.MODELESS;
-            }
+                    @Override
+                    protected void modifyTextPane(JTextPane textField) {
+                    }
 
-            @Override
-            protected JTextComponent addMessageComponent(final MigPanel p) {
-                JTextPane textField = new JTextPane();
-                modifyTextPane(textField);
-                final Font font = textField.getFont();
-                if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_HTML)) {
-                    textField.setContentType("text/html");
-                    textField.addHyperlinkListener(new HyperlinkListener() {
-                        public void hyperlinkUpdate(final HyperlinkEvent e) {
-                            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                                CrossSystem.openURL(e.getURL());
-                            }
+                    @Override
+                    public ModalityType getModalityType() {
+                        return ModalityType.MODELESS;
+                    }
+
+                    @Override
+                    protected JTextComponent addMessageComponent(final MigPanel p) {
+                        JTextPane textField = new JTextPane();
+                        modifyTextPane(textField);
+                        final Font font = textField.getFont();
+                        if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_HTML)) {
+                            textField.setContentType("text/html");
+                            textField.addHyperlinkListener(new HyperlinkListener() {
+                                public void hyperlinkUpdate(final HyperlinkEvent e) {
+                                    if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                                        CrossSystem.openURL(e.getURL());
+                                    }
+                                }
+                            });
+                        } else {
+                            textField.setContentType("text/plain");
                         }
-                    });
-                } else {
-                    textField.setContentType("text/plain");
-                }
-                textField.setFont(font);
-                textField.setText(getMessage());
-                if (env.isAdvancedAlert()) {
-                    textField.setEditable(true);
-                } else {
-                    textField.setEditable(false);
-                }
-                textField.setBackground(null);
-                textField.setOpaque(false);
-                if (env.isAdvancedAlert()) {
-                    textField.setFocusable(true);
-                } else {
-                    textField.setFocusable(false);
-                }
-                textField.setForeground(new JLabel().getForeground());
-                textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-                textField.setCaretPosition(0);
-                if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE)) {
-                    p.add(new JScrollPane(textField), "pushx,growx");
-                } else {
-                    p.add(textField);
-                }
-                return textField;
-            }
+                        textField.setFont(font);
+                        textField.setText(getMessage());
+                        if (env.isAdvancedAlert()) {
+                            textField.setEditable(true);
+                        } else {
+                            textField.setEditable(false);
+                        }
+                        textField.setBackground(null);
+                        textField.setOpaque(false);
+                        if (env.isAdvancedAlert()) {
+                            textField.setFocusable(true);
+                        } else {
+                            textField.setFocusable(false);
+                        }
+                        textField.setForeground(new JLabel().getForeground());
+                        textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+                        textField.setCaretPosition(0);
+                        if (BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE)) {
+                            p.add(new JScrollPane(textField), "pushx,growx");
+                        } else {
+                            p.add(textField);
+                        }
+                        return textField;
+                    }
 
-            @Override
-            public void pack() {
-                getDialog().pack();
-            }
-        });
+                    @Override
+                    public void pack() {
+                        getDialog().pack();
+                    }
+                });
+            };
+        }.start();
     }
 
     public static Object toJSObject(Object ret) {

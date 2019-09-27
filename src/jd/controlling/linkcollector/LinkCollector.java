@@ -82,6 +82,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -1174,44 +1175,45 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final java.util.List<CrawledLink> links, final LinkCollectingJob job) {
         if (ShutdownController.getInstance().isShutDownRequested()) {
             return null;
-        }
-        if (links == null || links.size() == 0) {
+        } else if (links == null || links.size() == 0) {
             throw new IllegalArgumentException("no links");
+        } else {
+            final JobLinkCrawler lc = newJobLinkCrawler(job);
+            lc.crawl(new ArrayList<CrawledLink>(links));
+            return lc;
         }
-        final JobLinkCrawler lc = newJobLinkCrawler(job);
-        lc.crawl(new ArrayList<CrawledLink>(links));
-        return lc;
     }
 
     public JobLinkCrawler newJobLinkCrawler(final LinkCollectingJob job) {
-        return new JobLinkCrawler(this, job);
+        final JobLinkCrawler ret = new JobLinkCrawler(this, job);
+        getEventsender().fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.NEW_CRAWLER_JOB, job, QueuePriority.NORM));
+        logger.info("Added CrawlerJob:" + job);
+        return ret;
     }
 
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         try {
             if (ShutdownController.getInstance().isShutDownRequested()) {
                 return null;
-            }
-            if (job == null) {
+            } else if (job == null) {
                 throw new IllegalArgumentException("job is null");
+            } else {
+                final JobLinkCrawler lc = newJobLinkCrawler(job);
+                /*
+                 * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
+                 */
+                final String jobText = job.getText();
+                // keep text if it is tiny.
+                // if we have the text in the job, we can display it for example in the balloons
+                if (StringUtils.isNotEmpty(jobText) && jobText.length() > 500) {
+                    job.setText(null);
+                }
+                lc.crawl(jobText, job.getCustomSourceUrl(), job.isDeepAnalyse());
+                return lc;
             }
-            getEventsender().fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.NEW_CRAWLER_JOB, job, QueuePriority.NORM));
-            logger.info("Added CrawlerJob:" + job);
-            final JobLinkCrawler lc = newJobLinkCrawler(job);
-            /*
-             * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
-             */
-            final String jobText = job.getText();
-            // keep text if it is tiny.
-            // if we have the text in the job, we can display it for example in the balloons
-            if (StringUtils.isNotEmpty(jobText) && jobText.length() > 500) {
-                job.setText(null);
-            }
-            lc.crawl(jobText, job.getCustomSourceUrl(), job.isDeepAnalyse());
-            return lc;
         } catch (VerifyError e) {
             logger.log(e);
-            if (!Application.isJared(LinkCollector.class)) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 Dialog.getInstance().showExceptionDialog("Eclipse Java 1.7 Bug", "This is an eclipse Java 7 bug. See here: http://goo.gl/REs9c\r\nAdd JVM Parameter -XX:-UseSplitVerifier", e);
             }
             throw e;
