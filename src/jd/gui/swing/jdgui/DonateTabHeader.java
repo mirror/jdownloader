@@ -44,6 +44,7 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
         if (event.getAndSet(now) != now) {
             final Icon icon = now.getIcon();
             labelIcon.setIcon(icon);
+            setToolTipText(now.getToolTipText());
             flashFlag.set(!now.matchesID(CFG_GUI.CFG.getDonationNotifyID()));
             if (isFlashing()) {
                 final Timer blinker = new Timer(1500, new ActionListener() {
@@ -53,7 +54,9 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
                     @Override
                     public void actionPerformed(final ActionEvent e) {
                         if (!isFlashing() || event.get() != now) {
-                            labelIcon.setIcon(event.get().getIcon());
+                            final DONATE_EVENT donate = event.get();
+                            labelIcon.setIcon(donate.getIcon());
+                            setToolTipText(donate.getToolTipText());
                             ((Timer) e.getSource()).stop();
                         } else {
                             if (i++ % 2 == 0) {
@@ -105,8 +108,9 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             @Override
             public void mousePressed(MouseEvent me) {
                 flashFlag.set(false);
-                CFG_GUI.CFG.setDonationNotifyID(event.get().getID());
-                new DonateAction(event.get()).actionPerformed(new ActionEvent(me.getSource(), me.getID(), me.paramString()));
+                final DONATE_EVENT donate = event.get();
+                CFG_GUI.CFG.setDonationNotifyID(donate.getID());
+                new DonateAction(donate).actionPerformed(new ActionEvent(me.getSource(), me.getID(), me.paramString()));
             }
 
             @Override

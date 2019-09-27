@@ -8,20 +8,29 @@ import javax.swing.Icon;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public enum DONATE_EVENT {
-    DEBUG(IconKey.ICON_CONSOLE) {
+    MUNICH_OKTOBERFEST(IconKey.ICON_BEER) {
         @Override
-        public boolean isNow() {
-            return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        public String getToolTipText() {
+            return "Munich Oktoberfest! O'zapft is!";
         }
 
-        final long timeStamp = System.currentTimeMillis();
-
         @Override
-        public String getID() {
-            return name() + "." + timeStamp;
+        public boolean isNow() {
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(timeStamp);
+            final int day = calendar.get(Calendar.DAY_OF_MONTH);
+            final int month = calendar.get(Calendar.MONTH);
+            final int year = calendar.get(Calendar.YEAR);
+            if (year == 2019) {
+                if ((month == Calendar.SEPTEMBER && day >= 21) || (month == Calendar.OCTOBER && day <= 6)) {
+                    return true;
+                }
+            }
+            return false;
         }
     },
     NEWYEARSEVE(IconKey.ICON_CHAMPAGNE) {
@@ -33,11 +42,26 @@ public enum DONATE_EVENT {
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int lastDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
-            if ((month == 11 && day == lastDay) || (month == 0 && day == 1)) {
+            if ((month == Calendar.DECEMBER && day == lastDay) || (month == Calendar.JANUARY && day == 1)) {
                 return true;
             } else {
                 return false;
             }
+        }
+
+        @Override
+        public String getToolTipText() {
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(timeStamp);
+            final int year = calendar.get(Calendar.YEAR);
+            final int happyNewYear;
+            if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+                happyNewYear = year;
+                return name() + "." + (year - 1) + "-" + year;
+            } else {
+                happyNewYear = year + 1;
+            }
+            return "Happy New Year " + happyNewYear + "!";
         }
 
         @Override
@@ -55,13 +79,18 @@ public enum DONATE_EVENT {
     },
     XMAS(IconKey.ICON_XMAS_GIFT) {
         @Override
+        public String getToolTipText() {
+            return "Ho! Ho! Ho! Merry Christmas!";
+        }
+
+        @Override
         public boolean isNow() {
             // 7 days, from 20.12 - 26.12
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(timeStamp);
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
-            if (month == 11 && day >= 20 && day <= 26) {
+            if (month == Calendar.DECEMBER && day >= 20 && day <= 26) {
                 return true;
             } else {
                 return false;
@@ -70,12 +99,17 @@ public enum DONATE_EVENT {
     },
     HALLOWEEN(IconKey.ICON_HALLOWEEN) {
         @Override
+        public String getToolTipText() {
+            return "Happy Halloween!";
+        }
+
+        @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(timeStamp);
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
-            if (month == 9 && day == 31) {
+            if (month == Calendar.OCTOBER && day == 31) {
                 return true;
             } else {
                 return false;
@@ -84,12 +118,17 @@ public enum DONATE_EVENT {
     },
     VALENTINE(IconKey.ICON_VALENTINE) {
         @Override
+        public String getToolTipText() {
+            return "Happy Valentines Day!";
+        }
+
+        @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(timeStamp);
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
-            if (month == 1 && day == 14) {
+            if (month == Calendar.FEBRUARY && day == 14) {
                 return true;
             } else {
                 return false;
@@ -98,19 +137,24 @@ public enum DONATE_EVENT {
     },
     EASTER(IconKey.ICON_EASTER_EGG) {
         @Override
+        public String getToolTipText() {
+            return "We wish you a happy Easter!";
+        }
+
+        @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(timeStamp);
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int year = calendar.get(Calendar.YEAR);
-            if (year == 2018 && month == 3 && day == 1) {
+            if (year == 2018 && month == Calendar.APRIL && day == 1) {
                 return true;
-            } else if (year == 2019 && month == 3 && day == 21) {
+            } else if (year == 2019 && month == Calendar.APRIL && day == 21) {
                 return true;
-            } else if (year == 2020 && month == 3 && day == 12) {
+            } else if (year == 2020 && month == Calendar.APRIL && day == 12) {
                 return true;
-            } else if (year == 2021 && month == 3 && day == 4) {
+            } else if (year == 2021 && month == Calendar.APRIL && day == 4) {
                 return true;
             } else {
                 return false;
@@ -119,19 +163,24 @@ public enum DONATE_EVENT {
     },
     BLACK_FRIDAY(IconKey.ICON_BLACK_FRIDAY) {
         @Override
+        public String getToolTipText() {
+            return "Black Friday! Shopping! Deals! Donations!";
+        }
+
+        @Override
         public boolean isNow() {
             final GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(timeStamp);
             final int day = calendar.get(Calendar.DAY_OF_MONTH);
             final int month = calendar.get(Calendar.MONTH);
             final int year = calendar.get(Calendar.YEAR);
-            if (month == 10 && day == 23 && year == 2018) {
+            if (month == Calendar.NOVEMBER && day == 23 && year == 2018) {
                 return true;
-            } else if (month == 10 && day == 29 && year == 2019) {
+            } else if (month == Calendar.NOVEMBER && day == 29 && year == 2019) {
                 return true;
-            } else if (month == 10 && day == 27 && year == 2020) {
+            } else if (month == Calendar.NOVEMBER && day == 27 && year == 2020) {
                 return true;
-            } else if (month == 10 && day == 26 && year == 2021) {
+            } else if (month == Calendar.NOVEMBER && day == 26 && year == 2021) {
                 return true;
             } else {
                 return false;
@@ -145,8 +194,36 @@ public enum DONATE_EVENT {
         }
 
         @Override
+        public String getTitleText() {
+            return _GUI.T.DonationDialog_DonationDialog_title_();
+        }
+
+        @Override
+        public String getToolTipText() {
+            return null;
+        }
+
+        @Override
         public boolean matchesID(String id) {
             return true;
+        }
+    },
+    DEBUG(IconKey.ICON_CONSOLE) {
+        @Override
+        public boolean isNow() {
+            return false;
+        }
+
+        final long timeStamp = System.currentTimeMillis();
+
+        @Override
+        public String getToolTipText() {
+            return "Testing";
+        }
+
+        @Override
+        public String getID() {
+            return name() + "." + timeStamp;
         }
     };
     private static final long timeStamp = System.currentTimeMillis();
@@ -166,6 +243,16 @@ public enum DONATE_EVENT {
 
     public abstract boolean isNow();
 
+    public String getTitleText() {
+        return getToolTipText();
+    }
+
+    public String getText() {
+        return _GUI.T.DonationDialog_layoutDialogContent_top_text();
+    }
+
+    public abstract String getToolTipText();
+
     public String getID() {
         final GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTimeInMillis(timeStamp);
@@ -173,12 +260,16 @@ public enum DONATE_EVENT {
     }
 
     public static DONATE_EVENT getNow() {
-        for (final DONATE_EVENT donateEvent : values()) {
-            if (donateEvent.isNow()) {
-                return donateEvent;
+        if (true && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return DONATE_EVENT.DEBUG;
+        } else {
+            for (final DONATE_EVENT donateEvent : values()) {
+                if (donateEvent.isNow()) {
+                    return donateEvent;
+                }
             }
+            return DONATE_EVENT.DEFAULT;
         }
-        return DONATE_EVENT.DEFAULT;
     }
 
     public boolean matchesID(String id) {
