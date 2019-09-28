@@ -75,21 +75,18 @@ public class PornroxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
-        String filename = br.getRegex("<div class=\"inner\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1[^<>]*?>([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
+            filename = br.getRegex("\"og:title\" content=\"([^<>\"]*?)( - Free Porn Video - Pornrox)?\"").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?)( - Free Porn Video - Pornrox)?</title>").getMatch(0);
         }
         if (filename == null) {
             filename = url_filename;
         }
         /* RegExes sometimes used for streaming */
-        final String jssource = br.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\{.*?\\})").getMatch(0);
+        final String jssource = br.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\{.*?\\})").getMatch(0); // n/a
         if (jssource != null) {
             try {
                 HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
@@ -120,13 +117,13 @@ public class PornroxCom extends PluginForHost {
             }
         }
         if (StringUtils.isEmpty(dllink)) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
@@ -137,9 +134,12 @@ public class PornroxCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext;
+        String ext;
         if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
+            ext = getFileNameExtensionFromString(dllink, default_extension); // Doesn't work, gets "." only
+            if (ext.equals(".")) {
+                ext = default_extension;
+            }
         } else {
             ext = default_extension;
         }
