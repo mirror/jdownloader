@@ -42,6 +42,9 @@ public class PornZeCom extends antiDDoSForDecrypt {
         String fpName = null;
         fpName = br.getRegex("<meta\\s*property\\s*=\\s*\"og:title\"[^>]+content\\s*=\\s*\"([^\"]+)\"[^>]+>").getMatch(0);
         String[] links = br.getRegex("<iframe[^>]+src\\s*=\\s*\"([^\"]+)\"[^>]+class\\s*=\\s*\"[^\"]*wps-player[^\"]*\"[^>]*>").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("<div[^>]*class\\s*=\\s*\"responsive-player\"[^>]*>\\s*<iframe[^>]+src\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
+        }
         if (links != null) {
             for (String link : links) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
