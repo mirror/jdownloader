@@ -7,22 +7,20 @@ import org.appwork.storage.Storable;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
-    private ArchiveController            archiveController;
-
-    private BooleanStatus                autoExtract                        = BooleanStatus.UNSET;
-    private ExtractionInfo               extractionInfo;
-    private String                       extractPath;
-    private String                       finalPassword;
-    private IfFileExistsAction           ifFileExistsAction                 = null;
-    private CopyOnWriteArrayList<String> passwords                          = new CopyOnWriteArrayList<String>();
-    private BooleanStatus                removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
-    private BooleanStatus                removeFilesAfterExtraction         = BooleanStatus.UNSET;
-    private volatile boolean             needsSaving                        = false;
-    public static final String           PASSWORD                           = "PASSWORD";
-    public static final String           AUTO_EXTRACT                       = "AUTO_EXTRACT";
+    private ArchiveController                     archiveController;
+    private BooleanStatus                         autoExtract                        = BooleanStatus.UNSET;
+    private ExtractionInfo                        extractionInfo;
+    private String                                extractPath;
+    private String                                finalPassword;
+    private IfFileExistsAction                    ifFileExistsAction                 = null;
+    private volatile CopyOnWriteArrayList<String> passwords                          = new CopyOnWriteArrayList<String>();
+    private BooleanStatus                         removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
+    private BooleanStatus                         removeFilesAfterExtraction         = BooleanStatus.UNSET;
+    private volatile boolean                      needsSaving                        = false;
+    public static final String                    PASSWORD                           = "PASSWORD";
+    public static final String                    AUTO_EXTRACT                       = "AUTO_EXTRACT";
 
     public ArchiveSettings(/* Storable */) {
-
     }
 
     public void assignController(ArchiveController archiveController) {
@@ -136,5 +134,4 @@ public class ArchiveSettings implements Storable {
     public boolean needsSaving() {
         return needsSaving;
     }
-
 }

@@ -13,6 +13,7 @@ import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -169,57 +170,60 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public void setArchive(Archive archive) {
         if (archive != null) {
             final String archiveID = archive.getArchiveID();
-            boolean hasOldPasswords = false;
-            for (final CrawledLink link : getLinks()) {
-                final DownloadLink dlLink = link.getDownloadLink();
-                if (dlLink != null) {
-                    dlLink.setArchiveID(archiveID);
-                    if (dlLink.getOldPluginPasswordList() != null) {
-                        hasOldPasswords = true;
-                    }
+            boolean mergeSourcePasswords = false;
+            for (final CrawledLink crawledLink : getLinks()) {
+                crawledLink.setArchiveID(archiveID);
+                final DownloadLink downloadLink = crawledLink.getDownloadLink();
+                if (downloadLink != null && downloadLink.getSourcePluginPasswordList() != null) {
+                    mergeSourcePasswords = true;
                 }
             }
-            boolean hasArchiveInfo = false;
+            boolean mergeArchiveInfos = false;
             for (final CrawledLink link : getLinks()) {
                 if (link.hasArchiveInfo()) {
-                    hasArchiveInfo = true;
+                    mergeArchiveInfos = true;
                     break;
                 }
             }
-            if (hasArchiveInfo || hasOldPasswords) {
-                List<String> existingPws = archive.getSettings().getPasswords();
-                if (existingPws == null) {
-                    existingPws = new ArrayList<String>();
-                }
-                final List<String> newPws = new ArrayList<String>();
+            final List<String> newPasswords = new ArrayList<String>();
+            if (mergeSourcePasswords) {
+                final List<String> existingPasswords = archive.getSettings().getPasswords();
                 final String finalPassword = archive.getSettings().getFinalPassword();
-                if (finalPassword != null && !existingPws.contains(finalPassword)) {
-                    newPws.add(finalPassword);
+                if (StringUtils.isNotEmpty(finalPassword) && (existingPasswords == null || !existingPasswords.contains(finalPassword))) {
+                    newPasswords.add(finalPassword);
                 }
-                for (final CrawledLink link : getLinks()) {
-                    if (link.hasArchiveInfo()) {
-                        for (final String newPw : link.getArchiveInfo().getExtractionPasswords()) {
-                            if (newPw != null && !existingPws.contains(newPw)) {
-                                newPws.add(newPw);
-                            }
-                        }
-                    }
-                    final DownloadLink dlLink = link.getDownloadLink();
-                    if (dlLink != null) {
-                        final List<String> oldPasswords = dlLink.getOldPluginPasswordList();
-                        if (oldPasswords != null) {
-                            for (final String newPw : oldPasswords) {
-                                if (newPw != null && !existingPws.contains(newPw)) {
-                                    newPws.add(newPw);
+                for (final CrawledLink crawledLink : getLinks()) {
+                    final DownloadLink downloadLink = crawledLink.getDownloadLink();
+                    if (downloadLink != null) {
+                        final List<String> sourcePluginPasswords = downloadLink.getSourcePluginPasswordList();
+                        if (sourcePluginPasswords != null) {
+                            for (final String sourcePluginPassword : sourcePluginPasswords) {
+                                if (StringUtils.isNotEmpty(sourcePluginPassword) && (existingPasswords == null || !existingPasswords.contains(sourcePluginPassword))) {
+                                    newPasswords.add(sourcePluginPassword);
                                 }
                             }
                         }
                     }
                 }
-                if (newPws.size() > 0) {
-                    existingPws.addAll(newPws);
-                    archive.getSettings().setPasswords(existingPws);
+            }
+            if (mergeArchiveInfos) {
+                final List<String> existingPasswords = archive.getSettings().getPasswords();
+                for (final CrawledLink link : getLinks()) {
+                    if (link.hasArchiveInfo()) {
+                        for (final String archivePassword : link.getArchiveInfo().getExtractionPasswords()) {
+                            if (StringUtils.isNotEmpty(archivePassword) && (existingPasswords == null || !existingPasswords.contains(archivePassword))) {
+                                newPasswords.add(archivePassword);
+                            }
+                        }
+                    }
                 }
+            }
+            if (newPasswords.size() > 0) {
+                final List<String> existingPasswords = archive.getSettings().getPasswords();
+                if (existingPasswords != null) {
+                    newPasswords.addAll(existingPasswords);
+                }
+                archive.getSettings().setPasswords(newPasswords);
             }
         }
     }

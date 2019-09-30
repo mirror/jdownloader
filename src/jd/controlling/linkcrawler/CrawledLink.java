@@ -231,12 +231,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     protected void passwordForward(DownloadLink dlLink) {
-        if (dlLink == null) {
-            return;
-        }
-        final List<String> lst = dlLink.getSourcePluginPasswordList();
-        if (lst != null && lst.size() > 0) {
-            getArchiveInfo().getExtractionPasswords().addAll(lst);
+        if (dlLink != null) {
+            final List<String> lst = dlLink.getSourcePluginPasswordList();
+            if (lst != null && lst.size() > 0) {
+                getArchiveInfo().getExtractionPasswords().addAll(lst);
+            }
         }
     }
 

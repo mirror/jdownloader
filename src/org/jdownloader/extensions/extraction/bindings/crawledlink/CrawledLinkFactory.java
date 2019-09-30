@@ -247,7 +247,8 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         final CrawledLink first = getLinks().get(0);
         if (first.hasArchiveInfo()) {
             return first.getArchiveInfo().getAutoExtract();
+        } else {
+            return BooleanStatus.UNSET;
         }
-        return BooleanStatus.UNSET;
     }
 }

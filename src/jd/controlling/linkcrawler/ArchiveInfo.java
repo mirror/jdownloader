@@ -35,13 +35,12 @@ public class ArchiveInfo {
     }
 
     public ArchiveInfo migrate(ArchiveInfo ai) {
-        if (ai == null) {
-            return this;
+        if (ai != null && ai != this) {
+            if (autoExtract == BooleanStatus.UNSET) {
+                autoExtract = ai.getAutoExtract();
+            }
+            getExtractionPasswords().addAll(ai.getExtractionPasswords());
         }
-        if (autoExtract == BooleanStatus.UNSET) {
-            autoExtract = ai.getAutoExtract();
-        }
-        getExtractionPasswords().addAll(ai.getExtractionPasswords());
         return this;
     }
 }

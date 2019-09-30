@@ -168,7 +168,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private UrlProtection                     urlProtection                       = UrlProtection.UNSET;
     private List<HistoryEntry>                history                             = null;
     private Boolean                           partOfAnArchive                     = null;
-    private List<String>                      sourcePluginPasswordList            = null;
     public static final String                RELATIVE_DOWNLOAD_FOLDER_PATH       = "subfolderbyplugin";
 
     public Boolean isPartOfAnArchive() {
@@ -291,10 +290,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setCreated(long created) {
         this.created = created;
-    }
-
-    public List<String> getOldPluginPasswordList() {
-        return this.sourcePluginPasswordList;
     }
 
     public UniqueAlltimeID getUniqueID() {
@@ -909,10 +904,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Deprecated
     public List<String> getSourcePluginPasswordList() {
         final Object ret = this.getProperty(PROPERTY_PWLIST);
-        if (ret != null && ret instanceof List) {
+        if (ret != null && ret instanceof List && ((List) ret).size() > 0) {
             return (List<String>) ret;
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**
@@ -929,8 +925,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         // workaround. all plugin calls should return the forced filename from the singledownloadcontroller - if available
         if (Thread.currentThread() instanceof SingleDownloadController) {
             return ((SingleDownloadController) Thread.currentThread()).getSessionDownloadFilename();
+        } else {
+            return this.getStringProperty(PROPERTY_FORCEDFILENAME, null);
         }
-        return this.getStringProperty(PROPERTY_FORCEDFILENAME, null);
     }
 
     public String getSetLinkID() {
