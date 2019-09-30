@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,12 +29,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
@@ -44,20 +42,17 @@ public class WeTransferComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        jd.plugins.hoster.WeTransferCom.prepBR(this.br);
+        jd.plugins.hoster.WeTransferCom.prepBRWebsite(this.br);
         if (parameter.matches(shortPattern)) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
-            parameter = br.getRedirectLocation();
-            if (parameter == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (parameter.matches(shortPattern)) {
-                decryptedLinks.add(createDownloadlink(parameter));
-                return decryptedLinks;
-            } else if (parameter.contains("/error")) {
+            final String redirect = br.getRedirectLocation();
+            if (redirect == null || (redirect != null && redirect.contains("/error"))) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            decryptedLinks.add(createDownloadlink(redirect));
+            return decryptedLinks;
         }
         final Regex urlregex = new Regex(parameter, "/downloads/([a-f0-9]+)/(?:[a-f0-9]{46}/)?([a-f0-9]+)");
         final String id_main = urlregex.getMatch(0);

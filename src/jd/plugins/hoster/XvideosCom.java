@@ -42,7 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?xvideos\\.com/(video\\d+/.*|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "https?://(?:www\\.|\\w+\\.)?(?:xvideos|xvideos2)\\.com/(video\\d+/.*|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)" })
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -106,18 +106,18 @@ public class XvideosCom extends PluginForHost {
         return -1;
     }
 
-    private static final String type_normal  = "https?://(www\\.)?xvideos\\.com/video[0-9]+/.*";
-    private static final String type_embed   = "https?://\\w+\\.xvideos\\.com/embedframe/\\d+";
-    private static final String type_special = "https?://(www\\.)?xvideos\\.com/([a-z0-9\\-\\_]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/(upload|pornstar)/[a-z0-9\\-\\_]+/\\d+)";
+    private static final String type_normal  = "https?://[^/]+/video[0-9]+/.*";
+    private static final String type_embed   = "https?://[^/]+/embedframe/\\d+";
+    private static final String type_special = "https?://[^/]+/([a-z0-9\\-\\_]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/(upload|pornstar)/[a-z0-9\\-\\_]+/\\d+)";
     private static final String NOCHUNKS     = "NOCHUNKS";
     private String              streamURL    = null;
     private HlsContainer        hlsContainer = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_embed) || link.getDownloadURL().matches(type_special)) {
-            link.setUrlDownload(new Regex(link.getDownloadURL(), "https?://[^/]+").getMatch(-1) + "/video" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
-            link.setContentUrl(link.getDownloadURL());
+        if (link.getPluginPatternMatcher().matches(type_embed) || link.getPluginPatternMatcher().matches(type_special)) {
+            link.setUrlDownload(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+").getMatch(-1) + "/video" + new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0) + "/");
+            link.setContentUrl(link.getPluginPatternMatcher());
         }
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
     }
@@ -155,15 +155,22 @@ public class XvideosCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        link.setName(new Regex(link.getDownloadURL(), "xvideos\\.com/(.+)").getMatch(0));
+        link.setName(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0));
         br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Language", "en-gb");
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         while (br.getRedirectLocation() != null) {
-            logger.info("Setting new downloadlink: " + br.getRedirectLocation());
-            link.setUrlDownload(br.getRedirectLocation());
-            br.getPage(link.getDownloadURL());
+            final String redirect = br.getRedirectLocation();
+            logger.info("Setting new downloadlink: " + redirect);
+            /*
+             * 2019-09-30: Only set new URL if it is valid. E.g. when using xvideos2.com (= for india) in germany, it will only redirect us
+             * to their mainpage!
+             */
+            if (new Regex(redirect, this.getSupportedLinks()).matches()) {
+                link.setPluginPatternMatcher(br.getRedirectLocation());
+            }
+            br.getPage(redirect);
         }
         if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
