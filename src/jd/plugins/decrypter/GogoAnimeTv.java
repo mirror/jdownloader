@@ -16,12 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,7 +33,7 @@ import jd.plugins.FilePackage;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.tv" }, urls = { "https?://(\\w+\\.)?(?:gogoanime\\.(?:tv|io)|vidstreaming\\.io|gogodramaonline\\.com|gogodrama\\.us|gogodrama\\.to)/(?:(?:watch/)?[-A-Za-z0-9]+-episode-\\d+|(?:embed|streaming)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.tv" }, urls = { "https?://(\\w+\\.)?(?:gogoanime\\.(?:tv|io)|gogodramaonline\\.com|gogodrama\\.us|gogodrama\\.to)/(?:(?:watch/)?[-A-Za-z0-9]+-episode-\\d+|(?:embed|streaming|load)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+)" })
 @SuppressWarnings("deprecation")
 public class GogoAnimeTv extends antiDDoSForDecrypt {
     public GogoAnimeTv(final PluginWrapper wrapper) {
@@ -43,7 +45,7 @@ public class GogoAnimeTv extends antiDDoSForDecrypt {
         return true;
     }
 
-    private final String embed = "/(?:embed|streaming)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+";
+    private final String embed = "/(?:embed|streaming|load)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -84,10 +86,17 @@ public class GogoAnimeTv extends antiDDoSForDecrypt {
 
     // id reference is base64encoded (number)
     private void handleEmbed(final ArrayList<DownloadLink> decryptedLinks) {
-        // simple iframe
-        final String link = br.getRegex("<iframe[^>]*\\s+src=\"((?:https?:)?//[^/]+/[^<>\"]+)\"").getMatch(0);
-        if (!inValidate(link)) {
-            decryptedLinks.add(createDownloadlink(link));
+        ArrayList<String> targets = new ArrayList<String>();
+        final String iframe = br.getRegex("<iframe[^>]*\\s+src=\"((?:https?:)?//[^/]+/[^<>\"]+)\"").getMatch(0);
+        String[] links = br.getRegex("<li\\s*class\\s*=\\s*\"[^\"]*linkserver[^\"]*\"[^>]+data-status\\s*=\\s*\"[^\"]+\"\\s*data-video\\s*=\\s*\"(?://)?([^\"]+)\">").getColumn(0);
+        String[] embeds = br.getRegex("\\{\\s*file\\s*:\\s*[\"']([^\"']+)[\"'][^\\}]*\\}").getColumn(0);
+        targets.add(iframe);
+        Collections.addAll(targets, links);
+        Collections.addAll(targets, embeds);
+        if (targets != null) {
+            for (String target : targets) {
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(target)));
+            }
         }
         return;
     }
