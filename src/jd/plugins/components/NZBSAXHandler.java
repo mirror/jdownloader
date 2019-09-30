@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -17,6 +18,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -30,10 +32,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class NZBSAXHandler extends DefaultHandler {
-
     public static ArrayList<DownloadLink> parseNZB(final String string) throws Exception {
         return parseNZB(new InputStream() {
-
             final StringReader stringReader = new StringReader(string);
 
             @Override
@@ -73,13 +73,14 @@ public class NZBSAXHandler extends DefaultHandler {
 
     private final CharArrayWriter               text              = new CharArrayWriter();
     private String                              path              = "";
+    private final HashSet<String>               passwords         = new HashSet<String>();
+    private String                              password          = null;
     private UsenetFile                          currentFile       = null;
     private UsenetFileSegment                   currentSegment    = null;
     private final ArrayList<DownloadLink>       downloadLinks;
     private String                              date              = null;
     private boolean                             isyEnc            = false;
     private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
-
         public int compare(int x, int y) {
             return (x < y) ? -1 : ((x == y) ? 0 : 1);
         }
@@ -172,10 +173,23 @@ public class NZBSAXHandler extends DefaultHandler {
             downloadLinks.add(downloadLink);
             currentFile = null;
         }
+        if (passwords.size() > 0) {
+            final ArrayList<String> sourcePluginPasswords = new ArrayList<String>(passwords);
+            for (final DownloadLink downloadLink : downloadLinks) {
+                downloadLink.setSourcePluginPasswordList(sourcePluginPasswords);
+            }
+        }
     }
 
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        if ("file".equalsIgnoreCase(qName)) {
+        if (StringUtils.equalsIgnoreCase("meta", qName)) {
+            for (int index = 0; index < attributes.getLength(); index++) {
+                if (StringUtils.equalsIgnoreCase("password", attributes.getValue(index))) {
+                    password = "";
+                    break;
+                }
+            }
+        } else if (StringUtils.equalsIgnoreCase("file", qName)) {
             finishCurrentFile();
             currentFile = new UsenetFile();
             date = attributes.getValue("date");
@@ -221,8 +235,7 @@ public class NZBSAXHandler extends DefaultHandler {
                     currentFile.setSize(SizeFormatter.getSize(fileSize));
                 }
             }
-        }
-        if ("segment".equalsIgnoreCase(qName)) {
+        } else if (StringUtils.equalsIgnoreCase("segment", qName)) {
             currentSegment = new UsenetFileSegment();
             final String number = attributes.getValue("number");
             if (number != null) {
@@ -237,7 +250,13 @@ public class NZBSAXHandler extends DefaultHandler {
     }
 
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if ("segment".equalsIgnoreCase(qName)) {
+        if (StringUtils.equalsIgnoreCase("meta", qName) && "".equals(password)) {
+            password = text.toString().trim();
+            if (StringUtils.isNotEmpty(password)) {
+                passwords.add(password);
+            }
+            password = null;
+        } else if ("segment".equalsIgnoreCase(qName)) {
             final String messageID = text.toString().trim();
             currentSegment.setMessageID(messageID);
             currentFile.getSegments().add(currentSegment);
