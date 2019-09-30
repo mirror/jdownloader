@@ -19,6 +19,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -29,13 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+#file=\\d+" })
 public class GofileIo extends PluginForHost {
@@ -53,16 +53,7 @@ public class GofileIo extends PluginForHost {
     }
 
     private String getFileID(final DownloadLink link) throws PluginException {
-        final String ret = new Regex(link.getPluginPatternMatcher(), "file=(\\d+)").getMatch(0);
-        if (ret == null) {
-            if (link.getPluginPatternMatcher().contains("#file=")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            return ret;
-        }
+        return new Regex(link.getPluginPatternMatcher(), "file=(\\d+)").getMatch(0);
     }
 
     /* Connection stuff */
@@ -71,6 +62,7 @@ public class GofileIo extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS = 20;
     private String               downloadURL       = null;
 
+    /** TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website. */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -99,12 +91,16 @@ public class GofileIo extends PluginForHost {
         brc.getPage(post);
         response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         if ("ok".equals(response.get("status"))) {
+            /*
+             * fileID is needed to find the correct files if multiple ones are in a 'folder'. If this is not available we most likely only
+             * have a single file.
+             */
             final String fileID = getFileID(link);
             final Map<String, Object> data = (Map<String, Object>) response.get("data");
             final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("files");
             for (Entry<String, Map<String, Object>> file : files.entrySet()) {
                 final String id = file.getKey();
-                if (id.toString().equals(fileID)) {
+                if (fileID == null || id.toString().equals(fileID)) {
                     final Map<String, Object> entry = file.getValue();
                     downloadURL = (String) entry.get("link");
                     final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
@@ -112,8 +108,12 @@ public class GofileIo extends PluginForHost {
                         link.setDownloadSize(size.longValue());
                     }
                     final String name = (String) entry.get("name");
-                    if (name != null) {
+                    final String md5 = (String) entry.get("md5");
+                    if (!StringUtils.isEmpty(name)) {
                         link.setFinalFileName(name);
+                    }
+                    if (!StringUtils.isEmpty(md5)) {
+                        link.setMD5Hash(md5);
                     }
                     return AvailableStatus.TRUE;
                 }
