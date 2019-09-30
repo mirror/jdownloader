@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.tv" }, urls = { "https?://(\\w+\\.)?(?:gogoanime\\.(?:tv|io)|gogodramaonline\\.com|gogodrama\\.us|gogodrama\\.to)/(?:(?:watch/)?[-A-Za-z0-9]+-episode-\\d+|(?:embed|streaming|load)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.tv" }, urls = { "https?://(\\w+\\.)?(?:gogoanime\\.(?:tv|io)|gogodramaonline\\.com|gogodrama\\.us|gogodrama\\.to|vidstreaming\\.io)/(?:(?:watch/)?[-A-Za-z0-9]+-episode-\\d+|(?:embed|streaming|load)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+)" })
 @SuppressWarnings("deprecation")
 public class GogoAnimeTv extends antiDDoSForDecrypt {
     public GogoAnimeTv(final PluginWrapper wrapper) {
