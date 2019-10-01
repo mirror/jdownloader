@@ -21,15 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UsersdriveCom extends XFileSharingProBasic {
-    public UsersdriveCom(final PluginWrapper wrapper) {
+public class StreamlandTo extends XFileSharingProBasic {
+    public StreamlandTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -37,14 +36,14 @@ public class UsersdriveCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-10-01: Premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-10-01: reCaptchaV2<br />
+     * limit-info: 2019-10-01: Premium untested, set FREE limits <br />
+     * captchatype-info: 2019-10-01: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "usersdrive.com" });
+        ret.add(new String[] { "streamland.to" });
         return ret;
     }
 
@@ -65,13 +64,13 @@ public class UsersdriveCom extends XFileSharingProBasic {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -79,13 +78,13 @@ public class UsersdriveCom extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -2;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -2;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
     }
 
@@ -102,14 +101,5 @@ public class UsersdriveCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
-    }
-
-    @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        /* 2019-10-01: Special: This might increase downloadspeed for free users */
-        if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
-            captchaForm.put("adblock_detected", "0");
-        }
-        super.handleCaptcha(link, captchaForm);
     }
 }

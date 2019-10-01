@@ -426,7 +426,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
      * 2019-08-20: Some XFS websites are supported via another API via play.google.com/store/apps/details?id=com.zeuscloudmanager --> This
      * has nothing todo with the official XFS API! </br>
-     * Example: xvideosharing.com, flix555.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
+     * Example: xvideosharing.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
      * default: false
      */
     protected boolean supports_api_only_mode() {
@@ -2549,10 +2549,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             long expire_milliseconds_from_expiredate = 0;
             long expire_milliseconds_precise_to_the_second = 0;
             if (expireStr != null) {
-                /*
-                 * 2019-07-10: Accounts should expire at the end of the last day (verified via API of XFS demo website xvideosharing.com
-                 * though for flix555.com is was different)
-                 */
                 expireStr += " 23:59:59";
                 expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
             }
@@ -2693,8 +2689,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (apikey == null && generate_apikey_url != null) {
             if (Encoding.isHtmlEntityCoded(generate_apikey_url)) {
                 /*
-                 * 2019-07-28: E.g. flix555.com has "&&amp;" inside URL (= buggy) - also some XFS hosts will only allow apikey generation
-                 * once and when pressing "change key" afterwards, it will always be the same. This may also be a serverside XFS bug.
+                 * 2019-07-28: Some hosts have "&&amp;" inside URL (= buggy) - also some XFS hosts will only allow apikey generation once
+                 * and when pressing "change key" afterwards, it will always be the same. This may also be a serverside XFS bug.
                  */
                 generate_apikey_url = Encoding.htmlDecode(generate_apikey_url);
             }
@@ -2855,7 +2851,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Tries to find available traffic-left value inside html code. */
     protected String regExTrafficLeft() {
         /* Traffic can also be negative! */
-        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*:?</TD>\\s*<TD[^>]*?>\\s*(?:<b>)?\\s*([^<>\"']+)").getMatch(0);
+        String availabletraffic = new Regex(this.correctedBR, "Traffic available[^<>]*:?(?:<[^>]*>)?</TD>\\s*<TD[^>]*?>\\s*(?:<b>)?\\s*([^<>\"']+)").getMatch(0);
         if (availabletraffic == null) {
             /* 2019-02-11: For newer XFS versions */
             availabletraffic = new Regex(this.correctedBR, ">\\s*Traffic available(?:\\s*today)?\\s*</div>\\s*<div class=\"txt\\d+\">\\s*([^<>\"]+)\\s*<").getMatch(0);
@@ -3222,7 +3218,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     dllink = getDllink(link, account);
                     if (StringUtils.isEmpty(dllink)) {
-                        /* 2019-05-30: Official video download for premium users of videohosts e.g. xvideosharing.com */
+                        /**
+                         * 2019-05-30: Official video download for premium users of videohosts e.g. xvideosharing.com. TODO: Prefer this
+                         * over stream download. Example: watchvideo.us . Else it might happen that (HLS) streams get downloaded although
+                         * official http download with higher quality and downloadspeed is available!
+                         */
                         dllink = checkOfficialVideoDownload(link, account);
                     }
                     if (StringUtils.isEmpty(dllink)) {
