@@ -4,9 +4,9 @@ import java.util.Date;
 
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 
 public class AccountReference {
-
     public AccountReference() {
     }
 
@@ -72,6 +72,15 @@ public class AccountReference {
         }
     }
 
+    public final AccountTrafficView getAccountTrafficView() {
+        final Account acc = getAccount();
+        if (acc != null) {
+            return acc.getAccountTrafficView();
+        } else {
+            return null;
+        }
+    }
+
     public boolean isAvailable() {
         final Account acc = getAccount();
         if (acc != null) {
@@ -106,5 +115,4 @@ public class AccountReference {
         }
         return null;
     }
-
 }

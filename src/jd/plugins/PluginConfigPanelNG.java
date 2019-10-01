@@ -380,20 +380,19 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         }
     }
 
-    protected String getTrafficString(Account acc, long current, long total) {
-        AccountInfo ai = acc.getAccountInfo();
-        long timeout = -1;
+    protected String getTrafficString(final Account acc) {
+        final AccountTrafficView trafficView = acc.getAccountTrafficView();
         if (!acc.isValid()) {
             return null;
-        } else if (acc.isEnabled() && acc.isTempDisabled() && ((timeout = acc.getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
+        } else if (acc.isEnabled() && acc.isTempDisabled() && ((acc.getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
             return null;
-        } else if (ai == null) {
+        } else if (trafficView == null) {
             return "";
         } else {
-            if (ai.isUnlimitedTraffic()) {
+            if (trafficView.isUnlimitedTraffic()) {
                 return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
             } else {
-                return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(Formatter.formatReadable(ai.getTrafficLeft()), Formatter.formatReadable(ai.getTrafficMax()));
+                return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(Formatter.formatReadable(trafficView.getTrafficLeft()), Formatter.formatReadable(trafficView.getTrafficMax()));
             }
         }
     }
@@ -486,7 +485,11 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                             add(enabledBox, "spanx,gapright " + gapleft + ", alignx right" + getRightGap());
                             addPair(_GUI.T.lit_status(), null, new Label(PremiumAccountTableModel.accountToStatusString(acc), PremiumAccountTableModel.accountToStatusIcon(acc)));
                             // addPair(_GUI.T.lit_type(), null, new Label(acc.getType().getLabel()));
-                            AccountInfo ai = acc.getAccountInfo();
+                            final String traffic = getTrafficString(acc);
+                            if (StringUtils.isNotEmpty(traffic)) {
+                                addPair(_GUI.T.lit_download_traffic(), null, new Label(traffic));
+                            }
+                            final AccountInfo ai = acc.getAccountInfo();
                             if (ai != null) {
                                 String expire = getExpireDateString(acc, ai);
                                 if (StringUtils.isNotEmpty(expire)) {
@@ -495,10 +498,6 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                                 long addedTs = acc.getLongProperty("added", -1);
                                 if (addedTs > 0) {
                                     addPair(_GUI.T.lit_added(), null, new Label(formatDate(new Date(addedTs))));
-                                }
-                                String traffic = getTrafficString(acc, ai.getTrafficLeft(), ai.getTrafficMax());
-                                if (StringUtils.isNotEmpty(traffic)) {
-                                    addPair(_GUI.T.lit_download_traffic(), null, new Label(traffic));
                                 }
                                 if (ai.getUsedSpace() != -1) {
                                     addPair(_GUI.T.lit_used_space(), null, new Label(Formatter.formatReadable(ai.getUsedSpace())));

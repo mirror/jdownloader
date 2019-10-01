@@ -9,7 +9,6 @@ import org.appwork.swing.exttable.tree.TreeNodeInterface;
 import org.jdownloader.controlling.hosterrule.AccountReference;
 
 public class AccountWrapper implements AccountInterface {
-
     private AccountReference account;
     private boolean          enabled;
     private GroupWrapper     parent;
@@ -62,7 +61,6 @@ public class AccountWrapper implements AccountInterface {
     }
 
     public boolean isValid() {
-
         return account.isValid();
     }
 
@@ -87,5 +85,4 @@ public class AccountWrapper implements AccountInterface {
     public void setParent(TreeNodeInterface parent) {
         this.parent = (GroupWrapper) parent;
     }
-
 }

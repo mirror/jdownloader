@@ -1032,16 +1032,25 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
+    public AccountTrafficView getAccountTrafficView(final Account account) {
+        final AccountInfo accountInfo;
+        if (account != null && (accountInfo = account.getAccountInfo()) != null) {
+            return accountInfo;
+        } else {
+            return null;
+        }
+    }
+
     public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) throws Exception {
-        final AccountInfo ai;
-        if (account != null && (ai = account.getAccountInfo()) != null) {
-            if (ai.isUnlimitedTraffic() || ai.isSpecialTraffic()) {
+        final AccountTrafficView accountTrafficView = getAccountTrafficView(account);
+        if (accountTrafficView != null) {
+            if (accountTrafficView.isUnlimitedTraffic() || accountTrafficView.isSpecialTraffic()) {
                 return true;
             } else {
-                final long trafficLeft = ai.getTrafficLeft();
+                final long trafficLeft = accountTrafficView.getTrafficLeft();
                 final long minimum = 1024;
                 if (trafficLeft == 0) {
-                    if (ai.isTrafficRefill()) {
+                    if (accountTrafficView.isTrafficRefill()) {
                         final long downloadSize = downloadLink.getView().getBytesTotalEstimated();
                         final long downloadLeft;
                         if (downloadSize >= 0) {
@@ -1058,7 +1067,7 @@ public abstract class PluginForHost extends Plugin {
                     if (downloadSize >= 0) {
                         final long downloadLeft = Math.max(0, downloadSize - downloadLink.getView().getBytesLoaded());
                         if (trafficLeft - downloadLeft <= 0) {
-                            if (ai.isTrafficRefill()) {
+                            if (accountTrafficView.isTrafficRefill()) {
                                 final long required = Math.max(minimum, downloadLeft - trafficLeft);
                                 throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, required));
                             } else {
@@ -1183,6 +1192,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void update(final DownloadLink downloadLink, final Account account, long bytesTransfered) throws PluginException {
         if (account != null && bytesTransfered > 0) {
+            // update the AccountInfo and NOT the AccountTrafficView
             final AccountInfo ai = account.getAccountInfo();
             if (ai != null && !ai.isUnlimitedTraffic()) {
                 final long left = Math.max(0, ai.getTrafficLeft() - bytesTransfered);

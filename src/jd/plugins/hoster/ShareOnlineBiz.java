@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -43,6 +44,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -64,6 +66,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class ShareOnlineBiz extends antiDDoSForHost {
     private static final String                                     COOKIE_HOST                             = "http://share-online.biz";
     private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                            = new WeakHashMap<Account, HashMap<String, String>>();
+    private static WeakHashMap<Account, AtomicLong>                 RESERVED_TRAFFIC                        = new WeakHashMap<Account, AtomicLong>();
     private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                          = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
     private static Object                                           LOCK                                    = new Object();
     private static HashMap<Long, Long>                              noFreeSlot                              = new HashMap<Long, Long>();
@@ -646,6 +649,57 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     }
 
     @Override
+    public AccountTrafficView getAccountTrafficView(final Account account) {
+        final AccountTrafficView ret = super.getAccountTrafficView(account);
+        if (ret != null) {
+            return new AccountTrafficView() {
+                @Override
+                public boolean isUnlimitedTraffic() {
+                    return ret.isUnlimitedTraffic();
+                }
+
+                @Override
+                public boolean isTrafficRefill() {
+                    return ret.isTrafficRefill();
+                }
+
+                @Override
+                public boolean isSpecialTraffic() {
+                    return ret.isSpecialTraffic();
+                }
+
+                @Override
+                public long getTrafficMax() {
+                    return ret.getTrafficMax();
+                }
+
+                @Override
+                public long getTrafficLeft() {
+                    return Math.max(0, ret.getTrafficLeft() - getAccountReservedTraffic());
+                }
+
+                private final long getAccountReservedTraffic() {
+                    synchronized (RESERVED_TRAFFIC) {
+                        final AtomicLong ret = RESERVED_TRAFFIC.get(account);
+                        if (ret != null) {
+                            return ret.get();
+                        } else {
+                            return 0;
+                        }
+                    }
+                }
+
+                @Override
+                public long getReservedTraffic() {
+                    return ret.getReservedTraffic() + getAccountReservedTraffic();
+                }
+            };
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (account == null || isFree(account)) {
             return 1;
@@ -657,12 +711,12 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             } else if (isVIPGroup(group)) {
                 max = account_premium_vipspecial_maxdownloads;
             } else {
-                final AccountInfo ai = account.getAccountInfo();
-                if (userTrafficWorkaround() && ai != null) {
+                final AccountTrafficView view = account.getAccountTrafficView();
+                if (userTrafficWorkaround() && view != null) {
                     /**
                      * special handling for throttled accounts
                      */
-                    if (ai.getTrafficLeft() > 1024 * 1024) {
+                    if (view.getTrafficLeft() > 1024 * 1024) {
                         max = account_premium_maxdownloads;
                     } else {
                         max = account_premium_penalty_maxdownloads;
@@ -672,9 +726,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
             }
             synchronized (LOCK) {
-                CopyOnWriteArrayList<Long> failureThreads = THREADFAILURES.get(account);
+                final CopyOnWriteArrayList<Long> failureThreads = THREADFAILURES.get(account);
                 if (failureThreads != null) {
-                    Iterator<Long> it = failureThreads.iterator();
+                    final Iterator<Long> it = failureThreads.iterator();
                     while (it.hasNext()) {
                         final long next = it.next();
                         if (System.currentTimeMillis() - next > THREADFAILURESTIMEOUT) {
@@ -999,29 +1053,41 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             } else if (maxchunks == 0) {
                 maxchunks = getMaxChunks(account);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
-            if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
-                final boolean trafficMaxWorkaround = userTrafficWorkaroundMax();
-                if (trafficMaxWorkaround) {
-                    synchronized (LOCK) {
-                        final AccountInfo ai = account.getAccountInfo();
-                        ai.setTrafficLeft(ai.getTrafficLeft() - Long.parseLong(size));
+            final boolean trafficMaxWorkaround = userTrafficWorkaroundMax();
+            final long sizeLong = size == null ? -1 : Long.parseLong(size);
+            if (trafficMaxWorkaround && sizeLong > 0) {
+                synchronized (RESERVED_TRAFFIC) {
+                    enoughTrafficFor(link, account);
+                    AtomicLong reservedTraffic = RESERVED_TRAFFIC.get(account);
+                    if (reservedTraffic == null) {
+                        reservedTraffic = new AtomicLong(sizeLong);
+                        RESERVED_TRAFFIC.put(account, reservedTraffic);
+                    } else {
+                        reservedTraffic.addAndGet(sizeLong);
                     }
                 }
-                try {
+            }
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, account_premium_resume, maxchunks);
+                if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
                     dl.startDownload();
-                } finally {
-                    if (trafficMaxWorkaround) {
-                        synchronized (LOCK) {
-                            final AccountInfo ai = account.getAccountInfo();
-                            ai.setTrafficLeft(ai.getTrafficLeft() + Long.parseLong(size));
+                } else {
+                    br.followConnection();
+                    errorHandling(br, link, account, infos);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } finally {
+                if (trafficMaxWorkaround && sizeLong > 0) {
+                    synchronized (RESERVED_TRAFFIC) {
+                        final AtomicLong reservedTraffic = RESERVED_TRAFFIC.get(account);
+                        if (reservedTraffic != null) {
+                            reservedTraffic.addAndGet(-sizeLong);
+                            if (reservedTraffic.get() == 0) {
+                                RESERVED_TRAFFIC.remove(account);
+                            }
                         }
                     }
                 }
-            } else {
-                br.followConnection();
-                errorHandling(br, link, account, infos);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
     }

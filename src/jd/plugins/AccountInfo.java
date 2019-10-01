@@ -42,7 +42,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
-public class AccountInfo extends Property {
+public class AccountInfo extends Property implements AccountTrafficView {
     private static final long serialVersionUID       = 1825140346023286206L;
     private long              account_validUntil     = -1;
     private long              account_trafficLeft    = -1;
@@ -593,5 +593,10 @@ public class AccountInfo extends Property {
             }
         }
         return null;
+    }
+
+    @Override
+    public long getReservedTraffic() {
+        return 0;
     }
 }

@@ -13,7 +13,7 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.Accoun
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
 import jd.nutils.Formatter;
-import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 
 import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
@@ -25,25 +25,20 @@ import org.jdownloader.controlling.hosterrule.FreeAccountReference;
 import org.jdownloader.gui.translate._GUI;
 
 public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface> implements AccountCheckerEventListener {
-
     public HosterPriorityTableModel() {
         super("HosterPriorityTableModel");
-
         AccountChecker.getInstance().getEventSender().addListener(this, true);
         checkRunning = AccountChecker.getInstance().isRunning();
-
     }
 
     public void onCheckStarted() {
         checkRunning = true;
         fireTableDataChanged();
-
     }
 
     public void onCheckStopped() {
         checkRunning = false;
         fireTableDataChanged();
-
     }
 
     private volatile boolean checkRunning = false;
@@ -51,10 +46,8 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
     @Override
     protected void initColumns() {
         this.addColumn(new PackageColumn());
-
         addColumn(new GroupRuleColumn());
         this.addColumn(new ExtTextColumn<AccountInterface>(_GUI.T.premiumaccounttablemodel_column_user()) {
-
             private static final long serialVersionUID = -8070328156326837828L;
 
             @Override
@@ -84,7 +77,6 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
 
             @Override
             protected void setStringValue(String value, AccountInterface object) {
-
             }
 
             @Override
@@ -92,7 +84,6 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                 return GUIUtils.getAccountName(value.getUser());
             }
         });
-
         this.addColumn(new ExtDateColumn<AccountInterface>(_GUI.T.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
 
@@ -136,10 +127,8 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                     return ((AccountWrapper) o2).getExpireDate();
                 }
                 return null;
-
             }
         });
-
         this.addColumn(new ExtProgressColumn<AccountInterface>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
             private final JComponent  empty            = new RendererMigPanel("ins 0", "[]", "[]");
@@ -161,7 +150,6 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
 
             protected boolean isIndeterminated(final AccountInterface value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 if (value instanceof AccountWrapper) {
-
                     AccountWrapper aw = (AccountWrapper) value;
                     if (aw.getAccount() instanceof FreeAccountReference) {
                         return false;
@@ -173,9 +161,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                         return true;
                     }
                 }
-
                 return false;
-
             }
 
             @Override
@@ -184,30 +170,31 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                     return empty;
                 }
                 JComponent ret = super.getRendererComponent(value, isSelected, hasFocus, row, column);
-
                 return ret;
             }
 
             @Override
             protected String getString(AccountInterface value, long current, long total) {
                 if (value instanceof AccountWrapper) {
-
-                    AccountWrapper aw = (AccountWrapper) value;
-                    AccountInfo ai = aw.getAccountInfo();
-                    long timeout = -1;
-                    if (!aw.isValid()) {
-                        return "";
-                    } else if (aw.getAccount().isEnabled() && aw.isTempDisabled() && ((timeout = aw.getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
-                        return _GUI.T.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
-                    } else if (ai == null) {
+                    final AccountWrapper accountWrapper = (AccountWrapper) value;
+                    if (!accountWrapper.isValid()) {
                         return "";
                     } else {
-                        // COL_PROGRESS = COL_PROGRESS_NORMAL;
-                        if (ai.isUnlimitedTraffic()) {
-                            return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
+                        long timeout = -1;
+                        if (accountWrapper.getAccount().isEnabled() && accountWrapper.isTempDisabled() && ((timeout = accountWrapper.getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
+                            return _GUI.T.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
                         } else {
-                            return Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
-
+                            final AccountTrafficView accountTrafficView = accountWrapper.getAccount().getAccountTrafficView();
+                            if (accountTrafficView == null) {
+                                return "";
+                            } else {
+                                // COL_PROGRESS = COL_PROGRESS_NORMAL;
+                                if (accountTrafficView.isUnlimitedTraffic()) {
+                                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
+                                } else {
+                                    return Formatter.formatReadable(accountTrafficView.getTrafficLeft()) + "/" + Formatter.formatReadable(accountTrafficView.getTrafficMax());
+                                }
+                            }
                         }
                     }
                 }
@@ -217,19 +204,18 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
             @Override
             protected long getMax(AccountInterface value) {
                 if (value instanceof AccountWrapper) {
-
-                    AccountWrapper ac = (AccountWrapper) value;
-
-                    AccountInfo ai = ac.getAccountInfo();
-                    if (!ac.isValid()) {
+                    final AccountWrapper accountWrapper = (AccountWrapper) value;
+                    if (!accountWrapper.isValid()) {
                         return 100;
-                    } else if (ai == null) {
+                    }
+                    final AccountTrafficView accountTrafficView = accountWrapper.getAccount().getAccountTrafficView();
+                    if (accountTrafficView == null) {
                         return 100;
                     } else {
-                        if (ai.isUnlimitedTraffic()) {
+                        if (accountTrafficView.isUnlimitedTraffic()) {
                             return 100;
                         } else {
-                            return ai.getTrafficMax();
+                            return accountTrafficView.getTrafficMax();
                         }
                     }
                 }
@@ -239,18 +225,18 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
             @Override
             protected long getValue(AccountInterface value) {
                 if (value instanceof AccountWrapper) {
-
-                    AccountWrapper ac = (AccountWrapper) value;
-                    AccountInfo ai = ac.getAccountInfo();
-                    if (!ac.isValid()) {
+                    final AccountWrapper accountWrapper = (AccountWrapper) value;
+                    if (!accountWrapper.isValid()) {
                         return 0;
-                    } else if (ai == null) {
+                    }
+                    final AccountTrafficView accountTrafficView = accountWrapper.getAccount().getAccountTrafficView();
+                    if (accountTrafficView == null) {
                         return 0;
                     } else {
-                        if (ai.isUnlimitedTraffic()) {
+                        if (accountTrafficView.isUnlimitedTraffic()) {
                             return 100;
                         } else {
-                            return ai.getTrafficLeft();
+                            return accountTrafficView.getTrafficLeft();
                         }
                     }
                 }
@@ -258,5 +244,4 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
             }
         });
     }
-
 }
