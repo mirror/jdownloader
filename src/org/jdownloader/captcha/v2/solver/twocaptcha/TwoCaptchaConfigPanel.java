@@ -7,6 +7,12 @@ import java.io.IOException;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.os.CrossSystem;
@@ -16,18 +22,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-
 public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPanel {
     /**
      *
      */
     private static final long       serialVersionUID = -6345775244208176097L;
-
     private ExtButton               btnUserCheck;
     private TextInput               apiKey;
     private TwoCaptchaSolverService service;
@@ -55,10 +54,8 @@ public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPane
         MigPanel toolbar = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar.add(label(_GUI.T.lit_api_key()));// , "width 135!");
         toolbar.add(apiKey, "pushx,growx");
-
         btnUserCheck = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -103695205004891917L;
-
             {
                 setName(_GUI.T.NinekwService_createPanel_btnUserCheck());
             }
@@ -91,7 +88,6 @@ public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPane
         toolbar.add(btnUserCheck);
         add(toolbar, "gapleft 40, spanx,pushx,growx");// , "gapleft 33,spanx,pushx,growx");
         // addPair(_GUI.T.lit_api_key(), null, toolbar);
-
         addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_TWO_CAPTCHA.FEED_BACK_SENDING_ENABLED));
         addBlackWhiteList(CFG_TWO_CAPTCHA.CFG);
     }
@@ -116,7 +112,7 @@ public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPane
 
     @Override
     public String getTitle() {
-        return "2Captcha.com";
+        return "2captcha.com/rucaptcha.com";
     }
 
     private Component label(String lbl) {
