@@ -15,19 +15,21 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class Flix555Com extends XFileSharingProBasic {
-    public Flix555Com(final PluginWrapper wrapper) {
+public class RarlinkCom extends XFileSharingProBasic {
+    public RarlinkCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -35,23 +37,41 @@ public class Flix555Com extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2019-04-29: null<br />
+     * limit-info: 2019-10-01: Untested (all URLs = premiumonly), set default limits <br />
+     * captchatype-info: 2019-10-01: unknown<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "flix555.com" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "rarlink.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -59,80 +79,42 @@ public class Flix555Com extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -2;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -2;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 2;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 2;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
-    public boolean isVideohosterEmbed() {
-        /* 2019-04-29: Special */
-        return true;
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        /* 2019-04-29: Special */
-        return true;
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        /* 2019-04-29: Special */
-        return false;
-    }
-
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+    public boolean isPremiumOnlyHTML() {
+        /*
+         * 2019-10-01: Special: According to website, free users can download files smaller than 1 MB but for those, they will just display
+         * another errormessage.
+         */
+        boolean isPremiumonlyHTML = super.isPremiumOnlyHTML();
+        if (!isPremiumonlyHTML) {
+            final boolean premiumonly_filehost = new Regex(correctedBR, "Upgrade Premium to Download this File").matches();
+            isPremiumonlyHTML = premiumonly_filehost;
         }
-        return pattern.toString();
+        return isPremiumonlyHTML;
     }
 }

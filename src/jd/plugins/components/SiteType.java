@@ -142,7 +142,7 @@ public class SiteType {
          * Script used by some (mostly free) file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what's the name of this
          * script.<br />
          * Usually hosts using this script will provide an public upload- & filecheck API under '/docs/api'.<br />
-         * <b>Examples:</b> <a href="https://megaupload.nz/">megaupload.nz</a>, <a href="https://anonfiles.com/">anonfiles.com</a><br />
+         * <b>Examples:</b> <a href="https://desufiles.com/">desufiles.com</a>, <a href="https://anonfiles.com/">anonfiles.com</a><br />
          * <b>Superclass:</b> UnknownHostingScriptCore <br />
          */
         Unknown_FilehostScript,
