@@ -58,7 +58,7 @@ public class TwoCaptchaSolverService extends AbstractSolverService implements Se
 
     @Override
     public String getName() {
-        return "2captcha.com";
+        return "2captcha.com/rucaptcha.com";
     }
 
     @Override
@@ -103,7 +103,6 @@ public class TwoCaptchaSolverService extends AbstractSolverService implements Se
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-
         ret.put(JacSolverService.ID, 30000);
         ret.put(NineKwSolverService.ID, 120000);
         // ret.put(CaptchaMyJDSolverService.ID, 60000);
@@ -111,7 +110,6 @@ public class TwoCaptchaSolverService extends AbstractSolverService implements Se
         // ret.put(ImageTyperzSolverService.ID, 60000);
         // ret.put(CheapCaptchaSolverService.ID, 60000);
         // ret.put(EndCaptchaSolverService.ID, 60000);
-
         return ret;
     }
 
