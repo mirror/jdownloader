@@ -21,32 +21,33 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.parser.html.Form;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DdlTo extends XFileSharingProBasic {
-    private final String   maxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT_2019_06";
-    private final String[] maxSimultaneousDownloads       = new String[] { "DEFAULT", "2", "1" };
-
-    public DdlTo(final PluginWrapper wrapper) {
+public class VupTo extends XFileSharingProBasic {
+    public VupTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
-        setConfigElements();
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-05-22: premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-05-22: null<br />
-     * other:<br />
+     * limit-info: 2019-10-01: Set to default as this host uses HLS streaming only <br />
+     * captchatype-info: null<br />
+     * other: Tags: ddl.to sister-site - is a videohoster <br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "vup.to" });
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -57,14 +58,12 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ddl.to" });
-        return ret;
+        /* 2019-10-01: Special: They have customized embed URLs. */
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed\\-|emb\\.html\\?)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -85,57 +84,50 @@ public class DdlTo extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
-        }
-    }
-
-    public int getMaxDownloadSelect() {
-        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(maxSimultaneousDownloads_LIMIT, 0);
-        try {
-            final String value = maxSimultaneousDownloads[chosenDownloadLimit];
-            if ("DEFAULT".equals(value)) {
-                return 1;
-            } else {
-                return Integer.parseInt(value);
-            }
-        } catch (final Throwable e) {
-            /* Return default limit */
-            logger.log(e);
-            return 1;
+            return 0;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return getMaxDownloadSelect();
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return getMaxDownloadSelect();
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
-        /* 2019-08-14: Special: This might increase downloadspeed for free users */
-        if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
-            captchaForm.put("adblock_detected", "0");
+    protected boolean isVideohosterEmbedHTML() {
+        /* 2019-10-01: Special: They have customized embed URLs. */
+        boolean isVideohostHTML = super.isVideohosterEmbedHTML();
+        if (!isVideohostHTML) {
+            isVideohostHTML = new Regex(correctedBR, "/emb\\.html\\?" + this.fuid).matches();
         }
-        super.handleCaptcha(link, captchaForm);
+        return isVideohostHTML;
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
+    @Override
+    public String getFUIDFromURL(final DownloadLink dl) {
+        final String result = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/(?:embed\\-|emb\\.html\\?)?([a-z0-9]{12})").getMatch(0);
+        return result;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        /* 2019-10-01: Special */
+        return true;
     }
 }
