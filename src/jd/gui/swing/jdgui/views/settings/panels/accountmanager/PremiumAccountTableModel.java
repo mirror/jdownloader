@@ -29,6 +29,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -141,52 +142,60 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
         @Override
         protected String getString(AccountEntry ac, long current, long total) {
-            AccountInfo ai = ac.getAccount().getAccountInfo();
-            long timeout = -1;
             if (!ac.getAccount().isValid()) {
                 return "";
-            } else if (ac.getAccount().isEnabled() && ac.getAccount().isTempDisabled() && ((timeout = ac.getAccount().getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
-                return _GUI.T.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
-            } else if (ai == null) {
-                return "";
             } else {
-                // COL_PROGRESS = COL_PROGRESS_NORMAL;
-                if (ai.isUnlimitedTraffic()) {
-                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
+                long timeout = -1;
+                if (ac.getAccount().isEnabled() && ac.getAccount().isTempDisabled() && ((timeout = ac.getAccount().getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
+                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
                 } else {
-                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(SIZEUNIT.formatValue(maxSizeUnit, formatter, ai.getTrafficLeft()), SIZEUNIT.formatValue(maxSizeUnit, formatter, ai.getTrafficMax()));
+                    final AccountTrafficView accountTrafficView = ac.getAccount().getAccountTrafficView();
+                    if (accountTrafficView == null) {
+                        return "";
+                    } else {
+                        // COL_PROGRESS = COL_PROGRESS_NORMAL;
+                        if (accountTrafficView.isUnlimitedTraffic()) {
+                            return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
+                        } else {
+                            return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(SIZEUNIT.formatValue(maxSizeUnit, formatter, accountTrafficView.getTrafficLeft()), SIZEUNIT.formatValue(maxSizeUnit, formatter, accountTrafficView.getTrafficMax()));
+                        }
+                    }
                 }
             }
         }
 
         @Override
         protected long getMax(AccountEntry ac) {
-            AccountInfo ai = ac.getAccount().getAccountInfo();
             if (!ac.getAccount().isValid()) {
                 return 0;
-            } else if (ai == null) {
-                return 0;
             } else {
-                if (ai.isUnlimitedTraffic()) {
-                    return Long.MAX_VALUE;
+                final AccountTrafficView accountTrafficView = ac.getAccount().getAccountTrafficView();
+                if (accountTrafficView == null) {
+                    return 0;
                 } else {
-                    return ai.getTrafficMax();
+                    if (accountTrafficView.isUnlimitedTraffic()) {
+                        return Long.MAX_VALUE;
+                    } else {
+                        return accountTrafficView.getTrafficMax();
+                    }
                 }
             }
         }
 
         @Override
         protected long getValue(AccountEntry ac) {
-            AccountInfo ai = ac.getAccount().getAccountInfo();
             if (!ac.getAccount().isValid()) {
                 return 0;
-            } else if (ai == null) {
-                return 0;
             } else {
-                if (ai.isUnlimitedTraffic()) {
-                    return Long.MAX_VALUE;
+                final AccountTrafficView accountTrafficView = ac.getAccount().getAccountTrafficView();
+                if (accountTrafficView == null) {
+                    return 0;
                 } else {
-                    return ai.getTrafficLeft();
+                    if (accountTrafficView.isUnlimitedTraffic()) {
+                        return Long.MAX_VALUE;
+                    } else {
+                        return accountTrafficView.getTrafficLeft();
+                    }
                 }
             }
         }

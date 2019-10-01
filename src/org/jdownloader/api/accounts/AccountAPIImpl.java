@@ -13,6 +13,7 @@ import javax.imageio.ImageIO;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.APIQuery;
@@ -22,7 +23,6 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
-
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
@@ -34,14 +34,10 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 public class AccountAPIImpl implements AccountAPI {
     @Deprecated
     public List<AccountAPIStorable> queryAccounts(APIQuery queryParams) {
-
         List<Account> accs = AccountController.getInstance().list();
-
         java.util.List<AccountAPIStorable> ret = new ArrayList<AccountAPIStorable>();
-
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
-
         if (startWith > accs.size() - 1) {
             return ret;
         }
@@ -51,12 +47,10 @@ public class AccountAPIImpl implements AccountAPI {
         if (maxResults < 0) {
             maxResults = accs.size();
         }
-
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
             AccountAPIStorable accas = new AccountAPIStorable(acc);
             JsonMap infoMap = new JsonMap();
-
             if (queryParams.fieldRequested("username")) {
                 infoMap.put("username", acc.getUser());
             }
@@ -66,16 +60,19 @@ public class AccountAPIImpl implements AccountAPI {
                     infoMap.put("validUntil", ai.getValidUntil());
                 }
             }
+            AccountTrafficView accountTrafficView = null;
             if (queryParams.fieldRequested("trafficLeft")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) {
-                    infoMap.put("trafficLeft", ai.getTrafficLeft());
+                accountTrafficView = acc.getAccountTrafficView();
+                if (accountTrafficView != null) {
+                    infoMap.put("trafficLeft", accountTrafficView.getTrafficLeft());
                 }
             }
             if (queryParams.fieldRequested("trafficMax")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) {
-                    infoMap.put("trafficMax", ai.getTrafficMax());
+                if (accountTrafficView == null) {
+                    accountTrafficView = acc.getAccountTrafficView();
+                }
+                if (accountTrafficView != null) {
+                    infoMap.put("trafficMax", accountTrafficView.getTrafficMax());
                 }
             }
             if (queryParams.fieldRequested("enabled")) {
@@ -84,7 +81,6 @@ public class AccountAPIImpl implements AccountAPI {
             if (queryParams.fieldRequested("valid")) {
                 infoMap.put("valid", acc.isValid());
             }
-
             accas.setInfoMap(infoMap);
             ret.add(accas);
         }
@@ -140,12 +136,10 @@ public class AccountAPIImpl implements AccountAPI {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
             if (plugin != null) {
                 ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
             }
-
         } catch (IOException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);

@@ -11,6 +11,7 @@ import jd.controlling.accountchecker.AccountChecker;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.StringUtils;
@@ -62,23 +63,26 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
                     accas.setValidUntil(ai.getValidUntil());
                 }
             }
+            AccountTrafficView accountTrafficView = null;
             if (queryParams.isTrafficLeft()) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) {
-                    if (ai.isUnlimitedTraffic()) {
+                accountTrafficView = acc.getAccountTrafficView();
+                if (accountTrafficView != null) {
+                    if (accountTrafficView.isUnlimitedTraffic()) {
                         accas.setTrafficLeft(-1l);
                     } else {
-                        accas.setTrafficLeft(ai.getTrafficLeft());
+                        accas.setTrafficLeft(accountTrafficView.getTrafficLeft());
                     }
                 }
             }
             if (queryParams.isTrafficMax()) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) {
-                    if (ai.isUnlimitedTraffic()) {
+                if (accountTrafficView == null) {
+                    accountTrafficView = acc.getAccountTrafficView();
+                }
+                if (accountTrafficView != null) {
+                    if (accountTrafficView.isUnlimitedTraffic()) {
                         accas.setTrafficMax(-1l);
                     } else {
-                        accas.setTrafficMax(ai.getTrafficMax());
+                        accas.setTrafficMax(accountTrafficView.getTrafficMax());
                     }
                 }
             }

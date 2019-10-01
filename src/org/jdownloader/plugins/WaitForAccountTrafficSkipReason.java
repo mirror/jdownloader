@@ -4,7 +4,7 @@ import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.Account;
-import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.config.JsonConfig;
@@ -45,12 +45,12 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
     }
 
     private final boolean hasEnoughTraffic() {
-        final AccountInfo ai = getAccount().getAccountInfo();
-        if (ai != null) {
-            if (ai.isSpecialTraffic() || ai.isUnlimitedTraffic() || !ai.isTrafficRefill()) {
+        final AccountTrafficView accountTrafficView = getAccount().getAccountTrafficView();
+        if (accountTrafficView != null) {
+            if (accountTrafficView.isSpecialTraffic() || accountTrafficView.isUnlimitedTraffic() || !accountTrafficView.isTrafficRefill()) {
                 return true;
             } else {
-                final long trafficLeft = ai.getTrafficLeft();
+                final long trafficLeft = accountTrafficView.getTrafficLeft();
                 return trafficLeft > 0 && trafficLeft >= getTrafficRequired();
             }
         } else {
