@@ -264,7 +264,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             /* Check if login is required to check/download */
             final boolean noLogin = checkNoLoginNeeded(link);
-            final Account aa = account != null ? account : AccountController.getInstance().getValidAccount(this);
+            final Account aa = account != null ? account : AccountController.getInstance().getValidAccount(this.getHost());
             if (!noLogin && aa == null) {
                 link.getLinkStatus().setStatusText("Only downlodable via account!");
                 return AvailableStatus.UNCHECKABLE;
@@ -391,6 +391,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* Access photo inside wall-post */
                         setHeadersPhoto(this.br);
                         postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&al_ad=0&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
+                        checkErrorsPhoto();
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
@@ -431,20 +432,29 @@ public class VKontakteRuHoster extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                             setHeadersPhoto(this.br);
-                            postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                            if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
+                            postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
+                            checkErrorsPhoto();
                         }
                     }
                     try {
-                        /*
-                         * We're only doing this to get our filename at this stage!! 'Real' downloadlink will be grabben once user starts
-                         * the download!
-                         */
-                        dllink_temp = getHighestQualityPictureDownloadurl(link, false);
-                        if (StringUtils.isEmpty(dllink_temp)) {
-                            dllink_temp = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), true);
+                        if (isDownload) {
+                            dllink_temp = getHighestQualityPictureDownloadurl(link, true);
+                            if (StringUtils.isEmpty(dllink_temp)) {
+                                dllink_temp = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), true);
+                            }
+                            if (link.getStringProperty(PROPERTY_directurls_fallback, null) == null) {
+                                /* 2019-08-08: Just a hint */
+                                logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
+                            }
+                        } else {
+                            /*
+                             * We're only doing this to get our filename at this stage!! 'Real' downloadlink will be grabbed once user
+                             * starts the download!
+                             */
+                            dllink_temp = getHighestQualityPictureDownloadurl(link, false);
+                            if (StringUtils.isEmpty(dllink_temp)) {
+                                dllink_temp = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), false);
+                            }
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
@@ -454,12 +464,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 setHeaderRefererPhoto(this.br);
                 final String temp_name;
                 if (this.finalUrl != null) {
+                    /* Download */
                     temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
                 } else {
-                    if (link.getStringProperty(PROPERTY_directurls_fallback, null) == null) {
-                        /* 2019-08-08: Just a hint */
-                        logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
-                    }
+                    /* Only linkcheck */
                     temp_name = photoGetFinalFilename(getPhotoID(link), null, dllink_temp);
                 }
                 if (temp_name != null) {
@@ -468,6 +476,24 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Check errors which may happen after POST '/al_photos.php' request. */
+    private void checkErrorsPhoto() throws PluginException {
+        if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Access denied\\\\\"") || br.containsHTML("Access denied\"")) {
+            /*
+             * 2019-10-02: E.g.
+             * {"payload":["8",["\"Access denied\"","false","\"12345678\""]],"loaderVersion":"12345678","pageviewCandidate":true,"langPack":
+             * 3,"langVersion":"4268"}
+             */
+            /*
+             * json version. Access denied is not exactly offline but usually it is kinda impossible which rights are required to be able to
+             * get read-permissions for such files!
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     public void doFree(final DownloadLink link) throws Exception, PluginException {
@@ -1200,6 +1226,10 @@ public class VKontakteRuHoster extends PluginForHost {
             json = picturesGetJsonFromXml();
         }
         if (json == null) {
+            /* 2019-10-02: E.g. single image from album */
+            json = br.toString();
+        }
+        if (json == null) {
             if (br.containsHTML("<!>deleted<!>")) {
                 // we suffer some desync between website and api. I guess due to website pages been held in cache.
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1219,7 +1249,8 @@ public class VKontakteRuHoster extends PluginForHost {
         /* Count how many possible downloadlinks we have */
         int links_count = 0;
         String dllink = null;
-        final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+        /* 2019-10-02: New: x, r, q, p, o */
+        final String[] qs = { "w_", "z_", "y_", "x_", "m_", "x_", "r_", "q_", "p_", "_o" };
         for (final String q : qs) {
             if (this.isAbort()) {
                 logger.info("User stopped downloads --> Stepping out of getHighestQualityPic to avoid 'freeze' of the current DownloadLink");
@@ -1314,8 +1345,34 @@ public class VKontakteRuHoster extends PluginForHost {
      *            true: Return best quality which also can be downloaded <br/>
      *            false: return best quality downloadurl without checking whether it is downloadable or not
      */
-    @SuppressWarnings({ "unchecked" })
     private String getHighestQualityPicFromSavedJson(final DownloadLink link, final String picture_preview_json, final boolean checkDownloadability) throws Exception {
+        String dllink = getHighestQualityPicFromSavedJson(picture_preview_json);
+        boolean success = false;
+        final boolean foundValidURL = dllink != null && dllink.startsWith("http");
+        String directurl = null;
+        if (dllink != null && dllink.startsWith("http")) {
+            /* 2019-08-06: Extension is sometimes missing but required! */
+            if (!dllink.endsWith(".jpg")) {
+                dllink += ".jpg";
+            }
+            directurl = dllink;
+            if (checkDownloadability) {
+                success = photolinkOk(link, null, true, directurl);
+            } else {
+                return directurl;
+            }
+        }
+        if (!foundValidURL) {
+            logger.info("No saved downloadlink available");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!success) {
+            logger.info("Saved downloadlink(s) did not work");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
+        }
+        return directurl;
+    }
+
+    public static String getHighestQualityPicFromSavedJson(final String picture_preview_json) {
         String dllink = null;
         if (picture_preview_json != null) {
             try {
@@ -1347,29 +1404,7 @@ public class VKontakteRuHoster extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        boolean success = false;
-        final boolean foundValidURL = dllink != null && dllink.startsWith("http");
-        String directurl = null;
-        if (dllink != null && dllink.startsWith("http")) {
-            /* 2019-08-06: Extension is sometimes missing but required! */
-            if (!dllink.endsWith(".jpg")) {
-                dllink += ".jpg";
-            }
-            directurl = dllink;
-            if (checkDownloadability) {
-                success = photolinkOk(link, null, true, directurl);
-            } else {
-                return directurl;
-            }
-        }
-        if (!foundValidURL) {
-            logger.info("No saved downloadlink available");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (!success) {
-            logger.info("Saved downloadlink(s) did not work");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
-        }
-        return directurl;
+        return dllink;
     }
 
     /**
