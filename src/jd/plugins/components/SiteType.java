@@ -40,6 +40,12 @@ public class SiteType {
          */
         EvilAngelNetwork,
         /**
+         * <b>URL to script :</b> <a href="https://www.scriptplazza.com/flexshare-file-hosting-script/">FlexShare</a> <br />
+         * <b>Main host template class:</b> FlexShareCore<br />
+         * <b>Examples</b> <a href="https:/extmatrix.com/">extmatrix.com</a>, <a href="https:/filepup.net/">filepup.net</a><br />
+         */
+        FlexShare,
+        /**
          * <b>Minimum requirements:</b> Website has to use fluidplayer: <a href="https:/fluidplayer.com/">fluidplayer.com</a> <br />
          * <b>Additional requirements to be added to main class:</b> NO account support<br />
          * <b>Main host class:</b> FluidPlayer<br />

@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,10 +35,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=\\d+.+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -180,54 +180,49 @@ public class NexusmodsCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private boolean isCookieSet(Account account, String key) {
-        final String value = br.getCookie(account.getHoster(), key);
-        return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
-    }
-
     public void login(final Account account) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
                     getPage("https://www." + account.getHoster());
-                    final boolean isLoggedinCookies = isCookieSet(account, "member_id") && isCookieSet(account, "sid") && isCookieSet(account, "pass_hash");
-                    final boolean isLoggedinHTML = br.containsHTML("class=\"username\"");
-                    if (!isLoggedinCookies || !isLoggedinHTML) {
+                    if (!isLoggedinCookies()) {
                         logger.info("Existing login invalid: Full login required!");
                         br.clearCookies(getHost());
                     } else {
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
-                        return;
+                        loggedIN = true;
                     }
                 }
-                getPage("https://www." + account.getHoster() + "/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
-                final PostRequest request = new PostRequest("https://www.nexusmods.com/Sessions?TryNewLogin");
-                request.put("username", Encoding.urlEncode(account.getUser()));
-                request.put("password", Encoding.urlEncode(account.getPass()));
-                request.put("uri", "%2F%2Fwww.nexusmods.com%2F");
-                final DownloadLink original = this.getDownloadLink();
-                if (original == null) {
-                    this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + br.getRequest().getURL().getHost(), true));
-                }
-                try {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfTA2EUAAAAAIyUT3sr2W8qKUV1IauZl-CduEix").getToken();
-                    if (recaptchaV2Response == null) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    request.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                } finally {
+                if (!loggedIN) {
+                    getPage("https://www." + account.getHoster() + "/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
+                    final PostRequest request = new PostRequest("https://www.nexusmods.com/Sessions?TryNewLogin");
+                    request.put("username", Encoding.urlEncode(account.getUser()));
+                    request.put("password", Encoding.urlEncode(account.getPass()));
+                    request.put("uri", "%2F%2Fwww.nexusmods.com%2F");
+                    final DownloadLink original = this.getDownloadLink();
                     if (original == null) {
-                        this.setDownloadLink(null);
+                        this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + br.getRequest().getURL().getHost(), true));
                     }
-                }
-                request.setContentType("application/x-www-form-urlencoded");
-                sendRequest(request);
-                if (!isCookieSet(account, "member_id") || !isCookieSet(account, "sid") || !isCookieSet(account, "pass_hash")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    try {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfTA2EUAAAAAIyUT3sr2W8qKUV1IauZl-CduEix").getToken();
+                        if (recaptchaV2Response == null) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        request.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        if (original == null) {
+                            this.setDownloadLink(null);
+                        }
+                    }
+                    request.setContentType("application/x-www-form-urlencoded");
+                    sendRequest(request);
+                    if (!isLoggedinCookies()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
@@ -237,6 +232,10 @@ public class NexusmodsCom extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedinCookies() {
+        return br.getCookie(br.getURL(), "pass_hash", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getURL(), "member_id", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getURL(), "sid", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
