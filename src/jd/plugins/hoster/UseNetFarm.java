@@ -154,6 +154,7 @@ public class UseNetFarm extends UseNet {
             if (br.getCookie(getHost(), "sessid") == null) {
                 account.clearCookies("");
                 // login url
+                br.setAllowedResponseCodes(400);// Bad Request on invalid Login
                 br.getPage(account.getPass());
                 if (br.getCookie(getHost(), "sessid") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -207,7 +208,7 @@ public class UseNetFarm extends UseNet {
                     if (user != null && pass != null) {
                         account.setProperty(USENET_USERNAME, user);
                         account.setProperty(USENET_PASSWORD, pass);
-                        final Number conns = getNumber(usage, "conns");
+                        final Number conns = getNumber(userpass, "conns");
                         if (conns != null) {
                             account.setConcurrentUsePossible(true);
                             account.setMaxSimultanDownloads(conns.intValue());
