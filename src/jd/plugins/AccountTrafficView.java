@@ -5,8 +5,6 @@ public interface AccountTrafficView {
 
     public long getTrafficMax();
 
-    public long getReservedTraffic();
-
     public boolean isUnlimitedTraffic();
 
     public boolean isTrafficRefill();

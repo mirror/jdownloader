@@ -594,9 +594,4 @@ public class AccountInfo extends Property implements AccountTrafficView {
         }
         return null;
     }
-
-    @Override
-    public long getReservedTraffic() {
-        return 0;
-    }
 }
