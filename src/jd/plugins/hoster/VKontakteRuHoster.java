@@ -1226,7 +1226,7 @@ public class VKontakteRuHoster extends PluginForHost {
             json = picturesGetJsonFromXml();
         }
         if (json == null) {
-            /* 2019-10-02: E.g. single image from album */
+            /* 2019-10-02: Fallback - e.g. single image from album will return plain json. */
             json = br.toString();
         }
         if (json == null) {
