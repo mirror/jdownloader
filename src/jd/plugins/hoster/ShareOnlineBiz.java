@@ -688,11 +688,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         }
                     }
                 }
-
-                @Override
-                public long getReservedTraffic() {
-                    return ret.getReservedTraffic() + getAccountReservedTraffic();
-                }
             };
         } else {
             return null;
