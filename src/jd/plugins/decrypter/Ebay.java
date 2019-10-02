@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(www\\.)?ebay\\.(?:\\.\\w+)?[\\w]+/itm/[^/]+/\\w+\\?.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(?:www\\.)?ebay[\\.\\w]+/itm/.+" })
 public class Ebay extends PluginForDecrypt {
     public Ebay(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +43,7 @@ public class Ebay extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         final String fpName = br.getRegex("<title>([^<]+)\\s+eBay</title>").getMatch(0);
-        final String itemID = new Regex(parameter, "ebay\\.(?:\\.\\w+)?[\\w]+/itm/[^/]+/(\\w+)\\?").getMatch(0).toString();
+        final String itemID = new Regex(parameter, "/itm/([^/]+)").getMatch(0);
         String[] links = br.getRegex("\"maxImageUrl\":\"([^\"]+)\"").getColumn(0);
         for (String link : links) {
             DownloadLink dl = createDownloadlink(Encoding.unicodeDecode(link));
