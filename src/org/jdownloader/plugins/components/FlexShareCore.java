@@ -5,10 +5,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -23,6 +19,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 public class FlexShareCore extends antiDDoSForHost {
     public FlexShareCore(PluginWrapper wrapper) {
@@ -67,9 +67,8 @@ public class FlexShareCore extends antiDDoSForHost {
 
     /**
      * Can be found in account under: '/members/account.php'. Docs are usually here: '/api/docs.php'. Example website with working API:
-     * filepup.net </br>
-     * The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does still not work, it
-     * will just return 404. Override this to use API.
+     * filepup.net </br> The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does
+     * still not work, it will just return 404. Override this to use API.
      */
     protected String getAPIKey() {
         return null;
@@ -171,10 +170,10 @@ public class FlexShareCore extends antiDDoSForHost {
         if (getAPIKey() != null) {
             getPage(link.getPluginPatternMatcher());
         }
-        doFree(link);
+        doFree(link, null);
     }
 
-    private void doFree(final DownloadLink link) throws Exception, PluginException {
+    protected void doFree(final DownloadLink link, Account account) throws Exception, PluginException {
         if (br.containsHTML("(>Premium Only\\!|you have requested require a premium account for download\\.<)")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
@@ -214,9 +213,9 @@ public class FlexShareCore extends antiDDoSForHost {
                     final String recaptchaV2Response = rc2.getToken();
                     dlform.put("g-recaptcha-response", recaptchaV2Response);
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, null), getMaxChunks(null));
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, account), getMaxChunks(account));
             } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, isResumeable(link, null), getMaxChunks(null));
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, isResumeable(link, account), getMaxChunks(account));
             }
         } finally {
             try {
@@ -234,7 +233,7 @@ public class FlexShareCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private void handleGeneralServerErrors() throws PluginException {
+    protected void handleGeneralServerErrors() throws PluginException {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
@@ -242,7 +241,7 @@ public class FlexShareCore extends antiDDoSForHost {
         }
     }
 
-    private void handleErrors() throws PluginException {
+    protected void handleErrors() throws PluginException {
         if (br.containsHTML("Server is too busy for free users")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
         }
@@ -261,53 +260,64 @@ public class FlexShareCore extends antiDDoSForHost {
     private static final String PREMIUMLIMIT = "out of 1024\\.00 TB</td>";
     private static final String PREMIUMTEXT  = "Account type:</td>\\s*<td><b>Premium</b>";
 
-    private void login(final Account account, boolean force) throws Exception {
+    protected void login(final Account account, boolean force) throws Exception {
         synchronized (account) {
-            br.setCookiesExclusive(false);
-            br.setFollowRedirects(true);
-            final Cookies cookies = account.loadCookies("");
-            boolean loggedIN = false;
-            if (cookies != null) {
-                this.br.setCookies(this.getHost(), cookies);
-                getPage(getMainPage() + "/members/myfiles.php");
-                loggedIN = isLoggedIN();
-                if (loggedIN) {
-                    logger.info("Successfully loggedin via cookies");
-                }
-            }
-            if (!loggedIN) {
-                logger.info("Performing full login");
-                getPage(getLoginURL());
-                final Form loginform = getAndFillLoginForm(account);
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String captchaURL = new Regex(loginform.getHtmlCode(), "(/captcha\\.php[^\"\\']+)").getMatch(0);
-                if (captchaURL != null) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    final DownloadLink captchaLink;
-                    if (dlinkbefore != null) {
-                        captchaLink = dlinkbefore;
-                    } else {
-                        captchaLink = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(captchaLink);
+            try {
+                br.setCookiesExclusive(false);
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                boolean loggedIN = false;
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    getPage(getMainPage() + "/members/myfiles.php");
+                    loggedIN = isLoggedIN();
+                    if (loggedIN) {
+                        logger.info("Successfully loggedin via cookies");
                     }
-                    final String code = this.getCaptchaCode(captchaURL, captchaLink);
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
+                }
+                if (!loggedIN) {
+                    br.clearCookies(getHost());
+                    logger.info("Performing full login");
+                    getPage(getLoginURL());
+                    final Form loginform = getAndFillLoginForm(account);
+                    if (loginform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    loginform.put("captcha", code);
+                    final String captchaURL = new Regex(loginform.getHtmlCode(), "(/captcha\\.php[^\"\\']+)").getMatch(0);
+                    if (captchaURL != null) {
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        final DownloadLink captchaLink;
+                        if (dlinkbefore != null) {
+                            captchaLink = dlinkbefore;
+                        } else {
+                            captchaLink = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(captchaLink);
+                        }
+                        try {
+                            final String code = this.getCaptchaCode(captchaURL, captchaLink);
+                            loginform.put("captcha", Encoding.urlEncode(code));
+                        } finally {
+                            if (dlinkbefore != null) {
+                                this.setDownloadLink(dlinkbefore);
+                            }
+                        }
+                    }
+                    submitForm(loginform);
+                    /* Workaround for wrong URL after-login-redirect */
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        getPage("/members/myfiles.php");
+                    }
+                    if (!isLoggedIN()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                submitForm(loginform);
-                /* Workaround for wrong URL after-login-redirect */
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    getPage("/members/myfiles.php");
+                account.saveCookies(br.getCookies(br.getURL()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
                 }
-                if (!isLoggedIN()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw e;
             }
-            account.saveCookies(br.getCookies(br.getURL()), "");
         }
     }
 
@@ -328,8 +338,8 @@ public class FlexShareCore extends antiDDoSForHost {
         if (loginform == null) {
             return null;
         }
-        loginform.put("user", account.getUser());
-        loginform.put("pass", account.getPass());
+        loginform.put("user", Encoding.urlEncode(account.getUser()));
+        loginform.put("pass", Encoding.urlEncode(account.getPass()));
         return loginform;
     }
 
@@ -385,10 +395,10 @@ public class FlexShareCore extends antiDDoSForHost {
         br.setFollowRedirects(false);
         getPage(link.getPluginPatternMatcher());
         if (AccountType.FREE.equals(account.getType())) {
-            doFree(link);
+            doFree(link, account);
         } else {
             String getLink = br.getRedirectLocation();
-            if (getLink != null && getLink.matches("https?://(?:www\\.)?" + Pattern.compile(this.getHost()) + "/get/.*?")) {
+            if (getLink != null && getLink.matches("https?://(?:www\\.)?" + Pattern.quote(this.getHost()) + "/get/.*?")) {
                 getPage(getLink);
                 getLink = br.getRedirectLocation();
             }
@@ -413,9 +423,9 @@ public class FlexShareCore extends antiDDoSForHost {
     }
 
     private String getLink() {
-        String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location='(http.*?)';\"").getMatch(0);
+        String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location='(https?.*?)';\"").getMatch(0);
         if (getLink == null) {
-            getLink = br.getRegex("('|\")(" + "https?://(www\\.)?([a-z0-9]+\\.)?" + Pattern.compile(this.getHost()) + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)\\1").getMatch(1);
+            getLink = br.getRegex("('|\")(" + "https?://(www\\.)?([a-z0-9]+\\.)?" + Pattern.quote(this.getHost()) + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)\\1").getMatch(1);
         }
         return getLink;
     }
@@ -444,9 +454,7 @@ public class FlexShareCore extends antiDDoSForHost {
     /**
      * @return true: Website supports https and plugin will prefer https. <br />
      *         false: Website does not support https - plugin will avoid https. <br />
-     *         default: true </br>
-     *         Example which supports https: extmatrix.com </br>
-     *         Example which does NOT support https: filepup.net
+     *         default: true </br> Example which supports https: extmatrix.com </br> Example which does NOT support https: filepup.net
      */
     protected boolean supports_https() {
         return true;
