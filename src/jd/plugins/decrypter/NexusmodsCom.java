@@ -17,11 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -33,9 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)[^/]+/mods/\\d+/?" })
 public class NexusmodsCom extends PluginForDecrypt {
@@ -64,6 +65,10 @@ public class NexusmodsCom extends PluginForDecrypt {
             return decryptedLinks;
         } else if (((jd.plugins.hoster.NexusmodsCom) plugin).isLoginRequired(br)) {
             throw new AccountRequiredException();
+        } else if (br.containsHTML(">\\s*This mod contains adult content")) {
+            /* 2019-10-02: Account required + setting has to be enabled in account to be able to see/download such content! */
+            logger.info("Adult content: Enable it in your account settings to be able to download such files via JD: Profile --> Settings --> Content blocking --> Show adult content");
+            throw new AccountRequiredException();
         }
         String fpName = br.getRegex("<title>([^>]+)</title>").getMatch(0);
         if (fpName == null) {
@@ -76,24 +81,39 @@ public class NexusmodsCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "/Core/Libs/Common/Widgets/ModFilesTab?id=" + fid + "&game_id=" + game_id);
-        final String[][] downloads = br2.getRegex("<span>([^<]*?)</span>.*?<li class=\"stat-filesize\">.*?class=\"stat\">(.*?)</.*?\"(/Core/Libs/Common/Widgets/DownloadPopUp?\\?id=\\d+.*?)\"").getMatches();
-        if (downloads == null || downloads.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        for (final String download[] : downloads) {
-            final DownloadLink downloadLink = createDownloadlink(br2.getURL(download[2]).toString());
-            final long size = SizeFormatter.getSize(download[1]);
-            if (size > 0) {
-                downloadLink.setDownloadSize(size);
+        // final String[] downloadTypes = new String[] { "Main files", "Update files", "Optional files", "Miscellaneous files", "Old files"
+        // };
+        final String[] downloadTypesHTMLs = br2.getRegex("<div class=\"file-category-header\">\\s*<h2>[^<>]+</h2>\\s*<div>.*?</dd>\\s*</dl>\\s*</div>").getColumn(-1);
+        int counter = 0;
+        for (final String downnloadTypeHTML : downloadTypesHTMLs) {
+            counter++;
+            String currentCategory = new Regex(downnloadTypeHTML, "<h2>([^<>\"]+)</h2>").getMatch(0);
+            if (currentCategory == null) {
+                /* Fallback */
+                currentCategory = "Unknown category " + counter;
             }
-            downloadLink.setName(Encoding.htmlOnlyDecode(download[0]));
-            downloadLink.setAvailable(true);
-            downloadLink.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
-            decryptedLinks.add(downloadLink);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName + " - " + currentCategory);
+            currentCategory = Encoding.htmlDecode(currentCategory).trim();
+            final String currentPath = fpName + "/" + currentCategory;
+            final String[][] downloads = new Regex(downnloadTypeHTML, "<span>([^<]*?)</span>.*?<li class=\"stat-filesize\">.*?class=\"stat\">(.*?)</.*?\"(/Core/Libs/Common/Widgets/DownloadPopUp?\\?id=\\d+.*?)\"").getMatches();
+            if (downloads == null || downloads.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (final String download[] : downloads) {
+                final DownloadLink link = createDownloadlink(br2.getURL(download[2]).toString());
+                final long size = SizeFormatter.getSize(download[1]);
+                if (size > 0) {
+                    link.setDownloadSize(size);
+                }
+                link.setName(Encoding.htmlOnlyDecode(download[0]));
+                link.setAvailable(true);
+                link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
+                link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
+                link._setFilePackage(fp);
+                decryptedLinks.add(link);
+            }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
