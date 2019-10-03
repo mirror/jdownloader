@@ -27,10 +27,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -42,22 +38,26 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 public class AccountInfo extends Property implements AccountTrafficView {
     private static final long serialVersionUID       = 1825140346023286206L;
-    private long              account_validUntil     = -1;
-    private long              account_trafficLeft    = -1;
-    private long              account_trafficMax     = -1;
+    private volatile long     account_validUntil     = -1;
+    private volatile long     account_trafficLeft    = -1;
+    private volatile long     account_trafficMax     = -1;
     private long              account_filesNum       = -1;
     private long              account_premiumPoints  = -1;
     private long              account_accountBalance = -1;
     private long              account_usedSpace      = -1;
-    private String            account_status;
+    private volatile String   account_status;
     private long              account_createTime     = 0;
     /**
      * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
-    private boolean           specialTraffic         = false;
-    private boolean           account_trafficRefill  = true;
+    private volatile boolean  specialTraffic         = false;
+    private volatile boolean  account_trafficRefill  = true;
 
     public boolean isTrafficRefill() {
         return account_trafficRefill;
