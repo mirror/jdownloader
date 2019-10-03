@@ -2,13 +2,13 @@ package org.jdownloader.controlling.hosterrule;
 
 import java.util.Date;
 
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-
 import org.appwork.exceptions.WTFException;
 
-public class FreeAccountReference extends AccountReference {
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 
+public class FreeAccountReference extends AccountReference {
     static final int     FREE_ID = 0;
     private final String hoster;
 
@@ -19,6 +19,11 @@ public class FreeAccountReference extends AccountReference {
     @Override
     public Account getAccount() {
         throw new WTFException("Not implemented");
+    }
+
+    @Override
+    public AccountTrafficView getAccountTrafficView() {
+        return null;
     }
 
     public Date getExpireDate() {
@@ -75,7 +80,5 @@ public class FreeAccountReference extends AccountReference {
             return true;
         }
         return false;
-
     }
-
 }

@@ -10,7 +10,7 @@ public class AccountReference {
     public AccountReference() {
     }
 
-    private boolean enabled = true;
+    protected boolean enabled = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -32,10 +32,10 @@ public class AccountReference {
         return account;
     }
 
-    private Account account;
+    protected Account account;
 
     public long getID() {
-        return account.getId().getID();
+        return getAccount().getId().getID();
     }
 
     public void setAccount(Account acc) {
@@ -43,15 +43,15 @@ public class AccountReference {
     }
 
     public String getHoster() {
-        return account.getHoster();
+        return getAccount().getHoster();
     }
 
     public String getUser() {
-        return account.getUser();
+        return getAccount().getUser();
     }
 
     public Date getExpireDate() {
-        final AccountInfo ai = account.getAccountInfo();
+        final AccountInfo ai = getAccount().getAccountInfo();
         if (ai == null) {
             return null;
         } else {
@@ -72,7 +72,7 @@ public class AccountReference {
         }
     }
 
-    public final AccountTrafficView getAccountTrafficView() {
+    public AccountTrafficView getAccountTrafficView() {
         final Account acc = getAccount();
         if (acc != null) {
             return acc.getAccountTrafficView();
