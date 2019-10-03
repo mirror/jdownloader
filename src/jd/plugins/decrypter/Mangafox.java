@@ -91,12 +91,27 @@ public class Mangafox extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
+        String title = br.getRegex("meta\\s*name\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
+        }
         if (title == null) {
             logger.warning("Decrypter broken for: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = Encoding.htmlDecode(title.trim());
+        final String multipleChapter[] = new Regex(title, "(?::|\\\\)\\s+(\\d+)\\s+").getColumn(0);
+        if (multipleChapter != null && multipleChapter.length > 2) {
+            String rawTitle = new Regex(title, ("(.*?)\\s*\\d+\\s*(:|\\\\)")).getMatch(0);
+            if (rawTitle == null) {
+                rawTitle = new Regex(br.getURL(), "/manga/(.*?)/").getMatch(0);
+            }
+            if (rawTitle != null) {
+                title = rawTitle + " chapter " + multipleChapter[0] + "-" + multipleChapter[multipleChapter.length - 1];
+            } else {
+                title = "chapter " + multipleChapter[0] + "-" + multipleChapter[multipleChapter.length - 1];
+            }
+        }
         int numberOfPages = 0;
         String maxPage = br.getRegex("var imagecount\\s*?=\\s*?(\\d+);").getMatch(0);
         if (maxPage == null) {
