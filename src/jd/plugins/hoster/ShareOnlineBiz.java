@@ -19,20 +19,30 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -53,20 +63,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" })
 public class ShareOnlineBiz extends antiDDoSForHost {
     private static final String                                     COOKIE_HOST                             = "http://share-online.biz";
     private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                            = new WeakHashMap<Account, HashMap<String, String>>();
-    private static WeakHashMap<Account, AtomicLong>                 RESERVED_TRAFFIC                        = new WeakHashMap<Account, AtomicLong>();
+    private static WeakHashMap<Account, List<Long[]>>               RESERVED_TRAFFIC                        = new WeakHashMap<Account, List<Long[]>>();
     private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                          = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
     private static Object                                           LOCK                                    = new Object();
     private static HashMap<Long, Long>                              noFreeSlot                              = new HashMap<Long, Long>();
@@ -680,11 +681,22 @@ public class ShareOnlineBiz extends antiDDoSForHost {
 
                 private final long getAccountReservedTraffic() {
                     synchronized (RESERVED_TRAFFIC) {
-                        final AtomicLong ret = RESERVED_TRAFFIC.get(account);
-                        if (ret != null) {
-                            return ret.get();
-                        } else {
+                        final List<Long[]> reservedTraffic = RESERVED_TRAFFIC.get(account);
+                        if (reservedTraffic == null || reservedTraffic.size() == 0) {
                             return 0;
+                        } else {
+                            long ret = 0;
+                            final long now = System.currentTimeMillis();
+                            final Iterator<Long[]> it = reservedTraffic.iterator();
+                            while (it.hasNext()) {
+                                final Long[] next = it.next();
+                                if (next[0] > 0 && (now - next[0] > (10 * 60 * 1000))) {
+                                    it.remove();
+                                } else {
+                                    ret += next[1];
+                                }
+                            }
+                            return ret;
                         }
                     }
                 }
@@ -1050,16 +1062,19 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             final boolean trafficMaxWorkaround = userTrafficWorkaroundMax();
             final long sizeLong = size == null ? -1 : Long.parseLong(size);
+            Long[] reserveTrafficEntry = null;
             if (trafficMaxWorkaround && sizeLong > 0) {
                 synchronized (RESERVED_TRAFFIC) {
                     enoughTrafficFor(link, account);
-                    AtomicLong reservedTraffic = RESERVED_TRAFFIC.get(account);
+                    List<Long[]> reservedTraffic = RESERVED_TRAFFIC.get(account);
                     if (reservedTraffic == null) {
-                        reservedTraffic = new AtomicLong(sizeLong);
+                        reservedTraffic = new ArrayList<Long[]>();
                         RESERVED_TRAFFIC.put(account, reservedTraffic);
-                    } else {
-                        reservedTraffic.addAndGet(sizeLong);
                     }
+                    final SingleDownloadController controller = link.getDownloadLinkController();
+                    final long reserveTraffic = Math.max(0, sizeLong - controller.getSizeBefore());
+                    reserveTrafficEntry = new Long[] { -1l, reserveTraffic };
+                    reservedTraffic.add(reserveTrafficEntry);
                 }
             }
             try {
@@ -1072,15 +1087,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
-                if (trafficMaxWorkaround && sizeLong > 0) {
+                if (reserveTrafficEntry != null) {
                     synchronized (RESERVED_TRAFFIC) {
-                        final AtomicLong reservedTraffic = RESERVED_TRAFFIC.get(account);
-                        if (reservedTraffic != null) {
-                            reservedTraffic.addAndGet(-sizeLong);
-                            if (reservedTraffic.get() == 0) {
-                                RESERVED_TRAFFIC.remove(account);
-                            }
-                        }
+                        reserveTrafficEntry[0] = System.currentTimeMillis();
                     }
                 }
             }
