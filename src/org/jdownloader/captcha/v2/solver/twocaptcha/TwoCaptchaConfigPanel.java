@@ -7,12 +7,6 @@ import java.io.IOException;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.os.CrossSystem;
@@ -21,6 +15,12 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
 
 public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPanel {
     /**
@@ -112,7 +112,7 @@ public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPane
 
     @Override
     public String getTitle() {
-        return "2captcha.com/rucaptcha.com";
+        return "2captcha.com / rucaptcha.com";
     }
 
     private Component label(String lbl) {

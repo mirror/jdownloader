@@ -6,11 +6,6 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -22,6 +17,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
+
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class TwoCaptchaSolverService extends AbstractSolverService implements ServicePanelExtender {
     private TwoCaptchaConfigInterface config;
@@ -58,7 +58,7 @@ public class TwoCaptchaSolverService extends AbstractSolverService implements Se
 
     @Override
     public String getName() {
-        return "2captcha.com/rucaptcha.com";
+        return "2captcha.com / rucaptcha.com";
     }
 
     @Override
