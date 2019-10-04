@@ -122,13 +122,13 @@ public class VKontakteRu extends PluginForDecrypt {
     /* Some supported url patterns */
     private static final String     PATTERN_VALID_PREFIXES                    = "https?://(?:www\\.|new\\.)?";
     private static final String     PATTERN_SHORT                             = PATTERN_VALID_PREFIXES + "vk\\.cc/.+";
-    private static final String     PATTERN_URL_EXTERN                        = PATTERN_VALID_PREFIXES + "vk\\.com/away\\.php\\?to=.+";
-    private static final String     PATTERN_GENERAL_AUDIO                     = PATTERN_VALID_PREFIXES + "vk\\.com/audio.*?";
-    private static final String     PATTERN_AUDIO_ALBUM                       = PATTERN_VALID_PREFIXES + "vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
-    private static final String     PATTERN_AUDIO_PAGE                        = PATTERN_VALID_PREFIXES + "vk\\.com/page\\-\\d+_\\d+.*?";
-    private static final String     PATTERN_AUDIO_PAGE_oid                    = PATTERN_VALID_PREFIXES + "vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
-    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = PATTERN_VALID_PREFIXES + "vk\\.com/audios\\-\\d+\\?album_id=\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "vk\\.com/.*?z=video(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_URL_EXTERN                        = PATTERN_VALID_PREFIXES + "[^/]+/away\\.php\\?to=.+";
+    private static final String     PATTERN_GENERAL_AUDIO                     = PATTERN_VALID_PREFIXES + "[^/]+/audio.*?";
+    private static final String     PATTERN_AUDIO_ALBUM                       = PATTERN_VALID_PREFIXES + "[^/]+/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
+    private static final String     PATTERN_AUDIO_PAGE                        = PATTERN_VALID_PREFIXES + "[^/]+/page\\-\\d+_\\d+.*?";
+    private static final String     PATTERN_AUDIO_PAGE_oid                    = PATTERN_VALID_PREFIXES + "[^/]+/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
+    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = PATTERN_VALID_PREFIXES + "[^/]+/audios\\-\\d+\\?album_id=\\d+";
+    private static final String     PATTERN_VIDEO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "[^/]+/.*?z=video(\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL             = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
@@ -137,9 +137,9 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_ALBUM                       = "https?://(?:[a-z0-9]+\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = "https?://(?:[a-z0-9]+\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video\\?gid=\\d+";
-    private static final String     PATTERN_PHOTO_SINGLE                      = PATTERN_VALID_PREFIXES + "vk\\.com/photo(\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PHOTO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PHOTO_MODULE                      = PATTERN_VALID_PREFIXES + "vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_SINGLE                      = PATTERN_VALID_PREFIXES + "[^/]+/photo(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "[^/]+/.+z=photo(?:\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_MODULE                      = PATTERN_VALID_PREFIXES + "[^/]+/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                      = PATTERN_VALID_PREFIXES + "[^/]+/.*?albums((?:\\-)?\\d+)";
     private static final String     PATTERN_GENERAL_WALL_LINK                 = PATTERN_VALID_PREFIXES + "vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=(?:-)?\\d+\\-currentoffset=\\d+)?";
@@ -339,7 +339,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 /**
                  * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                  */
-                decryptPhotoAlbum();
+                decryptPhotoAlbumWebsite();
             } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PHOTO_ALBUMS)) {
                 /**
                  * Photo albums lists/overviews Example: http://vk.com/albums46486585
@@ -808,8 +808,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return ids;
     }
 
-    /** NOT using API */
-    private void decryptPhotoAlbum() throws Exception {
+    private void decryptPhotoAlbumWebsite() throws Exception {
         final String type = "singlephotoalbum";
         if (this.CRYPTEDLINK_FUNCTIONAL.contains("#/album")) {
             this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/album" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
@@ -839,9 +838,9 @@ public class VKontakteRu extends PluginForDecrypt {
         if (numberOfEntrys == null) {
             throw new DecrypterException("Can not find 'numberOfEntries'");
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
-        fp.setProperty("CLEANUP_NAME", false);
+        // final FilePackage fp = FilePackage.getInstance();
+        // fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
+        // fp.setProperty("CLEANUP_NAME", false);
         final String[] regexesPage1 = { "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)'", "0" };
         decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&al_ad=0&part=1&offset=");
     }
@@ -860,7 +859,10 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
-    /** NOT Using API */
+    private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
+        return getSinglePhotoDownloadLink(photoID, null);
+    }
+
     private void decryptPhotoAlbums_Website() throws NumberFormatException, Exception {
         /*
          * Another possibility to get these (but still no API): https://vk.com/al_photos.php act=show_albums&al=1&owner=<owner_id> AblumsXXX
@@ -872,7 +874,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String type = "multiplephotoalbums";
         if (this.CRYPTEDLINK_FUNCTIONAL.contains("z=")) {
-            this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "albums((?:\\-)?\\d+)").getMatch(0);
+            this.CRYPTEDLINK_FUNCTIONAL = getProtocol() + "vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, PATTERN_PHOTO_ALBUMS).getMatch(0);
             if (!this.CRYPTEDLINK_FUNCTIONAL.equalsIgnoreCase(br.getURL())) {
                 getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
             }
@@ -880,26 +882,84 @@ public class VKontakteRu extends PluginForDecrypt {
             /* not needed as we already have requested this page */
             // getPage(br,parameter);
         }
-        String numberOfEntrys = br.getRegex("(?:\\||&#8211;|-) (\\d+) albums?</title>").getMatch(0);
+        final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, PATTERN_PHOTO_ALBUMS).getMatch(0);
+        String numberOfEntriesStr = br.getRegex("(?:\\||&#8211;|-) (\\d+) albums?</title>").getMatch(0);
         // Language independent
-        if (numberOfEntrys == null) {
-            numberOfEntrys = br.getRegex("class=\"summary\">(\\d+)").getMatch(0);
+        if (numberOfEntriesStr == null) {
+            numberOfEntriesStr = br.getRegex("class=\"summary\">(\\d+)").getMatch(0);
         }
-        if (numberOfEntrys == null) {
-            /* 2016-09-09 */
-            numberOfEntrys = br.getRegex("class=\"ui_crumb_count\">([0-9,]+)").getMatch(0);
+        if (numberOfEntriesStr == null) {
+            /* 2019-10-04 */
+            numberOfEntriesStr = br.getRegex("id=\"photos_all_block\">.*?class=\"ui_crumb_count\">([0-9,]+)</span>").getMatch(0);
         }
         final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
-        if (numberOfEntrys == null || startOffset == null) {
+        if (numberOfEntriesStr == null || startOffset == null || albumID == null) {
             logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
             decryptedLinks = null;
             return;
         }
-        numberOfEntrys = numberOfEntrys.replace(",", "");
-        /** Photos are placed in different locations, find them all */
-        final String[] regexesPage1 = { "class=\"photo_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
-        final String[] regexesAllOthers = { "class=\"photo(?:_album)?_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
-        decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&al_ad=0&part=1&offset=");
+        numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
+        final int numberOfEntries = (int) StrictMath.ceil((Double.parseDouble(numberOfEntriesStr)));
+        // /** Photos are placed in different locations, find them all */
+        // final String[] regexesPage1 = { "class=\"photo_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
+        // final String[] regexesAllOthers = { "class=\"photo(?:_album)?_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
+        final ArrayList<String> decryptedData = new ArrayList<String>();
+        final int entries_per_page = 80;
+        final int entries_alreadyOnPage = 0;
+        logger.info("Decrypting " + numberOfEntriesStr + " entries for linktype: " + type);
+        int maxLoops = (int) StrictMath.ceil((numberOfEntries - entries_alreadyOnPage) / entries_per_page);
+        if (maxLoops < 0) {
+            maxLoops = 0;
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        int addedLinksTotal = 0;
+        int addedLinks;
+        int realOffset = 0;
+        for (int i = 0; i <= maxLoops; i++) {
+            addedLinks = 0;
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user, stopping...");
+                break;
+            }
+            final String correctedBR;
+            if (i > 0) {
+                // offset is including! so must be -1
+                /* 2016-11-25: This might prevent their bot-protection from kicking in (too early). */
+                jd.plugins.hoster.VKontakteRuHoster.setHeaderRefererPhoto(this.br);
+                postPageSafe("/photos" + albumID, "al=1&al_ad=0&from=albums&from_block=1&part=1&offset=" + Math.max(0, realOffset - 1));
+                logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
+                correctedBR = br.toString().replace("\\", "");
+                final String[] photoIDs = new Regex(correctedBR, "showPhoto\\(\\'((?:-)?\\d+_\\d+)").getColumn(0);
+                for (final String photoID : photoIDs) {
+                    final String single_photo_content_url = getProtocol() + this.getHost() + "/photo" + photoID;
+                    final DownloadLink dl = getSinglePhotoDownloadLink(photoID);
+                    dl.setContentUrl(single_photo_content_url);
+                    dl.setProperty("albumid", albumID);
+                    this.decryptedLinks.add(dl);
+                    distribute(dl);
+                    addedLinks++;
+                    if (decryptedData.contains(photoID)) {
+                        logger.info("Detected dupe - stopping!");
+                        return;
+                    }
+                    decryptedData.add(photoID);
+                }
+            } else {
+                logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
+                correctedBR = br.toString().replace("\\", "");
+                final int linksnumBefore = decryptedLinks.size();
+                websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, false, false, this.vkwall_comment_grabphotos, false, false, this.vkwall_comment_store_picture_directurls);
+                final int linksnumAfter = decryptedLinks.size();
+                addedLinks = linksnumAfter - linksnumBefore;
+            }
+            addedLinksTotal += addedLinks;
+            realOffset += addedLinks;
+            if (addedLinks < entries_per_page || addedLinksTotal >= numberOfEntries) {
+                logger.info("Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1) + ", returning " + addedLinksTotal + " results");
+                break;
+            }
+            sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
+        }
     }
 
     /** NOT Using API --> NOT possible */
@@ -1626,12 +1686,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /* TODO: Make sure this works for POSTs, COMMENTs and ALBUMs!! */
         final String wall_post_text = new Regex(html, "<div class=\"wall_reply_text\">([^<>]+)</div>").getMatch(0);
         if (grabPhoto) {
-            String[] photo_ids = new Regex(html, "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)").getColumn(0);
-            /** 2019-10-02: TODO: Re-check albums support!! */
-            // if (photo_ids.length == 0 && !isContentFromWall) {
-            // /* Albums > page 1 */
-            // photo_ids = new Regex(html, "album((?:-)?\\d+_\\d+)").getColumn(0);
-            // }
+            final String[] photo_ids = new Regex(html, "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)").getColumn(0);
             for (final String photoIDs : photo_ids) {
                 final String[] wall_id_info = photoIDs.split("_");
                 ownerIDTemp = wall_id_info[0];
@@ -1669,6 +1724,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         photo_list_id = url_source;
                     }
                 } else {
+                    /* Photos inside photo album */
                     photo_list_id = null;
                     single_photo_content_url = getProtocol() + this.getHost() + "/photo" + ownerIDTemp + "_" + contentIDTemp;
                 }
@@ -1685,7 +1741,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                     dl.setProperty("photo_module", "wall");
                 } else {
-                    /* Must be album content */
+                    /* Album content */
                     dl.setProperty("albumid", album_ID);
                 }
                 if (store_picture_directurls) {

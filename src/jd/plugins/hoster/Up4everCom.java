@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Up4everCom extends XFileSharingProBasic {
@@ -40,7 +40,7 @@ public class Up4everCom extends XFileSharingProBasic {
      * mods: See overridden functions<br />
      * limit-info: 2019-06-12: Premium untested, set FREE account limits<br />
      * captchatype-info: 2019-06-12: reCaptchaV2<br />
-     * other:<br />
+     * other: 2019-10-04: Android App/API is available: https://play.google.com/store/apps/details?id=com.up_4ever.android <br />
      */
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
