@@ -745,6 +745,8 @@ public class TvnowDe extends PluginForHost {
                 }
                 if (!loggedIN) {
                     logger.info("Performing full login");
+                    /* Clear old headers/cookies - especially Authorization header! */
+                    br = prepBRAPI(new Browser());
                     /* 2019-01-16: This is skippable */
                     // br.getPage("https://my." + this.getHost() + "/login");
                     prepBRAPI(br);

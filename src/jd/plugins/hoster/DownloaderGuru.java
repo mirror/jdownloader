@@ -17,14 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -45,32 +40,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "" })
 public class DownloaderGuru extends PluginForHost {
-    private static final String                            API_ENDPOINT         = "http://www.downloader.guru/";
-    private static final String                            NICE_HOST            = "downloader.guru";
-    private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
-    /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
-    /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Integer>                hostMaxchunksMap     = new HashMap<String, Integer>();
-    /* Contains <host><number of max possible simultan downloads> */
-    private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
-    /* Contains <host><number of currently running simultan downloads> */
-    private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
-    /* Last updated: 31.03.15 */
-    private static final int                               defaultMAXDOWNLOADS  = 20;
-    private static final int                               defaultMAXCHUNKS     = 0;
-    private static final boolean                           defaultRESUME        = true;
-    private static Object                                  CTRLLOCK             = new Object();
-    private int                                            statuscode           = 0;
-    private Account                                        currAcc              = null;
-    private DownloadLink                                   currDownloadLink     = null;
+    private static final String          API_ENDPOINT     = "http://www.downloader.guru/";
+    private static MultiHosterManagement mhm              = new MultiHosterManagement("downloader.guru");
+    /* Last updated: 2015-03-31 */
+    // private static final int defaultMAXDOWNLOADS = 20;
+    private static final int             defaultMAXCHUNKS = 0;
+    private static final boolean         defaultRESUME    = true;
+    private int                          statuscode       = 0;
 
     @SuppressWarnings("deprecation")
     public DownloaderGuru(PluginWrapper wrapper) {
@@ -90,36 +72,16 @@ public class DownloaderGuru extends PluginForHost {
         return br;
     }
 
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException, IOException {
         return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
-        }
-        final String currentHost = this.correctHost(downloadLink.getHost());
-        /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
-        synchronized (hostRunningDlsNumMap) {
-            if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
-                final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
-                final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
-                if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    /*
-                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
-                     * this case - wait and retry!
-                     */
-                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
-                }
-            }
         }
         return true;
     }
@@ -132,13 +94,12 @@ public class DownloaderGuru extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        this.setConstants(account, link);
         handleDL(account, link);
     }
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             br.setFollowRedirects(true);
             /* request creation of downloadlink */
@@ -150,33 +111,8 @@ public class DownloaderGuru extends PluginForHost {
             dllink = PluginJSonUtils.getJsonValue(this.br, "GeneratedLink");
             if (dllink == null || !dllink.startsWith("http")) {
                 logger.warning("Final downloadlink is null");
-                handleErrorRetries(account, "dllinknull", 10, 60 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknull", 50, 5 * 60 * 1000l);
             }
-        }
-        boolean resume = account.getBooleanProperty("resume", defaultRESUME);
-        int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
-        /* Then check if we got an individual host limit. */
-        if (hostMaxchunksMap != null) {
-            final String thishost = link.getHost();
-            synchronized (hostMaxchunksMap) {
-                if (hostMaxchunksMap.containsKey(thishost)) {
-                    maxChunks = hostMaxchunksMap.get(thishost);
-                }
-            }
-        }
-        if (hostResumeMap != null) {
-            final String thishost = link.getHost();
-            synchronized (hostResumeMap) {
-                if (hostResumeMap.containsKey(thishost)) {
-                    resume = hostResumeMap.get(thishost);
-                }
-            }
-        }
-        if (link.getBooleanProperty(NORESUME, false)) {
-            resume = false;
-        }
-        if (!resume) {
-            maxChunks = 1;
         }
         final DownloadLinkDownloadable downloadable;
         if (link.getName().matches(".+(rar|r\\d+)$")) {
@@ -204,27 +140,21 @@ public class DownloaderGuru extends PluginForHost {
             downloadable = new DownloadLinkDownloadable(link);
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(dllink), resume, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(dllink), defaultRESUME, defaultMAXCHUNKS);
         } catch (PluginException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "RedirectLoop")) {
-                tempUnavailableHoster(account, 10 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "redirectloop", 50, 5 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
-        }
-        if (dl.getConnection().getResponseCode() == 416) {
-            logger.info("Resume impossible, disabling it for the next try");
-            link.setChunksProgress(null);
-            link.setProperty(DownloaderGuru.NORESUME, Boolean.valueOf(true));
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
             br.followConnection();
             updatestatuscode();
             handleAPIErrors(account, this.br);
-            handleErrorRetries(account, "unknowndlerror", 10, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 50, 5 * 60 * 1000l);
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         this.dl.startDownload();
     }
 
@@ -236,32 +166,7 @@ public class DownloaderGuru extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBR(this.br);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
-        /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-         * needed to get the individual host limits.
-         */
-        synchronized (CTRLLOCK) {
-            if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
-                logger.info("Performing full login to set individual host limits");
-                this.fetchAccountInfo(account);
-            }
-        }
-        this.setConstants(account, link);
+        mhm.runCheck(account, link);
         login(account, false);
         handleDL(account, link);
     }
@@ -285,33 +190,6 @@ public class DownloaderGuru extends PluginForHost {
         return dllink;
     }
 
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final Account account, final String error, final int maxRetries, final long disableTime) throws PluginException {
-        if (currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(account, disableTime);
-        }
-    }
-
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -322,7 +200,6 @@ public class DownloaderGuru extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        this.setConstants(account, null);
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account, false);
@@ -364,19 +241,9 @@ public class DownloaderGuru extends PluginForHost {
             for (String domain : supportedHostsOfCurrentTable) {
                 domain = Encoding.htmlDecode(domain).trim();
                 domain = correctHost(domain);
-                if (domain.length() <= 3) {
-                    continue;
-                }
-                final int maxdownloads = defaultMAXDOWNLOADS;
-                final int maxchunks = defaultMAXCHUNKS;
-                boolean resumable = defaultRESUME;
-                hostMaxchunksMap.put(domain, maxchunks);
-                hostMaxdlsMap.put(domain, maxdownloads);
-                hostResumeMap.put(domain, resumable);
                 supportedhostslist.add(domain);
             }
         }
-        account.setValid(true);
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
     }
@@ -436,25 +303,7 @@ public class DownloaderGuru extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(final Account account, final long timeout) throws PluginException {
-        if (this.currDownloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        } else if (this.currDownloadLink.getHost().equals(this.getHost())) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    private void getAPISafe(final Account account, final String url) throws IOException, PluginException {
+    private void getAPISafe(final Account account, final String url) throws IOException, PluginException, InterruptedException {
         this.br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -463,7 +312,7 @@ public class DownloaderGuru extends PluginForHost {
         handleAPIErrors(account, this.br);
     }
 
-    private void postRawAPISafe(final Account account, final String url, final String postData) throws IOException, PluginException {
+    private void postRawAPISafe(final Account account, final String url, final String postData) throws IOException, PluginException, InterruptedException {
         this.br.postPageRaw(url, postData);
         updatestatuscode();
         handleAPIErrors(account, this.br);
@@ -500,7 +349,7 @@ public class DownloaderGuru extends PluginForHost {
         }
     }
 
-    private void handleAPIErrors(final Account account, final Browser br) throws PluginException {
+    private void handleAPIErrors(final Account account, final Browser br) throws PluginException, InterruptedException {
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -515,12 +364,12 @@ public class DownloaderGuru extends PluginForHost {
                 // /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info("Unknown error");
-                handleErrorRetries(account, NICE_HOSTproperty + "timesfailed_unknown_api_error", 50, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknown_api_error", 50, 5 * 60 * 1000l);
             default:
-                handleErrorRetries(account, NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknown_api_error_2", 50, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info("Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
     }
