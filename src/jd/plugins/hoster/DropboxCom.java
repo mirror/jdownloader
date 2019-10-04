@@ -13,22 +13,24 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.DropBoxConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -39,6 +41,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -80,6 +83,15 @@ public class DropboxCom extends PluginForHost {
 
     public static boolean useAPI() {
         return DebugMode.TRUE_IN_IDE_ELSE_FALSE && (PluginJsonConfig.get(DropBoxConfig.class).isUseAPI() || HARDCODED_ENFORCE_API);
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        if (useAPI()) {
+            return new DropboxAccountFactory(callback);
+        } else {
+            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+        }
     }
 
     public static final String              TYPE_S                                           = "https?://[^/]+/(s/.+)";
@@ -714,15 +726,11 @@ public class DropboxCom extends PluginForHost {
                 prepBrAPI(br);
                 logger.info("Performing full login");
                 /* Perform full login */
-                final String user_auth_url = "https://www." + account.getHoster() + "/oauth2/authorize?client_id=" + getAPIClientID() + "&response_type=code&force_reapprove=false";
-                showOauthLoginInformation(user_auth_url);
-                final DownloadLink dl_dummy;
-                if (this.getDownloadLink() != null) {
-                    dl_dummy = this.getDownloadLink();
-                } else {
-                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                }
-                final String user_code = getUserInput("Authorization code?", dl_dummy);
+                /* TODO: Check if we still need that dialog */
+                // final String user_auth_url = "https://www." + account.getHoster() + "/oauth2/authorize?client_id=" + getAPIClientID() +
+                // "&response_type=code&force_reapprove=false";
+                // showOauthLoginInformation(user_auth_url);
+                final String user_code = account.getPass();
                 if (StringUtils.isEmpty(user_code)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authorization code has not been entered", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -818,68 +826,90 @@ public class DropboxCom extends PluginForHost {
         return dl.getBooleanProperty(PROPERTY_IS_PASSWORD_PROTECTED, false);
     }
 
-    /** Also called App-key and can be found here: https://www.dropbox.com/developers/apps */
+    /**
+     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br>
+     * TODO: Change this to public static
+     */
     private String getAPIClientID() throws PluginException {
-        try {
-            final String[] dropBox = (String[]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("DropBox").invoke(null);
-            return dropBox[0];
-        } catch (Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {
+            return getAPIClientIDDev();
+        } else {
+            try {
+                final String[] dropBox = (String[]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("DropBox").invoke(null);
+                return dropBox[0];
+            } catch (Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+            }
         }
     }
 
     /** Can be found here: https://www.dropbox.com/developers/apps */
     private String getAPISecret() throws PluginException {
-        try {
-            final String[] dropBox = (String[]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("DropBox").invoke(null);
-            return Encoding.Base64Decode(dropBox[1]);
-        } catch (Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {
+            return getAPISecretDev();
+        } else {
+            try {
+                final String[] dropBox = (String[]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("DropBox").invoke(null);
+                return Encoding.Base64Decode(dropBox[1]);
+            } catch (Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+            }
         }
     }
 
-    private Thread showOauthLoginInformation(final String auth_url) {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Dropbox.com - neue Login-Methode";
-                        message += "Hallo liebe(r) Dropbox NutzerIn\r\n";
-                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die Sicherheit zu erhöhen!\r\n";
-                        message += "Um deinen Account weiterhin in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Gehe sicher, dass du im Browser in deinem Dropbox Account eingeloggt bist.\r\n";
-                        message += "2. Öffne diesen Link im Browser falls das nicht automatisch geschieht:\r\n\t'" + auth_url + "'\t\r\n";
-                        message += "3. Gib den Code, der im Browser angezeigt wird hier ein.\r\n";
-                        message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
-                    } else {
-                        title = "Dropbox.com - New login method";
-                        message += "Hello dear Dropbox user\r\n";
-                        message += "This update has changed the login method of Dropbox in favor of security.\r\n";
-                        message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
-                        message += "1. Make sure that you're logged in your Dropbox account with your default browser.\r\n";
-                        message += "2. Open this URL in your browser if it does not happen automatically:\r\n\t'" + auth_url + "'\t\r\n";
-                        message += "3. Enter the code you see in your browser here.\r\n";
-                        message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(30 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(auth_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
+    /** TODO: Remove this once API tests are completed (Stable release) */
+    private static boolean force_dev_values = true;
+
+    private static String getAPIClientIDDev() {
+        return "REMOVEME_IN_STABLE";
     }
 
+    /** TODO: Remove this once API tests are completed (Stable release) */
+    private static String getAPISecretDev() {
+        return "REMOVEME_IN_STABLE";
+    }
+
+    // private Thread showOauthLoginInformation(final String auth_url) {
+    // final Thread thread = new Thread() {
+    // public void run() {
+    // try {
+    // String message = "";
+    // final String title;
+    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+    // title = "Dropbox.com - neue Login-Methode";
+    // message += "Hallo liebe(r) Dropbox NutzerIn\r\n";
+    // message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die Sicherheit zu erhöhen!\r\n";
+    // message += "Um deinen Account weiterhin in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+    // message += "1. Gehe sicher, dass du im Browser in deinem Dropbox Account eingeloggt bist.\r\n";
+    // message += "2. Öffne diesen Link im Browser falls das nicht automatisch geschieht:\r\n\t'" + auth_url + "'\t\r\n";
+    // message += "3. Gib den Code, der im Browser angezeigt wird hier ein.\r\n";
+    // message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+    // } else {
+    // title = "Dropbox.com - New login method";
+    // message += "Hello dear Dropbox user\r\n";
+    // message += "This update has changed the login method of Dropbox in favor of security.\r\n";
+    // message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
+    // message += "1. Make sure that you're logged in your Dropbox account with your default browser.\r\n";
+    // message += "2. Open this URL in your browser if it does not happen automatically:\r\n\t'" + auth_url + "'\t\r\n";
+    // message += "3. Enter the code you see in your browser here.\r\n";
+    // message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+    // }
+    // final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+    // dialog.setTimeout(30 * 1000);
+    // if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+    // CrossSystem.openURL(auth_url);
+    // }
+    // final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+    // ret.throwCloseExceptions();
+    // } catch (final Throwable e) {
+    // getLogger().log(e);
+    // }
+    // };
+    // };
+    // thread.setDaemon(true);
+    // thread.start();
+    // return thread;
+    // }
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if ((!useAPI() || account == null) && this.itemHasBeenCrawledViaAPI(link) && !isSingleFile(link)) {
@@ -944,5 +974,86 @@ public class DropboxCom extends PluginForHost {
         }
         url += "&oauth_signature=" + Encoding.urlEncode(signature);
         return url;
+    }
+
+    public static class DropboxAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+        private final String      AUTHHELP         = "Enter your Authorization code";
+        private final String      client_id        = getAPIClientIDDev();
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = "                 ";
+
+        public DropboxAccountFactory(final InputChangedCallbackInterface callback) {
+            /* TODO: Add Headless handling */
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Click here to get your authorization code:"));
+            add(new JLink("https://www.dropbox.com/oauth2/authorize?client_id=" + client_id + "&response_type=code&force_reapprove=false"));
+            // add(new JLink("https://www.dropbox.com/oauth2/authorize?client_id=" + DropboxCom.getAPIClientID() +
+            // "&response_type=code&force_reapprove=false"));
+            add(new JLabel("Authorization code:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(AUTHHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            // final String userName = getUsername();
+            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+            // idLabel.setForeground(Color.RED);
+            // return false;
+            // }
+            // idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
     }
 }
