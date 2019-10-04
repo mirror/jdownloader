@@ -805,7 +805,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[1])) {
-                    fileInfo[1] = getHighestVideoQualityFilesize();
+                    fileInfo[1] = getDllinkViaOfficialVideoDownload(null, null, true);
                 }
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
@@ -1231,6 +1231,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * Try to find a downloadlink. Check different methods sorted from "usually available" to "rarely available" (e.g. there are a lot
          * of sites which support video embedding but nearly none support mp3-embedding).
          */
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+        }
         /* Check for streaming/direct links on the first page. */
         if (StringUtils.isEmpty(dllink)) {
             checkErrors(link, account, false);
@@ -1326,9 +1329,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (StringUtils.isEmpty(dllink)) {
-            dllink = checkOfficialVideoDownload(link, account);
-        }
-        if (StringUtils.isEmpty(dllink)) {
             Form dlForm = findFormF1();
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
@@ -1389,44 +1389,107 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         handleDownload(link, account, dllink, null);
     }
 
-    /** Checks if official video download is possible and returns downloadlink if possible. */
-    public String checkOfficialVideoDownload(final DownloadLink link, final Account account) throws Exception {
+    /**
+     * Checks if official video download is possible and returns final downloadurl if possible. </br>
+     *
+     * @param returnFilesize
+     *            true = Only return filesize of selected quality. Use this in availablecheck. </br>
+     *            false = return final downloadurl of selected quality. Use this in download mode.
+     */
+    protected String getDllinkViaOfficialVideoDownload(final DownloadLink link, final Account account, final boolean returnFilesize) {
         String dllink = null;
-        final String highestVideoQualityHTML = getHighestQualityHTML();
-        if (highestVideoQualityHTML != null) {
-            final Regex videoinfo = new Regex(highestVideoQualityHTML, "download_video\\(\\'([a-z0-9]+)\\',\\'([^<>\"\\']*?)\\',\\'([^<>\"\\']*?)\\'");
-            // final String vid = videoinfo.getMatch(0);
-            /* Usually this will be 'o' standing for "original quality" */
-            final String q = videoinfo.getMatch(1);
-            final String hash = videoinfo.getMatch(2);
-            if (StringUtils.isEmpty(q) || StringUtils.isEmpty(hash)) {
-                logger.warning("Failed to find required parameters");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Info in table. E.g. xvideosharing.com, watchvideo.us */
+        String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
+        if (videoQualityHTMLs.length == 0) {
+            /* Match on line - safe attempt but this may not include filesize! */
+            videoQualityHTMLs = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
+        }
+        long widthMax = 0;
+        long sizeTmp = 0;
+        String filesizeStr = null;
+        String targetHTML = null;
+        if (videoQualityHTMLs.length > 0) {
+            /** TODO: Add quality selection: Low, Medium, Original Example: deltabit.co */
+            /*
+             * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
+             */
+            logger.info("Trying to find selected quality for official video download");
+            for (final String videoQualityHTML : videoQualityHTMLs) {
+                final String filesizeTmpStr = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
+                if (filesizeTmpStr != null) {
+                    /* Usually, filesize for official video downloads will be given! */
+                    sizeTmp = SizeFormatter.getSize(filesizeTmpStr);
+                    if (sizeTmp > widthMax) {
+                        widthMax = sizeTmp;
+                        targetHTML = videoQualityHTML;
+                        filesizeStr = filesizeTmpStr;
+                    }
+                } else {
+                    /* This should not happen */
+                    logger.warning("Failed to find highest-quality-video-download-html-snippet --> Returning the first one");
+                    targetHTML = videoQualityHTML;
+                    break;
+                }
             }
-            /* 2019-08-29: This may sometimes happen e.g. deltabit.co */
-            this.waitTime(link, System.currentTimeMillis());
-            final Browser brc = br.cloneBrowser();
-            getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
-            /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
-            final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
-            if (download1 != null) {
-                this.submitForm(brc, download1);
+        }
+        if (returnFilesize) {
+            /* E.g. in availablecheck */
+            return filesizeStr;
+        }
+        if (targetHTML != null) {
+            try {
+                final Regex videoinfo = new Regex(targetHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
+                // final String vid = videoinfo.getMatch(0);
+                /* Usually this will be 'o' standing for "original quality" */
+                final String q = videoinfo.getMatch(1);
+                final String hash = videoinfo.getMatch(2);
+                if (StringUtils.isEmpty(q) || StringUtils.isEmpty(hash)) {
+                    logger.warning("Failed to find required parameters");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
+                this.waitTime(link, System.currentTimeMillis());
+                final Browser brc = br.cloneBrowser();
                 /*
-                 * 2019-08-29: TODO: A 'checkErrors' is supposed to be here but at the moment not possible if we do not use our 'standard'
-                 * browser
+                 * TODO: Fix issue where first request leads to '<br><b class="err">Security error</b>' (reproduced over multiple filehosts
+                 * e.g. xvideosharing.com)
+                 */
+                getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
+                /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
+                final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
+                if (download1 != null) {
+                    this.submitForm(brc, download1);
+                    /*
+                     * 2019-08-29: TODO: A 'checkErrors' is supposed to be here but at the moment not possible if we do not use our
+                     * 'standard' browser
+                     */
+                }
+                /*
+                 * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g.
+                 * for streaming URLs) which are completely useless here.
+                 */
+                dllink = this.getDllink(link, account, brc, brc.toString());
+                if (StringUtils.isEmpty(dllink)) {
+                    /* 2019-05-30: Test - worked for: xvideosharing.com */
+                    dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+                }
+                if (StringUtils.isEmpty(dllink)) {
+                    /* 2019-08-29: Test - worked for: deltabit.co */
+                    dllink = regexVideoStreamDownloadURL(brc.toString());
+                }
+                if (StringUtils.isEmpty(dllink)) {
+                    logger.info("Failed to find final downloadurl");
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                logger.warning("Official video download failed: Exception occured");
+                /*
+                 * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for
+                 * us.
                  */
             }
-            dllink = this.getDllink(link, account, brc, brc.toString());
             if (StringUtils.isEmpty(dllink)) {
-                /* 2019-05-30: Test - worked for: xvideosharing.com */
-                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                /* 2019-08-29: Test - worked for: deltabit.co */
-                dllink = regexVideoStreamDownloadURL(brc.toString());
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                logger.info("Failed to find final downloadurl");
+                logger.warning("Official video download failed: dllink is null");
             }
         }
         return dllink;
@@ -1636,46 +1699,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Checks if there are multiple video qualities available, finds html containing information of the highest video quality and returns
-     * corresponding filesize if given.
-     */
-    protected final String getHighestQualityHTML() {
-        final String[] videoQualities = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
-        long widthMax = 0;
-        long widthTmp = 0;
-        String targetHTML = null;
-        for (final String videoQualityHTML : videoQualities) {
-            final String filesizeTmpStr = regexFilesizeFromVideoDownloadHTML(videoQualityHTML);
-            if (filesizeTmpStr != null) {
-                widthTmp = SizeFormatter.getSize(filesizeTmpStr);
-                if (widthTmp > widthMax) {
-                    widthMax = widthTmp;
-                    targetHTML = videoQualityHTML;
-                }
-            } else {
-                /* This should not happen */
-                logger.warning("Failed to find highest quality video download html --> Returning the first one");
-                targetHTML = videoQualityHTML;
-                break;
-            }
-        }
-        return targetHTML;
-    }
-
-    /**
-     * Returns filesize for highest video quality found via getHighestQualityHTML. <br />
-     * This function is rarely used!
-     */
-    protected final String getHighestVideoQualityFilesize() {
-        final String highestVideoQualityHTML = getHighestQualityHTML();
-        return regexFilesizeFromVideoDownloadHTML(highestVideoQualityHTML);
-    }
-
-    private final String regexFilesizeFromVideoDownloadHTML(final String html) {
-        return new Regex(html, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
-    }
-
-    /**
      * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
      * [NOT html]).
      */
@@ -1797,8 +1820,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return getDllink(link, account, this.br, correctedBR);
     }
 
-    /** Function to find the final downloadlink. */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    /**
+     * Function to find the final downloadlink. </br>
+     * This will also find video directurls of embedded videos if the player is 'currently visible'.
+     */
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = br.getRedirectLocation();
         if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
@@ -1833,99 +1858,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (StringUtils.isEmpty(dllink)) {
-            /* RegExes for videohosts */
-            String jssource = new Regex(src, "sources\\s*:\\s*(\\[[^\\]]+\\])").getMatch(0);
-            if (StringUtils.isEmpty(jssource)) {
-                /* 2019-07-04: Wider attempt - find sources via pattern of their video-URLs. */
-                jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
-            }
-            if (!StringUtils.isEmpty(jssource)) {
-                /*
-                 * Different services store the values we want under different names. E.g. vidoza.net uses 'res', most providers use
-                 * 'label'.
-                 */
-                final String[] possibleQualityObjectNames = new String[] { "label", "res" };
-                /*
-                 * Different services store the values we want under different names. E.g. vidoza.net uses 'src', most providers use 'file'.
-                 */
-                final String[] possibleStreamURLObjectNames = new String[] { "file", "src" };
-                try {
-                    HashMap<String, Object> entries = null;
-                    Object quality_temp_o = null;
-                    long quality_temp = 0;
-                    /*
-                     * Important: Default is -1 so that even if only one quality is available without quality-identifier, it will be used!
-                     */
-                    long quality_best = -1;
-                    String dllink_temp = null;
-                    final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-                    final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
-                    for (final Object videoo : ressourcelist) {
-                        if (videoo instanceof String && onlyOneQualityAvailable) {
-                            /* Maybe single URL without any quality information e.g. uqload.com */
-                            dllink_temp = (String) videoo;
-                            if (dllink_temp.startsWith("http")) {
-                                dllink = dllink_temp;
-                                break;
-                            }
-                        }
-                        entries = (HashMap<String, Object>) videoo;
-                        for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
-                            if (entries.containsKey(possibleStreamURLObjectName)) {
-                                dllink_temp = (String) entries.get(possibleStreamURLObjectName);
-                                break;
-                            }
-                        }
-                        if (StringUtils.isEmpty(dllink_temp)) {
-                            /* No downloadurl found --> Continue */
-                            continue;
-                        }
-                        for (final String possibleQualityObjectName : possibleQualityObjectNames) {
-                            try {
-                                quality_temp_o = entries.get(possibleQualityObjectName);
-                                if (quality_temp_o != null && quality_temp_o instanceof Long) {
-                                    quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
-                                } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                                    /* E.g. '360p' */
-                                    quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0));
-                                }
-                                if (quality_temp > 0) {
-                                    break;
-                                }
-                            } catch (final Throwable e) {
-                                e.printStackTrace();
-                                logger.info("Failed to find quality via key '" + possibleQualityObjectName + "' for current downloadurl candidate: " + dllink_temp);
-                                if (!onlyOneQualityAvailable) {
-                                    continue;
-                                }
-                            }
-                        }
-                        if (StringUtils.isEmpty(dllink_temp)) {
-                            continue;
-                        }
-                        if (quality_temp > quality_best) {
-                            quality_best = quality_temp;
-                            dllink = dllink_temp;
-                        }
-                    }
-                    if (!StringUtils.isEmpty(dllink)) {
-                        logger.info("BEST handling for multiple video source succeeded");
-                    }
-                } catch (final Throwable e) {
-                    logger.info("BEST handling for multiple video source failed");
-                }
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                /* 2019-07-04: Examplehost: vidoza.net */
-                dllink = regexVideoStreamDownloadURL(src);
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                final String check = new Regex(src, "file\\s*:\\s*\"(https?[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
-                if (StringUtils.isNotEmpty(check) && !StringUtils.containsIgnoreCase(check, "/images/")) {
-                    // jwplayer("flvplayer").onError(function()...
-                    dllink = check;
-                }
-            }
+            dllink = getDllinkVideohost(src);
         }
         if (dllink == null && this.isImagehoster()) {
             /* Used for imagehosts */
@@ -1957,6 +1890,106 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return dllink;
     }
 
+    /** Tries to find stream-URL for videohosts. */
+    protected String getDllinkVideohost(final String src) {
+        String dllink = null;
+        /* RegExes for videohosts */
+        String jssource = new Regex(src, "sources\\s*:\\s*(\\[[^\\]]+\\])").getMatch(0);
+        if (StringUtils.isEmpty(jssource)) {
+            /* 2019-07-04: Wider attempt - find sources via pattern of their video-URLs. */
+            jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
+        }
+        if (!StringUtils.isEmpty(jssource)) {
+            /** TODO: 2019-10-03: Add quality selection */
+            /*
+             * Different services store the values we want under different names. E.g. vidoza.net uses 'res', most providers use 'label'.
+             */
+            final String[] possibleQualityObjectNames = new String[] { "label", "res" };
+            /*
+             * Different services store the values we want under different names. E.g. vidoza.net uses 'src', most providers use 'file'.
+             */
+            final String[] possibleStreamURLObjectNames = new String[] { "file", "src" };
+            try {
+                HashMap<String, Object> entries = null;
+                Object quality_temp_o = null;
+                long quality_temp = 0;
+                /*
+                 * Important: Default is -1 so that even if only one quality is available without quality-identifier, it will be used!
+                 */
+                long quality_best = -1;
+                String dllink_temp = null;
+                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
+                for (final Object videoo : ressourcelist) {
+                    if (videoo instanceof String && onlyOneQualityAvailable) {
+                        /* Maybe single URL without any quality information e.g. uqload.com */
+                        dllink_temp = (String) videoo;
+                        if (dllink_temp.startsWith("http")) {
+                            dllink = dllink_temp;
+                            break;
+                        }
+                    }
+                    entries = (HashMap<String, Object>) videoo;
+                    for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
+                        if (entries.containsKey(possibleStreamURLObjectName)) {
+                            dllink_temp = (String) entries.get(possibleStreamURLObjectName);
+                            break;
+                        }
+                    }
+                    if (StringUtils.isEmpty(dllink_temp)) {
+                        /* No downloadurl found --> Continue */
+                        continue;
+                    }
+                    for (final String possibleQualityObjectName : possibleQualityObjectNames) {
+                        try {
+                            quality_temp_o = entries.get(possibleQualityObjectName);
+                            if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                                quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                            } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                                /* E.g. '360p' */
+                                quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0));
+                            }
+                            if (quality_temp > 0) {
+                                break;
+                            }
+                        } catch (final Throwable e) {
+                            e.printStackTrace();
+                            logger.info("Failed to find quality via key '" + possibleQualityObjectName + "' for current downloadurl candidate: " + dllink_temp);
+                            if (!onlyOneQualityAvailable) {
+                                continue;
+                            }
+                        }
+                    }
+                    if (StringUtils.isEmpty(dllink_temp)) {
+                        continue;
+                    }
+                    if (quality_temp > quality_best) {
+                        quality_best = quality_temp;
+                        dllink = dllink_temp;
+                    }
+                }
+                if (!StringUtils.isEmpty(dllink)) {
+                    logger.info("BEST handling for multiple video source succeeded - best quality is: " + quality_best);
+                }
+            } catch (final Throwable e) {
+                logger.info("BEST handling for multiple video source failed");
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2019-07-04: Examplehost: vidoza.net */
+            /* TODO: Check if we can remove regexVideoStreamDownloadURL or integrate it in this function. */
+            dllink = regexVideoStreamDownloadURL(src);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            final String check = new Regex(src, "file\\s*:\\s*\"(https?[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+            if (StringUtils.isNotEmpty(check) && !StringUtils.containsIgnoreCase(check, "/images/")) {
+                // jwplayer("flvplayer").onError(function()...
+                dllink = check;
+            }
+        }
+        return dllink;
+    }
+
     private final String regexVideoStreamDownloadURL(final String src) {
         String dllink = new Regex(src, Pattern.compile("(https?://[^/]+[^\"]+[a-z0-9]{60}/v\\.mp4)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
@@ -1971,7 +2004,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * This might sometimes be useful when VIDEOHOSTER or VIDEOHOSTER_2 handling is used.
      */
     @Deprecated
-    public String getVideoThumbnailURL(final String src) {
+    protected String getVideoThumbnailURL(final String src) {
         String url_thumbnail = new Regex(src, "image\\s*:\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(url_thumbnail)) {
             /* 2019-05-16: e.g. uqload.com */
@@ -1997,16 +2030,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             decoded = p;
         } catch (Exception e) {
         }
-        String finallink = null;
+        String dllink = null;
         if (decoded != null) {
-            /* Open regex is possible because in the unpacked JS there are usually only 1-2 URLs. */
-            finallink = new Regex(decoded, "(?:\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4|m3u8))(?:\"|')").getMatch(0);
-            if (finallink == null) {
+            dllink = getDllinkVideohost(decoded);
+            if (StringUtils.isEmpty(dllink)) {
+                /* Open regex is possible because in the unpacked JS there are usually only 1-2 URLs. */
+                dllink = new Regex(decoded, "(?:\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4|m3u8))(?:\"|')").getMatch(0);
+            }
+            if (StringUtils.isEmpty(dllink)) {
                 /* Maybe rtmp */
-                finallink = new Regex(decoded, "(?:\"|')(rtmp://[^<>\"']*?mp4:[^<>\"']+)(?:\"|')").getMatch(0);
+                dllink = new Regex(decoded, "(?:\"|')(rtmp://[^<>\"']*?mp4:[^<>\"']+)(?:\"|')").getMatch(0);
             }
         }
-        return finallink;
+        return dllink;
     }
 
     public boolean isDllinkFile(final String url) {
@@ -3163,6 +3199,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return !verifiedLogin;
     }
 
+    /**
+     * 2019-10-03: TODO: Maybe try to merge this with doFree() because there are a lot of similarities and some code that gets changed in
+     * doFree() currently also has to be maintained in handlePremium()!
+     */
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* Perform linkcheck without logging in */
@@ -3216,14 +3256,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         loginWebsite(account, true);
                         getPage(link.getPluginPatternMatcher());
                     }
-                    dllink = getDllink(link, account);
+                    dllink = getDllinkViaOfficialVideoDownload(link, account, false);
                     if (StringUtils.isEmpty(dllink)) {
-                        /**
-                         * 2019-05-30: Official video download for premium users of videohosts e.g. xvideosharing.com. TODO: Prefer this
-                         * over stream download. Example: watchvideo.us . Else it might happen that (HLS) streams get downloaded although
-                         * official http download with higher quality and downloadspeed is available!
-                         */
-                        dllink = checkOfficialVideoDownload(link, account);
+                        dllink = getDllink(link, account);
                     }
                     if (StringUtils.isEmpty(dllink)) {
                         final Form dlForm = findFormF1Premium();
@@ -3325,12 +3360,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } else if (dllink.contains(".m3u8")) {
                 /* 2019-08-29: HLS download - more and more streaming-hosts have this (example: streamty.com) */
-                this.getPage(dllink);
-                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                if (hlsbest == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown HLS streaming error");
-                }
-                dllink = hlsbest.getDownloadurl();
+                dllink = handleQualitySelectionHLS(dllink);
                 checkFFmpeg(link, "Download a HLS Stream");
                 dl = new HLSDownloader(link, br, dllink);
                 try {
@@ -3370,6 +3400,42 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
+    }
+
+    protected String handleQualitySelectionHLS(final String hls_master) throws Exception {
+        this.getPage(hls_master);
+        final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(br);
+        if (hlsQualities == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown HLS streaming error");
+        }
+        /** TODO: Add quality selection */
+        final boolean preferBEST = true;
+        final String selectedQuality = "TODO";
+        HlsContainer hlsSelected = null;
+        if (preferBEST) {
+            logger.info("BEST quality is selected");
+            hlsSelected = HlsContainer.findBestVideoByBandwidth(hlsQualities);
+        } else {
+            logger.info("Looking for selected quality");
+            for (final HlsContainer hlsQualityTmp : hlsQualities) {
+                /*
+                 * TODO: Check if they're always the same or if they can also be crooked numbers. See ZDFMediathekDecrypter -->
+                 * getHeightForQualitySelection()
+                 */
+                final int height = hlsQualityTmp.getHeight();
+                if (Integer.toString(height).equals(selectedQuality)) {
+                    logger.info("Successfully found selected quality: " + selectedQuality);
+                    hlsSelected = hlsQualityTmp;
+                    break;
+                }
+            }
+        }
+        if (hlsSelected == null) {
+            /* Fallback */
+            logger.info("Failed to find selected quality --> Using BEST instead");
+            hlsSelected = HlsContainer.findBestVideoByBandwidth(hlsQualities);
+        }
+        return hlsSelected.getDownloadurl();
     }
 
     /** Handles errors right before starting the download. */
