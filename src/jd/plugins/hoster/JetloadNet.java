@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,11 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
@@ -60,7 +60,7 @@ public class JetloadNet extends PluginForHost {
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /*
-     * Generated 2019-05-08 via jetload.com account psp[AT]jdownloader[DOT]org Documentation: https://jetload.net/u/#!/api_docs
+     * 2019-05-08: Generated via jetload.com account psp[AT]jdownloader[DOT]org Documentation: https://jetload.net/u/#!/api_docs
      */
     private static final String  API_KEY                      = "b9yEWYHSNVZq1a2y";
     private static final boolean prefer_linkcheck_via_API     = true;
@@ -186,7 +186,8 @@ public class JetloadNet extends PluginForHost {
              * Attention! This is NOT the filename we use - it is only required to get a working downloadlink (wrong value = downloadlink
              * leads to 404)
              */
-            // final String encoding_status = (String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status");
+            /* 2019-10-04: E.g. video: "encoding_status":"completed" */
+            final boolean is_video = !"file".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status"));
             final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
             final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
             final boolean archive = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/archive"));
@@ -197,9 +198,7 @@ public class JetloadNet extends PluginForHost {
             } else if (StringUtils.isEmpty(ext)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* 2019-07-17: official http download via API fails with response 404 --> Prefer stream download */
-            final boolean prefer_stream_download = true;
-            if (prefer_stream_download) {
+            if (is_video) {
                 final String hostname = (String) JavaScriptEngineFactory.walkJson(entries, "server/hostname");
                 if (StringUtils.isEmpty(hostname)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -221,7 +220,10 @@ public class JetloadNet extends PluginForHost {
                     dllink = String.format("%s/v2/schema/%s/" + m3u8, hostname, filename_internal);
                 }
             } else {
-                /* Official download via API */
+                /*
+                 * Official download via API. Can also be used to download videos but will often fail for videos (error 404) - we're only
+                 * using it to download non-video-files!
+                 */
                 String serverID = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
                 if (StringUtils.isEmpty(serverID)) {
                     // server/id available for encoding_status: "completed"
