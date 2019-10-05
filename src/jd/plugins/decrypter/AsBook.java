@@ -70,13 +70,13 @@ public class AsBook extends antiDDoSForDecrypt {
                     for (String[] trackDetail : trackDetails) {
                         String track = trackDetail[0];
                         String datacode = trackDetail[1];
-                        String decodedLink = br.getURL(Encoding.htmlDecode(track)).toString();
+                        String decodedLink = "";
                         engine.eval("res = d(f(d(i(\"" + datacode + "\"), p())), c());");
                         engine.eval("res = n(res);"); // Throws an "org.mozilla.javascript.ConsString cannot be cast to java.lang.String"
                                                       // error in the Rhino engine, but works fine in Nashorn, so we're using the latter
                                                       // above even though it's deprecated as of JDK 11.
                         decodedLink = (String) engine.get("res");
-                        decodedLink = br2.getURL(decodedLink.replaceAll("^//", "")).toString();
+                        decodedLink = decodedLink.replaceAll("^//", "https://");
                         DownloadLink dl = createDownloadlink(decodedLink);
                         if (StringUtils.isNotEmpty(fpName)) {
                             String trackNumber_formatted = String.format(Locale.US, "%0" + padlength + "d", trackNumber);
