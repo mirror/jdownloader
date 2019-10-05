@@ -15,8 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -52,15 +56,27 @@ public class AsBook extends antiDDoSForDecrypt {
             if (StringUtils.isNotEmpty(iframeURL)) {
                 iframeURL = Encoding.htmlOnlyDecode(iframeURL.replace("\\", ""));
                 getPage(br2, iframeURL);
-                String[] tracks = br2.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+data-code\\s*=[^>]+>").getColumn(0);
-                if (tracks != null && tracks.length > 0) {
-                    int trackcount = tracks.length;
+                String[][] trackDetails = br2.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+data-code\\s*=\\s*\"([^\"]+)\"[^>]*>").getMatches();
+                String decryptJS = getDecryptJS();
+                final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+                engine.eval("var res = \"\";");
+                engine.eval(decryptJS);
+                if (trackDetails != null && trackDetails.length > 0) {
+                    int trackcount = trackDetails.length;
                     int trackNumber = 1;
                     String trackNumber_suffix = null;
                     String ext = null;
-                    int padlength = getPadLength(tracks.length);
-                    for (String track : tracks) {
+                    int padlength = getPadLength(trackDetails.length);
+                    for (String[] trackDetail : trackDetails) {
+                        String track = trackDetail[0];
+                        String datacode = trackDetail[1];
                         String decodedLink = br.getURL(Encoding.htmlDecode(track)).toString();
+                        engine.eval("res = d(f(d(i(\"" + datacode + "\"), p())), c());");
+                        engine.eval("res = n(res);"); // Throws an "org.mozilla.javascript.ConsString cannot be cast to java.lang.String"
+                                                      // error in the Rhino engine, but works fine in Nashorn, so we're using the latter
+                                                      // above even though it's deprecated as of JDK 11.
+                        decodedLink = (String) engine.get("res");
+                        decodedLink = br2.getURL(decodedLink.replaceAll("^//", "")).toString();
                         DownloadLink dl = createDownloadlink(decodedLink);
                         if (StringUtils.isNotEmpty(fpName)) {
                             String trackNumber_formatted = String.format(Locale.US, "%0" + padlength + "d", trackNumber);
@@ -88,5 +104,14 @@ public class AsBook extends antiDDoSForDecrypt {
 
     private final int getPadLength(final int size) {
         return String.valueOf(size).length();
+    }
+
+    private String getDecryptJS() throws IOException {
+        /*
+         * NOTE: A castrated version of https://cdn-x4.xframeonline.com/audiobook/js/app.js?id=706bcafc9823cf61f4d8 was minified using
+         * https://jscompress.com/ and then escaped using https://www.freeformatter.com/java-dotnet-escape.html
+         */
+        // See ticket #87471 for more context.
+        return "function n(n){for(var r,t,e,o,u,i,c=m()+\"=\",f=0,a=\"\";r=(i=c.indexOf(n.charAt(f++))<<18|c.indexOf(n.charAt(f++))<<12|(o=c.indexOf(n.charAt(f++)))<<6|(u=c.indexOf(n.charAt(f++))))>>16&255,t=i>>8&255,e=255&i,a+=64==o?String.fromCharCode(r):64==u?String.fromCharCode(r,t):String.fromCharCode(r,t,e),f<n.length;);return a}function t(){return i(\"jihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA\")}function m(){return t()+i(a().join(\"\")+\"zyxwvutsrqponmlk\")+i(\"/+\")}function o(){return\"edoc\"}function i(n){return u(r(n).reverse())}function a(){for(var n=[],r=0;r<10;r++)n.push(r);return r=\"0\".charCodeAt(0),n.reverse().map(function(n){return String.fromCharCode(n+r)})}function r(n){return n.split(\"\")}function s(){return\"atad\"}function l(n){return n.replace(/[\\-\\[\\]\\/\\{\\}\\(\\)\\*\\+\\?\\.\\\\\\^\\$\\|]/g,\"\\\\$&\")}function u(n){return n.join(\"\")}function d(n,r){var t=Object.keys(r).map(l);return n.split(RegExp(\"(\"+t.join(\"|\")+\")\")).map(function(n){return r[n]||n}).join(\"\")}function c(){return{\";\":\"===\",\",\":\"==\",\".\":\"=\",\"?\":\"z\",\"?\":\"x\",\"{\":\"ja\",\"}\":\"4L\"}}function f(n){return decodeURIComponent(n.replace(/\\+/g,\" \"))}function p(){return{\"?\":\"%\",\"#\":\"%2\",\"[\":\"%A\",\"]\":\"%D\",\"@\":\"0\"}}";
     }
 }
