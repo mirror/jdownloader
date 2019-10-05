@@ -731,6 +731,7 @@ public class TvnowDe extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                prepBRAPI(br);
                 final Cookies cookies = account.loadCookies("");
                 String authtoken = account.getStringProperty("authtoken", null);
                 String userID = account.getStringProperty("userid", null);
@@ -749,7 +750,6 @@ public class TvnowDe extends PluginForHost {
                     br = prepBRAPI(new Browser());
                     /* 2019-01-16: This is skippable */
                     // br.getPage("https://my." + this.getHost() + "/login");
-                    prepBRAPI(br);
                     br.getHeaders().put("Origin", "https://my.tvnow.de");
                     /* 2019-03-04: Workaround for backslashes inside passwords */
                     final String postdata = "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass().replace("\\", "\\\\") + "\"}";

@@ -15,7 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -23,6 +24,7 @@ import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -39,7 +41,31 @@ public class DbuploadIn extends XFileSharingProBasic {
      * captchatype-info: 2019-05-03: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "dbupload.in" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "dbupload.co", "dbupload.in" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2019-10-05: Main domain has changed from dbupload.in to dbupload.co */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -84,37 +110,19 @@ public class DbuploadIn extends XFileSharingProBasic {
         return 2;
     }
 
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean downloadsStarted) throws Exception {
+        /* 2019-10-05: Special: Workaround for serverside bad filenames */
+        final AvailableStatus status = super.requestFileInformationWebsite(link, downloadsStarted);
+        final String filename = link.getName();
+        if (filename != null && this.fuid != null && !filename.equals(this.fuid)) {
+            link.setFinalFileName(filename);
+        }
+        return status;
     }
 
     @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
+    protected void fixFilename(final DownloadLink downloadLink) {
+        /* 2019-10-05: Special: Workaround for serverside bad filenames */
     }
 }
