@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -20,10 +24,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me", "zevera.com" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+", "https?://(?:(?:www|beta)\\.)?zevera\\.com/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
@@ -58,12 +58,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             return null;
         }
         /* Find path from previous craw process if available. */
-        String folderPath = new Regex(parameter.getCryptedUrl(), "folderpath=(.+)").getMatch(0);
-        if (folderPath != null) {
-            folderPath = Encoding.Base64Decode(folderPath);
-        } else {
-            folderPath = "";
-        }
+        final String folderPath = this.getAdoptedCloudFolderStructure();
         ret.addAll(convert(parameter.getCryptedUrl(), nodes, folderPath));
         return ret;
     }
@@ -108,8 +103,9 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
                 } else {
                     path_for_next_crawl_level = currentPath + "/" + itemName;
                 }
-                final String folderURL = createFolderURL(host, nodeCloudID) + "&folderpath=" + Encoding.Base64Encode(path_for_next_crawl_level);
+                final String folderURL = createFolderURL(host, nodeCloudID);
                 final DownloadLink folder = new DownloadLink(null, null, host, folderURL, true);
+                folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path_for_next_crawl_level);
                 ret.add(folder);
             } else {
                 /* File */
