@@ -83,18 +83,9 @@ public class WorldStarHipHopCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText("Video temporarily unavailable");
                 return AvailableStatus.TRUE;
             }
-            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+            filename = br.getRegex("\"content-heading\">\\s*<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>Video: (.*?)</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1 style=\"width:438px;\">(.*?)</h1>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<span style=\"display:none;\">Watching: (.*?)</span><img src=\"").getMatch(0);
-                    }
-                }
-            }
-            if (filename == null) {
-                filename = br.getRegex("content=\"([^<>]*?)\" name=\"title\" property=\"og:title\"").getMatch(0);
+                filename = br.getRegex("<title>(.*?)( | Video )?</title>").getMatch(0);
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
