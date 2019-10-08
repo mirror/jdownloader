@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -31,14 +27,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/|$)" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)/?$" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ART   = ".+/art(/|$)";
-    private static final String TYPE_AUDIO = ".+/audio(/|$)";
+    private static final String TYPE_ART   = ".+/art/?$";
+    private static final String TYPE_AUDIO = ".+/audio/?$";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

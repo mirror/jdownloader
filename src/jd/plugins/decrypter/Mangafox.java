@@ -99,9 +99,11 @@ public class Mangafox extends PluginForDecrypt {
             logger.warning("Decrypter broken for: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        title = title.replaceAll("(Page\\s*\\d+)", ""); // remove Page X in title
         title = Encoding.htmlDecode(title.trim());
         final String multipleChapter[] = new Regex(title, "(?::|\\\\)\\s+(\\d+)\\s+").getColumn(0);
         if (multipleChapter != null && multipleChapter.length > 2) {
+            // special handling for multiple chapters in one volume
             String rawTitle = new Regex(title, ("(.*?)\\s*\\d+\\s*(:|\\\\)")).getMatch(0);
             if (rawTitle == null) {
                 rawTitle = new Regex(br.getURL(), "/manga/(.*?)/").getMatch(0);
