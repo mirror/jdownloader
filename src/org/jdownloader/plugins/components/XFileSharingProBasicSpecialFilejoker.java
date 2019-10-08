@@ -175,14 +175,18 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         }
     }
 
-    private final boolean loginAPIZeusCloudManager(final Browser br, final Account account, final boolean force) throws Exception {
+    /**
+     * @return true = verified cookies/session </br>
+     *         false = did not verify cookies/session
+     */
+    private final boolean loginAPIZeusCloudManager(final Browser br, final Account account, final boolean validateSession) throws Exception {
         prepAPIZeusCloudManager(br);
-        boolean loggedIN = false;
+        boolean validatedSession = false;
         String sessionid = getAPIZeusCloudManagerSession(account);
         try {
             String error = null;
             if (!StringUtils.isEmpty(sessionid)) {
-                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateSession) {
                     /* We trust these cookies as they're not that old --> Do not check them */
                     logger.info("Trust login-sessionid without checking as it should still be fresh");
                     return false;
@@ -196,11 +200,11 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  * current sessionID is invalid!
                  */
                 if (!"invalid session".equalsIgnoreCase(error) && br.getHttpConnection().getResponseCode() == 200) {
-                    loggedIN = true;
+                    validatedSession = true;
                     this.checkErrorsAPIZeusCloudManager(this.br, null, account);
                 }
             }
-            if (!loggedIN) {
+            if (!validatedSession) {
                 getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + String.format(getRelativeAPILoginParamsFormatAPIZeusCloudManager(), Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass())));
                 sessionid = PluginJSonUtils.getJson(br, "session");
                 error = PluginJSonUtils.getJson(br, "error");
@@ -208,7 +212,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 if (StringUtils.isEmpty(sessionid)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                loggedIN = true;
+                validatedSession = true;
             }
             account.setProperty(PROPERTY_SESSIONID, sessionid);
         } catch (final PluginException e) {
@@ -217,11 +221,16 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             }
             throw e;
         } finally {
-            if (loggedIN) {
+            /*
+             * 2019-10-08: Errors may occur during login e.g. IP ban but as long as validatedCookies = true we know that our
+             * cookies/sessionID is valid and we can save it for eventual later usage via website.
+             */
+            if (validatedSession) {
                 convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
             }
         }
-        return true;
+        /* validatedSession will always be true here */
+        return validatedSession;
     }
 
     /** This is different from the official XFS "API-Mod" API!! */
