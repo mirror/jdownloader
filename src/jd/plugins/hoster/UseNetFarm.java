@@ -127,7 +127,7 @@ public class UseNetFarm extends UseNet {
         @Override
         public boolean validateInputs() {
             final String url = getURL();
-            return url != null && StringUtils.containsIgnoreCase(url, "uuid");
+            return url != null && StringUtils.containsIgnoreCase(url, "uuid") && StringUtils.startsWithCaseInsensitive(url, "http");
         }
 
         @Override
@@ -153,6 +153,9 @@ public class UseNetFarm extends UseNet {
             }
             if (br.getCookie(getHost(), "sessid") == null) {
                 account.clearCookies("");
+                if (!StringUtils.containsIgnoreCase(account.getPass(), "uuid") || !StringUtils.startsWithCaseInsensitive(account.getPass(), "http")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter the complete login URL!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // login url
                 br.setAllowedResponseCodes(400);// Bad Request on invalid Login
                 br.getPage(account.getPass());
