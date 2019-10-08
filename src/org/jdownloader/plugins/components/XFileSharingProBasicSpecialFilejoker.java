@@ -184,7 +184,6 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         boolean validatedSession = false;
         String sessionid = getAPIZeusCloudManagerSession(account);
         try {
-            String error = null;
             if (!StringUtils.isEmpty(sessionid)) {
                 if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateSession) {
                     /* We trust these cookies as they're not that old --> Do not check them */
@@ -193,7 +192,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 }
                 /* First check if old session is still valid */
                 getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
-                error = PluginJSonUtils.getJson(br, "error");
+                final String error = PluginJSonUtils.getJson(br, "error");
                 /* Check for e.g. "{"error":"invalid session"}" */
                 /*
                  * 2019-08-28: Errors may happen at this stage but we only want to perform a full login if we're absolutely sure that our
@@ -207,9 +206,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             if (!validatedSession) {
                 getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + String.format(getRelativeAPILoginParamsFormatAPIZeusCloudManager(), Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass())));
                 sessionid = PluginJSonUtils.getJson(br, "session");
-                error = PluginJSonUtils.getJson(br, "error");
                 this.checkErrorsAPIZeusCloudManager(this.br, null, account);
                 if (StringUtils.isEmpty(sessionid)) {
+                    /* All errors should be handled by checkErrorsAPIZeusCloudManager already so this might happen but is unusual. */
+                    logger.info("Login failed for unknown reasons");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 validatedSession = true;
