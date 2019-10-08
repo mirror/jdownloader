@@ -3,6 +3,11 @@ package org.jdownloader.plugins.components;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -20,11 +25,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
@@ -123,8 +123,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
-     * issues/complicated handling which is required for website login and download! </br> Sidenote: API Cookies will work fine for the
-     * website too so if enabled- and later disabled, login-captchas should still be avoided!
+     * issues/complicated handling which is required for website login and download! </br>
+     * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
     protected boolean useAPIZeusCloudManager() {
         return true;
@@ -137,7 +137,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * API login may avoid the need of login captchas. If enabled, ZeusCloudManagerAPI login will be tried even if API is disabled and
-     * resulting cookies will be used in website mode. Only enable this if tested! </br> default = false
+     * resulting cookies will be used in website mode. Only enable this if tested! </br>
+     * default = false
      */
     protected boolean tryAPILoginInWebsiteMode() {
         return false;
@@ -207,30 +208,18 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 if (StringUtils.isEmpty(sessionid)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                loggedIN = true;
             }
             account.setProperty(PROPERTY_SESSIONID, sessionid);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                try {
-                    /*
-                     * Check if API cookies and website cookies are the same --> If so, delete both so that they will not be checked again
-                     * in website mode! Cookies from website may slightly differ (they will e.g. contain language cookie) which is why we
-                     * compare simply via sessionid ("xfss") cookie!
-                     */
-                    final Cookies cookies_website = account.loadCookies("");
-                    final Cookies cookies_api = account.loadCookies(PROPERTY_COOKIES_API);
-                    final String sessionid_website = cookies_website.get("xfss").getValue();
-                    final String sessionid_api = cookies_api.get("xfss").getValue();
-                    if (sessionid_website.equals(sessionid_api)) {
-                        account.clearCookies("");
-                        account.clearCookies(PROPERTY_COOKIES_API);
-                    }
-                } catch (final Throwable eCookiesClearFailure) {
-                    /* Usually NPE because of missing values */
-                }
+                this.dumpSessionInfo(account);
             }
+            throw e;
         } finally {
-            convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
+            if (loggedIN) {
+                convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
+            }
         }
         return true;
     }
@@ -393,6 +382,9 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * download via website right away.
      */
     private final void convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(final Account account, final String sessionid) {
+        if (account == null || sessionid == null) {
+            return;
+        }
         final Browser dummyBR = new Browser();
         dummyBR.setCookie(account.getHoster(), "xfss", sessionid);
         final String email = account.getStringProperty(PROPERTY_EMAIL, null);
@@ -524,6 +516,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         if (!StringUtils.isEmpty(error)) {
             if (error.equalsIgnoreCase("Login failed")) {
                 /* This should only happen on login attempt via email/username & password */
+                /* Previous session should not exist when this error happens - dump it anyways if it does! */
+                this.dumpSessionInfo(account);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (error.equalsIgnoreCase("invalid session")) {
                 invalidateAPIZeusCloudManagerSession(account);
@@ -575,8 +569,28 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     private final void invalidateAPIZeusCloudManagerSession(final Account account) throws PluginException {
-        account.removeProperty(PROPERTY_SESSIONID);
+        dumpSessionInfo(account);
         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid sessionid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+    }
+
+    private void dumpSessionInfo(final Account account) {
+        /*
+         * Check if API cookies and website cookies are the same --> If so, delete both so that they will not be checked again in website
+         * mode! Cookies from website may slightly differ (they will e.g. contain language cookie) which is why we compare simply via
+         * sessionid ("xfss") cookie!
+         */
+        final Cookies cookies_website = account.loadCookies("");
+        final Cookies cookies_api = account.loadCookies(PROPERTY_COOKIES_API);
+        final String sessionid_website = cookies_website != null ? cookies_website.get("xfss").getValue() : null;
+        final String sessionid_api = cookies_api != null ? cookies_api.get("xfss").getValue() : null;
+        if (sessionid_website != null && sessionid_api != null && sessionid_website.equals(sessionid_api)) {
+            /* Delete website cookies only if sessionid == API sessionid */
+            account.clearCookies("");
+        }
+        /* Delete API cookies */
+        account.clearCookies(PROPERTY_COOKIES_API);
+        /* Delete API session */
+        account.removeProperty(PROPERTY_SESSIONID);
     }
 
     @Override
