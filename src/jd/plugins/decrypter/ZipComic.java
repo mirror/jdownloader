@@ -40,7 +40,10 @@ public class ZipComic extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        final String fpName = br.getRegex("<title>\\s*Read\\s+online,\\s+Download\\s+zip\\s+([^>]+)\\s+comic").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*Read\\s+online,\\s+Download\\s+zip\\s+([^>]+)\\s+comic").getMatch(0);
+        if (StringUtils.isEmpty(fpName)) {
+            fpName = br.getRegex("<title>\\s*Read\\s+online([^>]+)\\s+-\\s+Issue").getMatch(0);
+        }
         final String[] links = br.getRegex("<a[^>]+href\\s*=\\s*[\"']*([^\"'>]+)[\"']*[^>]*><i[^>]+class\\s*=\\s*\"fa fa-download\"[^>]*>").getColumn(0);
         if (links != null && links.length > 0) {
             for (String link : links) {
