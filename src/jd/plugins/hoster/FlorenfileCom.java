@@ -81,7 +81,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -10;
+            return -4;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;

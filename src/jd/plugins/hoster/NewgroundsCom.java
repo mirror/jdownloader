@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -234,15 +235,25 @@ public class NewgroundsCom extends antiDDoSForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
+        if (!downloadLink.getDownloadURL().matches(ARTLINK)) {
+            // avoid 429, You're making too many requests. Wait a bit before trying again
+            sleep(1500l, downloadLink);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getResponseCode() == 429) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException ignore) {
+                logger.log(ignore);
+            }
             /* 2017-11-16: E.g. happens for audio files */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 60 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             try {
-                br.followConnection();
-            } catch (final Throwable ignore) {
+                br.followConnection(true);
+            } catch (final IOException ignore) {
+                logger.log(ignore);
             }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
