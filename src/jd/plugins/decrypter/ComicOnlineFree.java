@@ -76,7 +76,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             for (String image : images) {
                 String page_formatted = String.format(Locale.US, "%0" + padlength + "d", page);
                 image = Encoding.htmlDecode(image);
-                DownloadLink dl = createDownloadlink(image);
+                DownloadLink dl = createDownloadlink("directhttp://" + image);
                 if (ext == null) {
                     ext = getFileNameExtensionFromURL(image, ".jpg");
                 }
