@@ -112,7 +112,6 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         opt.add(CollapseExpandContextAction.class);
         opt.add(CopyGenericContextAction.class);
         opt.add(ConfirmHashValuesLinkgrabberAction.class);
-        opt.add(createChunksMenu());
         return mr;
     }
 
@@ -156,6 +155,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         ret.add(SetDownloadPassword.class);
         ret.add(SetCommentAction.class);
         ret.add(createPriorityMenu());
+        ret.add(createChunksMenu());
         return ret;
     }
 
