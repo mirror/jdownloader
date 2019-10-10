@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\.)?(comiconlinefree\\.com|viewcomics//.me)/(?:comic/|[^/]+/issue-)[^\\s/]+(?:/full)?" })
 public class ComicOnlineFree extends antiDDoSForDecrypt {
@@ -46,7 +46,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             parameter = parameter + "/full";
         }
         getPage(parameter);
-        String fpName = br.getRegex("<title>([^<]+)Comic\\s+-\\s+Read\\s+Dino-Riders\\s+Online\\s+For\\s+Free").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<]+)Comic\\s*-\\s*Read\\s*Dino-Riders\\s+Online\\s+For\\s+Free").getMatch(0);
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("<title>\\s*([^>]+)\\s+-\\s+Read\\s+[^>]+\\s+Online\\s+").getMatch(0);
         }
@@ -72,19 +72,15 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             final String chapter_name = Encoding.htmlDecode(fpName.trim());
             final int padlength = getPadLength(images.length);
             int page = 1;
-            String ext = null;
             for (String image : images) {
-                String page_formatted = String.format(Locale.US, "%0" + padlength + "d", page);
+                String page_formatted = String.format(Locale.US, "%0" + padlength + "d", page++);
                 image = Encoding.htmlDecode(image);
-                DownloadLink dl = createDownloadlink("directhttp://" + image);
-                if (ext == null) {
-                    ext = getFileNameExtensionFromURL(image, ".jpg");
-                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + image);
+                String ext = getFileNameExtensionFromURL(image, ".jpg");
                 dl.setFinalFileName(chapter_name + "_" + page_formatted + ext);
                 fp.add(dl);
                 distribute(dl);
                 decryptedLinks.add(dl);
-                page++;
             }
         }
         return decryptedLinks;
