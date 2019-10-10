@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\.)?(comiconlinefree\\.com|viewcomics//.me)/(?:comic/|[^/]+/issue-)[^\\s/]+(?:/full)?" })
 public class ComicOnlineFree extends antiDDoSForDecrypt {
@@ -46,9 +46,9 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             parameter = parameter + "/full";
         }
         getPage(parameter);
-        String fpName = br.getRegex("<title>\\s*([^<]+)Comic\\s*-\\s*Read\\s*Dino-Riders\\s+Online\\s+For\\s+Free").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<]+)Comic\\s*-\\s*Read\\s*[^<]+\\s+Online\\s+For\\s+Free").getMatch(0);
         if (StringUtils.isEmpty(fpName)) {
-            fpName = br.getRegex("<title>\\s*([^>]+)\\s+-\\s+Read\\s+[^>]+\\s+Online\\s+").getMatch(0);
+            fpName = br.getRegex("<title>\\s*([^>]+)\\s+-\\s+Read\\s+[^<]+\\s+Online\\s+").getMatch(0);
         }
         final FilePackage fp = FilePackage.getInstance();
         if (StringUtils.isNotEmpty(fpName)) {
