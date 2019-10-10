@@ -40,6 +40,7 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
 
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
@@ -50,10 +51,9 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         return id;
     }
 
-    private final AtomicReference<Process> process = new AtomicReference<Process>(null);
-    private final HashMap<String, URL>     resourceIds;
-    private final HashMap<String, String>  types;
-    protected String                       base;
+    private final HashMap<String, URL>    resourceIds;
+    private final HashMap<String, String> types;
+    protected String                      base;
     {
         resourceIds = new HashMap<String, URL>();
         resourceIds.put("style.css", BrowserReference.class.getResource("html/style.css"));
@@ -140,49 +140,21 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     protected void openURL(String url) {
-        String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
-        if (browserCmd == null || browserCmd.length == 0) {
-            // if (CrossSystem.isWindows()) {
-            //
-            // try {
-            // // Get registry where we find the default browser
-            //
-            // ProcessOutput result = ProcessBuilderFactory.runCommand("REG", "QUERY", "HKEY_CLASSES_ROOT\\http\\shell\\open\\command");
-            // String string = result.getStdOutString("UTF-8");
-            // String pathToExecutable = new Regex(string, "\"([^\"]+)").getMatch(0);
-            // File file = new File(pathToExecutable);
-            // if (file.exists() && file.getName().toLowerCase(Locale.ENGLISH).endsWith(".exe")) {
-            // browserCmd = new String[] { file.getAbsolutePath(), "%%%url%%%" };
-            // if (file.getName().toLowerCase(Locale.ENGLISH).endsWith("chrome.exe")) {
-            // browserCmd = new String[] { file.getAbsolutePath(), "--app=%%%url%%%", "--window-position=%%%x%%%,%%%y%%%",
-            // "--window-size=%%%width%%%,%%%height%%%" };
-            // }
-            //
-            // }
-            //
-            // } catch (Exception e) {
-            // e.printStackTrace();
-            //
-            // }
-            // }
-        }
+        final String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
         if (browserCmd == null || browserCmd.length == 0) {
             CrossSystem.openURL(url);
         } else {
-            // Point pos = getPreferredBrowserPosition();
-            // Dimension size = getPreferredBrowserSize();
-            String[] cmds = new String[browserCmd.length];
+            final String[] cmds = new String[browserCmd.length];
             for (int i = 0; i < browserCmd.length; i++) {
                 cmds[i] = browserCmd[i].replace("%s", url);
             }
-            ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
+            final ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
             pb.redirectErrorStream(true);
             try {
-                process.set(pb.start());
-                // String str = IO.readInputStreamToString(process.getInputStream());
-                // System.out.println(str);
+                pb.start();
             } catch (IOException e) {
-                e.printStackTrace();
+                LogController.CL().log(e);
+                CrossSystem.openURL(url);
             }
         }
     }
@@ -201,15 +173,8 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             @Override
             protected Void run() throws RuntimeException {
                 final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
-                try {
-                    if (lHandlerInfo != null) {
-                        DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
-                    }
-                } finally {
-                    final Process lProcess = process.getAndSet(null);
-                    if (lProcess != null) {
-                        lProcess.destroy();
-                    }
+                if (lHandlerInfo != null) {
+                    DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
                 }
                 return null;
             }
