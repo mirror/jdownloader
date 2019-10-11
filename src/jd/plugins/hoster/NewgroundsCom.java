@@ -235,11 +235,15 @@ public class NewgroundsCom extends antiDDoSForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
+        final int chunks;
         if (!downloadLink.getDownloadURL().matches(ARTLINK)) {
             // avoid 429, You're making too many requests. Wait a bit before trying again
             sleep(1500l, downloadLink);
+            chunks = 1;
+        } else {
+            chunks = free_maxchunks;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, chunks);
         if (dl.getConnection().getResponseCode() == 429) {
             try {
                 br.followConnection(true);

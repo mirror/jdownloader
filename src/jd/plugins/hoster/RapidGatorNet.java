@@ -46,6 +46,7 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -552,7 +553,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (account) {
             try {
-                final String sid = login_api(account);
+                final String sid = login_api(account, false);
                 if (sid != null) {
                     account.setValid(true);
                     /* premium account */
@@ -758,10 +759,15 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private String login_api(final Account account) throws Exception {
+    private String login_api(final Account account, boolean isDownloadMode) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (account) {
             try {
+                final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
+                final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
+                if (pleaseWait > 5000) {
+                    throw new AccountUnavailableException("Frequest logins. Please wait!", pleaseWait);
+                }
                 avoidBlock(br);
                 con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass())));
                 handleErrors_api(null, false, null, account, con);
@@ -892,9 +898,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
                 final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty("session_id", null));
                 if (errorMessage.contains("Please wait")) {
+                    account.setProperty("lastPleaseWait", System.currentTimeMillis());
                     if (link == null) {
                         /* we are inside fetchAccountInfo */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server says: 'Please wait ...'", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new AccountUnavailableException("Frequent logins. Please wait", 5 * 60 * 1000l);
                     } else {
                         /* we are inside handlePremium */
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
@@ -990,11 +997,11 @@ public class RapidGatorNet extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
         String session_id = null;
-        boolean isPremium = false;
+        final boolean isPremium;
         synchronized (account) {
             session_id = account.getStringProperty("session_id", null);
             if (session_id == null) {
-                session_id = login_api(account);
+                session_id = login_api(account, true);
             }
             isPremium = Account.AccountType.PREMIUM.equals(account.getType());
         }
@@ -1095,9 +1102,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
