@@ -328,7 +328,9 @@ public class UpstoRe extends antiDDoSForHost {
                     }
                 }
                 submitForm(login);
-                if (br.containsHTML(regexLoginCaptcha)) {
+                if (br.containsHTML(">\\s*Wrong email or password\\.\\s*<")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (br.containsHTML(regexLoginCaptcha)) {
                     // incorrect captcha, or form values changed
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else if (!browserCookiesMatchLoginCookies(br)) {
