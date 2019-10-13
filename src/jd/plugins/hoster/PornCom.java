@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(\\w+\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
 public class PornCom extends antiDDoSForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -291,7 +291,7 @@ public class PornCom extends antiDDoSForHost {
     }
 
     public static String getFilename(Browser br) throws Exception {
-        String filename = br.getRegex("<meta name=\"description\" content=\"(?:Watch video |Watch )?([^<>\"]*?)\"\\s*/>").getMatch(0);
+        String filename = br.getRegex("embedURL:\"[^\"]+\",title:\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)( - PORN.COM)?</title>").getMatch(0);
         }
