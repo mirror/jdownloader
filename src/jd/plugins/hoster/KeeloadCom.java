@@ -36,8 +36,8 @@ public class KeeloadCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * limit-info: 2019-10-14: no limits at all <br />
+     * captchatype-info: 2019-10-14: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
