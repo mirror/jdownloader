@@ -50,11 +50,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class ChoMikujPl extends antiDDoSForHost {
     private String               dllink                      = null;
     private static final String  PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
-    private static final String  PREMIUMONLYUSERTEXT         = "Download is only available for registered/premium users!";
     private static final String  ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
     private final String         VIDEOENDINGS                = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
     private static final String  MAINPAGE                    = "https://chomikuj.pl/";
-    private static Object        LOCK                        = new Object();
     /* Pluging settings */
     public static final String   DECRYPTFOLDERS              = "DECRYPTFOLDERS";
     private static final String  AVOIDPREMIUMMP3TRAFFICUSAGE = "AVOIDPREMIUMMP3TRAFFICUSAGE";
@@ -86,7 +84,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
-            prepBr.setAllowedResponseCodes(500);
+            prepBr.setAllowedResponseCodes(new int[] { 500 });
         }
         return prepBr;
     }
@@ -180,7 +178,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
         account.setType(AccountType.PREMIUM);
         /* 2019-07-16: Points can be converted to traffic but for us they're not important */
-        final String collectedPointsStr = br.getRegex("title=\"Punkty\"[^<>]*?><strong>(\\d+)</strong>").getMatch(0);
+        final String collectedPointsStr = br.getRegex("title=\"Punkty\"[^<>]*?><strong>\\s*(\\d+)\\s*</strong>").getMatch(0);
         if (collectedPointsStr != null) {
             ai.setPremiumPoints(collectedPointsStr);
         }
@@ -554,8 +552,8 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
     }
 
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
@@ -565,8 +563,15 @@ public class ChoMikujPl extends antiDDoSForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     getPageWithCleanup(this.br, MAINPAGE);
                     loggedinViaCookies = this.isLoggedIn();
+                    if (loggedinViaCookies) {
+                        logger.info("Successfully loggedin via cookies");
+                    } else {
+                        logger.info("Failed to login via cookies");
+                    }
                 }
                 if (!loggedinViaCookies) {
+                    logger.info("Performing full login");
+                    br = prepBrowser(new Browser(), account.getHoster());
                     getPageWithCleanup(this.br, MAINPAGE);
                     final String lang = System.getProperty("user.language");
                     final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
@@ -577,19 +582,24 @@ public class ChoMikujPl extends antiDDoSForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    postPageRawWithCleanup(this.br, "https://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                    // postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin",
+                    // "rememberLogin=true&rememberLogin=false&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" +
+                    // Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" +
+                    // Encoding.urlEncode(requestVerificationToken));
+                    postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin", "ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
                     if (!isLoggedIn()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    br.setCookie(MAINPAGE, "cookiesAccepted", "1");
-                    br.setCookie(MAINPAGE, "spt", "0");
-                    br.setCookie(MAINPAGE, "rcid", "1");
-                    postPageRawWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
-                    getPageWithCleanup(this.br, "https://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
+                    br.setCookie(br.getHost(), "cookiesAccepted", "1");
+                    br.setCookie(br.getHost(), "spt", "0");
+                    br.setCookie(br.getHost(), "rcid", "1");
+                    getPageWithCleanup(this.br, "/" + Encoding.urlEncode(account.getUser()));
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
