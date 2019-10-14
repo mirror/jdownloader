@@ -678,7 +678,8 @@ public class YetiShareCore extends antiDDoSForHost {
         return getDllink(this.br);
     }
 
-    private String getDllink(final Browser br) {
+    /** If overridden, make sure to make isDownloadlink compatible as well! */
+    protected String getDllink(final Browser br) {
         String dllink = br.getRegex("\"(https?://[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
