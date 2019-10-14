@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -75,10 +76,9 @@ public class SaruchCo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
-
+    private static final boolean          FREE_RESUME       = true;
+    private static final int              FREE_MAXCHUNKS    = 0;
+    private static final int              FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -88,6 +88,9 @@ public class SaruchCo extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private LinkedHashMap<String, Object> entries           = null;
+    private Object                        videoError        = null;
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -114,8 +117,8 @@ public class SaruchCo extends PluginForHost {
             /* 2019-10-14: E.g. {"message":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Object message = entries.get("message");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        videoError = entries.get("message");
         entries = (LinkedHashMap<String, Object>) entries.get("video");
         // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
         final Object error = entries.get("error_code");
@@ -145,11 +148,83 @@ public class SaruchCo extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            final boolean plugin_under_development = true;
-            if (plugin_under_development) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloads are not yet possible");
+            if (videoError != null) {
+                /* 2019-10-14: E.g. "message":"Video is converting..." */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
-            dllink = br.getRegex("").getMatch(0);
+            /*
+             * Different services store the values we want under different names. E.g. vidoza.net uses 'res', most providers use 'label'.
+             */
+            final String[] possibleQualityObjectNames = new String[] { "label" };
+            /*
+             * Different services store the values we want under different names. E.g. vidoza.net uses 'src', most providers use 'file'.
+             */
+            final String[] possibleStreamURLObjectNames = new String[] { "file" };
+            try {
+                HashMap<String, Object> entries = null;
+                Object quality_temp_o = null;
+                long quality_temp = 0;
+                /*
+                 * Important: Default is -1 so that even if only one quality is available without quality-identifier, it will be used!
+                 */
+                long quality_best = -1;
+                String dllink_temp = null;
+                final ArrayList<Object> ressourcelist = (ArrayList) this.entries.get("sources");
+                final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
+                for (final Object videoo : ressourcelist) {
+                    if (videoo instanceof String && onlyOneQualityAvailable) {
+                        /* Maybe single URL without any quality information e.g. uqload.com */
+                        dllink_temp = (String) videoo;
+                        if (dllink_temp.startsWith("http")) {
+                            dllink = dllink_temp;
+                            break;
+                        }
+                    }
+                    entries = (HashMap<String, Object>) videoo;
+                    for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
+                        if (entries.containsKey(possibleStreamURLObjectName)) {
+                            dllink_temp = (String) entries.get(possibleStreamURLObjectName);
+                            break;
+                        }
+                    }
+                    if (StringUtils.isEmpty(dllink_temp)) {
+                        /* No downloadurl found --> Continue */
+                        continue;
+                    }
+                    for (final String possibleQualityObjectName : possibleQualityObjectNames) {
+                        try {
+                            quality_temp_o = entries.get(possibleQualityObjectName);
+                            if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                                quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                            } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                                /* E.g. '360p' */
+                                quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0));
+                            }
+                            if (quality_temp > 0) {
+                                break;
+                            }
+                        } catch (final Throwable e) {
+                            e.printStackTrace();
+                            logger.info("Failed to find quality via key '" + possibleQualityObjectName + "' for current downloadurl candidate: " + dllink_temp);
+                            if (!onlyOneQualityAvailable) {
+                                continue;
+                            }
+                        }
+                    }
+                    if (StringUtils.isEmpty(dllink_temp)) {
+                        continue;
+                    }
+                    if (quality_temp > quality_best) {
+                        quality_best = quality_temp;
+                        dllink = dllink_temp;
+                    }
+                }
+                if (!StringUtils.isEmpty(dllink)) {
+                    logger.info("BEST handling for multiple video source succeeded - best quality is: " + quality_best);
+                }
+            } catch (final Throwable e) {
+                logger.info("BEST handling for multiple video source failed");
+            }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
