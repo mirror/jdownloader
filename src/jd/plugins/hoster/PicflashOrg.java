@@ -85,9 +85,9 @@ public class PicflashOrg extends PluginForHost {
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("viewer.php")) {
+            /* 2019-10-15: Dupe recognization works via filename here and filename is not given inside URL for all linktypes! */
+            return this.getHost() + "://" + this.getFID(link);
         } else {
             return super.getLinkID(link);
         }
@@ -100,14 +100,15 @@ public class PicflashOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        /* Set fid as name so that offline content also has 'nice' filenames! */
         /* 2019-09-23: This is a JD-friendly project :) */
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().contains("viewer.php")) {
-            /*
-             * Direct-URLs - we only have support for this via this ´plugin to work-around their Content-Type issue:
-             * https://ngb.to/threads/9824-Bugs-Alles-was-an-Bugs-auff%C3%A4llt/page24?p=767647&highlight=pspzockerscene#post767647
+            /**
+             * Direct-URLs - we only only supported them via this plugin to work-around their Content-Type issue:
+             * https://ngb.to/threads/9824-Bugs-Alles-was-an-Bugs-auff%C3%A4llt/page24?p=767647&highlight=pspzockerscene#post767647 </br>
+             * 2019-10-15: They've fixed their content-type issue. Support for directurls via plugin is still useful though for
+             * offline-detection, see comments below.
              */
             link.setFinalFileName(this.getFID(link));
             URLConnectionAdapter con = null;
@@ -145,8 +146,12 @@ public class PicflashOrg extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"content-box error top-space\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = br.getRegex("<li><b>Name:</b>([^<>\"]+)</li>").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
+            String filename = br.getRegex("<li>\\s*<b>Name\\s*:\\s*</b>([^<>\"]+)</li>").getMatch(0);
+            if (!StringUtils.isEmpty(filename)) {
+                /* 2019-10-15: Do this so that duplicate recognization works throughout directurls and these URLs. */
+                filename = Encoding.htmlDecode(filename).trim();
+                link.setLinkID(this.getHost() + "://" + filename);
+            } else {
                 /* Fallback */
                 filename = this.getFID(link);
             }
@@ -154,7 +159,6 @@ public class PicflashOrg extends PluginForHost {
             if (StringUtils.isEmpty(filename)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
             if (filesize != null) {
                 filesize = filesize.replace(",", "");
