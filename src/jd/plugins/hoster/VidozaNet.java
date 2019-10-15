@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidozaNet extends XFileSharingProBasic {
@@ -57,6 +58,18 @@ public class VidozaNet extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "vidoza.net" });
+        return ret;
+    }
+
+    @Override
+    public String[] scanInfo(String[] fileInfo) {
+        final String[] ret = super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(ret[0]) || StringUtils.equalsIgnoreCase("No title", ret[0])) {
+            final String curFileName = br.getRegex("var\\s*curFileName\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (StringUtils.isNotEmpty(curFileName)) {
+                ret[0] = curFileName;
+            }
+        }
         return ret;
     }
 
