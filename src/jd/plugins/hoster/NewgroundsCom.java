@@ -238,7 +238,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         final int chunks;
         if (!downloadLink.getDownloadURL().matches(ARTLINK)) {
             // avoid 429, You're making too many requests. Wait a bit before trying again
-            sleep(1500l, downloadLink);
+            sleep(30 * 1000l, downloadLink);
             chunks = 1;
         } else {
             chunks = free_maxchunks;
@@ -251,7 +251,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 logger.log(ignore);
             }
             /* 2017-11-16: E.g. happens for audio files */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 120 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             try {

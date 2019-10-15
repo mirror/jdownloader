@@ -304,20 +304,22 @@ public class DownloadLinkSandBox {
     public long getEta() {
         if (downloadLink == null) {
             return -1l;
-        }
-        final PluginProgress progress = downloadLink.getPluginProgress();
-        if (progress != null) {
-            final long eta = progress.getETA();
-            return eta * 1000l;
-        }
-        final ConditionalSkipReason conditionalSkipReason = downloadLink.getConditionalSkipReason();
-        if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-            if (conditionalSkipReason instanceof TimeOutCondition) {
-                long time = ((TimeOutCondition) conditionalSkipReason).getTimeOutLeft();
-                return time * 1000l;
+        } else {
+            final PluginProgress progress = downloadLink.getPluginProgress();
+            if (progress != null) {
+                final long ret = progress.getETA();
+                return ret;
+            } else {
+                final ConditionalSkipReason conditionalSkipReason = downloadLink.getConditionalSkipReason();
+                if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+                    if (conditionalSkipReason instanceof TimeOutCondition) {
+                        final long ret = ((TimeOutCondition) conditionalSkipReason).getTimeOutLeft();
+                        return ret;
+                    }
+                }
+                return -1;
             }
         }
-        return -1;
     }
 
     public ArchiveSandbox getArchive() {
