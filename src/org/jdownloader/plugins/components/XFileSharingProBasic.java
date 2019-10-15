@@ -780,6 +780,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
+        if (internal_isVideohosterEmbed() && (StringUtils.isEmpty(fileInfo[0]) || StringUtils.equalsIgnoreCase("No title", fileInfo[0]))) {
+            final String curFileName = br.getRegex("var\\s*curFileName\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (StringUtils.isNotEmpty(curFileName)) {
+                fileInfo[0] = curFileName;
+            }
+        }
         /*
          * 2019-05-16: Experimental RegEx to find 'safe' filesize traits which can always be checked, regardless of the
          * 'supports_availablecheck_filesize_html' setting:
