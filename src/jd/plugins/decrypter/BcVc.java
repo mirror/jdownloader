@@ -82,8 +82,7 @@ public class BcVc extends antiDDoSForDecrypt {
         }
         // we have to rename them here because we can damage urls within urls.
         // - parameters containing www. will always be offline.
-        // - https never returns results, doesn't work in browser either.
-        parameter = parameter.replaceFirst("://www.", "://").replaceFirst("https://", "http://");
+        parameter = parameter.replaceFirst("://www.", "://").replaceFirst("http://", "https://");
         br.setFollowRedirects(false);
         getPage(parameter);
         /* Check for direct redirect */
@@ -94,6 +93,9 @@ public class BcVc extends antiDDoSForDecrypt {
         if (redirect != null && !redirect.contains("bc.vc/")) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
+        }
+        if (redirect != null) {
+            getPage(redirect);
         }
         if (StringUtils.endsWithCaseInsensitive(redirect, "//bc.vc/7") || br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
