@@ -1465,7 +1465,16 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (json_source == null) {
                     json_source = br.getRegex("Profile\\.init\\((\\{.*?)</script>").getMatch(0);
                 }
-                ownerID = PluginJSonUtils.getJson(json_source, "public_id");
+                if (json_source == null) {
+                    /* Public groups */
+                    json_source = br.getRegex("Groups\\.init\\((\\{.*?)</script>").getMatch(0);
+                    if (json_source != null) {
+                        ownerID = PluginJSonUtils.getJson(json_source, "group_id");
+                    }
+                }
+                if (StringUtils.isEmpty(ownerID)) {
+                    ownerID = PluginJSonUtils.getJson(json_source, "public_id");
+                }
                 postvalue_fixed = PluginJSonUtils.getJson(json_source, "fixed_post_id");
                 if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
                     /* ownerID is given as double value --> Correct that */
@@ -1483,7 +1492,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     postvalue_fixed = "";
                 }
             } else {
-                this.getPageSafe(String.format("https://vk.com/wall%s", ownerID));
+                /* Be aware! The parameter 'own=0|1' may decide whether we can access the URL or not! Do NOT remove it! */
+                this.getPageSafe(this.CRYPTEDLINK_ORIGINAL);
             }
             /* This is not always given! */
             json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
@@ -2430,7 +2440,7 @@ public class VKontakteRu extends PluginForDecrypt {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
         } else {
             /* Remove unneeded parameters. */
-            final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)", "(/rev)$", "(\\?albums=\\d+)", "(\\?own=(?:0|1))" };
+            final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)", "(/rev)$", "(\\?albums=\\d+)" };
             for (final String unwantedPart : unwantedParts) {
                 final String unwantedData = new Regex(this.CRYPTEDLINK_ORIGINAL, unwantedPart).getMatch(0);
                 if (unwantedData != null) {

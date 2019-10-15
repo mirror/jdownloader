@@ -13,10 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRuDecrypter extends PluginForDecrypt {
-
     public OkRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,18 +39,25 @@ public class OkRuDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceAll("https?://(m|www)\\.", "https://www.").replace("/videoembed/", "/video/");
         param.setCryptedUrl(parameter);
-        final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
+        final String vid = new Regex(parameter, "(\\d+(-\\d+)?)$").getMatch(0);
         jd.plugins.hoster.OkRu.prepBR(this.br);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage("https://ok.ru/video/" + vid);
+        if (jd.plugins.hoster.OkRu.isOffline(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String externID = this.br.getRegex("data-ytid=\"([^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
+        String externID = null;
+        String provider = null;
+        final LinkedHashMap<String, Object> entries = jd.plugins.hoster.OkRu.getFlashVars(br);
+        if (entries != null) {
+            provider = (String) entries.get("provider");
+            externID = (String) JavaScriptEngineFactory.walkJson(entries, "movie/contentId");
+        }
+        if ("USER_YOUTUBE".equalsIgnoreCase(provider) && !StringUtils.isEmpty(externID)) {
             decryptedLinks.add(createDownloadlink("https://www.youtube.com/watch?v=" + externID));
             return decryptedLinks;
         }
+        /* 2019-10-15: TODO: Check if this is still working */
         externID = this.br.getRegex("coubID=([A-Za-z0-9]+)").getMatch(0);
         if (externID == null) {
             externID = this.br.getRegex("coub\\.com%2Fview%2F([A-Za-z0-9]+)").getMatch(0);
@@ -57,6 +66,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(String.format("https://coub.com/view/%s", externID)));
             return decryptedLinks;
         }
+        /* No external hosting provider found --> Content should be hosted by ok.ru --> Pass over to hosterplugin. */
         final DownloadLink main = createDownloadlink(param.toString());
         main.setLinkID(getHost() + "://" + vid);
         main.setName(vid);
@@ -64,7 +74,6 @@ public class OkRuDecrypter extends PluginForDecrypt {
             main.setAvailable(false);
         }
         decryptedLinks.add(main);
-
         return decryptedLinks;
     }
 }

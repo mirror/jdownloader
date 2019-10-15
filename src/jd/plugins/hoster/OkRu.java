@@ -16,15 +16,20 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,11 +38,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/.+" })
 public class OkRu extends PluginForHost {
     public OkRu(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(\\d+(-\\d+)?)$").getMatch(0);
     }
 
     /* DEV NOTES */
@@ -52,94 +71,94 @@ public class OkRu extends PluginForHost {
     private final String         PREFER_480P         = "PREFER_480P";
     private String               dllink              = null;
     private boolean              download_impossible = false;
+    private boolean              paidContent         = false;
 
     public static void prepBR(final Browser br) {
         /* Use mobile website to get http urls. */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+        /* 2019-10-15: Do not use mobile User-Agent anymore! */
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML,
+        // like Gecko) Version/4.0 Mobile");
         // with jd default lang we get non english (homepage) or non russian responses (mobile)
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.setFollowRedirects(true);
     }
 
+    public static LinkedHashMap<String, Object> getFlashVars(final Browser br) {
+        String playerJsonSrc = br.getRegex("data-module=\"OKVideo\" data-options=\"([^<>]+)\" data-player-container-id=").getMatch(0);
+        if (playerJsonSrc == null) {
+            return null;
+        }
+        try {
+            playerJsonSrc = playerJsonSrc.replace("&quot;", "\"");
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(playerJsonSrc);
+            entries = (LinkedHashMap<String, Object>) entries.get("flashvars");
+            String metadataUrl = (String) entries.get("metadataUrl");
+            String metadataSrc = (String) entries.get("metadata");
+            if (StringUtils.isEmpty(metadataSrc) && metadataUrl != null) {
+                metadataUrl = Encoding.htmlDecode(metadataUrl);
+                br.postPage(metadataUrl, "st.location=AutoplayLayerMovieRBlock%2FanonymVideo%2Fanonym");
+                metadataSrc = br.toString();
+            }
+            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(metadataSrc);
+            return entries;
+        } catch (final Throwable e) {
+            return null;
+        }
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         download_impossible = false;
         this.setBrowserExclusive();
         prepBR(this.br);
-        br.getPage(downloadLink.getDownloadURL());
+        final String fid = this.getFID(link);
+        br.getPage("https://" + this.getHost() + "/video/" + fid);
         /* Offline or private video */
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"mvtitle clamp __2\">([^<>\"]*?)</div").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String filename = null;
+        final LinkedHashMap<String, Object> entries = getFlashVars(this.br);
+        if (entries != null) {
+            filename = (String) JavaScriptEngineFactory.walkJson(entries, "movie/title");
+            dllink = (String) entries.get("hlsManifestUrl");
+            final String statusText = (String) JavaScriptEngineFactory.walkJson(entries, "movie/statusText");
+            if ("Not paid".equalsIgnoreCase(statusText)) {
+                /* User needs account and has to pay to download such content. */
+                this.paidContent = true;
+            }
+        }
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = fid;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (br.containsHTML("class=\"fierr\"")) {
-            if (!downloadLink.isNameSet()) {
-                downloadLink.setName(filename + ".mp4");
+        if (br.containsHTML("class=\"fierr\"") || br.containsHTML(">Access to this video is restricted")) {
+            if (!link.isNameSet()) {
+                link.setName(filename + ".mp4");
             }
             download_impossible = true;
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("embedVPlayer\\(this,&#39;(https?[^<>\"]*?)&#39;,&#39;").getMatch(0);
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
-        } else {
-            dllink = br.getRegex("videoSrc&quot;:&quot;(https[^<>\"]*?)(&quot;)").getMatch(0);
-            if (dllink != null) {
-                dllink = Encoding.unicodeDecode(dllink);
-            } else {
-                dllink = br.getRegex("data-embedclass=\"yt_layer\" data-objid=\"\\d+\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
-                if (dllink != null) {
-                    dllink = Encoding.htmlDecode(dllink);
-                }
-            }
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
-        if (url_quality != null) {
-            /* st.mq: 2 = 480p (mobile format), 3=?, 4=? 5 = highest */
-            if (this.getPluginConfig().getBooleanProperty(PREFER_480P, false)) {
-                dllink = dllink.replace(url_quality, "st.mq=2");
-            } else {
-                /* Prefer highest quality available */
-                dllink = dllink.replace(url_quality, "st.mq=5");
-            }
-        }
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        // final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
+        // if (url_quality != null) {
+        // /* st.mq: 2 = 480p (mobile format), 3=?, 4=? 5 = highest */
+        // if (this.getPluginConfig().getBooleanProperty(PREFER_480P, false)) {
+        // dllink = dllink.replace(url_quality, "st.mq=2");
+        // } else {
+        // /* Prefer highest quality available */
+        // dllink = dllink.replace(url_quality, "st.mq=5");
+        // }
+        // }
+        final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -180,29 +199,25 @@ public class OkRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://ok.ru/";
+        return "https://ok.ru/";
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (download_impossible) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible", 3 * 60 * 60 * 1000l);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - video corrupted?", 3 * 60 * 60 * 1000l);
+        } else if (this.paidContent) {
+            throw new AccountRequiredException();
+        } else if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.getPage(dllink);
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        dllink = hlsbest.getDownloadurl();
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
     }
 
