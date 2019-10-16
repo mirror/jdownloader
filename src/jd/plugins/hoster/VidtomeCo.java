@@ -18,17 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VidloxTv extends XFileSharingProBasic {
-    public VidloxTv(final PluginWrapper wrapper) {
+public class VidtomeCo extends XFileSharingProBasic {
+    public VidtomeCo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,14 +38,14 @@ public class VidloxTv extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: Premium untested, set FREE limits<br />
-     * captchatype-info: null<br />
-     * other: Sister sites: vidlox.tv, vidlox.me, videobin.co <br />
+     * limit-info:<br />
+     * captchatype-info: 2019-10-16: null<br />
+     * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidlox.tv", "vidlox.me" });
+        ret.add(new String[] { "vidtome.co", "vidtome.stream", "vidto.me", "vidto.se" });
         return ret;
     }
 
@@ -104,20 +106,18 @@ public class VidloxTv extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        /* 2019-08-13: Special */
-        return false;
+    public String[] scanInfo(final String[] fileInfo) {
+        /* 2019-10-16: Special */
+        super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<h2[^>]*class=\"video-page-head\"[^>]*>([^<>\"]+)</h2>").getMatch(0);
+        }
+        return fileInfo;
     }
 
     @Override
     protected boolean isVideohoster_enforce_video_filename() {
-        /* 2019-08-13: Special */
-        return true;
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_via_embedded_video() {
-        /* 2019-08-17: Special and experimental. Disable this if it slows down the linkcheck too much! */
+        /* 2019-10-16: Special */
         return true;
     }
 }

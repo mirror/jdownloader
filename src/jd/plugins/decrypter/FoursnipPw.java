@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4snip.pw" }, urls = { "https?://(?:www\\.)?4snip\\.pw/out2?/([A-Za-z0-9\\-]+)" })
 public class FoursnipPw extends PluginForDecrypt {
@@ -83,5 +84,10 @@ public class FoursnipPw extends PluginForDecrypt {
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MightyScript_AdLinkFly;
     }
 }
