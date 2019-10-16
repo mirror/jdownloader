@@ -21,13 +21,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,8 +42,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download\\.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -59,7 +58,6 @@ public class FilesMonsterCom extends PluginForHost {
     private static final String TEMPORARYUNAVAILABLE     = "Download not available at the moment";
     private static final String REDIRECTFNF              = "DL_FileNotFound";
     private static final String PREMIUMONLYUSERTEXT      = "Only downloadable via premium";
-    private static Object       LOCK                     = new Object();
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
     public FilesMonsterCom(PluginWrapper wrapper) {
@@ -129,12 +127,6 @@ public class FilesMonsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            synchronized (LOCK) {
-                /*
-                 * we only have to load this once, to make sure its loaded
-                 */
-                JDUtilities.getPluginForDecrypt("filesmonster.com");
             }
             String filename = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
             String filesize = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);
@@ -334,10 +326,11 @@ public class FilesMonsterCom extends PluginForHost {
             try {
                 br.getPage(overviewLink);
             } catch (final Exception e) {
+                logger.log(e);
             }
-            handleErrors(this.br);
             dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             if (StringUtils.isEmpty(dllink)) {
+                handleErrors(this.br);
                 logger.warning("The following string could not be found: dllink");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -371,7 +364,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /** Load cookies */
                 prepBR();
@@ -466,8 +459,10 @@ public class FilesMonsterCom extends PluginForHost {
                 account.setProperty("cookies", cookies);
                 account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                account.setProperty("lastlogin", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                    account.setProperty("lastlogin", Property.NULL);
+                }
                 throw e;
             }
         }

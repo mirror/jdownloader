@@ -42,13 +42,14 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|([^/]+/)?artworks/\\d+)" })
 public class PixivNet extends PluginForDecrypt {
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String TYPE_GALLERY        = ".+/member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+";
+    private static final String TYPE_ARTWORKS       = ".+/artworks/\\d+";
     private static final String TYPE_GALLERY_MEDIUM = ".+/member_illust\\.php\\?mode=medium\\&illust_id=\\d+";
     private static final String TYPE_GALLERY_MANGA  = ".+/member_illust\\.php\\?mode=manga\\&illust_id=\\d+";
 
@@ -78,12 +79,19 @@ public class PixivNet extends PluginForDecrypt {
                 handleAccountException(aa, e);
             }
         }
-        final String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
+        String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String fpName = null;
         Boolean single = null;
-        if (parameter.matches(TYPE_GALLERY)) {
-            if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
+        if (parameter.matches(TYPE_GALLERY) || parameter.matches(TYPE_ARTWORKS)) {
+            if (parameter.matches(TYPE_ARTWORKS)) {
+                lid = new Regex(parameter, "artworks/(\\d+)").getMatch(0);
+                br.getPage(parameter);
+                final Integer pageCount = getPageCount(br, lid);
+                if (pageCount != null) {
+                    single = pageCount.intValue() == 1;
+                }
+            } else if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
                 final Integer pageCount = getPageCount(br, lid);
                 if (br.containsHTML("mode=manga&amp;illust_id=" + lid) || (pageCount != null && pageCount.intValue() > 1)) {
@@ -150,7 +158,7 @@ public class PixivNet extends PluginForDecrypt {
                     return decryptedLinks;
                 } else if (links.isEmpty() && isAdultImageLoginRequired(lid) && !loggedIn) {
                     logger.info("Adult content: Account required");
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM);
                 } else if (links.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -162,10 +170,10 @@ public class PixivNet extends PluginForDecrypt {
                     return decryptedLinks;
                 } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                     logger.info("Account required to crawl this particular content");
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM);
                 } else if (isAdultImageLoginRequired(lid) && !loggedIn) {
                     logger.info("Adult content: Account required");
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM);
                 }
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
                 if (fpName == null) {
@@ -241,7 +249,7 @@ public class PixivNet extends PluginForDecrypt {
                 return decryptedLinks;
             } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                 logger.info("Account required to crawl this particular content");
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_PREMIUM);
             }
             // final String total_numberof_items = br.getRegex("class=\"count-badge\">(\\d+) results").getMatch(0);
             int numberofitems_found_on_current_page = 0;
