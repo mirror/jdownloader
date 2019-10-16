@@ -29,6 +29,18 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -53,18 +65,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -387,10 +387,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
+     * <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
+     * <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -418,12 +420,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
      * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
-     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br> Sadly, it seems like their
-     * linkcheck function only works on the files in the users' own account:
+     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br>
+     * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
      * 2019-08-20: Some XFS websites are supported via another API via play.google.com/store/apps/details?id=com.zeuscloudmanager --> This
-     * has nothing todo with the official XFS API! </br> Example: xvideosharing.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
+     * has nothing todo with the official XFS API! </br>
+     * Example: xvideosharing.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
      * default: false
      */
     protected boolean supports_api_only_mode() {
@@ -432,7 +435,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * 2019-08-20: Some websites' login will fail on the first attempt even with correct logindata. On the 2nd attempt a captcha will be
-     * required and then the login should work. </br> default = false
+     * required and then the login should work. </br>
+     * default = false
      */
     protected boolean allows_multiple_login_attempts_in_one_go() {
         return false;
@@ -557,10 +561,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformationWebsite(link, false);
+        return requestFileInformationWebsite(link, null, false);
     }
 
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean downloadsStarted) throws Exception {
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
         final String[] fileInfo = internal_getFileInfoArray();
         Browser altbr = null;
         fuid = null;
@@ -657,7 +661,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * Special case for some videohosts to determinethe filesize: Last chance to find filesize - do NOT execute this when used
                  * has started the download of our current DownloadLink as this could lead to "Too many connections" errors!
                  */
-                requestFileInformationVideoEmbed(link, null, true);
+                requestFileInformationVideoEmbed(link, account, true);
             }
         }
         return AvailableStatus.TRUE;
@@ -670,18 +674,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * 2019-05-15: This can check availability via '/embed' URL. <br />
-     * Only call this if isVideohoster_2 is set to true.
+     * Only call this if internal_isVideohosterEmbed returns true. </br>
+     *
+     * @return final downloadurl
      */
-    protected void requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+    protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         /*
          * Some video sites contain their directurl right on the first page - let's use this as an indicator and assume that the file is
          * online if we find a directurl. This also speeds-up linkchecking! Example: uqload.com
          */
-        String dllink = getDllink(link, account);
+        String dllink = getDllink(link, account, br, correctedBR);
+        final Browser brc = this.br.cloneBrowser();
         if (StringUtils.isEmpty(dllink)) {
-            if (br.getURL() != null && !br.getURL().contains("/embed")) {
+            if (brc.getURL() != null && !brc.getURL().contains("/embed")) {
                 final String embed_access = getMainPage() + "/embed-" + fuid + ".html";
-                getPage(embed_access);
+                getPage(brc, embed_access);
                 /**
                  * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
                  * code" OR "Video embed restricted for this user"
@@ -691,22 +698,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * Important: Do NOT use 404 as offline-indicator here as the website-owner could have simply disabled embedding while it was
              * enabled before --> This would return 404 for all '/embed' URLs! Only rely on precise errormessages!
              */
-            // if (br.getHttpConnection().getResponseCode() == 404) {
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // }
-            if (br.toString().equalsIgnoreCase("File was deleted")) {
+            if (brc.toString().equalsIgnoreCase("File was deleted")) {
                 /* Should be valid for all XFS hosts e.g. speedvideo.net, uqload.com */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            dllink = getDllink(link, account, brc, brc.toString());
             // final String url_thumbnail = getVideoThumbnailURL(br.toString());
         }
-        if (findFilesize) {
-            if (StringUtils.isEmpty(dllink)) {
-                dllink = getDllink(link, account);
-            }
+        if (findFilesize && !StringUtils.isEmpty(dllink)) {
             /* Get- and set filesize from directurl */
-            checkDirectLinkAndSetFilesize(link, dllink, true);
+            final boolean dllink_is_valid = checkDirectLinkAndSetFilesize(link, dllink, true) != null;
+            /* Store directurl if it is valid */
+            if (dllink_is_valid) {
+                storeDirecturl(link, account, dllink);
+            }
         }
+        return dllink;
     }
 
     /**
@@ -781,6 +788,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (internal_isVideohosterEmbed() && (StringUtils.isEmpty(fileInfo[0]) || StringUtils.equalsIgnoreCase("No title", fileInfo[0]))) {
+            /* 2019-10-15: E.g. vidoza.net */
             final String curFileName = br.getRegex("var\\s*curFileName\\s*=\\s*\"(.*?)\"").getMatch(0);
             if (StringUtils.isNotEmpty(curFileName)) {
                 fileInfo[0] = curFileName;
@@ -807,7 +815,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[1])) {
-                    fileInfo[1] = getDllinkViaOfficialVideoDownload(null, null, true);
+                    try {
+                        fileInfo[1] = getDllinkViaOfficialVideoDownload(null, null, true);
+                    } catch (final Throwable e) {
+                        /* This should never happen */
+                        e.printStackTrace();
+                    }
                 }
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
@@ -837,8 +850,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Used by getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br> - If used for single URLs
-     * inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br>
+     * - If used for single URLs inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
      * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
     public boolean massLinkcheckerWebsite(final DownloadLink[] urls, final boolean setWeakFilename) {
@@ -1156,9 +1169,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Often used as fallback if o.g. officially only logged-in users can see filesize or filesize is not given in html code for whatever
      * reason.<br />
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
-     * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports it)!<br />
-     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br> In
-     * case there is no filesize given, offline status will still be recognized! <br/>
+     * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
+     * it)!<br />
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
+     * In case there is no filesize given, offline status will still be recognized! <br/>
      *
      * @return isOnline
      */
@@ -1215,7 +1229,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformationWebsite(downloadLink, true);
+        requestFileInformationWebsite(downloadLink, null, true);
         doFree(downloadLink, null);
     }
 
@@ -1244,19 +1258,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed()) {
             try {
                 logger.info("Trying to get link via embed");
-                requestFileInformationVideoEmbed(link, null, false);
-                dllink = getDllink(link, account);
+                dllink = requestFileInformationVideoEmbed(link, account, false);
                 if (StringUtils.isEmpty(dllink)) {
                     logger.info("FAILED to get link via embed");
                 } else {
                     logger.info("Successfully found link via embed");
                 }
             } catch (final Throwable e) {
+                e.printStackTrace();
                 logger.info("Failed to get link via embed");
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                /* If failed, go back to the beginning */
-                getPage(link.getPluginPatternMatcher());
             }
         }
         /* Do they provide direct video URLs? */
@@ -1357,7 +1367,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 waitTime(link, timeBefore);
                 final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                if (!formCon.getContentType().contains("text") && formCon.isOK() && formCon.getLongContentLength() > -1) {
+                if (!formCon.getContentType().contains("text") && formCon.isOK() && formCon.isContentDisposition()) {
                     /* Very rare case - e.g. tiny-files.com */
                     handleDownload(link, account, dllink, formCon.getRequest());
                     return;
@@ -1392,12 +1402,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * Checks if official video download is possible and returns final downloadurl if possible. </br>
+     * This should by default NOT throw any Exceptions!
      *
      * @param returnFilesize
-     *            true = Only return filesize of selected quality. Use this in availablecheck. </br> false = return final downloadurl of
-     *            selected quality. Use this in download mode.
+     *            true = Only return filesize of selected quality. Use this in availablecheck. </br>
+     *            false = return final downloadurl of selected quality. Use this in download mode.
      */
-    protected String getDllinkViaOfficialVideoDownload(final DownloadLink link, final Account account, final boolean returnFilesize) {
+    protected String getDllinkViaOfficialVideoDownload(final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
         String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
@@ -1822,8 +1833,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Function to find the final downloadlink. </br> This will also find video directurls of embedded videos if the player is 'currently
-     * visible'.
+     * Function to find the final downloadlink. </br>
+     * This will also find video directurls of embedded videos if the player is 'currently visible'.
      */
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = br.getRedirectLocation();
@@ -3207,7 +3218,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* Perform linkcheck without logging in */
-        requestFileInformationWebsite(link, true);
+        requestFileInformationWebsite(link, account, true);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (AccountType.FREE.equals(account.getType())) {
             final boolean verifiedLogin = loginWebsite(account, false);
@@ -3268,7 +3279,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 handlePassword(dlForm, link);
                             }
                             final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                            if (formCon.isOK() && !formCon.getContentType().contains("html")) {
+                            if (formCon.isOK() && !formCon.getContentType().contains("html") && formCon.isContentDisposition()) {
                                 /* Very rare case - e.g. tiny-files.com */
                                 handleDownload(link, account, dllink, formCon.getRequest());
                                 return;
@@ -3296,7 +3307,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("@Developer: fixme! maxChunks may not be fixed positive:" + maxChunks);
             maxChunks = -maxChunks;
         }
-        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (req != null) {
             logger.info("Final downloadlink = Form download");
             /*
@@ -3306,7 +3316,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final String location = req.getLocation();
             if (location != null) {
                 /* E.g. redirect to downloadurl --> We can save that URL */
-                link.setProperty(directlinkproperty, location);
+                storeDirecturl(link, account, location);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
             handleDownloadErrors(link);
@@ -3386,7 +3396,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too
                  * many connections) --> Should work fine after the next try.
                  */
-                link.setProperty(directlinkproperty, dllink);
+                storeDirecturl(link, account, dllink);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
                 handleDownloadErrors(link);
                 fixFilename(link);
@@ -3441,6 +3451,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             hlsSelected = HlsContainer.findBestVideoByBandwidth(hlsQualities);
         }
         return hlsSelected.getDownloadurl();
+    }
+
+    /** Stores final downloadurl on current DownloadLink object */
+    private void storeDirecturl(final DownloadLink link, final Account account, final String directurl) {
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        link.setProperty(directlinkproperty, directurl);
     }
 
     /** Handles errors right before starting the download. */
@@ -3524,15 +3540,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports embedding videos. <br />
-     * Example: uqload.com</br> Do not override!
+     * Example: uqload.com</br>
+     * Do not override!
      */
     protected final boolean internal_isVideohosterEmbed() {
         return isVideohosterEmbed() || isVideohosterEmbedHTML();
     }
 
     /**
-     * Decides whether to enforce a filename with a '.mp4' ending or not. </br> Names are either enforced if the configuration of the script
-     * implies this or if it detects that embedding videos is possible. </br> Do not override - at least try to avoid having to!!
+     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
+     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
+     * Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohoster_enforce_video_filename() {
         return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
@@ -3549,7 +3567,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
-     * Example: uploadboy.com</br> Do not override - at least try to avoid having to!!
+     * Example: uploadboy.com</br>
+     * Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();

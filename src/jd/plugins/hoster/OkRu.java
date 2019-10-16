@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -36,7 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/.+" })
 public class OkRu extends PluginForHost {
@@ -214,8 +214,20 @@ public class OkRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(dllink);
-        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-        dllink = hlsbest.getDownloadurl();
+        HlsContainer chosenQuality = null;
+        final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+        for (final HlsContainer quality : qualities) {
+            final int bandwidth = quality.getBandwidth();
+            final boolean isSDQuality = bandwidth > 1000000 && bandwidth < 2000000;
+            if (this.getPluginConfig().getBooleanProperty(PREFER_480P, false) && isSDQuality) {
+                chosenQuality = quality;
+                break;
+            }
+        }
+        if (chosenQuality == null) {
+            chosenQuality = HlsContainer.findBestVideoByBandwidth(qualities);
+        }
+        dllink = chosenQuality.getDownloadurl();
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
@@ -227,7 +239,7 @@ public class OkRu extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_480P, JDL.L("plugins.hoster.OkRu.preferLow480pQuality", "Prefer download of 480p version instead of the highest video quality?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_480P, "Prefer download of 480p version instead of the highest video quality?").setDefaultValue(false));
     }
 
     @Override
