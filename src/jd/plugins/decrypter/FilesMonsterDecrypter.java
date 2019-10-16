@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -33,7 +30,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
@@ -95,7 +97,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
-        String main_id = null;
+        final String main_id;
         final String parameter;
         if (param.toString().matches(TYPE_EMBEDDED)) {
             main_id = new Regex(param.toString(), "/([^/]+)$").getMatch(0);
@@ -110,6 +112,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             /* TYPE_DL_FREE */
             main_id = new Regex(param.toString(), TYPE_DL_FREE).getMatch(0);
             parameter = param.toString();
+        }
+        if (main_id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
         String browserReferrer = getBrowserReferrer();
@@ -144,6 +149,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     /* There are no free links available so probably a limit has been reached! */
                     FAILED = "Probably limit reached";
                 } catch (final Throwable e) {
+                    logger.log(e);
                     /* We know for sure that a limit must be reached */
                     FAILED = "Limit reached";
                 }
