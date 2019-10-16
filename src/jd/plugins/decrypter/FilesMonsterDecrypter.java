@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -34,16 +35,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+|player/v\\d+/video/[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static final String  FILENAMEREGEX            = "\">File name:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
-    public static final String  FILESIZEREGEX            = "\">File size:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
+    public static final String  FILENAMEREGEX            = "<a class=\"link premium\" href=\"[^\"]+\">\\s*<span class=\"filename\">([^<>\"]+)</";
+    public static final String  FILESIZEREGEX            = "<span class=\"size\">([^<>\"]+)</span>";
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
     private static final String TYPE_EMBEDDED            = ".+/player/v3/video/.+";
+    private static final String TYPE_MAIN                = "https?://(?:www\\.)?filesmonster\\.com/download\\.php\\?id=([A-Za-z0-9_-]+)";
+    private static final String TYPE_DL_FREE             = "https?://(?:www\\.)?filesmonster\\.com/dl/([A-Za-z0-9_-]+)/free/(?:[^\\s<>/]*/)*";
 
     /**
      * TODO: Seems like some urls only have a free download option available if a certain Referer is present e.g.
@@ -92,11 +95,20 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
+        String main_id = null;
         final String parameter;
         if (param.toString().matches(TYPE_EMBEDDED)) {
-            final String url_id = new Regex(param.toString(), "/([^/]+)$").getMatch(0);
-            parameter = String.format("https://%s/download.php?id=%s", this.getHost(), url_id);
+            main_id = new Regex(param.toString(), "/([^/]+)$").getMatch(0);
+            parameter = String.format("https://%s/download.php?id=%s", this.getHost(), main_id);
+        } else if (param.toString().matches(TYPE_MAIN)) {
+            main_id = new Regex(param.toString(), TYPE_MAIN).getMatch(0);
+            parameter = param.toString();
+        } else if (param.toString().matches(TYPE_MAIN)) {
+            main_id = new Regex(param.toString(), TYPE_MAIN).getMatch(0);
+            parameter = param.toString();
         } else {
+            /* TYPE_DL_FREE */
+            main_id = new Regex(param.toString(), TYPE_DL_FREE).getMatch(0);
             parameter = param.toString();
         }
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
@@ -110,10 +122,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         final String title = jd.plugins.hoster.FilesMonsterCom.getLongTitle(this.br);
         if (jd.plugins.hoster.FilesMonsterCom.isOffline(this.br)) {
-            final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
-            finalOne.setAvailable(false);
-            finalOne.setProperty("offline", true);
-            finalOne.setName(new Regex(parameter, "download\\.php\\?id=(.+)").getMatch(0));
+            final DownloadLink finalOne = this.createOfflinelink(parameter);
+            finalOne.setName(main_id);
             decryptedLinks.add(finalOne);
             return decryptedLinks;
         }
@@ -127,6 +137,16 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             if (findOtherLinks != null) {
                 br.getPage(findOtherLinks);
                 decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
+            }
+            if (decryptedStuff == null) {
+                try {
+                    jd.plugins.hoster.FilesMonsterCom.handleErrors(this.br);
+                    /* There are no free links available so probably a limit has been reached! */
+                    FAILED = "Probably limit reached";
+                } catch (final Throwable e) {
+                    /* We know for sure that a limit must be reached */
+                    FAILED = "Limit reached";
+                }
             }
         } else {
             FAILED = "Limit reached";
@@ -166,25 +186,33 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 }
             } else {
                 logger.info("Failed to get free links because: " + FAILED);
+                logger.info("If a limit has been reached, free users have to wait until it is over to be able to add new free downloadurls");
             }
         }
         if (addPremium || FAILED != null) {
-            final DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
+            final DownloadLink premiumDownloadURL = createDownloadlink(String.format("https://filesmonsterdecrypted.com/download.php?id=%s", main_id));
             if (fname != null && fsize != null) {
-                thebigone.setFinalFileName(Encoding.htmlDecode(fname.trim()));
-                thebigone.setDownloadSize(SizeFormatter.getSize(fsize));
-                thebigone.setAvailable(true);
+                premiumDownloadURL.setFinalFileName(Encoding.htmlDecode(fname.trim()));
+                premiumDownloadURL.setDownloadSize(SizeFormatter.getSize(fsize));
+                premiumDownloadURL.setAvailable(true);
             }
-            thebigone.setProperty("PREMIUMONLY", true);
-            if (title != null) {
-                thebigone.setComment(title);
+            premiumDownloadURL.setProperty("PREMIUMONLY", true);
+            if (!StringUtils.isEmpty(title)) {
+                premiumDownloadURL.setComment(title);
             }
-            decryptedLinks.add(thebigone);
+            decryptedLinks.add(premiumDownloadURL);
         }
-        /** All those links belong to the same file so lets make a package */
-        if (fname != null) {
+        /** All those links belong to the same file so lets make a package. */
+        final String fpName;
+        if (!StringUtils.isEmpty(fname)) {
+            fpName = fname;
+        } else {
+            /* Fallback */
+            fpName = main_id;
+        }
+        if (decryptedLinks.size() > 1) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fname.trim()));
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
