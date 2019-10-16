@@ -46,7 +46,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
     private static final String TYPE_EMBEDDED            = ".+/player/v3/video/.+";
     private static final String TYPE_MAIN                = "https?://(?:www\\.)?filesmonster\\.com/download\\.php\\?id=([A-Za-z0-9_-]+)";
-    private static final String TYPE_DL_FREE             = "https?://(?:www\\.)?filesmonster\\.com/dl/([A-Za-z0-9_-]+)/free/(?:[^\\s<>/]*/)*";
+    private static final String TYPE_DL_FREE             = "https?://(?:www\\.)?filesmonster\\.com/dl/([A-Za-z0-9_-]+)/free/.+";
 
     /**
      * TODO: Seems like some urls only have a free download option available if a certain Referer is present e.g.
