@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,6 +26,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -45,6 +41,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
@@ -589,11 +590,13 @@ public class ChoMikujPl extends antiDDoSForHost {
                     } else {
                         logger.info("Failed to find any '__RequestVerificationToken' - trying to login without it");
                     }
+                    PostRequest postRequest = br.createPostRequest("/action/Login/TopBarLogin", postData);
+                    postRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     // postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin",
                     // "rememberLogin=true&rememberLogin=false&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" +
                     // Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" +
                     // Encoding.urlEncode(requestVerificationToken));
-                    postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin", postData);
+                    postRequestWithCleanup(this.br, postRequest);
                     if (!isLoggedIn()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
@@ -630,6 +633,12 @@ public class ChoMikujPl extends antiDDoSForHost {
 
     private void postPageRawWithCleanup(final Browser br, final String url, final String postData) throws Exception {
         postPageRaw(br, url, postData);
+        cbr = br.cloneBrowser();
+        cleanupBrowser(cbr, correctBR(br.toString()));
+    }
+
+    private void postRequestWithCleanup(final Browser br, Request request) throws Exception {
+        sendRequest(br, request);
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, correctBR(br.toString()));
     }
