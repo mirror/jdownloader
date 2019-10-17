@@ -260,7 +260,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             });
         }
         final Priority finalPriority = (Priority) priority.getSelectedItem();
-        if (finalPriority != null && (!Priority.DEFAULT.equals(finalPriority) || overwritePackagizerRules)) {
+        if (finalPriority != null && !Priority.DEFAULT.equals(finalPriority)) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
                 public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
