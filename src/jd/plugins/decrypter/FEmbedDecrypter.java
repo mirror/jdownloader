@@ -53,14 +53,13 @@ public class FEmbedDecrypter extends PluginForDecrypt {
         } else {
             videos = (List<Map<String, Object>>) response.get("data");
         }
-        for (Map<String, Object> video : videos) {
-            String label = (String) video.get("label");
-            String type = (String) video.get("type");
-            DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
+        for (final Map<String, Object> video : videos) {
+            final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
+            final String label = (String) video.get("label");
+            final String type = (String) video.get("type");
             link.setProperty("label", label);
             link.setProperty("fembedid", file_id);
             link.setProperty("fembedHost", fembedHost);
-            link.setLinkID("fembed" + "." + file_id + "." + label);
             if (!StringUtils.isEmpty(name)) {
                 link.setFinalFileName(name + "-" + label + "." + type);
             } else {

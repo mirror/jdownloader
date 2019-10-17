@@ -26,6 +26,15 @@ public class FEmbedCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(DownloadLink link) {
+        final String label = link.getStringProperty("label", null);
+        final String type = link.getStringProperty("type", null);
+        final String id = link.getStringProperty("fembedid", null);
+        final String fembedHost = link.getStringProperty("fembedHost", getHost());
+        return fembedHost + "://" + id + "/" + label + "/" + type;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.fembed.com/";
     }
