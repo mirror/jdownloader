@@ -80,9 +80,9 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
     private final Queue                 queue      = new Queue("Banner") {
-        public void killQueue() {
-        };
-    };
+                                                       public void killQueue() {
+                                                       };
+                                                   };
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
         private volatile boolean    hasDownloadLinks        = false;
@@ -730,13 +730,11 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                         });
                         isBannerEnabled.set(CFG_GUI.BANNER_ENABLED.isEnabled());
                         if (StringUtils.startsWithCaseInsensitive(TranslationFactory.getDesiredLanguage(), "de")) {
-                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("share-online.biz")));
                             getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
                             getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
                         } else {
                             getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
                             getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
-                            getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("share-online.biz")));
                         }
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("uploaded.to")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("filejoker.net")));
