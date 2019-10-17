@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,11 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
@@ -575,20 +575,25 @@ public class ChoMikujPl extends antiDDoSForHost {
                     br.setCookiesExclusive(true);
                     br.setFollowRedirects(true);
                     getPageWithCleanup(this.br, MAINPAGE);
-                    final String lang = System.getProperty("user.language");
-                    final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
-                    if (requestVerificationToken == null) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    String postData = "ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass());
+                    final String[] requestVerificationTokens = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getColumn(0);
+                    if (requestVerificationTokens.length > 0) {
+                        logger.info("Found " + requestVerificationTokens.length + "x '__RequestVerificationToken' values");
+                        /*
+                         * 2019-10-17: Strange - website contains this value twice (well different values, same key) and uses them in login
+                         * POST data. According to my tests, login works even without these tokens or with them set to "".
+                         */
+                        for (final String requestVerificationToken : requestVerificationTokens) {
+                            postData += "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
                         }
+                    } else {
+                        logger.info("Failed to find any '__RequestVerificationToken' - trying to login without it");
                     }
                     // postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin",
                     // "rememberLogin=true&rememberLogin=false&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" +
                     // Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" +
                     // Encoding.urlEncode(requestVerificationToken));
-                    postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin", "ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                    postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin", postData);
                     if (!isLoggedIn()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
