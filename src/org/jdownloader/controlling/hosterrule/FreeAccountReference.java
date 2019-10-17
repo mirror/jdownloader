@@ -2,11 +2,11 @@ package org.jdownloader.controlling.hosterrule;
 
 import java.util.Date;
 
-import org.appwork.exceptions.WTFException;
-
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountTrafficView;
+
+import org.appwork.exceptions.WTFException;
 
 public class FreeAccountReference extends AccountReference {
     static final int     FREE_ID = 0;
@@ -23,6 +23,11 @@ public class FreeAccountReference extends AccountReference {
 
     @Override
     public AccountTrafficView getAccountTrafficView() {
+        return null;
+    }
+
+    @Override
+    protected String getRef() {
         return null;
     }
 

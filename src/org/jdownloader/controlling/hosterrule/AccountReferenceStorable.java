@@ -5,9 +5,20 @@ import java.util.List;
 import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 
 public class AccountReferenceStorable implements Storable {
-    private long    id      = -1;
+    private long   id  = -1;
+    private String ref = null;
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
+    }
+
     private boolean enabled = false;
 
     public boolean isEnabled() {
@@ -29,8 +40,9 @@ public class AccountReferenceStorable implements Storable {
     private AccountReferenceStorable(/* storable */) {
     }
 
-    public AccountReferenceStorable(AccountReference acc) {
+    public AccountReferenceStorable(final AccountReference acc) {
         this.id = acc.getID();
+        this.ref = acc.getRef();
         this.enabled = acc.isEnabled();
     }
 
@@ -38,11 +50,18 @@ public class AccountReferenceStorable implements Storable {
         AccountReference ret = null;
         if (getId() == FreeAccountReference.FREE_ID) {
             ret = new FreeAccountReference(hoster);
-        } else {
-            if (availableAccounts != null) {
-                for (Account acc : availableAccounts) {
-                    if (acc.getId().getID() == getId()) {
-                        ret = new AccountReference(acc);
+        } else if (availableAccounts != null) {
+            for (final Account acc : availableAccounts) {
+                if (acc.getId().getID() == getId()) {
+                    ret = new AccountReference(acc);
+                    break;
+                }
+            }
+            if (ret == null && getRef() != null) {
+                for (final Account acc : availableAccounts) {
+                    final AccountReference accountReference = new AccountReference(acc);
+                    if (StringUtils.equals(getRef(), accountReference.getRef())) {
+                        ret = accountReference;
                         break;
                     }
                 }
@@ -51,7 +70,8 @@ public class AccountReferenceStorable implements Storable {
         if (ret != null) {
             ret.setEnabled(isEnabled());
             return ret;
+        } else {
+            return null;
         }
-        return null;
     }
 }

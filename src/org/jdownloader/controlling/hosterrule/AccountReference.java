@@ -6,6 +6,8 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountTrafficView;
 
+import org.appwork.utils.Hash;
+
 public class AccountReference {
     public AccountReference() {
     }
@@ -36,6 +38,12 @@ public class AccountReference {
 
     public long getID() {
         return getAccount().getId().getID();
+    }
+
+    protected String getRef() {
+        final Account account = getAccount();
+        final String ret = Hash.getStringHash(account.getHoster() + account.getUser() + account.getPass(), Hash.HASH_TYPE_SHA512);
+        return ret;
     }
 
     public void setAccount(Account acc) {
