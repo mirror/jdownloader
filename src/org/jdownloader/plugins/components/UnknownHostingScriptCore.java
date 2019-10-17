@@ -265,7 +265,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         try {
             if (supports_availablecheck_via_api()) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                getPage(String.format("https://%s/api/v2/file/%s/info", this.getHost(), this.getFID(link)));
+                getPage(String.format("https://api.%s/v2/file/%s/info", this.getHost(), this.getFID(link)));
                 /*
                  * E.g.
                  * {"status":false,"error":{"message":"The file you are looking for does not exist.","type":"ERROR_FILE_NOT_FOUND","code":
@@ -348,9 +348,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             }
             /* Now fix filename ending / fileextension */
             /* filename_part1: Filename without extension */
-            final String filename_part1 = output.substring(0, output.lastIndexOf("_"));
+            final String filename_part1 = output.lastIndexOf("_") > 0 ? output.substring(0, output.lastIndexOf("_")) : "unknown";
             /* filename_part2_suggested_extension: The part which might be the extension of our filename */
-            final String filename_part2_suggested_extension = output.substring(output.lastIndexOf("_") + 1);
+            final String filename_part2_suggested_extension = output.lastIndexOf("_") > 0 ? output.substring(output.lastIndexOf("_") + 1) : output;
             boolean ending_is_Extension = false;
             final ArrayList<Pattern> patterns = new ArrayList<Pattern>();
             for (final ExtensionsFilterInterface extension : ImageExtensions.values()) {

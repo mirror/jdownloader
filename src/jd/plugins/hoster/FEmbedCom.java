@@ -3,11 +3,6 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.URLConnectionAdapter;
@@ -18,6 +13,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "decryptedforFEmbedHosterPlugin://.*" })
 public class FEmbedCom extends PluginForHost {
@@ -41,7 +41,9 @@ public class FEmbedCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         String file_id = new Regex(parameter.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
-        final PostRequest postRequest = new PostRequest("https://www.fembed.com/api/source/" + file_id);
+        final String fembedHost = parameter.getStringProperty("fembedHost", getHost());
+        br.setFollowRedirects(true);
+        final PostRequest postRequest = new PostRequest("https://www." + fembedHost + "/api/source/" + file_id);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
         if (!Boolean.TRUE.equals(response.get("success"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -59,21 +61,15 @@ public class FEmbedCom extends PluginForHost {
             if (StringUtils.equals(label, searchLabel) && StringUtils.isNotEmpty(file)) {
                 url = file;
                 if (url.startsWith("/")) {
-                    url = "https://www.fembed.com" + url;
+                    url = "https://www." + fembedHost + url;
                 }
                 if (!(Thread.currentThread() instanceof SingleDownloadController)) {
                     final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
                     try {
-                        if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "html")) {
+                        if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "text")) {
                             parameter.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                        if (con.getResponseCode() == 302 && !con.getHeaderField("Location").isEmpty()) {
-                            String url2 = con.getHeaderField("Location");
-                            con.disconnect();
-                            URLConnectionAdapter con2 = br.cloneBrowser().openHeadConnection(url2);
-                            if (con2.getResponseCode() == 200 && con2.getLongContentLength() > 0 && !StringUtils.contains(con2.getContentType(), "html")) {
-                                parameter.setVerifiedFileSize(con2.getCompleteContentLength());
-                            }
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     } finally {
                         con.disconnect();
