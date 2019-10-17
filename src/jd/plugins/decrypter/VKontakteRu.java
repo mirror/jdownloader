@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -1518,9 +1519,12 @@ public class VKontakteRu extends PluginForDecrypt {
                     break;
                 }
                 this.postPageSafe("/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&owner_id=%s&type=own&wall_start_from=%s", postvalue_fixed, currentOffset, ownerID, counter_wall_start_from));
-                this.br.getRequest().setHtmlCode(Encoding.unicodeDecode(this.br.toString()));
+                this.br.getRequest().setHtmlCode(JSonUtils.unescape(br.toString()));
             }
-            final String[] wall_posts_htmls = this.br.getRegex("<div class=\"_post_content\">.*?</div></div>\\s*?</div>\\s*?</div>").getColumn(-1);
+            final String[] wall_posts_htmls = this.br.getRegex("<div class=\"_post_content\">.*</div>\\s*</div>\\s*</div>\\s*</div>").getColumn(-1);
+            if (wall_posts_htmls.length == 0) {
+                logger.info("Failed to find any items for offset: " + currentOffset);
+            }
             for (final String html : wall_posts_htmls) {
                 decryptSingleWallPostAndComments_Website(null, html);
                 /* Count how many items the current offset exists to stop if it does not contain any. */
