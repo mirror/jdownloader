@@ -73,14 +73,14 @@ public class HitomiLa extends antiDDoSForDecrypt {
             ++i;
             if (!checked) {
                 HeadRequest head = br.createHeadRequest("https://" + imghost + ".hitomi.la/galleries" + singleLink);
-                URLConnectionAdapter con = br.openRequestConnection(head);
+                URLConnectionAdapter con = br.cloneBrowser().openRequestConnection(head);
                 try {
                     if (con.isOK()) {
                         checked = true;
                     } else {
                         con.disconnect();
                         head = br.createHeadRequest("https://0a.hitomi.la/galleries" + singleLink);
-                        con = br.openRequestConnection(head);
+                        con = br.cloneBrowser().openRequestConnection(head);
                         if (con.isOK()) {
                             checked = true;
                             imghost = "0a";
@@ -113,8 +113,8 @@ public class HitomiLa extends antiDDoSForDecrypt {
      * @throws DecrypterException
      */
     private String getImageHost(final String guid) throws DecrypterException {
-        // number of subdmains.
-        final int i = 2;
+        // number of subdmains, var number_of_frontends = 3;
+        final int i = 3;
         // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
         String g = new Regex(guid, "^\\d*(\\d)$").getMatch(0);
         if ("1".equals(g)) {
