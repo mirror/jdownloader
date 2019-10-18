@@ -6,10 +6,20 @@ import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
 
 public class AccountReferenceStorable implements Storable {
-    private long   id  = -1;
-    private String ref = null;
+    private long   id    = -1;
+    private String ref   = null;
+    private long   refId = UniqueAlltimeID.next();
+
+    public long getRefId() {
+        return refId;
+    }
+
+    public void setRefId(long refId) {
+        this.refId = refId;
+    }
 
     public String getRef() {
         return ref;
@@ -42,7 +52,7 @@ public class AccountReferenceStorable implements Storable {
 
     public AccountReferenceStorable(final AccountReference acc) {
         this.id = acc.getID();
-        this.ref = acc.getRef();
+        this.ref = acc.getRef(getRefId());
         this.enabled = acc.isEnabled();
     }
 
@@ -60,7 +70,7 @@ public class AccountReferenceStorable implements Storable {
             if (ret == null && getRef() != null) {
                 for (final Account acc : availableAccounts) {
                     final AccountReference accountReference = new AccountReference(acc);
-                    if (StringUtils.equals(getRef(), accountReference.getRef())) {
+                    if (StringUtils.equals(getRef(), accountReference.getRef(getRefId()))) {
                         ret = accountReference;
                         break;
                     }

@@ -40,9 +40,9 @@ public class AccountReference {
         return getAccount().getId().getID();
     }
 
-    protected String getRef() {
+    protected String getRef(final long refID) {
         final Account account = getAccount();
-        final String ret = Hash.getStringHash(account.getHoster() + account.getUser() + account.getPass(), Hash.HASH_TYPE_SHA512);
+        final String ret = Hash.getStringHash(refID + account.getHoster() + account.getUser() + account.getPass(), Hash.HASH_TYPE_SHA512);
         return ret;
     }
 
@@ -73,11 +73,7 @@ public class AccountReference {
 
     public boolean isValid() {
         final Account acc = getAccount();
-        if (acc != null) {
-            return acc.isValid();
-        } else {
-            return true;
-        }
+        return acc != null && acc.isValid();
     }
 
     public AccountTrafficView getAccountTrafficView() {
@@ -91,20 +87,12 @@ public class AccountReference {
 
     public boolean isAvailable() {
         final Account acc = getAccount();
-        if (acc != null) {
-            return acc.getAccountController() != null;
-        } else {
-            return true;
-        }
+        return acc == null || acc.getAccountController() != null;
     }
 
     public boolean isTempDisabled() {
         final Account acc = getAccount();
-        if (acc != null) {
-            return acc.isTempDisabled();
-        } else {
-            return false;
-        }
+        return acc != null && acc.isTempDisabled();
     }
 
     public long getTmpDisabledTimeout() {
@@ -120,7 +108,8 @@ public class AccountReference {
         final Account acc = getAccount();
         if (acc != null) {
             return acc.getAccountInfo();
+        } else {
+            return null;
         }
-        return null;
     }
 }

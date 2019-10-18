@@ -27,7 +27,7 @@ public class FreeAccountReference extends AccountReference {
     }
 
     @Override
-    protected String getRef() {
+    protected String getRef(long refID) {
         return null;
     }
 
