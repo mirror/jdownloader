@@ -25,12 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -55,6 +49,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -937,7 +937,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setContentUrl(single_photo_content_url);
                     dl.setProperty("albumid", albumID);
                     this.decryptedLinks.add(dl);
-                    distribute(dl);
                     addedLinks++;
                     if (decryptedData.contains(photoID)) {
                         logger.info("Detected dupe - stopping!");
@@ -949,7 +948,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 correctedBR = br.toString().replace("\\", "");
                 final int linksnumBefore = decryptedLinks.size();
-                websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, false, false, this.vkwall_comment_grabphotos, false, false, this.vkwall_comment_store_picture_directurls);
+                websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.vkwall_comment_store_picture_directurls);
                 final int linksnumAfter = decryptedLinks.size();
                 addedLinks = linksnumAfter - linksnumBefore;
             }
@@ -1575,7 +1574,6 @@ public class VKontakteRu extends PluginForDecrypt {
         if (this.vkwall_grabcomments && this.vkwall_crawl_posts_and_comments_separately && !isSingleWallPost(this.CRYPTEDLINK_FUNCTIONAL)) {
             final DownloadLink dl = this.createDownloadlink(String.format("https://vk.com/wall%s", wall_post_ID));
             decryptedLinks.add(dl);
-            this.distribute(dl);
             return;
         }
         do {
@@ -1765,7 +1763,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                 }
                 decryptedLinks.add(dl);
-                distribute(dl);
             }
         }
         if (grabAudio) {
@@ -1786,7 +1783,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* There is no official URL to these mp3 files --> Use url of the post. */
                 dl.setContentUrl(wall_single_post_url);
                 decryptedLinks.add(dl);
-                distribute(dl);
             }
         }
         /* Videos */
@@ -1795,7 +1791,6 @@ public class VKontakteRu extends PluginForDecrypt {
             for (final String videoInfoSingle : video_ids) {
                 dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + videoInfoSingle);
                 decryptedLinks.add(dl);
-                distribute(dl);
             }
         }
         if (grabURLsInsideText && isContentFromWall) {
@@ -1906,7 +1901,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 correctedBR = br.toString().replace("\\", "");
             }
             final int linksnumBefore = decryptedLinks.size();
-            websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, false, false, this.vkwall_comment_grabphotos, false, false, this.vkwall_comment_store_picture_directurls);
+            websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.vkwall_comment_store_picture_directurls);
             final int linksnumAfter = decryptedLinks.size();
             addedLinks = linksnumAfter - linksnumBefore;
             if (addedLinks < entries_per_page || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {

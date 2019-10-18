@@ -389,19 +389,26 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    // private void getVideoLinkAccount() {
-    // dlUrl = br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
-    // }
     @SuppressWarnings({ "unchecked" })
     public static Map<String, Map<String, String>> getVideoLinksFree(Plugin plugin, final Browser br) throws Exception {
         boolean success = false;
         final Map<String, Map<String, String>> qualities = new LinkedHashMap<String, Map<String, String>>();
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
-            flashVars = br.getRegex("var flashvars_\\d+ = (\\{.*?);\n").getMatch(0);
+            flashVars = br.getRegex("(var\\s*flashvars_\\d+.*?)(loadScriptUniqueId|</script)").getMatch(0);
+            final String flashVarsID = new Regex(flashVars, "flashvars_(\\d+)").getMatch(0);
+            if (flashVarsID != null) {
+                try {
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(plugin);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    engine.eval(flashVars + "var result=JSON.stringify(flashvars_" + flashVarsID + ");");
+                    flashVars = String.valueOf(engine.get("result"));
+                } catch (final Exception e) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                }
+            }
         }
         if (flashVars != null) {
-            flashVars = flashVars.replaceAll("(\"\\s*\\+\\s*\")", "");
             final LinkedHashMap<String, Object> values = flashVars == null ? null : (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
             if (values == null || values.size() < 1) {
                 return null;
