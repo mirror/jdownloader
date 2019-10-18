@@ -106,7 +106,7 @@ public class SubyShareCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 3;
+        return 5;
     }
 
     @Override
