@@ -480,19 +480,24 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /** Check errors which may happen after POST '/al_photos.php' request. */
     private void checkErrorsPhoto() throws PluginException {
-        if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
+        if (br.containsHTML(">\\s*Unfortunately, this photo has been deleted")) {
+            /* html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*Access denied")) {
+            /* html */
+            throw new AccountRequiredException();
         } else if (br.containsHTML("Access denied\\\\\"") || br.containsHTML("Access denied\"")) {
+            /* json */
             /*
              * 2019-10-02: E.g.
              * {"payload":["8",["\"Access denied\"","false","\"12345678\""]],"loaderVersion":"12345678","pageviewCandidate":true,"langPack":
              * 3,"langVersion":"4268"}
              */
             /*
-             * json version. Access denied is not exactly offline but usually it is kinda impossible which rights are required to be able to
-             * get read-permissions for such files!
+             * json version. Access denied is not exactly offline but usually it is kind of impossible to know which rights are required to
+             * be able to get read-permissions for such files! We'll handle it as "Account required".
              */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new AccountRequiredException();
         }
     }
 

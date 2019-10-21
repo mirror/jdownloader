@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,11 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
@@ -96,16 +96,19 @@ public class ChoMikujPl extends antiDDoSForHost {
         premiumonly = false;
         plus18 = false;
         this.setBrowserExclusive();
+        final String fid = getFID(link);
         final String mainlink = link.getStringProperty("mainlink", null);
-        // Offline from decrypter
-        if (link.getBooleanProperty("offline", false)) {
+        if (fid == null) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (mainlink != null) {
             /* Try to find better filename - usually only needed for single links. */
             getPage(mainlink);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
-                /* Additional offline check */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!br.containsHTML(fid)) {
+                /* html must contain fileid - if not, content should be offline (e.g. redirect to upper folder or errorpage) */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
@@ -154,7 +157,7 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
