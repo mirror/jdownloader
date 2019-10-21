@@ -176,7 +176,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                         if (folderIdCheck == null) {
                             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                             dloffline.setAvailable(false);
-                            dloffline.setProperty("offline", true);
                             decryptedLinks.add(dloffline);
                             return decryptedLinks;
                         } else {
@@ -290,7 +289,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             // Offline
             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
             dloffline.setAvailable(false);
-            dloffline.setProperty("offline", true);
             dloffline.setName(cantDecrypt + "_" + new Regex(parameter, "chomikuj\\.pl/(.+)").getMatch(0));
             decryptedLinks.add(dloffline);
             return decryptedLinks;
