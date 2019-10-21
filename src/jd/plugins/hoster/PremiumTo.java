@@ -342,7 +342,7 @@ public class PremiumTo extends UseNet {
                 if ("Not in queue".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
                     br.getPage(API_BASE_STORAGE + "/add.php?apikey=" + apikey + "&url=" + url);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to Storage: Storage download pending", 5 * 60 * 1000);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 5 * 60 * 1000);
                 } else if ("completed".equalsIgnoreCase(status)) {
                     /* File has been downloaded to their servers and download should be possible now. */
                     finalURL = API_BASE_STORAGE + "/download.php?apikey=" + apikey + "&url=" + url;
