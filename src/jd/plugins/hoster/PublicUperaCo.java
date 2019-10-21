@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -176,12 +175,11 @@ public class PublicUperaCo extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(this.getHost(), cookies);
@@ -192,14 +190,10 @@ public class PublicUperaCo extends antiDDoSForHost {
                 final Form form = br.getFormbyActionRegex(".*verifylogin");
                 form.put("email", Encoding.urlEncode(account.getUser()));
                 form.put("password", Encoding.urlEncode(account.getPass()));
+                form.put("remember", "on");
                 br.submitForm(form);
-                br.followRedirect();
-                if (br.getCookie(this.getHost(), "upera_cs_upera") == null || br.getCookie(getHost(), "upera_user") == null || StringUtils.equalsIgnoreCase(br.getCookie(getHost(), "upera_user"), "deleted")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (br.getCookie(this.getHost(), "upera_cs_upera", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(getHost(), "upera_user", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -216,7 +210,6 @@ public class PublicUperaCo extends antiDDoSForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
