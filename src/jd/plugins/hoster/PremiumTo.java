@@ -160,6 +160,7 @@ public class PremiumTo extends UseNet {
                     }
                 }
                 /* First try old way ia username & password */
+                /* TODO: Set this to false once login is only possible via userid & apikey (waiting for input of admin) */
                 final boolean login_via_username_and_password_possible = true;
                 final boolean logindata_looks_like_api_logindata = new Regex(account.getUser(), Pattern.compile("[a-z0-9]+", Pattern.CASE_INSENSITIVE)).matches() && new Regex(account.getPass(), Pattern.compile("[a-z0-9]{32}", Pattern.CASE_INSENSITIVE)).matches();
                 if (!login_via_username_and_password_possible && !logindata_looks_like_api_logindata) {
