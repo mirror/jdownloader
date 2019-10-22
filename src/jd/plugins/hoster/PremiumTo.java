@@ -17,12 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
@@ -38,9 +36,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -59,21 +55,21 @@ import jd.plugins.download.DownloadLinkDownloadable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
-    private final String                   normalTraffic    = "normalTraffic";
-    private final String                   specialTraffic   = "specialTraffic";
-    private final String                   storageTraffic   = "storageTraffic";
-    private static final String            type_storage     = "https?://storage.+";
+    private final String                   normalTraffic             = "normalTraffic";
+    private final String                   specialTraffic            = "specialTraffic";
+    private final String                   storageTraffic            = "storageTraffic";
+    private static final String            type_storage              = "https?://storage.+";
     // private static final String type_torrent = "https?://torrent.+";
-    private static final String            API_BASE         = "http://api.premium.to/";
-    private static final String            API_BASE_STORAGE = "http://storage.premium.to/api";
-    private static MultiHosterManagement   mhm              = new MultiHosterManagement("premium.to");
-    private static final ArrayList<String> hosts_regular    = new ArrayList<String>();
-    private static final ArrayList<String> hosts_storage    = new ArrayList<String>();
+    private static final String            API_BASE                  = "http://api.premium.to/api/2";
+    private static final String            API_BASE_STORAGE          = "https://storage.premium.to/api";
+    /* 2019-10-22: Disabled upon admin request. Storage hosts will not be displayed as supported host either when this is disabled! */
+    private static final boolean           supports_storage_download = false;
+    private static MultiHosterManagement   mhm                       = new MultiHosterManagement("premium.to");
+    private static final ArrayList<String> hosts_regular             = new ArrayList<String>();
+    private static final ArrayList<String> hosts_storage             = new ArrayList<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
-        /* 2019-08-13: Not required anymore */
-        // setStartIntervall(2 * 1000L);
         this.enablePremium("https://premium.to/");
     }
 
@@ -127,54 +123,122 @@ public class PremiumTo extends UseNet {
         prepBr.setConnectTimeout(90 * 1000);
         prepBr.setReadTimeout(90 * 1000);
         prepBr.getHeaders().put("User-Agent", "JDownloader");
-        prepBr.setAllowedResponseCodes(new int[] { 400 });
         return prepBr;
+    }
+
+    private boolean login(Account account, boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setCookiesExclusive(true);
+                prepBrowser(br);
+                String apikey = this.getAPIKey(account);
+                String userid = this.getUserID(account);
+                boolean attemptedAPIKeyLogin = false;
+                if (!StringUtils.isEmpty(apikey) && !StringUtils.isEmpty(userid)) {
+                    if (!force) {
+                        /* Trust existing data without check */
+                        return false;
+                    }
+                    boolean username_and_pw_is_userid_and_apikey = false;
+                    try {
+                        username_and_pw_is_userid_and_apikey = account.getUser().equals(userid) && account.getPass().equals(apikey);
+                    } catch (final Throwable e) {
+                    }
+                    br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
+                    try {
+                        this.handleErrorsAPI(account);
+                        return true;
+                    } catch (final Throwable e) {
+                        /* E.g. API logindata has changed */
+                        if (username_and_pw_is_userid_and_apikey) {
+                            /* No need to try anything. User initially entered userid + apikey as username & password --> */
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                        e.printStackTrace();
+                        logger.info("Login via apikey failed, trying via username + password");
+                        attemptedAPIKeyLogin = true;
+                    }
+                }
+                /* First try old way ia username & password */
+                final boolean login_via_username_and_password_possible = false;
+                final boolean logindata_looks_like_api_logindata = new Regex(account.getUser(), Pattern.compile("[a-z0-9]+", Pattern.CASE_INSENSITIVE)).matches() && new Regex(account.getPass(), Pattern.compile("[a-z0-9]{32}", Pattern.CASE_INSENSITIVE)).matches();
+                if (!login_via_username_and_password_possible && !logindata_looks_like_api_logindata) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter API userid as username and API key as password, see premium.to website --> Account tab", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                logger.info("Logging in with username + password");
+                br.getPage(API_BASE + "/getapicredentials.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                apikey = PluginJSonUtils.getJson(br, "apikey");
+                userid = PluginJSonUtils.getJson(br, "userid");
+                /* Failed? Hmm user might have entered 'new' API logindata, see premium.to homepage --> Account */
+                if ((StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) && logindata_looks_like_api_logindata && !attemptedAPIKeyLogin) {
+                    logger.info("User might have entered new API username (userid) and api password (apikey)");
+                    br.getPage(API_BASE + "/traffic.php?userid=" + account.getUser() + "&apikey=" + account.getPass());
+                    userid = account.getUser();
+                    apikey = account.getPass();
+                }
+                this.handleErrorsAPI(account);
+                if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /* Save API logindata */
+                account.setProperty("apikey", apikey);
+                account.setProperty("userid", userid);
+                /* TODO: Dump originally stored username + password to protect them in case e.g. account database gets stolen! */
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         login(account, true);
-        final Browser tbr = br.cloneBrowser();
-        tbr.setFollowRedirects(true);
-        tbr.getPage("https://" + this.getHost() + "/sstraffic.php");
-        /* NormalTraffic:SpecialTraffic:TorrentTraffic(StorageTraffic) */
-        String[] traffic = tbr.toString().split(";");
-        String additionalAccountStatus = "";
-        if (traffic != null && traffic.length == 3) {
-            /* Normal traffic */
-            final long nT = Long.parseLong(traffic[0]);
-            /* Special traffic */
-            final long spT = Long.parseLong(traffic[1]);
-            /* Storage traffic, 2019-04-17: According to admin, this type of traffic does not exist anymore(API will always return 0) */
-            final long stT = Long.parseLong(traffic[2]);
-            ac.setTrafficLeft(nT + spT + stT + "MiB");
-            // set both so we can check in canHandle.
-            account.setProperty(normalTraffic, nT + stT);
-            account.setProperty(specialTraffic, spT);
-            account.setProperty(storageTraffic, stT);
-            if (nT > 0 && spT > 0) {
-                additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
-            }
+        final String apikey = this.getAPIKey(account);
+        final String userid = this.getUserID(account);
+        if (br.getURL() == null || !br.getURL().contains("traffic.php")) {
+            br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
+            this.handleErrorsAPI(account);
         }
-        final Browser hbr = br.cloneBrowser();
-        hbr.setFollowRedirects(true);
-        hbr.getPage(API_BASE + "hosts.php");
-        final String hosters_regular[] = hbr.toString().toLowerCase().split(";|\\s+");
-        final ArrayList<String> supported_hosts_regular = new ArrayList<String>(Arrays.asList(hosters_regular));
+        /* NormalTraffic:SpecialTraffic:TorrentTraffic(StorageTraffic) */
+        String additionalAccountStatus = "";
+        /* Normal traffic */
+        final long nT = Long.parseLong(PluginJSonUtils.getJson(br, "traffic"));
+        /* Special traffic */
+        final long spT = Long.parseLong(PluginJSonUtils.getJson(br, "specialtraffic"));
+        /* Storage traffic, 2019-04-17: According to admin, this type of traffic does not exist anymore(API will always return 0) */
+        final long stT = 0;
+        ac.setTrafficLeft(nT + spT + stT);
+        // set both so we can check in canHandle.
+        account.setProperty(normalTraffic, nT + stT);
+        account.setProperty(specialTraffic, spT);
+        account.setProperty(storageTraffic, stT);
+        if (nT > 0 && spT > 0) {
+            additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
+        }
+        final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
+        try {
+            br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("hosts");
+            for (final Object hostO : ressourcelist) {
+                if (hostO instanceof String) {
+                    supported_hosts_regular.add((String) hostO);
+                }
+            }
+        } catch (final Throwable e) {
+        }
         supported_hosts_regular.add("usenet");
         hosts_regular.addAll(supported_hosts_regular);
         account.setType(AccountType.PREMIUM);
         ac.setStatus("Premium account" + additionalAccountStatus);
-        String apikey = null;
-        try {
-            /* Do not fail here */
-            apikey = getAndStoreAPIKey(account);
-        } catch (final Throwable e) {
-        }
         /* Find storage hosts and add them to array of supported hosts as well */
-        hbr.getPage(API_BASE_STORAGE + "/hosts.php?apikey=" + apikey);
-        final String hosters_storage[] = hbr.toString().toLowerCase().split(";|\\s+");
+        br.getPage(API_BASE_STORAGE + "/hosts.php?apikey=" + apikey);
+        final String hosters_storage[] = br.toString().toLowerCase().split(";|\\s+");
         final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
         for (final String supported_host_storage : supported_hosts_storage) {
             if (!supported_hosts_regular.contains(supported_host_storage)) {
@@ -182,37 +246,49 @@ public class PremiumTo extends UseNet {
                  * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
                  * downloads!
                  */
-                logger.info("Adding storage host: " + supported_host_storage);
-                supported_hosts_regular.add(supported_host_storage);
-                hosts_storage.add(supported_host_storage);
+                if (supports_storage_download) {
+                    logger.info("Adding storage host: " + supported_host_storage);
+                    supported_hosts_regular.add(supported_host_storage);
+                    hosts_storage.add(supported_host_storage);
+                } else {
+                    logger.info("Skipping storage host: " + supported_host_storage);
+                }
             }
         }
-        if (supported_hosts_regular.size() > 0) {
-            ac.setMultiHostSupport(this, supported_hosts_regular);
-        }
+        ac.setMultiHostSupport(this, supported_hosts_regular);
         return ac;
     }
 
     /**
      * 2019-04-15: Required for downloading from STORAGE hosts. This apikey will always be the same until the user changes his password
-     * (which he then also has to change in JDownloader)!
+     * (which he then also has to change in JDownloader)! </br>
+     * 2019-10-22: @Deprecated since the existance of APIv2: https://premium.to/API.html
      */
-    private String getAndStoreAPIKey(final Account account) throws Exception {
-        String apikey = account.getStringProperty("apikey");
+    @Deprecated
+    private String findAndStoreAPIKey(final Account account) throws Exception {
+        String apikey = getAPIKey(account);
         if (apikey == null) {
-            br.getPage(API_BASE + "api/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            br.getPage(API_BASE_STORAGE + "/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             /* 2019-04-15: apikey = username+hash */
             if (br.toString().length() > account.getUser().length()) {
                 apikey = br.toString();
                 account.setProperty("apikey", apikey);
                 /* Cookie & header not required for all requests but for e.g. '/removeFile.php' */
-                this.br.setCookie("premium.to", "auth", this.getAndStoreAPIKey(account));
-                this.br.getHeaders().put("auth", this.getAndStoreAPIKey(account));
+                this.br.setCookie("premium.to", "auth", this.findAndStoreAPIKey(account));
+                this.br.getHeaders().put("auth", this.findAndStoreAPIKey(account));
             } else {
                 account.setProperty("apikey", Property.NULL);
             }
         }
         return apikey;
+    }
+
+    private String getAPIKey(final Account account) {
+        return account.getStringProperty("apikey", null);
+    }
+
+    private String getUserID(final Account account) {
+        return account.getStringProperty("userid", null);
     }
 
     @Override
@@ -235,21 +311,14 @@ public class PremiumTo extends UseNet {
         return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
         } else {
-            final boolean freshLogin = login(account, false);
-            String url = link.getDownloadURL();
+            final String url = link.getPluginPatternMatcher();
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, -10);
-            if (dl.getConnection().getResponseCode() == 403 && !freshLogin) {
-                dl.getConnection().disconnect();
-                login(account, true);
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, -10);
-            }
             if (dl.getConnection().getResponseCode() == 403) {
                 /*
                  * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
@@ -260,45 +329,6 @@ public class PremiumTo extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             dl.startDownload();
-        }
-    }
-
-    private boolean login(Account account, boolean force) throws Exception {
-        final boolean redirect = br.isFollowingRedirects();
-        synchronized (account) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    return false;
-                }
-                final Map<String, Object> login = new HashMap<String, Object>();
-                login.put("u", account.getUser());
-                login.put("p", account.getPass());
-                login.put("r", Boolean.TRUE);
-                final PostRequest post = new PostRequest(API_BASE + "login.php");
-                post.setContentType("application/json");
-                post.setPostDataString(JSonStorage.toString(login));
-                br.getPage(post);
-                if (br.getHttpConnection().getResponseCode() == 400) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.getCookie(this.br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
-            } finally {
-                br.setFollowRedirects(redirect);
-            }
         }
     }
 
@@ -323,6 +353,8 @@ public class PremiumTo extends UseNet {
             }
             String serverside_filename = link.getStringProperty("serverside_filename", null);
             dl = null;
+            String apikey = this.getAPIKey(account);
+            final String userid = this.getUserID(account);
             final String url = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             final int maxConnections = -10;
             String finalURL = null;
@@ -334,10 +366,16 @@ public class PremiumTo extends UseNet {
             final boolean requiresStorageDownload = hosts_storage != null && hosts_storage.contains(link.getHost());
             if (requiresStorageDownload) {
                 /* Storage download */
-                final String apikey = getAndStoreAPIKey(account);
+                if (!supports_storage_download) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download is not yet supported via API");
+                }
+                if (apikey == null) {
+                    apikey = findAndStoreAPIKey(account);
+                }
                 /* Check if that URL has already been downloaded to their cloud. */
                 br.getPage(API_BASE_STORAGE + "/check.php?apikey=" + apikey + "&url=" + url);
-                handleErrorsStorageAPI();
+                handleErrorsAPI(account);
                 final String status = getStorageAPIStatus();
                 if ("Not in queue".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
@@ -355,7 +393,7 @@ public class PremiumTo extends UseNet {
             } else {
                 /* Normal (direct) download */
                 login(account, false);
-                finalURL = API_BASE + "getfile.php?link=" + url;
+                finalURL = API_BASE + "/getfile.php?link=" + url + "&userid=" + userid + "&apikey=" + apikey;
             }
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
@@ -425,7 +463,7 @@ public class PremiumTo extends UseNet {
                     logger.info("Trying to find storageID");
                     try {
                         /* Make sure we're logged-IN via apikey! */
-                        this.getAndStoreAPIKey(account);
+                        this.findAndStoreAPIKey(account);
                         br.getPage("https://storage.premium.to/status.php");
                         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                         final ArrayList<Object> storage_objects = (ArrayList<Object>) entries.get("f");
@@ -470,25 +508,48 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    private void handleErrorsStorageAPI() throws Exception {
-        if (br.toString().equalsIgnoreCase("Invalid API key")) {
-            /* Temp disable account --> Next accountcheck will refresh apikey */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        } else {
-            final int responsecode = br.getHttpConnection().getResponseCode();
-            switch (responsecode) {
-            case 200:
-                /* Everything ok */
-                break;
-            case 401:
-                /* Invalid apikey (same as above) */
-                /* Temp disable account --> Next accountcheck will refresh apikey */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            case 403:
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            case 405:
-                /* User has reached max. storage files limit (2019-04-15: 200 files) */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
+    private void handleErrorsAPI(final Account account) throws Exception {
+        int responsecode = 0;
+        final String responsecodeStr = PluginJSonUtils.getJson(br, "code");
+        if (!StringUtils.isEmpty(responsecodeStr) && responsecodeStr.matches("\\d+")) {
+            responsecode = Integer.parseInt(responsecodeStr);
+        }
+        switch (responsecode) {
+        case 0:
+            /* No error */
+            break;
+        case 200:
+            /* Everything ok */
+            break;
+        case 400:
+            /* Invalid parameter - this should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "API response 400");
+        case 401:
+            /* Invalid apikey --> Invalid logindata */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        case 402:
+            /* TODO: Unsupported filehost */
+            mhm.handleErrorGeneric(account, this.getDownloadLink(), "unsupported_filehost", 20, 5 * 60 * 1000);
+        case 403:
+            /* Not enough traffic left */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        case 404:
+            /* File not found TODO: Check whether we can trust this or not! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 405:
+            /* User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
+        case 500:
+            /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
+        default:
+            /* TODO: Unknown error */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000);
+        }
+        if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
+            /* Now handle special Storage errors / statuscodes */
+            if ("Invalid API Key".equalsIgnoreCase(br.toString())) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid Storage apikey", 5 * 60 * 1000);
             }
             final String status = getStorageAPIStatus();
             if (StringUtils.isEmpty(status)) {
@@ -510,19 +571,18 @@ public class PremiumTo extends UseNet {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
-            final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
+            final String dlink = Encoding.urlDecode(link.getPluginPatternMatcher(), true);
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             long fileSize = -1;
             ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs == null || accs.size() == 0) {
-                if (link.getDownloadURL().matches(type_storage)) {
+                if (link.getPluginPatternMatcher().matches(type_storage)) {
                     /* This linktype can only be downloaded/checked via account */
                     link.getLinkStatus().setStatusText("Only downlodable via account!");
                     return AvailableStatus.UNCHECKABLE;

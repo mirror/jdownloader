@@ -248,20 +248,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * <b> Enabling this leads to at least one additional http-request! </b>
-     *
-     * @return true: Implies that the hoster only allows audio-content to be uploaded. Enabling this will make plugin try to find
-     *         audio-downloadlinks via '/mp3embed-<fuid>'. Also sets mime-hint via CompiledFiletypeFilter.ImageExtensions.JPG. <br />
-     *         false: Website is just an usual filehost, use given fileextension if possible. <br />
-     *         This is Deprecated since 2019-05-30 as we have not found a single XFS website which supported this for several yars now.
-     *         default: false
-     */
-    @Deprecated
-    protected boolean isAudiohoster() {
-        return false;
-    }
-
-    /**
      * 2019-05-21: This old method is rarely supported in new XFS versions - you will usually not need this! <br />
      * <b> Enabling this will perform at least one additional http-request! </b> <br />
      * Enable this only for websites using <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
@@ -1284,25 +1270,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
-            }
-        }
-        /* Do they provide audio hosting? EXTREMELY rare case! */
-        if (StringUtils.isEmpty(dllink) && link.getName().endsWith(".mp3") && this.isAudiohoster()) {
-            try {
-                logger.info("Trying to get link via mp3embed");
-                final Browser brv = br.cloneBrowser();
-                getPage(brv, "/mp3embed-" + fuid, false);
-                dllink = brv.getRedirectLocation();
-                if (StringUtils.isEmpty(dllink)) {
-                    dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.info("Failed to get link via mp3embed because: " + br.toString());
-                } else {
-                    logger.info("Successfully found link via mp3embed");
-                }
-            } catch (final Throwable e) {
-                logger.info("Failed to get link via mp3embed");
             }
         }
         /* Do we have an imagehost? */
@@ -3510,9 +3477,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final boolean setMineHint = weak_fallback_filename == null || !fallback_filename_contains_file_extension;
         if (setMineHint) {
             /* Only setMimeHint if weak filename does not contain filetype. */
-            if (this.isAudiohoster()) {
-                link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-            } else if (this.isImagehoster()) {
+            if (this.isImagehoster()) {
                 link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
             } else if (this.internal_isVideohoster_enforce_video_filename()) {
                 link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
