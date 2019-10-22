@@ -160,7 +160,7 @@ public class PremiumTo extends UseNet {
                     }
                 }
                 /* First try old way ia username & password */
-                final boolean login_via_username_and_password_possible = false;
+                final boolean login_via_username_and_password_possible = true;
                 final boolean logindata_looks_like_api_logindata = new Regex(account.getUser(), Pattern.compile("[a-z0-9]+", Pattern.CASE_INSENSITIVE)).matches() && new Regex(account.getPass(), Pattern.compile("[a-z0-9]{32}", Pattern.CASE_INSENSITIVE)).matches();
                 if (!login_via_username_and_password_possible && !logindata_looks_like_api_logindata) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter API userid as username and API key as password, see premium.to website --> Account tab", PluginException.VALUE_ID_PREMIUM_DISABLE);
