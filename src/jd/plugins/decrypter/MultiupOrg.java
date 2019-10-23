@@ -66,11 +66,17 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         String filename = getFilename(parameter);
         String filesize = getFileSize(parameter);
         if (filename != null) {
-            parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
+            parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/download/" + uid + "/" + filename;
             param.setCryptedUrl(parameter);
         }
         getPage(parameter);
-        getPage(parameter.replace("/en/download/", "/en/mirror/"));
+        final String csrftoken = br.getRegex("_csrf_token\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final String mirror = parameter.replace("/en/download/", "/en/mirror/").replace("/download/", "/en/mirror/");
+        if (csrftoken != null) {
+            postPage(mirror, "_csrf_token=" + Encoding.urlEncode(csrftoken));
+        } else {
+            getPage(mirror);
+        }
         final String webSiteFilename = getWebsiteFileName(br);
         if (!StringUtils.isEmpty(webSiteFilename)) {
             filename = webSiteFilename;
@@ -92,10 +98,13 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        final String[] links = br.getRegex("\\s+href=\"([^\"]+)\"\\s+").getColumn(0);
+        String[] links = br.getRegex("\\s+link\\s*=\\s*\"((https?://)?[^\"]+)\"\\s+").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            links = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         for (String singleLink : links) {
             if (isAbort()) {
