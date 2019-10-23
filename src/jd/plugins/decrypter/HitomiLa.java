@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
@@ -59,7 +61,22 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
         // get the image host.
         // retval = subdomain_from_galleryid(g) + retval;
-        final String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
+        String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
+        if (links == null || links.length == 0) {
+            final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + guid + "\\.js)\"").getMatch(0);
+            if (js != null) {
+                final Browser brc = br.cloneBrowser();
+                getPage(brc, js);
+                final String names[] = brc.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getColumn(0);
+                if (names != null && names.length > 0) {
+                    final ArrayList<String> urls = new ArrayList<String>();
+                    for (String name : names) {
+                        urls.add("/" + guid + "/" + name);
+                    }
+                    links = urls.toArray(new String[0]);
+                }
+            }
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -75,13 +92,13 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 HeadRequest head = br.createHeadRequest("https://" + imghost + ".hitomi.la/galleries" + singleLink);
                 URLConnectionAdapter con = br.cloneBrowser().openRequestConnection(head);
                 try {
-                    if (con.isOK()) {
+                    if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
                         checked = true;
                     } else {
                         con.disconnect();
                         head = br.createHeadRequest("https://0a.hitomi.la/galleries" + singleLink);
                         con = br.cloneBrowser().openRequestConnection(head);
-                        if (con.isOK()) {
+                        if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
                             checked = true;
                             imghost = "0a";
                         } else {
@@ -93,6 +110,8 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 }
             }
             final DownloadLink dl = createDownloadlink("directhttp://https://" + imghost + ".hitomi.la/galleries" + singleLink);
+            dl.setProperty("Referer", br.getURL());
+            dl.setProperty("requestType", "GET");
             dl.setAvailable(true);
             dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(singleLink, ".jpg"));
             decryptedLinks.add(dl);
@@ -117,7 +136,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final int i = 3;
         // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
         String g = new Regex(guid, "^\\d*(\\d)$").getMatch(0);
-        if ("1".equals(g)) {
+        if (false && "1".equals(g)) {
             g = "0";
         }
         final String subdomain = Character.toString((char) (97 + (Integer.parseInt(g) % i)));

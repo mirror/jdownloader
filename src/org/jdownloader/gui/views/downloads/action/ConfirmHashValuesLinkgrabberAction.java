@@ -25,7 +25,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContextAppAction implements ActionContext, ExtTableListener, ExtTableModelListener {
-
     private IncludedSelectionSetup includedSelection;
 
     public ConfirmHashValuesLinkgrabberAction() {
@@ -43,13 +42,11 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
     @Override
     public void initContextDefaults() {
         super.initContextDefaults();
-
     }
 
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-
     }
 
     @Override
@@ -79,7 +76,6 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
             return;
         }
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final HashMap<String, List<CrawledLink>> map = new HashMap<String, List<CrawledLink>>();
@@ -107,16 +103,18 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
                             }
                         }
                     }
-                    for (HashInfo.TYPE type : HashInfo.TYPE.values()) {
-                        final HashInfo existing = knownHashInfos.get(type);
-                        if (existing != null) {
-                            final HashInfo newHashInfo = HashInfo.newInstanceSafe(existing.getHash(), existing.getType(), existing.isTrustworthy(), true);
-                            for (final CrawledLink cl : list) {
-                                if (cl.getDownloadLink() != null) {
-                                    cl.getDownloadLink().setHashInfo(newHashInfo);
+                    if (knownHashInfos.size() > 0) {
+                        for (HashInfo.TYPE type : HashInfo.TYPE.values()) {
+                            final HashInfo existing = knownHashInfos.get(type);
+                            if (existing != null) {
+                                final HashInfo newHashInfo = HashInfo.newInstanceSafe(existing.getHash(), existing.getType(), existing.isTrustworthy(), true);
+                                for (final CrawledLink cl : list) {
+                                    if (cl.getDownloadLink() != null) {
+                                        cl.getDownloadLink().setHashInfo(newHashInfo);
+                                    }
                                 }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
@@ -127,11 +125,9 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
 
     @Override
     public void onExtTableEvent(ExtTableEvent<?> event) {
-
     }
 
     @Override
     public void onExtTableModelEvent(ExtTableModelEventWrapper event) {
     }
-
 }

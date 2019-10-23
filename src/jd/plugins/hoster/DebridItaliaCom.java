@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -186,6 +187,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
             chunks = 1;
         }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, currDownloadLink, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -249,7 +253,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+        } catch (final PluginException e) {
+            throw e;
         } catch (final Throwable e) {
+            logger.log(e);
             return AvailableStatus.UNCHECKABLE;
         } finally {
             try {
@@ -281,22 +288,27 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                final URLConnectionAdapter con = br2.openGetConnection(dllink);
+                try {
+                    if (StringUtils.containsIgnoreCase(con.getContentType(), "text") || !con.isOK() || con.getLongContentLength() == -1) {
+                        downloadLink.setProperty(property, Property.NULL);
+                        return null;
+                    } else {
+                        return dllink;
+                    }
+                } finally {
+                    con.disconnect();
                 }
-                con.disconnect();
             } catch (Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override

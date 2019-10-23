@@ -25,7 +25,6 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class ConfirmHashValuesDownloadAction extends CustomizableTableContextAppAction implements ActionContext, ExtTableListener, ExtTableModelListener {
-
     private IncludedSelectionSetup includedSelection;
 
     public ConfirmHashValuesDownloadAction() {
@@ -43,13 +42,11 @@ public class ConfirmHashValuesDownloadAction extends CustomizableTableContextApp
     @Override
     public void initContextDefaults() {
         super.initContextDefaults();
-
     }
 
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-
     }
 
     @Override
@@ -79,7 +76,6 @@ public class ConfirmHashValuesDownloadAction extends CustomizableTableContextApp
             return;
         }
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final HashMap<String, List<DownloadLink>> map = new HashMap<String, List<DownloadLink>>();
@@ -105,14 +101,16 @@ public class ConfirmHashValuesDownloadAction extends CustomizableTableContextApp
                             }
                         }
                     }
-                    for (HashInfo.TYPE type : HashInfo.TYPE.values()) {
-                        final HashInfo existing = knownHashInfos.get(type);
-                        if (existing != null) {
-                            final HashInfo newHashInfo = HashInfo.newInstanceSafe(existing.getHash(), existing.getType(), existing.isTrustworthy(), true);
-                            for (final DownloadLink cl : list) {
-                                cl.getDownloadLink().setHashInfo(newHashInfo);
+                    if (knownHashInfos.size() > 0) {
+                        for (HashInfo.TYPE type : HashInfo.TYPE.values()) {
+                            final HashInfo existing = knownHashInfos.get(type);
+                            if (existing != null) {
+                                final HashInfo newHashInfo = HashInfo.newInstanceSafe(existing.getHash(), existing.getType(), existing.isTrustworthy(), true);
+                                for (final DownloadLink cl : list) {
+                                    cl.getDownloadLink().setHashInfo(newHashInfo);
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
@@ -123,11 +121,9 @@ public class ConfirmHashValuesDownloadAction extends CustomizableTableContextApp
 
     @Override
     public void onExtTableEvent(ExtTableEvent<?> event) {
-
     }
 
     @Override
     public void onExtTableModelEvent(ExtTableModelEventWrapper event) {
     }
-
 }

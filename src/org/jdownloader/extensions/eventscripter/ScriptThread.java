@@ -75,14 +75,16 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private final Set<String> permissions = new HashSet<String>();
 
     public boolean isPermissionSet(String permission) {
-        synchronized (permission) {
-            return permissions.contains(permission);
+        synchronized (permissions) {
+            return permission != null && permissions.contains(permission);
         }
     }
 
     public void setPermissionSet(String permission) {
-        synchronized (permission) {
-            permissions.add(permission);
+        if (permission != null) {
+            synchronized (permissions) {
+                permissions.add(permission);
+            }
         }
     }
 
