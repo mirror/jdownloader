@@ -15,11 +15,23 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,24 +54,14 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*\\.premium\\.to/.+" })
 public class PremiumTo extends UseNet {
     private final String                   normalTraffic             = "normalTraffic";
     private final String                   specialTraffic            = "specialTraffic";
     private final String                   storageTraffic            = "storageTraffic";
     private static final String            type_storage              = "https?://storage.+";
     // private static final String type_torrent = "https?://torrent.+";
+    /* 2019-10-23: According to admin, missing https support for API is not an issue */
     private static final String            API_BASE                  = "http://api.premium.to/api/2";
     private static final String            API_BASE_STORAGE          = "https://storage.premium.to/api";
     /* 2019-10-22: Disabled upon admin request. Storage hosts will not be displayed as supported host either when this is disabled! */
@@ -177,9 +179,8 @@ public class PremiumTo extends UseNet {
                     userid = account.getUser();
                     apikey = account.getPass();
                 }
-                this.handleErrorsAPI(account);
                 if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Save API logindata */
                 account.setProperty(PROPERTY_APIKEY, apikey);
@@ -188,7 +189,8 @@ public class PremiumTo extends UseNet {
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
+                    /* 2019-10-23: There are no cookies given via API anymore */
+                    // account.clearCookies("");
                     account.removeProperty(PROPERTY_APIKEY);
                     account.removeProperty(PROPERTY_USERID);
                 }
@@ -264,8 +266,8 @@ public class PremiumTo extends UseNet {
 
     /**
      * 2019-04-15: Required for downloading from STORAGE hosts. This apikey will always be the same until the user changes his password
-     * (which he then also has to change in JDownloader)! </br> 2019-10-22: @Deprecated since the existance of APIv2:
-     * https://premium.to/API.html
+     * (which he then also has to change in JDownloader)! </br>
+     * 2019-10-22: @Deprecated since the existance of APIv2: https://premium.to/API.html
      */
     @Deprecated
     private String findAndStoreAPIKey(final Account account) throws Exception {
@@ -470,7 +472,7 @@ public class PremiumTo extends UseNet {
                      */
                     logger.info("Trying to find storageID");
                     try {
-                        /* Make sure we're logged-IN via apikey! */
+                        /* Make sure we're logged-IN via apikey! Without 'auth' cookie we cannot access this site! */
                         this.findAndStoreAPIKey(account);
                         br.getPage("https://storage.premium.to/status.php");
                         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -545,7 +547,8 @@ public class PremiumTo extends UseNet {
             /* File not found TODO: Check whether we can trust this or not! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case 405:
-            /* User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
+            /* Rare case: User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
+            /* {"code":405,"message":"Too many files"} */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
         case 500:
             /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
@@ -584,75 +587,50 @@ public class PremiumTo extends UseNet {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
-            final String dlink = Encoding.urlDecode(link.getPluginPatternMatcher(), true);
+            final String dllink = Encoding.urlDecode(link.getPluginPatternMatcher(), true);
             br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            long fileSize = -1;
             ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs == null || accs.size() == 0) {
-                if (link.getPluginPatternMatcher().matches(type_storage)) {
-                    /* This linktype can only be downloaded/checked via account */
-                    link.getLinkStatus().setStatusText("Only downlodable via account!");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                /* try without login (only possible for URLs with token) */
-                try {
-                    con = br.openGetConnection(dlink);
-                    if (!con.getContentType().contains("html")) {
-                        fileSize = con.getLongContentLength();
-                        if (fileSize == 0) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (fileSize == -1) {
-                            link.getLinkStatus().setStatusText("Only downlodable via account!");
-                            return AvailableStatus.UNCHECKABLE;
-                        }
-                        String name = con.getHeaderField("Content-Disposition");
-                        if (name != null) {
-                            /* filter the filename from content disposition and decode it... */
-                            name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
-                            name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                            if (name != null) {
-                                link.setFinalFileName(name);
-                            }
-                        }
-                        link.setDownloadSize(fileSize);
-                        return AvailableStatus.TRUE;
-                    } else {
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
+                /* 2019-10-23: All o those URLs should be downloadable without account/logging in */
+                // if (link.getPluginPatternMatcher().matches(type_storage)) {
+                // /* This linktype can only be downloaded/checked via account */
+                // link.getLinkStatus().setStatusText("Only downlodable via account!");
+                // return AvailableStatus.UNCHECKABLE;
+                // }
+                return getDirecturlStatus(link, dllink);
             } else {
-                // if accounts available try all whether the link belongs to it links with token should work anyway
-                for (Account acc : accs) {
+                for (final Account acc : accs) {
                     login(acc, false);
-                    try {
-                        con = br.openHeadConnection(dlink);
-                        if (con.getResponseCode() == 403) {
-                            /* Either invalid URL or user deleted file from Storage/Cloud --> URL is invalid now. */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        if (!con.getContentType().contains("html")) {
-                            fileSize = con.getLongContentLength();
-                            if (fileSize <= 0) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            link.setFinalFileName(getFileNameFromHeader(con));
-                            link.setDownloadSize(fileSize);
-                            return AvailableStatus.TRUE;
-                        }
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (Throwable e) {
-                        }
-                    }
+                    return getDirecturlStatus(link, dllink);
                 }
                 return AvailableStatus.UNCHECKABLE;
+            }
+        }
+    }
+
+    private AvailableStatus getDirecturlStatus(final DownloadLink link, final String dllink) throws PluginException, IOException {
+        URLConnectionAdapter con = null;
+        try {
+            /* 2019-10-23: HEADRequest does not work anymore, use GET instead */
+            con = br.openGetConnection(dllink);
+            if (con.getResponseCode() == 403) {
+                /* Either invalid URL or user deleted file from Storage/Cloud --> URL is invalid now. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (con.getContentType().contains("html")) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+            long fileSize = con.getLongContentLength();
+            if (fileSize <= 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setFinalFileName(getFileNameFromHeader(con));
+            link.setDownloadSize(fileSize);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
             }
         }
     }
