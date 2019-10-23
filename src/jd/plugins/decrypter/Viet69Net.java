@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viet69.net" }, urls = { "https?://(www\\.)?viet69\\.net/[^/]+" })
 public class Viet69Net extends antiDDoSForDecrypt {
@@ -47,7 +47,11 @@ public class Viet69Net extends antiDDoSForDecrypt {
             final String[] links = br2.getRegex("\"file\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
             if (links != null && links.length > 0) {
                 for (String link : links) {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+                    final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
+                    if (fpName != null) {
+                        downloadLink.setName(fpName);
+                    }
+                    decryptedLinks.add(downloadLink);
                 }
             }
         }
