@@ -43,7 +43,7 @@ public class UploadAc extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "upload.ac", "uplod.ws", "uploadshub.com", "upload.so" });
+        ret.add(new String[] { "upload.ac", "uplod.ws", "uplod.org", "uploadshub.com", "upload.so" });
         return ret;
     }
 
