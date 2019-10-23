@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "https?://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+_\\d+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "https?://(www\\.)?shooshtime\\.com/(videos/(?:[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+_\\d+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
 public class ShooshTimeCom extends PluginForHost {
     public ShooshTimeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,21 +95,16 @@ public class ShooshTimeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br2.openHeadConnection(dllink);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br2.openGetConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             }
-            if (!con.getContentType().contains("html") && con.isOK()) {
+            if (!con.getContentType().contains("text") && con.isOK()) {
                 if (con.getLongContentLength() <= 40140) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (con.getLongContentLength() > 0) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
-                downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

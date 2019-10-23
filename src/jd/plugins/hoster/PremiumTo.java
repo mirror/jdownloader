@@ -21,17 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -52,6 +41,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
@@ -148,13 +148,13 @@ public class PremiumTo extends UseNet {
                     try {
                         this.handleErrorsAPI(account);
                         return true;
-                    } catch (final Throwable e) {
+                    } catch (final Exception e) {
                         /* E.g. API logindata has changed */
                         if (username_and_pw_is_userid_and_apikey) {
                             /* No need to try anything. User initially entered userid + apikey as username & password --> */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
                         }
-                        e.printStackTrace();
+                        logger.log(e);
                         logger.info("Login via apikey failed, trying via username + password");
                         attemptedAPIKeyLogin = true;
                     }
@@ -168,8 +168,8 @@ public class PremiumTo extends UseNet {
                 }
                 logger.info("Logging in with username + password");
                 br.getPage(API_BASE + "/getapicredentials.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                apikey = PluginJSonUtils.getJson(br, "apikey");
-                userid = PluginJSonUtils.getJson(br, "userid");
+                apikey = PluginJSonUtils.getJson(br, PROPERTY_APIKEY);
+                userid = PluginJSonUtils.getJson(br, PROPERTY_USERID);
                 /* Failed? Hmm user might have entered 'new' API logindata, see premium.to homepage --> Account */
                 if ((StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) && logindata_looks_like_api_logindata && !attemptedAPIKeyLogin) {
                     logger.info("User might have entered new API username (userid) and api password (apikey)");
@@ -182,13 +182,15 @@ public class PremiumTo extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Save API logindata */
-                account.setProperty("apikey", apikey);
-                account.setProperty("userid", userid);
+                account.setProperty(PROPERTY_APIKEY, apikey);
+                account.setProperty(PROPERTY_USERID, userid);
                 /* TODO: Dump originally stored username + password to protect them in case e.g. account database gets stolen! */
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.removeProperty(PROPERTY_APIKEY);
+                    account.removeProperty(PROPERTY_USERID);
                 }
                 throw e;
             }
@@ -262,34 +264,39 @@ public class PremiumTo extends UseNet {
 
     /**
      * 2019-04-15: Required for downloading from STORAGE hosts. This apikey will always be the same until the user changes his password
-     * (which he then also has to change in JDownloader)! </br>
-     * 2019-10-22: @Deprecated since the existance of APIv2: https://premium.to/API.html
+     * (which he then also has to change in JDownloader)! </br> 2019-10-22: @Deprecated since the existance of APIv2:
+     * https://premium.to/API.html
      */
     @Deprecated
     private String findAndStoreAPIKey(final Account account) throws Exception {
-        String apikey = getAPIKey(account);
-        if (apikey == null) {
-            br.getPage(API_BASE_STORAGE + "/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            /* 2019-04-15: apikey = username+hash */
-            if (br.toString().length() > account.getUser().length()) {
-                apikey = br.toString();
-                account.setProperty("apikey", apikey);
-                /* Cookie & header not required for all requests but for e.g. '/removeFile.php' */
-                this.br.setCookie("premium.to", "auth", this.findAndStoreAPIKey(account));
-                this.br.getHeaders().put("auth", this.findAndStoreAPIKey(account));
-            } else {
-                account.setProperty("apikey", Property.NULL);
+        synchronized (account) {
+            String apikey = getAPIKey(account);
+            if (apikey == null) {
+                br.getPage(API_BASE_STORAGE + "/getauthcode.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                /* 2019-04-15: apikey = username+hash */
+                if (br.toString().length() > account.getUser().length()) {
+                    apikey = br.toString();
+                    account.setProperty(PROPERTY_APIKEY, apikey);
+                    /* Cookie & header not required for all requests but for e.g. '/removeFile.php' */
+                    this.br.setCookie("premium.to", "auth", this.findAndStoreAPIKey(account));
+                    this.br.getHeaders().put("auth", this.findAndStoreAPIKey(account));
+                } else {
+                    account.setProperty(PROPERTY_APIKEY, Property.NULL);
+                }
             }
+            return apikey;
         }
-        return apikey;
     }
 
+    private final String PROPERTY_APIKEY = "apikey";
+    private final String PROPERTY_USERID = "userid";
+
     private String getAPIKey(final Account account) {
-        return account.getStringProperty("apikey", null);
+        return account.getStringProperty(PROPERTY_APIKEY, null);
     }
 
     private String getUserID(final Account account) {
-        return account.getStringProperty("userid", null);
+        return account.getStringProperty(PROPERTY_USERID, null);
     }
 
     @Override

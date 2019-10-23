@@ -35,10 +35,6 @@ public class FlexShareCore extends antiDDoSForHost {
         return "https://" + this.getHost() + "/help/terms.php";
     }
 
-    // @Override
-    // public void correctDownloadLink(final DownloadLink link) {
-    // link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("https://", "http://").replace("/get/", "/files/"));
-    // }
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);

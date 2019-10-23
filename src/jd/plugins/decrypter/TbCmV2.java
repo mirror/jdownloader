@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -974,7 +975,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                     } else {
                         // secondary pages are pure json
-                        final ArrayList<Object> asdf = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
+                        final Map<String, Object> asdf = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
                         if (asdf != null) {
                             final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(asdf, "{}/response/continuationContents/playlistVideoListContinuation/contents");
                             if (pl != null) {
