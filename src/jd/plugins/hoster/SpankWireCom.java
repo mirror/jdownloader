@@ -218,6 +218,9 @@ public class SpankWireCom extends PluginForHost {
             dllink = PluginJSonUtils.getJsonValue(qualityUrls, "src");
         }
         if (dllink == null) {
+            dllink = br.getRegex("data-desktop-url=\"([^\"]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
             /* Fallback - grab any URL */
             dllink = br.getRegex("<a href=\"(https?://[^\"]+\\.(mp4|avi|flv|wmv)[^\"]+)\"").getMatch(0);
         }
