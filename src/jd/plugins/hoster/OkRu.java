@@ -177,11 +177,6 @@ public class OkRu extends PluginForHost {
                     /* Prefer http - only use HLS if http is not available! */
                     dllink = (String) entries.get("hlsManifestUrl");
                 }
-                // final String statusText = (String) JavaScriptEngineFactory.walkJson(entries, "movie/statusText");
-                // if ("Not paid".equalsIgnoreCase(statusText)) {
-                // /* User needs account and has to pay to download/view such content. */
-                // this.paidContent = true;
-                // }
             }
         }
         if (StringUtils.isEmpty(filename)) {
