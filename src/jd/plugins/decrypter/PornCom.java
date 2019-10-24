@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -70,6 +71,13 @@ public class PornCom extends PluginForDecrypt {
             }
         }
         return links;
+    }
+
+    @Override
+    protected DownloadLink createOfflinelink(final String link) {
+        final DownloadLink offline = super.createOfflinelink(link);
+        offline.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        return offline;
     }
 
     private ArrayList<DownloadLink> getLinks(final Browser br, final String origin, final String fileName) {

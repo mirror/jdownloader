@@ -16,10 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -28,6 +30,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.AccountRequiredException;
@@ -38,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRu extends PluginForHost {
     public OkRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -109,6 +112,11 @@ public class OkRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         download_impossible = false;
         this.setBrowserExclusive();
@@ -120,14 +128,60 @@ public class OkRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
-        final LinkedHashMap<String, Object> entries = getFlashVars(this.br);
+        LinkedHashMap<String, Object> entries = getFlashVars(this.br);
         if (entries != null) {
             filename = (String) JavaScriptEngineFactory.walkJson(entries, "movie/title");
-            dllink = (String) entries.get("hlsManifestUrl");
-            final String statusText = (String) JavaScriptEngineFactory.walkJson(entries, "movie/statusText");
-            if ("Not paid".equalsIgnoreCase(statusText)) {
-                /* User needs account and has to pay to download such content. */
+            final Object paymentInfo = entries.get("paymentInfo");
+            if (paymentInfo != null) {
+                /* User needs account and has to pay to download/view such content. */
                 this.paidContent = true;
+            } else {
+                final String[] qualities = { "hd", "sd", "low", "lowest", "mobile" };
+                final String lowQualityName = "sd";
+                final boolean preferLowQuality = this.getPluginConfig().getBooleanProperty(PREFER_480P, false);
+                LinkedHashMap<String, Object> httpQualityInfo = null;
+                final Object httpQualitiesO = entries.get("videos");
+                if (httpQualitiesO != null) {
+                    int maxQuality = 0;
+                    final ArrayList<Object> httpQualities = (ArrayList<Object>) httpQualitiesO;
+                    for (final Object httpQ : httpQualities) {
+                        httpQualityInfo = (LinkedHashMap<String, Object>) httpQ;
+                        final String quality = (String) httpQualityInfo.get("name");
+                        final String url = (String) httpQualityInfo.get("url");
+                        if (StringUtils.isEmpty(quality) || StringUtils.isEmpty(url)) {
+                            continue;
+                        }
+                        final int currentQuality;
+                        if (quality.equalsIgnoreCase("hd")) {
+                            currentQuality = 100;
+                        } else if (quality.equalsIgnoreCase("sd")) {
+                            currentQuality = 80;
+                        } else if (quality.equalsIgnoreCase("low")) {
+                            currentQuality = 60;
+                        } else if (quality.equalsIgnoreCase("lowest")) {
+                            currentQuality = 40;
+                        } else {
+                            /* Mobile or other > 0 */
+                            currentQuality = 1;
+                        }
+                        if (preferLowQuality && quality.equalsIgnoreCase(lowQualityName)) {
+                            dllink = url;
+                            break;
+                        } else if (currentQuality > maxQuality) {
+                            dllink = url;
+                            maxQuality = currentQuality;
+                        }
+                    }
+                }
+                if (StringUtils.isEmpty(dllink)) {
+                    /* Prefer http - only use HLS if http is not available! */
+                    dllink = (String) entries.get("hlsManifestUrl");
+                }
+                // final String statusText = (String) JavaScriptEngineFactory.walkJson(entries, "movie/statusText");
+                // if ("Not paid".equalsIgnoreCase(statusText)) {
+                // /* User needs account and has to pay to download/view such content. */
+                // this.paidContent = true;
+                // }
             }
         }
         if (StringUtils.isEmpty(filename)) {
@@ -159,6 +213,21 @@ public class OkRu extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
+        /* Only check filesize during linkcheck to avoid double-http-requests */
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(dllink);
+                if (con.isContentDisposition()) {
+                    link.setDownloadSize(con.getLongContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -203,8 +272,8 @@ public class OkRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
         if (download_impossible) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - video corrupted?", 3 * 60 * 60 * 1000l);
         } else if (this.paidContent) {
@@ -213,24 +282,32 @@ public class OkRu extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(dllink);
-        HlsContainer chosenQuality = null;
-        final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
-        for (final HlsContainer quality : qualities) {
-            final int bandwidth = quality.getBandwidth();
-            final boolean isSDQuality = bandwidth > 1000000 && bandwidth < 2000000;
-            if (this.getPluginConfig().getBooleanProperty(PREFER_480P, false) && isSDQuality) {
-                chosenQuality = quality;
-                break;
+        if (dllink.contains(".m3u8")) {
+            br.getPage(dllink);
+            HlsContainer chosenQuality = null;
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+            for (final HlsContainer quality : qualities) {
+                final int bandwidth = quality.getBandwidth();
+                final boolean isSDQuality = bandwidth > 1000000 && bandwidth < 2000000;
+                if (this.getPluginConfig().getBooleanProperty(PREFER_480P, false) && isSDQuality) {
+                    chosenQuality = quality;
+                    break;
+                }
             }
+            if (chosenQuality == null) {
+                chosenQuality = HlsContainer.findBestVideoByBandwidth(qualities);
+            }
+            dllink = chosenQuality.getDownloadurl();
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (!dl.getConnection().isContentDisposition()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
+            dl.startDownload();
         }
-        if (chosenQuality == null) {
-            chosenQuality = HlsContainer.findBestVideoByBandwidth(qualities);
-        }
-        dllink = chosenQuality.getDownloadurl();
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, dllink);
-        dl.startDownload();
     }
 
     @Override
