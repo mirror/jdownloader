@@ -507,9 +507,13 @@ public class SoundcloudCom extends PluginForHost {
                     String streamUrl = null;
                     final List<Map<String, Object>> transcodings = (List<Map<String, Object>>) media.get("transcodings");
                     for (Map<String, Object> transcoding : transcodings) {
-                        streamUrl = (String) transcoding.get("url");
-                        if (transcoding.toString().contains("protocol=progressive")) {
-                            break;
+                        if (!StringUtils.containsIgnoreCase(String.valueOf(transcoding.get("preset")), "mp3")) {
+                            continue;
+                        } else {
+                            streamUrl = (String) transcoding.get("url");
+                            if (transcoding.toString().contains("protocol=progressive")) {
+                                break;
+                            }
                         }
                     }
                     if (streamUrl != null) {
