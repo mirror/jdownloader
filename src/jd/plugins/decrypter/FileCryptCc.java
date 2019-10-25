@@ -60,7 +60,7 @@ import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPlugi
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -99,7 +99,7 @@ public class FileCryptCc extends PluginForDecrypt {
         } else {
             getPage(parameter);
         }
-        if (br.getURL().contains("filecrypt.cc/404.html")) {
+        if (br.getURL().matches(".*filecrypt\\.(cc|co)/404\\.html.*")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -312,7 +312,7 @@ public class FileCryptCc extends PluginForDecrypt {
             final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
             if (dlc_id != null) {
                 logger.info("DLC found - trying to add it");
-                tdl.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
+                tdl.addAll(loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm()));
                 if (tdl.isEmpty()) {
                     logger.warning("DLC is empty or something is broken!");
                     continue;
@@ -342,7 +342,7 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             final Browser br2 = br.cloneBrowser();
             br2.getPage("/Link/" + singleLink + ".html");
-            if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.cc/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
+            if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.(cc|co)/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
                 /* Advertising */
                 continue;
             }
@@ -373,13 +373,13 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             String finallink = null;
             final String first_rd = br2.getRedirectLocation();
-            if (first_rd != null && first_rd.contains("filecrypt.cc/")) {
+            if (first_rd != null && first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
                 br2.getPage(first_rd);
                 finallink = br2.getRedirectLocation();
-            } else if (first_rd != null && !first_rd.contains("filecrypt.cc/")) {
+            } else if (first_rd != null && !first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
                 finallink = first_rd;
             } else {
-                final String nextlink = br2.getRegex("(\"|')(https?://(www\\.)?filecrypt\\.cc/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
+                final String nextlink = br2.getRegex("(\"|')(https?://(www\\.)?filecrypt\\.(?:cc|co)/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
                 if (nextlink != null) {
                     br2.getPage(nextlink);
                     finallink = br2.getRedirectLocation();

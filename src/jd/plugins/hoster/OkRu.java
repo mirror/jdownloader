@@ -20,12 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,6 +34,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRu extends PluginForHost {
@@ -213,8 +213,12 @@ public class OkRu extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (con.isContentDisposition()) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (con.isOK() && con.isContentDisposition()) {
+                    if (con.getLongContentLength() > 0) {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
                 try {
@@ -298,7 +302,12 @@ public class OkRu extends PluginForHost {
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (!dl.getConnection().isContentDisposition()) {
+            if (!dl.getConnection().isOK() || !dl.getConnection().isContentDisposition()) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             dl.startDownload();
