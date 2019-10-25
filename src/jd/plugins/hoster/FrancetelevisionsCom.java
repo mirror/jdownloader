@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -126,7 +131,23 @@ public class FrancetelevisionsCom extends PluginForHost {
             if (format.equals("mp4-dp")) {
                 url_http = url_temp;
             } else if (format.contains("hls") || format.contains("m3u8")) {
-                hls_master = url_temp;
+                for (final String host : new String[] { "hdfauthftv-a.akamaihd.net", "hdfauth.francetv.fr" }) {
+                    try {
+                        final Browser brc = br.cloneBrowser();
+                        brc.setFollowRedirects(true);
+                        brc.getPage("https://" + host + "/esi/TA?format=json&url=" + Encoding.urlEncode(url_temp));
+                        final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                        hls_master = (String) response.get("url");
+                        if (StringUtils.isNotEmpty(hls_master)) {
+                            break;
+                        }
+                    } catch (final Exception e) {
+                        logger.log(e);
+                    }
+                }
+                if (StringUtils.isEmpty(hls_master)) {
+                    hls_master = url_temp;
+                }
             }
         }
         if (hls_master == null && url_http == null) {
