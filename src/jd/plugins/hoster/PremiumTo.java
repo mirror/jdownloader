@@ -16,12 +16,13 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
@@ -73,8 +74,7 @@ public class PremiumTo extends UseNet {
     /* 2019-10-24: Storage download is possible again via new API */
     private static final boolean           supports_storage_download = true;
     private static MultiHosterManagement   mhm                       = new MultiHosterManagement("premium.to");
-    private static final ArrayList<String> hosts_regular             = new ArrayList<String>();
-    private static final ArrayList<String> hosts_storage             = new ArrayList<String>();
+    private static final ArrayList<String> supported_hosts_storage   = new ArrayList<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -122,6 +122,14 @@ public class PremiumTo extends UseNet {
             public String getClearDownloadHistory_label() {
                 return "Delete storage.premium.to file(s) in your account after each successful download?";
             }
+
+            public String getEnableStorageWhiteListing_label() {
+                return "Enable storage.premium.to whitelisting (comma separated)? This will only allow JD to automatically add links to Storage for the services listed below. Leave the list empty to disable all storage hosts.";
+            }
+
+            public String getWhitelistedStorageHosts_label() {
+                return "Enter comma seprarated whitelist of supported storage.premium.to hosts.";
+            }
         }
 
         public static final PremiumDotToConfigInterface.Translation TRANSLATION = new Translation();
@@ -131,6 +139,18 @@ public class PremiumTo extends UseNet {
         boolean isClearDownloadHistory();
 
         void setClearDownloadHistory(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isEnableStorageWhiteListing();
+
+        void setEnableStorageWhiteListing(boolean b);
+
+        @AboutConfig
+        @DefaultStringValue("examplehost1.com,examplehost2.net")
+        String getWhitelistedStorageHosts();
+
+        void setWhitelistedStorageHosts(String whitelist);
     };
 
     @Override
@@ -140,12 +160,12 @@ public class PremiumTo extends UseNet {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "cleardownloadhistory".equals(keyHandler.getKey());
+                return "cleardownloadhistory".equals(keyHandler.getKey()) || "enablestoragewhitelisting".equals(keyHandler.getKey()) || "whitelistedstoragehosts".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"cleardownloadhistory".equals(keyHandler.getKey());
+                return !"cleardownloadhistory".equals(keyHandler.getKey()) && !"enablestoragewhitelisting".equals(keyHandler.getKey()) && !"whitelistedstoragehosts".equals(keyHandler.getKey());
             }
 
             @Override
@@ -271,6 +291,7 @@ public class PremiumTo extends UseNet {
             additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
         }
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
+        ArrayList<String> supported_hosts_storage = new ArrayList<String>();
         try {
             br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -283,30 +304,85 @@ public class PremiumTo extends UseNet {
         } catch (final Throwable e) {
         }
         supported_hosts_regular.add("usenet");
-        hosts_regular.addAll(supported_hosts_regular);
+        supported_hosts_regular.addAll(supported_hosts_regular);
         account.setType(AccountType.PREMIUM);
         ac.setStatus("Premium account" + additionalAccountStatus);
         /* Find storage hosts and add them to array of supported hosts as well */
         br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
         /* We expect a comma separated array */
-        final String hosters_storage[] = br.toString().toLowerCase().split(";|\\s+");
-        final ArrayList<String> supported_hosts_storage = new ArrayList<String>(Arrays.asList(hosters_storage));
-        for (final String supported_host_storage : supported_hosts_storage) {
-            if (!supported_hosts_regular.contains(supported_host_storage)) {
+        final String tmp_supported_hosts_storage[] = br.toString().toLowerCase().split(";|\\s+");
+        for (final String tmp_supported_host_storage : tmp_supported_hosts_storage) {
+            if (!supported_hosts_regular.contains(tmp_supported_host_storage)) {
                 /*
                  * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
                  * downloads!
                  */
                 if (supports_storage_download) {
-                    logger.info("Adding storage host: " + supported_host_storage);
-                    supported_hosts_regular.add(supported_host_storage);
-                    hosts_storage.add(supported_host_storage);
+                    logger.info("Found Storage host: " + tmp_supported_host_storage);
+                    supported_hosts_storage.add(tmp_supported_host_storage);
                 } else {
-                    logger.info("Skipping storage host: " + supported_host_storage);
+                    logger.info("Storage functionality disabled: Skipping Storage host: " + tmp_supported_host_storage);
                 }
             }
         }
+        /*
+         * Now we've found all supported hosts - let's get the REAL list of supported hosts via a workaround (important for user-settings
+         * below).
+         */
+        List<String> real_supported_hosts_regular = null;
+        List<String> real_supported_hosts_storage = null;
+        List<String> user_whitelisted_hosts_storage = new ArrayList<String>();
+        List<String> real_user_whitelisted_hosts_storage = null;
+        List<String> final_real_user_whitelisted_hosts_storage = new ArrayList<String>();
         ac.setMultiHostSupport(this, supported_hosts_regular);
+        real_supported_hosts_regular = ac.getMultiHostSupport();
+        ac.setMultiHostSupport(this, supported_hosts_storage);
+        real_supported_hosts_storage = ac.getMultiHostSupport();
+        final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
+        final boolean onlyAllowWhitelistedStorageHosts = config.isEnableStorageWhiteListing();
+        if (onlyAllowWhitelistedStorageHosts) {
+            logger.info("User enabled whitelisting of Storage hosts");
+            final String whitelistedStorageHostsCommaSeparated = config.getWhitelistedStorageHosts();
+            if (!StringUtils.isEmpty(whitelistedStorageHostsCommaSeparated)) {
+                final String[] whitelistedHosts = whitelistedStorageHostsCommaSeparated.split(",");
+                for (final String whitelistedHost : whitelistedHosts) {
+                    user_whitelisted_hosts_storage.add(whitelistedHost);
+                }
+                // if(whitelistedStorageHostsCommaSeparated.contains(",")) {
+                //
+                // }else {}
+                ac.setMultiHostSupport(this, user_whitelisted_hosts_storage);
+                real_user_whitelisted_hosts_storage = ac.getMultiHostSupport();
+            }
+            /*
+             * Filter out nonsense entries e.g. user enters "examplehost4.com" but real_user_whitelisted_hosts_storage does not even contain
+             * this --> Ignore that. Don't let the user add random hosts.
+             */
+            if (real_user_whitelisted_hosts_storage != null) {
+                for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
+                    if (real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
+                        final_real_user_whitelisted_hosts_storage.add(real_user_whitelisted_storage_host);
+                    }
+                }
+            }
+            /* Clear list of Storage hosts to fill it again with whitelisted entries of user */
+            real_supported_hosts_storage.clear();
+            if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
+                logger.info("User whitelisted nothing or entered invalid values --> Adding no Storage hosts at all");
+            } else {
+                logger.info("User whitelisted the following Storage hosts:");
+                for (final String final_real_user_whitelisted_storage_host : final_real_user_whitelisted_hosts_storage) {
+                    logger.info("WhitelistedStorageHost: " + final_real_user_whitelisted_storage_host);
+                    PremiumTo.supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
+                    real_supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
+                }
+            }
+        }
+        /* Finally, add Storage hosts to regular host array to be able to use them and display the list of supported hosts. */
+        for (final String real_supported_host_storage : real_supported_hosts_storage) {
+            real_supported_hosts_regular.add(real_supported_host_storage);
+        }
+        ac.setMultiHostSupport(this, real_supported_hosts_regular);
         return ac;
     }
 
@@ -380,11 +456,11 @@ public class PremiumTo extends UseNet {
             return;
         } else {
             mhm.runCheck(account, link);
-            synchronized (hosts_storage) {
-                if (hosts_storage.isEmpty()) {
+            synchronized (supported_hosts_storage) {
+                if (supported_hosts_storage.isEmpty()) {
                     logger.info("Storage-host list is empty: Performing full login to refresh it");
                     this.fetchAccountInfo(account);
-                    if (hosts_storage.isEmpty()) {
+                    if (supported_hosts_storage.isEmpty()) {
                         logger.info("Storage-host list is still empty");
                     } else {
                         logger.info("Storage-host list is filled now");
@@ -403,7 +479,7 @@ public class PremiumTo extends UseNet {
              * Multihost first and can then be downloaded by the user) while others can be used via normal download AND storage (e.g.
              * uploaded.net) - we prefer normal download and only use storage download if necessary.
              */
-            final boolean requiresStorageDownload = hosts_storage != null && hosts_storage.contains(link.getHost());
+            final boolean requiresStorageDownload = supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost());
             if (requiresStorageDownload) {
                 /* Storage download */
                 if (!supports_storage_download) {
