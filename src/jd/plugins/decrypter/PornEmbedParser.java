@@ -3,17 +3,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     public PornEmbedParser(PluginWrapper wrapper) {
@@ -127,7 +127,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         };
         // use plugin regex where possible... this means less maintaince required.
-        Plugin plugin = null;
         /* Cleanup/Improve title */
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
@@ -277,13 +276,8 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         /* tnaflix.com, other */
-        plugin = JDUtilities.getPluginForHost("tnaflix.com");
-        externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
+        if (handleExtern("tnaflix.com", processAll, decryptedLinks)) {
+            return decryptedLinks;
         }
         externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
         if (externID != null) {
@@ -647,13 +641,8 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // pornstar
-        plugin = JDUtilities.getPluginForHost("pornstarnetwork.com");
-        externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
+        if (handleExtern("pornstarnetwork.com", processAll, decryptedLinks)) {
+            return decryptedLinks;
         }
         externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?playvid\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
@@ -847,22 +836,12 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // 2017-07-09 bitporno
-        plugin = JDUtilities.getPluginForHost("bitporno.sx");
-        externID = br.getRegex("(?:'|\")(" + plugin.getSupportedLinks() + ")").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
+        if (handleExtern("bitporno.com", processAll, decryptedLinks)) {
+            return decryptedLinks;
         }
         // 2017-07-09 vshare.io
-        plugin = JDUtilities.getPluginForHost("vshare.io");
-        externID = br.getRegex("(?:'|\")(" + plugin.getSupportedLinks() + ")").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
+        if (handleExtern("vshare.io", processAll, decryptedLinks)) {
+            return decryptedLinks;
         }
         // 2018-01-07 hotmovs.com
         externID = br.getRegex("src=\"https?://www.hotmovs.com/embed/(\\d+)\"").getMatch(0);
@@ -1020,17 +999,8 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // 2017-07-09 vshare.io
-        plugin = JDUtilities.getPluginForDecrypt("xxxssl.com");
-        externID = br.getRegex("(?:'|\")(" + plugin.getSupportedLinks() + ")").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink(externID);
-            if (title != null) {
-                dl.setFinalFileName(title + ".mp4");
-            }
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
+        if (handleExtern("xxxssl.com", processAll, decryptedLinks)) {
+            return decryptedLinks;
         }
         // 2018-06-25 rapidvideo.com
         externID = br.getRegex("(?:\\'|\")(https?://(?:www\\.)?rapidvideo.com/e/[A-Z0-9]+/?)(?:\\'|\")").getMatch(0);
@@ -1088,6 +1058,22 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private boolean handleExtern(final String host, final boolean processAll, DecrypterArrayList<DownloadLink> decryptedLinks) {
+        final PluginForHost plugin = JDUtilities.getPluginForHost(host);
+        if (plugin != null) {
+            final String externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
+            if (externID != null) {
+                decryptedLinks.add(externID);
+                if (!processAll) {
+                    return true;
+                }
+            }
+        } else {
+            logger.info("Plugin missing:" + host);
+        }
+        return false;
     }
 
     @Override

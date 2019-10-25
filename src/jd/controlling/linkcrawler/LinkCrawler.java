@@ -129,6 +129,7 @@ public class LinkCrawler {
     public final static String                                       PACKAGE_ALLOW_INHERITANCE   = "ALLOW_INHERITANCE";
     public final static String                                       PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
     public final static String                                       PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
+    public final static String                                       PROPERTY_AUTO_REFERER       = "autoReferer";
     public static final UniqueAlltimeID                              PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
     private boolean                                                  doDuplicateFinderFinalCheck = true;
     private List<LazyCrawlerPlugin>                                  unsortedLazyCrawlerPlugins;
@@ -1124,7 +1125,7 @@ public class LinkCrawler {
         link.setAvailable(true);
         final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
         if (!StringUtils.equals(requestRef, startURL)) {
-            link.setProperty("refURL", requestRef);
+            link.setProperty(PROPERTY_AUTO_REFERER, requestRef);
         }
         if (request instanceof PostRequest) {
             final String postString = ((PostRequest) request).getPostDataString();

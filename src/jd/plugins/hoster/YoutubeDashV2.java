@@ -1594,15 +1594,14 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     /* Skip video if just audio should be downloaded */
                     loadVideo = false;
                 } else {
-                    loadVideo |= !(new File(videoStreamPath).exists() && new File(videoStreamPath).length() > 0);
+                    loadVideo |= (videoStreamPath != null && !(new File(videoStreamPath).isFile() && new File(videoStreamPath).length() > 0));
                 }
                 if (loadVideo) {
                     /* videoStream not finished yet, resume/download it */
                     final Boolean ret = downloadDashStream(downloadLink, data, true);
                     if (ret == null) {
                         return;
-                    }
-                    if (!ret) {
+                    } else if (!ret) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -1612,14 +1611,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     data.setDashAudioFinished(true);
                 }
                 boolean loadAudio = !data.isDashAudioFinished();
-                loadAudio |= !(new File(audioStreamPath).exists() && new File(audioStreamPath).length() > 0);
+                loadAudio |= (audioStreamPath != null && !(new File(audioStreamPath).isFile() && new File(audioStreamPath).length() > 0));
                 if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
                     final Boolean ret = downloadDashStream(downloadLink, data, false);
                     if (ret == null) {
                         return;
-                    }
-                    if (!ret) {
+                    } else if (!ret) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -2069,45 +2067,47 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     public String getAudioStreamPath(DownloadLink link) throws PluginException {
-        String audioFilenName = getDashAudioFileName(link);
+        final String audioFilenName = getDashAudioFileName(link);
         if (StringUtils.isEmpty(audioFilenName)) {
             return null;
+        } else {
+            return new File(link.getDownloadDirectory(), audioFilenName).getAbsolutePath();
         }
-        return new File(link.getDownloadDirectory(), audioFilenName).getAbsolutePath();
     }
 
     public String getDashAudioFileName(DownloadLink link) throws PluginException {
-        AbstractVariant var = getVariant(link);
+        final AbstractVariant var = getVariant(link);
         switch (var.getType()) {
         case DASH_AUDIO:
         case DASH_VIDEO:
-            break;
+            // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
+            return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getBaseVariant().name() + "_" + Hash.getMD5(var._getUniqueId()) + ".dashAudio";
         default:
+            logger.info("getDashAudioFileName for '" + var.getType() + "'?");
             return null;
         }
-        // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
-        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getBaseVariant().name() + "_" + Hash.getMD5(var._getUniqueId()) + ".dashAudio";
     }
 
     public String getVideoStreamPath(DownloadLink link) throws PluginException {
-        String videoFileName = getDashVideoFileName(link);
+        final String videoFileName = getDashVideoFileName(link);
         if (StringUtils.isEmpty(videoFileName)) {
             return null;
+        } else {
+            return new File(link.getDownloadDirectory(), videoFileName).getAbsolutePath();
         }
-        return new File(link.getDownloadDirectory(), videoFileName).getAbsolutePath();
     }
 
     public String getDashVideoFileName(DownloadLink link) throws PluginException {
-        AbstractVariant var = getVariant(link);
+        final AbstractVariant var = getVariant(link);
         switch (var.getType()) {
         case DASH_AUDIO:
         case DASH_VIDEO:
-            break;
+            // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
+            return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getBaseVariant().name() + "_" + Hash.getMD5(var._getUniqueId()) + ".dashVideo";
         default:
+            logger.info("getDashVideoFileName for '" + var.getType() + "'?");
             return null;
         }
-        // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
-        return link.getStringProperty(YoutubeHelper.YT_ID, null) + "_" + var.getBaseVariant().name() + "_" + Hash.getMD5(var._getUniqueId()) + ".dashVideo";
     }
 
     @Override

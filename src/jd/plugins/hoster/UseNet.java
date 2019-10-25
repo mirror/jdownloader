@@ -144,11 +144,10 @@ public class UseNet extends antiDDoSForHost {
 
     @Override
     public String buildContainerDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
-        if (buildForThisPlugin != null && StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
-            /* TODO: finish me */
+        if (isUsenetLink(downloadLink)) {
             return null;
         } else {
-            return null;
+            return super.buildContainerDownloadURL(downloadLink, buildForThisPlugin);
         }
     }
 

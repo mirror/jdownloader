@@ -33,6 +33,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
@@ -110,6 +112,15 @@ public class DirectHTTP extends antiDDoSForHost {
                     link.setProperty(TRY_ALL, Boolean.TRUE);
                 }
                 correctDownloadLink(link);// needed to fixup the returned url
+                CrawledLink currentLink = getCurrentLink();
+                while (currentLink != null) {
+                    if (!StringUtils.equals(currentLink.getURL(), data)) {
+                        link.setProperty(LinkCrawler.PROPERTY_AUTO_REFERER, currentLink.getURL());
+                        break;
+                    } else {
+                        currentLink = currentLink.getSourceLink();
+                    }
+                }
                 /* single link parsing in svn/jd2 */
                 final String url = link.getDownloadURL();
                 final int idx = modifiedData.indexOf(url);
@@ -124,7 +135,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
         } catch (final Throwable e) {
-            this.logger.severe(e.getMessage());
+            this.logger.log(e);
         }
         return ret;
     }
@@ -984,10 +995,15 @@ public class DirectHTTP extends antiDDoSForHost {
             // used in MANY plugins!
             br.getHeaders().put("Referer", downloadLink.getStringProperty("lastRefURL", null));
         }
+        if (downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null) != null) {
+            if (!br.getHeaders().contains("Referer")) {
+                br.getHeaders().put("Referer", downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null));
+            }
+        }
         this.downloadWorkaround(br, downloadLink);
     }
 
-    private void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
+    protected void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
         // we shouldn't potentially over right setCustomHeaders..
         if (br.getHeaders().get("Referer") == null) {
             final String link = getDownloadURL(downloadLink);
