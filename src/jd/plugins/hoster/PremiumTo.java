@@ -52,20 +52,24 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
     private final String                   normalTraffic             = "normalTraffic";
     private final String                   specialTraffic            = "specialTraffic";
     private final String                   storageTraffic            = "storageTraffic";
+    private static final String            type_torrent              = "https?://torrent\\..+";
+    private static final String            type_torrent_file         = "https?://torrent\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
+    private static final String            type_torrent_remote       = "https?://torrent\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
     private static final String            type_storage              = "https?://storage\\..+";
     /* storage.premium.to --> Extract download URLs */
     private static final String            type_storage_file         = "https?://storage\\.[^/]+/file/(.+)";
     /* storage.premium.to --> Extract remote URLs */
-    private static final String            type_storage_remote       = "https?://storage\\.[^/]+/remote/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
+    private static final String            type_storage_remote       = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
     /* 2019-10-23: According to admin, missing https support for API is not an issue */
     private static final String            API_BASE                  = "http://api.premium.to/api/2";
     private static final String            API_BASE_STORAGE          = "https://storage.premium.to/api/2";
+    private static final String            API_BASE_TORRENT          = "https://torrent.premium.to/api/2";
     /* 2019-10-24: Storage download is possible again via new API */
     private static final boolean           supports_storage_download = true;
     private static MultiHosterManagement   mhm                       = new MultiHosterManagement("premium.to");
@@ -87,12 +91,26 @@ public class PremiumTo extends UseNet {
         }
     }
 
+    private boolean requiresAccount(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null && (link.getPluginPatternMatcher().matches(type_torrent_remote) || link.getPluginPatternMatcher().matches(type_storage_remote))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private String getFID(final DownloadLink link) {
         if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(type_storage)) {
             if (link.getPluginPatternMatcher().matches(type_storage_file)) {
                 return new Regex(link.getPluginPatternMatcher(), type_storage_file).getMatch(0);
             } else {
                 return new Regex(link.getPluginPatternMatcher(), type_storage_remote).getMatch(0);
+            }
+        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(type_torrent)) {
+            if (link.getPluginPatternMatcher().matches(type_torrent_file)) {
+                return new Regex(link.getPluginPatternMatcher(), type_torrent_file).getMatch(0);
+            } else {
+                return new Regex(link.getPluginPatternMatcher(), type_torrent_remote).getMatch(0);
             }
         } else {
             return null;
@@ -314,8 +332,8 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDirectDownload(link, null);
     }
 
     @Override
@@ -329,25 +347,29 @@ public class PremiumTo extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            this.requestFileInformation(link);
-            final String dllink = getDirectURL(link, account);
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -10);
-            if (dl.getConnection().getResponseCode() == 403) {
-                /*
-                 * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
-                 * via JDownloader.
-                 */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
-            }
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
-                br.followConnection();
-                this.handleErrorsAPI(account);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            }
-            dl.startDownload();
+            handleDirectDownload(link, account);
         }
+    }
+
+    private void handleDirectDownload(final DownloadLink link, final Account account) throws Exception {
+        this.requestFileInformation(link);
+        final String dllink = getDirectURL(link, account);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -10);
+        if (dl.getConnection().getResponseCode() == 403) {
+            /*
+             * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link via
+             * JDownloader.
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+        }
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
+            br.followConnection();
+            this.handleErrorsAPI(account);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     /** no override to keep plugin compatible to old stable */
@@ -606,6 +628,9 @@ public class PremiumTo extends UseNet {
                 // link.getLinkStatus().setStatusText("Only downlodable via account!");
                 // return AvailableStatus.UNCHECKABLE;
                 // }
+                if (requiresAccount(link)) {
+                    return AvailableStatus.UNCHECKABLE;
+                }
                 return getDirecturlStatus(link, null);
             } else {
                 for (final Account acc : accs) {
@@ -632,6 +657,7 @@ public class PremiumTo extends UseNet {
             }
             if (con.getContentType().contains("html") || con.getContentType().contains("application/json")) {
                 br.followConnection();
+                /* We expect an API error */
                 this.handleErrorsAPI(account);
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -653,6 +679,7 @@ public class PremiumTo extends UseNet {
     private String getDirectURL(final DownloadLink link, final Account account) {
         final String dllink;
         if (link.getPluginPatternMatcher().matches(type_storage_file)) {
+            /* API required */
             if (account == null) {
                 /* This linktype can only be generated with Account */
                 return null;
@@ -661,7 +688,26 @@ public class PremiumTo extends UseNet {
             final String userid = this.getUserID(account);
             final String fileid = new Regex(link.getPluginPatternMatcher(), type_storage_file).getMatch(0);
             dllink = API_BASE_STORAGE + "/getstoragefile.php?userid=" + userid + "&apikey=" + apikey + "&file=" + fileid;
+        } else if (link.getPluginPatternMatcher().matches(type_torrent_file)) {
+            /* API required */
+            if (account == null) {
+                /* This linktype can only be generated with Account */
+                return null;
+            }
+            final String apikey = this.getAPIKey(account);
+            final String userid = this.getUserID(account);
+            final String[] ids = new Regex(link.getPluginPatternMatcher(), type_torrent_file).getMatch(0).split("/");
+            final String torrentID = ids[0];
+            final String fileID = ids[1];
+            if (link.getPluginPatternMatcher().matches("https?://torrent\\.[^/]+/z/.+")) {
+                /* zip file (one file which contains all files of one particular .torrent download) */
+                dllink = API_BASE_TORRENT + "/getzip.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
+            } else {
+                /* Other filetype */
+                dllink = API_BASE_TORRENT + "/getfile.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
+            }
         } else {
+            /* Remote-Directurl (Torrent & Storage) - no API and no account required */
             dllink = link.getPluginPatternMatcher();
         }
         return dllink;
@@ -679,8 +725,11 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account != null) {
+            return true;
+        } else if (!requiresAccount(downloadLink)) {
+            /* Some directurls are downloadable without account */
             return true;
         }
         return false;
