@@ -825,7 +825,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         String numberOfEntrys = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
         if (numberOfEntrys == null) {
-            numberOfEntrys = br.getRegex("count: (\\d+),").getMatch(0);
+            numberOfEntrys = br.getRegex("count\\s*:\\s*(\\d+),").getMatch(0);
             if (numberOfEntrys == null) {
                 numberOfEntrys = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
                 if (numberOfEntrys == null) {
@@ -836,14 +836,31 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
         }
-        if (numberOfEntrys == null) {
-            throw new DecrypterException("Can not find 'numberOfEntries'");
-        }
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
-        // fp.setProperty("CLEANUP_NAME", false);
-        final String[] regexesPage1 = { "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)'", "0" };
-        decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&al_ad=0&part=1&offset=");
+        /* 2019-10-25: If not found, stop after the first page! */
+        // if (numberOfEntrys == null) {
+        // throw new DecrypterException("Can not find 'numberOfEntries'");
+        // }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?(\\d+_)?\\d+)$").getMatch(0));
+        fp.setProperty("CLEANUP_NAME", false);
+        int page = 0;
+        int offset = 0;
+        int addedLinks = 0;
+        do {
+            addedLinks = 0;
+            page++;
+            if (page > 1) {
+                this.br.postPage(br.getURL(), "al=1&al_ad=0&part=1&offset=" + offset);
+            }
+            final int linksnumBefore = decryptedLinks.size();
+            websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.vkwall_comment_store_picture_directurls);
+            final int linksnumAfter = decryptedLinks.size();
+            addedLinks = linksnumAfter - linksnumBefore;
+            offset += addedLinks;
+        } while (addedLinks > 40 && numberOfEntrys != null && !this.isAbort());
+        // final String[] regexesPage1 = { "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)'", "0" };
+        // decryptMultiplePagesPhotos(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL,
+        // "al=1&al_ad=0&part=1&offset=");
     }
 
     private DownloadLink getSinglePhotoDownloadLink(final String photoID, final String picture_preview_json) throws IOException {
@@ -884,6 +901,8 @@ public class VKontakteRu extends PluginForDecrypt {
             // getPage(br,parameter);
         }
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, PATTERN_PHOTO_ALBUMS).getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(albumID);
         String numberOfEntriesStr = br.getRegex("(?:\\||&#8211;|-) (\\d+) albums?</title>").getMatch(0);
         // Language independent
         if (numberOfEntriesStr == null) {
@@ -936,6 +955,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final DownloadLink dl = getSinglePhotoDownloadLink(photoID);
                     dl.setContentUrl(single_photo_content_url);
                     dl.setProperty("albumid", albumID);
+                    dl._setFilePackage(fp);
                     this.decryptedLinks.add(dl);
                     addedLinks++;
                     if (decryptedData.contains(photoID)) {
@@ -948,7 +968,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
                 correctedBR = br.toString().replace("\\", "");
                 final int linksnumBefore = decryptedLinks.size();
-                websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, null, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.vkwall_comment_store_picture_directurls);
+                websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, correctedBR, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.vkwall_comment_store_picture_directurls);
                 final int linksnumAfter = decryptedLinks.size();
                 addedLinks = linksnumAfter - linksnumBefore;
             }
