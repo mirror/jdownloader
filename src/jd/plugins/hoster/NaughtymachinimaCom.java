@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -26,6 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/\\d+(?:/[a-z0-9\\-_]+)?" })
 public class NaughtymachinimaCom extends PluginForHost {
@@ -80,8 +83,23 @@ public class NaughtymachinimaCom extends PluginForHost {
         if (filename == null) {
             filename = url_name;
         }
-        /* E.g. SD: http://www.naughtymachinima.com/media/videos/iphone/<fid>.mp4 */
-        dllink = "/media/videos/hd/" + fid + ".mp4";
+        final String videos[] = br.getRegex("src\\s*=\\s*\"([^\"]+/media/videos/[^\"]+" + fid + "[^\"]*\\.mp4)").getColumn(0);
+        if (videos != null) {
+            int size = -1;
+            for (final String video : videos) {
+                String resolution = new Regex(video, "_(\\d+)p\\.mp4").getMatch(0);
+                if (resolution == null && StringUtils.containsIgnoreCase(video, "/hd/")) {
+                    resolution = "720";
+                }
+                if (resolution == null && StringUtils.containsIgnoreCase(video, "/iphone/")) {
+                    resolution = "360";
+                }
+                if (size == -1 || resolution == null || Integer.parseInt(resolution) > size) {
+                    size = resolution != null ? Integer.parseInt(resolution) : -1;
+                    dllink = video;
+                }
+            }
+        }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -94,22 +112,23 @@ public class NaughtymachinimaCom extends PluginForHost {
         }
         if (dllink != null) {
             link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
-                } else {
-                    server_issues = true;
-                }
-            } finally {
+            if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                final Browser br2 = br.cloneBrowser();
+                // In case the link redirects to the finallink
+                br2.setFollowRedirects(true);
+                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
+                        link.setDownloadSize(con.getLongContentLength());
+                        link.setProperty("directlink", dllink);
+                    } else {
+                        server_issues = true;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         } else {
