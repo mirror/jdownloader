@@ -348,15 +348,12 @@ public class PremiumTo extends UseNet {
                 for (final String whitelistedHost : whitelistedHosts) {
                     user_whitelisted_hosts_storage.add(whitelistedHost);
                 }
-                // if(whitelistedStorageHostsCommaSeparated.contains(",")) {
-                //
-                // }else {}
                 ac.setMultiHostSupport(this, user_whitelisted_hosts_storage);
                 real_user_whitelisted_hosts_storage = ac.getMultiHostSupport();
             }
             /*
-             * Filter out nonsense entries e.g. user enters "examplehost4.com" but real_user_whitelisted_hosts_storage does not even contain
-             * this --> Ignore that. Don't let the user add random hosts.
+             * Only allow verified entries e.g. user enters "examplehost4.com" but real_supported_hosts_storage does not even contain this
+             * --> Ignore that. Don't let the user add random hosts which the multihost does not even support!
              */
             if (real_user_whitelisted_hosts_storage != null) {
                 for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
