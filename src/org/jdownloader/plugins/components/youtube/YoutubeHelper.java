@@ -1899,9 +1899,9 @@ public class YoutubeHelper {
                         encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
                         final String signature = this.descrambleSignature(encrypted_sig);
                         if (query.containsKey("sp")) {
-                            url = queryURL + "&" + query.get("sp") + "=" + signature;
+                            url = queryURL + "&" + query.get("sp") + "=" + Encoding.urlEncode(signature);
                         } else {
-                            url = queryURL + "&signature=" + signature;
+                            url = queryURL + "&signature=" + Encoding.urlEncode(signature);
                         }
                     }
                 } catch (PluginException e) {
@@ -1914,6 +1914,11 @@ public class YoutubeHelper {
             }
             if (StringUtils.isEmpty(url)) {
                 logger.info("URL?:" + JSonStorage.toString(entry));
+                return null;
+            }
+            final String type = (String) entry.get("type");
+            if (StringUtils.equalsIgnoreCase("FORMAT_STREAM_TYPE_OTF", type)) {
+                logger.info("UNSUPPORTED OTF:" + JSonStorage.toString(entry));
                 return null;
             }
             final Long width = JavaScriptEngineFactory.toLong(entry.get("width"), -1);
@@ -2103,10 +2108,14 @@ public class YoutubeHelper {
             encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
             final String signature = this.descrambleSignature(encrypted_sig);
             if (query.containsKey("sp")) {
-                url = url + "&" + query.get("sp") + "=" + signature;
+                url = url + "&" + query.get("sp") + "=" + Encoding.urlEncode(signature);
             } else {
-                url = url + "&signature=" + signature;
+                url = url + "&signature=" + Encoding.urlEncode(signature);
             }
+        }
+        if (StringUtils.equals(query.get("stream_type"), "3")) {
+            logger.info("UNSUPPORTED OTF:" + query);
+            return;
         }
         String size = query.get("size");
         int width = -1;
@@ -2630,6 +2639,10 @@ public class YoutubeHelper {
             vid.error = "RTMP(E) Stream not supported";
             return null;
         }
+        if (StringUtils.equals(query.get("stream_type"), "3")) {
+            logger.info("UNSUPPORTED OTF:" + query);
+            return null;
+        }
         String url = query.getDecoded("url");
         if (url == null) {
             String fallback_host = query.getDecoded("fallback_host");
@@ -2653,9 +2666,9 @@ public class YoutubeHelper {
             encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
             final String signature = this.descrambleSignature(encrypted_sig);
             if (query.containsKey("sp")) {
-                url = url + "&" + query.get("sp") + "=" + signature;
+                url = url + "&" + query.get("sp") + "=" + Encoding.urlEncode(signature);
             } else {
-                url = url + "&signature=" + signature;
+                url = url + "&signature=" + Encoding.urlEncode(signature);
             }
         }
         int bitrate = -1;

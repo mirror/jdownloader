@@ -385,7 +385,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     finallink = br2.getRedirectLocation();
                 }
             }
-            if (finallink == null || finallink.contains("filecrypt.cc/")) {
+            if (finallink == null || finallink.matches(".*filecrypt\\.(cc|co)/.*")) {
                 // commented these out so that unhandled ads or what ever don't kill failover.
                 // logger.warning("Decrypter broken for link: " + parameter);
                 // return null;
