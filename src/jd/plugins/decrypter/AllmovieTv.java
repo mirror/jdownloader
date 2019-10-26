@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allmovie.tv" }, urls = { "https?://(?:www\\.)?allmovie\\.(?:tv|pro)/video/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class AllmovieTv extends PluginForDecrypt {
-
     public AllmovieTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,17 +40,15 @@ public class AllmovieTv extends PluginForDecrypt {
         final String url_filename = urlregex.getMatch(0);
         final String videoid = urlregex.getMatch(1);
         final String currenthost = Browser.getHost(parameter);
-
-        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.br.getHeaders().put("Referer", parameter);
-        this.br.getPage("http://" + currenthost + "/video/show_player/" + videoid + "?autopay=1&skip_ads=1");
-
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Referer", parameter);
+        br.setFollowRedirects(true);
+        br.getPage("http://" + currenthost + "/video/show_player/" + videoid + "?autopay=1&skip_ads=1");
         // br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         final String iframe_src = this.br.getRegex("<iframe.*?</iframe>").getMatch(-1);
         if (iframe_src != null) {
             final String[] links = HTMLParser.getHttpLinks(iframe_src, "");
@@ -72,7 +68,6 @@ public class AllmovieTv extends PluginForDecrypt {
             dl.setFinalFileName(url_filename + ".mp4");
             decryptedLinks.add(dl);
         }
-
         return decryptedLinks;
     }
 }
