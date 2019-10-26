@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+|\\?xlink=.+)" })
 public class NewAsianTv extends PluginForDecrypt {
     public NewAsianTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +55,7 @@ public class NewAsianTv extends PluginForDecrypt {
         if (new Regex(parameter, "/(?:watch|files)/.+\\.html?").matches()) {
             links = br.getRegex("<a[^>]*href=\"([^\"]+)\" episode-type=\"watch\"[^>]*>").getColumn(0);
             String episodeJSON = br.getRegex("episodeJson\\s*=\\s*\'([^\']+)\'\\;").getMatch(0);
-            if (episodeJSON != null && episodeJSON.length() > 0) {
+            if (StringUtils.isNotEmpty(episodeJSON)) {
                 final Object[] jsonArray = JSonStorage.restoreFromString(episodeJSON, TypeRef.OBJECT_ARRAY);
                 for (Object jsonObject : jsonArray) {
                     final Browser br2 = br.cloneBrowser();
@@ -67,12 +67,12 @@ public class NewAsianTv extends PluginForDecrypt {
                     String filmID = br.getRegex("var filmId=\"(\\w+)\";").getMatch(0);
                     String currentEp = br.getRegex("var currentEp=\"(\\w+)\";").getMatch(0);
                     if (StringUtils.equalsIgnoreCase(episodeID, currentEp)) {
-                        if (subUrl != null && subUrl.length() > 0) {
+                        if (StringUtils.isNotEmpty(subUrl)) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(subUrl)));
                         }
                         br2.postPage(apiUrl, "url=" + url + "&subUrl=" + subUrl + "&eid=" + episodeID + "&filmID=" + filmID);
                         String cryptedData = br2.getRegex("(decodeLink\\(\\s*\"[^\"]+\"\\s*\\,\\s*[^\\)]+\\s*\\))").getMatch(0);
-                        if (cryptedData != null && cryptedData.length() > 0) {
+                        if (StringUtils.isNotEmpty(cryptedData)) {
                             final String jsExternal1 = br2.getPage("https://newasiantv.tv/theme/js/main.js?v=02042018");
                             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                             final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -86,10 +86,10 @@ public class NewAsianTv extends PluginForDecrypt {
                             }
                         }
                         String iframeLink = br2.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatch(0);
-                        if (iframeLink != null && iframeLink.length() > 0) {
+                        if (StringUtils.isNotEmpty(iframeLink)) {
                             iframeLink = Encoding.htmlDecode(iframeLink);
                             if (iframeLink.startsWith("//")) {
-                                iframeLink = iframeLink.replace("//", "");
+                                iframeLink = "https:" + iframeLink;
                             }
                             decryptedLinks.add(createDownloadlink(iframeLink));
                         }
@@ -98,8 +98,17 @@ public class NewAsianTv extends PluginForDecrypt {
             }
         } else if (new Regex(parameter, "/embed\\.php\\?.+").matches()) {
             String encodedURL = br.getRegex("atob\\(\"([^\"]+)\"").getMatch(0);
-            if (encodedURL != null && encodedURL.length() > 0) {
+            if (StringUtils.isNotEmpty(encodedURL)) {
                 links = new String[] { Encoding.Base64Decode(encodedURL) };
+            }
+        } else if (br.containsHTML("<iframe")) {
+            String iframeLink = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatch(0);
+            if (StringUtils.isNotEmpty(iframeLink)) {
+                iframeLink = Encoding.htmlDecode(iframeLink);
+                if (iframeLink.startsWith("//")) {
+                    iframeLink = "https:" + iframeLink;
+                }
+                links = new String[] { iframeLink };
             }
         }
         if (links != null && links.length > 0) {
@@ -107,7 +116,7 @@ public class NewAsianTv extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
             }
         }
-        if (fpName != null) {
+        if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
