@@ -113,6 +113,11 @@ public class NewAsianTv extends PluginForDecrypt {
         }
         if (links != null && links.length > 0) {
             for (String link : links) {
+                if (link.startsWith("//")) {
+                    link = "https:" + link;
+                } else if (link.startsWith("/")) {
+                    link = br.getURL(link).toString();
+                }
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
             }
         }
