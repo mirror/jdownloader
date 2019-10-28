@@ -57,7 +57,6 @@ import jd.plugins.download.DownloadLinkDownloadable;
 public class PremiumTo extends UseNet {
     private final String                   normalTraffic             = "normalTraffic";
     private final String                   specialTraffic            = "specialTraffic";
-    private final String                   storageTraffic            = "storageTraffic";
     private static final String            type_torrent              = "https?://torrent\\..+";
     private static final String            type_torrent_file         = "https?://torrent\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
     private static final String            type_torrent_remote       = "https?://torrent\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
@@ -231,7 +230,11 @@ public class PremiumTo extends UseNet {
                 final boolean login_via_username_and_password_possible = true;
                 final boolean logindata_looks_like_api_logindata = new Regex(account.getUser(), Pattern.compile("[a-z0-9]+", Pattern.CASE_INSENSITIVE)).matches() && new Regex(account.getPass(), Pattern.compile("[a-z0-9]{32}", Pattern.CASE_INSENSITIVE)).matches();
                 if (!login_via_username_and_password_possible && !logindata_looks_like_api_logindata) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter API userid as username and API key as password, see premium.to website --> Account tab", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (System.getProperty("user.language").equals("de")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername/Passwort!\r\nBitte verwende die extra für JDownloader zur Verfügung gestellten API Zugangsdaten.\r\nDiese findest du hier:\r\npremium.to Webseite --> Account Tab\r\n--> 'JDownloader username / API userid' UND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password!\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab\r\n--> 'JDownloader username / API userid' AND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 logger.info("Logging in with username + password");
                 br.getPage(API_BASE + "/getapicredentials.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
@@ -245,7 +248,11 @@ public class PremiumTo extends UseNet {
                     apikey = account.getPass();
                 }
                 if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (System.getProperty("user.language").equals("de")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername/Passwort!\r\nBitte verwende die extra für JDownloader zur Verfügung gestellten API Zugangsdaten.\r\nDiese findest du hier:\r\npremium.to Webseite --> Account Tab\r\n--> 'JDownloader username / API userid' UND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password!\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab\r\n--> 'JDownloader username / API userid' AND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 /* Save API logindata */
                 account.setProperty(PROPERTY_APIKEY, apikey);
@@ -274,7 +281,6 @@ public class PremiumTo extends UseNet {
             br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
             this.handleErrorsAPI(account);
         }
-        /* NormalTraffic:SpecialTraffic:TorrentTraffic(StorageTraffic) */
         String additionalAccountStatus = "";
         /* Normal traffic */
         final long nT = Long.parseLong(PluginJSonUtils.getJson(br, "traffic"));
@@ -286,7 +292,6 @@ public class PremiumTo extends UseNet {
         // set both so we can check in canHandle.
         account.setProperty(normalTraffic, nT + stT);
         account.setProperty(specialTraffic, spT);
-        account.setProperty(storageTraffic, stT);
         if (nT > 0 && spT > 0) {
             additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
         }
@@ -306,7 +311,6 @@ public class PremiumTo extends UseNet {
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
         account.setType(AccountType.PREMIUM);
-        ac.setStatus("Premium account" + additionalAccountStatus);
         /* Find storage hosts and add them to array of supported hosts as well */
         br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
         /* We expect a comma separated array */
@@ -366,12 +370,20 @@ public class PremiumTo extends UseNet {
             real_supported_hosts_storage.clear();
             if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
                 logger.info("User whitelisted nothing or entered invalid values --> Adding no Storage hosts at all");
+                additionalAccountStatus += " | Whitelisted Storage hosts: None [All disabled]";
             } else {
                 logger.info("User whitelisted the following Storage hosts:");
+                additionalAccountStatus += " | Whitelisted Storage hosts: ";
+                int counter = 0;
                 for (final String final_real_user_whitelisted_storage_host : final_real_user_whitelisted_hosts_storage) {
                     logger.info("WhitelistedStorageHost: " + final_real_user_whitelisted_storage_host);
                     PremiumTo.supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
                     real_supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
+                    additionalAccountStatus += final_real_user_whitelisted_storage_host;
+                    if (counter < final_real_user_whitelisted_hosts_storage.size() - 1) {
+                        additionalAccountStatus += ", ";
+                    }
+                    counter++;
                 }
             }
         }
@@ -380,6 +392,7 @@ public class PremiumTo extends UseNet {
             real_supported_hosts_regular.add(real_supported_host_storage);
         }
         ac.setMultiHostSupport(this, real_supported_hosts_regular);
+        ac.setStatus("Premium account" + additionalAccountStatus);
         return ac;
     }
 
