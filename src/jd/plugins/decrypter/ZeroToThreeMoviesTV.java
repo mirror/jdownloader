@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "0123moviestv.com" }, urls = { "https?://(www[0-9]*\\.)?0123moviestv\\.com/watch.+/.+" })
 public class ZeroToThreeMoviesTV extends antiDDoSForDecrypt {
@@ -59,9 +59,13 @@ public class ZeroToThreeMoviesTV extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private void appendListToDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, Iterable<String> list) {
+    private void appendListToDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, Iterable<String> list) throws IOException {
         if (list != null) {
             for (String listItem : list) {
+                listItem = listItem.trim().replaceAll("^//", "https://");
+                if (listItem.startsWith("/")) {
+                    listItem = this.br.getURL(listItem).toString();
+                }
                 decryptedLinks.add(createDownloadlink(listItem));
             }
         }
