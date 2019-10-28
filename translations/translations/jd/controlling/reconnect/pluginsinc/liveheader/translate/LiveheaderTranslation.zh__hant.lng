@@ -54,6 +54,7 @@ SearchScriptAction_tt=在我們龐大的社群指令碼資料庫中搜尋
 SearchScriptDialog=重新連線資料庫指令碼
 avg_time=重新連線的平均持續時間
 confirm_script=JDownloader 將測試下面的重新連線指令碼。\n如果您不想執行此指令碼，請按一下 [略過] 按鈕。
+confirm_success_message=您的 IP 已變更。對於 JDownloader 而言看起來一切正常。這 100％ 是自動完成的，還是您必須手動執行任何操作 (例如重設路由器或類似的操作)？\n如果一切正常，除非您還在等待中，否則您只需按下 [是] 即可。
 confirm_success_title=沒有運作嗎？
 confirm_upload_script=JDownloader 將要上傳下面的重新連線指令碼。\n請檢查所有的請求和參數，如果他們包含並洩露了您不想分享的個人資料時取消繼續。
 details=詳細資訊
