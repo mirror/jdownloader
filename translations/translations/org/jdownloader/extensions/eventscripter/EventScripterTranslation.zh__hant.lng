@@ -43,5 +43,6 @@ securityLoading=您正在試圖從 %s1 載入並執行 JavaScript。請記住，
 securityLoading_title=安全警告！
 showMessageDialog_title=%s1@%s2 的警報訊息
 sure_delete_entries=您要刪除 %s1 個指令碼嗎？
+synchronous=同步執行的腳本
 syntax_error=JavaScript 語法錯誤
 title=事件指令碼
