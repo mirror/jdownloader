@@ -1,4 +1,5 @@
 AutoDetectAction_run_failed=JDownloader 找不到可以使用的 LiveHeader 重新連線指令碼。\n\n請確保您輸入的資訊正確，並且您具有動態 IP 連線。
+BadQueryException=搜尋錯誤。\n確保搜尋模式的長度不超過 1 個或 2 個字元。
 DataCompareDialog_DataCompareDialog_=比較路由器資訊
 DataCompareDialog_layoutDialogContent__desc=請檢查以下資訊，並盡可能準確的填寫空白欄位。
 DataCompareDialog_layoutDialogContent_firmware=韌體/版本
