@@ -154,6 +154,9 @@ public class GoogleDrive extends PluginForDecrypt {
                 }
             }
         }
+        if (!StringUtils.isEmpty(currentFolderTitle)) {
+            currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim());
+        }
         if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
             /* Begin subfolder structure if not given already */
             subfolder = currentFolderTitle;
@@ -276,12 +279,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     }
                 }
             } while (key != null && addedlinks >= 50 && !isAbort());
-            if (currentFolderTitle != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(currentFolderTitle.trim()));
-                fp.addLinks(decryptedLinks);
-            }
-            return decryptedLinks;
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
@@ -289,7 +286,7 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         if (currentFolderTitle != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(currentFolderTitle.trim()));
+            fp.setName(currentFolderTitle);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
