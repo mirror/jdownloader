@@ -7,17 +7,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -29,6 +23,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -233,10 +234,11 @@ public class ProLeechLink extends antiDDoSForHost {
             logger.info("Trying to re-use old generated downloadlink");
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedDownloadURL, true, 0);
-                if (!dl.getConnection().isContentDisposition()) {
+                final boolean isOkay = isDownloadConnection(dl.getConnection());
+                if (!isOkay) {
                     logger.info("Saved downloadurl did not work");
                     try {
-                        br.followConnection();
+                        br.followConnection(true);
                     } catch (final IOException e) {
                         logger.log(e);
                     }
@@ -299,10 +301,10 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
-            final boolean isOkay = dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application/force-download"));
+            final boolean isOkay = isDownloadConnection(dl.getConnection());
             if (!isOkay) {
                 try {
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
@@ -311,6 +313,11 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         link.setProperty(getHost(), downloadURL);
         dl.startDownload();
+    }
+
+    private boolean isDownloadConnection(URLConnectionAdapter con) throws IOException {
+        final boolean ret = con.isOK() && (con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application/force-download"));
+        return ret;
     }
 
     @Override
@@ -322,10 +329,10 @@ public class ProLeechLink extends antiDDoSForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         login(account, null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        final boolean isOkay = dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application/force-download"));
+        final boolean isOkay = isDownloadConnection(dl.getConnection());
         if (!isOkay) {
             try {
-                br.followConnection();
+                br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }

@@ -185,10 +185,14 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             String sessionid = getAPIZeusCloudManagerSession(account);
             try {
                 if (!StringUtils.isEmpty(sessionid)) {
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateSession) {
+                    final long timeStamp = account.getCookiesTimeStamp("");
+                    final long age = System.currentTimeMillis() - timeStamp;
+                    if (age <= (60 * 60 * 1000l) && !validateSession) {
                         /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login-sessionid without checking as it should still be fresh");
+                        logger.info("Trust login-sessionid without checking as it should still be fresh: age=" + TimeFormatter.formatMilliSeconds(age, 0));
                         return false;
+                    } else {
+                        logger.info("Verify login-sessionid: age=" + TimeFormatter.formatMilliSeconds(age, 0));
                     }
                     /* First check if old session is still valid */
                     getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
@@ -215,7 +219,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                         validatedSession = true;
                     }
                 }
-                account.setProperty(PROPERTY_SESSIONID, sessionid);
+                // reduce refresh to avoid false *hack activity*
+                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
                 return validatedSession;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -228,7 +233,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  * cookies/sessionID is valid and we can save it for eventual later usage via website.
                  */
                 if (validatedSession) {
-                    convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
+                    logger.info("convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(" + sessionid + "):" + convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid));
                 }
             }
         }
@@ -281,7 +286,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         if (!StringUtils.isEmpty(username)) {
             account.setProperty(PROPERTY_USERNAME, username);
         }
-        convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid);
+        logger.info("convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(" + sessionid + "):" + convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(account, sessionid));
         return ai;
     }
 
@@ -393,25 +398,34 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      */
     protected boolean convertSpecialAPICookiesToWebsiteCookiesAndSaveThem(final Account account, final String sessionid) {
         if (account != null && StringUtils.isNotEmpty(sessionid)) {
-            final Cookies cookies = new Cookies();
-            cookies.add(new Cookie(account.getHoster(), "xfss", sessionid));
-            final String email = account.getStringProperty(PROPERTY_EMAIL, null);
-            final String username = account.getStringProperty(PROPERTY_USERNAME, null);
-            if (!StringUtils.isEmpty(email)) {
-                /* 2019-09-12: E.g. required for filejoker.net */
-                cookies.add(new Cookie(account.getHoster(), "email", email));
+            synchronized (account) {
+                final Cookies cookies = new Cookies();
+                if (br != null) {
+                    cookies.add(br.getCookies(account.getHoster()));
+                }
+                cookies.remove("xfss");
+                cookies.add(new Cookie(account.getHoster(), "xfss", sessionid));
+                final String email = account.getStringProperty(PROPERTY_EMAIL, null);
+                final String username = account.getStringProperty(PROPERTY_USERNAME, null);
+                if (!StringUtils.isEmpty(email)) {
+                    /* 2019-09-12: E.g. required for filejoker.net */
+                    cookies.remove("email");
+                    cookies.add(new Cookie(account.getHoster(), "email", email));
+                }
+                if (!StringUtils.isEmpty(username)) {
+                    /* 2019-09-12: E.g. required for novafile.com */
+                    cookies.remove("login");
+                    cookies.add(new Cookie(account.getHoster(), "login", username));
+                }
+                /*
+                 * 2019-09-12: E.g.filejoker.net website needs xfss and email cookies, novafile.com needs xfss and login cookies. Both
+                 * websites will also work when xfss, email AND login cookies are present all together!
+                 */
+                account.saveCookies(cookies, "");
+                account.saveCookies(cookies, PROPERTY_COOKIES_API);
+                account.setProperty(PROPERTY_SESSIONID, sessionid);
+                return true;
             }
-            if (!StringUtils.isEmpty(username)) {
-                /* 2019-09-12: E.g. required for novafile.com */
-                cookies.add(new Cookie(account.getHoster(), "login", username));
-            }
-            /*
-             * 2019-09-12: E.g.filejoker.net website needs xfss and email cookies, novafile.com needs xfss and login cookies. Both websites
-             * will also work when xfss, email AND login cookies are present all together!
-             */
-            account.saveCookies(cookies, "");
-            account.saveCookies(cookies, PROPERTY_COOKIES_API);
-            return true;
         } else {
             return false;
         }
@@ -547,10 +561,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  * then! This can be triggered by messing with their website, frequently logging-in (creating new login-sessions) and trying
                  * again with new Cloudflare-cookies frequently.
                  */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Try again with new IP: API error '" + error + "'", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("Try again later: API error '" + error + "'", 15 * 60 * 1000l);
             } else {
                 /* This should not happen. If it does, improve errorhandling! */
-                logger.warning("Unknown API error");
+                logger.warning("Unknown API error:" + error);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown API error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         } else if (!StringUtils.isEmpty(message)) {
@@ -569,7 +583,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     private final String getAPIZeusCloudManagerSession(final Account account) {
         synchronized (account) {
-            String api_sessionid = account.getStringProperty(PROPERTY_SESSIONID, null);
+            final String api_sessionid = account.getStringProperty(PROPERTY_SESSIONID, null);
             /* 2019-09-12: Indeed website xfss cookie will also work as API sessionid but let's not use that for now! */
             // if (api_sessionid == null) {
             // final Cookies cookies = account.loadCookies("");
@@ -599,8 +613,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             final Cookie sessionid_api = cookies_api != null ? cookies_api.get("xfss", Cookies.NOTDELETEDPATTERN) : null;
             if (sessionid_website != null && sessionid_api != null && StringUtils.equals(sessionid_website.getValue(), sessionid_api.getValue())) {
                 /* Delete website cookies only if sessionid == API sessionid */
+                logger.info("clearNormalCookies:sessionid=" + sessionid_website.getValue());
                 account.clearCookies("");
             }
+            logger.info("clearAPICookies");
             /* Delete API cookies */
             account.clearCookies(PROPERTY_COOKIES_API);
             /* Delete API session */
