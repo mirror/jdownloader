@@ -74,6 +74,11 @@ public class TwitchTv extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(DownloadLink link) {
+        return super.getLinkID(link);
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
@@ -140,6 +145,12 @@ public class TwitchTv extends PluginForHost {
                         }
                         if (s.getCodec_name() != null) {
                             downloadLink.setProperty("videoCodec", s.getCodec_name());
+                        }
+                        if (s.getR_frame_rate() != null && !downloadLink.hasProperty("fps")) {
+                            final String fps = new Regex(s.getR_frame_rate(), "(\\d+)/1").getMatch(0);
+                            if (fps != null) {
+                                downloadLink.setProperty("fps", Integer.parseInt(fps));
+                            }
                         }
                     } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
                         if (s.getBit_rate() != null) {
@@ -504,6 +515,7 @@ public class TwitchTv extends PluginForHost {
         final int videoQuality = downloadLink.getIntegerProperty("videoQuality", -1);
         final String videoCodec = downloadLink.getStringProperty("videoCodec", "");
         final int audioBitrate = downloadLink.getIntegerProperty("audioBitrate", -1);
+        final int fps = downloadLink.getIntegerProperty("fps", -1);
         final String audioCodec = downloadLink.getStringProperty("audioCodec", "");
         final String extension = downloadLink.getStringProperty("extension", ".flv");
         String formattedDate = null;
@@ -543,6 +555,7 @@ public class TwitchTv extends PluginForHost {
         }
         formattedFilename = formattedFilename.replace("*videoQuality*", videoQualityString);
         formattedFilename = formattedFilename.replace("*videoCodec*", videoCodec);
+        formattedFilename = formattedFilename.replace("*fps*", fps == -1 ? "" : String.valueOf(fps));
         formattedFilename = formattedFilename.replace("*audioBitrate*", audioBitrate == -1 ? "" : audioBitrate + "kbits");
         formattedFilename = formattedFilename.replace("*audioCodec*", audioCodec);
         if (formattedDate != null) {
@@ -661,8 +674,8 @@ public class TwitchTv extends PluginForHost {
         return "JDownloader's twitch.tv plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilenameWeb = "*partnumber**videoname*_*quality**ext*";
-    private final static String defaultCustomFilenameHls = "*partnumber* - *videoname* -*videoQuality*_*videoCodec*-*audioBitrate*_*audioCodec**ext*";
+    private final static String defaultCustomFilenameWeb = "*partnumber**videoname*_*quality*_*fps**ext*";
+    private final static String defaultCustomFilenameHls = "*partnumber* - *videoname* -*videoQuality*_*videoCodec*-*audioBitrate*_*audioCodec*_*fps**ext*";
     public final static String  grabChatHistory          = "grabChatHistory";
     public final static boolean defaultGrabChatHistory   = false;
 
@@ -691,6 +704,7 @@ public class TwitchTv extends PluginForHost {
         sb.append("*videoCodec* = video codec used, e.g. 'h264'\r\n");
         sb.append("*audioBitrate* = audio bitrate, e.g. '128kbits'\r\n");
         sb.append("*audioCodec* = audio encoding type, e.g. 'aac'\r\n");
+        sb.append("*fps* = frames per second, e.g. '30'\r\n");
         sb.append("*vuid* = video unquie identifier");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         // best shite for hls
@@ -703,6 +717,7 @@ public class TwitchTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q480p", JDL.L("plugins.hoster.twitchtv.check480p", "Grab 480p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.twitchtv.check360p", "Grab 360p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.twitchtv.check240p", "Grab 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "60fps", JDL.L("plugins.hoster.twitchtv.60fps", "Grab 60 fps?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "avoidChunked", JDL.L("plugins.hoster.twitchtv.avoidChunked", "Avoid source quality (chunked)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "expspeed", JDL.L("plugins.hoster.twitchtv.expspeed", "Increase download speed (experimental)? ")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "meta", JDL.L("plugins.hoster.twitchtv.meta", "Set meta data? ")).setDefaultValue(true));

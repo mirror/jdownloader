@@ -19,9 +19,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -34,6 +34,8 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -47,7 +49,6 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" })
@@ -57,7 +58,6 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
     }
 
     private String userApiToken = null;
-    private String userId       = null;
 
     private Browser ajaxGetPage(final String string) throws IOException {
         final Browser ajax = br.cloneBrowser();
@@ -127,11 +127,11 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             try {
                 decryptedLinks.add(createOfflinelink(parameter, null));
             } catch (final Throwable t) {
+                logger.log(t);
                 logger.info("OfflineLink :" + parameter);
             }
             return decryptedLinks;
         }
-        pluginsLoaded();
         if (parameter.contains("/videos") && !new Regex(parameter, videoSingleHLS).matches()) {
             final String username = new Regex(parameter, "/([^<>\"/]*?)/videos").getMatch(0);
             String[] decryptAgainLinks = null;
@@ -198,6 +198,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         }
                         break;
                     } catch (final BrowserException e) {
+                        logger.log(e);
                         this.sleep(5000l, param);
                     }
                 }
@@ -239,6 +240,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     dlink.setProperty("plainfilename", filename);
                     dlink.setProperty("partnumber", counter);
                     dlink.setProperty("quality", used_quality);
+                    dlink.setProperty("vodid", vid);
                     if (date != null) {
                         dlink.setProperty("originaldate", date);
                     }
@@ -271,7 +273,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         formattedDate = formatter.format(theDate);
                         fpName += formattedDate + " - ";
                     } catch (final Throwable e) {
-                        LogSource.exception(logger, e);
+                        logger.log(e);
                     }
                 }
                 fpName += filename;
@@ -281,7 +283,6 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             } else if (br.getURL().matches(videoSingleHLS)) {
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
-                // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
                 Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/videos/v" + vid);
                 if (ajax.getHttpConnection().getResponseCode() == 404) {
                     // offline
@@ -300,31 +301,13 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 filename = filename.replaceAll("[\r\n#]+", "");
                 ajax = this.ajaxGetPagePlayer("https://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
                 ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
-                // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
                 final String auth = (String) ajaxMap.get("sig");
                 // final String expire = PluginJSonUtils.getJson(ajax, "expires");
                 final String privileged = (String) ajaxMap.get("privileged");
                 final String tokenString = (String) ajaxMap.get("token");
                 // auth required
-                // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
                 final String a = Encoding.urlEncode(tokenString);
                 ajax = this.ajaxGetPagePlayer("https://usher.twitch.tv/vod/" + vid + ".m3u8?nauth=" + a + "&nauthsig=" + auth + "&player=twitchweb&allow_source=true");
-                // #EXTM3U
-                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
-                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3428253,CODECS="avc1.4D4029,mp4a.40.2",VIDEO="chunked"
-                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/chunked/index-dvr.m3u8
-                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="high",NAME="High",AUTOSELECT=YES,DEFAULT=YES
-                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1590189,CODECS="avc1.42C01F,mp4a.40.2",VIDEO="high"
-                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/high/index-dvr.m3u8
-                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="medium",NAME="Medium",AUTOSELECT=YES,DEFAULT=YES
-                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=880744,CODECS="avc1.42C01E,mp4a.40.2",VIDEO="medium"
-                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/medium/index-dvr.m3u8
-                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="low",NAME="Low",AUTOSELECT=YES,DEFAULT=YES
-                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=617200,CODECS="avc1.42C01E,mp4a.40.2",VIDEO="low"
-                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/low/index-dvr.m3u8
-                // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="mobile",NAME="Mobile",AUTOSELECT=YES,DEFAULT=YES
-                // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=271909,CODECS="avc1.42C00D,mp4a.40.2",VIDEO="mobile"
-                // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/mobile/index-dvr.m3u8
                 if (ajax.getHttpConnection().getResponseCode() == 403) {
                     // error handling for invalid token and or subscription based video/channel?
                     final String failreason = ("true".equalsIgnoreCase(privileged) ? "Subscription required" : "Login required");
@@ -335,14 +318,23 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 if (medias == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                final ArrayList<DownloadLink> hlsStreams = new ArrayList<DownloadLink>();
                 for (final String media : medias) {
                     // name = quality
                     // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
                     final String bandwidth = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
                     final String m3u8 = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+                    String fps = new Regex(media, "NAME\\s*=\\s*\"\\d+p(\\d+)").getMatch(0);
+                    if (fps == null) {
+                        fps = new Regex(media, "VIDEO\\s*=\\s*\"\\d+p(\\d+)").getMatch(0);
+                    }
                     final DownloadLink dlink = createDownloadlink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000));
+                    if (fps != null) {
+                        dlink.setProperty("fps", Integer.parseInt(fps));
+                    }
                     dlink.setProperty("directlink", "true");
                     dlink.setProperty("m3u", m3u8);
+                    dlink.setProperty("vodid", vid);
                     dlink.setProperty("plainfilename", filename);
                     // dlink.setProperty("quality", quality);
                     if (date != null) {
@@ -351,7 +343,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     if (channelName != null) {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
-                    final String linkID = "twitch:" + vid + ":HLS:" + bandwidth;
+                    final String linkID = "twitch:" + vid + ":HLS:" + bandwidth + ":FPS:" + fps;
                     if (bandwidth != null) {
                         dlink.setProperty("hlsBandwidth", Integer.parseInt(bandwidth));
                     }
@@ -364,14 +356,20 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     try {
                         ((jd.plugins.hoster.TwitchTv) plugin).setBrowser(br.cloneBrowser());
                         dlink.setAvailableStatus(((jd.plugins.hoster.TwitchTv) plugin).requestFileInformation(dlink));
+                    } catch (InterruptedException e) {
+                        throw e;
                     } catch (Exception e) {
+                        logger.log(e);
                         dlink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                     }
                     if (m3u8.contains("/chunked")) {
-                        decryptedLinks.add(dlink);
+                        hlsStreams.add(dlink);
                     } else {
-                        decryptedLinks.add(0, dlink);
+                        hlsStreams.add(0, dlink);
                     }
+                }
+                if (hlsStreams.size() == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // because its too awkward to know bitrate to p rating we online check, then confirm by ffprobe results
                 if (true) {
@@ -383,6 +381,16 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     boolean q480 = this.getPluginConfig().getBooleanProperty("q480p", true);
                     boolean q360 = this.getPluginConfig().getBooleanProperty("q360p", true);
                     boolean q240 = this.getPluginConfig().getBooleanProperty("q240p", true);
+                    final boolean fps60 = this.getPluginConfig().getBooleanProperty("60fps", true);
+                    if (!fps60) {
+                        final Iterator<DownloadLink> it = hlsStreams.iterator();
+                        while (it.hasNext()) {
+                            final DownloadLink next = it.next();
+                            if (next.getIntegerProperty("fps", -1) == 60) {
+                                it.remove();
+                            }
+                        }
+                    }
                     // covers when users are idiots and disables all qualities.
                     if (!q1080 && !q720 && !q480 && !q360 && !q240) {
                         q1080 = true;
@@ -395,7 +403,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     boolean chunked = false;
                     while (true) {
                         if (q1080 && (desiredLinks.isEmpty() || !useBest)) {
-                            for (final DownloadLink downloadLink : decryptedLinks) {
+                            for (final DownloadLink downloadLink : hlsStreams) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
                                 if (vidQual >= 1080 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
@@ -403,7 +411,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                             }
                         }
                         if (q720 && (desiredLinks.isEmpty() || !useBest)) {
-                            for (final DownloadLink downloadLink : decryptedLinks) {
+                            for (final DownloadLink downloadLink : hlsStreams) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
                                 if (vidQual < 1080 && vidQual >= 720 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
@@ -411,7 +419,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                             }
                         }
                         if (q480 && (desiredLinks.isEmpty() || !useBest)) {
-                            for (final DownloadLink downloadLink : decryptedLinks) {
+                            for (final DownloadLink downloadLink : hlsStreams) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
                                 if (vidQual < 720 && vidQual >= 480 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
@@ -419,7 +427,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                             }
                         }
                         if (q360 && (desiredLinks.isEmpty() || !useBest)) {
-                            for (final DownloadLink downloadLink : decryptedLinks) {
+                            for (final DownloadLink downloadLink : hlsStreams) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
                                 if (vidQual < 480 && vidQual >= 360 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
@@ -427,7 +435,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                             }
                         }
                         if (q240 && (desiredLinks.isEmpty() || !useBest)) {
-                            for (final DownloadLink downloadLink : decryptedLinks) {
+                            for (final DownloadLink downloadLink : hlsStreams) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
                                 if (vidQual < 360 && vidQual >= 240 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
@@ -440,6 +448,9 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                             chunked = true;
                         }
                     }
+                }
+                if (desiredLinks.size() == 0) {
+                    throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
                 }
                 if (channelName != null) {
                     fpName = (fpName == null ? "" : fpName) + Encoding.htmlDecode(channelName.trim()) + " - ";
@@ -457,12 +468,12 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                         formattedDate = formatter.format(theDate);
                         fpName += formattedDate + " - ";
                     } catch (final Throwable e) {
-                        LogSource.exception(logger, e);
+                        logger.log(e);
                     }
                 }
                 fpName += filename;
                 fp.setName(fpName);
-                fp.addLinks(decryptedLinks);
+                fp.addLinks(desiredLinks);
             } else {
                 // unsupported feature
                 decryptedLinks.add(createOfflinelink(parameter, null));
@@ -496,39 +507,44 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         return !desiredLinks.isEmpty() ? desiredLinks : decryptedLinks;
     }
 
+    @Override
+    public void clean() {
+        try {
+            final PluginForHost plugin = this.plugin;
+            this.plugin = null;
+            if (plugin != null) {
+                plugin.clean();
+            }
+        } finally {
+            super.clean();
+        }
+    }
+
     PluginForHost plugin = null;
 
     private boolean getUserLogin(final boolean force) throws Exception {
-        plugin = JDUtilities.getPluginForHost("twitch.tv");
-        final Account aa = AccountController.getInstance().getValidAccount(plugin);
-        if (aa == null) {
-            logger.warning("There is no account available, stopping...");
-            return false;
-        }
-        try {
-            ((jd.plugins.hoster.TwitchTv) plugin).login(this.br, aa, force);
-        } catch (final PluginException e) {
-            handleAccountException(aa, e);
-            return false;
-        }
-        // set from cookie value after login.
-        // Set-Cookie:api_token=[a-f0-9]{32}; domain=.twitch.tv; path=/; expires=Wed, 29-Apr-2015 01:00:05 GMT
-        userApiToken = br.getCookie(this.getHost(), "api_token");
-        // userId is present in another cookie?
-        userId = br.getCookie(this.getHost(), "persistent");
-        if (userId != null) {
-            userId = new Regex(userId, "^(\\d+)").getMatch(0);
-        }
-        return true;
-    }
-
-    private static AtomicBoolean pL = new AtomicBoolean(false);
-
-    private void pluginsLoaded() {
-        if (!pL.get()) {
-            /* make sure the plugin is loaded! */
-            JDUtilities.getPluginForHost("twitch.tv");
-            pL.set(true);
+        plugin = JDUtilities.getNewPluginForHostInstance(getHost());
+        if (plugin == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Hoster plugin missing!?");
+        } else {
+            final Account aa = AccountController.getInstance().getValidAccount(getHost());
+            if (aa == null) {
+                logger.warning("There is no account available, stopping...");
+                return false;
+            } else {
+                try {
+                    plugin.setLogger(getLogger());
+                    ((jd.plugins.hoster.TwitchTv) plugin).login(this.br, aa, force);
+                    // set from cookie value after login.
+                    // Set-Cookie:api_token=[a-f0-9]{32}; domain=.twitch.tv; path=/; expires=Wed, 29-Apr-2015 01:00:05 GMT
+                    userApiToken = br.getCookie(this.getHost(), "api_token");
+                    // userId is present in another cookie?
+                    return true;
+                } catch (final PluginException e) {
+                    handleAccountException(aa, e);
+                    return false;
+                }
+            }
         }
     }
 
