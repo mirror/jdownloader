@@ -24,6 +24,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -47,6 +48,15 @@ public class ImagetwistCom extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    public String getFUIDFromURL(DownloadLink dl) {
+        String ret = super.getFUIDFromURL(dl);
+        if (ret == null) {
+            ret = new Regex(dl.getPluginPatternMatcher(), "/th/\\d+/([a-z0-9]{12})").getMatch(0);
+        }
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -57,7 +67,11 @@ public class ImagetwistCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/th/\\d+/[a-z0-9]{12})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
