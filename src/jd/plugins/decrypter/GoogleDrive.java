@@ -20,10 +20,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,9 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
@@ -110,14 +109,7 @@ public class GoogleDrive extends PluginForDecrypt {
         parameter = "https://drive.google.com/drive/folders/" + fid;
         final PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
         ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br);
-        final CrawledLink source = getCurrentLink().getSourceLink();
-        final String subfolder;
-        if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
-            final DownloadLink downloadLink = source.getDownloadLink();
-            subfolder = downloadLink.getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-        } else {
-            subfolder = null;
-        }
+        String subfolder = this.getAdoptedCloudFolderStructure();
         int retry = 0;
         do {
             try {
@@ -152,15 +144,19 @@ public class GoogleDrive extends PluginForDecrypt {
                 throw new AccountRequiredException("You need an account to access URL");
             }
         }
-        String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("<title>([^<>\"]*?) - Google Drive</title>").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<title>([^<>\"]*?) – Google Drive</title>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String currentFolderTitle = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
+        if (currentFolderTitle == null) {
+            currentFolderTitle = br.getRegex("<title>([^<>\"]*?) - Google Drive</title>").getMatch(0);
+            if (currentFolderTitle == null) {
+                currentFolderTitle = br.getRegex("<title>([^<>\"]*?) – Google Drive</title>").getMatch(0);
+                if (currentFolderTitle == null) {
+                    currentFolderTitle = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
                 }
             }
+        }
+        if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
+            /* Begin subfolder structure if not given already */
+            subfolder = currentFolderTitle;
         }
         String[] results = null;
         // old type
@@ -211,14 +207,12 @@ public class GoogleDrive extends PluginForDecrypt {
                         if (firstRequest) {
                             /* 2017-05-10: Updated these requests / URLs! */
                             /* Required to get the first "nextPageToken". */
-                            brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
-                                    + fid
+                            brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + fid
                                     + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
                                     + key);
                             firstRequest = false;
                         } else {
-                            brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
-                                    + fid
+                            brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + fid
                                     + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
                                     + key + "&pageToken=" + nextPageToken);
                         }
@@ -251,7 +245,7 @@ public class GoogleDrive extends PluginForDecrypt {
                         final DownloadLink dl;
                         String folder_path = null;
                         if (kind.contains("#file")) {
-                            /* Single file */
+                            /* Single file - use name of current folder */
                             if (subfolder != null) {
                                 folder_path = subfolder;
                             }
@@ -274,17 +268,17 @@ public class GoogleDrive extends PluginForDecrypt {
                         }
                         decryptedLinks.add(dl);
                     }
+                    logger.info("added:" + addedlinks);
                     if (StringUtils.isEmpty(nextPageToken)) {
                         logger.info("break2");
                         /* Either we found everything or plugin failure ... */
                         break;
                     }
-                    logger.info("added:" + addedlinks);
                 }
             } while (key != null && addedlinks >= 50 && !isAbort());
-            if (fpName != null) {
+            if (currentFolderTitle != null) {
                 FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.setName(Encoding.htmlDecode(currentFolderTitle.trim()));
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
@@ -293,9 +287,9 @@ public class GoogleDrive extends PluginForDecrypt {
             logger.info("Found nothing to download: " + parameter);
             return decryptedLinks;
         }
-        if (fpName != null) {
+        if (currentFolderTitle != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(currentFolderTitle.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
