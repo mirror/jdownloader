@@ -662,8 +662,8 @@ public class PremiumTo extends UseNet {
             /* Not enough traffic left */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         case 404:
-            /* File not found TODO: Check whether we can trust this or not! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* 2019-10-30: We cannot trust this API errormessage */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted API error 404", 5 * 60 * 1000);
         case 405:
             /* Rare case: User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
             /* {"code":405,"message":"Too many files"} */

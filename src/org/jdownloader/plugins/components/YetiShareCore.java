@@ -260,16 +260,6 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
-    /**
-     * When checking previously generated direct-URLs, this will count as an open connection so if the host only supports one connection at
-     * a time, trying to download such an URL immediately after the check will result in an error so this is the time we wait before trying
-     * to start the download with this URL.<br />
-     * default: 8
-     */
-    public int getWaitTimeSecondsAfterDirecturlCheck() {
-        return 8;
-    }
-
     /** Returns empty StringArray for filename, filesize, [more information in the future?] */
     protected String[] getFileInfoArray() {
         return new String[2];
@@ -444,22 +434,10 @@ public class YetiShareCore extends antiDDoSForHost {
         String continue_link = null;
         boolean captcha = false;
         boolean success = false;
-        final long timeBeforeDirectlinkCheck = System.currentTimeMillis();
         long timeBeforeCaptchaInput;
-        continue_link = checkDirectLink(link, directlinkproperty);
-        br.setFollowRedirects(false);
-        if (continue_link != null) {
-            logger.info("Using previously stored direct-url");
-            /*
-             * Let the server 'calm down' (if it was slow before) otherwise it will thing that we tried to open two connections as we
-             * checked the directlink before and return an error.
-             */
-            if ((System.currentTimeMillis() - timeBeforeDirectlinkCheck) > 1500) {
-                sleep(getWaitTimeSecondsAfterDirecturlCheck() * 1000l, link);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
-            dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
-        } else {
+        continue_link = checkDirectLink(link, account);
+        if (StringUtils.isEmpty(continue_link) && this.dl == null) {
+            br.setFollowRedirects(false);
             // if (supports_embed_stream_download()) {
             // try {
             // final Browser br2 = this.br.cloneBrowser();
@@ -967,14 +945,19 @@ public class YetiShareCore extends antiDDoSForHost {
         return ttt;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final Account account) {
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
+            final boolean resume = this.isResumeable(link, account);
+            final int maxchunks = this.getMaxChunks(account);
             final Browser br2 = this.br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                // con = br2.openHeadConnection(dllink);
+                this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
+                con = dl.getConnection();
                 if (br2.getHttpConnection().getResponseCode() == 429) {
                     /*
                      * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 429 on
@@ -984,16 +967,19 @@ public class YetiShareCore extends antiDDoSForHost {
                     return dllink;
                 }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(directlinkproperty, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(directlinkproperty, Property.NULL);
                 dllink = null;
             } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                if (dllink == null) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                    this.dl = null;
                 }
             }
         }
