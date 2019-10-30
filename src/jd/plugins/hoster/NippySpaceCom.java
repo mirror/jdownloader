@@ -13,16 +13,19 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,12 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nippyspace.com" }, urls = { "https?://(?:www\\.)?nippyspace\\.com/v/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nippyspace.com" }, urls = { "https?://(?:www\\.)?nippyspace\\.com/v/([a-z0-9]+)" })
 public class NippySpaceCom extends PluginForHost {
-
     public NippySpaceCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -59,25 +58,40 @@ public class NippySpaceCom extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/"));
+        final String fid = getFID(link);
         link.setLinkID(fid);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/v/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">Name:([^<>\"\\']+)<").getMatch(0);
-        if (filename == null) {
+        String filename = br.getRegex(">Name\\s*:([^<>\"\\']+)<").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            /* Content-Disposition Header on downloadstart will often send crippled filenames so use this one instead whenever possible! */
+            link.setFinalFileName(filename);
+        } else {
             /* Fallback */
-            filename = fid;
+            link.setName(getFID(link));
         }
-        String filesize = br.getRegex(">Size:\\s*?([^<>\"]+)<").getMatch(0);
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        String filesize = br.getRegex(">\\s*Size\\s*:\\s*?([^<>\"]+)<").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -149,5 +163,4 @@ public class NippySpaceCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
