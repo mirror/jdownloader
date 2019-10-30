@@ -1293,7 +1293,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * likely end up with error "Fatal countdown error (countdown skipped)"
              */
             checkErrors(link, account, false);
-            final Form download1 = findFormDownload1();
+            final Form download1 = findFormDownload1Free();
             if (download1 != null) {
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -1302,7 +1302,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (StringUtils.isEmpty(dllink)) {
-            Form dlForm = findFormF1();
+            Form dlForm = findFormDownload2Free();
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(link, account, false);
@@ -1344,12 +1344,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(link, account, true);
                 dllink = getDllink(link, account);
-                final boolean dlformIsThere = findFormF1() != null;
+                final boolean dlformIsThere = findFormDownload2Free() != null;
                 if (StringUtils.isEmpty(dllink) && (!dlformIsThere || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (StringUtils.isEmpty(dllink) && dlformIsThere) {
-                    dlForm = findFormF1();
+                    dlForm = findFormDownload2Free();
                     invalidateLastChallengeResponse();
                     continue;
                 } else {
@@ -1624,7 +1624,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Tries to find 1st download Form for free(and Free-Account) download. */
-    public Form findFormDownload1() throws Exception {
+    public Form findFormDownload1Free() throws Exception {
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
         if (download1 != null) {
             download1.remove("method_premium");
@@ -1641,7 +1641,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Tries to find 2nd download Form for free(and Free-Account) download. */
-    protected Form findFormF1() {
+    protected Form findFormDownload2Free() {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
         final Form[] forms = br.getForms();
@@ -1668,7 +1668,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    public Form findFormF1Premium() throws Exception {
+    public Form findFormDownload2Premium() throws Exception {
         return br.getFormbyProperty("name", "F1");
     }
 
@@ -3235,7 +3235,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         dllink = getDllink(link, account);
                     }
                     if (StringUtils.isEmpty(dllink)) {
-                        final Form dlForm = findFormF1Premium();
+                        final Form dlForm = findFormDownload2Premium();
                         if (dlForm != null) {
                             if (isPasswordProtectedHTM()) {
                                 handlePassword(dlForm, link);

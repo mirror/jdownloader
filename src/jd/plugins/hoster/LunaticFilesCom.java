@@ -147,7 +147,7 @@ public class LunaticFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected Form findFormF1() {
+    protected Form findFormDownload2Free() {
         Form dlForm = null;
         /* First try to find Form for video hosts with multiple qualities. */
         final Form[] forms = br.getForms();
@@ -161,7 +161,7 @@ public class LunaticFilesCom extends XFileSharingProBasic {
         }
         if (dlForm == null) {
             /* Fallback to template handling */
-            dlForm = super.findFormF1();
+            dlForm = super.findFormDownload2Free();
         }
         return dlForm;
     }
