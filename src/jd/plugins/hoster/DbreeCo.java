@@ -18,19 +18,17 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class DropmegaCom extends YetiShareCore {
-    public DropmegaCom(PluginWrapper wrapper) {
+public class DbreeCo extends YetiShareCore {
+    public DbreeCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -39,20 +37,15 @@ public class DropmegaCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2019-10-14: Premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-10-14: null<br />
+     * limit-info: 2019-10-30: Premium untested, set FREE account limits <br />
+     * captchatype-info: 2019-10-30: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dropmega.com", "megaupload2.com" });
+        ret.add(new String[] { "dbree.co" });
         return ret;
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
@@ -73,6 +66,10 @@ public class DropmegaCom extends YetiShareCore {
         return ret.toArray(new String[0]);
     }
 
+    // @Override
+    // public String rewriteHost(String host) {
+    // return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    // }
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
@@ -112,21 +109,5 @@ public class DropmegaCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
-    }
-
-    @Override
-    protected String getDllink(final Browser br) {
-        /* 2019-10-14: Special */
-        String dllink = super.getDllink(br);
-        if (StringUtils.isEmpty(dllink)) {
-            /* Videofile */
-            dllink = br.getRegex("\"file\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
-        }
-        /* 2019-10-30: Not required anymore as it has been moved into template */
-        // if (StringUtils.isEmpty(dllink)) {
-        // /* All other files */
-        // dllink = br.getRegex("\"(https?://[^\"]+/files/[^\"]+)\"").getMatch(0);
-        // }
-        return dllink;
     }
 }
