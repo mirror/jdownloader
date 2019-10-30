@@ -106,8 +106,8 @@ public class FileupupCom extends XFileSharingProBasic {
 
     /* 2019-10-28: Special */
     @Override
-    public Form findFormDownload1() throws Exception {
-        final Form download1 = super.findFormDownload1();
+    public Form findFormDownload1Free() throws Exception {
+        final Form download1 = super.findFormDownload1Free();
         if (download1 != null) {
             download1.remove("method_premium");
             download1.remove("proceed");

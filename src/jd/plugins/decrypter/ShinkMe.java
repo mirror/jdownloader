@@ -41,7 +41,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.me" }, urls = { "https?://(?:www\\.)?shink\\.(in|me)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.me" }, urls = { "https?://(?:www\\.)?(?:shink\\.(?:in|me)|shon\\.xyz)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
 public class ShinkMe extends antiDDoSForDecrypt {
     private static Object CTRLLOCK = new Object();
 

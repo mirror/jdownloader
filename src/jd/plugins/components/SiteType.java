@@ -72,11 +72,9 @@ public class SiteType {
          * Can be bought e.g. from here:
          * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
          * script/2558257</a>.<br />
-         * <b>Main decrypter class:</b> ImgShotDecrypt<br />
-         * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
-         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a>
-         * <br />
-         * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
+         * <b>Main hoster template class:</b> ImgShotCore<br />
+         * <b>Example that suits main template:</b> <a href="http:/imgshot.com/">imgshot.com</a> (= official demo)<br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> --- </br>
          */
         ImageHosting_ImgShot,
         /**

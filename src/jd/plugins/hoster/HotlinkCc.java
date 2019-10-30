@@ -90,18 +90,18 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormF1() {
+    public Form findFormDownload2Free() {
         /* 2019-05-15: Special */
-        final Form formf1Free = super.findFormF1();
+        final Form formf1Free = super.findFormDownload2Free();
         /* Should only be required for premium but we're doing it for free mode anyways! */
         fixFormF1(formf1Free);
         return formf1Free;
     }
 
     @Override
-    public Form findFormF1Premium() throws Exception {
+    public Form findFormDownload2Premium() throws Exception {
         /* 2019-05-15: Special */
-        final Form formf1Premium = super.findFormF1Premium();
+        final Form formf1Premium = super.findFormDownload2Premium();
         fixFormF1(formf1Premium);
         return formf1Premium;
     }
