@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de", "tvtotal.prosieben.de" }, urls = { "https?://(?:www\\.)?myspassdecrypted\\.de/.+\\d+/?$", "http://tvtotal\\.prosieben\\.de/videos/.*?/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de", "tvtotal.prosieben.de" }, urls = { "https?://(?:www\\.)?myspassdecrypted\\.de/.+\\d+/?$", "https?://tvtotal\\.prosieben\\.de/(videos/.*?/\\d+/|videoplayer/\\?id=\\d+)" })
 public class MySpassDe extends PluginForHost {
     public MySpassDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,15 +51,14 @@ public class MySpassDe extends PluginForHost {
      * http://x3583brainc11021.s.o.l.lb.core-cdn.net/secdl/78de6150fffffffffff1f136aff77d61/55593149/11021brainpool/ondemand
      * /3583brainpool/163840/myspass2009/14/660/10680/18471/18471_61.mp4
      */
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
-        downloadLink.setLinkID(fid);
+        final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
+        link.setLinkID(fid);
         // br.getPage("http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=" + fid + "&0." +
         // System.currentTimeMillis());
         /* 2018-12-29: New */
@@ -69,7 +68,7 @@ public class MySpassDe extends PluginForHost {
         }
         /* Build our filename */
         /* Links added via decrypter can have this set to FALSE as it is not needed for all filenames e.g. stock car crash challenge. */
-        final boolean needs_series_filename = downloadLink.getBooleanProperty("needs_series_filename", true);
+        final boolean needs_series_filename = link.getBooleanProperty("needs_series_filename", true);
         final DecimalFormat df = new DecimalFormat("00");
         String filename = getXML("format") + " - ";
         if (needs_series_filename) { // Sometimes episode = 9/Best Of, need regex to get only the integer
@@ -78,21 +77,31 @@ public class MySpassDe extends PluginForHost {
         filename += getXML("title");
         dllink = getXML("url_flv");
         filename = filename.trim();
-        final String ext;
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
-            ext = getFileNameExtensionFromString(dllink, ".mp4");
-        } else {
-            ext = ".mp4";
-        }
+        final String ext = ".mp4";
         filename = Encoding.htmlDecode(filename);
+        /*
+         * 2019-10-30: They've changed their final downloadurls. They modify the one which is present in their XML. However, older Clips
+         * which can be accessed via tvtotal.prosieben.de are still easily downloadable.F
+         */
+        final boolean enable_old_clips_workaround = true;
+        if (enable_old_clips_workaround && link.getPluginPatternMatcher().contains("tvtotal.prosieben.de")) {
+            logger.info("Attempting workaround for old clips");
+            br.getPage(link.getPluginPatternMatcher());
+            final String dllink_alt = br.getRegex("videoURL\\s*:\\s*'(http[^<>\"\\']+)'").getMatch(0);
+            if (dllink_alt != null) {
+                logger.info("Workaround for old clips seems to be successful");
+                dllink = dllink_alt;
+            } else {
+                logger.info("Workaround for old clips failed");
+            }
+        }
         if (dllink != null) {
-            downloadLink.setFinalFileName(filename + ext);
+            link.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
                 }
@@ -103,7 +112,7 @@ public class MySpassDe extends PluginForHost {
                 }
             }
         } else {
-            downloadLink.setName(filename + ext);
+            link.setName(filename + ext);
         }
         return AvailableStatus.TRUE;
     }
