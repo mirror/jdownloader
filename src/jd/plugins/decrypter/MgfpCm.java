@@ -17,9 +17,8 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +31,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
@@ -219,6 +221,7 @@ public class MgfpCm extends PluginForDecrypt {
             }
             int counter = 1;
             DecimalFormat df = new DecimalFormat("0000");
+            final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
             for (final String page : allPages) {
                 if (!page.equals("0")) {
                     br.getPage(parameter + "&page=" + page);
@@ -230,8 +233,14 @@ public class MgfpCm extends PluginForDecrypt {
                 for (final String elements[] : info) {
                     final String orderID = df.format(counter);
                     final String fid = elements[0];
-                    final String original_filename = Encoding.htmlDecode(elements[1].trim());
                     final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + fid);
+                    String original_filename = Encoding.htmlDecode(elements[1].trim());
+                    if (!incompleteOriginalFilenameWorkaround.add(original_filename) || original_filename.matches(".*[\\.]{2,}$")) {
+                        // some filenames are incomplete and end with ...
+                        // this workaround removes ... and adds orderID
+                        original_filename = original_filename.replaceFirst("([\\.]{2,})$", "") + "_" + orderID;
+                        link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
+                    }
                     link.setContentUrl("https://www.imagefap.com/photo/" + fid + "/");
                     link.setProperty("orderid", orderID);
                     link.setProperty("galleryname", galleryName);
