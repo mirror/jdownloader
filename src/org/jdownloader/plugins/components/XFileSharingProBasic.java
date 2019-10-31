@@ -2251,7 +2251,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
             return result;
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         return null;
     }
@@ -2272,7 +2272,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             return result;
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         return null;
     }

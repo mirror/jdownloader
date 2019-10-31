@@ -24,11 +24,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,6 +46,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -200,8 +200,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page() {
@@ -252,9 +252,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed (e.g. badshare.io). </br>
-     * default = false
+     * Enforces old, non-ajax login-method. </br> This is only rarely needed (e.g. badshare.io). </br> default = false
      */
     protected boolean enforce_old_login_method() {
         return false;
@@ -945,15 +943,16 @@ public class YetiShareCore extends antiDDoSForHost {
         return ttt;
     }
 
-    private String checkDirectLink(final DownloadLink link, final Account account) {
+    private String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String dllink = link.getStringProperty(directlinkproperty);
+        final String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
             final boolean resume = this.isResumeable(link, account);
             final int maxchunks = this.getMaxChunks(account);
             final Browser br2 = this.br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
+            boolean valid = false;
             try {
                 // con = br2.openHeadConnection(dllink);
                 this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
@@ -964,17 +963,22 @@ public class YetiShareCore extends antiDDoSForHost {
                      * download-attempt this error will get displayed to the user.
                      */
                     logger.info("Stored directurl lead to 429 | too many connections");
+                    valid = true;
+                    return dllink;
+                } else if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
+                    link.setProperty(directlinkproperty, Property.NULL);
+                    return null;
+                } else {
+                    valid = true;
                     return dllink;
                 }
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    link.setProperty(directlinkproperty, Property.NULL);
-                    dllink = null;
-                }
+            } catch (final InterruptedException e) {
+                throw e;
             } catch (final Exception e) {
                 link.setProperty(directlinkproperty, Property.NULL);
-                dllink = null;
+                logger.log(e);
             } finally {
-                if (dllink == null) {
+                if (!valid) {
                     try {
                         con.disconnect();
                     } catch (final Throwable e) {
@@ -983,7 +987,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     protected String getProtocol() {

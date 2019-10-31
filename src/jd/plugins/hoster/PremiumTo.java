@@ -20,19 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -52,6 +39,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
@@ -557,18 +557,20 @@ public class PremiumTo extends UseNet {
                 this.handleErrorsAPI(account);
                 logger.severe("PremiumTo Error");
                 /* 2019-10-24: TODO: Consider removing this old errorhandling code. All errors should be returned via json by now. */
-                if (br.toString().matches("File not found")) {
+                if (br.containsHTML("File not found")) {
                     // we can not trust multi-hoster file not found returns, they could be wrong!
                     // jiaz new handling to dump to next download candidate.
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (br.toString().matches("File hosting service not supported")) {
                     mhm.putError(account, link, 10 * 60 * 1000l, "hoster_unsupported");
-                } else if ("Not enough traffic".equals(br.toString())) {
+                } else if (br.containsHTML("Not enough traffic")) {
                     /*
                      * With our special traffic it's a bit complicated. When you still have a little Special Traffic but you have enough
                      * standard traffic, it will show you "Not enough traffic" for the filehost Uploaded.net for example.
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else if (br.containsHTML("No premium account available")) {
+                    mhm.putError(account, link, 60 * 60 * 1000l, "No premium account available");
                 }
                 /*
                  * after x retries we disable this host and retry with normal plugin

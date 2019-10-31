@@ -353,6 +353,10 @@ public class TurbobitCore extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        handleFree(link, null);
+    }
+
+    protected void handleFree(final DownloadLink link, Account account) throws Exception {
         /* support for public premium links */
         if (link.getDownloadURL().matches(premRedirectLinks)) {
             handlePremiumLink(link);
@@ -391,10 +395,28 @@ public class TurbobitCore extends antiDDoSForHost {
         simulateBrowser();
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
+        } else if (isPremiumOnly(link, account, br, false)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        partTwo(link, true);
+        partTwo(link, account, true);
+    }
+
+    protected boolean isPremiumOnly(DownloadLink downloadLink, Account account, Browser br, boolean throwException) throws PluginException {
+        if (br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
+            if (throwException) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } else {
+                return true;
+            }
+        } else if (br.containsHTML("<a\\s*data-premium-only-download") || br.containsHTML("href\\s*=\\s*\"/download/free/[^>]*?data-premium-only-download")) {
+            if (throwException) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     protected String IMAGEREGEX(final String b) {
@@ -413,7 +435,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
-    private final void partTwo(final DownloadLink link, final boolean allowRetry) throws Exception {
+    private final void partTwo(final DownloadLink link, Account account, final boolean allowRetry) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -431,7 +453,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 if (allowRetry && br.containsHTML("/download/free/" + Pattern.quote(id))) {
                     // from a log where the first call to this, just redirected to main page and set some cookies
                     getPage("/download/free/" + id);
-                    partTwo(link, false);
+                    partTwo(link, account, false);
                     return;
                 }
                 /* 2019-04-24: This should not happen anymore but still we should retry if it happens. */
@@ -650,7 +672,7 @@ public class TurbobitCore extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
-            this.handleFree(link);
+            this.handleFree(link, account);
         } else {
             /* support for public premium links */
             if (link.getDownloadURL().matches(premRedirectLinks)) {

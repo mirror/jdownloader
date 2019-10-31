@@ -41,7 +41,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html|[^/]+/.*?-\\d+\\.html)" })
 public class HitomiLa extends antiDDoSForDecrypt {
     public HitomiLa(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,7 +50,13 @@ public class HitomiLa extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String guid = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
+        String guid = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
+        if (guid == null) {
+            guid = new Regex(parameter, "/[^/]+/.*?-(\\d+)\\.html").getMatch(0);
+        }
+        if (guid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         /* Avoid https, prefer http */
         getPage("https://hitomi.la/reader/" + guid + ".html");

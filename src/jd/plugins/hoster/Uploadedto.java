@@ -35,11 +35,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,6 +64,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" })
 public class Uploadedto extends PluginForHost {
@@ -114,17 +114,19 @@ public class Uploadedto extends PluginForHost {
 
     private String getProtocol() {
         if (avoidHTTPS) {
+            logger.info("HTTPS avoided");
             return "http://";
-        }
-        if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL)) {
+        } else if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL) == false) {
+            logger.info("HTTPS not preferred");
+            return "http://";
+        } else {
+            logger.info("HTTPS preferred");
             /**
              * add this do disable https for old java 1.6 (dh > 1024)
              *
              * && Application.getJavaVersion() >= Application.JAVA17
              **/
             return "https://";
-        } else {
-            return "http://";
         }
     }
 
@@ -160,9 +162,10 @@ public class Uploadedto extends PluginForHost {
                 getPage(br, getProtocol() + "uploaded.net/file/" + id + "/status");
             } catch (BrowserException e) {
                 if (e.getRequest() != null && e.getRequest().getHttpConnection().getResponseCode() == 451) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, -1, e);
+                } else {
+                    throw e;
                 }
-                throw e;
             }
             final String ret = br.getRedirectLocation();
             if (ret != null) {
@@ -451,6 +454,7 @@ public class Uploadedto extends PluginForHost {
                 }
             }
         } catch (Exception e) {
+            logger.log(e);
             return false;
         } finally {
             try {
@@ -486,7 +490,7 @@ public class Uploadedto extends PluginForHost {
                 return api_Fetch_accountinfo(account);
             } catch (Exception e) {
                 // for password that cause getLoginSHA1Hash to fail.
-                getLogger().log(e);
+                logger.log(e);
                 return site_Fetch_accountinfo(account);
             }
         } else {
@@ -505,6 +509,7 @@ public class Uploadedto extends PluginForHost {
                 try {
                     tokenType = api_getTokenType(account, token, true);
                 } catch (final PluginException e) {
+                    logger.log(e);
                     token = api_getAccessToken(account, false);
                     tokenType = api_getTokenType(account, token, true);
                 }
@@ -882,9 +887,9 @@ public class Uploadedto extends PluginForHost {
         handleGeneralServerErrors();
         if (!dl.getConnection().isContentDisposition()) {
             try {
-                br.followConnection();
-            } catch (final Throwable e) {
-                logger.severe(e.getMessage());
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
             logger.info(br.toString());
             generalFreeErrorhandling(account);
@@ -1252,8 +1257,8 @@ public class Uploadedto extends PluginForHost {
             }
             return null;
         } catch (final Throwable e) {
-            getLogger().log(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.log(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
         }
     }
 
@@ -1415,18 +1420,20 @@ public class Uploadedto extends PluginForHost {
                 handleGeneralServerErrors();
                 if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
                     try {
-                        br.followConnection();
-                    } catch (final Throwable e) {
-                        logger.severe(e.getMessage());
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
                     }
                     checkGeneralErrors();
                     try {
                         logger.info(br.toString());
                     } catch (final Throwable e) {
+                        logger.log(e);
                     }
                     try {
                         logger.info(dl.getConnection().toString());
                     } catch (final Throwable e) {
+                        logger.log(e);
                     }
                     if ("No htmlCode read".equalsIgnoreCase(br.toString())) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
@@ -1529,19 +1536,21 @@ public class Uploadedto extends PluginForHost {
         handleGeneralServerErrors();
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             try {
-                br.followConnection();
-            } catch (final Throwable e) {
-                logger.severe(e.getMessage());
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
             handleErrorCode(br, account, token, false);
             checkGeneralErrors();
             try {
                 logger.info(br.toString());
             } catch (final Throwable e) {
+                logger.log(e);
             }
             try {
                 logger.info(dl.getConnection().toString());
             } catch (final Throwable e) {
+                logger.log(e);
             }
             if ("No htmlCode read".equalsIgnoreCase(br.toString())) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
@@ -1559,9 +1568,9 @@ public class Uploadedto extends PluginForHost {
         }
         if (dl.getConnection().getResponseCode() == 404) {
             try {
-                br.followConnection();
-            } catch (final Throwable e) {
-                logger.severe(e.getMessage());
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
             // this does not mean that the file is offline. This is most likly a server error. try again. if the file is really offline, the
             // linkcheck will set the corrects status
@@ -1748,6 +1757,7 @@ public class Uploadedto extends PluginForHost {
                         break;
                     }
                 } catch (Throwable e) {
+                    logger.log(e);
                 }
             }
         }
@@ -1859,23 +1869,23 @@ public class Uploadedto extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
-                                                      put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
-                                                      put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
-                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
-                                                      put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
-                                                  }
-                                              };
+        {
+            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
+            put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
+            put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
+            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
+            put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
+        }
+    };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
-                                                      put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
-                                                      put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
-                                                      put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
-                                                      put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
-                                                  }
-                                              };
+        {
+            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
+            put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
+            put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
+            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
+            put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
