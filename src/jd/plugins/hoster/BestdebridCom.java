@@ -266,13 +266,7 @@ public class BestdebridCom extends PluginForHost {
             String host = (String) entries.get("name");
             if (!StringUtils.isEmpty(host) && "up".equalsIgnoreCase(status)) {
                 /* 2019-08-27: Some workarounds for some bad given hostnames without TLD */
-                if (host.equalsIgnoreCase("openload")) {
-                    /*
-                     * 2019-08-27: Workaround for openload because we support "openload.cc" and "openload.co" (along with many more domains
-                     * of them) and it may be unclear what's ment so this is to make sure that the correct openload host gets recognized.
-                     */
-                    host = "openload.co";
-                } else if (host.equalsIgnoreCase("free")) {
+                if (host.equalsIgnoreCase("free")) {
                     host = "dl.free.fr";
                 } else if (host.equalsIgnoreCase("load")) {
                     host = "load.to";

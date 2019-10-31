@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -12,8 +14,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     public PornEmbedParser(PluginWrapper wrapper) {
@@ -167,14 +167,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("madthumbscdn\\.com/videos/\\d+/(\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add("//www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* 2019-07-31: TODO: Add support for their other domains. */
-        externID = br.getRegex("(\"|')((?:https?:)?//openload\\.co/embed/[A-Za-z0-9_\\-]+(/[^<>\"/]*?)?)\\1").getMatch(1);
-        if (externID != null) {
-            decryptedLinks.add(externID);
             if (!processAll) {
                 return decryptedLinks;
             }

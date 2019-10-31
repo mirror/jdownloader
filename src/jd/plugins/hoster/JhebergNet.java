@@ -239,7 +239,6 @@ public class JhebergNet extends antiDDoSForHost {
         final Map<String, String> mapping = new HashMap<String, String>();
         mapping.put("1fichier", "1fichier.com");
         mapping.put("Turbobit", "turbobit.net");
-        mapping.put("Openload", "openload.co");
         mapping.put("Rapidgator", "rapidgator.net");
         mapping.put("Mega", "mega.co.nz");
         mapping.put("Uploaded", "uploaded.to");
