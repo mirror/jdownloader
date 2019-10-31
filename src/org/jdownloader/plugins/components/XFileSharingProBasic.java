@@ -3349,14 +3349,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid_to_download);
         this.checkErrorsAPI(this.br, link, account);
-        /* 2019-05-30: TODO: Check handling for password protected URLs, check errorhandling */
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         LinkedHashMap<String, Object> entries_tmp;
-        // final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 0);
-        // if (status != 200) {
-        // /* E.g. {"msg":"no file","server_time":"2019-05-30 16:38:39","status":404} */
-        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API server issue");
-        // }
         entries = (LinkedHashMap<String, Object>) entries.get("result");
         String dllink = null;
         /** TODO: Add quality selection */
