@@ -90,7 +90,7 @@ public class Offline extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String name : getDomains()) {
-            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + "(?:" + Pattern.quote(name) + ").+");
+            ret.add("https?://(?:[A-Za-z0-9\\-]+\\.)?" + "(?:" + Pattern.quote(name) + ").+");
         }
         return ret.toArray(new String[0]);
     }
