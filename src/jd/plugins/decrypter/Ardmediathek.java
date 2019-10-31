@@ -27,6 +27,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -55,20 +70,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/(?:.*?documentId=\\d+[^/]*?|.*?player/[a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html",
         "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -93,14 +94,15 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("576", 1728000l);
         heigth_to_bitrate.put("720", 3773000l);
     }
-    private String  subtitleLink   = null;
-    private String  parameter      = null;
-    private String  title          = null;
-    private String  show           = null;
-    private String  provider       = null;
-    private long    date_timestamp = -1;
-    private boolean grabHLS        = false;
-    private String  contentID      = null;
+    private String                              subtitleLink                               = null;
+    private String                              parameter                                  = null;
+    private String                              title                                      = null;
+    private String                              show                                       = null;
+    private String                              provider                                   = null;
+    private long                                date_timestamp                             = -1;
+    private boolean                             grabHLS                                    = false;
+    private String                              contentID                                  = null;
+    private ArdConfigInterface                  cfg                                        = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -161,7 +163,7 @@ public class Ardmediathek extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
+        cfg = PluginJsonConfig.get(getConfigInterface());
         final List<String> selectedQualities = new ArrayList<String>();
         /*
          * 2018-03-06: TODO: Maybe add option to download hls audio as hls master playlist will often contain a mp4 stream without video (==
@@ -1026,8 +1028,28 @@ public class Ardmediathek extends PluginForDecrypt {
             protocol = "hls";
         } else {
             protocol = "http";
+            if (cfg.isGrabBESTEnabled() || cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                URLConnectionAdapter con = null;
+                try {
+                    con = brc.openHeadConnection(directurl);
+                    if (!con.isOK() || StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
+                        return null;
+                    } else {
+                        if (con.getLongContentLength() > 0) {
+                            filesize = con.getLongContentLength();
+                        }
+                    }
+                } catch (IOException e) {
+                    logger.log(e);
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                }
+            }
         }
-        final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
         final String qualityStringForQualitySelection = getQualityIdentifier(directurl, bitrate, width, height);
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         final MediathekProperties data = link.bindData(MediathekProperties.class);
@@ -1064,8 +1086,6 @@ public class Ardmediathek extends PluginForDecrypt {
     private void handleUserQualitySelection(List<String> selectedQualities) {
         /* We have to re-add the subtitle for the best quality if wished by the user */
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
-        final Class<? extends ArdConfigInterface> cfgInterface = getConfigInterface();
-        final ArdConfigInterface cfg = PluginJsonConfig.get(cfgInterface);
         if (cfg.isGrabBESTEnabled()) {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
