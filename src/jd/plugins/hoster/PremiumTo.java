@@ -20,6 +20,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,19 +52,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
@@ -665,7 +665,7 @@ public class PremiumTo extends UseNet {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         case 404:
             /* 2019-10-30: We cannot trust this API errormessage */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted API error 404", 5 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404", 5 * 60 * 1000);
         case 405:
             /* Rare case: User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
             /* {"code":405,"message":"Too many files"} */
@@ -675,7 +675,7 @@ public class PremiumTo extends UseNet {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
         default:
             /* TODO: Unknown error */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown error", 5 * 60 * 1000);
         }
         if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
             /* Now handle special Storage errors / statuscodes */
