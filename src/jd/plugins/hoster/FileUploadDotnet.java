@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -125,9 +124,10 @@ public class FileUploadDotnet extends antiDDoSForHost {
             final String sitekey = download.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
             if (download.containsHTML("g\\-recaptcha") && sitekey != null) {
                 /* 2017-04-25 */
-                logger.info("ReCaptchaV2 required");
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, sitekey).getToken();
-                download.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                /* 2019-11-01: Captcha not required anymore(?!) */
+                // logger.info("ReCaptchaV2 required");
+                // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, sitekey).getToken();
+                // download.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
