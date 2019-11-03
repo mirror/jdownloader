@@ -3264,42 +3264,51 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             String dllink = checkDirectLink(link, directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
+                /* First API ... */
                 if (this.supports_api_only_mode(account) || this.allow_api_premium_download_if_apikey_is_available(account)) {
                     /* TODO: 2019-07-11: Consider using this over normal linkcheck whenever possible */
                     // requestFileInformationAPI(link, account);
                     dllink = this.getDllinkAPI(link, account);
                 }
+                /* ... then website */
                 if (StringUtils.isEmpty(dllink)) {
                     final boolean verifiedLogin = loginWebsite(account, false);
                     getPage(link.getPluginPatternMatcher());
-                    if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
-                        loginWebsite(account, true);
-                        getPage(link.getPluginPatternMatcher());
-                    }
-                    dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                    /*
+                     * Check for final downloadurl here because if user/host has direct downloads enabled, PluginPatternMatcher will
+                     * redirect to our final downloadurl thus isLoggedin might return false although we are loggedin!
+                     */
+                    dllink = getDllink(link, account);
                     if (StringUtils.isEmpty(dllink)) {
-                        dllink = getDllink(link, account);
-                    }
-                    if (StringUtils.isEmpty(dllink)) {
-                        final Form dlForm = findFormDownload2Premium();
-                        if (dlForm != null) {
-                            if (isPasswordProtectedHTM()) {
-                                handlePassword(dlForm, link);
-                            }
-                            final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                            if (formCon.isOK() && !formCon.getContentType().contains("html") && formCon.isContentDisposition()) {
-                                /* Very rare case - e.g. tiny-files.com */
-                                handleDownload(link, account, dllink, formCon.getRequest());
-                                return;
-                            } else {
-                                br.followConnection();
-                                this.correctBR();
-                            }
-                            checkErrors(link, account, true);
+                        if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
+                            loginWebsite(account, true);
+                            getPage(link.getPluginPatternMatcher());
                             dllink = getDllink(link, account);
-                        } else {
-                            checkErrors(link, account, true);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (StringUtils.isEmpty(dllink)) {
+                            dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                        }
+                        if (StringUtils.isEmpty(dllink)) {
+                            final Form dlForm = findFormDownload2Premium();
+                            if (dlForm != null) {
+                                if (isPasswordProtectedHTM()) {
+                                    handlePassword(dlForm, link);
+                                }
+                                final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                                if (formCon.isOK() && !formCon.getContentType().contains("html") && formCon.isContentDisposition()) {
+                                    /* Very rare case - e.g. tiny-files.com */
+                                    handleDownload(link, account, dllink, formCon.getRequest());
+                                    return;
+                                } else {
+                                    br.followConnection();
+                                    this.correctBR();
+                                }
+                                checkErrors(link, account, true);
+                                dllink = getDllink(link, account);
+                            } else {
+                                checkErrors(link, account, true);
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
                     }
                 }
