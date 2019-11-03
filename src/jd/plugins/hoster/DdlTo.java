@@ -18,16 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -133,6 +136,42 @@ public class DdlTo extends XFileSharingProBasic {
             captchaForm.put("adblock_detected", "0");
         }
         super.handleCaptcha(link, captchaForm);
+    }
+
+    @Override
+    protected String regExTrafficLeft() {
+        /* 2019-11-03: Special */
+        final Regex trafficleft = new Regex(correctedBR, "<span>Traffic available</span>\\s*<div class=\"price\"><sup>([^<>]+)</sup>(\\d+)</div>");
+        String availabletraffic = null;
+        final String trafficleftUnit = trafficleft.getMatch(0);
+        final String trafficleftTmp = trafficleft.getMatch(1);
+        if (trafficleftUnit != null && trafficleftTmp != null) {
+            availabletraffic = trafficleftTmp + trafficleftUnit;
+        }
+        if (availabletraffic == null) {
+            /* Fallback to template handling */
+            availabletraffic = super.regExTrafficLeft();
+        }
+        return availabletraffic;
+    }
+
+    @Override
+    public String regexFilenameAbuse(final Browser br) {
+        String filename = br.getRegex("label>Filename</label>\\s*<input[^>]*value=\"([^<>\"]+)\"").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback to template */
+            filename = super.regexFilenameAbuse(br);
+        }
+        return filename;
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<div class=\"name\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
+        }
+        return fileInfo;
     }
 
     private void setConfigElements() {

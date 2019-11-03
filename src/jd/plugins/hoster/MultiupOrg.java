@@ -134,8 +134,17 @@ public class MultiupOrg extends PluginForHost {
             /* 402 - Payment required */
             if (dl.getConnection().getResponseCode() == 402) {
                 /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
-                account.getAccountInfo().setTrafficLeft(0);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /*
+                 * 2019-11-03: We cannot trust this error as it may even occur on premium account download attempts. Rather wait than temp.
+                 * disabling account.
+                 */
+                final boolean trust_402_message = false;
+                if (trust_402_message) {
+                    account.getAccountInfo().setTrafficLeft(0);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    mhm.handleErrorGeneric(account, link, "untrusted_error_responsecode_402", 20, 5 * 60 * 1000l);
+                }
             }
             br.followConnection();
             handleKnownErrors(this.br, account, link);
