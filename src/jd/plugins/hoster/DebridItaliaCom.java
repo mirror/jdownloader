@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,10 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
     public DebridItaliaCom(PluginWrapper wrapper) {
@@ -49,21 +49,12 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return "https://www.debriditalia.com/premium.php";
     }
 
+    private static final String          API_BASE                      = "https://debriditalia.com/api.php";
     private static MultiHosterManagement mhm                           = new MultiHosterManagement("debriditalia.com");
-    private static final String          NICE_HOST                     = "debriditalia.com";
-    private static final String          NICE_HOSTproperty             = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String          NOCHUNKS                      = "NOCHUNKS";
     private static final String          MAX_RETRIES_DL_ERROR_PROPERTY = "MAX_RETRIES_DL_ERROR";
     private static final int             DEFAULT_MAX_RETRIES_DL_ERROR  = 50;
-    private Account                      currAcc                       = null;
-    private DownloadLink                 currDownloadLink              = null;
     private String                       dllink                        = null;
-
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        dllink = null;
-        this.currAcc = acc;
-        this.currDownloadLink = dl;
-    }
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
@@ -78,10 +69,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return prepBr;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
         if (account.getUser().equals("") || account.getPass().equals("")) {
             /* Server returns 401 if you send empty fields (logindata) */
             accountInvalid();
@@ -93,7 +82,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             if (br.containsHTML("<status>expired</status>")) {
                 ac.setStatus("Account is expired!");
                 ac.setExpired(true);
-                account.setValid(false);
                 return ac;
             }
             accountInvalid();
@@ -104,7 +92,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             accountInvalid();
         }
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
-        getPage("https://debriditalia.com/api.php?hosts");
+        getPage(API_BASE + "?hosts");
         final String[] hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final List<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
@@ -132,16 +120,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        setConstants(null, link);
         requestFileInformation(link);
-        handleDl();
+        handleDl(link, null);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        setConstants(account, link);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        handleDl();
+        handleDl(link, account);
     }
 
     @Override
@@ -150,64 +136,62 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
-        mhm.runCheck(currAcc, currDownloadLink);
+        mhm.runCheck(account, link);
         showMessage(link, "Generating link");
         /* since no requests are done with this.br we need to manually set so checkdirectlink is correct */
         prepBrowser(br, "https://debriditalia.com/");
         dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
-            String host_downloadlink = link.getDownloadURL();
+            String host_downloadlink = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             /* Workaround for server side debriditalia bug. */
             /*
              * Known hosts for which they do definitely not accept https urls [ last updated 2015-10-05]: share-online.biz, inclouddrive.com
              */
             host_downloadlink = host_downloadlink.replace("https://", "http://");
             final String encodedLink = Encoding.urlEncode(host_downloadlink);
-            getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + encodedLink);
+            getPage(API_BASE + "?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
-                mhm.handleErrorGeneric(currAcc, currDownloadLink, "not_available", 5, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "not_available", 20, 5 * 60 * 1000l);
             } else if (br.containsHTML("ERROR: not_supported")) {
                 logger.info("Current host is not supported");
-                mhm.putError(currAcc, currDownloadLink, 5 * 60 * 1000l, "not_supported");
+                mhm.putError(account, link, 5 * 60 * 1000l, "not_supported");
             }
             dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
             if (dllink == null) {
-                mhm.handleErrorGeneric(currAcc, currDownloadLink, "dllinknull", 5, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "dllinknull", 20, 5 * 60 * 1000l);
             }
         }
-        handleDl();
+        handleDl(link, account);
     }
 
-    private void handleDl() throws Exception {
+    private void handleDl(final DownloadLink link, final Account account) throws Exception {
         int chunks = 0;
-        if (currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
             chunks = 1;
         }
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, currDownloadLink, Encoding.htmlDecode(dllink.trim()), true, chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
             if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the page or click the button below\\.</p>")) {
-                mhm.handleErrorGeneric(currAcc, currDownloadLink, "Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
             }
             if (br.containsHTML("No htmlCode read")) {
-                mhm.handleErrorGeneric(currAcc, currDownloadLink, "unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
             }
-            mhm.handleErrorGeneric(currAcc, currDownloadLink, "unknowndlerror2", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "unknowndlerror2", maxRetriesOnDownloadError, 5 * 60 * 1000l);
         }
-        // Directlinks can be used for up to 2 days
-        currDownloadLink.setProperty("debriditaliadirectlink", dllink);
+        /* Directlinks can be used for up to 2 days */
+        link.setProperty("debriditaliadirectlink", dllink);
         /* They sometimes return html-encoded filenames - let's fix this! */
         String server_filename = getFileNameFromHeader(this.dl.getConnection());
         server_filename = Encoding.htmlDecode(server_filename);
-        this.currDownloadLink.setFinalFileName(server_filename);
+        link.setFinalFileName(server_filename);
         try {
             // start the dl
             if (!this.dl.startDownload()) {
@@ -218,16 +202,16 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
-                    currDownloadLink.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                    link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 chunk errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && currDownloadLink.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
-                currDownloadLink.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
@@ -241,7 +225,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         try {
             br.setFollowRedirects(true);
             // head connection not possible. -raztoki-20160112
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getDownloadURL()));
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
             if (con.isContentDisposition() && con.isOK()) {
                 if (link.getFinalFileName() == null) {
                     link.setFinalFileName(getFileNameFromHeader(con));
@@ -267,8 +251,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
     }
 
-    private boolean loginAPI(final Account acc) throws Exception {
-        getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + encodePassword(acc.getPass()));
+    private boolean loginAPI(final Account account) throws Exception {
+        getPage(API_BASE + "?check=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()));
         if (!br.containsHTML("<status>valid</status>") || br.getHttpConnection().getResponseCode() == 401) {
             return false;
         }
