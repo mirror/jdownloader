@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -39,16 +40,15 @@ import jd.plugins.components.PluginJSonUtils;
 public class ZbigzCom extends antiDDoSForHost {
     public ZbigzCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://zbigz.com/page-premium-overview");
+        this.enablePremium("https://zbigz.com/page-premium-overview");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://zbigz.com/page-therms-of-use";
+        return "https://zbigz.com/page-therms-of-use";
     }
 
-    private String              DLLINK   = null;
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private String dllink = null;
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -58,31 +58,31 @@ public class ZbigzCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
             login(aa, false);
             final boolean enable_antiddos_workaround = true;
             if (enable_antiddos_workaround) {
-                br.getPage(downloadLink.getPluginPatternMatcher());
+                br.getPage(link.getPluginPatternMatcher());
             } else {
-                super.getPage(downloadLink.getPluginPatternMatcher());
+                super.getPage(link.getPluginPatternMatcher());
             }
             if (br.containsHTML("Page not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            DLLINK = br.getRedirectLocation();
-            if (DLLINK == null) {
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(DLLINK);
+                con = br.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -94,37 +94,48 @@ public class ZbigzCom extends antiDDoSForHost {
             }
             return AvailableStatus.TRUE;
         } else {
-            downloadLink.getLinkStatus().setStatusText("Status can only be checked with account enabled");
+            link.getLinkStatus().setStatusText("Status can only be checked with account enabled");
             return AvailableStatus.UNCHECKABLE;
         }
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private static Object LOCK = new Object();
+    private static final String WEBSITE_API_BASE = "https://api.zbigz.com/v1";
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    return;
-                }
                 br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                /* 2019-11-04: Always try to re-use cookies to avoid login captchas! */
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/info");
+                    accountInfoReq.addFormData(new FormData("undefined", "undefined"));
+                    // br.clearCookies("zbigz.com");
+                    super.sendRequest(accountInfoReq);
+                    final String email = PluginJSonUtils.getJson(br, "email");
+                    if (!StringUtils.isEmpty(email)) {
+                        return;
+                    } else {
+                        /* Full login required */
+                        br.clearCookies(br.getHost());
+                    }
+                }
+                logger.info("Performing full login");
                 getPage("https://zbigz.com/login");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "application/json, application/xml, text/plain, text/html, *.*");
-                postPage("https://api.zbigz.com/v1/account/info", "undefined=undefined");
+                postPage(WEBSITE_API_BASE + "/account/info", "undefined=undefined");
                 /* Important header!! */
                 br.getHeaders().put("Origin", "https://zbigz.com");
-                final PostFormDataRequest authReq = br.createPostFormDataRequest("https://api.zbigz.com/v1/account/auth/token");
+                final PostFormDataRequest authReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/auth/token");
                 authReq.addFormData(new FormData("undefined", "undefined"));
                 super.sendRequest(authReq);
                 final String auth_token_name = PluginJSonUtils.getJson(br, "auth_token_name");
@@ -133,13 +144,29 @@ public class ZbigzCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final PostFormDataRequest loginReq = br.createPostFormDataRequest("/v1/account/sign-in");
+                /* 2019-11-04: Seems like login captcha is always required */
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                try {
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    /* 2019-11-04: Hardcoded reCaptchaV2 key */
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lei4loUAAAAACp9km05L8agghrMMNNSYo5Mfmhj").getToken();
+                    loginReq.addFormData(new FormData("recaptcha", Encoding.urlEncode(recaptchaV2Response)));
+                } finally {
+                    this.setDownloadLink(dlinkbefore);
+                }
                 loginReq.addFormData(new FormData("login", account.getUser()));
                 loginReq.addFormData(new FormData("email", account.getUser()));
                 loginReq.addFormData(new FormData("password", account.getPass()));
                 loginReq.addFormData(new FormData("csrf_name", auth_token_name));
                 loginReq.addFormData(new FormData("csrf_value", auth_token_value));
-                loginReq.addFormData(new FormData("recaptcha", ""));
                 super.sendRequest(loginReq);
+                /* 2019-11-04: This will also be set as cookie with key "session". */
                 final String sessiontoken = PluginJSonUtils.getJson(br, "session");
                 if (StringUtils.isEmpty(sessiontoken)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -161,9 +188,11 @@ public class ZbigzCom extends antiDDoSForHost {
             throw e;
         }
         /* Browser: https://zbigz.com/account */
-        final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest("https://api.zbigz.com/v1/account/info");
-        accountInfoReq.addFormData(new FormData("undefined", "undefined"));
-        super.sendRequest(accountInfoReq);
+        if (br.getURL() == null || !br.getURL().contains("/account/info")) {
+            final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/info");
+            accountInfoReq.addFormData(new FormData("undefined", "undefined"));
+            super.sendRequest(accountInfoReq);
+        }
         final String premium_valid_date = PluginJSonUtils.getJson(br, "premium_valid_date");
         final String premium_days = PluginJSonUtils.getJson(br, "premium_days");
         if (!StringUtils.isEmpty(premium_valid_date) || "true".equalsIgnoreCase(premium_days)) {
@@ -183,11 +212,7 @@ public class ZbigzCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        int chunks = -5;
-        if (link.getBooleanProperty(ZbigzCom.NOCHUNKS, false)) {
-            chunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
