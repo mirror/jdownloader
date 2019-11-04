@@ -30,8 +30,9 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
-    private static MultiHosterManagement mhm     = new MultiHosterManagement("linkifier.com");
-    private static final String          API_KEY = "d046c4309bb7cabd19f49118a2ab25e0";
+    private static MultiHosterManagement mhm      = new MultiHosterManagement("linkifier.com");
+    private static final String          API_KEY  = "d046c4309bb7cabd19f49118a2ab25e0";
+    private static final String          API_BASE = "https://api.linkifier.com";
 
     public LinkifierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +55,7 @@ public class LinkifierCom extends PluginForHost {
         userJson.put("login", username);
         userJson.put("md5Pass", Hash.getMD5(account.getPass()));
         userJson.put("apiKey", API_KEY);
-        final PostRequest userRequest = new PostRequest("https://api.linkifier.com/downloadapi.svc/user");
+        final PostRequest userRequest = new PostRequest(API_BASE + "/downloadapi.svc/user");
         userRequest.setContentType("application/json; charset=utf-8");
         userRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
         final HashMap<String, Object> userResponse = JSonStorage.restoreFromString(br.getPage(userRequest), TypeRef.HASHMAP);
@@ -66,7 +67,7 @@ public class LinkifierCom extends PluginForHost {
             if (expiryDate != null) {
                 ai.setValidUntil(expiryDate.longValue());
                 if (!ai.isExpired()) {
-                    final PostRequest hosterRequest = new PostRequest("https://api.linkifier.com/DownloadAPI.svc/hosters");
+                    final PostRequest hosterRequest = new PostRequest(API_BASE + "/DownloadAPI.svc/hosters");
                     hosterRequest.setContentType("application/json; charset=utf-8");
                     hosterRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
                     final HashMap<String, Object> hosterResponse = JSonStorage.restoreFromString(br.getPage(hosterRequest), TypeRef.HASHMAP);
@@ -89,7 +90,7 @@ public class LinkifierCom extends PluginForHost {
         }
         final String errorMsg = userResponse.get("ErrorMSG") != null ? String.valueOf(userResponse.get("ErrorMSG")) : null;
         if (StringUtils.containsIgnoreCase(errorMsg, "Error verifying api key")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (StringUtils.containsIgnoreCase(errorMsg, "Could not find a customer with those credentials")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (StringUtils.isNotEmpty(errorMsg)) {
@@ -134,14 +135,14 @@ public class LinkifierCom extends PluginForHost {
         downloadJson.put("apiKey", API_KEY);
         downloadJson.put("url", downloadLink.getDefaultPlugin().buildExternalDownloadURL(downloadLink, this));
         Browser br = new Browser();
-        final PostRequest downloadRequest = new PostRequest("https://api.linkifier.com/downloadapi.svc/stream");
+        final PostRequest downloadRequest = new PostRequest(API_BASE + "/downloadapi.svc/stream");
         downloadRequest.setContentType("application/json; charset=utf-8");
         downloadRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(downloadJson));
         final HashMap<String, Object> downloadResponse = JSonStorage.restoreFromString(br.getPage(downloadRequest), TypeRef.HASHMAP);
         if (Boolean.FALSE.equals(downloadResponse.get("hasErrors"))) {
-            String url = downloadResponse.get("url") != null ? String.valueOf(downloadResponse.get("url")) : null;
-            if (StringUtils.isEmpty(url)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String dllink = downloadResponse.get("url") != null ? String.valueOf(downloadResponse.get("url")) : null;
+            if (StringUtils.isEmpty(dllink)) {
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknull", 50, 5 * 60 * 1000l);
             }
             br.setConnectTimeout(120 * 1000);
             br.setReadTimeout(120 * 1000);
@@ -165,7 +166,7 @@ public class LinkifierCom extends PluginForHost {
                 }
             }
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, resume, maxChunks);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                     try {
                         dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -207,12 +208,12 @@ public class LinkifierCom extends PluginForHost {
                         }
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errDesc == null ? "Server Error" : errDesc, waitTime * 60 * 1000l + 1);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknofile1", 50, 5 * 60 * 1000l);
                     }
                 }
                 if (!dl.getConnection().isContentDisposition()) {
                     dl.getConnection().disconnect();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknofile12", 50, 5 * 60 * 1000l);
                 }
                 dl.startDownload();
             } catch (PluginException e) {
@@ -231,22 +232,19 @@ public class LinkifierCom extends PluginForHost {
         final String errorMsg = downloadResponse.get("ErrorMSG") != null ? String.valueOf(downloadResponse.get("ErrorMSG")) : null;
         if (errorMsg != null) {
             if (StringUtils.containsIgnoreCase(errorMsg, "Error verifying api key")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (StringUtils.containsIgnoreCase(errorMsg, "Could not find a customer with those credentials")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (StringUtils.containsIgnoreCase(errorMsg, "Account expired")) {
+            } else if (StringUtils.containsIgnoreCase(errorMsg, "Could not find a customer with those credentials")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (StringUtils.containsIgnoreCase(errorMsg, "Customer reached daily limit for current hoster")) {
-                mhm.putError(account, downloadLink, 60 * 60 * 1000l, errorMsg);
-            }
-            if (StringUtils.containsIgnoreCase(errorMsg, "Accounts are maxed out for current hoster")) {
-                mhm.putError(account, downloadLink, 60 * 60 * 1000l, errorMsg);
-            }
-            if (StringUtils.containsIgnoreCase(errorMsg, "Downloads blocked until")) {
+            } else if (StringUtils.containsIgnoreCase(errorMsg, "Account expired")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (StringUtils.containsIgnoreCase(errorMsg, "Customer reached daily limit for current hoster")) {
+                mhm.putError(account, downloadLink, 5 * 60 * 1000l, errorMsg);
+            } else if (StringUtils.containsIgnoreCase(errorMsg, "Accounts are maxed out for current hoster")) {
+                mhm.putError(account, downloadLink, 5 * 60 * 1000l, errorMsg);
+            } else if (StringUtils.containsIgnoreCase(errorMsg, "Downloads blocked until")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (StringUtils.containsIgnoreCase(errorMsg, "Hoster is not supported")) {
+                mhm.putError(account, downloadLink, 5 * 60 * 1000l, errorMsg);
             }
         } else {
             final Number expiryDate = (Number) downloadResponse.get("expirydate");
@@ -254,7 +252,7 @@ public class LinkifierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMsg);
+        mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 50, 5 * 60 * 1000l);
     }
 
     @Override
