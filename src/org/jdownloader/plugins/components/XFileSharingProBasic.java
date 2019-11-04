@@ -1492,7 +1492,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
             }
             if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Official video download failed: dllink is null");
+                logger.warning("Failed to find dllink via official video download");
+            } else {
+                logger.info("Successfully found dllink via official video download");
             }
         }
         return dllink;
@@ -3245,10 +3247,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* Perform linkcheck without logging in */
-        requestFileInformationWebsite(link, account, true);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (AccountType.FREE.equals(account.getType())) {
+            /*
+             * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http request.
+             */
+            requestFileInformationWebsite(link, account, true);
+            /* TODO: Add API download functionality for free accounts or completely merge free- & premium-account download handling. */
             final boolean verifiedLogin = loginWebsite(account, false);
             /* Access main Content-URL */
             this.getPage(link.getPluginPatternMatcher());
@@ -3265,50 +3270,58 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             String dllink = checkDirectLink(link, directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
                 /* First API ... */
-                if (this.supports_api_only_mode(account) || this.allow_api_premium_download_if_apikey_is_available(account)) {
-                    /* TODO: 2019-07-11: Consider using this over normal linkcheck whenever possible */
-                    // requestFileInformationAPI(link, account);
-                    dllink = this.getDllinkAPI(link, account);
-                }
+                dllink = this.getDllinkAPI(link, account);
                 /* ... then website */
                 if (StringUtils.isEmpty(dllink)) {
+                    /*
+                     * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http
+                     * request.
+                     */
+                    requestFileInformationWebsite(link, account, true);
                     final boolean verifiedLogin = loginWebsite(account, false);
                     getPage(link.getPluginPatternMatcher());
                     /*
                      * Check for final downloadurl here because if user/host has direct downloads enabled, PluginPatternMatcher will
                      * redirect to our final downloadurl thus isLoggedin might return false although we are loggedin!
                      */
-                    dllink = getDllink(link, account);
+                    /*
+                     * First check for official video download as this is sometimes only available via account (example: xvideosharing.com)!
+                     */
+                    dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                    if (StringUtils.isEmpty(dllink)) {
+                        dllink = getDllink(link, account);
+                    }
                     if (StringUtils.isEmpty(dllink)) {
                         if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
                             loginWebsite(account, true);
                             getPage(link.getPluginPatternMatcher());
-                            dllink = getDllink(link, account);
-                        }
-                        if (StringUtils.isEmpty(dllink)) {
+                            /* Same as above again */
                             dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                            if (StringUtils.isEmpty(dllink)) {
+                                dllink = getDllink(link, account);
+                            }
                         }
                         if (StringUtils.isEmpty(dllink)) {
                             final Form dlForm = findFormDownload2Premium();
-                            if (dlForm != null) {
-                                if (isPasswordProtectedHTM()) {
-                                    handlePassword(dlForm, link);
-                                }
-                                final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                                if (formCon.isOK() && !formCon.getContentType().contains("html") && formCon.isContentDisposition()) {
-                                    /* Very rare case - e.g. tiny-files.com */
-                                    handleDownload(link, account, dllink, formCon.getRequest());
-                                    return;
-                                } else {
-                                    br.followConnection();
-                                    this.correctBR();
-                                }
+                            if (dlForm == null) {
                                 checkErrors(link, account, true);
-                                dllink = getDllink(link, account);
-                            } else {
-                                checkErrors(link, account, true);
+                                logger.warning("Failed to find Form download2");
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
+                            if (isPasswordProtectedHTM()) {
+                                handlePassword(dlForm, link);
+                            }
+                            final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                            if (formCon.isOK() && !formCon.getContentType().contains("html") && formCon.isContentDisposition()) {
+                                /* Very rare case - e.g. tiny-files.com */
+                                handleDownload(link, account, dllink, formCon.getRequest());
+                                return;
+                            } else {
+                                br.followConnection();
+                                this.correctBR();
+                            }
+                            checkErrors(link, account, true);
+                            dllink = getDllink(link, account);
                         }
                     }
                 }
@@ -3317,81 +3330,87 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    /**
-     * Get final downloadurl via API! </br>
-     * Only execute this if you know that the currently used host supports this! </br>
-     * Only execute this if an apikey is given! </br>
-     * Only execude this if you know that a particular host has enabled this API call! </br>
-     * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
-     */
+    /** Generates final downloadurl via API if API usage is allowed and apikey is available. */
     protected String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
-        logger.info("Trying to get dllink via API");
-        final String apikey = getAPIKey(account);
-        if (StringUtils.isEmpty(apikey)) {
-            /* This should never happen */
-            logger.warning("Cannot do this without apikey");
-            return null;
-        }
-        final String fileid_to_download;
-        if (requires_api_getdllink_clone_workaround(account)) {
-            /* 2019-10-31: This even allows us to import password protected files (password will be removed then) and download them :D */
-            logger.info("Trying to download file via clone workaround");
-            getPage(this.getAPIBase() + "/file/clone?key=" + apikey + "&file_code=" + this.fuid);
-            this.checkErrorsAPI(this.br, link, account);
-            fileid_to_download = PluginJSonUtils.getJson(br, "filecode");
-            if (StringUtils.isEmpty(fileid_to_download)) {
-                logger.warning("Failed to find new fileid in clone handling");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            logger.info("Trying to download file via api without workaround");
-            fileid_to_download = this.fuid;
-        }
-        /*
-         * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in case
-         * the quality selected by our user is not available.
-         */
-        /* Documentation videohost: https://xfilesharingpro.docs.apiary.io/#reference/file/file-clone/get-direct-link */
-        /*
-         * Documentation filehost:
-         * https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities
-         */
-        getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid_to_download);
-        this.checkErrorsAPI(this.br, link, account);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        LinkedHashMap<String, Object> entries_tmp;
-        entries = (LinkedHashMap<String, Object>) entries.get("result");
         String dllink = null;
-        /** TODO: Add quality selection */
-        /* For videohosts: Pick the best quality */
-        final String[] qualities = new String[] { "o", "h", "n" };
-        for (final String quality : qualities) {
-            final Object qualityO = entries.get(quality);
-            if (qualityO != null) {
-                entries_tmp = (LinkedHashMap<String, Object>) qualityO;
-                dllink = (String) entries_tmp.get("url");
-                break;
+        /**
+         * Only execute this if you know that the currently used host supports this! </br>
+         * Only execute this if an apikey is given! </br>
+         * Only execude this if you know that a particular host has enabled this API call! </br>
+         * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
+         */
+        if (this.supports_api_only_mode(account) || this.allow_api_premium_download_if_apikey_is_available(account)) {
+            /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
+            // requestFileInformationAPI(link, account);
+            logger.info("Trying to get dllink via API");
+            final String apikey = getAPIKey(account);
+            if (StringUtils.isEmpty(apikey)) {
+                /* This should never happen */
+                logger.warning("Cannot do this without apikey");
+                return null;
             }
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            /* For filehosts (= no different qualities available) */
-            logger.info("Failed to find any quality - downloading original file");
-            dllink = (String) entries.get("url");
-            // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-        }
-        if (dllink != null) {
-            logger.info("Successfully found dllink via API");
-        } else {
-            logger.warning("Failed to find dllink via API");
-            if (this.supports_api_only_mode(account)) {
-                logger.warning("API only mode is active --> Plugin broken");
-                /**
-                 * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with a
-                 * waittime.
+            final String fileid_to_download;
+            if (requires_api_getdllink_clone_workaround(account)) {
+                /*
+                 * 2019-10-31: This even allows us to import password protected files (password will be removed then) and download them :D
                  */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("Trying to download file via clone workaround");
+                getPage(this.getAPIBase() + "/file/clone?key=" + apikey + "&file_code=" + this.fuid);
+                this.checkErrorsAPI(this.br, link, account);
+                fileid_to_download = PluginJSonUtils.getJson(br, "filecode");
+                if (StringUtils.isEmpty(fileid_to_download)) {
+                    logger.warning("Failed to find new fileid in clone handling");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
-                logger.info("Continuing via website as fallback");
+                logger.info("Trying to download file via api without workaround");
+                fileid_to_download = this.fuid;
+            }
+            /*
+             * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in
+             * case the quality selected by our user is not available.
+             */
+            /* Documentation videohost: https://xfilesharingpro.docs.apiary.io/#reference/file/file-clone/get-direct-link */
+            /*
+             * Documentation filehost:
+             * https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities
+             */
+            getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid_to_download);
+            this.checkErrorsAPI(this.br, link, account);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            LinkedHashMap<String, Object> entries_tmp;
+            entries = (LinkedHashMap<String, Object>) entries.get("result");
+            /** TODO: Add quality selection */
+            /* For videohosts: Pick the best quality */
+            final String[] qualities = new String[] { "o", "h", "n" };
+            for (final String quality : qualities) {
+                final Object qualityO = entries.get(quality);
+                if (qualityO != null) {
+                    entries_tmp = (LinkedHashMap<String, Object>) qualityO;
+                    dllink = (String) entries_tmp.get("url");
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                /* For filehosts (= no different qualities available) */
+                logger.info("Failed to find any quality - downloading original file");
+                dllink = (String) entries.get("url");
+                // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            }
+            if (dllink != null) {
+                logger.info("Successfully found dllink via API");
+            } else {
+                logger.warning("Failed to find dllink via API");
+                if (this.supports_api_only_mode(account)) {
+                    logger.warning("API only mode is active --> Plugin broken");
+                    /**
+                     * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with
+                     * a waittime.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    logger.info("Continuing via website as fallback");
+                }
             }
         }
         return dllink;
