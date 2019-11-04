@@ -17,11 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,7 +33,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|#\\!/v)/([A-Za-z0-9]+)" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|p|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
     public JetloadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -174,6 +175,17 @@ public class JetloadNet extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    private String getString(Map<String, Object> map, String key) {
+        final Object ret = JavaScriptEngineFactory.walkJson(map, key);
+        if (ret == null) {
+            return null;
+        } else if (ret instanceof String) {
+            return (String) ret;
+        } else {
+            return String.valueOf(ret);
+        }
+    }
+
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
@@ -190,9 +202,9 @@ public class JetloadNet extends PluginForHost {
             final boolean is_video = !"file".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status"));
             final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
             final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
-            final boolean archive = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/archive"));
-            final boolean low = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/low"));
-            final boolean med = "1".equals(JavaScriptEngineFactory.walkJson(entries, "file/med"));
+            final boolean archive = "1".equals(getString(entries, "file/archive"));
+            final boolean low = "1".equals(getString(entries, "file/low"));
+            final boolean med = "1".equals(getString(entries, "file/med"));
             if (StringUtils.isEmpty(filename_internal)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isEmpty(ext)) {
@@ -224,10 +236,10 @@ public class JetloadNet extends PluginForHost {
                  * Official download via API. Can also be used to download videos but will often fail for videos (error 404) - we're only
                  * using it to download non-video-files!
                  */
-                String serverID = (String) JavaScriptEngineFactory.walkJson(entries, "server/id");
+                String serverID = getString(entries, "server/id");
                 if (StringUtils.isEmpty(serverID)) {
                     // server/id available for encoding_status: "completed"
-                    serverID = (String) JavaScriptEngineFactory.walkJson(entries, "file/srv_id");
+                    serverID = getString(entries, "file/srv_id");
                     // file/srv_id always available for encoding_status: "pending"
                     if (StringUtils.isEmpty(serverID)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -280,7 +292,7 @@ public class JetloadNet extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
