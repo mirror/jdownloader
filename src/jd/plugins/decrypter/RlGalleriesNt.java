@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,7 +32,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_]+\\.)?urlgalleries\\.net/porn-gallery-\\d+/.*" })
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_\\-]+\\.)?urlgalleries\\.net/porn-gallery-\\d+/.*" })
 public class RlGalleriesNt extends PluginForDecrypt {
     private static String agent = null;
 
@@ -70,7 +70,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
         String[][] items = br.getRegex("href='(/porn-picture[^']+)'[^<>]+><[^<>]+title=\"([^\"]+)\"").getMatches();
         if (items == null || items.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int counter = 1;
         /* 2019-05-15: Via browser it sometimes worked when using a private tab but so far I havent found a way to avoid their captcha. */
@@ -102,6 +102,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
                 }
                 brc.getPage("https://" + this.getHost() + aLink);
             } catch (final Exception e) {
+                logger.log(e);
                 logger.info("Link timed out: " + aLink);
                 counter++;
                 continue;
@@ -127,7 +128,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
             }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DownloadLink lol = createDownloadlink(finallink);
             // Give temp name so we have no same filenames

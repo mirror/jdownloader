@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -30,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * The idea behind this is to speed up linkchecking for host providers that go permanently offline. URLs tend to stay cached/archived on the
@@ -52,7 +52,7 @@ public class Offline extends PluginForHost {
                 "imggold.org", "gavitex.com", "filesflash.com", "share.vnn.vn", "filebebo.cc", "imgdiamond.com", "imgswift.com", "arabloads.net", "filesisland.com", "share.az", "gigasize.com", "tuberealm.com", "nudeflix.com", "grifthost.com", "xvidstage.com", "emuparadise.me", "up07.net", "wastedamateurs.com", "filedais.com", "streamin.to", "myimg.club", "depfile.com", "mangatraders.biz", "vid.me", "uploadrocket.net", "faplust.com", "unlimitzone.com", "copiapop.com", "partagora.com", "filespace.io", "kingfiles.net", "uber-sha.re", "obscuredfiles.com", "uploadlw.com", "ulnow.com", "nashdisk.ru", "partage-facile.com", "ourupload.com", "glbupload.com", "imgve.com", "drfile.net", "bitload.org", "megafile.co", "gulf4up.com", "mydrive.com", "uplea.com", "letwatch.us", "onemillionfiles.com", "unlimit.co.il", "ul-instant.pw", "goear.com", "exfile.ru", "extradj.com", "exashare.com",
                 "ecostream.tv", "karadownloads.com", "dropjar.com", "zstream.to", "ulshare.se", "f-bit.ru", "movyo.to", "yourvideohost.com", "tigerfiles.net", "thevideos.tv", "megafile.org", "99yp.cc", "ultrashare.net", "host4desi.com", "coo5shaine.com", "rapidvideo.ws", "neodrive.co", "mediafree.co", "filez.tv", "hochladen.to", "ampya.com", "filearn.com", "crocko.com", "porn5.com", "torrent.ajee.sh", "tikfile.com", "sharesend.com", "upfiles.net", "rioupload.com", "limefile.com", "powerwatch.pw", "up4file.com", "sli.mg", "sfshare.se", "rabbitfile.com", "megadysk.pl", "megadrv.com", "grimblr.com", "dwn.so", "cloudshares.net", "72bbb.com", "vip-shared.com", "someimage.com", "rodfile.com", "mightyupload.com", "pornative.com", "oload.net", "mediafire.bz", "lafiles.com", "kure.tv", "junocloud.me", "fileweed.net", "imgblitz.pw", "fibero.co", "filescloud.co", "fileload.io", "dedifile.com",
                 "anysend.com", "2downloadz.com", "otakushare.com", "uploadbb.co", "bitcasa.com", "imgwet.com", "ziddu.com", "imxd.net", "myvideo.de", "timsah.com", "shared.sx", "stagevu.com", "vip-file.com", "shareflare.net", "moevideo.net", "letitbit.net", "lumload.com", "rosharing.net", "erafile.com", "uploading.com", "cloudsix.me", "zalaa.com", "vodlocker.com", "vidbull.com", "timeload.net", "sendspace.pl", "secureupload.eu", "mp3takeout.com", "imzdrop.com", "idowatch.net", "jpopsuki.tv", "minus.com", "happystreams.net", "kingload.net", "interfile.net", "imgbb.net", "filemoney.com", "auengine.com", "rocketfiles.net", "flashvids.org", "yamivideo.com", "divxhosted.com", "4upld.com", "filespart.com", "uploadc.com", "skymiga.com", "shareblue.eu", "videopremium.tv", "veterok.tv", "goo.im", "soundowl.com", "megaxfile.com", "bitshare.com", "promptfile.com", "fireswap.org", "vessel.com",
-                "loadus.net", "gbload.com", "themediastorage.com", "uphere.pl", "megashares.com", "share-online.biz",
+                "loadus.net", "gbload.com", "themediastorage.com", "uphere.pl", "megashares.com", "share-online.biz", "datei.to",
                 /** 2019-09-24: Yunfile.com domains */
                 "yunfile.com", "filemarkets.com", "yfdisk.com", "needisk.com", "5xpan.com", "dix3.com", "dfpan.com", "pwpan.com", "srcpan.com", "skpan.com", "gmpan.com", "tadown.com", "putpan.com", "fourpan.com",
                 /** -> */

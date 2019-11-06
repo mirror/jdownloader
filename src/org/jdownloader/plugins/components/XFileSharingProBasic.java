@@ -2200,10 +2200,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
-        if (orgNameExt == null) {
+        if (StringUtils.isEmpty(orgNameExt)) {
             orgNameExt = downloadLink.getName();
         }
-        if (!StringUtils.isEmpty(orgNameExt) && orgNameExt.contains(".")) {
+        if (!StringUtils.isEmpty(orgNameExt) && StringUtils.contains(orgNameExt, ".")) {
             orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
         }
         if (!StringUtils.isEmpty(orgExt)) {
@@ -2213,24 +2213,28 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = dl.getConnection() != null && getFileNameFromHeader(dl.getConnection()) != null ? Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())) : null;
-        if (!StringUtils.isEmpty(servNameExt) && servNameExt.contains(".")) {
+        if (!StringUtils.isEmpty(servNameExt) && StringUtils.contains(servNameExt, ".")) {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
             servName = new Regex(servNameExt, "(.+)" + Pattern.quote(servExt)).getMatch(0);
         } else {
             servName = servNameExt;
         }
-        String FFN = null;
-        if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
+        final String FFN;
+        if (StringUtils.equalsIgnoreCase(orgName, fuid)) {
             FFN = servNameExt;
-        } else if (StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
+            logger.info("fixFileName(1): before=" + orgNameExt + "|after=" + FFN);
+        } else if (StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && (StringUtils.containsIgnoreCase(servName, orgName) && !StringUtils.equalsIgnoreCase(servName, orgName))) {
             /*
              * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
              */
             FFN = servNameExt;
-        } else if (!StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
+            logger.info("fixFileName(2): before=" + orgNameExt + "|after=" + FFN);
+        } else if (!StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && !StringUtils.equalsIgnoreCase(orgExt, servExt)) {
             FFN = orgName + servExt;
+            logger.info("fixFileName(3): before=" + orgNameExt + "|after=" + FFN);
         } else {
             FFN = orgNameExt;
+            logger.info("fixFileName(4): before=" + orgNameExt + "|after=" + FFN);
         }
         downloadLink.setFinalFileName(FFN);
     }
@@ -3431,7 +3435,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
             handleDownloadErrors(link);
-            fixFilename(link);
+            try {
+                fixFilename(link);
+            } catch (Exception e) {
+                logger.log(e);
+            }
             try {
                 /* add a download slot */
                 if (account == null) {
@@ -3470,7 +3478,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 rtmp.setSwfVfy("CHECK_ME");
                 rtmp.setApp("vod/");
                 rtmp.setResume(false);
-                fixFilename(link);
+                try {
+                    fixFilename(link);
+                } catch (Exception e) {
+                    logger.log(e);
+                }
                 try {
                     /* add a download slot */
                     if (account == null) {
@@ -3510,7 +3522,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 storeDirecturl(link, account, dllink);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
                 handleDownloadErrors(link);
-                fixFilename(link);
+                try {
+                    fixFilename(link);
+                } catch (Exception e) {
+                    logger.log(e);
+                }
                 try {
                     /* add a download slot */
                     if (account == null) {
