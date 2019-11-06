@@ -181,6 +181,9 @@ public class AdfLy extends antiDDoSForDecrypt {
                 } else if (br.containsHTML("Sorry, there has been a problem\\.")) {
                     logger.info("Link ink offline: " + parameter);
                     return decryptedLinks;
+                } else if (redir != null && canHandle(redir)) {
+                    decryptedLinks.add(createDownloadlink(redir));
+                    return decryptedLinks;
                 }
             }
             /* javascript vars 20130328 */
