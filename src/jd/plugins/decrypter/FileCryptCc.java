@@ -52,6 +52,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.Challenge;
@@ -234,7 +235,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 submitForm(captchaForm);
             } else if (StringUtils.containsIgnoreCase(captcha, "cutcaptcha")) {
-                if (!Application.isHeadless()) {
+                if (!Application.isHeadless() && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    // current implementation via localhost no longer working
                     final String cutcaptcha = new CaptchaHelperCrawlerPluginCutCaptcha(this, br, "SAs61IAI").getToken();
                     if (StringUtils.isEmpty(cutcaptcha)) {
                         if (counter + 1 < retry) {

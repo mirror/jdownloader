@@ -202,9 +202,13 @@ public class JetloadNet extends PluginForHost {
             final boolean is_video = !"file".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status"));
             final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
             final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
-            final boolean archive = "1".equals(getString(entries, "file/archive"));
-            final boolean low = "1".equals(getString(entries, "file/low"));
-            final boolean med = "1".equals(getString(entries, "file/med"));
+            final String archiveValue = getString(entries, "file/archive");
+            final boolean archive = "1".equals(archiveValue);
+            final String lowValue = getString(entries, "file/low");
+            final String medValue = getString(entries, "file/med");
+            final String highValue = getString(entries, "file/high");
+            final boolean low = "1".equals(lowValue);
+            final boolean med = "1".equals(medValue);
             if (StringUtils.isEmpty(filename_internal)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isEmpty(ext)) {
@@ -218,18 +222,29 @@ public class JetloadNet extends PluginForHost {
                 // br.getPage("/api/get_direct_video/" + this.getFID(link));
                 // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 // ng-visitor/js/play.js
-                final String m3u8;
-                if (low && med) {
-                    m3u8 = "master.m3u8";
-                } else if (!low || med) {
-                    m3u8 = "med.m3u8";
-                } else {
-                    m3u8 = "low.m3u8";
+                Browser brc = null;
+                if (lowValue == null && medValue == null && highValue == null) {
+                    brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    brc.getPage(link.getPluginPatternMatcher());
                 }
-                if (archive) {
-                    dllink = String.format("%s/v2/schema/archive/%s/" + m3u8, hostname, filename_internal);
+                final String hlsPlayerSource = brc != null ? brc.getRegex("<\\s*source\\s*src\\s*=\\s*\"([^\"]*\\.m3u8)\"").getMatch(0) : null;
+                if (hlsPlayerSource != null) {
+                    dllink = hlsPlayerSource;
                 } else {
-                    dllink = String.format("%s/v2/schema/%s/" + m3u8, hostname, filename_internal);
+                    final String m3u8;
+                    if (low && med) {
+                        m3u8 = "master.m3u8";
+                    } else if (med) {
+                        m3u8 = "med.m3u8";
+                    } else {
+                        m3u8 = "low.m3u8";
+                    }
+                    if (archive) {
+                        dllink = String.format("%s/v2/schema/archive/%s/" + m3u8, hostname, filename_internal);
+                    } else {
+                        dllink = String.format("%s/v2/schema/%s/" + m3u8, hostname, filename_internal);
+                    }
                 }
             } else {
                 /*
