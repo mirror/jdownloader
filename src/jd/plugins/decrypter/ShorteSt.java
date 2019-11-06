@@ -84,7 +84,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         handleSiteVerification(parameter);
         String finallink = null;
-        if (br.containsHTML("g-recaptcha\"|google\\.com/recaptcha/") && false) {
+        if (br.containsHTML("g-recaptcha\"|google\\.com/recaptcha/")) {
             // https://github.com/adsbypasser/adsbypasser/blob/master/src/sites/link/sh.st.js
             Form captchaForm = br.getForm(0);
             if (captchaForm == null) {
