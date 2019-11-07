@@ -49,6 +49,12 @@ public class LetsuploadCo extends YetiShareCore {
     }
 
     @Override
+    public boolean requires_WWW() {
+        // 07.11.2019, now redirects www. to normal domain. www domain is redirected to cloudhost.to
+        return false;
+    }
+
+    @Override
     protected String getFUIDFromURL(final DownloadLink link) {
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/plugins/mediaplayer/site/_embed\\.php\\?u=([A-Za-z0-9]+)");
         final String fid = urlinfo.getMatch(0);
@@ -131,14 +137,14 @@ public class LetsuploadCo extends YetiShareCore {
 
     /** 2019-04-25: Special */
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        if (supports_availablecheck_over_info_page()) {
+    public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
+        if (supports_availablecheck_over_info_page(link)) {
             fileInfo[0] = br.getRegex("<span>Filename[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
             fileInfo[1] = br.getRegex("<span>Filesize[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
         } else {
             fileInfo[0] = br.getRegex("class=\"fa fa-file\\-text\"></i>([^<>\"]+)</div>").getMatch(0);
             fileInfo[1] = br.getRegex("size[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
         }
-        return super.scanInfo(fileInfo);
+        return super.scanInfo(link, fileInfo);
     }
 }

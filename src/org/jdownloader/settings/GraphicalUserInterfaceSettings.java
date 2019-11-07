@@ -498,11 +498,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             default:
                 if (fileSize == 0) {
                     return "0 B";
-                }
-                if (fileSize < 0) {
+                } else if (fileSize < 0) {
                     return "~";
+                } else {
+                    return fileSize + " B";
                 }
-                return fileSize + " B";
             }
         }
     }

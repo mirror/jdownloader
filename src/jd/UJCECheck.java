@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.Cipher;
 
 public class UJCECheck {
-    // Version 09-05-2019 17:40
+    // Version 07-11-2019 15:45
     private static Boolean isRestrictedCryptography() {
         try {
             final int strength = Cipher.getMaxAllowedKeyLength("AES");
@@ -25,12 +25,6 @@ public class UJCECheck {
         }
     }
 
-    private static boolean isOracleJVM() {
-        final String name = System.getProperty("java.runtime.name");
-        final String vendor = System.getProperty("java.vendor");
-        return (vendor != null && vendor.contains("Oracle")) || "Java(TM) SE Runtime Environment".equals(name);
-    }
-
     private static final AtomicBoolean checked    = new AtomicBoolean(false);
     private static final AtomicBoolean successful = new AtomicBoolean(false);
 
@@ -40,9 +34,7 @@ public class UJCECheck {
 
     public static final void check() {
         if (UJCECheck.checked.compareAndSet(false, true)) {
-            if (UJCECheck.isOracleJVM() && Boolean.TRUE.equals(UJCECheck.isRestrictedCryptography())) {
-                UJCECheck.removeCryptographyRestrictions();
-            }
+            UJCECheck.removeCryptographyRestrictions();
         }
     }
 
@@ -62,15 +54,6 @@ public class UJCECheck {
             isRestrictedField.setAccessible(true);
             isRestrictedField.set(null, false);
             isRestrictedField.setAccessible(false);
-        }
-    }
-
-    public static void main(String[] args) {
-        UJCECheck.removeCryptographyRestrictions();
-        if (Boolean.FALSE.equals(UJCECheck.isRestrictedCryptography())) {
-            System.out.println("Hello World!");
-        } else {
-            System.out.println("Sad world :(");
         }
     }
 
@@ -149,9 +132,16 @@ public class UJCECheck {
      */
     private static void removeCryptographyRestrictions() {
         if (Boolean.FALSE.equals(UJCECheck.isRestrictedCryptography())) {
-            System.out.println("Cryptography restrictions removal not needed");
+            if (UJCECheck.successful.get()) {
+                System.out.println("Already removed cryptography restrictions");
+            } else {
+                System.out.println("Cryptography restrictions removal not needed");
+            }
+        } else if (UJCECheck.successful.get()) {
+            System.out.println("Already removed cryptography restrictions");
         } else {
             try {
+                // >=Java9 and >=8u151
                 Security.setProperty("crypto.policy", "unlimited");
             } catch (final Throwable e) {
             }
@@ -167,8 +157,7 @@ public class UJCECheck {
                         try {
                             UJCECheck.removeCryptographyRestrictions_M3();
                         } catch (final ClassNotFoundException e3) {
-                            e3.printStackTrace();
-                            throw e;
+                            throw e3;
                         }
                     }
                 }
