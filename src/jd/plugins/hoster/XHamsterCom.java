@@ -24,13 +24,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,6 +49,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.(com|xxx|desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx|desi)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
@@ -73,7 +73,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
     final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
-    private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p" };
+    private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
     private boolean               friendsOnly                     = false;
 
     private void setConfigElements() {
@@ -372,7 +372,11 @@ public class XHamsterCom extends PluginForHost {
         case 6:
             qualities.add("1440p");
             break;
+        case 7:
+            qualities.add("2160p");
+            break;
         default:
+            qualities.add("2160p");
             qualities.add("1440p");
             qualities.add("1080p");
             qualities.add("960p");
