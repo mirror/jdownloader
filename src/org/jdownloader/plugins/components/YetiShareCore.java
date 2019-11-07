@@ -204,7 +204,7 @@ public class YetiShareCore extends antiDDoSForHost {
      *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
-    public boolean supports_availablecheck_over_info_page() {
+    public boolean supports_availablecheck_over_info_page(DownloadLink link) {
         return true;
     }
 
@@ -276,7 +276,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final String fallback_filename = this.getFallbackFilename(link);
         final String[] fileInfo = getFileInfoArray();
         try {
-            if (supports_availablecheck_over_info_page()) {
+            if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher() + "~i");
                 if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                     /*
@@ -304,7 +304,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            scanInfo(fileInfo);
+            scanInfo(link, fileInfo);
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* Final fallback - this should never happen! */
                 fileInfo[0] = fallback_filename;
@@ -327,8 +327,8 @@ public class YetiShareCore extends antiDDoSForHost {
      * THEN, if needed, call super.scanInfo(fileInfo). <br />
      * fileInfo[0] = filename, fileInfo[1] = filesize
      */
-    public String[] scanInfo(final String[] fileInfo) {
-        if (supports_availablecheck_over_info_page()) {
+    public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
+        if (supports_availablecheck_over_info_page(link)) {
             final List<String> fileNameCandidates = new ArrayList<String>();
             if (!StringUtils.isEmpty(fileInfo[0])) {
                 fileNameCandidates.add(Encoding.htmlDecode(fileInfo[0]).trim());
@@ -444,7 +444,7 @@ public class YetiShareCore extends antiDDoSForHost {
             // } catch (final BrowserException e) {
             // }
             // }
-            if (supports_availablecheck_over_info_page()) {
+            if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher());
                 /* For premium mode, we might get our final downloadurl here already. */
                 while (true) {

@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BadshareIo extends YetiShareCore {
@@ -109,7 +109,7 @@ public class BadshareIo extends YetiShareCore {
     }
 
     @Override
-    public boolean supports_availablecheck_over_info_page() {
+    public boolean supports_availablecheck_over_info_page(DownloadLink link) {
         /* 2019-087-16: Special */
         return false;
     }
@@ -120,12 +120,12 @@ public class BadshareIo extends YetiShareCore {
         return true;
     }
 
-    public String[] scanInfo(final String[] fileInfo) {
+    public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
         /* 2019-087-16: Special */
         fileInfo[0] = br.getRegex("<h4>([^<>\"]+)<").getMatch(0);
         fileInfo[1] = br.getRegex("<strong>File size:</strong>([^<>\"]+)</li>").getMatch(0);
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
-            super.scanInfo(fileInfo);
+            super.scanInfo(link, fileInfo);
         }
         return fileInfo;
     }

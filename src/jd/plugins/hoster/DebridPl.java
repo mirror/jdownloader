@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class DebridPl extends YetiShareCore {
@@ -113,12 +113,12 @@ public class DebridPl extends YetiShareCore {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        if (supports_availablecheck_over_info_page()) {
+    public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
+        if (supports_availablecheck_over_info_page(link)) {
             fileInfo[0] = this.br.getRegex("<H2>([^<>\"]+)</H2>\\s*<div class=\"share-file-last-cell").getMatch(0);
             fileInfo[1] = this.br.getRegex("Rozmiar Pliku:([^<>]+)<").getMatch(0);
         } else {
-            super.scanInfo(fileInfo);
+            super.scanInfo(link, fileInfo);
         }
         return fileInfo;
     }
