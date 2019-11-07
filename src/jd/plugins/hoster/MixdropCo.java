@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,9 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MixdropCo extends PluginForHost {
@@ -169,12 +169,15 @@ public class MixdropCo extends PluginForHost {
             if (USE_API_FOR_LINKCHECK) {
                 br.getPage(link.getPluginPatternMatcher());
             }
-            final String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
-            if (StringUtils.isEmpty(csrftoken)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String fid = getFID(link);
+            String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
+            if (csrftoken == null) {
+                /* 2019-11-07: Via browser it is usually "" so empty value is okay */
+                csrftoken = "";
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            br.postPage(br.getURL(), "a=genticket&csrf=" + csrftoken);
+            final String url = "/f/" + fid + "?download";
+            br.postPage(url, "a=genticket&csrf=" + csrftoken);
             dllink = PluginJSonUtils.getJson(br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
