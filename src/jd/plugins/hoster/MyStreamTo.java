@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,9 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "https?://(?:(www|embed)\\.)?mystream\\.(?:la|to)/(?:external/|embed-)?[A-Za-z0-9]{12}" })
-public class MyStreamLa extends PluginForHost {
-    public MyStreamLa(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.to" }, urls = { "https?://(?:(?:www|embed)\\.)?mystream\\.(?:la|to)/(?:external/|embed-)?[A-Za-z0-9]{12}" })
+public class MyStreamTo extends PluginForHost {
+    public MyStreamTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,19 +42,28 @@ public class MyStreamLa extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/external/"));
     }
 
-    private String fuid   = null;
     private String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "http://mystream.la/terms-of-service";
+        return "https://mystream.la/terms-of-service";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("mystream.la".equals(getHost())) {
+            if (host == null || "mystream.la".equals(host)) {
+                return "mystream.to";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         correctDownloadLink(downloadLink);
-        fuid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]{12})$").getMatch(0);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]{12})$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
@@ -62,9 +73,9 @@ public class MyStreamLa extends PluginForHost {
         }
         String filename = PluginJSonUtils.getJsonValue(br, "title");
         final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             /* 2016-09-19: Fallback to fuid as we do not always have a title/filename available. */
-            filename = fuid;
+            filename = fid;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -86,7 +97,7 @@ public class MyStreamLa extends PluginForHost {
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             dllink = PluginJSonUtils.getJsonValue(br, "file");
-            if (dllink == null) {
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
