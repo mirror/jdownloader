@@ -1,8 +1,9 @@
 package org.jdownloader.plugins.components.usenet;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -13,7 +14,9 @@ import jd.plugins.download.HashInfo;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
+import org.appwork.utils.net.Base64InputStream;
+import org.appwork.utils.net.Base64OutputStream;
+import org.appwork.utils.net.CharSequenceInputStream;
 
 public class UsenetFile implements Storable {
     private String hash = null;
@@ -70,31 +73,27 @@ public class UsenetFile implements Storable {
     public UsenetFile() {
     }
 
-    public static final String PROPERTY = "useNetFile";
+    public static final String  PROPERTY = "useNetFile";
+    public static final Charset UTF8     = Charset.forName("UTF-8");
 
     public static UsenetFile _read(final DownloadLink downloadLink) throws IOException {
         final String compressedJSonString = downloadLink.getStringProperty(PROPERTY, null);
         if (compressedJSonString != null) {
-            /* TODO: refactor to work directly on inputStream (gzip->base64input->charsequenceinput) */
-            final byte[] bytes = org.appwork.utils.encoding.Base64.decode(compressedJSonString);
-            final String jsonString = IO.readInputStreamToString(new GZIPInputStream(new ByteArrayInputStream(bytes)));
-            return JSonStorage.restoreFromString(jsonString, new TypeRef<UsenetFile>() {
-            }, null);
+            final InputStream is = new GZIPInputStream(new Base64InputStream(new CharSequenceInputStream(compressedJSonString, UTF8)));
+            final UsenetFile ret = JSonStorage.getMapper().inputStreamToObject(is, new TypeRef<UsenetFile>() {
+            });
+            return ret;
         }
         return null;
     }
 
     public void _write(final DownloadLink downloadLink) throws IOException {
-        /*
-         * TODO: refactor to work directly on outputstream (gzip->base64->charsequence)
-         */
-        final String jsonString = JSonStorage.serializeToJson(this);
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final GZIPOutputStream gos = new GZIPOutputStream(bos);
-        gos.write(jsonString.getBytes("UTF-8"));
+        final Base64OutputStream b64os = new Base64OutputStream(bos);
+        final GZIPOutputStream gos = new GZIPOutputStream(b64os);
+        JSonStorage.getMapper().writeObject(gos, this);
         gos.close();
-        final String compressedJSonString = org.appwork.utils.encoding.Base64.encodeToString(bos.toByteArray(), false);
-        downloadLink.setProperty(PROPERTY, compressedJSonString);
+        downloadLink.setProperty(PROPERTY, bos.toString(UTF8.name()));
     }
 
     /**

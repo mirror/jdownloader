@@ -13,6 +13,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -124,7 +125,11 @@ public class UsenextCom extends UseNet {
             }
             final String availableTraffic[][] = br.getRegex("<span class=\"donut-label-inner\\s*\"\\s*>\\s*([0-9,\\.]+)\\s*<br/>\\s*<small>\\s*([KTMG]B)\\s*<").getMatches();
             if (availableTraffic == null || availableTraffic.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("Upgrade in progress...")) {
+                    throw new AccountUnavailableException("Upgrade in progess...", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
                 final long trafficNormal = SizeFormatter.getSize(availableTraffic[0][0] + availableTraffic[0][1]);
                 final long trafficBoost;

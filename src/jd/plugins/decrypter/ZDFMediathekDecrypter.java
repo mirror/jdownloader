@@ -439,13 +439,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             DownloadLink dl;
                             if (isAdaptive) {
                                 /* Segment download */
-                                final String hls_master_quality_str = new Regex(uri, "m3u8/(\\d+)/").getMatch(0);
+                                String hls_master_quality_str = new Regex(uri, "m3u8/(\\d+)/").getMatch(0);
                                 if (hls_master_quality_str == null) {
-                                    /*
-                                     * Fatal failure - without this value we cannot know which hls masters we already crawled and which not
-                                     * resulting in unnecessary http requests!
-                                     */
-                                    continue;
+                                    // we asume this leads to m3u8 with multiple qualities
+                                    // better than not processing any m3u8
+                                    hls_master_quality_str = String.valueOf(Short.MAX_VALUE);
                                 }
                                 hlsMasterValueTemp = Short.parseShort(hls_master_quality_str);
                                 if (hlsMasterValueTemp <= highestHlsMasterValue) {

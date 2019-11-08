@@ -840,7 +840,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             /* Generic failover */
             if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(KB|MB|GB))").getMatch(0);
+                // sync with YetiShareCore.scanInfo- Generic failover
+                fileInfo[1] = new Regex(correctedBR, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s))").getMatch(0);
             }
         }
         /* MD5 is only available in very very rare cases! */

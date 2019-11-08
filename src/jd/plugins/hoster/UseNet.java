@@ -25,6 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
@@ -233,6 +234,35 @@ public class UseNet extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.USENET };
     }
 
+    protected boolean setUseNetFileName(DownloadLink downloadLink, UsenetFile usenetFile, String bodyFileName) {
+        boolean changedFlag = false;
+        if (StringUtils.isNotEmpty(bodyFileName)) {
+            final String fileExtension = Files.getExtension(usenetFile.getName());
+            final String bodyExtension = Files.getExtension(bodyFileName);
+            final String finalFileName;
+            if (StringUtils.isNotEmpty(fileExtension) && StringUtils.isEmpty(bodyExtension)) {
+                finalFileName = usenetFile.getName();
+            } else if (StringUtils.isEmpty(fileExtension) && StringUtils.isNotEmpty(bodyExtension)) {
+                finalFileName = bodyFileName;
+            } else if (StringUtils.equalsIgnoreCase(bodyExtension, fileExtension)) {
+                finalFileName = bodyFileName;
+            } else {
+                finalFileName = null;
+            }
+            if (StringUtils.isNotEmpty(finalFileName)) {
+                if (downloadLink.getFinalFileName() == null) {
+                    downloadLink.setFinalFileName(finalFileName);
+                    changedFlag = true;
+                }
+                if (!StringUtils.equals(usenetFile.getName(), finalFileName)) {
+                    usenetFile.setName(finalFileName);
+                    changedFlag = true;
+                }
+            }
+        }
+        return changedFlag;
+    }
+
     @Override
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         final UsenetFile usenetFile = UsenetFile._read(downloadLink);
@@ -274,27 +304,25 @@ public class UseNet extends antiDDoSForHost {
                     final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
                     final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
                     if (bodyInputStream instanceof YEncInputStream) {
-                        final YEncInputStream yEnc = (YEncInputStream) bodyInputStream;
-                        final String fileName = yEnc.getName();
-                        if (StringUtils.isNotEmpty(fileName)) {
-                            if (downloadLink.getFinalFileName() == null) {
-                                downloadLink.setFinalFileName(fileName);
-                            }
-                            writeUsenetFile = true;
-                            usenetFile.setName(fileName);
+                        final YEncInputStream yEncInputStream = (YEncInputStream) bodyInputStream;
+                        final String yEncFileName = yEncInputStream.getName();
+                        if (StringUtils.isNotEmpty(yEncFileName)) {
+                            writeUsenetFile = setUseNetFileName(downloadLink, usenetFile, yEncFileName);
                         }
-                        final long fileSize = yEnc.getSize();
-                        final long verifiedFileSize = downloadLink.getVerifiedFileSize();
-                        if (fileSize >= 0) {
-                            if (verifiedFileSize == -1 || fileSize != verifiedFileSize) {
-                                downloadLink.setVerifiedFileSize(fileSize);
+                        final long yEncFileSize = yEncInputStream.getSize();
+                        if (yEncFileSize >= 0) {
+                            final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+                            if (verifiedFileSize == -1 || yEncFileSize != verifiedFileSize) {
+                                downloadLink.setVerifiedFileSize(yEncFileSize);
                             }
-                            writeUsenetFile = true;
-                            usenetFile.setSize(fileSize);
+                            if (usenetFile.getSize() != yEncFileSize) {
+                                writeUsenetFile = true;
+                                usenetFile.setSize(yEncFileSize);
+                            }
                         }
                         drainInputStream(bodyInputStream);
-                        if (StringUtils.isNotEmpty(yEnc.getFileCRC32())) {
-                            usenetFile.setHash(new HashInfo(yEnc.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
+                        if (StringUtils.isNotEmpty(yEncInputStream.getFileCRC32())) {
+                            usenetFile.setHash(new HashInfo(yEncInputStream.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
                             writeUsenetFile = true;
                         } else {
                             if (usenetFile.getHash() != null) {
@@ -302,7 +330,7 @@ public class UseNet extends antiDDoSForHost {
                                 writeUsenetFile = true;
                             }
                         }
-                        final int totalParts = yEnc.getPartTotal();
+                        final int totalParts = yEncInputStream.getPartTotal();
                         if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
                             logger.severe("Segments missing: " + totalParts + "!=" + usenetFile.getSegments().size());
                             setIncomplete(downloadLink, true);
@@ -310,14 +338,10 @@ public class UseNet extends antiDDoSForHost {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     } else if (bodyInputStream instanceof UUInputStream) {
-                        final UUInputStream uu = (UUInputStream) bodyInputStream;
-                        final String fileName = uu.getName();
-                        if (StringUtils.isNotEmpty(fileName)) {
-                            if (downloadLink.getFinalFileName() == null) {
-                                downloadLink.setFinalFileName(fileName);
-                            }
-                            writeUsenetFile = true;
-                            usenetFile.setName(fileName);
+                        final UUInputStream uuInputStream = (UUInputStream) bodyInputStream;
+                        final String uuFileName = uuInputStream.getName();
+                        if (StringUtils.isNotEmpty(uuFileName)) {
+                            writeUsenetFile = setUseNetFileName(downloadLink, usenetFile, uuFileName);
                         }
                     }
                     drainInputStream(bodyInputStream);
