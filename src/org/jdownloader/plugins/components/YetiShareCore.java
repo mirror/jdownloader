@@ -403,7 +403,7 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             fileInfo[0] = bestName;
         } else {
-            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB|B))\\)<");
+            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:TB|GB|MB|KB|B))\\)<");
             if (StringUtils.isEmpty(fileInfo[0])) {
                 fileInfo[0] = fInfo.getMatch(0);
             }
@@ -411,8 +411,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     fileInfo[1] = fInfo.getMatch(1);
                 }
+                /* Generic failover */
                 if (StringUtils.isEmpty(fileInfo[1])) {
-                    fileInfo[1] = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(KB|MB|GB))").getMatch(0);
+                    // sync with XFileSharingProBasic.scanInfo- Generic failover
+                    fileInfo[1] = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s))").getMatch(0);
                 }
             }
         }
