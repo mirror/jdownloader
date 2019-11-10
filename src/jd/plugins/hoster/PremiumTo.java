@@ -55,25 +55,28 @@ import jd.plugins.download.DownloadLinkDownloadable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
-    private final String                   normalTraffic             = "normalTraffic";
-    private final String                   specialTraffic            = "specialTraffic";
-    private static final String            type_torrent              = "https?://torrent\\..+";
-    private static final String            type_torrent_file         = "https?://torrent\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
-    private static final String            type_torrent_remote       = "https?://torrent\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
-    private static final String            type_storage              = "https?://storage\\..+";
+    private final String                   normalTraffic                   = "normalTraffic";
+    private final String                   specialTraffic                  = "specialTraffic";
+    private static final String            type_torrent                    = "https?://torrent\\..+";
+    private static final String            type_torrent_file               = "https?://torrent\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
+    private static final String            type_torrent_remote             = "https?://torrent\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
+    private static final String            type_storage                    = "https?://storage\\..+";
     /* storage.premium.to --> Extract download URLs */
-    private static final String            type_storage_file         = "https?://storage\\.[^/]+/file/(.+)";
+    private static final String            type_storage_file               = "https?://storage\\.[^/]+/file/(.+)";
     /* storage.premium.to --> Extract remote URLs */
-    private static final String            type_storage_remote       = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
+    private static final String            type_storage_remote             = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
     /* 2019-10-23: According to admin, missing https support for API is not an issue */
-    private static final String            API_BASE                  = "http://api.premium.to/api/2";
-    private static final String            API_BASE_STORAGE          = "https://storage.premium.to/api/2";
-    private static final String            API_BASE_TORRENT          = "https://torrent.premium.to/api/2";
-    /* 2019-10-24: Storage download is possible again via new API */
-    private static final boolean           supports_storage_download = true;
-    private static MultiHosterManagement   mhm                       = new MultiHosterManagement("premium.to");
-    private static final ArrayList<String> supported_hosts_storage   = new ArrayList<String>();
+    private static final String            API_BASE                        = "http://api.premium.to/api/2";
+    private static final String            API_BASE_STORAGE                = "https://storage.premium.to/api/2";
+    private static final String            API_BASE_TORRENT                = "https://torrent.premium.to/api/2";
+    /*
+     * 2019-11-10: Internal switch to force disable all Storage hosts - do not touch this unless e.g. admin requests this or API breaks
+     * down.
+     */
+    private static final boolean           debug_supports_storage_download = true;
+    private static MultiHosterManagement   mhm                             = new MultiHosterManagement("premium.to");
+    private static final ArrayList<String> supported_hosts_storage         = new ArrayList<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -321,7 +324,7 @@ public class PremiumTo extends UseNet {
                  * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
                  * downloads!
                  */
-                if (supports_storage_download) {
+                if (debug_supports_storage_download) {
                     logger.info("Found Storage host: " + tmp_supported_host_storage);
                     supported_hosts_storage.add(tmp_supported_host_storage);
                 } else {
@@ -342,54 +345,65 @@ public class PremiumTo extends UseNet {
         real_supported_hosts_regular = ac.getMultiHostSupport();
         ac.setMultiHostSupport(this, supported_hosts_storage);
         real_supported_hosts_storage = ac.getMultiHostSupport();
-        final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
-        final boolean onlyAllowWhitelistedStorageHosts = config.isEnableStorageWhiteListing();
-        if (onlyAllowWhitelistedStorageHosts) {
-            logger.info("User enabled whitelisting of Storage hosts");
-            final String whitelistedStorageHostsCommaSeparated = config.getWhitelistedStorageHosts();
-            if (!StringUtils.isEmpty(whitelistedStorageHostsCommaSeparated)) {
-                final String[] whitelistedHosts = whitelistedStorageHostsCommaSeparated.split(",");
-                for (final String whitelistedHost : whitelistedHosts) {
-                    user_whitelisted_hosts_storage.add(whitelistedHost);
+        {
+            /* Handling for Storage hosts */
+            final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
+            final boolean onlyAllowWhitelistedStorageHosts = config.isEnableStorageWhiteListing();
+            if (onlyAllowWhitelistedStorageHosts) {
+                logger.info("User enabled whitelisting of Storage hosts");
+                final String whitelistedStorageHostsCommaSeparated = config.getWhitelistedStorageHosts();
+                if (!StringUtils.isEmpty(whitelistedStorageHostsCommaSeparated)) {
+                    final String[] whitelistedHosts = whitelistedStorageHostsCommaSeparated.split(",");
+                    for (final String whitelistedHost : whitelistedHosts) {
+                        user_whitelisted_hosts_storage.add(whitelistedHost);
+                    }
+                    ac.setMultiHostSupport(this, user_whitelisted_hosts_storage);
+                    real_user_whitelisted_hosts_storage = ac.getMultiHostSupport();
                 }
-                ac.setMultiHostSupport(this, user_whitelisted_hosts_storage);
-                real_user_whitelisted_hosts_storage = ac.getMultiHostSupport();
-            }
-            /*
-             * Only allow verified entries e.g. user enters "examplehost4.com" but real_supported_hosts_storage does not even contain this
-             * --> Ignore that. Don't let the user add random hosts which the multihost does not even support!
-             */
-            if (real_user_whitelisted_hosts_storage != null) {
-                for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
-                    if (real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
-                        final_real_user_whitelisted_hosts_storage.add(real_user_whitelisted_storage_host);
+                /*
+                 * Only allow verified entries e.g. user enters "examplehost4.com" but real_supported_hosts_storage does not even contain
+                 * this --> Ignore that. Don't let the user add random hosts which the multihost does not even support!
+                 */
+                if (real_user_whitelisted_hosts_storage != null) {
+                    for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
+                        if (real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
+                            final_real_user_whitelisted_hosts_storage.add(real_user_whitelisted_storage_host);
+                        }
                     }
                 }
-            }
-            /* Clear list of Storage hosts to fill it again with whitelisted entries of user */
-            real_supported_hosts_storage.clear();
-            if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
-                logger.info("User whitelisted nothing or entered invalid values --> Adding no Storage hosts at all");
-                additionalAccountStatus += " | Whitelisted Storage hosts: None [All disabled]";
+                /* Clear list of Storage hosts to fill it again with whitelisted entries of user */
+                real_supported_hosts_storage.clear();
+                if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
+                    logger.info("User whitelisted nothing or entered invalid values (e.g. non-Storage hosts) --> Adding no Storage hosts at all");
+                    additionalAccountStatus += " | Whitelisted Storage hosts: None [All disabled]";
+                } else {
+                    logger.info("User whitelisted the following Storage hosts:");
+                    additionalAccountStatus += " | Whitelisted Storage hosts: ";
+                    int counter = 0;
+                    for (final String final_real_user_whitelisted_storage_host : final_real_user_whitelisted_hosts_storage) {
+                        logger.info("WhitelistedStorageHost: " + final_real_user_whitelisted_storage_host);
+                        real_supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
+                        additionalAccountStatus += final_real_user_whitelisted_storage_host;
+                        if (counter < final_real_user_whitelisted_hosts_storage.size() - 1) {
+                            additionalAccountStatus += ", ";
+                        }
+                        counter++;
+                    }
+                }
             } else {
-                logger.info("User whitelisted the following Storage hosts:");
-                additionalAccountStatus += " | Whitelisted Storage hosts: ";
-                int counter = 0;
-                for (final String final_real_user_whitelisted_storage_host : final_real_user_whitelisted_hosts_storage) {
-                    logger.info("WhitelistedStorageHost: " + final_real_user_whitelisted_storage_host);
-                    PremiumTo.supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
-                    real_supported_hosts_storage.add(final_real_user_whitelisted_storage_host);
-                    additionalAccountStatus += final_real_user_whitelisted_storage_host;
-                    if (counter < final_real_user_whitelisted_hosts_storage.size() - 1) {
-                        additionalAccountStatus += ", ";
-                    }
-                    counter++;
+                logger.info("User disabled whitelisting of Storage hosts (= add all Storage hosts to list)");
+            }
+            /* Finally, add Storage hosts to regular host array to be able to use them and display the list of supported hosts. */
+            if (real_supported_hosts_storage.isEmpty()) {
+                logger.info("Storage host array is empty");
+            } else {
+                for (final String real_supported_host_storage : real_supported_hosts_storage) {
+                    logger.info("Adding final active Storage host: " + real_supported_host_storage);
+                    real_supported_hosts_regular.add(real_supported_host_storage);
+                    /* Add host to special Array of Storage hosts */
+                    PremiumTo.supported_hosts_storage.add(real_supported_host_storage);
                 }
             }
-        }
-        /* Finally, add Storage hosts to regular host array to be able to use them and display the list of supported hosts. */
-        for (final String real_supported_host_storage : real_supported_hosts_storage) {
-            real_supported_hosts_regular.add(real_supported_host_storage);
         }
         ac.setMultiHostSupport(this, real_supported_hosts_regular);
         ac.setStatus("Premium account" + additionalAccountStatus);
@@ -492,7 +506,8 @@ public class PremiumTo extends UseNet {
             final boolean requiresStorageDownload = supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost());
             if (requiresStorageDownload) {
                 /* Storage download */
-                if (!supports_storage_download) {
+                logger.info("Attempting STORAGE download: " + link.getHost());
+                if (!debug_supports_storage_download) {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download is not yet supported via API");
                 }
@@ -503,7 +518,7 @@ public class PremiumTo extends UseNet {
                 if ("Not in queue".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
                     br.getPage(API_BASE_STORAGE + "/add.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 5 * 60 * 1000);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 1 * 60 * 1000);
                 } else if ("completed".equalsIgnoreCase(status)) {
                     /* File has been downloaded to their servers and download should be possible now. */
                     finalURL = API_BASE_STORAGE + "/download.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url;
@@ -515,6 +530,7 @@ public class PremiumTo extends UseNet {
                 serverside_filename = PluginJSonUtils.getJson(br, "Filename");
             } else {
                 /* Normal (direct) download */
+                logger.info("Attempting DIRECT download: " + link.getHost());
                 login(account, false);
                 finalURL = API_BASE + "/getfile.php?link=" + url + "&userid=" + userid + "&apikey=" + apikey;
             }
