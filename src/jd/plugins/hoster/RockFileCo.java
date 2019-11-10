@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RockFileCo extends XFileSharingProBasic {
@@ -42,6 +42,13 @@ public class RockFileCo extends XFileSharingProBasic {
      * captchatype-info: null<br />
      * other:<br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "rockfile.co", "rockfile.eu", "rockfileserver.eu", "rfservers.eu" });
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -53,13 +60,6 @@ public class RockFileCo extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rockfile.co", "rockfile.eu", "rockfileserver.eu", "rfservers.eu" });
-        return ret;
     }
 
     @Override
@@ -109,12 +109,10 @@ public class RockFileCo extends XFileSharingProBasic {
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
         if (fuid != null) {
-            /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}")) {
-                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
-            }
             /* 2019-07-02: Special: Requires '.html' at the end!! */
-            link.setPluginPatternMatcher(getMainPage() + "/" + fuid + ".html");
+            final String url_with_html_ending = getMainPage() + "/" + fuid + ".html";
+            link.setPluginPatternMatcher(url_with_html_ending);
+            link.setContentUrl(url_with_html_ending);
             link.setLinkID(getHost() + "://" + fuid);
         }
     }
@@ -123,6 +121,20 @@ public class RockFileCo extends XFileSharingProBasic {
     public String[] scanInfo(final String[] fileInfo) {
         /* 2019-07-02: Special */
         super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            /*
+             * 2019-11-10: There is no way to find the real filename before starting the download - this is a workaround which also assumes
+             * that the file has an extension which can be found at the end of that String. After all this is not the final name but quite
+             * similar to it!
+             */
+            final String tmpName = new Regex(correctedBR, "<meta name=\"description\" content=\"Download File ([^<>\"]+)\"").getMatch(0);
+            if (tmpName != null && tmpName.contains(" ")) {
+                final int indext_last_space = tmpName.lastIndexOf(" ");
+                final String extension = tmpName.substring(indext_last_space + 1);
+                final String workarounded_filename = tmpName.substring(0, indext_last_space).replace(" ", "_") + "." + extension;
+                fileInfo[0] = workarounded_filename;
+            }
+        }
         if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = new Regex(correctedBR, "var iniFileSize\\s*=\\s*(\\d+)\\s*").getMatch(0);
         }
@@ -132,6 +144,15 @@ public class RockFileCo extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filesize_html() {
         /* 2019-07-02: Special */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /*
+         * 2019-11-10: No possible anymore. This will display a captcha and afterwards instead of displaying a filename, it will only
+         * display "Please use Report DMCA from the footer.".
+         */
         return false;
     }
 }
