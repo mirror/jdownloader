@@ -98,9 +98,17 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 for (final Object audioO : ressourcelist) {
                     entries = (LinkedHashMap<String, Object>) audioO;
                     /* All items of a user? */
-                    final Object userLookup = JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
+                    Object userLookup = JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
+                    if (userLookup == null) {
+                        /* 2019-11-10 */
+                        userLookup = JavaScriptEngineFactory.walkJson(entries, "userLookup/data/userLookup");
+                    }
                     /* More likely a single item? */
-                    final Object cloudcastLookup = JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
+                    Object cloudcastLookup = JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
+                    if (cloudcastLookup == null) {
+                        /* 2019-11-10 */
+                        cloudcastLookup = JavaScriptEngineFactory.walkJson(entries, "cloudcastLookup/data/cloudcastLookup");
+                    }
                     if (cloudcastLookup != null) {
                         audio_objects.add(cloudcastLookup);
                     } else if (userLookup != null) {
