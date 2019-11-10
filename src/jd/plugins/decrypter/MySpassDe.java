@@ -78,29 +78,42 @@ public class MySpassDe extends PluginForDecrypt {
             /* Channel playlist */
             fp.setName(show);
             final String[] playlist_htmls = br.getRegex("<li class=\"[a-z0-9_]+_video_li\".*?</li>").getColumn(-1);
-            for (final String playlist_html : playlist_htmls) {
-                final String singleLink = new Regex(playlist_html, "<a href=\"(/channels/[^\"]+\\d+/)\"").getMatch(0);
-                final String episodenumber = new Regex(playlist_html, "Folge\\s*?(\\d+)").getMatch(0);
-                if (singleLink == null) {
+            for (final String html_single_video : playlist_htmls) {
+                final String singleLink = new Regex(html_single_video, "<a href=\"(/channels/[^\"]+\\d+/)\"").getMatch(0);
+                final String episodenumber = new Regex(html_single_video, "Folge\\s*?(\\d+)").getMatch(0);
+                final String fid = new Regex(singleLink, "(\\d+)/$").getMatch(0);
+                if (singleLink == null || fid == null) {
                     /* Skip invalid items */
                     continue;
                 }
                 final String url_content = "http://myspass.de" + singleLink;
-                final String fid = new Regex(singleLink, "(\\d+)/$").getMatch(0);
                 final DownloadLink dl = createDownloadlink("http://myspassdecrypted.de" + singleLink);
+                String episodeTitle = new Regex(html_single_video, "title=\"([^\"]+)\"").getMatch(0);
                 // dl.setProperty("needs_series_filename", needs_series_filename);
                 dl.setContentUrl(url_content);
-                dl.setLinkID(fid);
-                final String filename_temp;
+                dl.setLinkID(this.getHost() + "://" + fid);
+                String filename_temp;
                 if (episodenumber != null && seasonnumber != null && seasonnumber_formatted != null) {
                     if (yearInsteadOfSeasonNumber) {
-                        filename_temp = fid + "_" + show + "_" + seasonnumber + "E" + episodenumber;
+                        filename_temp = fid + "_" + show;
+                        if (episodeTitle != null) {
+                            filename_temp += " - " + episodeTitle;
+                        }
+                        filename_temp += "_" + seasonnumber + "E" + episodenumber;
                     } else {
-                        filename_temp = fid + "_" + show + "_S" + seasonnumber_formatted + "E" + episodenumber;
+                        filename_temp = fid + "_" + show;
+                        if (episodeTitle != null) {
+                            filename_temp += " - " + episodeTitle;
+                        }
+                        filename_temp += "_S" + seasonnumber_formatted + "E" + episodenumber;
                     }
+                } else if (episodeTitle != null) {
+                    filename_temp = fid + "_" + episodeTitle;
                 } else {
+                    /* Fallback */
                     filename_temp = fid;
                 }
+                filename_temp += ".mp4";
                 dl.setName(filename_temp);
                 dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                 if (fastlinkcheck) {
@@ -115,6 +128,11 @@ public class MySpassDe extends PluginForDecrypt {
             // class="float-left seasonTab baxx-tabbes-tab full_episode_seasonTab"
             String[] html_list_season = this.br.getRegex("<option data\\-remote\\-args=\"\\&seasonId[^\"]+\\&category=full_episode.*?\\</option>").getColumn(-1);
             if (html_list_season == null || html_list_season.length == 0 && videoid != null) {
+                if (!parameter.contains(videoid) || parameter.matches("https?://[^/]+/channels/[^/]+/\\d+/?$")) {
+                    /* No downloadable content (e.g. overview of channel (Displays trailer in browser)) */
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
                 /* Single video */
                 final DownloadLink dl = createDownloadlink(parameter.replace("myspass.de", "myspassdecrypted.de/") + videoid + "/");
                 dl.setContentUrl(parameter);
@@ -200,7 +218,7 @@ public class MySpassDe extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink("http://myspassdecrypted.de" + singleLink);
                     dl.setProperty("needs_series_filename", needs_series_filename);
                     dl.setContentUrl(url_content);
-                    dl.setLinkID(fid);
+                    dl.setLinkID(this.getHost() + "://" + fid);
                     final String filename_temp;
                     if (episodenumber != null) {
                         if (yearInsteadOfSeasonNumber) {
