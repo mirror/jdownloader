@@ -7,6 +7,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -23,13 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -129,16 +130,37 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                 }
                 if (!checkCookies(cookies)) {
+                    logger.info("Performing full login");
                     br.clearCookies(getHost());
                     getPage("https://proleech.link");
-                    getPage("https://proleech.link/login/index");
-                    final Form login = br.getFormbyAction("/login");
-                    if (login == null) {
+                    getPage("https://proleech.link/login");
+                    final Form loginform = br.getFormbyAction("/login");
+                    if (loginform == null) {
+                        logger.warning("Failed to find loginform");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    login.put("amember_login", URLEncoder.encode(account.getUser(), "UTF-8"));
-                    login.put("amember_pass", URLEncoder.encode(account.getPass(), "UTF-8"));
-                    submitForm(login);
+                    loginform.put("amember_login", URLEncoder.encode(account.getUser(), "UTF-8"));
+                    loginform.put("amember_pass", URLEncoder.encode(account.getPass(), "UTF-8"));
+                    /* 2019-11-10: Captcha required for logging in RE: admin (this was a reaction to a DDoS attack) */
+                    final boolean force_login_captcha = true;
+                    if (loginform.containsHTML("recaptcha") || force_login_captcha) {
+                        /* 2019-11-10: New */
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        try {
+                            final DownloadLink dl_dummy;
+                            if (dlinkbefore != null) {
+                                dl_dummy = dlinkbefore;
+                            } else {
+                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                this.setDownloadLink(dl_dummy);
+                            }
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            loginform.put("g-recaptcha-response", URLEncoder.encode(recaptchaV2Response, "UTF-8"));
+                        } finally {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                    }
+                    submitForm(loginform);
                     br.followRedirect();
                     if (br.getFormbyAction("/login") != null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
