@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.encoding.AADecoder;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -96,7 +97,16 @@ public class MyStreamTo extends PluginForHost {
         requestFileInformation(downloadLink);
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = PluginJSonUtils.getJsonValue(br, "file");
+            try {
+                final String aaa_decoded_result = new AADecoder().decode(br.toString());
+                dllink = new Regex(aaa_decoded_result, "TYPE\\.setAttribute\\(\\'src\\'\\s*,\\s*\\'(http[^<>\"\\']+)").getMatch(0);
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                logger.warning("AADecoder failed");
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = PluginJSonUtils.getJsonValue(br, "file");
+            }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
