@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,9 +32,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -172,6 +173,39 @@ public class DdlTo extends XFileSharingProBasic {
             fileInfo[0] = new Regex(correctedBR, "<div class=\"name\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
         }
         return fileInfo;
+    }
+
+    // /** TODO: 2019-11-11: Use this once they've updated their API. */
+    // @Override
+    // protected boolean allow_api_download_if_apikey_is_available(final Account account) {
+    // final boolean apikey_is_available = this.getAPIKey(account) != null;
+    // /* API download is available for premium accounts only. */
+    // return apikey_is_available && account != null && account.getType() == AccountType.PREMIUM;
+    // }
+    //
+    // /** TODO: 2019-11-11: Use this once they've updated their API. */
+    // @Override
+    // protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final boolean setAndAnonymizeUsername) throws
+    // Exception {
+    // final Browser brc = br.cloneBrowser();
+    // final AccountInfo ai = super.fetchAccountInfoAPI(brc, account, setAndAnonymizeUsername);
+    // /* Original XFS API ('API Mod') does not return trafficleft - their API does. Set it! */
+    // final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
+    // if (trafficleftStr != null && trafficleftStr.matches("\\d+")) {
+    // ai.setTrafficLeft(Long.parseLong(trafficleftStr) * 1024 * 1024);
+    // }
+    // return ai;
+    // }
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2019-11-11: Reset final downloadurls in dev mode. */
+            link.removeProperty("freelink");
+            link.removeProperty("freelink2");
+            link.removeProperty("premlink");
+        } else {
+            super.resetDownloadlink(link);
+        }
     }
 
     private void setConfigElements() {
