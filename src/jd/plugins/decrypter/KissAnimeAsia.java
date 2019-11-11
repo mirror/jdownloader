@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kissanime.asia" }, urls = { "https?://(www\\d*\\.)?kissanime\\.asia/(episode/)?[^/]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kissanime.asia" }, urls = { "https?://(www\\d*\\.)?kissanime\\.(asia|bz)/(episode/)?[^/]+/?" })
 public class KissAnimeAsia extends antiDDoSForDecrypt {
     public KissAnimeAsia(PluginWrapper wrapper) {
         super(wrapper);
