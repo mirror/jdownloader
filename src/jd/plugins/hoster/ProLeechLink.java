@@ -3,7 +3,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -18,6 +17,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -59,14 +59,15 @@ public class ProLeechLink extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, ai);
+        login(account, ai, true);
         /* Contains all filehosts available for free account users regardless of their status */
         String[] filehosts_free = null;
         /* Contains all filehosts available for premium users and listed as online/working */
         String[] filehosts_premium_online = null;
-        List<String> filehosts_premium_onlineArray = null;
+        List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         /* Contains all filehosts available for premium users and listed as online/working */
         List<String> filehosts_free_onlineArray = new ArrayList<String>();
+        String maxTrafficPremiumDailyStr = null;
         {
             /* Grab free hosts */
             if (br.getURL() == null || !br.getURL().contains("/downloader")) {
@@ -83,12 +84,31 @@ public class ProLeechLink extends antiDDoSForHost {
                 logger.warning("Failed to find list of supported hosts");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            filehosts_premium_onlineArray = Arrays.asList(filehosts_premium_online);
+            for (final String filehost_premium_online : filehosts_premium_online) {
+                if (filehost_premium_online.contains("/")) {
+                    /* 2019-11-11: WTF They sometimes display multiple domains of one filehost in one entry, separated by ' / ' */
+                    logger.info("Special case: Multiple domains of one filehost given: " + filehost_premium_online);
+                    final String[] filehost_domains = filehost_premium_online.split("/");
+                    for (String filehost_domain : filehost_domains) {
+                        filehost_domain = filehost_domain.trim();
+                        filehosts_premium_onlineArray.add(filehost_domain);
+                    }
+                } else {
+                    filehosts_premium_onlineArray.add(filehost_premium_online);
+                }
+            }
+            // filehosts_premium_onlineArray = Arrays.asList(filehosts_premium_online);
+            /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
+            maxTrafficPremiumDailyStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
         }
         /* Set supported hosts depending on account type */
         if (account.getType() == AccountType.PREMIUM && !ai.isExpired()) {
             /* Premium account - bigger list of supported hosts */
             ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
+            if (maxTrafficPremiumDailyStr != null) {
+                ai.setTrafficLeft(SizeFormatter.getSize(maxTrafficPremiumDailyStr));
+                // ai.setTrafficMax(SizeFormatter.getSize(maxTrafficPremiumDailyStr));
+            }
         } else {
             /* Free & Expired[=Free] accounts - they support much less hosts */
             if (filehosts_free != null && filehosts_free.length != 0) {
@@ -108,32 +128,49 @@ public class ProLeechLink extends antiDDoSForHost {
         return ai;
     }
 
-    private boolean checkCookies(Cookies cookies) throws PluginException {
-        if (cookies == null || cookies.get("amember_nr", Cookies.NOTDELETEDPATTERN) == null || cookies.get("amember_ru", Cookies.NOTDELETEDPATTERN) == null || cookies.get("amember_rp", Cookies.NOTDELETEDPATTERN) == null) {
-            return false;
-        } else {
+    private boolean isLoggedin(final Browser br) throws PluginException {
+        final boolean cookie_ok_amember_nr = br.getCookie("amember_nr", Cookies.NOTDELETEDPATTERN) != null;
+        final boolean cookie_ok_amember_ru = br.getCookie("amember_ru", Cookies.NOTDELETEDPATTERN) != null;
+        final boolean cookie_ok_amember_rp = br.getCookie("amember_rp", Cookies.NOTDELETEDPATTERN) != null;
+        final boolean cookies_ok = cookie_ok_amember_nr && cookie_ok_amember_ru && cookie_ok_amember_rp;
+        final boolean html_ok = br.containsHTML("/logout");
+        logger.info("cookies_ok = " + cookies_ok);
+        logger.info("html_ok = " + html_ok);
+        /* 2019-11-11: Allow validation via cookies OR html code! */
+        if (cookies_ok || html_ok) {
             return true;
+        } else {
+            return false;
         }
     }
 
-    private void login(Account account, AccountInfo ai) throws Exception {
+    /**
+     * @param validateCookies
+     *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
+     *            false = Set stored cookies and trust them if they're not older than 300000l
+     *
+     */
+    private boolean login(Account account, AccountInfo ai, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
-                Cookies cookies = account.loadCookies("");
+                final Cookies cookies = account.loadCookies("");
+                boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
-                    getPage("https://proleech.link/member");
-                    br.followRedirect();
-                    cookies = br.getCookies(getHost());
-                    if (br.getFormbyAction("/login") != null) {
-                        cookies = null;
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust login-cookies without checking as they should still be fresh");
+                        return false;
                     }
+                    getPage("https://" + this.getHost() + "/member");
+                    br.followRedirect();
+                    loggedIN = this.isLoggedin(this.br);
                 }
-                if (!checkCookies(cookies)) {
+                if (!loggedIN) {
                     logger.info("Performing full login");
                     br.clearCookies(getHost());
-                    getPage("https://proleech.link");
-                    getPage("https://proleech.link/login");
+                    getPage("https://" + this.getHost());
+                    getPage("/login");
                     final Form loginform = br.getFormbyAction("/login");
                     if (loginform == null) {
                         logger.warning("Failed to find loginform");
@@ -162,19 +199,12 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                     submitForm(loginform);
                     br.followRedirect();
-                    if (br.getFormbyAction("/login") != null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
+                    if (!br.getURL().contains("/member")) {
                         getPage("/member");
-                        br.followRedirect();
-                        if (br.getFormbyAction("/login") != null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        cookies = br.getCookies(getHost());
                     }
-                }
-                if (!checkCookies(cookies)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!isLoggedin(this.br)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 final String activeSubscription = br.getRegex("am-list-subscriptions\">\\s*<li[^<]*>(.*?)</li>").getMatch(0);
                 String accountStatus = null;
@@ -195,6 +225,7 @@ public class ProLeechLink extends antiDDoSForHost {
                     accountStatus = "Free user";
                     account.setConcurrentUsePossible(true);
                     if (ai != null) {
+                        /* Only get/set hostlist if we're not currently trying to download a file (quick login) */
                         getPage("/downloader");
                         int maxfiles_per_day_used = 0;
                         int maxfiles_per_day_maxvalue = 0;
@@ -236,7 +267,8 @@ public class ProLeechLink extends antiDDoSForHost {
                 if (ai != null) {
                     ai.setStatus(accountStatus);
                 }
-                account.saveCookies(cookies, "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
+                return true;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -249,15 +281,21 @@ public class ProLeechLink extends antiDDoSForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        login(account, null);
+        /* 2019-11-11: Login is not required to check previously generated directurls */
+        // login(account, null, false);
         final String generatedDownloadURL = link.getStringProperty(getHost(), null);
         String downloadURL = null;
         if (generatedDownloadURL != null) {
+            /*
+             * 2019-11-11: Seems like generated downloadurls are only valid for some seconds after genration but let's try to re-use them
+             * anyways!
+             */
             logger.info("Trying to re-use old generated downloadlink");
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedDownloadURL, true, 0);
                 final boolean isOkay = isDownloadConnection(dl.getConnection());
                 if (!isOkay) {
+                    /* 2019-11-11: E.g. "Link expired! Please leech again." */
                     logger.info("Saved downloadurl did not work");
                     try {
                         br.followConnection(true);
@@ -287,7 +325,9 @@ public class ProLeechLink extends antiDDoSForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
             }
-            final PostRequest post = new PostRequest("https://proleech.link/dl/debrid/deb_process.php");
+            /* Login - first try without validating cookies! */
+            final boolean validatedCookies = login(account, null, false);
+            final PostRequest post = new PostRequest("https://" + this.getHost() + "/dl/debrid/deb_process.php");
             post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
             post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
@@ -300,22 +340,29 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             post.put("boxlinklist", "0");
             sendRequest(post);
-            downloadURL = br.getRegex("class=\"[^\"]*success\".*?<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
-            if (downloadURL == null) {
+            downloadURL = getDllink();
+            if (StringUtils.isEmpty(downloadURL) && !validatedCookies && !this.isLoggedin(this.br)) {
+                /* Bad login - try again with fresh / validated cookies! */
+                login(account, null, true);
+                sendRequest(post);
+                downloadURL = getDllink();
+            }
+            if (StringUtils.isEmpty(downloadURL)) {
                 final String danger = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*(.*?)\\s*</b>").getMatch(0);
                 if (danger != null) {
+                    /* 2019-11-11: Too many requests! Please try again in a few seconds. */
                     logger.info("Found errormessage on website:");
                     logger.info(danger);
                 }
                 if (br.containsHTML(">\\s*?No link entered\\.?\\s*<")) {
                     mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
-                } else if (br.containsHTML(">\\s*?Error getting the link from this account\\.?\\s*<")) {
+                } else if (br.containsHTML(">\\s*Error getting the link from this account")) {
                     mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
-                } else if (br.containsHTML(">\\s*?Our account has reached traffic limit\\.?\\s*<")) {
+                } else if (br.containsHTML(">\\s*Our account has reached traffic limit")) {
                     mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
-                } else if (br.containsHTML(">\\s*?This filehost is only enabled in")) {
+                } else if (br.containsHTML(">\\s*This filehost is only enabled in")) {
                     mhm.putError(account, link, 10 * 60 * 1000l, "This filehost is only available in premium mode");
-                } else if (br.containsHTML(">\\s*?You can only generate this link during Happy Hours")) {
+                } else if (br.containsHTML(">\\s*You can only generate this link during Happy Hours")) {
                     /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
                 }
@@ -337,6 +384,10 @@ public class ProLeechLink extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    private String getDllink() {
+        return br.getRegex("class=\"[^\"]*success\".*?<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+    }
+
     private boolean isDownloadConnection(URLConnectionAdapter con) throws IOException {
         final boolean ret = con.isOK() && (con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application/force-download"));
         return ret;
@@ -348,8 +399,9 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        login(account, null);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /** TODO: Maybe optimize this to not always validate cookies! */
+        login(account, null, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         final boolean isOkay = isDownloadConnection(dl.getConnection());
         if (!isOkay) {
