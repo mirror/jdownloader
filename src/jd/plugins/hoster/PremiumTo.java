@@ -515,7 +515,8 @@ public class PremiumTo extends UseNet {
                 br.getPage(API_BASE_STORAGE + "/check.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url);
                 handleErrorsAPI(account);
                 final String status = getStorageAPIStatus();
-                if ("Not in queue".equalsIgnoreCase(status)) {
+                /* 2019-11-11: "Canceled" = URL has been added to Storage before but was deleted e.g. by user --> Add it again */
+                if ("Not in queue".equalsIgnoreCase(status) || "Canceled".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
                     br.getPage(API_BASE_STORAGE + "/add.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 1 * 60 * 1000);
@@ -523,7 +524,7 @@ public class PremiumTo extends UseNet {
                     /* File has been downloaded to their servers and download should be possible now. */
                     finalURL = API_BASE_STORAGE + "/download.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url;
                 } else {
-                    /* WTF */
+                    /* WTF this should never happen */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown status");
                 }
                 /* We might need this later. */
