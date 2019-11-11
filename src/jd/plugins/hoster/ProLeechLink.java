@@ -97,7 +97,6 @@ public class ProLeechLink extends antiDDoSForHost {
                     filehosts_premium_onlineArray.add(filehost_premium_online);
                 }
             }
-            // filehosts_premium_onlineArray = Arrays.asList(filehosts_premium_online);
             /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
             maxTrafficPremiumDailyStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
         }
