@@ -386,4 +386,5 @@ system_download_errors_couldnotdelete=Nelze odstranit existující část soubor
 system_download_errors_couldnotrename=Nelze přejmenovat dočasný soubor
 system_download_errors_linkisBlocked=Zrcadlení %s1 se načítá
 video_description=Soubory videa: mp4, avi, mov, ...
+youtube_demux=Demuxovat audio
 youtube_spatial=Prostorové vícekanálové audio
