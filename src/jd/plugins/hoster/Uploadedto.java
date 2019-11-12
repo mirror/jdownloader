@@ -116,7 +116,7 @@ public class Uploadedto extends PluginForHost {
         if (avoidHTTPS) {
             logger.info("HTTPS avoided");
             return "http://";
-        } else if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL) == false) {
+        } else if (isPreferSSL() == false) {
             logger.info("HTTPS not preferred");
             return "http://";
         } else {
@@ -128,6 +128,10 @@ public class Uploadedto extends PluginForHost {
              **/
             return "https://";
         }
+    }
+
+    private boolean isPreferSSL() {
+        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL);
     }
 
     @Override
@@ -715,6 +719,19 @@ public class Uploadedto extends PluginForHost {
         doFree(downloadLink, null);
     }
 
+    private String modifySSLDownloadURL(final DownloadLink downloadLink, final Account account, final String url) {
+        final String ret;
+        if (isPreferSSL()) {
+            ret = url.replaceFirst("http://", "https://");
+        } else {
+            ret = url.replaceFirst("https://", "http://");
+        }
+        if (!StringUtils.equalsIgnoreCase(url, ret)) {
+            logger.info("modified:" + url + "->" + ret);
+        }
+        return ret;
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         currentIP.set(this.getIP());
@@ -873,9 +890,7 @@ public class Uploadedto extends PluginForHost {
             }
             setIP(downloadLink, account);
         }
-        if ("http://".equals(getProtocol()) && StringUtils.startsWithCaseInsensitive(dllink, "https")) {
-            dllink = dllink.replaceFirst("https://", "http://");
-        }
+        dllink = modifySSLDownloadURL(downloadLink, account, dllink);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         try {
             /* remove next major update */
@@ -1396,18 +1411,18 @@ public class Uploadedto extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     logger.info("Download from:" + form.getAction());
-                    if ("http://".equals(getProtocol()) && StringUtils.startsWithCaseInsensitive(form.getAction(), "https")) {
-                        form.setAction(form.getAction().replaceFirst("https://", "http://"));
-                    }
+                    final String url = modifySSLDownloadURL(downloadLink, account, form.getAction());
+                    form.setAction(url);
                     form.setMethod(MethodType.GET);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, chunks);
                 } else {
                     logger.info("Direct Downloads active");
                     logger.info("Download from:" + br.getRedirectLocation());
                     String dllink = br.getRedirectLocation();
-                    if ("http://".equals(getProtocol()) && StringUtils.startsWithCaseInsensitive(dllink, "https")) {
-                        dllink = dllink.replaceFirst("https://", "http://");
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    dllink = modifySSLDownloadURL(downloadLink, account, dllink);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
                 }
                 try {
@@ -1525,6 +1540,7 @@ public class Uploadedto extends PluginForHost {
                 maxChunks = -maxConcurrent;
             }
         }
+        url = modifySSLDownloadURL(downloadLink, account, url);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, maxChunks);
         try {
             /* remove next major update */

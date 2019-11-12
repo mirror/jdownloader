@@ -17,7 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -92,6 +94,8 @@ public class SrfCh extends PluginForHost {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         ArrayList<Object> ressourcelist;
         if (useV2) {
+            final Map<String, String> hlsMap = new HashMap<String, String>();
+            final Map<String, String> mp4Map = new HashMap<String, String>();
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
             // final String id = (String) entries.get("id");
             ressourcelist = (ArrayList<Object>) entries.get("resourceList");
@@ -99,22 +103,41 @@ public class SrfCh extends PluginForHost {
                 entries = (LinkedHashMap<String, Object>) ressourceO;
                 final String protocol = (String) entries.get("protocol");
                 if (protocol.equals("HTTP")) {
-                    if (url_http_download != null) {
-                        /* Already found result? Skip object! */
-                        continue;
+                    final String url = (String) entries.get("url");
+                    final String quality = (String) entries.get("quality");
+                    if (StringUtils.isNotEmpty(url)) {
+                        mp4Map.put(quality, url);
                     }
-                    url_http_download = (String) entries.get("url");
-                    break;
                 } else if (protocol.equals("HLS")) {
-                    if (url_hls_master != null) {
-                        /* Already found result? Skip object! */
-                        continue;
+                    final String url = (String) entries.get("url");
+                    final String quality = (String) entries.get("quality");
+                    if (StringUtils.isNotEmpty(url)) {
+                        hlsMap.put(quality, url);
                     }
-                    url_hls_master = (String) entries.get("url");
                 } else {
                     /* Skip unsupported protocol */
-                    logger.info("Skipping protocol: " + protocol);
+                    logger.info("Skipping protocol: " + entries);
                     continue;
+                }
+            }
+            if (hlsMap.size() > 0) {
+                if (hlsMap.containsKey("HD")) {
+                    url_hls_master = hlsMap.get("HD");
+                } else if (hlsMap.containsKey("SD")) {
+                    url_hls_master = hlsMap.get("SD");
+                } else {
+                    logger.info("unknown qualities(hls):" + hlsMap);
+                    url_hls_master = hlsMap.entrySet().iterator().next().getValue();
+                }
+            }
+            if (mp4Map.size() > 0) {
+                if (mp4Map.containsKey("HD")) {
+                    url_http_download = mp4Map.get("HD");
+                } else if (hlsMap.containsKey("SD")) {
+                    url_http_download = mp4Map.get("SD");
+                } else {
+                    logger.info("unknown qualities(mp4):" + mp4Map);
+                    url_http_download = mp4Map.entrySet().iterator().next().getValue();
                 }
             }
             if (!StringUtils.isEmpty(url_hls_master)) {

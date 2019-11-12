@@ -6,14 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,6 +23,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -177,10 +177,7 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                     loginform.put("amember_login", URLEncoder.encode(account.getUser(), "UTF-8"));
                     loginform.put("amember_pass", URLEncoder.encode(account.getPass(), "UTF-8"));
-                    /* 2019-11-10: Captcha required for logging in RE: admin (this was a reaction to a DDoS attack) */
-                    final boolean force_login_captcha = true;
-                    if (loginform.containsHTML("recaptcha") || force_login_captcha) {
-                        /* 2019-11-10: New */
+                    if (loginform.containsHTML("recaptcha")) {
                         final DownloadLink dlinkbefore = this.getDownloadLink();
                         try {
                             final DownloadLink dl_dummy;
