@@ -26,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -54,8 +56,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
         }
         final String[] links = br.getRegex("\"(https?://mirrorace\\.com/m/[A-Za-z0-9]+/\\d+\\?t=[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             if (this.isAbort()) {
@@ -74,7 +75,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
             }
             final String finallink = br.getRegex("<a class=\"uk-button[^\"]*\"\\s*href=\"(https?[^<>\"]+)").getMatch(0);
             if (finallink == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DownloadLink dl;
             if (finallink.contains("mirrorace.com")) {

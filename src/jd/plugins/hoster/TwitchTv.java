@@ -579,7 +579,8 @@ public class TwitchTv extends PluginForHost {
     }
 
     private static Object      ctrlLock = new Object();
-    public static final String clientID = "mov1ay9d49l14f7siur0q8k9gny15aw"; // This clientID is for JDownloader only
+    public static final String clientID = "mov1ay9d49l14f7siur0q8k9gny15aw"; // This clientID is for JDownloader only, 12.11.2019, seems
+                                                                             // like twitch is blocking all non twitch clientID
 
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {

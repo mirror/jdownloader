@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -38,19 +37,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" })
 public class Shareplacecom extends PluginForHost {
-
     public Shareplacecom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.org", ".com"));
+        // they are switching to .org as main domain
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.com", ".org"));
         link.setUrlDownload(link.getDownloadURL().replaceFirst("Download", ""));
     }
 
@@ -72,13 +72,16 @@ public class Shareplacecom extends PluginForHost {
     }
 
     private static final String html_captcha = "/captcha\\.php";
-
     private String              correctedBR  = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         String url = downloadLink.getDownloadURL();
+        if (StringUtils.containsIgnoreCase(url, ".com/")) {
+            convert(downloadLink);
+            url = downloadLink.getDownloadURL();
+        }
         setBrowserExclusive();
         prepBR(this.br);
         getPage(url);
@@ -210,6 +213,7 @@ public class Shareplacecom extends PluginForHost {
                 try {
                     new URL(result);
                 } catch (Exception e) {
+                    logger.log(e);
                     continue;
                 }
                 if (result == null || (result.contains("jdownloader") && !result.startsWith("http"))) {
@@ -219,11 +223,11 @@ public class Shareplacecom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br2.openHeadConnection(result);
-                    if (con.getContentType().contains("html")) {
+                    if (!con.isOK() || con.getContentType().contains("text")) {
                         continue;
                     }
                 } catch (final Exception e) {
-                    // e.printStackTrace();
+                    logger.log(e);
                 } finally {
                     try {
                         con.disconnect();
@@ -245,14 +249,11 @@ public class Shareplacecom extends PluginForHost {
     private void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
-
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
@@ -262,5 +263,4 @@ public class Shareplacecom extends PluginForHost {
             }
         }
     }
-
 }
