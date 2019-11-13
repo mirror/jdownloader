@@ -209,7 +209,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getFUID(final DownloadLink downloadLink) {
-        return getFUID(downloadLink.getPluginPatternMatcher());
+        return getFUID(downloadLink.getDownloadURL());
     }
 
     public String getFUID(final String link) {
