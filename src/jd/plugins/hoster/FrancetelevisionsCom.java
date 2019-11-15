@@ -121,6 +121,7 @@ public class FrancetelevisionsCom extends PluginForHost {
         String url_http = null;
         String url_temp = null;
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("videos");
+        final ArrayList<String> hls = new ArrayList<String>();
         for (final Object videoo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) videoo;
             final String format = (String) entries.get("format");
@@ -137,9 +138,14 @@ public class FrancetelevisionsCom extends PluginForHost {
                         brc.setFollowRedirects(true);
                         brc.getPage("https://" + host + "/esi/TA?format=json&url=" + Encoding.urlEncode(url_temp));
                         final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                        hls_master = (String) response.get("url");
-                        if (StringUtils.isNotEmpty(hls_master)) {
-                            break;
+                        final String url = (String) response.get("url");
+                        if (StringUtils.isNotEmpty(url)) {
+                            final Browser brc2 = br.cloneBrowser();
+                            brc2.getPage(url);
+                            if (brc2.getHttpConnection().isOK() && !hls.contains(url)) {
+                                hls.add(url);
+                                break;
+                            }
                         }
                     } catch (final Exception e) {
                         logger.log(e);
@@ -149,6 +155,10 @@ public class FrancetelevisionsCom extends PluginForHost {
                     hls_master = url_temp;
                 }
             }
+        }
+        if (hls.size() > 0) {
+            logger.info("hls:" + hls);
+            hls_master = hls.get(0);
         }
         if (hls_master == null && url_http == null) {
             /*

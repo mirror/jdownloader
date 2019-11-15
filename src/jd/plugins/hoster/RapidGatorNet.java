@@ -889,6 +889,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             synchronized (account) {
                 final String lang = System.getProperty("user.language");
                 final String errorMessage = RapidGatorNet.readErrorStream(con);
+                final String statusString = new Regex(errorMessage, "status\"\\s*:\\s*\"?(\\d+)").getMatch(0);
+                final long status = statusString != null ? Long.parseLong(statusString) : -1;
                 logger.info("ErrorMessage: " + errorMessage);
                 if (link != null && errorMessage.contains("Exceeded traffic")) {
                     final AccountInfo ac = new AccountInfo();
@@ -943,7 +945,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                } else if (StringUtils.containsIgnoreCase(errorMessage, "Session not exist")) {
+                } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
+                    // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
+                    // {"response":null,"status":401,"details":"Error. Session not exist"}
                     if (retrySameSession) {
                         throw new PluginException(LinkStatus.ERROR_RETRY, "RetrySameSession");
                     } else {
