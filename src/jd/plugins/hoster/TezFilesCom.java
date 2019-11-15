@@ -15,17 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -35,11 +36,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  *
@@ -117,12 +113,14 @@ public class TezFilesCom extends K2SApi {
         return new String[] { "tezfiles.com" };
     }
 
-    /* end of K2SApi stuff */
     private void setConfigElements() {
-        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled());
+        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled()).setEnabled(false);
         getConfig().addEntry(cfgapi);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode!)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom
+        // Referer here (disable API to use this!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
+        /* 2019-11-15: Works via API too */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here").setDefaultValue(null));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
 
@@ -150,161 +148,15 @@ public class TezFilesCom extends K2SApi {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         setConstants(null);
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
         if (useAPI()) {
-            super.handleDownload(downloadLink, null);
+            super.handleDownload(link, null);
         } else {
-            requestFileInformation(downloadLink);
-            doFree(downloadLink, null);
-        }
-    }
-
-    private final String freeAccConLimit = "Free account does not allow to download more than one file at the same time";
-    private final String reCaptcha       = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
-    private final String formCaptcha     = "/file/captcha\\.html\\?v=[a-z0-9]+";
-
-    public void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
-        String dllink = downloadLink.getStringProperty(directlinkproperty, null);
-        // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
-        if (!inValidate(dllink)) {
-            final Browser obr = br.cloneBrowser();
-            logger.info("Reusing cached finallink!");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 401) {
-                br.followConnection();
-                handleGeneralServerErrors(account, downloadLink);
-                // we now want to restore!
-                br = obr;
-                dllink = null;
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
-            }
-        }
-        // if above has failed, dllink will be null
-        if (inValidate(dllink)) {
-            dllink = getDllink();
-            if (inValidate(dllink)) {
-                if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*")) {
-                    premiumDownloadRestriction("This file can only be downloaded by premium users");
-                }
-                final Form slowdl = br.getFormbyKey("slow_id");
-                if (slowdl == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String id = slowdl.getInputField("slow_id").getValue();
-                if (id == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                sendForm(slowdl);
-                if (br.containsHTML("Free user can't download large files")) {
-                    premiumDownloadRestriction("This file can only be downloaded by premium users");
-                } else if (br.containsHTML(freeAccConLimit)) {
-                    // could be shared network or a download hasn't timed out yet or user downloading in another program?
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
-                }
-                if (br.containsHTML(">Downloading is not possible<")) {
-                    final Regex waittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this");
-                    String tmphrs = waittime.getMatch(0);
-                    String tmpmin = waittime.getMatch(1);
-                    String tmpsec = waittime.getMatch(2);
-                    if (tmphrs == null && tmpmin == null && tmpsec == null) {
-                        logger.info("Waittime regexes seem to be broken");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                    } else {
-                        int minutes = 0, seconds = 0, hours = 0;
-                        if (tmphrs != null) {
-                            hours = Integer.parseInt(tmphrs);
-                        }
-                        if (tmpmin != null) {
-                            minutes = Integer.parseInt(tmpmin);
-                        }
-                        if (tmpsec != null) {
-                            seconds = Integer.parseInt(tmpsec);
-                        }
-                        int totalwaittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                        logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, totalwaittime);
-                    }
-                }
-                dllink = getDllink();
-                if (inValidate(dllink)) {
-                    final Browser cbr = br.cloneBrowser();
-                    String captcha = null;
-                    final int repeat = 4;
-                    for (int i = 1; i <= repeat; i++) {
-                        if (br.containsHTML(reCaptcha)) {
-                            final Recaptcha rc = new Recaptcha(br, this);
-                            rc.findID();
-                            rc.load();
-                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                            postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
-                            if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
-                                continue;
-                            } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            } else {
-                                break;
-                            }
-                        } else if (br.containsHTML(formCaptcha)) {
-                            if (captcha == null) {
-                                captcha = br.getRegex(formCaptcha).getMatch(-1);
-                                if (captcha == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                            }
-                            String code = getCaptchaCode(captcha, downloadLink);
-                            postPage(br.getURL(), "CaptchaForm%5BverifyCode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
-                            if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
-                                getPage(cbr, "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
-                                captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
-                                if (captcha != null) {
-                                    captcha = captcha.replace("\\", "");
-                                }
-                                continue;
-                            } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                    int wait = 30;
-                    final String waittime = br.getRegex("class=\"tik-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
-                    if (waittime != null) {
-                        wait = Integer.parseInt(waittime);
-                    }
-                    this.sleep(wait * 1001l, downloadLink);
-                    postPage(br.getURL(), "free=1&uniqueId=" + id);
-                    if (br.containsHTML(freeAccConLimit)) {
-                        // could be shared network or a download hasn't timed out yet or user downloading in another program?
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
-                    }
-                    dllink = getDllink();
-                    if (inValidate(dllink)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-            }
-            logger.info("dllink = " + dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                handleGeneralServerErrors(account, downloadLink);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        downloadLink.setProperty("directlink", dllink);
-        // add download slot
-        controlSlot(+1, account);
-        try {
-            dl.startDownload();
-        } finally {
-            // remove download slot
-            controlSlot(-1, account);
+            super.handleDownloadWebsite(link, null);
         }
     }
 
@@ -498,7 +350,7 @@ public class TezFilesCom extends K2SApi {
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
             if (account.getType() == AccountType.FREE) {
-                doFree(link, account);
+                super.handleDownloadWebsite(link, account);
             } else {
                 String dllink = br.getRedirectLocation();
                 /* Maybe user has direct downloads disabled */
