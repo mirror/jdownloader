@@ -18,11 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.UnknownVideohostingCore;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.UnknownVideohostingCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VevIo extends UnknownVideohostingCore {
@@ -53,6 +57,16 @@ public class VevIo extends UnknownVideohostingCore {
     @Override
     public boolean check_filesize_via_directurl() {
         return false;
+    }
+
+    @Override
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()) {
+            @Override
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        };
     }
 
     @Override

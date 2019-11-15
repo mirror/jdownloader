@@ -26,6 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viet69.net" }, urls = { "https?://(www\\.)?viet69\\.net/[^/]+" })
@@ -44,14 +45,26 @@ public class Viet69Net extends antiDDoSForDecrypt {
         if (videoDetails != null && videoDetails.length > 1) {
             final Browser br2 = br.cloneBrowser();
             postPage(br2, "/get.video.php", "movie_id=" + videoDetails[0] + "&type=" + videoDetails[1] + "&index=1");
-            final String[] links = br2.getRegex("\"file\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
+            String[] links = br2.getRegex("\"file\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br2.getRegex("file\\s*:\\s*\'([^']+)'").getColumn(0);
+            }
             if (links != null && links.length > 0) {
                 for (String link : links) {
-                    final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
-                    if (fpName != null) {
-                        downloadLink.setName(fpName);
+                    if (StringUtils.containsIgnoreCase(link, ".m3u8")) {
+                        final Browser brc = br2.cloneBrowser();
+                        brc.getPage(link);
+                        final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, parameter, null, null, fpName);
+                        if (downloadLinks != null) {
+                            decryptedLinks.addAll(downloadLinks);
+                        }
+                    } else {
+                        final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
+                        if (fpName != null) {
+                            downloadLink.setName(fpName);
+                        }
+                        decryptedLinks.add(downloadLink);
                     }
-                    decryptedLinks.add(downloadLink);
                 }
             }
         }

@@ -22,12 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -38,11 +34,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 public class UnknownVideohostingCore extends PluginForHost {
     public UnknownVideohostingCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
     }
+
     // public static List<String[]> getPluginDomains() {
     // final List<String[]> ret = new ArrayList<String[]>();
     // // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -74,7 +76,6 @@ public class UnknownVideohostingCore extends PluginForHost {
     // }
     // return super.rewriteHost(host);
     // }
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -194,6 +195,10 @@ public class UnknownVideohostingCore extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey());
+    }
+
     /** 2019-08-06: See e.g. https://vev.io/api */
     private String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         br.getHeaders().put("Origin", "https://" + this.getHost());
@@ -212,6 +217,7 @@ public class UnknownVideohostingCore extends PluginForHost {
             if (loop > 0) {
                 postData = "{\"g-recaptcha-verify\":\"" + recaptchaV2Response + "\"}";
             }
+            br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
             br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -227,7 +233,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                         return null;
                     }
                     captchaFailed = true;
-                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()).getToken();
+                    recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 }
             }
             loop++;
