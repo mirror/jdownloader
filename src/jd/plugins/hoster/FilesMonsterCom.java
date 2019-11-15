@@ -88,10 +88,26 @@ public class FilesMonsterCom extends PluginForHost {
         return true;
     }
 
+    public static String getFileName(Browser br) throws PluginException {
+        String ret = br.getRegex("<a class=\"link premium\" href=\"[^\"]+\">\\s*<span class=\"filename\">\\s*([^<>\"]+)\\s*</").getMatch(0);
+        if (ret == null) {
+            ret = br.getRegex(">\\s*File\\s*name\\s*:\\s*</td>\\s*<td[^>]*>\\s*([^<>\"]+)\\s*</").getMatch(0);
+        }
+        return ret;
+    }
+
+    public static String getFileSize(Browser br) throws PluginException {
+        String ret = br.getRegex("<span class=\"size\">\\s*([^<>\"]+)\\s*</span>").getMatch(0);
+        if (ret == null) {
+            ret = br.getRegex(">\\s*File\\s*size\\s*:\\s*</td>\\s*<td[^>]+>\\s*([^<>\"]+)\\s*</").getMatch(0);
+        }
+        return ret;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         correctDownloadLink(downloadLink);
-        prepBR();
+        prepBR(br);
         br.setFollowRedirects(false);
         downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
@@ -128,8 +144,8 @@ public class FilesMonsterCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String filename = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
-            String filesize = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);
+            final String filename = getFileName(br);
+            final String filesize = getFileSize(br);
             if (filename != null) {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             }
@@ -367,7 +383,7 @@ public class FilesMonsterCom extends PluginForHost {
         synchronized (account) {
             try {
                 /** Load cookies */
-                prepBR();
+                prepBR(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -613,7 +629,7 @@ public class FilesMonsterCom extends PluginForHost {
         return ai;
     }
 
-    private void prepBR() {
+    public static void prepBR(Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookie("http://filesmonster.com/", "yab_ulanguage", "en");
     }

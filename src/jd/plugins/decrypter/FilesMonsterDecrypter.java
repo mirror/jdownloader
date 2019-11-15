@@ -43,8 +43,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String  FILENAMEREGEX            = "<a class=\"link premium\" href=\"[^\"]+\">\\s*<span class=\"filename\">([^<>\"]+)</";
-    public static final String  FILESIZEREGEX            = "<span class=\"size\">([^<>\"]+)</span>";
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
     private static final String TYPE_EMBEDDED            = ".+/player/v3/video/.+";
     private static final String TYPE_MAIN                = "https?://(?:www\\.)?filesmonster\\.com/download\\.php\\?id=([A-Za-z0-9_-]+)";
@@ -124,6 +122,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             br.setCurrentURL(browserReferrer);
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        jd.plugins.hoster.FilesMonsterCom.prepBR(br);
         br.getPage(parameter);
         final String title = jd.plugins.hoster.FilesMonsterCom.getLongTitle(this.br);
         if (jd.plugins.hoster.FilesMonsterCom.isOffline(this.br)) {
@@ -132,8 +131,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             decryptedLinks.add(finalOne);
             return decryptedLinks;
         }
-        String fname = br.getRegex(FILENAMEREGEX).getMatch(0);
-        String fsize = br.getRegex(FILESIZEREGEX).getMatch(0);
+        final String fname = jd.plugins.hoster.FilesMonsterCom.getFileName(br);
+        final String fsize = jd.plugins.hoster.FilesMonsterCom.getFileSize(br);
         String[] decryptedStuff = null;
         final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
