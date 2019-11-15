@@ -101,12 +101,18 @@ public class NexusmodsCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String download[] : downloads) {
-                final DownloadLink link = createDownloadlink(br2.getURL(download[2]).toString());
+                final String content_url = br2.getURL(download[2]).toString();
+                final DownloadLink link = createDownloadlink(content_url);
+                final String linkid = new Regex(content_url, "\\?id=(\\d+)").getMatch(0);
+                if (linkid == null) {
+                    continue;
+                }
+                link.setLinkID(this.getHost() + "://" + linkid);
                 final long size = SizeFormatter.getSize(download[1]);
                 if (size > 0) {
                     link.setDownloadSize(size);
                 }
-                link.setName(Encoding.htmlOnlyDecode(download[0]));
+                link.setName(linkid + "_" + Encoding.htmlOnlyDecode(download[0]));
                 link.setAvailable(true);
                 link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
                 link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
