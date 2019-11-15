@@ -22,6 +22,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,11 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class UnknownVideohostingCore extends PluginForHost {
     public UnknownVideohostingCore(PluginWrapper wrapper) {
@@ -199,7 +199,7 @@ public class UnknownVideohostingCore extends PluginForHost {
         return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey());
     }
 
-    /** 2019-08-06: See e.g. https://vev.io/api */
+    /** 2019-08-06: See e.g. https://vev.io/api. Alternative way: https://vev.io/pair (this also requires solving reCaptcha) */
     private String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         br.getHeaders().put("Origin", "https://" + this.getHost());
         br.getHeaders().put("Referer", "https://" + this.getHost() + "/" + this.getFID(link));
