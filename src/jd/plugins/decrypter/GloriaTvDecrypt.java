@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -36,9 +35,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "https?://(www\\.)?gloria\\.tv/(?:media|video)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "https?://(www\\.)?gloria\\.tv/(?:media|video|post)/[A-Za-z0-9]+" })
 public class GloriaTvDecrypt extends PluginForDecrypt {
-
     public GloriaTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -189,18 +187,15 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                 dl.setDownloadSize(SizeFormatter.getSize(fsize));
             }
             dl.setProperty("decryptedfilesize", fsize);
-
             dl.setProperty("decryptedfilename", filename);
             dl.setProperty("LINKDUPEID", "gloriatv_" + fid + "_" + filename);
             dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(videotitle);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -221,5 +216,4 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         }
         return true;
     }
-
 }

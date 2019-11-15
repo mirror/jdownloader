@@ -15,10 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +32,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadfiles.io" }, urls = { "https?://(?:www\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
 public class UploadfilesIo extends antiDDoSForHost {
@@ -102,7 +102,7 @@ public class UploadfilesIo extends antiDDoSForHost {
             if (br.containsHTML(">Premium Access Only")) {
                 throw new AccountRequiredException();
             }
-            dllink = "https://down.uploadfiles.io/get/" + this.getLinkID(downloadLink);
+            dllink=br.getRegex("(https?://[a-z0-9\\-]+\\.(uploadfiles|ufile).io/get/[a-zA-Z0-9]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -121,20 +121,21 @@ public class UploadfilesIo extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             } finally {
                 try {
                     con.disconnect();
@@ -142,7 +143,7 @@ public class UploadfilesIo extends antiDDoSForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override

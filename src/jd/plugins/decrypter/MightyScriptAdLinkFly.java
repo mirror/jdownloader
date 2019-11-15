@@ -57,9 +57,17 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** 2019-10-30: glory-link.com domains */
             "glory-link.com",
             /** 2019-10-30: exe.io domains */
-            "exe.io", "iddeas.xyz", "artiicle.xyz",
+            "exe.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com",
             /** 2019-08-29: 4snip.pw domains, handles by FoursnipPw plugin */
             /* "4snip.pw", */
+            /** 2019-11-13: linkjust */
+            "linkjust.com", "thegreatfuture.com", "siha.xyz", "akltu.com",
+            /** 2019-11-13: linkshorty */
+            "linkshorty.com", "americansvsarabs.com", "mat3sports.com",
+            /** 2019-11-13: ex-foary.com */
+            "ex-foary.com",
+            /** 2019-11-13: Zoom Link */
+            "zoom-link.com", "empir33.com",
             /** 2019-08-24: shortzon.com domains */
             "shortzon.com", "infothon.com",
             /** 2019-08-24: ilinkshort.com domains */
@@ -188,30 +196,37 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         final String source_host = Browser.getHost(parameter);
         br.setFollowRedirects(false);
         getPage(parameter);
-        String redirect = br.getRedirectLocation();
-        if (redirect == null) {
-            /* 2019-01-29: E.g. cuon.io */
-            redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;url=(https?://[^\"]+)\">").getMatch(0);
-        }
-        if (redirect == null) {
-            /* 2019-04-25: E.g. clkfly.pw */
-            redirect = br.getHttpConnection().getHeaderField("Refresh");
-            if (redirect != null && redirect.matches("^\\d+, http.+")) {
-                redirect = new Regex(redirect, "^\\d+, (http.+)").getMatch(0);
+        // 2019-11-13: http->https->different domain(https)
+        // 2019-11-13: http->https->different domain(http)->different domain(https)
+        while (true) {
+            String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                /* 2019-01-29: E.g. cuon.io */
+                redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;url=(https?://[^\"]+)\">").getMatch(0);
+            }
+            if (redirect == null) {
+                /* 2019-04-25: E.g. clkfly.pw */
+                redirect = br.getHttpConnection().getHeaderField("Refresh");
+                if (redirect != null && redirect.matches("^\\d+, http.+")) {
+                    redirect = new Regex(redirect, "^\\d+, (http.+)").getMatch(0);
+                }
+            }
+            if (redirect != null && !redirect.contains(source_host + "/")) {
+                /*
+                 * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
+                 * wi.cr --> wicr.me
+                 */
+                decryptedLinks.add(this.createDownloadlink(redirect));
+                return decryptedLinks;
+            } else {
+                if (redirect != null) {
+                    getPage(redirect);
+                } else {
+                    break;
+                }
             }
         }
-        if (redirect != null && !redirect.contains(source_host + "/")) {
-            /*
-             * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
-             * wi.cr --> wicr.me
-             */
-            decryptedLinks.add(this.createDownloadlink(redirect));
-            return decryptedLinks;
-        }
         br.setFollowRedirects(true);
-        if (redirect != null) {
-            getPage(redirect);
-        }
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -225,7 +240,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         appVars = br.getRegex("var (app_vars.*?)</script>").getMatch(0);
         Form form = getCaptchaForm();
         if (form == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // form.remove("_Token%5Bunlocked%5D");
         // form.put("_Token%5Bunlocked%5D", "adcopy_challenge%7Cadcopy_response%7Ccoinhive-captcha-token%7Cg-recaptcha-response");
@@ -246,7 +261,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
             form = br.getForm(0);
             if (form == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // we want redirect off here
             br.setFollowRedirects(false);
@@ -259,7 +274,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     return decryptedLinks;
                 }
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
@@ -272,7 +287,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 for (int i = 0; i <= 2; i++) {
                     form = getCaptchaForm();
                     if (form == null) {
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     /* Captcha type will usually stay the same even on bad solve attempts! */
                     // captchaType = getCaptchaType();
@@ -286,7 +301,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         if (StringUtils.isEmpty(key)) {
                             logger.warning("Failed to find reCaptchaV2 key");
-                            return null;
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
                             @Override
@@ -303,7 +318,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
                         if (StringUtils.isEmpty(solvemediaChallengeKey)) {
                             logger.warning("Failed to find solvemedia_challenge_key");
-                            return null;
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         requiresCaptchaWhichCanFail = true;
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
@@ -317,7 +332,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     } else {
                         /* Unsupported captchaType */
                         logger.warning("Unsupported captcha type!");
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     submitForm(form);
                     if (requiresCaptchaWhichCanFail && this.br.containsHTML("The CAPTCHA was incorrect")) {
@@ -385,7 +400,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     return decryptedLinks;
                 }
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
