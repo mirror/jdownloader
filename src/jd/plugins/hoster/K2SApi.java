@@ -112,11 +112,13 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public void resetLink(DownloadLink downloadLink) {
-        if (downloadLink != null) {
-            downloadLink.removeProperty("premlink");
-            downloadLink.removeProperty("freelink2");
-            downloadLink.removeProperty("freelink1");
-        }
+        /* 2019-11-15: Do not remove final downloadurls on reset anymore! */
+        // if (downloadLink != null) {
+        // downloadLink.removeProperty("premlink");
+        // downloadLink.removeProperty("freelink2");
+        // downloadLink.removeProperty("freelink1");
+        // }
+        super.resetLink(downloadLink);
     }
 
     protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
@@ -165,7 +167,8 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getUseAPIPropertyID() {
-        return "USE_API_2";
+        /* 2019-11-15: Website mode is broken. Reset this setting to force all users to use API and disabled setting to disable API. */
+        return "USE_API_2019_11_15";
     }
 
     protected boolean isUseAPIDefaultEnabled() {
@@ -209,7 +212,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getFUID(final DownloadLink downloadLink) {
-        return getFUID(downloadLink.getDownloadURL());
+        return getFUID(downloadLink.getPluginPatternMatcher());
     }
 
     public String getFUID(final String link) {
@@ -387,7 +390,6 @@ public abstract class K2SApi extends PluginForHost {
         }
         resetAccountProperties(account);
         setAccountLimits(account);
-        account.setValid(true);
         return ai;
     }
 
@@ -518,6 +520,14 @@ public abstract class K2SApi extends PluginForHost {
                 this.handleErrors(account, this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /*
+             * E.g. free = 51200, with correct Referer = 204800 --> Normal free speed: 30-50 KB/s | Free Speed with special Referer: 150-200
+             * KB/s
+             */
+            final String rate_limit = new Regex(dllink, "rate_limit=(\\d+)").getMatch(0);
+            if (rate_limit != null) {
+                logger.info("Current speedlimit: " + rate_limit);
+            }
             logger.info("dllink = " + dllink);
             /*
              * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
@@ -645,6 +655,12 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, "");
                 /** 2019-07-05: TODO: Fix auth stuff */
+                this.postPageRaw(br, "https://api." + this.getHost() + "/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"fb_web_app\",\"client_secret\":\"TODO_FIXME\"}", account);
+                final String access_token = PluginJSonUtils.getJson(br, "access_token");
+                if (StringUtils.isEmpty(access_token)) {
+                    logger.warning("Failed to find accesstoken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 getPage("https://api." + this.getHost() + "/v1/auth/token");
                 getPage("https://api." + this.getHost() + "/v1/files/" + fuid + "/download?referer=" + Encoding.urlEncode(custom_referer));
                 final String msg = PluginJSonUtils.getJson(br, "message");
@@ -775,7 +791,7 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * @throws Exception
      */
-    public void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
+    public void postPageRaw(final Browser ibr, final String url, String arg, final Account account) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
             try {
