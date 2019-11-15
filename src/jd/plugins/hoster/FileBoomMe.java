@@ -60,7 +60,7 @@ public class FileBoomMe extends K2SApi {
 
     @Override
     protected boolean useAPI() {
-        final boolean use_api = this.getPluginConfig().getBooleanProperty(getUseAPIPropertyID(), false);
+        final boolean use_api = this.getPluginConfig().getBooleanProperty(getUseAPIPropertyID(), isUseAPIDefaultEnabled());
         return use_api;
     }
 
