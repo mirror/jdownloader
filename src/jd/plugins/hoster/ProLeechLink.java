@@ -6,6 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -23,14 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -67,7 +67,7 @@ public class ProLeechLink extends antiDDoSForHost {
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         /* Contains all filehosts available for premium users and listed as online/working */
         List<String> filehosts_free_onlineArray = new ArrayList<String>();
-        String maxTrafficPremiumDailyStr = null;
+        String traffic_maxStr = null;
         {
             /* Grab free hosts */
             if (br.getURL() == null || !br.getURL().contains("/downloader")) {
@@ -98,15 +98,26 @@ public class ProLeechLink extends antiDDoSForHost {
                 }
             }
             /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
-            maxTrafficPremiumDailyStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
+            traffic_maxStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
         }
         /* Set supported hosts depending on account type */
         if (account.getType() == AccountType.PREMIUM && !ai.isExpired()) {
             /* Premium account - bigger list of supported hosts */
             ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
-            if (maxTrafficPremiumDailyStr != null) {
-                ai.setTrafficLeft(SizeFormatter.getSize(maxTrafficPremiumDailyStr));
-                // ai.setTrafficMax(SizeFormatter.getSize(maxTrafficPremiumDailyStr));
+            if (traffic_maxStr != null) {
+                /*
+                 * Used traffic is kinda hidden on their website. Click on the 'account' icon in the top right corner, then it should get
+                 * displayed.
+                 */
+                final String traffic_usedStr = br.getRegex("Bandwidth Used\\s*:\\s*<span[^<>]*><b>([^<>\"]+)<").getMatch(0);
+                final long traffic_max = SizeFormatter.getSize(traffic_maxStr);
+                if (traffic_usedStr != null) {
+                    ai.setTrafficLeft(traffic_max - SizeFormatter.getSize(traffic_usedStr));
+                    ai.setTrafficMax(traffic_max);
+                } else {
+                    /* No used traffic available --> Set max. daily traffic as trafficleft */
+                    ai.setTrafficLeft(traffic_max);
+                }
             }
         } else {
             /* Free & Expired[=Free] accounts - they support much less hosts */
