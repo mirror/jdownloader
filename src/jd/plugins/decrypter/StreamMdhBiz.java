@@ -2,19 +2,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream-mydirtyhobby.biz" }, urls = { "https?://(stream-mydirtyhobby.biz|(?:old\\.|www\\.)?stream-mdh.se)(/view/.*?/.+|/video/.*?/.+)" })
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream-mdh.co" }, urls = { "https?://(stream-mydirtyhobby.biz|(?:old\\.|www\\.)?stream-mdh.(?:se|co))(/view/.*?/.+|/video/.*?/.+)" })
 public class StreamMdhBiz extends antiDDoSForDecrypt {
     public StreamMdhBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -26,9 +26,9 @@ public class StreamMdhBiz extends antiDDoSForDecrypt {
         final String streamID = new Regex(parameter.getCryptedUrl(), "/view/.*?/(.+)").getMatch(0);
         if (streamID != null) {
             if (parameter.getCryptedUrl().contains("old.stream")) {
-                getPage("https://old.stream-mdh.se/embed/" + streamID);
+                getPage("https://old.stream-mdh.co/embed/" + streamID);
             } else {
-                getPage("https://stream-mdh.se/embed/" + streamID);
+                getPage("https://stream-mdh.co/embed/" + streamID);
             }
         } else {
             getPage(parameter.getCryptedUrl());
