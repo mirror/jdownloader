@@ -2453,7 +2453,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         final String errorCodeStr = PluginJSonUtils.getJson(br, "status");
         final String errorMsg = PluginJSonUtils.getJson(br, "msg");
-        int errorcode = -1;
+        int errorcode = errorCodeStr != null && errorCodeStr.matches("\\d+") ? Integer.parseInt(errorCodeStr) : -1;
         switch (errorcode) {
         case -1:
             /* No error */
@@ -3365,9 +3365,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             final String fileid_to_download;
             if (requires_api_getdllink_clone_workaround(account)) {
-                /*
-                 * 2019-10-31: This even allows us to import password protected files (password will be removed then) and download them :D
-                 */
                 logger.info("Trying to download file via clone workaround");
                 getPage(this.getAPIBase() + "/file/clone?key=" + apikey + "&file_code=" + this.fuid);
                 this.checkErrorsAPI(this.br, link, account);
@@ -3378,7 +3375,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } else {
                 logger.info("Trying to download file via api without workaround");
-                fileid_to_download = this.fuid;
+                if (this.fuid != null) {
+                    fileid_to_download = this.fuid;
+                } else {
+                    /*
+                     * Small workaround. This can only happen when requestFileInformationWebsite is not executed beforehand. In some cases
+                     * this may result in a wrong fuid but services with API support are rare and will get tested so this should not be a
+                     * problem!
+                     */
+                    fileid_to_download = this.getFUIDFromURL(link);
+                }
             }
             /*
              * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in
