@@ -2478,6 +2478,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* {"msg":"No file","server_time":"2019-10-31 17:23:17","status":404} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         default:
+            /* Do not throw Exception here - usually website will be used as fallback and website-errors will be handled correctly */
             logger.info("Unknown API error: " + errorCodeStr);
         }
     }
