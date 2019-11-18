@@ -118,7 +118,6 @@ public abstract class K2SApi extends PluginForHost {
         // downloadLink.removeProperty("freelink2");
         // downloadLink.removeProperty("freelink1");
         // }
-        super.resetLink(downloadLink);
     }
 
     protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
