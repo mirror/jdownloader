@@ -23,6 +23,20 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,20 +53,6 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class OffCloudCom extends PluginForHost {
@@ -438,10 +438,8 @@ public class OffCloudCom extends PluginForHost {
         } else {
             /* This should never happen */
             account.setType(AccountType.UNKNOWN);
-            account.setValid(false);
             return ai;
         }
-        account.setValid(true);
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
         final ArrayList<String> supportedHosts = new ArrayList<String>();

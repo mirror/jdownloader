@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)[^/]+/mods/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)([^/]+)/mods/(\\d+)/?" })
 public class NexusmodsCom extends PluginForDecrypt {
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,14 +50,23 @@ public class NexusmodsCom extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setLogger(getLogger());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setBrowser(br);
-        final String fid = ((jd.plugins.hoster.NexusmodsCom) plugin).getFID(parameter);
+        final String game_domain_name = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String mod_id = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        if (game_domain_name == null || mod_id == null) {
+            /* This should never happen */
+            return null;
+        }
         final Account account = AccountController.getInstance().getValidAccount(plugin.getHost());
+        // final String apikey = jd.plugins.hoster.NexusmodsCom.getApikey(account);
+        // if (apikey != null) {
+        // /* TODO: Add API handling */
+        // } else {
+        // /* Login via website */
+        // ((jd.plugins.hoster.NexusmodsCom) plugin).loginWebsite(account);
+        // }
         if (account != null) {
-            try {
-                ((jd.plugins.hoster.NexusmodsCom) plugin).login(account);
-            } catch (PluginException e) {
-                handleAccountException(account, e);
-            }
+            /* Login via website */
+            ((jd.plugins.hoster.NexusmodsCom) plugin).loginWebsite(account);
         }
         ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br, parameter);
         if (((jd.plugins.hoster.NexusmodsCom) plugin).isOffline(br)) {
@@ -73,16 +82,14 @@ public class NexusmodsCom extends PluginForDecrypt {
         String fpName = br.getRegex("<title>([^>]+)</title>").getMatch(0);
         if (fpName == null) {
             /* Fallback */
-            fpName = fid;
+            fpName = mod_id;
         }
         final Browser br2 = br.cloneBrowser();
         final String game_id = br.getRegex("game_id\\s*=\\s*(\\d+)").getMatch(0);
         if (game_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "/Core/Libs/Common/Widgets/ModFilesTab?id=" + fid + "&game_id=" + game_id);
-        // final String[] downloadTypes = new String[] { "Main files", "Update files", "Optional files", "Miscellaneous files", "Old files"
-        // };
+        ((jd.plugins.hoster.NexusmodsCom) plugin).getPage(br2, "/Core/Libs/Common/Widgets/ModFilesTab?id=" + mod_id + "&game_id=" + game_id);
         final String[] downloadTypesHTMLs = br2.getRegex("<div class=\"file-category-header\">\\s*<h2>[^<>]+</h2>\\s*<div>.*?</dd>\\s*</dl>\\s*</div>").getColumn(-1);
         int counter = 0;
         for (final String downnloadTypeHTML : downloadTypesHTMLs) {
@@ -103,23 +110,49 @@ public class NexusmodsCom extends PluginForDecrypt {
             for (final String download[] : downloads) {
                 final String content_url = br2.getURL(download[2]).toString();
                 final DownloadLink link = createDownloadlink(content_url);
-                final String linkid = new Regex(content_url, "\\?id=(\\d+)").getMatch(0);
-                if (linkid == null) {
+                final String file_id = new Regex(content_url, "\\?id=(\\d+)").getMatch(0);
+                if (file_id == null) {
+                    logger.info("file_id is null");
                     continue;
                 }
-                link.setLinkID(this.getHost() + "://" + linkid);
                 final long size = SizeFormatter.getSize(download[1]);
                 if (size > 0) {
                     link.setDownloadSize(size);
                 }
-                link.setName(linkid + "_" + Encoding.htmlOnlyDecode(download[0]));
+                link.setName(file_id + "_" + Encoding.htmlOnlyDecode(download[0]));
                 link.setAvailable(true);
                 link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
                 link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 link._setFilePackage(fp);
+                /* Important! These properties are especially required for all API requests! */
+                link.setProperty("game_domain_name", game_domain_name);
+                link.setProperty("mod_id", mod_id);
                 decryptedLinks.add(link);
             }
         }
         return decryptedLinks;
     }
+    // /*
+    // * Sadly there is not always a mapping via API so we will have to keep this updated by hand but they will probably not add / change
+    // * these category IDs in the near future! Especially for files of category 6 their API will often return 'null' as 'category_name'.
+    // */
+    // private String apiCategoryIDToString(final int cetegoryID) {
+    // switch (cetegoryID) {
+    // case 1:
+    // return "MAIN";
+    // case 2:
+    // return "UPDATE";
+    // case 3:
+    // /* TODO: Add name */
+    // return "";
+    // case 4:
+    // return "OLD_VERSION";
+    // case 5:
+    // return "MISCELLANEOUS";
+    // case 6:
+    // return "OLD FILES";
+    // default:
+    // return "Unknown_category_" + cetegoryID;
+    // }
+    // }
 }
