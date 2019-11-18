@@ -16,13 +16,18 @@
 package jd.plugins.hoster;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
@@ -31,11 +36,13 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=(\\d+).+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -59,6 +66,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public static final String   API_BASE                     = "https://api.nexusmods.com/v1";
     private String               dllink;
     private boolean              loginRequired;
 
@@ -70,6 +78,17 @@ public class NexusmodsCom extends antiDDoSForHost {
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    public static Browser prepBrAPI(final Browser br, final Account account) throws PluginException {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        final String apikey = getApikey(account);
+        if (apikey == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("apikey", apikey);
+        return br;
     }
 
     private String getFID(final DownloadLink link) {
@@ -102,8 +121,30 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
+    /** URLs added <= rev. 41547 are missing properties which are required to do download & linkcheck via API! */
+    private boolean linkIsAPICompatible(final DownloadLink link) {
+        final String game_domain_name = link.getStringProperty("game_domain_name", null);
+        final String mod_id = link.getStringProperty("mod_id", null);
+        if (game_domain_name != null && mod_id != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        final String apikey = getApikey(acc);
+        if (acc != null && apikey != null && linkIsAPICompatible(link)) {
+            this.prepBrAPI(br, acc);
+            return requestFileInformationAPI(link);
+        } else {
+            return requestFileInformationWebsite(link);
+        }
+    }
+
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
         final String fid = getFID(link.getPluginPatternMatcher());
         getPage(link.getPluginPatternMatcher());
@@ -154,6 +195,44 @@ public class NexusmodsCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
+        final String game_domain_name = link.getStringProperty("game_domain_name", null);
+        final String mod_id = link.getStringProperty("mod_id", null);
+        final String file_id = new Regex(link.getPluginPatternMatcher(), "\\?id=(\\d+)").getMatch(0);
+        if (file_id == null || mod_id == null || game_domain_name == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        getPage(API_BASE + String.format("/games/%s/mods/%s/files/%s", game_domain_name, mod_id, file_id));
+        handleErrorsAPI(br);
+        // if (br.getHttpConnection().getResponseCode() == 404) {
+        // /* {"error":"File ID '12345' not found"} */
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+        String filename = (String) entries.get("file_name");
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        } else {
+            /* Fallback */
+            filename = game_domain_name + "_" + mod_id + "_" + file_id;
+            link.setName(filename);
+        }
+        if (filesize > 0) {
+            link.setVerifiedFileSize(filesize);
+        }
+        final String description = (String) entries.get("description");
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
+        /* TODO: Add free account (error-) handling */
+        // loginRequired = isLoginRequired(br);
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -163,14 +242,14 @@ public class NexusmodsCom extends antiDDoSForHost {
     private void doFree(final DownloadLink downloadLink, final Account account, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         if (dllink == null) {
             if (loginRequired) {
-                if (account != null) {
+                if (account == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } else {
                     /*
                      * 2019-01-23: Added errorhandling but this should never happen because if an account exists we should be able to
                      * download!
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Login failure");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -184,11 +263,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     public String getFID(final String dlurl) {
-        String ret = new Regex(dlurl, "id=(\\d+)").getMatch(0);
-        if (ret == null) {
-            ret = new Regex(dlurl, "mods/(\\d+)").getMatch(0);
-        }
-        return ret;
+        return new Regex(dlurl, "id=(\\d+)").getMatch(0);
     }
 
     @Override
@@ -196,7 +271,7 @@ public class NexusmodsCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(final Account account) throws Exception {
+    public void loginWebsite(final Account account) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -256,28 +331,125 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        String apikey = getApikey(account);
+        if (apikey != null) {
+            return fetchAccountInfoAPI(account);
+        }
         final AccountInfo ai = new AccountInfo();
-        login(account);
-        ai.setUnlimitedTraffic();
-        getPage("/users/myaccount");
-        if (StringUtils.equalsIgnoreCase(br.getRegex("\"premium-desc\">\\s*(.*?)\\s*<").getMatch(0), "Inactive")) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
+        loginWebsite(account);
+        getPage("/users/myaccount?tab=api%20access");
+        /* Try to find apikey - prefer API */
+        /* TODO: Maybe generate apikey is it is not yet available */
+        /*
+         * TODO: In case we get an 'official app' linked on their site: Grab the apikey which has been generated specifically for
+         * JDownloader!
+         */
+        apikey = br.getRegex("id=\"personal_key\"[^>]*>([^<>\"]+)<").getMatch(0);
+        if (apikey != null) {
+            /* TODO: Consider removing original logindata once we found an apikey for safety reasons! */
+            logger.info("Found apikey");
+            account.setProperty("apikey", apikey);
+            return fetchAccountInfoAPI(account);
         } else {
+            logger.info("Failed to find apikey - continuing via website");
+            getPage("/users/myaccount");
+            if (StringUtils.equalsIgnoreCase(br.getRegex("\"premium-desc\">\\s*(.*?)\\s*<").getMatch(0), "Inactive")) {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(false);
+            } else {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+            }
+            return ai;
+        }
+    }
+
+    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        prepBrAPI(br, account);
+        ai.setUnlimitedTraffic();
+        getPage(API_BASE + "/users/validate.json");
+        handleErrorsAPI(br);
+        final String is_premium = PluginJSonUtils.getJson(br, "is_premium");
+        if ("true".equalsIgnoreCase(is_premium)) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
         }
         return ai;
     }
 
+    public static void handleErrorsAPI(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 401) {
+            /* {"message":"Please provide a valid API Key"} */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            /*
+             * According to API documentation, this may happen if we try to download a file via API with a free account (downloads are only
+             * possible via website!)
+             */
+            throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            /* {"error":"File ID '12345' not found"} */
+            /* {"code":404,"message":"No Game Found: xskyrimspecialedition"} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    public static String getApikey(final Account account) {
+        if (account == null) {
+            return null;
+        }
+        return account.getStringProperty("apikey");
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* Important! Login before requestFileInformation! */
-        login(account);
-        requestFileInformation(link);
-        /* Free- and premium download is the same. */
+        /*
+         * TODO: Consider saving- and re-using direct downloadurls. Consider that premium users do not have any traffic limits so re-using
+         * generated downloadurls does not bring any huge benefits. Also when re-using generated downloadlinks consider that they do have
+         * different download mirrors/location and these are currently randomly selected on downloadstart!
+         */
+        if (getApikey(account) != null && linkIsAPICompatible(link)) {
+            prepBrAPI(br, account);
+            /* We do not have to perform an extra onlinecheck - if the file is offline, the download request will return 404. */
+            // requestFileInformationAPI(link);
+            final String game_domain_name = link.getStringProperty("game_domain_name", null);
+            final String mod_id = link.getStringProperty("mod_id", null);
+            final String file_id = new Regex(link.getPluginPatternMatcher(), "\\?id=(\\d+)").getMatch(0);
+            if (file_id == null || mod_id == null || game_domain_name == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            getPage(API_BASE + String.format("/games/%s/mods/%s/files/%s/download_link.json", game_domain_name, mod_id, file_id));
+            handleErrorsAPI(br);
+            LinkedHashMap<String, Object> entries = null;
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            if (ressourcelist == null || ressourcelist.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unable to find downloadlink");
+            }
+            /* TODO: Maybe add mirror (location) selection */
+            final int randomMirrorSelector = new Random().nextInt(ressourcelist.size());
+            final Object randomMirrorO = ressourcelist.get(randomMirrorSelector);
+            entries = (LinkedHashMap<String, Object>) randomMirrorO;
+            final String mirrorName = (String) entries.get("name");
+            this.dllink = (String) entries.get("URI");
+            if (StringUtils.isEmpty(this.dllink)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unable to find downloadlink for mirror: " + mirrorName);
+            }
+            logger.info("Selected random mirror: " + mirrorName);
+        } else {
+            /* Important! Login before requestFileInformation! */
+            loginWebsite(account);
+            requestFileInformation(link);
+        }
+        /* Free- and premium download handling is the same. */
         doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
     }
 
