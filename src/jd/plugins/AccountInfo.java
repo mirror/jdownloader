@@ -27,20 +27,19 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property implements AccountTrafficView {
     private static final long serialVersionUID       = 1825140346023286206L;
@@ -408,8 +407,13 @@ public class AccountInfo extends Property implements AccountTrafficView {
                                     }
                                     continue loop;
                                 }
-                            } catch (UpdateRequiredClassNotFoundException e) {
-                                LogController.CL().log(e);
+                            } catch (Throwable e) {
+                                final LogInterface logger = multiHostPlugin != null ? multiHostPlugin.getLogger() : null;
+                                if (logger != null) {
+                                    logger.log(e);
+                                } else {
+                                    LogController.CL().log(e);
+                                }
                             }
                         }
                         final String pattern = lazyHostPlugin.getPatternSource();
@@ -496,7 +500,12 @@ public class AccountInfo extends Property implements AccountTrafficView {
                                         }
                                     }
                                 } catch (final Throwable e) {
-                                    LogController.CL().log(e);
+                                    final LogInterface logger = multiHostPlugin != null ? multiHostPlugin.getLogger() : null;
+                                    if (logger != null) {
+                                        logger.log(e);
+                                    } else {
+                                        LogController.CL().log(e);
+                                    }
                                 }
                             }
                         }

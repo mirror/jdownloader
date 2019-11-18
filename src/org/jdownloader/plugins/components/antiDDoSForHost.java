@@ -473,7 +473,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 }
                 // ddosprotectionru
                 else if (containsDDoSProtectionRu(ibr)) {
-                    processDDoSProtectionRu(lockObject, ibr, request);
+                    processDDoSProtectionRu(lockObject, ibr, request, cookies);
                 }
                 // save the session!
                 synchronized (antiDDoSCookies) {
@@ -501,6 +501,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
         concurrentLock.compareAndSet(lockObject, null);
     }
 
+    protected void followCloudflareRequest(final Object lockObject, Browser br, final Request request, final Cookies cookies) throws IOException {
+        // we ignore response code because we want to handle cloudflare message
+        br.followConnection(true);
+    }
+
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
@@ -523,7 +528,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         openAntiDDoSRequestConnection(ibr, getRequest);
                         return;
                     }
-                    ibr.followConnection();
+                    followCloudflareRequest(lockObject, ibr, request, cookies);
                 }
                 // start
                 if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
@@ -837,7 +842,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
             if (ibr.getHttpConnection().getResponseCode() == 200 && StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
                 // active browser wont be a head request at this time. but request might not be followed yet due to open connections above.
                 if (request != null) {
-                    ibr.followConnection();
+                    followCloudflareRequest(lockObject, ibr, request, cookies);
                 }
                 if (ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
                     final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
@@ -1102,14 +1107,14 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @author coalado
      * @author raztoki
      */
-    private void processDDoSProtectionRu(final Object lockObject, final Browser ibr, final Request request) throws Exception {
+    private void processDDoSProtectionRu(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         if (request != null) {
             // used soley by openAntiDDoSRequestConnection, when open connection is used.
             if (request instanceof HeadRequest) {
                 openAntiDDoSRequestConnection(ibr, new GetRequest(request));
                 return;
             }
-            ibr.followConnection();
+            followCloudflareRequest(lockObject, ibr, request, cookies);
         }
         final String[] jsRedirectScripts = ibr.getRegex("<script language=\"JavaScript\">(.*?)</script>").getColumn(0);
         if (jsRedirectScripts != null && jsRedirectScripts.length == 1) {

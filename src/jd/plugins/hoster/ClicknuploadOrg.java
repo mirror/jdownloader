@@ -93,7 +93,7 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
             return -5;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -2;
         }
     }
 

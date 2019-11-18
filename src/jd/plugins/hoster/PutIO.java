@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -29,7 +30,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.HTTPHeader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/(mp4/download|download)|zipstream/\\d+.*|download/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/(mp4/download(/[^/]*)?|download(/[^/]*)?)|zipstream/\\d+.*|download/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
     private final String CLIENT_ID     = "181";
     private final String CLIENT_SECRET = "ga38bm4yv546pzauepok";
@@ -101,7 +102,7 @@ public class PutIO extends PluginForHost {
     }
 
     private String getID(String url) throws PluginException {
-        final String id = new Regex(url, "(files|download)/(\\d+)").getMatch(1);
+        final String id = new Regex(url, "/(files|download)/(\\d+)").getMatch(1);
         if (id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -197,35 +198,43 @@ public class PutIO extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        for (final Account account : AccountController.getInstance().getValidAccounts(getHost())) {
-            try {
-                final String access_token = login(account);
-                final Request request = new HeadRequest(getDownloadURL(link, access_token));
-                request.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
-                br.setFollowRedirects(true);
-                br.getPage(request);
-                final URLConnectionAdapter connection = br.getHttpConnection();
-                final int responseCode = connection.getResponseCode();
-                if (isDownload(connection)) {
-                    link.setDownloadSize(connection.getCompleteContentLength());
-                    link.setProperty("requires_account", account.getUser());
-                    if (connection.isContentDisposition()) {
-                        link.setFinalFileName(getFileNameFromDispositionHeader(connection));
+        final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
+        if (accounts != null) {
+            for (final Account account : accounts) {
+                try {
+                    final String access_token = login(account);
+                    final Request request = new HeadRequest(getDownloadURL(link, access_token));
+                    request.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
+                    br.setFollowRedirects(true);
+                    br.getPage(request);
+                    final URLConnectionAdapter connection = br.getHttpConnection();
+                    try {
+                        final int responseCode = connection.getResponseCode();
+                        if (isDownload(connection)) {
+                            link.setDownloadSize(connection.getCompleteContentLength());
+                            link.setProperty("requires_account", account.getUser());
+                            if (connection.isContentDisposition()) {
+                                link.setFinalFileName(getFileNameFromDispositionHeader(connection));
+                            }
+                            return AvailableStatus.TRUE;
+                        } else if (responseCode == 404) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    } finally {
+                        connection.disconnect();
                     }
-                    return AvailableStatus.TRUE;
-                } else if (responseCode == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        throw e;
+                    } else {
+                        logger.log(e);
+                    }
                 }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    throw e;
-                }
-                logger.log(e);
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
