@@ -67,7 +67,7 @@ public class ProLeechLink extends antiDDoSForHost {
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         /* Contains all filehosts available for premium users and listed as online/working */
         List<String> filehosts_free_onlineArray = new ArrayList<String>();
-        String traffic_maxStr = null;
+        String traffic_max_dailyStr = null;
         {
             /* Grab free hosts */
             if (br.getURL() == null || !br.getURL().contains("/downloader")) {
@@ -98,26 +98,14 @@ public class ProLeechLink extends antiDDoSForHost {
                 }
             }
             /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
-            traffic_maxStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
+            traffic_max_dailyStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
         }
         /* Set supported hosts depending on account type */
         if (account.getType() == AccountType.PREMIUM && !ai.isExpired()) {
             /* Premium account - bigger list of supported hosts */
             ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
-            if (traffic_maxStr != null) {
-                /*
-                 * Used traffic is kinda hidden on their website. Click on the 'account' icon in the top right corner, then it should get
-                 * displayed.
-                 */
-                final String traffic_usedStr = br.getRegex("Bandwidth Used\\s*:\\s*<span[^<>]*><b>([^<>\"]+)<").getMatch(0);
-                final long traffic_max = SizeFormatter.getSize(traffic_maxStr);
-                if (traffic_usedStr != null) {
-                    ai.setTrafficLeft(traffic_max - SizeFormatter.getSize(traffic_usedStr));
-                    ai.setTrafficMax(traffic_max);
-                } else {
-                    /* No used traffic available --> Set max. daily traffic as trafficleft */
-                    ai.setTrafficLeft(traffic_max);
-                }
+            if (traffic_max_dailyStr != null) {
+                ai.setTrafficLeft(SizeFormatter.getSize(traffic_max_dailyStr));
             }
         } else {
             /* Free & Expired[=Free] accounts - they support much less hosts */
@@ -213,6 +201,11 @@ public class ProLeechLink extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                /*
+                 * 2019-11-19: Important! This is NOT the 'daily traffic used' - this is the total traffic ever used with the current
+                 * account! We can display it in the account status but we cannot use this to calculate the remaining traffic!
+                 */
+                final String total_traffic_ever_used_with_this_accountStr = br.getRegex("Bandwidth Used\\s*:\\s*<span[^<>]*><b>\\s*(\\d+(?:\\.\\d{1,2})[ ]*[A-Za-z]+)\\s*<").getMatch(0);
                 final String activeSubscription = br.getRegex("am-list-subscriptions\">\\s*<li[^<]*>(.*?)</li>").getMatch(0);
                 String accountStatus = null;
                 if (activeSubscription != null) {
@@ -223,6 +216,7 @@ public class ProLeechLink extends antiDDoSForHost {
                             ai.setValidUntil(validUntil);
                         }
                         account.setType(AccountType.PREMIUM);
+                        /* 2019-11-19: Set premium account status in fetchAccountInfo */
                         accountStatus = "Premium user";
                         account.setConcurrentUsePossible(true);
                         account.setMaxSimultanDownloads(-1);
@@ -272,6 +266,9 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                 }
                 if (ai != null) {
+                    if (total_traffic_ever_used_with_this_accountStr != null) {
+                        accountStatus += String.format(" [Total traffic ever used: %s]", total_traffic_ever_used_with_this_accountStr);
+                    }
                     ai.setStatus(accountStatus);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
@@ -413,6 +410,8 @@ public class ProLeechLink extends antiDDoSForHost {
                 } else {
                     logger.info("Failed to clear download history: Failed to find any download_ids to delete");
                 }
+            } else {
+                logger.info("Not deleting download history - used has disabled this setting");
             }
         } catch (final Throwable e) {
             e.printStackTrace();
