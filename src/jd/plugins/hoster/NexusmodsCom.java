@@ -45,9 +45,9 @@ import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -318,28 +318,36 @@ public class NexusmodsCom extends antiDDoSForHost {
                     }
                 }
                 if (!loggedIN) {
-                    getPage("https://www." + account.getHoster() + "/Core/Libs/Common/Widgets/LoginPopUp?url=%2F%2Fwww.nexusmods.com%2F");
-                    final PostRequest request = new PostRequest("https://www.nexusmods.com/Sessions?TryNewLogin");
-                    request.put("username", Encoding.urlEncode(account.getUser()));
-                    request.put("password", Encoding.urlEncode(account.getPass()));
-                    request.put("uri", "%2F%2Fwww.nexusmods.com%2F");
+                    getPage("https://users." + this.getHost() + "/auth/sign_in");
+                    final Form loginform = br.getFormbyKey("user%5Blogin%5D");
+                    if (loginform == null) {
+                        logger.warning("Failed to find loginform");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String reCaptchaKey = br.getRegex("grecaptcha\\.execute\\('([^<>\"\\']+)'").getMatch(0);
+                    if (reCaptchaKey == null) {
+                        logger.warning("Failed to find reCaptchaKey");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginform.put("user%5Blogin%5D", Encoding.urlEncode(account.getUser()));
+                    loginform.put("user%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
                     final DownloadLink original = this.getDownloadLink();
                     if (original == null) {
                         this.setDownloadLink(new DownloadLink(this, "Account", getHost(), "http://" + br.getRequest().getURL().getHost(), true));
                     }
                     try {
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfTA2EUAAAAAIyUT3sr2W8qKUV1IauZl-CduEix").getToken();
+                        /* 2019-11-20: Invisible reCaptchaV2 is always required */
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
                         if (recaptchaV2Response == null) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        request.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        loginform.put("g-recaptcha-response%5Blogin%5D", Encoding.urlEncode(recaptchaV2Response));
                     } finally {
                         if (original == null) {
                             this.setDownloadLink(null);
                         }
                     }
-                    request.setContentType("application/x-www-form-urlencoded");
-                    sendRequest(request);
+                    this.submitForm(loginform);
                     if (!isLoggedinCookies()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed.\r\nIf you own a premium account you should disable website login in Settings --> Plugin Settings --> nexusmods.com\r\nBe sure to delete your account and try again after changing this setting!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
