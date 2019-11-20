@@ -539,7 +539,6 @@ public class NexusmodsCom extends antiDDoSForHost {
             logger.info("Selected random mirror: " + mirrorName);
         } else {
             /* Important! Login before requestFileInformation! */
-            /* TODO: Maybe add errorhandling for isAPIOnlyMode() */
             loginWebsite(account);
             requestFileInformation(link);
         }
