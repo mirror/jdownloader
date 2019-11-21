@@ -51,7 +51,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc" });
+        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us" });
         return ret;
     }
 
@@ -103,20 +103,22 @@ public class CtDiskComFolder extends PluginForDecrypt {
         return host;
     }
 
-    public String getUserID(final String url) {
+    public static String getUserID(final String url) {
         String userid = new Regex(url, "https?://u(\\d+)").getMatch(0);
         if (userid == null) {
             userid = new Regex(url, "/fs/(\\d+)").getMatch(0);
         }
         if (userid == null) {
-            /* Older stype folder URLs */
-            userid = new Regex(url, "/u/(\\d+)").getMatch(0);
+            userid = new Regex(url, "file/(\\d+)-\\d+$").getMatch(0);
         }
         return userid;
     }
 
-    public String getFileID(final String url) {
+    public static String getFileID(final String url) {
         String fileid = new Regex(url, "/fs/(?:\\d+\\-|file/)(\\d+)$").getMatch(0);
+        if (fileid == null) {
+            fileid = new Regex(url, "/file/\\d+-(\\d+)$").getMatch(0);
+        }
         return fileid;
     }
 
