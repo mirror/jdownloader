@@ -3603,7 +3603,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Stores final downloadurl on current DownloadLink object */
-    private void storeDirecturl(final DownloadLink link, final Account account, final String directurl) {
+    protected void storeDirecturl(final DownloadLink link, final Account account, final String directurl) {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         link.setProperty(directlinkproperty, directurl);
     }
