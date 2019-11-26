@@ -123,6 +123,8 @@ public class ProLeechLink extends antiDDoSForHost {
                 ai.setMultiHostSupport(this, filehosts_free_onlineArray);
             }
         }
+        /* Clear download history on every accountcheck (if selected by user) */
+        clearDownloadHistory();
         return ai;
     }
 
@@ -392,7 +394,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     private void clearDownloadHistory() {
         try {
-            if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD", false)) {
+            if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", false)) {
                 logger.info("Trying to delete download history");
                 /*
                  * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
@@ -400,7 +402,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 br.getPage("https://" + this.getHost() + "/mydownloads");
                 final String[] download_ids = br.getRegex("id=\"checkbox\\[\\]\"[^<>]*value=\"(\\d+)\"").getColumn(0);
                 if (download_ids != null && download_ids.length > 0) {
-                    logger.info("Found " + download_ids.length + " download_ids to delete");
+                    logger.info("Found " + download_ids.length + " download_ids in history to delete");
                     String postData = "delete=Delete+selected";
                     for (final String download_id : download_ids) {
                         postData += "&checkbox%5B%5D=" + download_id;
@@ -457,7 +459,7 @@ public class ProLeechLink extends antiDDoSForHost {
     private void setConfigElements() {
         /* Crawler settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "DOWNLOADLINK_GENERATION_LIMIT", "Allow new downloadlink generation every X hours (default = 0 = unlimited/disabled)\r\nThis can save traffic but this can also slow down the download process", 0, 72, 1).setDefaultValue(0));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD", "Delete download history after every successful download?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", "Delete download history after every successful download and on every account-check(~ every 30 minutes)?").setDefaultValue(false));
     }
 
     @Override

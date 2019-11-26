@@ -19,6 +19,10 @@ import java.text.DecimalFormat;
 import java.util.LinkedHashSet;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
 public class EHentaiOrg extends PluginForHost {
@@ -114,7 +114,7 @@ public class EHentaiOrg extends PluginForHost {
      */
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws Exception {
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
-        if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
+        if (account == null && new Regex(downloadLink.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
             return AvailableStatus.UNCHECKABLE;
         }
         // nullfication
@@ -123,8 +123,8 @@ public class EHentaiOrg extends PluginForHost {
         String dllink_fullsize = null;
         boolean loggedin = false;
         // uids
-        uid_chapter = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        uid_page = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(1);
+        uid_chapter = new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        uid_page = new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         final String mainlink = getMainlink(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -186,9 +186,6 @@ public class EHentaiOrg extends PluginForHost {
             }
         }
         getDllink(account);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final String originalFileName = br.getRegex("<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
         final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         final String ext = getFileNameExtensionFromString(dllink, ".png");
@@ -214,7 +211,7 @@ public class EHentaiOrg extends PluginForHost {
             dllink = dllink_fullsize;
             if (requiresAccount(dllink)) {
                 if (account != null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Automatically logged out?");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
@@ -360,7 +357,8 @@ public class EHentaiOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (downloadLink.getDownloadSize() < minimal_filesize) {
             /* E.h. "403 picture" is smaller than 1 KB */
@@ -406,6 +404,7 @@ public class EHentaiOrg extends PluginForHost {
 
     private static final String MAINPAGE = "http://e-hentai.org";
 
+    /** 2019-11-26: Alternative way to login: https://e-hentai.org/bounce_login.php?b=d&bt=1-1 */
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -472,9 +471,16 @@ public class EHentaiOrg extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
         ai.setUnlimitedTraffic();
-        account.setType(AccountType.PREMIUM);
+        account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium Account");
+        br.getPage("https://e-hentai.org/home.php");
+        final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
+        final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
+        if (items_downloadedStr != null && items_maxStr != null) {
+            ai.setStatus(String.format("Free Account [Used %s / %s items]", items_downloadedStr, items_maxStr));
+        } else {
+            ai.setStatus("Free Account");
+        }
         return ai;
     }
 
