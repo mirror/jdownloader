@@ -367,24 +367,39 @@ public abstract class K2SApi extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         logger.info(getRevisionInfo());
         final AccountInfo ai = new AccountInfo();
-        // required to get overrides to work
+        /* required to get overrides to work */
         br = prepAPI(br);
         postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account) + "\"}", account);
         final String available_traffic = PluginJSonUtils.getJsonValue(br, "available_traffic");
-        final String account_expires = PluginJSonUtils.getJsonValue(br, "account_expires");
-        if ("false".equalsIgnoreCase(account_expires)) {
+        /*
+         * 2019-11-26: Expired premium accounts will have their old expire-date given thus we'll have to check for that before setting
+         * expire-date or such free accounts cannot be used!
+         */
+        final String account_expiresStr = PluginJSonUtils.getJsonValue(br, "account_expires");
+        long account_expires_timestamp = 0;
+        if (account_expiresStr != null && account_expiresStr.matches("\\d+")) {
+            account_expires_timestamp = Long.parseLong(account_expiresStr) * 1000l;
+        }
+        if (account_expires_timestamp < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
+            if (account_expires_timestamp > 0) {
+                /* Account was once a premium account */
+                ai.setStatus("Free Account (expired premium)");
+            } else {
+                /* Account has always been a free account - user never bought any premium packages */
+                ai.setStatus("Free Account");
+            }
+            /* 2019-11-26: Free Accounts are supposed to get 100 KB/s downloadspeed but at least via API this did not work for me. */
         } else {
             account.setType(AccountType.PREMIUM);
-            if (!inValidate(account_expires)) {
-                ai.setValidUntil(Long.parseLong(account_expires) * 1000l);
+            if (!inValidate(account_expiresStr)) {
+                ai.setValidUntil(account_expires_timestamp);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ai.setStatus("Premium Account");
         }
-        if (!inValidate(available_traffic)) {
+        if (!inValidate(available_traffic) && available_traffic.matches("\\d+")) {
             ai.setTrafficLeft(Long.parseLong(available_traffic));
         }
         resetAccountProperties(account);
@@ -424,6 +439,11 @@ public abstract class K2SApi extends PluginForHost {
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
+                /*
+                 * 2019-11-26: Outdated downloadurls will return precise errors (only text) e.g. "This link assigned with other IP address"
+                 * or
+                 * "Download link is outdated, invalid or assigned to another IP address.If you see this error, most likely you will need to get new download link"
+                 */
                 handleGeneralServerErrors(account, downloadLink);
                 // we now want to restore!
                 br = obr;
