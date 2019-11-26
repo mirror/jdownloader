@@ -186,81 +186,10 @@ public class Keep2ShareCc extends K2SApi {
         super.prepBrowserForWebsite(br);
         getPage(buildExternalDownloadURL(link, this));
         followRedirectNew(br);
-        if (isNewLayout2018()) {
-            // switch to new layout + new api
-            // waiting for detauls to new api
-            forceAPI.set(true);
-            return requestFileInformation(link);
-        } else if (isNewLayout2017()) {
-            return requestFileInformationNew2017(link);
-        } else {
-            return requestFileInformationOld(link);
-        }
-    }
-
-    public AvailableStatus requestFileInformationOld(final DownloadLink link) throws Exception {
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Keep2Share\\.cc - Error</title>")) {
-            link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        final String filename = getFileName();
-        final String filesize = getFileSize();
-        if (filename != null) {
-            if (filename.contains("...")) {
-                super.checkLinks(new DownloadLink[] { link });
-            } else {
-                link.setName(Encoding.htmlDecode(filename.trim()));
-            }
-        }
-        if (filesize != null) {
-            /* Remove spaces to support such inputs: 1 000.0 MB */
-            link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(" ", "")));
-        }
-        if (br.containsHTML("Downloading blocked due to")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);
-        }
-        // you can set filename for offline links! handling should come here!
-        if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>|class=\"empty\"|>Displaying 1")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (isPremiumOnly()) {
-            link.getLinkStatus().setStatusText("Only downloadable for premium users");
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
-    public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
-        /*
-         * TODO: Add error handling here - filename might not be available or located in a different place for abused content or when a
-         * download limit is reached!
-         */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filename = getFileName();
-        final String filesize = getFileSize();
-        if (filename != null) {
-            if (filename.contains("...")) {
-                super.checkLinks(new DownloadLink[] { link });
-            } else {
-                link.setName(Encoding.htmlDecode(filename.trim()));
-            }
-        }
-        if (filesize != null) {
-            /* Remove spaces to support such inputs: 1 000.0 MB */
-            link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(" ", "")));
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (isPremiumOnly()) {
-            link.getLinkStatus().setStatusText("Only downloadable for premium users");
-        }
-        return AvailableStatus.TRUE;
+        // switch to new layout + new api
+        // waiting for detauls to new api
+        forceAPI.set(true);
+        return requestFileInformation(link);
     }
 
     /**
@@ -271,37 +200,12 @@ public class Keep2ShareCc extends K2SApi {
         return br.containsHTML(">To download this file with slow speed, use");
     }
 
-    /** Determines via html strings whether we are on the new- or the old keep2share website. */
-    public boolean isNewLayout2017() {
-        return br.containsHTML("class=\"footer-nav\"|class=\"list-services\"");
-    }
-
     public boolean isNewLayout2018() {
         return br.containsHTML("(/css/spa\\.|/js/spa\\.)");
     }
 
-    public String getFileNameNew2017() {
-        String fileName = br.getRegex("<span class=\"name-file\">\\s*(.*?)\\s*(<em|</)").getMatch(0);
-        if (fileName == null) {
-            fileName = br.getRegex("class=\"title-file\">\\s*([^<>\"]+)\\s*<").getMatch(0);
-            if (fileName == null) {
-                // 20170811 only available for premium users. note does not display filesize.
-                fileName = br.getRegex("<strong>\\s*(.*?)\\s*</strong>\\s*available only for premium members").getMatch(0);
-            }
-        }
-        return fileName;
-    }
-
-    public String getFileSizeNew2017() {
-        String fileSize = br.getRegex("<b>Size:\\s*</b>\\s*([0-9\\.]+\\s*[TKGM]B)\\s*<").getMatch(0);
-        if (fileSize == null) {
-            fileSize = br.getRegex("<span class=\"name-file\">.*?<em>\\s*([0-9\\.]+\\s*[TKGM]B)\\s*(</em|</)").getMatch(0);
-        }
-        return fileSize;
-    }
-
     public String getFileName() {
-        String fileName = getFileNameNew2017();
+        String fileName = null;
         // This might not be needed anymore but keeping it doesn't hurt either
         if (fileName == null && freeDownloadImmediatelyPossible()) {
             fileName = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
@@ -317,7 +221,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileSize() {
-        String filesize = getFileSizeNew2017();
+        String filesize = null;
         if (filesize == null && freeDownloadImmediatelyPossible()) {
             filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
         }
@@ -341,17 +245,7 @@ public class Keep2ShareCc extends K2SApi {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        if (useAPI()) {
-            super.handleDownload(downloadLink, null);
-        } else {
-            requestFileInformation(downloadLink);
-            if (useAPI()) {
-                // temp solution for forceAPI
-                super.handleDownload(downloadLink, null);
-            } else {
-                super.handleDownloadWebsite(downloadLink, null);
-            }
-        }
+        super.handleDownload(downloadLink, null);
     }
 
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {

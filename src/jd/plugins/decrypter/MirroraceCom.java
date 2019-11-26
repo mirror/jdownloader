@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,9 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace.com/m/[A-Za-z0-9]+" })
 public class MirroraceCom extends antiDDoSForDecrypt {
@@ -54,6 +54,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
         if (fp != null) {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
         }
+        /* 2019-11-26: They are possibly changing their website against us! */
         final String[] links = br.getRegex("\"(https?://mirrorace\\.com/m/[A-Za-z0-9]+/\\d+\\?t=[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -73,7 +74,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                     submitForm(br, captchaForm);
                 }
             }
-            final String finallink = br.getRegex("<a class=\"uk-button[^\"]*\"\\s*href=\"(https?[^<>\"]+)").getMatch(0);
+            final String finallink = br.getRegex("<a class=\"uk-button[^\"]*\"\\s*href=\"(https?[^<>\"]+\\&k=[^<>\"]+)\"").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
