@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -26,13 +31,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -184,7 +187,8 @@ public class DdlTo extends XFileSharingProBasic {
         return fileInfo;
     }
 
-    // /** TODO: 2019-11-11: Use this once they've updated their API. */
+    // /** TODO: 2019-11-11: Use this once they've updated their API. 2019-11-27: They will not fix this issue as they're afraid of it being
+    // used by multihosts lol */
     // @Override
     // protected boolean allow_api_download_if_apikey_is_available(final Account account) {
     // final boolean apikey_is_available = this.getAPIKey(account) != null;
@@ -192,19 +196,39 @@ public class DdlTo extends XFileSharingProBasic {
     // return apikey_is_available && account != null && account.getType() == AccountType.PREMIUM;
     // }
     //
-    // /** TODO: 2019-11-11: Use this once they've updated their API. */
-    // @Override
-    // protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final boolean setAndAnonymizeUsername) throws
-    // Exception {
-    // final Browser brc = br.cloneBrowser();
-    // final AccountInfo ai = super.fetchAccountInfoAPI(brc, account, setAndAnonymizeUsername);
-    // /* Original XFS API ('API Mod') does not return trafficleft - their API does. Set it! */
-    // final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
-    // if (trafficleftStr != null && trafficleftStr.matches("\\d+")) {
-    // ai.setTrafficLeft(Long.parseLong(trafficleftStr) * 1024 * 1024);
-    // }
-    // return ai;
-    // }
+    @Override
+    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final boolean setAndAnonymizeUsername) throws Exception {
+        final Browser brc = br.cloneBrowser();
+        final AccountInfo ai = super.fetchAccountInfoAPI(brc, account, setAndAnonymizeUsername);
+        /* Original XFS API ('API Mod') does not return trafficleft but theirs is modified and more useful! */
+        /* 2019-11-27: Not sure but this must be the traffic you can buy via 'extend traffic': https://ddl.to/?op=payments */
+        final String premium_extra_trafficStr = PluginJSonUtils.getJson(br, "premium_traffic_left");
+        final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
+        // final String trafficusedStr = PluginJSonUtils.getJson(brc, "traffic_used");
+        if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
+            long traffic_left = Long.parseLong(trafficleftStr) * 1024 * 1024;
+            if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
+                final long premium_extra_traffic = Long.parseLong(premium_extra_trafficStr) * 1024 * 1024;
+                traffic_left += premium_extra_traffic;
+                if (premium_extra_traffic > 0) {
+                    if (ai.getStatus() != null) {
+                        ai.setStatus(ai.getStatus() + " | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
+                    } else {
+                        ai.setStatus("Premium account | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
+                    }
+                }
+            }
+            ai.setTrafficLeft(traffic_left);
+        } else {
+            /*
+             * They will return "traffic_left":"0" for free accounts which is wrong. It is unlimited on their website. By setting it to
+             * unlimited here it will be re-checked via website by our XFS template!
+             */
+            ai.setUnlimitedTraffic();
+        }
+        return ai;
+    }
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {

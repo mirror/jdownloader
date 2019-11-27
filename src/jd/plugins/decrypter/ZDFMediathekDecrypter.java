@@ -495,11 +495,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     continue;
                                 }
                                 hlsDupeArray.add(hls_master_dupe_string);
-                                // hlsMasterValueTemp = Short.parseShort(hls_master_quality_str);
-                                // if (hlsMasterValueTemp <= highestHlsMasterValue) {
-                                // /* Skip hls masters which we have already decrypted. */
-                                // continue;
-                                // }
                                 /* Access (hls) master. */
                                 this.br.getPage(uri);
                                 final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
@@ -672,20 +667,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return heightselect;
     }
 
-    private String convertInternalAudioClassToUserReadable(final String audio_class) {
-        if (audio_class == null) {
-            return null;
-        }
-        if (audio_class.equals("main")) {
-            return "TV_Ton";
-        } else if (audio_class.equals("ad")) {
-            return "Audiodeskription";
-        } else {
-            /* This should never happen! */
-            return "Ton_unbekannt";
-        }
-    }
-
     private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
         HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
         DownloadLink keep = null;
@@ -774,6 +755,20 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    private String convertInternalAudioClassToUserReadable(final String audio_class) {
+        if (audio_class == null) {
+            return null;
+        }
+        if (audio_class.equals("main")) {
+            return "TV_Ton";
+        } else if (audio_class.equals("ad")) {
+            return "Audiodeskription";
+        } else {
+            /* This should never happen! */
+            return "Ton_unbekannt";
+        }
     }
 
     /* NO OVERRIDE!! */
