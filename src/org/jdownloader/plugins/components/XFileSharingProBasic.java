@@ -2840,6 +2840,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         } else {
+            /* Fallback */
             currentTime = System.currentTimeMillis();
         }
         /*
@@ -2888,13 +2889,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             account.setUser(email);
         }
         {
-            /* Now set less relevant information */
-            final long balance = JavaScriptEngineFactory.toLong(entries.get("balance"), 0);
+            /* Now set less relevant account information */
+            final long balance = JavaScriptEngineFactory.toLong(entries.get("balance"), -1);
             /* 2019-07-26: values can also be "inf" for "Unlimited": "storage_left":"inf" */
             // final long storage_left = JavaScriptEngineFactory.toLong(entries.get("storage_left"), 0);
-            final long storage_used = JavaScriptEngineFactory.toLong(entries.get("storage_used"), 0);
-            ai.setUsedSpace(storage_used);
-            ai.setAccountBalance(balance);
+            final long storage_used_bytes = JavaScriptEngineFactory.toLong(entries.get("storage_used"), -1);
+            if (storage_used_bytes > -1) {
+                ai.setUsedSpace(storage_used_bytes);
+            }
+            if (balance > -1) {
+                ai.setAccountBalance(balance);
+            }
         }
         return ai;
     }
