@@ -16,14 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,6 +31,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[a-z][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
@@ -86,13 +89,15 @@ public class BbcCom extends PluginForHost {
         String title_downloadurl = null;
         String transferformat = null;
         // int filesize_max = 0;
-        int filesize_temp = 0;
+        long filesize_temp = 0;
         int bitrate_max = 0;
         int bitrate_temp = 0;
         /* Allow audio download if there is no video available at all --> We probably have a podcast then. */
         final boolean allowAudio = !this.br.containsHTML("kind=\"video\"");
         /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
+        final HashSet<String> testedM3U8 = new HashSet<String>();
+        HlsContainer bestHLSContainer = null;
         for (final String mediasingle : media) {
             final String kind = new Regex(mediasingle, "kind=\"([a-z]+)\"").getMatch(0);
             final String bitrate_str = new Regex(mediasingle, "bitrate=\"(\\d+)\"").getMatch(0);
@@ -112,11 +117,11 @@ public class BbcCom extends PluginForHost {
             bitrate_temp = Integer.parseInt(bitrate_str);
             /* Filesize is not always given */
             if (filesize_str != null) {
-                filesize_temp = Integer.parseInt(filesize_str);
+                filesize_temp = Long.parseLong(filesize_str);
             } else {
                 filesize_temp = 0;
             }
-            if (bitrate_temp > bitrate_max) {
+            if (bitrate_temp >= bitrate_max) {
                 bitrate_max = bitrate_temp;
                 /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
                 for (final String connection : connections) {
@@ -130,7 +135,41 @@ public class BbcCom extends PluginForHost {
                         continue;
                     }
                     if (transferformat.equals("hls")) {
-                        hls_master = new Regex(connection, "\"(https?://[^<>\"]+\\.m3u8[^<>\"]*?)\"").getMatch(0);
+                        String m3u8 = new Regex(connection, "\"(https?://[^<>\"]+\\.m3u8[^<>\"]*?)\"").getMatch(0);
+                        if (m3u8 != null && testedM3U8.add(m3u8)) {
+                            m3u8 = Encoding.htmlDecode(m3u8);
+                            if (m3u8.matches(".*/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8.*")) {
+                                // rewrite to check for all available formats
+                                try {
+                                    final String id = new Regex(m3u8, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
+                                    final String rewrite = m3u8.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
+                                    final Browser brc = br.cloneBrowser();
+                                    brc.setFollowRedirects(true);
+                                    brc.getPage(rewrite);
+                                    final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
+                                    final HlsContainer best = HlsContainer.findBestVideoByBandwidth(containers);
+                                    if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                                        bestHLSContainer = best;
+                                        hls_master = rewrite;
+                                        continue;
+                                    }
+                                } catch (final Exception e) {
+                                    logger.log(e);
+                                }
+                            }
+                            try {
+                                final Browser brc = br.cloneBrowser();
+                                brc.getPage(m3u8);
+                                final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
+                                final HlsContainer best = HlsContainer.findBestVideoByBandwidth(containers);
+                                if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                                    bestHLSContainer = best;
+                                    hls_master = m3u8;
+                                }
+                            } catch (final Exception e) {
+                                logger.log(e);
+                            }
+                        }
                     } else if (transferformat.equals("rtmp")) {
                         rtmp_app = new Regex(connection, "application=\"([^<>\"]+)\"").getMatch(0);
                         rtmp_host = new Regex(connection, "server=\"([^<>\"]+)\"").getMatch(0);
@@ -138,6 +177,15 @@ public class BbcCom extends PluginForHost {
                         rtmp_authString = new Regex(connection, "authString=\"([^<>\"]*?)\"").getMatch(0);
                     }
                 }
+            }
+        }
+        if (bestHLSContainer != null) {
+            hls_master = bestHLSContainer.getM3U8URL();
+            try {
+                final List<M3U8Playlist> m3u8s = bestHLSContainer.getM3U8(br.cloneBrowser());
+                filesize_temp = M3U8Playlist.getEstimatedSize(m3u8s);
+            } catch (Exception e) {
+                logger.log(e);
             }
         }
         if (rtmp_playpath != null) {
@@ -171,7 +219,6 @@ public class BbcCom extends PluginForHost {
         }
         final String quality_string;
         if (hls_master != null) {
-            hls_master = Encoding.htmlDecode(hls_master);
             br.getPage(hls_master);
             final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
             final String configuredPreferredVideoFramerate = getConfiguredVideoFramerate();

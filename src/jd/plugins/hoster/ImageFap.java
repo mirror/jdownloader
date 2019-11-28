@@ -145,6 +145,9 @@ public class ImageFap extends PluginForHost {
                     imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(https?://.*?)\"").getMatch(0);
                     if (imagelink == null) {
                         imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+                        if (imagelink == null) {
+                            imagelink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/.*?)\\s*<").getMatch(0);
+                        }
                     }
                 }
             }
@@ -164,8 +167,8 @@ public class ImageFap extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0))) {
-                pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)$").getMatch(0);
+            if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0))) {
+                pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0);
             }
             downloadLink.setFinalFileName(pfilename);
         }

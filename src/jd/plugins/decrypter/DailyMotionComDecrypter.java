@@ -47,6 +47,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Decrypts embedded videos from dailymotion
@@ -603,7 +604,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(map, "qualities");
                 }
                 /* TODO: Maybe add HLS support in case it gives us more/other formats/qualities */
-                final String[][] qualities_2 = { { "2160@60", "7" }, { "2160", "7" }, { "1440@60", "6" }, { "1440", "6" }, { "1080@60", "5" }, { "1080", "5" }, { "720@60", "4" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" }, { "144", "0" } };
+                final String[][] qualities_2 = { { "2160@60", "7" }, { "2160", "7" }, { "1440@60", "6" }, { "1440", "6" }, { "1080@60", "5" }, { "1080", "5" }, { "720@60", "4" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" }, { "144", "0" }, { "auto", "auto" } };
                 for (final String quality[] : qualities_2) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];
@@ -619,11 +620,37 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                                 dlinfo[2] = qualityName;
                                 dlinfo[3] = qualityNumber;
                                 if (StringUtils.equalsIgnoreCase("application/x-mpegURL", currentQualityType)) {
-                                    QUALITIES.put(qualityNumber + "_HLS", dlinfo);
+                                    if (StringUtils.equalsIgnoreCase(dlinfo[3], "auto")) {
+                                        try {
+                                            // TODO: split auto HLS into multiple entries
+                                            final Browser brc = br.cloneBrowser();
+                                            brc.setFollowRedirects(true);
+                                            brc.getPage(currentQualityUrl);
+                                            final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
+                                            if (hlsBest.getHeight() > 1440) {
+                                                dlinfo[3] = "7";
+                                            } else if (hlsBest.getHeight() > 1080) {
+                                                dlinfo[3] = "6";
+                                            } else if (hlsBest.getHeight() > 720) {
+                                                dlinfo[3] = "5";
+                                            } else if (hlsBest.getHeight() > 480) {
+                                                dlinfo[3] = "4";
+                                            } else if (hlsBest.getHeight() > 380) {
+                                                dlinfo[3] = "3";
+                                            } else if (hlsBest.getHeight() > 240) {
+                                                dlinfo[3] = "2";
+                                            } else if (hlsBest.getHeight() > 144) {
+                                                dlinfo[3] = "1";
+                                            }
+                                        } catch (Exception e) {
+                                            plugin.getLogger().log(e);
+                                        }
+                                    }
+                                    QUALITIES.put(dlinfo[3] + "_HLS", dlinfo);
                                 } else if (StringUtils.equalsIgnoreCase("video/mp4", currentQualityType)) {
-                                    QUALITIES.put(qualityNumber + "_MP4", dlinfo);
+                                    QUALITIES.put(dlinfo[3] + "_MP4", dlinfo);
                                 } else {
-                                    QUALITIES.put(qualityNumber, dlinfo);
+                                    QUALITIES.put(dlinfo[3], dlinfo);
                                 }
                             }
                         }
@@ -643,7 +670,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 dlinfo[1] = "hds";
                 dlinfo[2] = "autoURL";
                 dlinfo[3] = "8";
-                QUALITIES.put("8", dlinfo);
+                QUALITIES.put("auto", dlinfo);
             }
             // Try to avoid HDS
             br.getPage("https://www.dailymotion.com/embed/video/" + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));

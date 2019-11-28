@@ -32,7 +32,6 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
     public MergeToPackageAction() {
         setName(_GUI.T.MergeToPackageAction_MergeToPackageAction_());
         setIconKey(IconKey.ICON_PACKAGE_NEW);
-        setLastPathDefault(true);
     }
 
     private boolean expandNewPackage = false;

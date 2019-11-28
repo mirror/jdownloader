@@ -94,7 +94,8 @@ public class HlsContainer {
                     if (codecs != null) {
                         hls.codecs = codecs.trim();
                     }
-                    hls.downloadurl = url;
+                    hls.streamURL = url;
+                    hls.m3u8URL = br.getURL();
                     if (resolution != null) {
                         final String[] resolution_info = resolution.split("x");
                         final String width = resolution_info[0];
@@ -112,8 +113,14 @@ public class HlsContainer {
         return hlsqualities;
     }
 
-    private String             codecs;
-    private String             downloadurl;
+    private String codecs;
+    private String streamURL;
+    private String m3u8URL;
+
+    public String getM3U8URL() {
+        return m3u8URL;
+    }
+
     private List<M3U8Playlist> m3u8List          = null;
     private int                width             = -1;
     private int                height            = -1;
@@ -129,7 +136,7 @@ public class HlsContainer {
 
     protected List<M3U8Playlist> loadM3U8(Browser br) throws IOException {
         final Browser br2 = br.cloneBrowser();
-        return M3U8Playlist.loadM3U8(getDownloadurl(), br2);
+        return M3U8Playlist.loadM3U8(getStreamURL(), br2);
     }
 
     public void setM3U8(List<M3U8Playlist> m3u8List) {
@@ -227,8 +234,13 @@ public class HlsContainer {
         return this.codecs;
     }
 
+    @Deprecated
     public String getDownloadurl() {
-        return downloadurl;
+        return getStreamURL();
+    }
+
+    public String getStreamURL() {
+        return streamURL;
     }
 
     public boolean isVideo() {
