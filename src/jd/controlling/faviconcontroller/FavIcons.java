@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +41,6 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -371,7 +369,7 @@ public class FavIcons {
                 // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
                 // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
                 // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
-                if (Application.isHeadless() && (Exceptions.getInstanceof(e, NullPointerException.class) != null || Exceptions.getInstanceof(e, InvocationTargetException.class) != null)) {
+                if (ImageProvider.isBuggyFontEnvironment(e)) {
                     return IconIO.toBufferedImage(new AbstractIcon(IconKey.ICON_ERROR, 16));
                 } else {
                     throw new RuntimeException(e);

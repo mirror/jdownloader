@@ -49,21 +49,24 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
+    private static final String     PATTERN_SUPPORTED_LANGUAGES                 = "(?:de|fr|en|it|pl|es)";
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
-    private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr|en|it|pl|es)/[a-z0-9\\-]+";
-    private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/.+";
+    private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/[a-z0-9\\-]+";
+    private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/.+";
     private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
-    private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
-    private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/.+";
+    private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
+    private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/embed/.+";
     private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/.+";
     private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/.+";
-    private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
-    private static final String     API_TYPE_CINEMA                             = "^https?://api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)\\?vector=.+";
-    private static final String     API_TYPE_OEMBED                             = "https://api.arte.tv/api/player/v1/oembed/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?platform=.+)";
-    private static final String     API_TYPE_OTHER                              = "https://api.arte.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?.+)";
+    private static final String     API_TYPE_GUIDE                              = "^https?://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
+    // 28.11.2019: v1 doesn't require authentication, v2 requires bearer-authentication
+    private static final String     API_TYPE_CINEMA_PATTERN                     = "^https?://api\\.arte\\.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)\\?vector=.+";
+    private static final String     API_TYPE_OEMBED_PATTERN                     = "https?://api.arte.tv/api/player/v\\d+/oembed/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?platform=.+)";
+    private static final String     API_TYPE_OTHER_PATTERN                      = "https?://api.arte.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?.+)?";
     /* ?autostart=0&lifeCycle=1 = get lower qualities too. */
+    // v2 requires bearer-authentication, we stick to v1 as long as it works
     private static final String     API_HYBRID_URL_1                            = "https://api.arte.tv/api/player/v1/config/%s/%s?autostart=0&lifeCycle=1";
-    private static final String     API_HYBRID_URL_2                            = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+    private static final String     API_HYBRID_URL_2                            = "https://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
     private static final String     API_HYBRID_URL_3                            = "https://api-preprod.arte.tv/api/player/v1/config/%s/%s?autostart=0&lifeCycle=1";
     private static final String     http_300                                    = "http_300";
     private static final String     http_800                                    = "http_800";
@@ -136,7 +139,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             /* First we need to have some basic data - this part is link-specific. */
             if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
-                videoid_base = new Regex(this.parameter, "/guide/[A-Za-z]{2}/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
+                videoid_base = new Regex(this.parameter, "/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
                 int status = br.getHttpConnection().getResponseCode();
                 if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
@@ -165,16 +168,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (decryptedLinks.size() > 0) {
                     return decryptedLinks;
                 }
-                Regex playerinfo = this.br.getRegex("\"(https?://[^/]+)/(?:[a-z]{2})/player/(\\d+)\"");
+                Regex playerinfo = this.br.getRegex("\"(https?://[^/]+)/" + PATTERN_SUPPORTED_LANGUAGES + "/player/(\\d+)\"");
                 final String player_host = playerinfo.getMatch(0);
                 fid = playerinfo.getMatch(1);
                 if (player_host != null && fid != null) {
                     hybridAPIUrl = player_host + "/%s/player/%s";
                 } else {
                     /* Fallback - maybe they simply embed a normal ARTE TYPE_GUIDE video ... */
-                    playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
+                    playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
                     final String link_ending = playerinfo.getMatch(1);
-                    fid = br.getRegex("api\\.arte\\.tv(?:/|%2F)api(?:/|%2F)player(?:/|%2F)v1(?:/|%2F)config(?:/|%2F)(?:de|fr|en|it|pl|es)(?:/|%2F)([A-Za-z0-9\\-]+)").getMatch(0);
+                    fid = br.getRegex("api\\.arte\\.tv(?:/|%2F)api(?:/|%2F)player(?:/|%2F)v\\d+(?:/|%2F)config(?:/|%2F)" + PATTERN_SUPPORTED_LANGUAGES + "(?:/|%2F)([A-Za-z0-9\\-]+)").getMatch(0);
                     if (fid != null && link_ending != null) {
                         hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
                     } else {
@@ -188,15 +191,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
             if (this.example_arte_vp_url != null || fid == null) {
-                if (this.example_arte_vp_url.matches(API_TYPE_OTHER)) {
+                if (this.example_arte_vp_url.matches(API_TYPE_OTHER_PATTERN)) {
                     fid = videoid_base;
                     hybridAPIUrl = API_HYBRID_URL_1;
-                } else if (this.example_arte_vp_url.matches(API_TYPE_OEMBED)) {
+                } else if (this.example_arte_vp_url.matches(API_TYPE_OEMBED_PATTERN)) {
                     /*
                      * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
                      * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
                      */
-                    final Regex info = new Regex(this.example_arte_vp_url, API_TYPE_OEMBED);
+                    final Regex info = new Regex(this.example_arte_vp_url, API_TYPE_OEMBED_PATTERN);
                     fid = info.getMatch(0);
                     final String link_ending = info.getMatch(1);
                     hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
@@ -468,11 +471,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                                     link.setProperty("resolution", videoResolution);
                                     link.setProperty("bitrate", videoBitrate);
                                     link.setProperty("ext", "mp4");
-                                    
                                     final String filename = getFormattedFileName(link);
                                     link.setProperty("directName", filename);
                                     link.setFinalFileName(filename);
-                                    
                                     if (vra != null && vru != null) {
                                         link.setProperty("VRA", convertDateFormat(vra));
                                         link.setProperty("VRU", convertDateFormat(vru));
@@ -533,11 +534,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                             link.setProperty("resolution", videoResolution);
                             link.setProperty("bitrate", videoBitrate);
                             link.setProperty("ext", "mp4");
-                            
                             final String filename = getFormattedFileName(link);
                             link.setProperty("directName", filename);
                             link.setFinalFileName(filename);
-                            
                             if (vra != null && vru != null) {
                                 link.setProperty("VRA", convertDateFormat(vra));
                                 link.setProperty("VRU", convertDateFormat(vru));
@@ -587,7 +586,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 link.setProperty("date", dateFormatted);
                 link.setProperty("title", title);
                 link.setProperty("ext", "jpg");
-                
                 final String filename = getFormattedThumbnailName(link);
                 link.setProperty("directName", filename);
                 link.setFinalFileName(filename);
@@ -618,7 +616,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private void scanForExternalUrls() {
         /* Return external links if existant */
         final String currentHost = new Regex(this.br.getURL(), "https?://([^/]*?)/.+").getMatch(0);
-        final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr|en|it|pl|es)/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"", "(https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/[^/\"]+/[^/\"]+)" };
+        final String[] externURLsRegexes = { "data\\-url=\"(https?://creative\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"", "(https?://(?:www\\.)?arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/embed/[^/\"]+/[^/\"]+)" };
         for (final String externURLRegex : externURLsRegexes) {
             final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
             if (externURLs != null && externURLs.length > 0) {
@@ -906,9 +904,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings("unused")
     private String getURLFilename(final String parameter) {
         if (parameter.matches(TYPE_CONCERT)) {
-            return new Regex(parameter, "concert\\.arte\\.tv/(de|fr|en|it|pl|es)/(.+)").getMatch(1);
+            return new Regex(parameter, "concert\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/(.+)").getMatch(1);
         } else {
-            return new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
+            return new Regex(parameter, "arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/(.+)").getMatch(0);
         }
     }
 
@@ -935,192 +933,168 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
         return formattedDate;
     }
-    
+
     private String getFormattedFilePackageName(final String date, final String title) {
         @SuppressWarnings("deprecation")
-		final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
-    	
-        String formattedPackageName = cfg.getStringProperty(
-        		jd.plugins.hoster.ArteTv.CUSTOM_PACKAGE_NAME_PATTERN,
-        		jd.plugins.hoster.ArteTv.default_CUSTOM_PACKAGE_NAME_PATTERN);
+        final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+        String formattedPackageName = cfg.getStringProperty(jd.plugins.hoster.ArteTv.CUSTOM_PACKAGE_NAME_PATTERN, jd.plugins.hoster.ArteTv.default_CUSTOM_PACKAGE_NAME_PATTERN);
         if (formattedPackageName == null || formattedPackageName.equals("")) {
             formattedPackageName = jd.plugins.hoster.ArteTv.default_CUSTOM_PACKAGE_NAME_PATTERN;
         }
-
         if (!formattedPackageName.contains("*title*")) {
             return "Custom filename pattern is missing *title*.";
         }
-
         if (formattedPackageName.contains("*date*")) {
-        	if (date != null) {
-        		formattedPackageName = formattedPackageName.replace("*date*", date);
-        	} else {
-        		formattedPackageName = formattedPackageName.replace("*date*", "");
-        	}
+            if (date != null) {
+                formattedPackageName = formattedPackageName.replace("*date*", date);
+            } else {
+                formattedPackageName = formattedPackageName.replace("*date*", "");
+            }
         }
         if (title != null) {
             formattedPackageName = formattedPackageName.replace("*title*", title);
         } else {
             formattedPackageName = formattedPackageName.replace("*title*", "missing_title");
         }
-
-	    return formattedPackageName;
+        return formattedPackageName;
     }
-    
+
     private String getFormattedThumbnailName(final DownloadLink downloadLink) {
         @SuppressWarnings("deprecation")
-		final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
-    	
-        String formattedFileName = cfg.getStringProperty(
-        		jd.plugins.hoster.ArteTv.CUSTOM_THUMBNAIL_NAME_PATTERN,
-        		jd.plugins.hoster.ArteTv.default_CUSTOM_THUMBNAIL_NAME_PATTERN);
+        final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+        String formattedFileName = cfg.getStringProperty(jd.plugins.hoster.ArteTv.CUSTOM_THUMBNAIL_NAME_PATTERN, jd.plugins.hoster.ArteTv.default_CUSTOM_THUMBNAIL_NAME_PATTERN);
         if (formattedFileName == null || formattedFileName.equals("")) {
             formattedFileName = jd.plugins.hoster.ArteTv.default_CUSTOM_THUMBNAIL_NAME_PATTERN;
         }
-
         if (!formattedFileName.contains("*title*")) {
             return "Custom filename pattern for thumbnail is missing *title*.";
         }
-
         final String date = downloadLink.getStringProperty("date", null);
-    	final String title = downloadLink.getStringProperty("title", null);
-    	final String ext = downloadLink.getStringProperty("ext", null);
-    	
+        final String title = downloadLink.getStringProperty("title", null);
+        final String ext = downloadLink.getStringProperty("ext", null);
         if (formattedFileName.contains("*date*")) {
-        	if (date != null) {
-        		formattedFileName = formattedFileName.replace("*date*", date);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*date*", "");
-        	}
+            if (date != null) {
+                formattedFileName = formattedFileName.replace("*date*", date);
+            } else {
+                formattedFileName = formattedFileName.replace("*date*", "");
+            }
         }
-
         // Insert title at the end to prevent errors with tags
         if (title != null) {
             formattedFileName = formattedFileName.replace("*title*", title);
         } else {
             formattedFileName = formattedFileName.replace("*title*", "missing_title");
         }
-
         // Extension will be either replaced according to tag or if not given, appended
         if (formattedFileName.contains("*ext*")) {
-        	if (ext != null) {
-        		formattedFileName = formattedFileName.replace("*ext*", ext);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*ext*", "");
-        	}
+            if (ext != null) {
+                formattedFileName = formattedFileName.replace("*ext*", ext);
+            } else {
+                formattedFileName = formattedFileName.replace("*ext*", "");
+            }
         } else {
-	        if (ext != null) {
-	        	formattedFileName = formattedFileName + "." + ext; 
-	        }
+            if (ext != null) {
+                formattedFileName = formattedFileName + "." + ext;
+            }
         }
-        
-	    return formattedFileName;
+        return formattedFileName;
     }
-    
+
     private String getFormattedFileName(final DownloadLink downloadLink) {
         @SuppressWarnings("deprecation")
-		final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
-    	
-        String formattedFileName = cfg.getStringProperty(
-        		jd.plugins.hoster.ArteTv.CUSTOM_FILE_NAME_PATTERN,
-        		jd.plugins.hoster.ArteTv.default_CUSTOM_FILE_NAME_PATTERN);
+        final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+        String formattedFileName = cfg.getStringProperty(jd.plugins.hoster.ArteTv.CUSTOM_FILE_NAME_PATTERN, jd.plugins.hoster.ArteTv.default_CUSTOM_FILE_NAME_PATTERN);
         if (formattedFileName == null || formattedFileName.equals("")) {
             formattedFileName = jd.plugins.hoster.ArteTv.default_CUSTOM_FILE_NAME_PATTERN;
         }
-
         if (!formattedFileName.contains("*title*")) {
             return "Custom filename pattern is missing *title*.";
         }
-
         final String date = downloadLink.getStringProperty("date", null);
-    	final String title = downloadLink.getStringProperty("title", null);
-    	final String vpi = downloadLink.getStringProperty("vpi", null);
-    	final String language = downloadLink.getStringProperty("versionLibelle", null);
-    	final String shortlanguage = downloadLink.getStringProperty("versionShortLibelle", null);
-    	final String resolution = downloadLink.getStringProperty("resolution", null);
-    	final String height = downloadLink.getStringProperty("height", null);
-    	final String width = downloadLink.getStringProperty("width", null);
-    	final String bitrate = downloadLink.getStringProperty("bitrate", null);
-    	final String ext = downloadLink.getStringProperty("ext", null);
-    	
+        final String title = downloadLink.getStringProperty("title", null);
+        final String vpi = downloadLink.getStringProperty("vpi", null);
+        final String language = downloadLink.getStringProperty("versionLibelle", null);
+        final String shortlanguage = downloadLink.getStringProperty("versionShortLibelle", null);
+        final String resolution = downloadLink.getStringProperty("resolution", null);
+        final String height = downloadLink.getStringProperty("height", null);
+        final String width = downloadLink.getStringProperty("width", null);
+        final String bitrate = downloadLink.getStringProperty("bitrate", null);
+        final String ext = downloadLink.getStringProperty("ext", null);
         if (formattedFileName.contains("*date*")) {
-        	if (date != null) {
-        		formattedFileName = formattedFileName.replace("*date*", date);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*date*", "");
-        	}
+            if (date != null) {
+                formattedFileName = formattedFileName.replace("*date*", date);
+            } else {
+                formattedFileName = formattedFileName.replace("*date*", "");
+            }
         }
         if (formattedFileName.contains("*vpi*")) {
-        	if (vpi != null) {
-        		formattedFileName = formattedFileName.replace("*vpi*", vpi);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*vpi*", "");
-        	}
+            if (vpi != null) {
+                formattedFileName = formattedFileName.replace("*vpi*", vpi);
+            } else {
+                formattedFileName = formattedFileName.replace("*vpi*", "");
+            }
         }
         if (formattedFileName.contains("*language*")) {
-        	if (language != null) {
-        		formattedFileName = formattedFileName.replace("*language*", language);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*language*", "");
-        	}
+            if (language != null) {
+                formattedFileName = formattedFileName.replace("*language*", language);
+            } else {
+                formattedFileName = formattedFileName.replace("*language*", "");
+            }
         }
         if (formattedFileName.contains("*shortlanguage*")) {
-        	if (shortlanguage != null) {
-        		formattedFileName = formattedFileName.replace("*shortlanguage*", shortlanguage);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*shortlanguage*", "");
-        	}
+            if (shortlanguage != null) {
+                formattedFileName = formattedFileName.replace("*shortlanguage*", shortlanguage);
+            } else {
+                formattedFileName = formattedFileName.replace("*shortlanguage*", "");
+            }
         }
         if (formattedFileName.contains("*resolution*")) {
-        	if (resolution != null) {
-        		formattedFileName = formattedFileName.replace("*resolution*", resolution);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*resolution*", "");
-        	}
+            if (resolution != null) {
+                formattedFileName = formattedFileName.replace("*resolution*", resolution);
+            } else {
+                formattedFileName = formattedFileName.replace("*resolution*", "");
+            }
         }
         if (formattedFileName.contains("*height*")) {
-        	if (height != null) {
-        		formattedFileName = formattedFileName.replace("*height*", height);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*height*", "");
-        	}
+            if (height != null) {
+                formattedFileName = formattedFileName.replace("*height*", height);
+            } else {
+                formattedFileName = formattedFileName.replace("*height*", "");
+            }
         }
         if (formattedFileName.contains("*width*")) {
-        	if (width != null) {
-        		formattedFileName = formattedFileName.replace("*width*", width);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*width*", "");
-        	}
+            if (width != null) {
+                formattedFileName = formattedFileName.replace("*width*", width);
+            } else {
+                formattedFileName = formattedFileName.replace("*width*", "");
+            }
         }
         if (formattedFileName.contains("*bitrate*")) {
-        	if (bitrate != null) {
-        		formattedFileName = formattedFileName.replace("*bitrate*", bitrate);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*bitrate*", "");
-        	}
+            if (bitrate != null) {
+                formattedFileName = formattedFileName.replace("*bitrate*", bitrate);
+            } else {
+                formattedFileName = formattedFileName.replace("*bitrate*", "");
+            }
         }
-
         // Insert title at the end to prevent errors with tags
         if (title != null) {
             formattedFileName = formattedFileName.replace("*title*", title);
         } else {
             formattedFileName = formattedFileName.replace("*title*", "missing_title");
         }
-
         // Extension will be either replaced according to tag or if not given, appended
         if (formattedFileName.contains("*ext*")) {
-        	if (ext != null) {
-        		formattedFileName = formattedFileName.replace("*ext*", ext);
-        	} else {
-        		formattedFileName = formattedFileName.replace("*ext*", "");
-        	}
+            if (ext != null) {
+                formattedFileName = formattedFileName.replace("*ext*", ext);
+            } else {
+                formattedFileName = formattedFileName.replace("*ext*", "");
+            }
         } else {
-	        if (ext != null) {
-	        	formattedFileName = formattedFileName + "." + ext; 
-	        }
+            if (ext != null) {
+                formattedFileName = formattedFileName + "." + ext;
+            }
         }
-        
-	    return formattedFileName;
+        return formattedFileName;
     }
 
     /* NO OVERRIDE!! */
