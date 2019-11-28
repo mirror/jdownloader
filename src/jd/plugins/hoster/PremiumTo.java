@@ -53,13 +53,13 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
     private final String                   normalTraffic                   = "normalTraffic";
     private final String                   specialTraffic                  = "specialTraffic";
-    private static final String            type_torrent                    = "https?://torrent\\..+";
-    private static final String            type_torrent_file               = "https?://torrent\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
-    private static final String            type_torrent_remote             = "https?://torrent\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
+    private static final String            type_torrent                    = "https?://torrent.*?\\..+";
+    private static final String            type_torrent_file               = "https?://torrent.*?\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
+    private static final String            type_torrent_remote             = "https?://torrent.*?\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
     private static final String            type_storage                    = "https?://storage\\..+";
     /* storage.premium.to --> Extract download URLs */
     private static final String            type_storage_file               = "https?://storage\\.[^/]+/file/(.+)";
