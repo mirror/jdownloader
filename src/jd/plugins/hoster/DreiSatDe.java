@@ -24,6 +24,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.DreiSatConfigInterface;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -39,14 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.DreiSatConfigInterface;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "https?://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat2.de" }, urls = { "https?://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" })
 public class DreiSatDe extends PluginForHost {
     public DreiSatDe(final PluginWrapper wrapper) {
         super(wrapper);
