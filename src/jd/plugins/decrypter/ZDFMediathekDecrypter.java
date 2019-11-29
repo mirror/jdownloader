@@ -295,7 +295,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
-        final String apiParams[] = getApiParams(br, PARAMETER_ORIGINAL, true);
+        final String apiParams[] = getApiParams(br, PARAMETER_ORIGINAL, false);
         /* 2016-12-21: By hardcoding the apitoken we can save one http request thus have a faster crawl process :) */
         this.br.getHeaders().put("Api-Auth", "Bearer " + apiParams[0]);
         this.br.getPage(apiParams[2] + "/content/documents/" + sophoraID + ".json?profile=player");
