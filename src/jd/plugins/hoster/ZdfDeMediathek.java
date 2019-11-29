@@ -71,7 +71,6 @@ public class ZdfDeMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         server_issues = false;
-        final String filename;
         prepBR(this.br);
         /* New urls 2016-12-21 */
         dllink = link.getDownloadURL().replace("decryptedmediathek://", "http://");
@@ -383,23 +382,12 @@ public class ZdfDeMediathek extends PluginForHost {
                 return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
             }
 
-            public String getNeoMagazinRoyaleDeOnlyGrabCurrentEpisode_label() {
-                /* Translation not required for this */
-                return "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?";
-            }
-
             public String getAddUnknownQualitiesEnabled_label() {
                 return _JDT.T.lit_add_unknown_formats();
             }
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
-
-        @DefaultBooleanValue(true)
-        @Order(8)
-        boolean isNeoMagazinRoyaleDeOnlyGrabCurrentEpisode();
-
-        void setNeoMagazinRoyaleDeOnlyGrabCurrentEpisode(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(9)
