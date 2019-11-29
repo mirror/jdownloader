@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -40,9 +41,9 @@ public class ProLeechLink extends antiDDoSForHost {
         setConfigElements();
     }
 
-    private static MultiHosterManagement mhm                                    = new MultiHosterManagement("proleech.link");
+    private static MultiHosterManagement        mhm                                    = new MultiHosterManagement("proleech.link");
     /** Contains all filenames of files we attempted to download or downloaded via this account. */
-    private static List<String>          deleteDownloadHistoryFilenameWhitelist = new ArrayList<String>();
+    private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist = new CopyOnWriteArrayList<String>();
     // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
 
     @Override
@@ -409,6 +410,7 @@ public class ProLeechLink extends antiDDoSForHost {
                  */
                 br.getPage("https://" + this.getHost() + "/mydownloads");
                 final String[] cloudDownloadRows = getDownloadHistoryRows();
+                final ArrayList<String> deleted_filenames = new ArrayList<String>();
                 if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
                     logger.info("Found " + cloudDownloadRows.length + " download_ids in history to delete");
                     String postData = "delete=Delete+selected";
@@ -424,6 +426,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         for (final String allowedFilename : deleteDownloadHistoryFilenameWhitelist) {
                             if (cloudDownloadRow.contains(allowedFilename)) {
                                 deletionAllowed = true;
+                                deleted_filenames.add(allowedFilename);
                                 break;
                             }
                         }
@@ -444,6 +447,10 @@ public class ProLeechLink extends antiDDoSForHost {
                         logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
                         br.postPage(br.getURL(), postData);
                         logger.info("Successfully cleared download history");
+                        /* Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. */
+                        for (final String deleted_filename : deleted_filenames) {
+                            deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
+                        }
                     }
                 }
             } else {
