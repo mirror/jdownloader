@@ -308,14 +308,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries_2 = null;
         final String contentType = (String) entries.get("contentType");
         String title = (String) entries.get("title");
+        if (StringUtils.isEmpty(title)) {
+            /* Fallback */
+            title = sophoraID;
+        }
         final String editorialDate = (String) entries.get("editorialDate");
         final Object tvStationo = entries.get("tvService");
-        final String tvStation = tvStationo != null && tvStationo instanceof String ? (String) tvStationo : "ZDF";
+        final String tv_station = tvStationo != null && tvStationo instanceof String ? (String) tvStationo : "ZDF";
         // final Object hasVideoo = entries.get("hasVideo");
         // final boolean hasVideo = hasVideoo != null && hasVideoo instanceof Boolean ? ((Boolean) entries.get("hasVideo")).booleanValue() :
         // false;
         entries_2 = (LinkedHashMap<String, Object>) entries.get("http://zdf.de/rels/brand");
-        final String tvShow = entries_2 != null ? (String) entries_2.get("title") : null;
+        final String tv_show = entries_2 != null ? (String) entries_2.get("title") : null;
         entries_2 = (LinkedHashMap<String, Object>) entries.get("mainVideoContent");
         if (entries_2 == null) {
             /* Not a single video? Maybe we have a playlist / embedded video(s)! */
@@ -338,19 +342,23 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         // logger.info("Content is not a video --> Nothing to download");
         // return ret;
         // }
-        if (inValidate(contentType) || inValidate(title) || inValidate(editorialDate) || inValidate(tvStation)) {
+        if (inValidate(contentType) || inValidate(editorialDate) || inValidate(tv_station)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Show is not always available - merge it with the title, if tvShow is available. */
-        if (tvShow != null) {
-            title = tvShow + " - " + title;
+        if (tv_show != null) {
+            title = tv_show + " - " + title;
+        }
+        String base_title = title;
+        if (tv_show != null) {
+            base_title = base_title + " - " + base_title;
         }
         final String date_formatted = new Regex(editorialDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         internal_videoid = new Regex(player_url_template, "/([^/]+)$").getMatch(0);
         if (date_formatted == null || internal_videoid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String filename_packagename_base_title = date_formatted + "_" + tvStation + "_" + title;
+        final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + base_title;
         short counter = 0;
         short highestHlsMasterValue = 0;
         short hlsMasterValueTemp = 0;
@@ -504,7 +512,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     final String resolution = hlscontainer.getResolution();
                                     final_download_url = hlscontainer.getDownloadurl();
                                     ext = hlscontainer.getFileExtension().replace(".", "");
-                                    linkid = String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, resolution);
+                                    linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, resolution);
                                     final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, protocol, resolution, language, audio_class_user_readable, ext));
                                     dl = createDownloadlink(final_download_url);
                                     if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
@@ -515,7 +523,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                         highestHlsBandwidth = hlscontainer.getBandwidth();
                                         highestHlsDownload = dl;
                                     }
-                                    setDownloadlinkProperties(dl, final_filename, type, linkid);
+                                    setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                                     dl.setProperty("hlsBandwidth", hlscontainer.getBandwidth());
                                     if (duration > 0 && hlscontainer.getBandwidth() > 0) {
                                         dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
@@ -527,7 +535,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             } else {
                                 /* http download */
                                 final_download_url = uri;
-                                linkid = String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
+                                linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
                                 final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, protocol, quality, language, audio_class_user_readable, ext));
                                 /* TODO: Check if this might still be useful ... */
                                 // boolean isHBBTV = false;
@@ -545,7 +553,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     dl.setAvailable(true);
                                     dl.setDownloadSize(filesize);
                                 }
-                                setDownloadlinkProperties(dl, final_filename, type, linkid);
+                                setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                                 all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, quality, language, audio_class, all_found_languages), dl);
                             }
                         }
@@ -684,7 +692,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final String final_filename = dl.getFinalFileName().replace(current_ext, ".xml");
             final String linkid = dl.getLinkID() + "_subtitle";
             final DownloadLink dl_subtitle = this.createDownloadlink(this.url_subtitle);
-            setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid);
+            setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
             if (filesizeSubtitle > 0) {
                 dl_subtitle.setDownloadSize(filesizeSubtitle);
                 dl_subtitle.setAvailable(true);
@@ -693,10 +701,24 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void setDownloadlinkProperties(final DownloadLink dl, final String final_filename, final String type, final String linkid) {
+    private void setDownloadlinkProperties(final DownloadLink dl, final String final_filename, final String streamingType, final String linkid, final String title, final String tv_show, final String date_formatted, final String tv_station) {
         dl.setFinalFileName(final_filename);
         dl.setLinkID(linkid);
-        dl.setProperty("streamingType", type);
+        /* Very important! */
+        dl.setProperty("streamingType", streamingType);
+        /* The following properties are only relevant for packagizer usage. */
+        if (!StringUtils.isEmpty(title)) {
+            dl.setProperty("title", title);
+        }
+        if (!StringUtils.isEmpty(tv_show)) {
+            dl.setProperty("tv_show", tv_show);
+        }
+        if (!StringUtils.isEmpty(date_formatted)) {
+            dl.setProperty("date_formatted", date_formatted);
+        }
+        if (!StringUtils.isEmpty(tv_station)) {
+            dl.setProperty("tv_station", tv_station);
+        }
         dl.setContentUrl(PARAMETER_ORIGINAL);
     }
 
