@@ -21,6 +21,12 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,12 +44,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/g/(\\d+)/([a-z0-9]+)" })
 public class EHentaiOrg extends PluginForDecrypt {
     public EHentaiOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,17 +60,20 @@ public class EHentaiOrg extends PluginForDecrypt {
         }
         // links are transferable between the login enforced url and public, but may not be available on public
         final String parameter = aa == null ? param.toString().replace("exhentai.org/", "g.e-hentai.org/") : param.toString().replace("g.e-hentai.org/", "exhentai.org/");
-        final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        if (uid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "fuid can not be found");
+        final String galleryid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String galleryhash = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        if (galleryid == null || galleryhash == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.setFollowRedirects(true);
         br.setCookie(Browser.getHost(parameter), "nw", "1");
         br.getPage(parameter);
-        if (br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.getHttpConnection().getResponseCode() == 404 || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
+        if (jd.plugins.hoster.EHentaiOrg.isOffline(br) || br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String archiveFileSize = br.getRegex(">File Size:</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
         final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
         final String tagsCommaSeparated = br.getRegex("<meta name=\"description\" content=\"[^\"]+ - Tags: ([^\"]+)\" />").getMatch(0);
         String fpName = ((jd.plugins.hoster.EHentaiOrg) hostplugin).getTitle(br);
@@ -79,7 +83,18 @@ public class EHentaiOrg extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        fp.setProperty(FilePackage.PROPERTY_PACKAGE_KEY, uid);
+        fp.setProperty(FilePackage.PROPERTY_PACKAGE_KEY, galleryid);
+        /* Crawl process can take some time so let's add this always existing URL first */
+        final DownloadLink galleryArchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
+        galleryArchive.setContentUrl(parameter);
+        galleryArchive.setFinalFileName(fpName + ".zip");
+        if (archiveFileSize != null) {
+            galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
+        }
+        galleryArchive.setAvailable(true);
+        decryptedLinks.add(galleryArchive);
+        distribute(galleryArchive);
+        /* Now add all single images */
         int pagemax = 0;
         final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -91,7 +106,7 @@ public class EHentaiOrg extends PluginForDecrypt {
             }
         }
         final DecimalFormat df = new DecimalFormat("0000");
-        final Set<String> dups = new HashSet<String>();
+        final Set<String> dupes = new HashSet<String>();
         int counter = 1;
         final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         for (int page = 0; page <= pagemax; page++) {
@@ -104,7 +119,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                 sleep(new Random().nextInt(5000), param);
                 br2.getPage(parameter + "/?p=" + page);
             }
-            final String[][] links = br2.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + uid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
+            final String[][] links = br2.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + galleryid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
             if (links == null || links.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -117,7 +132,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                 final String singleLink = link[0];
                 final DownloadLink dl = createDownloadlink(singleLink);
                 final String imgposition = df.format(counter);
-                final String namepart = fpName + "_" + uid + "-" + imgposition;
+                final String namepart = fpName + "_" + galleryid + "-" + imgposition;
                 final String originalFileName = new Regex(link[1], "\\s*(?:Page\\s*\\d+\\s*:?)?\\s+(.*?\\.(jpe?g|png|gif))").getMatch(0);
                 final String extension;
                 if (StringUtils.isNotEmpty(originalFileName) && Files.getExtension(originalFileName) != null) {
@@ -136,13 +151,13 @@ public class EHentaiOrg extends PluginForDecrypt {
                 }
                 final String name;
                 if (preferOriginalFilename && StringUtils.isNotEmpty(originalFileName)) {
-                    if (dups.add(originalFileName)) {
+                    if (dupes.add(originalFileName)) {
                         name = originalFileName;
                     } else {
                         int num = 1;
                         while (true) {
                             final String newName = originalFileName.replaceFirst("(\\.)([^\\.]+$)", "_" + (num++) + ".$2");
-                            if (dups.add(newName)) {
+                            if (dupes.add(newName)) {
                                 name = newName;
                                 break;
                             }

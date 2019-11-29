@@ -354,11 +354,11 @@ public class ProLeechLink extends antiDDoSForHost {
                 downloadURL = getDllink();
             }
             if (StringUtils.isEmpty(downloadURL)) {
-                final String danger = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*(.*?)\\s*</b>").getMatch(0);
-                if (danger != null) {
-                    /* 2019-11-11: Too many requests! Please try again in a few seconds. */
+                final String errormessage = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*([^<>]+)").getMatch(0);
+                if (errormessage != null) {
+                    /* 2019-11-11: E.g. "Too many requests! Please try again in a few seconds." */
                     logger.info("Found errormessage on website:");
-                    logger.info(danger);
+                    logger.info(errormessage);
                 }
                 if (br.containsHTML(">\\s*?No link entered\\.?\\s*<")) {
                     mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
@@ -371,8 +371,13 @@ public class ProLeechLink extends antiDDoSForHost {
                 } else if (br.containsHTML(">\\s*You can only generate this link during Happy Hours")) {
                     /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
+                } else if (errormessage != null) {
+                    /* Unknown failure but let's display errormessage from website to user. */
+                    mhm.handleErrorGeneric(account, link, errormessage, 50, 2 * 60 * 1000l);
+                } else {
+                    /* Unknown failure and we failed to find an errormessage */
+                    mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
                 }
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
             }
             link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
@@ -400,17 +405,33 @@ public class ProLeechLink extends antiDDoSForHost {
                  * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
                  */
                 br.getPage("https://" + this.getHost() + "/mydownloads");
-                final String[] download_ids = br.getRegex("id=\"checkbox\\[\\]\"[^<>]*value=\"(\\d+)\"").getColumn(0);
-                if (download_ids != null && download_ids.length > 0) {
-                    logger.info("Found " + download_ids.length + " download_ids in history to delete");
+                final String[] cloudDownloadRows = br.getRegex("<tr>\\s*<td><input[^>]*name=\"checkbox\\[\\]\"[^>]+>.*?</tr>").getColumn(-1);
+                if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
+                    logger.info("Found " + cloudDownloadRows.length + " download_ids in history to delete");
                     String postData = "delete=Delete+selected";
-                    for (final String download_id : download_ids) {
+                    int numberofDownloadIdsToDelete = 0;
+                    for (final String cloudDownloadRow : cloudDownloadRows) {
+                        final String download_id = new Regex(cloudDownloadRow, "id=\"checkbox\\[\\]\" value=\"(\\d+)\"").getMatch(0);
+                        if (download_id == null) {
+                            /* Skip invalid entries */
+                            continue;
+                        }
+                        final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
+                        if (isStillDownloadingToCloud) {
+                            logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
+                            continue;
+                        }
                         postData += "&checkbox%5B%5D=" + download_id;
+                        numberofDownloadIdsToDelete++;
                     }
-                    br.postPage(br.getURL(), postData);
-                    logger.info("Successfully cleared download history");
-                } else {
-                    logger.info("Failed to clear download history: Failed to find any download_ids to delete");
+                    if (numberofDownloadIdsToDelete == 0) {
+                        /* This is unlikely but possible! */
+                        logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress");
+                    } else {
+                        logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
+                        br.postPage(br.getURL(), postData);
+                        logger.info("Successfully cleared download history");
+                    }
                 }
             } else {
                 logger.info("Not deleting download history - used has disabled this setting");
@@ -422,7 +443,9 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     private String getDllink() {
-        return br.getRegex("class=\"[^\"]*success\".*?<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"[^\"]*success\".*<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+        /* TODO: 2019-11-28: Add check for forced cloud download hosts e.g. k2s. */
+        return dllink;
     }
 
     private boolean isDownloadConnection(URLConnectionAdapter con) throws IOException {

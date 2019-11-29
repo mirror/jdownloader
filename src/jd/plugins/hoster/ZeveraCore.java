@@ -314,6 +314,26 @@ abstract public class ZeveraCore extends UseNet {
             }
             callAPI(br, account, "/api/transfer/directdl" + getdata);
             dllink = PluginJSonUtils.getJsonValue(br, "location");
+            if (!StringUtils.isEmpty(dllink)) {
+                /*
+                 * 2019-11-29: They're caching data. This means that it may also happen that a slightly different file will get delivered (=
+                 * new hash). This is a bad workaround to "disable" the hash check of our original file thus prevent JD to display CRC
+                 * errors when there are none. Premiumize is advised to at least return the correct MD5 hash so that we can set it
+                 * accordingly but for now, we only have this workaround. See also: https://svn.jdownloader.org/issues/87604
+                 */
+                final long originalSourceFilesize = link.getView().getBytesTotal();
+                long thisFilesize = 0;
+                final String thisFilesizeStr = PluginJSonUtils.getJson(br, "filesize");
+                if (thisFilesizeStr != null && thisFilesizeStr.matches("\\d+")) {
+                    thisFilesize = Long.parseLong(thisFilesizeStr);
+                }
+                if (originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
+                    logger.info("Dumping existing hashes to prevent errors because of cache download");
+                    link.setMD5Hash(null);
+                    link.setSha1Hash(null);
+                    link.setSha256Hash(null);
+                }
+            }
         }
         return dllink;
     }
