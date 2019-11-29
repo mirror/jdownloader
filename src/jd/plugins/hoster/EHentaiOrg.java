@@ -48,7 +48,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
@@ -81,6 +81,7 @@ public class EHentaiOrg extends PluginForHost {
     public static final String          ENABLE_FILENAME_FIX      = "ENABLE_FILENAME_FIX";
     public static final String          PREFER_ORIGINAL_FILENAME = "PREFER_ORIGINAL_FILENAME";
     private static final String         TYPE_EXHENTAI            = "exhentai\\.org";
+    private static final String         TYPE_ARCHIVE             = "ehentaiarchive://\\d+/[a-z0-9]+";
     private final LinkedHashSet<String> dupe                     = new LinkedHashSet<String>();
     private String                      uid_chapter              = null;
     private String                      uid_page                 = null;
@@ -92,7 +93,7 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
+        if (account == null && (new Regex(downloadLink.getPluginPatternMatcher(), TYPE_EXHENTAI).matches() || new Regex(downloadLink.getPluginPatternMatcher(), TYPE_ARCHIVE).matches())) {
             return false;
         } else {
             return super.canHandle(downloadLink, account);
@@ -101,33 +102,19 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, null);
+        return requestFileInformation(downloadLink, null, false);
     }
 
     /**
      * take account from download candidate!
      *
-     * @param downloadLink
+     * @param link
      * @param account
      * @return
      * @throws Exception
      */
-    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws Exception {
-        /* from manual 'online check', we don't want to 'try' as it uses up quota... */
-        if (account == null && new Regex(downloadLink.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
-            return AvailableStatus.UNCHECKABLE;
-        }
-        // nullfication
-        dupe.clear();
-        dllink = null;
-        String dllink_fullsize = null;
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         boolean loggedin = false;
-        // uids
-        uid_chapter = new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        uid_page = new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        final String mainlink = getMainlink(downloadLink);
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         if (account != null) {
             try {
                 login(this.br, account, false);
@@ -136,6 +123,49 @@ public class EHentaiOrg extends PluginForHost {
                 loggedin = false;
             }
         }
+        /* from manual 'online check', we don't want to 'try' as it uses up quota... */
+        if (account == null && new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches()) {
+            /* Account archive download */
+            if (account == null) {
+                /* Cannot check without account */
+                return AvailableStatus.UNCHECKABLE;
+            }
+            final String galleryid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(0);
+            final String galleryhash = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(1);
+            br.getPage("https://" + this.getHost() + "/g/" + galleryid + "/" + galleryhash);
+            if (isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (isDownload) {
+                String continue_url = br.getRegex("popUp\\('(https?://[^/]+/archiver\\.php\\?[^<>\"\\']+)'").getMatch(0);
+                if (continue_url == null) {
+                    logger.warning("Failed to find continue_url");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                continue_url = Encoding.htmlDecode(continue_url);
+                br.getPage(continue_url);
+                /* Another step */
+                continue_url = br.getRegex("document\\.getElementById\\(\"continue\"\\).*?document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
+                if (continue_url != null) {
+                    br.getPage(continue_url);
+                }
+                dllink = br.getRegex("document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
+            }
+            return AvailableStatus.TRUE;
+        }
+        // nullfication
+        dupe.clear();
+        dllink = null;
+        String dllink_fullsize = null;
+        // uids
+        uid_chapter = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        uid_page = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        final String mainlink = getMainlink(link);
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         if (ENABLE_RANDOM_UA) {
             /*
              * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses as it
@@ -172,17 +202,17 @@ public class EHentaiOrg extends PluginForHost {
             long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
             throw new AccountUnavailableException("Your IP address has been temporarily banned for excessive pageloads", expireS);
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String namepart = getNamePart(downloadLink);
+        final String namepart = getNamePart(link);
         if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
             /* Try to get fullsize (original) image. */
             final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
             dllink_fullsize = fulllinkinfo.getMatch(0);
             final String html_filesize = fulllinkinfo.getMatch(1);
             if (dllink_fullsize != null && html_filesize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(html_filesize));
+                link.setDownloadSize(SizeFormatter.getSize(html_filesize));
             }
         }
         getDllink(account);
@@ -190,18 +220,18 @@ public class EHentaiOrg extends PluginForHost {
         final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         final String ext = getFileNameExtensionFromString(dllink, ".png");
         // package customiser altered, or user altered value, we need to update this value.
-        if (downloadLink.getForcedFileName() != null) {
-            downloadLink.setForcedFileName(namepart + ext);
+        if (link.getForcedFileName() != null) {
+            link.setForcedFileName(namepart + ext);
         } else {
             // package customiser altered, or user altered value, we need to update this value.
-            if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
-                downloadLink.setForcedFileName(namepart + ext);
-            } else if (downloadLink.getFinalFileName() == null) {
+            if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && link.getForcedFileName() != null && !link.getForcedFileName().endsWith(ext)) {
+                link.setForcedFileName(namepart + ext);
+            } else if (link.getFinalFileName() == null) {
                 if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
-                    downloadLink.setFinalFileName(originalFileName);
+                    link.setFinalFileName(originalFileName);
                 } else {
                     // decrypter doesn't set file extension.
-                    downloadLink.setFinalFileName(namepart + ext);
+                    link.setFinalFileName(namepart + ext);
                 }
             }
         }
@@ -268,8 +298,8 @@ public class EHentaiOrg extends PluginForHost {
                     }
                     final long conlength = con.getLongContentLength();
                     if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
-                        downloadLink.setDownloadSize(conlength);
-                        downloadLink.setProperty("directlink", dllink);
+                        link.setDownloadSize(conlength);
+                        link.setProperty("directlink", dllink);
                         return AvailableStatus.TRUE;
                     } else {
                         return AvailableStatus.UNCHECKABLE;
@@ -289,6 +319,11 @@ public class EHentaiOrg extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Returns whether or not a gallery is offline. */
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     private void getDllink(final Account account) throws Exception {
@@ -347,7 +382,7 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink, null);
+        requestFileInformation(downloadLink, null, true);
         doFree(downloadLink, null);
     }
 
@@ -486,7 +521,7 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         /* No need to login here as we already logged in in availablecheck */
         doFree(link, account);
     }
