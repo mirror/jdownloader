@@ -29,15 +29,17 @@ public class JavCL extends PluginForDecrypt {
         final String filename = br.getRegex("<span class=([\"\']?)title2\\1>([a-zA-Z0-9-]+)</span>").getMatch(1);
         final String data_id = br.getRegex("<div id=([\"\']?)videoPlayer\\1 data-id=([\"\']?)([0-9]+)\\2 data-ep=([\"\']?)([0-9]+)\\4>").getMatch(2);
         final String data_links[] = br.getRegex("<li data-sv=([\"\']?)([0-9]+)\\1 data-link=([\"\']?)([a-zA-Z0-9/+=-]+)\\3(?: class=([\\\"\\']?)active\\5)?>\\s*([^</]+)\\s*</li>").getColumn(3);
-        if (data_links == null) {
+        if (data_links == null | data_links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int index = 0;
         for (String data_link : data_links) {
+            logger.info("data_id: " + data_id + ", data_links: " + data_link);
             if (data_link.equals("post")) {
                 continue;
             }
             final String url = decodejav(data_link, data_id);
+            logger.info("Decrypter output: " + url);
             final String name;
             if (data_links.length > 1) {
                 name = filename + "_" + (char) ('a' + index);
