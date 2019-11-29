@@ -40,7 +40,10 @@ public class ProLeechLink extends antiDDoSForHost {
         setConfigElements();
     }
 
-    private static MultiHosterManagement mhm = new MultiHosterManagement("proleech.link");
+    private static MultiHosterManagement mhm                                    = new MultiHosterManagement("proleech.link");
+    /** Contains all filenames of files we attempted to download or downloaded via this account. */
+    private static List<String>          deleteDownloadHistoryFilenameWhitelist = new ArrayList<String>();
+    // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
 
     @Override
     public String getAGBLink() {
@@ -346,12 +349,12 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             post.put("boxlinklist", "0");
             sendRequest(post);
-            downloadURL = getDllink();
+            downloadURL = getDllink(link);
             if (StringUtils.isEmpty(downloadURL) && !validatedCookies && !this.isLoggedin(this.br)) {
                 /* Bad login - try again with fresh / validated cookies! */
                 login(account, null, true);
                 sendRequest(post);
-                downloadURL = getDllink();
+                downloadURL = getDllink(link);
             }
             if (StringUtils.isEmpty(downloadURL)) {
                 final String errormessage = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*([^<>]+)").getMatch(0);
@@ -405,7 +408,7 @@ public class ProLeechLink extends antiDDoSForHost {
                  * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
                  */
                 br.getPage("https://" + this.getHost() + "/mydownloads");
-                final String[] cloudDownloadRows = br.getRegex("<tr>\\s*<td><input[^>]*name=\"checkbox\\[\\]\"[^>]+>.*?</tr>").getColumn(-1);
+                final String[] cloudDownloadRows = getDownloadHistoryRows();
                 if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
                     logger.info("Found " + cloudDownloadRows.length + " download_ids in history to delete");
                     String postData = "delete=Delete+selected";
@@ -417,8 +420,18 @@ public class ProLeechLink extends antiDDoSForHost {
                             continue;
                         }
                         final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
+                        boolean deletionAllowed = false;
+                        for (final String allowedFilename : deleteDownloadHistoryFilenameWhitelist) {
+                            if (cloudDownloadRow.contains(allowedFilename)) {
+                                deletionAllowed = true;
+                                break;
+                            }
+                        }
                         if (isStillDownloadingToCloud) {
                             logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
+                            continue;
+                        } else if (!deletionAllowed) {
+                            logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion: " + download_id);
                             continue;
                         }
                         postData += "&checkbox%5B%5D=" + download_id;
@@ -442,9 +455,54 @@ public class ProLeechLink extends antiDDoSForHost {
         }
     }
 
-    private String getDllink() {
+    private String[] getDownloadHistoryRows() {
+        return br.getRegex("<tr>\\s*<td><input[^>]*name=\"checkbox\\[\\]\"[^>]+>.*?</tr>").getColumn(-1);
+    }
+
+    private String getDllink(final DownloadLink link) throws Exception {
         String dllink = br.getRegex("class=\"[^\"]*success\".*<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+        /*
+         * We can only identify our cloud-download-item by filename so let's get the filename they display as it may differ from the
+         * filename we know/expect which means this is the only identifier we can use!
+         */
+        final String internal_filename = br.getRegex(">Transloading in progress.*?once completed\\!?</a>([^<>\"]+)</div>").getMatch(0);
         /* TODO: 2019-11-28: Add check for forced cloud download hosts e.g. k2s. */
+        if (dllink == null && internal_filename != null) {
+            logger.info("Waiting for possible cloud-download to finish serverside");
+            /* Add filename to list to prevent delete-history handling from deleting it before we can download it. */
+            try {
+                final int max_tries = 100;
+                final long waittime_between_retry = 3000;
+                for (int i = 0; i < max_tries; i++) {
+                    logger.info("Attempting to find downloadurl for cloud-download : " + (i + 1) + " / " + max_tries);
+                    this.getPage("/mydownloads");
+                    final String[] downloadHistoryRows = getDownloadHistoryRows();
+                    if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
+                        logger.warning("Failed to find any download history objects");
+                        return null;
+                    }
+                    for (final String downloadHistoryRow : downloadHistoryRows) {
+                        if (downloadHistoryRow.contains(internal_filename)) {
+                            logger.info("Looks like we found the row containing our cloud-download");
+                            dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
+                            if (dllink != null) {
+                                logger.info("Successfully found downloadurl");
+                                break;
+                            } else {
+                                logger.info("Failed to find downloadurl");
+                                /* Continue! It can happen that there are multiple entries for the same filename! */
+                            }
+                        }
+                    }
+                    if (dllink != null) {
+                        break;
+                    }
+                    this.sleep(waittime_between_retry, link);
+                }
+            } finally {
+                deleteDownloadHistoryFilenameWhitelist.add(internal_filename);
+            }
+        }
         return dllink;
     }
 
@@ -482,7 +540,7 @@ public class ProLeechLink extends antiDDoSForHost {
     private void setConfigElements() {
         /* Crawler settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "DOWNLOADLINK_GENERATION_LIMIT", "Allow new downloadlink generation every X hours (default = 0 = unlimited/disabled)\r\nThis can save traffic but this can also slow down the download process", 0, 72, 1).setDefaultValue(0));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", "Delete download history after every successful download and on every account-check(~ every 30 minutes)?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", "Delete download history after every successful download and on every account-check(~ every 30 minutes, only files added via JDownloader)?").setDefaultValue(false));
     }
 
     @Override
