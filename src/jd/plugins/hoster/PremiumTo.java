@@ -804,12 +804,13 @@ public class PremiumTo extends UseNet {
             final String[] ids = new Regex(link.getPluginPatternMatcher(), type_torrent_file).getMatch(0).split("/");
             final String torrentID = ids[0];
             final String fileID = ids[1];
+            final String api_host = new Regex(link.getPluginPatternMatcher(), "https?://([^/]+)/").getMatch(0);
             if (link.getPluginPatternMatcher().matches("https?://torrent\\.[^/]+/z/.+")) {
                 /* zip file (one file which contains all files of one particular .torrent download) */
-                dllink = API_BASE_TORRENT + "/getzip.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
+                dllink = "https://" + api_host + "/api/2/getzip.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
             } else {
                 /* Other filetype */
-                dllink = API_BASE_TORRENT + "/getfile.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
+                dllink = "https://" + api_host + "/api/2/getfile.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
             }
         } else {
             /* Remote-Directurl (Torrent & Storage) - no API and no account required */
