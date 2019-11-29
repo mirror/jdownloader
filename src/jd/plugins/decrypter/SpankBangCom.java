@@ -21,6 +21,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -39,11 +44,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
 public class SpankBangCom extends PluginForDecrypt {
@@ -83,7 +83,7 @@ public class SpankBangCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
-        parameter = param.toString().replaceAll("https?://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "https://spankbang.com/").replace("/embed/", "/video/");
+        parameter = param.toString().replace("/embed/", "/video/");
         br.setFollowRedirects(true);
         /* www = English language */
         br.setCookie(this.getHost(), "language", "www");
@@ -196,16 +196,33 @@ public class SpankBangCom extends PluginForDecrypt {
         final String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
         if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
             final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
+            final String stream_url_m3u8 = String.valueOf(map.get("stream_url_m3u8"));
             for (final String quality : qualities) {
+                System.out.println("quality: " + quality);
                 final String qualityID = getQuality(quality);
                 final Object entry = map.get("stream_url_" + quality);
-                final String value;
+                String value = null;
                 if (entry instanceof String) {
                     value = (String) entry;
-                } else if (entry instanceof List) {
+                } else if (entry instanceof List && ((List) entry).size() != 0) {
                     value = ((List<String>) entry).get(0);
+                }
+                System.out.println("value: " + value);
+                if (StringUtils.isEmpty(value) && StringUtils.isNotEmpty(stream_url_m3u8)) {
+                    final String one_stream_url_m3u8 = new Regex(stream_url_m3u8, "(http.*?d=\\d)").getMatch(0);
+                    // System.out.println("one_stream_url_m3u8: " + one_stream_url_m3u8);
+                    final String page_m3u8 = br.getPage(one_stream_url_m3u8);
+                    final String[] single_url_m3u8s = new Regex(page_m3u8, "(http.*?d=\\d)\\s").getColumn(0);
+                    // System.out.println("single_url_m3u8s.length: " + single_url_m3u8s.length);
+                    for (final String single_url_m3u8 : single_url_m3u8s) {
+                        // System.out.println("single_url_m3u8: " + single_url_m3u8);
+                        if (single_url_m3u8.contains(quality)) {
+                            value = single_url_m3u8;
+                            System.out.println("value: " + value);
+                        }
+                    }
                 } else {
-                    continue;
+                    // continue;
                 }
                 if (StringUtils.isNotEmpty(value)) {
                     foundQualities.put(qualityID, value);
@@ -250,7 +267,7 @@ public class SpankBangCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*this video is (no longer available|private|under review)|>\\s*este vídeo já não está disponível") || !br.getURL().contains("/video");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*this video is (no longer available|private|under review)|>\\s*este vídeo já não está disponível|video_removed_page") || !br.getURL().contains("/video");
     }
 
     public static boolean isPrivate(final Browser br) {
@@ -280,7 +297,7 @@ public class SpankBangCom extends PluginForDecrypt {
     }
 
     /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     * JD2 CODE: DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS!!!!!
      */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;

@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -29,9 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
 public class SpankBangCom extends antiDDoSForHost {
@@ -88,7 +89,7 @@ public class SpankBangCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
-        if (dllink != null) {
+        if (dllink != null && !dllink.contains("m3u8")) {
             URLConnectionAdapter con = null;
             try {
                 // this request isn't behind cloudflare.
@@ -155,12 +156,18 @@ public class SpankBangCom extends antiDDoSForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.contains("m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
