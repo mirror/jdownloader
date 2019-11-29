@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,9 +37,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.(?:com|xxx|desi)/photos/(gallery/[0-9A-Za-z_\\-/]+(\\.html)?|view/[0-9A-Za-z_\\-/]+(\\.html)?)" })
 public class XHamsterGallery extends PluginForDecrypt {
     public XHamsterGallery(PluginWrapper wrapper) {
@@ -50,6 +50,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final String replace_string = new Regex(parameter, "(https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.(?:com|xxx|desi)/)").getMatch(0);
         parameter = parameter.replace(replace_string, "https://xhamster.com/");
         br.addAllowedResponseCodes(410);
+        br.addAllowedResponseCodes(423);
         br.addAllowedResponseCodes(452);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Login if possible
@@ -66,7 +67,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter, "Private gallery"));
             return decryptedLinks;
         }
-        if (br.containsHTML(">This gallery needs password<")) {
+        if (br.containsHTML(">This gallery (needs|requires) password<")) {
             boolean failed = true;
             for (int i = 1; i <= 3; i++) {
                 String passCode = getUserInput("Password?", param);
