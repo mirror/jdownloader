@@ -128,7 +128,7 @@ public class ProLeechLink extends antiDDoSForHost {
             }
         }
         /* Clear download history on every accountcheck (if selected by user) */
-        clearDownloadHistory();
+        clearDownloadHistory(true);
         return ai;
     }
 
@@ -294,7 +294,9 @@ public class ProLeechLink extends antiDDoSForHost {
         /* 2019-11-11: Login is not required to check previously generated directurls */
         // login(account, null, false);
         final String generatedDownloadURL = link.getStringProperty(getHost(), null);
-        String downloadURL = null;
+        String dllink = null;
+        /* We do not have to login to check previously generated downloadurls */
+        boolean isLoggedIN = false;
         if (generatedDownloadURL != null) {
             /*
              * 2019-11-11: Seems like generated downloadurls are only valid for some seconds after genration but let's try to re-use them
@@ -313,7 +315,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         logger.log(e);
                     }
                 } else {
-                    downloadURL = generatedDownloadURL;
+                    dllink = generatedDownloadURL;
                 }
             } catch (InterruptedException e) {
                 throw e;
@@ -321,70 +323,48 @@ public class ProLeechLink extends antiDDoSForHost {
                 logger.log(e);
             }
         }
-        if (downloadURL == null) {
-            logger.info("Trying to generate new downloadlink");
-            final long userDefinedWaitHours = this.getPluginConfig().getLongProperty("DOWNLOADLINK_GENERATION_LIMIT", 0);
-            final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
-            if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
-                final long waittime_until_next_downloadlink_generation_is_allowed = timestamp_next_downloadlink_generation_allowed - System.currentTimeMillis();
-                final String waittime_until_next_downloadlink_generation_is_allowed_Str = TimeFormatter.formatSeconds(waittime_until_next_downloadlink_generation_is_allowed / 1000, 0);
-                logger.info("Next downloadlink generation is allowed in: " + waittime_until_next_downloadlink_generation_is_allowed_Str);
-                /*
-                 * 2019-08-14: Set a small waittime here so links can be tried earlier again - so not set the long waittime
-                 * waittime_until_next_downloadlink_generation_is_allowed!
-                 */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
-            }
-            /* Login - first try without validating cookies! */
-            final boolean validatedCookies = login(account, null, false);
-            final PostRequest post = new PostRequest("https://" + this.getHost() + "/dl/debrid/deb_process.php");
-            post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-            post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-            post.put("urllist", URLEncoder.encode(url, "UTF-8"));
-            final String pass = link.getDownloadPassword();
-            if (StringUtils.isEmpty(pass)) {
-                post.put("pass", "");
-            } else {
-                post.put("pass", URLEncoder.encode(pass, "UTF-8"));
-            }
-            post.put("boxlinklist", "0");
-            sendRequest(post);
-            downloadURL = getDllink(link);
-            if (StringUtils.isEmpty(downloadURL) && !validatedCookies && !this.isLoggedin(this.br)) {
-                /* Bad login - try again with fresh / validated cookies! */
-                login(account, null, true);
-                sendRequest(post);
-                downloadURL = getDllink(link);
-            }
-            if (StringUtils.isEmpty(downloadURL)) {
-                final String errormessage = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*([^<>]+)").getMatch(0);
-                if (errormessage != null) {
-                    /* 2019-11-11: E.g. "Too many requests! Please try again in a few seconds." */
-                    logger.info("Found errormessage on website:");
-                    logger.info(errormessage);
+        if (dllink == null) {
+            logger.info("Trying to generate/find final downloadurl");
+            /* First, try to get downloadlinks for previously started cloud-downloads as this does not create new directurls */
+            dllink = getDllinkCloud(link, account);
+            if (dllink == null) {
+                final long userDefinedWaitHours = this.getPluginConfig().getLongProperty("DOWNLOADLINK_GENERATION_LIMIT", 0);
+                final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
+                if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
+                    final long waittime_until_next_downloadlink_generation_is_allowed = timestamp_next_downloadlink_generation_allowed - System.currentTimeMillis();
+                    final String waittime_until_next_downloadlink_generation_is_allowed_Str = TimeFormatter.formatSeconds(waittime_until_next_downloadlink_generation_is_allowed / 1000, 0);
+                    logger.info("Next downloadlink generation is allowed in: " + waittime_until_next_downloadlink_generation_is_allowed_Str);
+                    /*
+                     * 2019-08-14: Set a small waittime here so links can be tried earlier again - so not set the long waittime
+                     * waittime_until_next_downloadlink_generation_is_allowed!
+                     */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
                 }
-                if (br.containsHTML(">\\s*?No link entered\\.?\\s*<")) {
-                    mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
-                } else if (br.containsHTML(">\\s*Error getting the link from this account")) {
-                    mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
-                } else if (br.containsHTML(">\\s*Our account has reached traffic limit")) {
-                    mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
-                } else if (br.containsHTML(">\\s*This filehost is only enabled in")) {
-                    mhm.putError(account, link, 10 * 60 * 1000l, "This filehost is only available in premium mode");
-                } else if (br.containsHTML(">\\s*You can only generate this link during Happy Hours")) {
-                    /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
-                } else if (errormessage != null) {
-                    /* Unknown failure but let's display errormessage from website to user. */
-                    mhm.handleErrorGeneric(account, link, errormessage, 50, 2 * 60 * 1000l);
+                /* Login - first try without validating cookies! */
+                final boolean validatedCookies = login(account, null, false);
+                final PostRequest post = new PostRequest("https://" + this.getHost() + "/dl/debrid/deb_process.php");
+                post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+                post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+                post.put("urllist", URLEncoder.encode(url, "UTF-8"));
+                final String pass = link.getDownloadPassword();
+                if (StringUtils.isEmpty(pass)) {
+                    post.put("pass", "");
                 } else {
-                    /* Unknown failure and we failed to find an errormessage */
-                    mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
+                    post.put("pass", URLEncoder.encode(pass, "UTF-8"));
+                }
+                post.put("boxlinklist", "0");
+                sendRequest(post);
+                dllink = getDllink(link, account);
+                if (StringUtils.isEmpty(dllink) && !validatedCookies && !this.isLoggedin(this.br)) {
+                    /* Bad login - try again with fresh / validated cookies! */
+                    login(account, null, true);
+                    sendRequest(post);
+                    dllink = getDllink(link, account);
                 }
             }
             link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             final boolean isOkay = isDownloadConnection(dl.getConnection());
             if (!isOkay) {
                 try {
@@ -394,25 +374,41 @@ public class ProLeechLink extends antiDDoSForHost {
                 }
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
             }
+            /* Now we are definitely loggedIN */
+            isLoggedIN = true;
         }
-        link.setProperty(getHost(), downloadURL);
+        link.setProperty(getHost(), dllink);
         if (dl.startDownload()) {
-            clearDownloadHistory();
+            final String internal_filename = getInternalFilename(link);
+            if (internal_filename != null) {
+                deleteDownloadHistoryFilenameWhitelist.add(internal_filename);
+            } else {
+                /* Try this as fallback */
+                deleteDownloadHistoryFilenameWhitelist.add(link.getFinalFileName());
+            }
+            clearDownloadHistory(isLoggedIN);
         }
     }
 
-    private void clearDownloadHistory() {
+    private void clearDownloadHistory(final boolean isLoggedIN) {
         try {
-            if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", false)) {
+            /* Only clear download history if user wants it AND if we're logged-in! */
+            if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", false) && isLoggedIN) {
                 logger.info("Trying to delete download history");
                 /*
                  * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
                  */
                 br.getPage("https://" + this.getHost() + "/mydownloads");
                 final String[] cloudDownloadRows = getDownloadHistoryRows();
-                final ArrayList<String> deleted_filenames = new ArrayList<String>();
+                final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
+                /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
+                for (final String filenameToCheck : deleteDownloadHistoryFilenameWhitelist) {
+                    if (!br.toString().contains(filenameToCheck)) {
+                        filename_entries_to_delete.add(filenameToCheck);
+                    }
+                }
                 if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
-                    logger.info("Found " + cloudDownloadRows.length + " download_ids in history to delete");
+                    logger.info("Found " + cloudDownloadRows.length + " possible download_ids in history to delete");
                     String postData = "delete=Delete+selected";
                     int numberofDownloadIdsToDelete = 0;
                     for (final String cloudDownloadRow : cloudDownloadRows) {
@@ -423,10 +419,10 @@ public class ProLeechLink extends antiDDoSForHost {
                         }
                         final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
                         boolean deletionAllowed = false;
-                        for (final String allowedFilename : deleteDownloadHistoryFilenameWhitelist) {
-                            if (cloudDownloadRow.contains(allowedFilename)) {
+                        for (final String deletionAllowedFilename : deleteDownloadHistoryFilenameWhitelist) {
+                            if (cloudDownloadRow.contains(deletionAllowedFilename)) {
                                 deletionAllowed = true;
-                                deleted_filenames.add(allowedFilename);
+                                filename_entries_to_delete.add(deletionAllowedFilename);
                                 break;
                             }
                         }
@@ -442,15 +438,19 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                     if (numberofDownloadIdsToDelete == 0) {
                         /* This is unlikely but possible! */
-                        logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress");
+                        logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress or they were added via website or via another JD instance");
                     } else {
                         logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
                         br.postPage(br.getURL(), postData);
                         logger.info("Successfully cleared download history");
-                        /* Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. */
-                        for (final String deleted_filename : deleted_filenames) {
-                            deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
-                        }
+                    }
+                    /*
+                     * Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. And also elements
+                     * which do not exist at all in the website list e.g. automatically deleted or deleted by other user in case people
+                     * share accounts and download the same files.
+                     */
+                    for (final String deleted_filename : filename_entries_to_delete) {
+                        deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
                     }
                 }
             } else {
@@ -466,51 +466,117 @@ public class ProLeechLink extends antiDDoSForHost {
         return br.getRegex("<tr>\\s*<td><input[^>]*name=\"checkbox\\[\\]\"[^>]+>.*?</tr>").getColumn(-1);
     }
 
-    private String getDllink(final DownloadLink link) throws Exception {
+    private String getDllink(final DownloadLink link, final Account account) throws Exception {
         String dllink = br.getRegex("class=\"[^\"]*success\".*<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
         /*
          * We can only identify our cloud-download-item by filename so let's get the filename they display as it may differ from the
          * filename we know/expect which means this is the only identifier we can use!
          */
-        final String internal_filename = br.getRegex(">Transloading in progress.*?once completed\\!?</a>([^<>\"]+)</div>").getMatch(0);
-        /* TODO: 2019-11-28: Add check for forced cloud download hosts e.g. k2s. */
-        if (dllink == null && internal_filename != null) {
-            logger.info("Waiting for possible cloud-download to finish serverside");
-            /* Add filename to list to prevent delete-history handling from deleting it before we can download it. */
+        final String normal_download_internal_filename = br.getRegex("<a href=\"[^\"]+\"[^>]*?><b>([^<>\"]+)</a>").getMatch(0);
+        final String cloud_download_internal_filename = br.getRegex(">Transloading in progress.*?once completed\\!?</a>([^<>\"]+)</div>").getMatch(0);
+        if (dllink == null && cloud_download_internal_filename != null) {
+            logger.info("Enforced cloud download: Needs to finish serverside download before we can download it --> Checking one time whether it might already be downloadable");
+            link.setProperty("proleech_internal_filename", cloud_download_internal_filename);
+            /* Mark as cloud download so that getDllinkCloud can be used! */
+            link.setProperty("is_cloud_download", true);
             try {
-                final int max_tries = 100;
-                final long waittime_between_retry = 3000;
-                for (int i = 0; i < max_tries; i++) {
-                    logger.info("Attempting to find downloadurl for cloud-download : " + (i + 1) + " / " + max_tries);
-                    this.getPage("/mydownloads");
-                    final String[] downloadHistoryRows = getDownloadHistoryRows();
-                    if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
-                        logger.warning("Failed to find any download history objects");
-                        return null;
-                    }
-                    for (final String downloadHistoryRow : downloadHistoryRows) {
-                        if (downloadHistoryRow.contains(internal_filename)) {
-                            logger.info("Looks like we found the row containing our cloud-download");
-                            dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
-                            if (dllink != null) {
-                                logger.info("Successfully found downloadurl");
-                                break;
-                            } else {
-                                logger.info("Failed to find downloadurl");
-                                /* Continue! It can happen that there are multiple entries for the same filename! */
-                            }
-                        }
-                    }
-                    if (dllink != null) {
-                        break;
-                    }
-                    this.sleep(waittime_between_retry, link);
-                }
-            } finally {
-                deleteDownloadHistoryFilenameWhitelist.add(internal_filename);
+                dllink = getDllinkCloud(link, account);
+            } catch (final Throwable e) {
+            }
+            if (dllink == null) {
+                /**
+                 * TODO: If a cloud download gets stuck serverside, we might need a handling to force-delete old entries and fully re-add
+                 * them to the cloud downloader after a certain time ...
+                 */
+                logger.info("Unable to find downloadurl right away --> Waiting to retry later");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to proleech.link Cloud-downloader: Cloud download pending", 30 * 1000);
+            }
+        } else if (dllink != null && normal_download_internal_filename != null) {
+            link.setProperty("proleech_internal_filename", normal_download_internal_filename);
+        } else if (dllink != null && normal_download_internal_filename == null) {
+            logger.info("Failed to find internal_filename --> We will probably be unable to delete this file");
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            final String errormessage = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*([^<>]+)").getMatch(0);
+            if (errormessage != null) {
+                /* 2019-11-11: E.g. "Too many requests! Please try again in a few seconds." */
+                logger.info("Found errormessage on website:");
+                logger.info(errormessage);
+            }
+            if (br.containsHTML(">\\s*?No link entered\\.?\\s*<")) {
+                mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
+            } else if (br.containsHTML(">\\s*Error getting the link from this account")) {
+                mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
+            } else if (br.containsHTML(">\\s*Our account has reached traffic limit")) {
+                mhm.putError(account, link, 2 * 60 * 1000l, "Error getting the link from this account");
+            } else if (br.containsHTML(">\\s*This filehost is only enabled in")) {
+                mhm.putError(account, link, 10 * 60 * 1000l, "This filehost is only available in premium mode");
+            } else if (br.containsHTML(">\\s*You can only generate this link during Happy Hours")) {
+                /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
+            } else if (errormessage != null) {
+                /* Unknown failure but let's display errormessage from website to user. */
+                mhm.handleErrorGeneric(account, link, errormessage, 50, 2 * 60 * 1000l);
+            } else {
+                /* Unknown failure and we failed to find an errormessage */
+                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
             }
         }
         return dllink;
+    }
+
+    /**
+     * Tries to find final downloadurl for URLs which had to be first downloaded to the proleech cloud.
+     *
+     * @throws Exception
+     */
+    private String getDllinkCloud(final DownloadLink link, final Account account) throws Exception {
+        if (link == null) {
+            return null;
+        }
+        final boolean is_cloud_download = link.getBooleanProperty("is_cloud_download", false);
+        final String internal_filename = this.getInternalFilename(link);
+        String dllink = null;
+        if (internal_filename != null && is_cloud_download) {
+            logger.info("Checking for directurl of forced cloud download URL");
+            getPage("https://" + this.getHost() + "/mydownloads");
+            final boolean validatedCookies = login(account, null, false);
+            if (!validatedCookies && !this.isLoggedin(this.br)) {
+                /* Ensure that we're logged-in */
+                login(account, null, true);
+                getPage("/mydownloads");
+            }
+            try {
+                final String[] downloadHistoryRows = getDownloadHistoryRows();
+                if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
+                    logger.warning("Failed to find any download history objects");
+                    return null;
+                }
+                for (final String downloadHistoryRow : downloadHistoryRows) {
+                    if (downloadHistoryRow.contains(internal_filename)) {
+                        logger.info("Looks like we found the row containing our cloud-download");
+                        dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
+                        if (dllink != null) {
+                            logger.info("Successfully found final downloadurl");
+                            break;
+                        } else {
+                            logger.info("Failed to find final downloadurl");
+                            /* Continue! It can happen that there are multiple entries for the same filename! */
+                        }
+                    }
+                }
+            } finally {
+                if (dllink == null) {
+                    /* This could also be a plugin failure but let's hope that a final downloadurl will be available later! */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waitingproleech.link Cloud-downloader: Cloud download pending", 30 * 1000l);
+                }
+            }
+        }
+        return dllink;
+    }
+
+    private String getInternalFilename(final DownloadLink link) {
+        return link.getStringProperty("proleech_internal_filename", null);
     }
 
     private boolean isDownloadConnection(URLConnectionAdapter con) throws IOException {
