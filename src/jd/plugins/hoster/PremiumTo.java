@@ -53,12 +53,12 @@ import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:(?:t|z)/[a-z0-9]+/\\d+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:t/[a-z0-9]+/\\d+|z/[a-z0-9]+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
     private final String                   normalTraffic                   = "normalTraffic";
     private final String                   specialTraffic                  = "specialTraffic";
     private static final String            type_torrent                    = "https?://torrent.*?\\..+";
-    private static final String            type_torrent_file               = "https?://torrent.*?\\.[^/]+/(?:t|z)/([a-z0-9]+/\\d+)";
+    private static final String            type_torrent_file               = "https?://torrent.*?\\.[^/]+/(?:t|z)/(.+)";
     private static final String            type_torrent_remote             = "https?://torrent.*?\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
     private static final String            type_storage                    = "https?://storage\\..+";
     /* storage.premium.to --> Extract download URLs */
@@ -212,7 +212,7 @@ public class PremiumTo extends UseNet {
                     }
                     br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
                     try {
-                        this.handleErrorsAPI(account);
+                        this.handleErrorsAPI(account, false);
                         return true;
                     } catch (final Exception e) {
                         /* E.g. API logindata has changed */
@@ -282,7 +282,7 @@ public class PremiumTo extends UseNet {
         final String userid = this.getUserID(account);
         if (br.getURL() == null || !br.getURL().contains("traffic.php")) {
             br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
-            this.handleErrorsAPI(account);
+            this.handleErrorsAPI(account, false);
         }
         String additionalAccountStatus = "";
         /* Normal traffic */
@@ -466,7 +466,7 @@ public class PremiumTo extends UseNet {
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
             br.followConnection();
-            this.handleErrorsAPI(account);
+            this.handleErrorsAPI(account, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
@@ -513,7 +513,7 @@ public class PremiumTo extends UseNet {
                 }
                 /* Check if that URL has already been downloaded to their cloud. */
                 br.getPage(API_BASE_STORAGE + "/check.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url);
-                handleErrorsAPI(account);
+                handleErrorsAPI(account, false);
                 final String status = getStorageAPIStatus();
                 /* 2019-11-11: "Canceled" = URL has been added to Storage before but was deleted e.g. by user --> Add it again */
                 if ("Not in queue".equalsIgnoreCase(status) || "Canceled".equalsIgnoreCase(status)) {
@@ -571,7 +571,7 @@ public class PremiumTo extends UseNet {
                     mhm.handleErrorGeneric(account, link, "server_error_420", 2, 5 * 60 * 1000l);
                 }
                 br.followConnection();
-                this.handleErrorsAPI(account);
+                this.handleErrorsAPI(account, false);
                 logger.severe("PremiumTo Error");
                 /* 2019-10-24: TODO: Consider removing this old errorhandling code. All errors should be returned via json by now. */
                 if (br.containsHTML("File not found")) {
@@ -652,7 +652,7 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    private void handleErrorsAPI(final Account account) throws Exception {
+    private void handleErrorsAPI(final Account account, final boolean trust_error_404_as_file_not_found) throws Exception {
         int responsecode = 0;
         final String responsecodeStr = PluginJSonUtils.getJson(br, "code");
         if (!StringUtils.isEmpty(responsecodeStr) && responsecodeStr.matches("\\d+")) {
@@ -681,8 +681,12 @@ public class PremiumTo extends UseNet {
             /* Not enough traffic left */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         case 404:
-            /* 2019-10-30: We cannot trust this API errormessage */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404", 5 * 60 * 1000);
+            if (trust_error_404_as_file_not_found) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* 2019-10-30: We cannot trust this API errormessage */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404", 5 * 60 * 1000);
+            }
         case 405:
             /* Rare case: User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
             /* {"code":405,"message":"Too many files"} */
@@ -763,7 +767,7 @@ public class PremiumTo extends UseNet {
             if (con.getContentType().contains("html") || con.getContentType().contains("application/json")) {
                 br.followConnection();
                 /* We expect an API error */
-                this.handleErrorsAPI(account);
+                this.handleErrorsAPI(account, true);
                 return AvailableStatus.UNCHECKABLE;
             }
             long fileSize = con.getLongContentLength();
@@ -803,13 +807,14 @@ public class PremiumTo extends UseNet {
             final String userid = this.getUserID(account);
             final String[] ids = new Regex(link.getPluginPatternMatcher(), type_torrent_file).getMatch(0).split("/");
             final String torrentID = ids[0];
-            final String fileID = ids[1];
+            /* 2019-12-01: Replaces static usage of API_BASE_TORRENT to e.g. allow torrent2.premium.to */
             final String api_host = new Regex(link.getPluginPatternMatcher(), "https?://([^/]+)/").getMatch(0);
             if (link.getPluginPatternMatcher().matches("https?://torrent\\.[^/]+/z/.+")) {
-                /* zip file (one file which contains all files of one particular .torrent download) */
-                dllink = "https://" + api_host + "/api/2/getzip.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
+                /* zip file --> One file contains all files of one particular .torrent download */
+                dllink = "https://" + api_host + "/api/2/getzip.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID;
             } else {
                 /* Other filetype */
+                final String fileID = ids[1];
                 dllink = "https://" + api_host + "/api/2/getfile.php?userid=" + userid + "&apikey=" + apikey + "&torrent=" + torrentID + "&file=" + fileID;
             }
         } else {
