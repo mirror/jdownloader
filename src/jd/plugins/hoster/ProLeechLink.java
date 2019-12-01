@@ -323,11 +323,19 @@ public class ProLeechLink extends antiDDoSForHost {
                 logger.log(e);
             }
         }
+        /*
+         * TODO: Check if we need this to reset properties to force generation of new downloadurls to prevent infinite loops! Serverside
+         * Cloud-download entries may as well link to non-working final downloadurls!
+         */
+        final boolean is_forced_cloud_download = this.isForcedCloudDownload(link);
+        boolean found_downloadurl_in_cloud_downloads = false;
         if (dllink == null) {
             logger.info("Trying to generate/find final downloadurl");
             /* First, try to get downloadlinks for previously started cloud-downloads as this does not create new directurls */
             dllink = getDllinkCloud(link, account);
-            if (dllink == null) {
+            if (dllink != null) {
+                found_downloadurl_in_cloud_downloads = true;
+            } else {
                 final long userDefinedWaitHours = this.getPluginConfig().getLongProperty("DOWNLOADLINK_GENERATION_LIMIT", 0);
                 final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
                 if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
@@ -365,26 +373,31 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            final boolean isOkay = isDownloadConnection(dl.getConnection());
-            if (!isOkay) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
-            }
-            /* Now we are definitely loggedIN */
-            isLoggedIN = true;
         }
+        final String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
+        final boolean isOkay = isDownloadConnection(dl.getConnection());
+        if (!isOkay) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
+        }
+        /* Now we are definitely loggedIN */
+        isLoggedIN = true;
         link.setProperty(getHost(), dllink);
+        /*
+         * TODO: Make sure that non-forced cloud downloads will not end up in an infinite loop of trying broken final downloadurls obtained
+         * via serverside stored cloud downloads list!
+         */
         if (dl.startDownload()) {
             final String internal_filename = getInternalFilename(link);
             if (internal_filename != null) {
                 deleteDownloadHistoryFilenameWhitelist.add(internal_filename);
-            } else {
+            } else if (!StringUtils.isEmpty(server_filename)) {
                 /* Try this as fallback */
-                deleteDownloadHistoryFilenameWhitelist.add(link.getFinalFileName());
+                deleteDownloadHistoryFilenameWhitelist.add(server_filename);
             }
             clearDownloadHistory(isLoggedIN);
         }
@@ -398,7 +411,10 @@ public class ProLeechLink extends antiDDoSForHost {
                 /*
                  * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
                  */
-                br.getPage("https://" + this.getHost() + "/mydownloads");
+                if (br.getURL() == null || !br.getURL().contains("/mydownloads")) {
+                    /* Only access this URL if it has not been accessed before! */
+                    br.getPage("https://" + this.getHost() + "/mydownloads");
+                }
                 final String[] cloudDownloadRows = getDownloadHistoryRows();
                 final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
                 /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
@@ -473,7 +489,11 @@ public class ProLeechLink extends antiDDoSForHost {
          * filename we know/expect which means this is the only identifier we can use!
          */
         final String normal_download_internal_filename = br.getRegex("<a href=\"[^\"]+\"[^>]*?><b>([^<>\"]+)</a>").getMatch(0);
-        final String cloud_download_internal_filename = br.getRegex(">Transloading in progress.*?once completed\\!?</a>([^<>\"]+)</div>").getMatch(0);
+        String cloud_download_internal_filename = br.getRegex(">Transloading in progress.*?once completed\\!?</a>([^<>\"]+)</div>").getMatch(0);
+        if (cloud_download_internal_filename == null) {
+            /* 2019-12-01: 2nd version */
+            cloud_download_internal_filename = br.getRegex(">Transloading in progress.*?once completed\\!?</a>\\s+<b>([^<>\"]*?)\\s*\\(<font color").getMatch(0);
+        }
         if (dllink == null && cloud_download_internal_filename != null) {
             logger.info("Enforced cloud download: Needs to finish serverside download before we can download it --> Checking one time whether it might already be downloadable");
             link.setProperty("proleech_internal_filename", cloud_download_internal_filename);
@@ -481,7 +501,7 @@ public class ProLeechLink extends antiDDoSForHost {
             link.setProperty("is_cloud_download", true);
             try {
                 dllink = getDllinkCloud(link, account);
-            } catch (final Throwable e) {
+            } catch (final PluginException e) {
             }
             if (dllink == null) {
                 /**
@@ -497,11 +517,11 @@ public class ProLeechLink extends antiDDoSForHost {
             logger.info("Failed to find internal_filename --> We will probably be unable to delete this file");
         }
         if (StringUtils.isEmpty(dllink)) {
-            final String errormessage = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*([^<>]+)").getMatch(0);
-            if (errormessage != null) {
+            final String website_errormessage = br.getRegex("class=\"[^\"]*danger\".*?<b>\\s*([^<>]+)").getMatch(0);
+            if (website_errormessage != null) {
                 /* 2019-11-11: E.g. "Too many requests! Please try again in a few seconds." */
                 logger.info("Found errormessage on website:");
-                logger.info(errormessage);
+                logger.info(website_errormessage);
             }
             if (br.containsHTML(">\\s*?No link entered\\.?\\s*<")) {
                 mhm.handleErrorGeneric(account, link, "no_link_entered", 50, 2 * 60 * 1000l);
@@ -514,9 +534,10 @@ public class ProLeechLink extends antiDDoSForHost {
             } else if (br.containsHTML(">\\s*You can only generate this link during Happy Hours")) {
                 /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
-            } else if (errormessage != null) {
+            } else if (website_errormessage != null) {
                 /* Unknown failure but let's display errormessage from website to user. */
-                mhm.handleErrorGeneric(account, link, errormessage, 50, 2 * 60 * 1000l);
+                // mhm.handleErrorGeneric(account, link, website_errormessage, 50, 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, website_errormessage, 5 * 60 * 1000l);
             } else {
                 /* Unknown failure and we failed to find an errormessage */
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 2 * 60 * 1000l);
@@ -526,7 +547,8 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     /**
-     * Tries to find final downloadurl for URLs which had to be first downloaded to the proleech cloud.
+     * Tries to find final downloadurl for URLs which either had to be first downloaded to the proleech cloud or which were attempted to
+     * download before and are still in the cloud.
      *
      * @throws Exception
      */
@@ -534,11 +556,15 @@ public class ProLeechLink extends antiDDoSForHost {
         if (link == null) {
             return null;
         }
-        final boolean is_cloud_download = link.getBooleanProperty("is_cloud_download", false);
+        final boolean is_forced_cloud_download = this.isForcedCloudDownload(link);
         final String internal_filename = this.getInternalFilename(link);
         String dllink = null;
-        if (internal_filename != null && is_cloud_download) {
-            logger.info("Checking for directurl of forced cloud download URL");
+        if (internal_filename != null || is_forced_cloud_download) {
+            if (is_forced_cloud_download) {
+                logger.info("Checking for directurl of forced cloud download URL");
+            } else {
+                logger.info("Checking for directurl of NON-forced cloud download URL");
+            }
             getPage("https://" + this.getHost() + "/mydownloads");
             final boolean validatedCookies = login(account, null, false);
             if (!validatedCookies && !this.isLoggedin(this.br)) {
@@ -546,21 +572,25 @@ public class ProLeechLink extends antiDDoSForHost {
                 login(account, null, true);
                 getPage("/mydownloads");
             }
+            boolean foundDownloadHistoryRow = false;
+            String cloud_download_progress = null;
             try {
                 final String[] downloadHistoryRows = getDownloadHistoryRows();
                 if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
-                    logger.warning("Failed to find any download history objects");
+                    logger.warning("Failed to find any download history objects --> Possible plugin failure");
                     return null;
                 }
                 for (final String downloadHistoryRow : downloadHistoryRows) {
                     if (downloadHistoryRow.contains(internal_filename)) {
                         logger.info("Looks like we found the row containing our cloud-download");
+                        foundDownloadHistoryRow = true;
                         dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
                         if (dllink != null) {
                             logger.info("Successfully found final downloadurl");
                             break;
                         } else {
                             logger.info("Failed to find final downloadurl");
+                            cloud_download_progress = new Regex(downloadHistoryRow, "Transfering (\\d{1,3}\\.\\d{1,2})\\s*?\\%").getMatch(0);
                             /* Continue! It can happen that there are multiple entries for the same filename! */
                         }
                     }
@@ -568,11 +598,26 @@ public class ProLeechLink extends antiDDoSForHost {
             } finally {
                 if (dllink == null) {
                     /* This could also be a plugin failure but let's hope that a final downloadurl will be available later! */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waitingproleech.link Cloud-downloader: Cloud download pending", 30 * 1000l);
+                    if (!foundDownloadHistoryRow) {
+                        logger.info("Failed to find download history row --> Removing filename property to perform a full retry next time");
+                        link.removeProperty("proleech_internal_filename");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Proleech.link Cloud-downloader: Cloud download failed(?) re-trying next time", 30 * 1000l);
+                    } else {
+                        logger.info("Failed to find downloadurel for forced cloud download --> Serverside download is probably still running");
+                        String error_text = "Proleech.link Cloud-downloader: Cloud download pending";
+                        if (!StringUtils.isEmpty(cloud_download_progress)) {
+                            error_text = "[" + cloud_download_progress + "%] " + error_text;
+                        }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error_text, 15 * 1000l);
+                    }
                 }
             }
         }
         return dllink;
+    }
+
+    private boolean isForcedCloudDownload(final DownloadLink link) {
+        return link.getBooleanProperty("is_cloud_download", false);
     }
 
     private String getInternalFilename(final DownloadLink link) {
