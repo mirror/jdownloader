@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -403,6 +404,7 @@ public class ProLeechLink extends antiDDoSForHost {
         }
     }
 
+    /** Deletes entries from serverside download history if: File is successfully downloaded, file is olde than X days */
     private void clearDownloadHistory(final boolean isLoggedIN) {
         try {
             /* Only clear download history if user wants it AND if we're logged-in! */
@@ -433,21 +435,39 @@ public class ProLeechLink extends antiDDoSForHost {
                             /* Skip invalid entries */
                             continue;
                         }
+                        final String date_when_entry_was_addedStr = new Regex(cloudDownloadRow, ">\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
+                        final long delete_after_x_days = 1;
+                        boolean isOldEntry = false;
                         final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
-                        boolean deletionAllowed = false;
+                        boolean deletionAllowedByFilename = false;
+                        String filename_of_current_entry = null;
                         for (final String deletionAllowedFilename : deleteDownloadHistoryFilenameWhitelist) {
                             if (cloudDownloadRow.contains(deletionAllowedFilename)) {
-                                deletionAllowed = true;
+                                deletionAllowedByFilename = true;
+                                filename_of_current_entry = deletionAllowedFilename;
                                 filename_entries_to_delete.add(deletionAllowedFilename);
                                 break;
+                            }
+                        }
+                        if (date_when_entry_was_addedStr != null) {
+                            final long current_time = getCurrentServerTime(br, System.currentTimeMillis());
+                            final long date_when_entry_was_added = TimeFormatter.getMilliSeconds(date_when_entry_was_addedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                            final long time_passed = current_time - date_when_entry_was_added;
+                            if (time_passed > delete_after_x_days * 24 * 60 * 60 * 1000l) {
+                                isOldEntry = true;
                             }
                         }
                         if (isStillDownloadingToCloud) {
                             logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
                             continue;
-                        } else if (!deletionAllowed) {
-                            logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion: " + download_id);
+                        } else if (!deletionAllowedByFilename && !isOldEntry) {
+                            logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion and it is not old enough: " + download_id);
                             continue;
+                        }
+                        if (isOldEntry) {
+                            logger.info("Deleting the following entry as it is older than " + delete_after_x_days + " days: " + download_id);
+                        } else {
+                            logger.info("Deleting the following entry as deletion is allowed by filename: " + download_id + " | " + filename_of_current_entry);
                         }
                         postData += "&checkbox%5B%5D=" + download_id;
                         numberofDownloadIdsToDelete++;
@@ -476,6 +496,33 @@ public class ProLeechLink extends antiDDoSForHost {
             e.printStackTrace();
             logger.info("Error occured in delete-download-history handling");
         }
+    }
+
+    private long getCurrentServerTime(final Browser br, final long fallback) {
+        return getCurrentServerTime(br, "EEE, dd MMM yyyy HH:mm:ss z", fallback);
+    }
+
+    private long getCurrentServerTime(final Browser br, final String formatter, final long fallback_time) {
+        long serverTime = -1;
+        if (br != null && br.getHttpConnection() != null) {
+            // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
+            final String dateString = br.getHttpConnection().getHeaderField("Date");
+            if (dateString != null) {
+                if (StringUtils.isNotEmpty(formatter) && dateString.matches("[A-Za-z]+, \\d{1,2} [A-Za-z]+ \\d{4} \\d{1,2}:\\d{1,2}:\\d{1,2} [A-Z]+")) {
+                    serverTime = TimeFormatter.getMilliSeconds(dateString, formatter, Locale.ENGLISH);
+                } else {
+                    final Date date = TimeFormatter.parseDateString(dateString);
+                    if (date != null) {
+                        serverTime = date.getTime();
+                    }
+                }
+            }
+        }
+        if (serverTime == -1) {
+            /* Fallback */
+            serverTime = fallback_time;
+        }
+        return serverTime;
     }
 
     private String[] getDownloadHistoryRows() {
@@ -658,7 +705,7 @@ public class ProLeechLink extends antiDDoSForHost {
     private void setConfigElements() {
         /* Crawler settings */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "DOWNLOADLINK_GENERATION_LIMIT", "Allow new downloadlink generation every X hours (default = 0 = unlimited/disabled)\r\nThis can save traffic but this can also slow down the download process", 0, 72, 1).setDefaultValue(0));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", "Delete download history after every successful download and on every account-check(~ every 30 minutes, only files added via JDownloader)?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", "Delete download history after every successful download and on every account check (all successfully downloaded entries & all older than 24 hours)?").setDefaultValue(false));
     }
 
     @Override
