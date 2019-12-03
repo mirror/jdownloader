@@ -425,6 +425,9 @@ public class EHentaiOrg extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
                 }
+            } else if (br.getURL().contains("bounce_login.php")) {
+                /* Account required / re-login required */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account / Re-login required", 1 * 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (requiresAccount(dl.getConnection().getURL().toString()) || (dl.getConnection().getCompleteContentLength() > 0 && dl.getConnection().getLongContentLength() < minimal_filesize)) {
