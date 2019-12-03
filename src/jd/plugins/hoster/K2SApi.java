@@ -373,7 +373,8 @@ public abstract class K2SApi extends PluginForHost {
         final String available_traffic = PluginJSonUtils.getJsonValue(br, "available_traffic");
         /*
          * 2019-11-26: Expired premium accounts will have their old expire-date given thus we'll have to check for that before setting
-         * expire-date or such free accounts cannot be used!
+         * expire-date or such free accounts cannot be used! For Free Accounts which have never bought any premium package, this will be
+         * returned instead: "account_expires":false
          */
         final String account_expiresStr = PluginJSonUtils.getJsonValue(br, "account_expires");
         long account_expires_timestamp = 0;
@@ -381,6 +382,13 @@ public abstract class K2SApi extends PluginForHost {
             account_expires_timestamp = Long.parseLong(account_expiresStr) * 1000l;
         }
         if (account_expires_timestamp < System.currentTimeMillis()) {
+            /* 2019-11-26: Free Accounts are supposed to get 100 KB/s downloadspeed but at least via API this did not work for me. */
+            /*
+             * 2019-12-03: Free Account limits are basically the same as via browser. API will return 10GB traffic for free accounts but
+             * after 1-2 downloads, users will get a IP_BLOCKED waittime of 60+ minutes. With a new IP, traffic of the free account will
+             * reset to 10GB and more downloads are possible. However, often users will have to enter a login-captcha when logging in the
+             * same account with a new IP!
+             */
             account.setType(AccountType.FREE);
             if (account_expires_timestamp > 0) {
                 /* Account was once a premium account */
@@ -389,7 +397,6 @@ public abstract class K2SApi extends PluginForHost {
                 /* Account has always been a free account - user never bought any premium packages */
                 ai.setStatus("Free Account");
             }
-            /* 2019-11-26: Free Accounts are supposed to get 100 KB/s downloadspeed but at least via API this did not work for me. */
         } else {
             account.setType(AccountType.PREMIUM);
             if (!inValidate(account_expiresStr)) {
