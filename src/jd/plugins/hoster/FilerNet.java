@@ -15,6 +15,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,11 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
     private static Object       LOCK                                         = new Object();
     private int                 statusCode                                   = 0;
@@ -69,11 +69,11 @@ public class FilerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://filer.net/get/" + getFileID(link));
+        link.setUrlDownload("https://" + this.getHost() + "/get/" + getFileID(link));
     }
 
     private final String getFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override

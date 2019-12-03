@@ -129,7 +129,7 @@ public class ProLeechLink extends antiDDoSForHost {
             }
         }
         /* Clear download history on every accountcheck (if selected by user) */
-        clearDownloadHistory(true);
+        clearDownloadHistory(account, true);
         return ai;
     }
 
@@ -333,6 +333,7 @@ public class ProLeechLink extends antiDDoSForHost {
         if (dllink == null) {
             logger.info("Trying to generate/find final downloadurl");
             /* First, try to get downloadlinks for previously started cloud-downloads as this does not create new directurls */
+            /* TODO: Try to grab previously generated direct-downloadurls for non-forced-cloud-downloads too */
             dllink = getDllinkCloud(link, account);
             if (dllink != null) {
                 found_downloadurl_in_cloud_downloads = true;
@@ -374,6 +375,8 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            /* Now we are definitely loggedIN */
+            isLoggedIN = true;
         }
         final String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
         final boolean isOkay = isDownloadConnection(dl.getConnection());
@@ -385,8 +388,6 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
         }
-        /* Now we are definitely loggedIN */
-        isLoggedIN = true;
         link.setProperty(getHost(), dllink);
         /*
          * TODO: Make sure that non-forced cloud downloads will not end up in an infinite loop of trying broken final downloadurls obtained
@@ -400,101 +401,104 @@ public class ProLeechLink extends antiDDoSForHost {
                 /* Try this as fallback */
                 deleteDownloadHistoryFilenameWhitelist.add(server_filename);
             }
-            clearDownloadHistory(isLoggedIN);
+            clearDownloadHistory(account, isLoggedIN);
         }
     }
 
     /** Deletes entries from serverside download history if: File is successfully downloaded, file is olde than X days */
-    private void clearDownloadHistory(final boolean isLoggedIN) {
-        try {
-            /* Only clear download history if user wants it AND if we're logged-in! */
-            if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", false) && isLoggedIN) {
-                logger.info("Trying to delete download history");
-                /*
-                 * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a captcha!
-                 */
-                if (br.getURL() == null || !br.getURL().contains("/mydownloads")) {
-                    /* Only access this URL if it has not been accessed before! */
-                    br.getPage("https://" + this.getHost() + "/mydownloads");
-                }
-                final String[] cloudDownloadRows = getDownloadHistoryRows();
-                final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
-                /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
-                for (final String filenameToCheck : deleteDownloadHistoryFilenameWhitelist) {
-                    if (!br.toString().contains(filenameToCheck)) {
-                        filename_entries_to_delete.add(filenameToCheck);
-                    }
-                }
-                if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
-                    logger.info("Found " + cloudDownloadRows.length + " possible download_ids in history to delete");
-                    String postData = "delete=Delete+selected";
-                    int numberofDownloadIdsToDelete = 0;
-                    for (final String cloudDownloadRow : cloudDownloadRows) {
-                        final String download_id = new Regex(cloudDownloadRow, "id=\"checkbox\\[\\]\" value=\"(\\d+)\"").getMatch(0);
-                        if (download_id == null) {
-                            /* Skip invalid entries */
-                            continue;
-                        }
-                        final String date_when_entry_was_addedStr = new Regex(cloudDownloadRow, ">\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
-                        final long delete_after_x_days = 1;
-                        boolean isOldEntry = false;
-                        final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
-                        boolean deletionAllowedByFilename = false;
-                        String filename_of_current_entry = null;
-                        for (final String deletionAllowedFilename : deleteDownloadHistoryFilenameWhitelist) {
-                            if (cloudDownloadRow.contains(deletionAllowedFilename)) {
-                                deletionAllowedByFilename = true;
-                                filename_of_current_entry = deletionAllowedFilename;
-                                filename_entries_to_delete.add(deletionAllowedFilename);
-                                break;
-                            }
-                        }
-                        if (date_when_entry_was_addedStr != null) {
-                            final long current_time = getCurrentServerTime(br, System.currentTimeMillis());
-                            final long date_when_entry_was_added = TimeFormatter.getMilliSeconds(date_when_entry_was_addedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-                            final long time_passed = current_time - date_when_entry_was_added;
-                            if (time_passed > delete_after_x_days * 24 * 60 * 60 * 1000l) {
-                                isOldEntry = true;
-                            }
-                        }
-                        if (isStillDownloadingToCloud) {
-                            logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
-                            continue;
-                        } else if (!deletionAllowedByFilename && !isOldEntry) {
-                            logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion and it is not old enough: " + download_id);
-                            continue;
-                        }
-                        if (isOldEntry) {
-                            logger.info("Deleting the following entry as it is older than " + delete_after_x_days + " days: " + download_id);
-                        } else {
-                            logger.info("Deleting the following entry as deletion is allowed by filename: " + download_id + " | " + filename_of_current_entry);
-                        }
-                        postData += "&checkbox%5B%5D=" + download_id;
-                        numberofDownloadIdsToDelete++;
-                    }
-                    if (numberofDownloadIdsToDelete == 0) {
-                        /* This is unlikely but possible! */
-                        logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress or they were added via website or via another JD instance");
-                    } else {
-                        logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
-                        br.postPage(br.getURL(), postData);
-                        logger.info("Successfully cleared download history");
-                    }
+    private void clearDownloadHistory(final Account account, final boolean isLoggedIN) {
+        synchronized (account) {
+            try {
+                /* Only clear download history if user wants it AND if we're logged-in! */
+                if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", false) && isLoggedIN) {
+                    logger.info("Trying to delete download history");
                     /*
-                     * Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. And also elements
-                     * which do not exist at all in the website list e.g. automatically deleted or deleted by other user in case people
-                     * share accounts and download the same files.
+                     * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a
+                     * captcha!
                      */
-                    for (final String deleted_filename : filename_entries_to_delete) {
-                        deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
+                    if (br.getURL() == null || !br.getURL().contains("/mydownloads")) {
+                        /* Only access this URL if it has not been accessed before! */
+                        br.getPage("https://" + this.getHost() + "/mydownloads");
                     }
+                    final String[] cloudDownloadRows = getDownloadHistoryRows();
+                    final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
+                    /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
+                    for (final String filenameToCheck : deleteDownloadHistoryFilenameWhitelist) {
+                        if (!br.toString().contains(filenameToCheck)) {
+                            filename_entries_to_delete.add(filenameToCheck);
+                        }
+                    }
+                    if (cloudDownloadRows != null && cloudDownloadRows.length > 0) {
+                        logger.info("Found " + cloudDownloadRows.length + " possible download_ids in history to delete");
+                        String postData = "delete=Delete+selected";
+                        int numberofDownloadIdsToDelete = 0;
+                        for (final String cloudDownloadRow : cloudDownloadRows) {
+                            final String download_id = new Regex(cloudDownloadRow, "id=\"checkbox\\[\\]\" value=\"(\\d+)\"").getMatch(0);
+                            if (download_id == null) {
+                                /* Skip invalid entries */
+                                continue;
+                            }
+                            final String date_when_entry_was_addedStr = new Regex(cloudDownloadRow, ">\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
+                            final long delete_after_x_days = 1;
+                            boolean isOldEntry = false;
+                            final boolean isStillDownloadingToCloud = new Regex(cloudDownloadRow, "Transfering \\d{1,3}\\.\\d{1,2} ").matches();
+                            boolean deletionAllowedByFilename = false;
+                            String filename_of_current_entry = null;
+                            for (final String deletionAllowedFilename : deleteDownloadHistoryFilenameWhitelist) {
+                                if (cloudDownloadRow.contains(deletionAllowedFilename)) {
+                                    deletionAllowedByFilename = true;
+                                    filename_of_current_entry = deletionAllowedFilename;
+                                    filename_entries_to_delete.add(deletionAllowedFilename);
+                                    break;
+                                }
+                            }
+                            if (date_when_entry_was_addedStr != null) {
+                                final long current_time = getCurrentServerTime(br, System.currentTimeMillis());
+                                final long date_when_entry_was_added = TimeFormatter.getMilliSeconds(date_when_entry_was_addedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                                final long time_passed = current_time - date_when_entry_was_added;
+                                if (time_passed > delete_after_x_days * 24 * 60 * 60 * 1000l) {
+                                    isOldEntry = true;
+                                }
+                            }
+                            if (isStillDownloadingToCloud) {
+                                logger.info("NOT deleting the following download_id because cloud download is still in progress: " + download_id);
+                                continue;
+                            } else if (!deletionAllowedByFilename && !isOldEntry) {
+                                logger.info("NOT deleting the following download_id because its' filename is not allowed for deletion and it is not old enough: " + download_id);
+                                continue;
+                            }
+                            if (isOldEntry) {
+                                logger.info("Deleting the following entry as it is older than " + delete_after_x_days + " days: " + download_id);
+                            } else {
+                                logger.info("Deleting the following entry as deletion is allowed by filename: " + download_id + " | " + filename_of_current_entry);
+                            }
+                            postData += "&checkbox%5B%5D=" + download_id;
+                            numberofDownloadIdsToDelete++;
+                        }
+                        if (numberofDownloadIdsToDelete == 0) {
+                            /* This is unlikely but possible! */
+                            logger.info("Found no download_ids to delete --> Probably all existing download_ids are download_ids with serverside cloud download in progress or they were added via website or via another JD instance and are not yet old enough to get deleted");
+                        } else {
+                            logger.info("Deleting " + numberofDownloadIdsToDelete + " of " + cloudDownloadRows.length + " download_ids");
+                            br.postPage(br.getURL(), postData);
+                            logger.info("Successfully cleared download history");
+                        }
+                        /*
+                         * Cleanup deleteDownloadHistoryFilenameWhitelist - remove supposedly deleted elements from that list. And also
+                         * elements which do not exist at all in the website list e.g. automatically deleted or deleted by other user in
+                         * case people share accounts and download the same files.
+                         */
+                        for (final String deleted_filename : filename_entries_to_delete) {
+                            deleteDownloadHistoryFilenameWhitelist.remove(deleted_filename);
+                        }
+                    }
+                } else {
+                    logger.info("Not deleting download history - used has disabled this setting");
                 }
-            } else {
-                logger.info("Not deleting download history - used has disabled this setting");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                logger.info("Error occured in delete-download-history handling");
             }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-            logger.info("Error occured in delete-download-history handling");
         }
     }
 
@@ -605,62 +609,66 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         final boolean is_forced_cloud_download = this.isForcedCloudDownload(link);
         final String internal_filename = this.getInternalFilename(link);
-        String dllink = null;
         if (internal_filename != null || is_forced_cloud_download) {
             if (is_forced_cloud_download) {
                 logger.info("Checking for directurl of forced cloud download URL");
             } else {
                 logger.info("Checking for directurl of NON-forced cloud download URL");
             }
-            getPage("https://" + this.getHost() + "/mydownloads");
             final boolean validatedCookies = login(account, null, false);
+            getPage("https://" + this.getHost() + "/mydownloads");
             if (!validatedCookies && !this.isLoggedin(this.br)) {
                 /* Ensure that we're logged-in */
                 login(account, null, true);
                 getPage("/mydownloads");
             }
+            final String errortext_basic = "Proleech.link Cloud-downloader:";
             boolean foundDownloadHistoryRow = false;
             String cloud_download_progress = null;
-            try {
-                final String[] downloadHistoryRows = getDownloadHistoryRows();
-                if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
-                    logger.warning("Failed to find any download history objects --> Possible plugin failure");
-                    return null;
+            String dllink = null;
+            final String[] downloadHistoryRows = getDownloadHistoryRows();
+            if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
+                logger.warning("Failed to find any download history objects --> Possible plugin failure");
+                if (is_forced_cloud_download) {
+                    logger.info("Failed to find any information about pending cloud download");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext_basic + " Failed to find any information about pending cloud download", 30 * 1000l);
                 }
-                for (final String downloadHistoryRow : downloadHistoryRows) {
-                    if (downloadHistoryRow.contains(internal_filename)) {
-                        logger.info("Looks like we found the row containing our cloud-download");
-                        foundDownloadHistoryRow = true;
-                        dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
-                        if (dllink != null) {
-                            logger.info("Successfully found final downloadurl");
-                            break;
-                        } else {
-                            logger.info("Failed to find final downloadurl");
-                            cloud_download_progress = new Regex(downloadHistoryRow, "Transfering (\\d{1,3}\\.\\d{1,2})\\s*?\\%").getMatch(0);
-                            /* Continue! It can happen that there are multiple entries for the same filename! */
-                        }
-                    }
-                }
-            } finally {
-                if (dllink == null) {
-                    /* This could also be a plugin failure but let's hope that a final downloadurl will be available later! */
-                    if (!foundDownloadHistoryRow) {
-                        logger.info("Failed to find download history row --> Removing filename property to perform a full retry next time");
-                        link.removeProperty("proleech_internal_filename");
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Proleech.link Cloud-downloader: Cloud download failed(?) re-trying next time", 30 * 1000l);
+                /* No forced cloud download --> Continue so maybe upper handling will re-add downloadurl to list */
+                return null;
+            }
+            for (final String downloadHistoryRow : downloadHistoryRows) {
+                if (downloadHistoryRow.contains(internal_filename)) {
+                    logger.info("Looks like we found the row containing our cloud-download");
+                    foundDownloadHistoryRow = true;
+                    dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
+                    if (dllink != null) {
+                        logger.info("Successfully found final downloadurl");
+                        return dllink;
                     } else {
-                        logger.info("Failed to find downloadurel for forced cloud download --> Serverside download is probably still running");
-                        String error_text = "Proleech.link Cloud-downloader: Cloud download pending";
-                        if (!StringUtils.isEmpty(cloud_download_progress)) {
-                            error_text = "[" + cloud_download_progress + "%] " + error_text;
-                        }
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error_text, 15 * 1000l);
+                        logger.info("Failed to find final downloadurl");
+                        cloud_download_progress = new Regex(downloadHistoryRow, "Transfering (\\d{1,3}\\.\\d{1,2})\\s*?\\%").getMatch(0);
+                        /* Continue! It can happen that there are multiple entries for the same filename! */
                     }
                 }
             }
+            if (dllink == null && is_forced_cloud_download) {
+                /* This could also be a plugin failure but let's hope that a final downloadurl will be available later! */
+                if (!foundDownloadHistoryRow) {
+                    logger.info("Failed to find download history row");
+                    /* TODO: Maybe remove this property to perform a full retry next time */
+                    // link.removeProperty("proleech_internal_filename");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext_basic + " Failed to find cloud download information", 30 * 1000l);
+                } else {
+                    logger.info("Failed to find downloadurl for forced cloud download --> Serverside download is probably still running");
+                    String error_text = errortext_basic + " Cloud download pending(?)";
+                    if (!StringUtils.isEmpty(cloud_download_progress)) {
+                        error_text = "[" + cloud_download_progress + "%] " + error_text;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error_text, 15 * 1000l);
+                }
+            }
         }
-        return dllink;
+        return null;
     }
 
     private boolean isForcedCloudDownload(final DownloadLink link) {
