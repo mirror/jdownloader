@@ -640,7 +640,13 @@ public class ProLeechLink extends antiDDoSForHost {
                 if (downloadHistoryRow.contains(internal_filename)) {
                     logger.info("Looks like we found the row containing our cloud-download");
                     foundDownloadHistoryRow = true;
+                    /* RegEx for cloud-forced-downloads ("Save To Cloud" column) */
                     dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/download/[^<>\"]+)\"").getMatch(0);
+                    /* TODO: Add proper errorhandling for broken final downloadurls, then enable this. */
+                    // if (dllink == null) {
+                    // /* RegEx for non-cloud-forced-downloads ("Direct link" column) */
+                    // dllink = new Regex(downloadHistoryRow, "<a href=\"(https?://[^/]+/d\\d+/[^<>\"]+)\"><u>Download</u>").getMatch(0);
+                    // }
                     if (dllink != null) {
                         logger.info("Successfully found final downloadurl");
                         return dllink;
