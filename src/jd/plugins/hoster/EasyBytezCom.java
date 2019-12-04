@@ -166,12 +166,12 @@ public class EasyBytezCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override

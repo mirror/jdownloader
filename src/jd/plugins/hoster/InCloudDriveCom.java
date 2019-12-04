@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,10 +40,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(?:#/)?((?:file_download|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?|file/[0-9a-zA-Z=_-]+/[^/]+))" })
-public class InCloudDriveCom extends PluginForHost {
+public class InCloudDriveCom extends antiDDoSForHost {
     // DEV NOTE:
     // links are not correctable to a standard url format
     public InCloudDriveCom(PluginWrapper wrapper) {
@@ -85,14 +85,14 @@ public class InCloudDriveCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser(br);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         return parseFileInformation(link);
     }
 
     @SuppressWarnings("deprecation")
     private AvailableStatus parseFileInformation(final DownloadLink link) throws Exception {
         setFUID(link);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML(">we are performing a service upgrade please try again!")) {
             return AvailableStatus.UNCHECKABLE;
         }
@@ -198,7 +198,7 @@ public class InCloudDriveCom extends PluginForHost {
             }
             //
             br.setFollowRedirects(false);
-            br.getPage(Encoding.urlDecode(dlserver, false) + "download.php?accesstoken=" + token);
+            getPage(Encoding.urlDecode(dlserver, false) + "download.php?accesstoken=" + token);
             dllink = br.getRedirectLocation();
             if (dllink == null || !dllink.startsWith("http")) {
                 if (br.getHttpConnection().getResponseCode() == 401) {
@@ -243,7 +243,7 @@ public class InCloudDriveCom extends PluginForHost {
         ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Referer", "https://www.inclouddrive.com/");
-        ajax.postPage(url, param);
+        this.postPage(ajax, url, param);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -297,7 +297,7 @@ public class InCloudDriveCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("https://www.inclouddrive.com/user/login");
+                getPage("https://www.inclouddrive.com/user/login");
                 final String js = br.cloneBrowser().getPage("/java/mycloud.js");
                 final String appToken = new Regex(js, "app:\\s*'(.*?)',").getMatch(0);
                 ajaxPostPage("https://www.inclouddrive.com/api/0/signmein", "useraccess=&access_token=" + appToken + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
@@ -342,19 +342,14 @@ public class InCloudDriveCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("/me");
+        getPage("/me");
         final String[] premExpire = br.getRegex(">(Premium)</div>[^<]*<div[^>]*>Expires on (\\d+ \\w+, \\d{4})<").getRow(0);
         if (premExpire == null) {
-            account.setProperty("free", true);
             ai.setStatus("Free Account");
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
         } else {
             final String expire = premExpire[1];
             if (expire == null) {
@@ -366,22 +361,17 @@ public class InCloudDriveCom extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM, yyyy", Locale.ENGLISH));
             }
-            account.setProperty("free", false);
             ai.setStatus("Premium Account");
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
         }
         final String space = br.getRegex(">Used Space</div>\\s*<span[^>]*>(.*?) / \\d+ GB</span>").getMatch(0);
         if (space != null) {
             ai.setUsedSpace(SizeFormatter.getSize(space.trim()));
         } else {
-            logger.warning("Could not determine Used Space! Account type: " + getAccountType(account));
+            logger.warning("Could not determine Used Space! Account type");
         }
         final String[] traffic = br.getRegex(">Used Bandwidth</div>\\s*<span[^>]*>(.*?)\\s*/\\s*(\\d+ GB)<").getRow(0);
         if (traffic != null) {
@@ -390,7 +380,7 @@ public class InCloudDriveCom extends PluginForHost {
             ai.setTrafficMax(trafficmax);
             ai.setTrafficLeft(trafficmax - trafficused);
         } else {
-            logger.warning("Could not determine Used Bandwidth! Account type: " + getAccountType(account));
+            logger.warning("Could not determine Used Bandwidth! Account type");
         }
         account.setValid(true);
         return ai;
@@ -399,7 +389,7 @@ public class InCloudDriveCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(link);
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
@@ -499,7 +489,7 @@ public class InCloudDriveCom extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (downloadLink.getBooleanProperty("premiumRequired", false) && (account == null || account.getBooleanProperty("free", false))) {
+        if (downloadLink.getBooleanProperty("premiumRequired", false) && (account == null || account.getType() == AccountType.FREE)) {
             return false;
         } else {
             return true;
@@ -516,10 +506,6 @@ public class InCloudDriveCom extends PluginForHost {
         // "Process folder pages as individual links")).setDefaultValue(default_folderLinks));
     }
 
-    private String getAccountType(final Account account) {
-        return account.getBooleanProperty("free", false) ? "Free" : "Premium";
-    }
-
     /**
      * because stable is lame!
      */
@@ -529,21 +515,5 @@ public class InCloudDriveCom extends PluginForHost {
 
     public void setAjaxBrowser(final Browser ajax) {
         this.ajax = ajax;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("\\s+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 }
