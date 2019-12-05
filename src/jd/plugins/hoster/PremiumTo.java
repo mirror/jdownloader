@@ -314,23 +314,31 @@ public class PremiumTo extends UseNet {
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
         account.setType(AccountType.PREMIUM);
-        /* Find storage hosts and add them to array of supported hosts as well */
-        br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
-        /* We expect a comma separated array */
-        final String tmp_supported_hosts_storage[] = br.toString().toLowerCase().split(";|\\s+");
-        for (final String tmp_supported_host_storage : tmp_supported_hosts_storage) {
-            if (!supported_hosts_regular.contains(tmp_supported_host_storage)) {
-                /*
-                 * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer direct
-                 * downloads!
-                 */
-                if (debug_supports_storage_download) {
-                    logger.info("Found Storage host: " + tmp_supported_host_storage);
-                    supported_hosts_storage.add(tmp_supported_host_storage);
-                } else {
-                    logger.info("Storage functionality disabled: Skipping Storage host: " + tmp_supported_host_storage);
+        /* Find storage hosts and add them to array of supported hosts */
+        try {
+            /*
+             * 2019-12-05: They're having server issues with the server that handles this request --> Catch errors and in the worst case,
+             * continue without adding any Storage hosts!
+             */
+            br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
+            /* We expect a comma separated array */
+            final String tmp_supported_hosts_storage[] = br.toString().toLowerCase().split(";|\\s+");
+            for (final String tmp_supported_host_storage : tmp_supported_hosts_storage) {
+                if (!supported_hosts_regular.contains(tmp_supported_host_storage)) {
+                    /*
+                     * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer
+                     * direct downloads!
+                     */
+                    if (debug_supports_storage_download) {
+                        logger.info("Found Storage host: " + tmp_supported_host_storage);
+                        supported_hosts_storage.add(tmp_supported_host_storage);
+                    } else {
+                        logger.info("Storage functionality disabled: Skipping Storage host: " + tmp_supported_host_storage);
+                    }
                 }
             }
+        } catch (final Throwable e) {
+            logger.info("Failed to find Storage hosts");
         }
         /*
          * Now we've found all supported hosts - let's get the REAL list of supported hosts via a workaround (important for user-settings
@@ -366,13 +374,15 @@ public class PremiumTo extends UseNet {
                  */
                 if (real_user_whitelisted_hosts_storage != null) {
                     for (final String real_user_whitelisted_storage_host : real_user_whitelisted_hosts_storage) {
-                        if (real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
+                        if (real_supported_hosts_storage != null && real_supported_hosts_storage.contains(real_user_whitelisted_storage_host)) {
                             final_real_user_whitelisted_hosts_storage.add(real_user_whitelisted_storage_host);
                         }
                     }
                 }
                 /* Clear list of Storage hosts to fill it again with whitelisted entries of user */
-                real_supported_hosts_storage.clear();
+                if (real_supported_hosts_storage != null) {
+                    real_supported_hosts_storage.clear();
+                }
                 if (final_real_user_whitelisted_hosts_storage.isEmpty()) {
                     logger.info("User whitelisted nothing or entered invalid values (e.g. non-Storage hosts) --> Adding no Storage hosts at all");
                     additionalAccountStatus += " | Whitelisted Storage hosts: None [All disabled]";
@@ -394,7 +404,7 @@ public class PremiumTo extends UseNet {
                 logger.info("User disabled whitelisting of Storage hosts (= add all Storage hosts to list)");
             }
             /* Finally, add Storage hosts to regular host array to be able to use them and display the list of supported hosts. */
-            if (real_supported_hosts_storage.isEmpty()) {
+            if (real_supported_hosts_storage == null || real_supported_hosts_storage.isEmpty()) {
                 logger.info("Storage host array is empty");
             } else {
                 for (final String real_supported_host_storage : real_supported_hosts_storage) {
