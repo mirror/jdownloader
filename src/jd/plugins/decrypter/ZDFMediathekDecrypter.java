@@ -303,7 +303,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
-        this.br.getHeaders().put("Api-Auth", "Bearer " + apiParams[1]);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
         LinkedHashMap<String, Object> entries_2 = null;
         final String contentType = (String) entries.get("contentType");
