@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(/.*)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(?:/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
         super(wrapper);
@@ -328,15 +328,15 @@ public class ProLeechLink extends antiDDoSForHost {
          * TODO: Check if we need this to reset properties to force generation of new downloadurls to prevent infinite loops! Serverside
          * Cloud-download entries may as well link to non-working final downloadurls!
          */
-        final boolean is_forced_cloud_download = this.isForcedCloudDownload(link);
-        boolean found_downloadurl_in_cloud_downloads = false;
+        // final boolean is_forced_cloud_download = this.isForcedCloudDownload(link);
+        // boolean found_downloadurl_in_cloud_downloads = false;
         if (dllink == null) {
             logger.info("Trying to generate/find final downloadurl");
             /* First, try to get downloadlinks for previously started cloud-downloads as this does not create new directurls */
             /* TODO: Try to grab previously generated direct-downloadurls for non-forced-cloud-downloads too */
             dllink = getDllinkCloud(link, account);
             if (dllink != null) {
-                found_downloadurl_in_cloud_downloads = true;
+                // found_downloadurl_in_cloud_downloads = true;
             } else {
                 final long userDefinedWaitHours = this.getPluginConfig().getLongProperty("DOWNLOADLINK_GENERATION_LIMIT", 0);
                 final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
@@ -389,10 +389,6 @@ public class ProLeechLink extends antiDDoSForHost {
             mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
         }
         link.setProperty(getHost(), dllink);
-        /*
-         * TODO: Make sure that non-forced cloud downloads will not end up in an infinite loop of trying broken final downloadurls obtained
-         * via serverside stored cloud downloads list!
-         */
         if (dl.startDownload()) {
             final String internal_filename = getInternalFilename(link);
             if (internal_filename != null) {
@@ -615,9 +611,8 @@ public class ProLeechLink extends antiDDoSForHost {
             } else {
                 logger.info("Checking for directurl of NON-forced cloud download URL");
             }
-            final boolean validatedCookies = login(account, null, false);
             getPage("https://" + this.getHost() + "/mydownloads");
-            if (!validatedCookies && !this.isLoggedin(this.br)) {
+            if (!this.isLoggedin(this.br)) {
                 /* Ensure that we're logged-in */
                 login(account, null, true);
                 getPage("/mydownloads");
@@ -697,7 +692,6 @@ public class ProLeechLink extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /** TODO: Maybe optimize this to not always validate cookies! */
         login(account, null, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         final boolean isOkay = isDownloadConnection(dl.getConnection());

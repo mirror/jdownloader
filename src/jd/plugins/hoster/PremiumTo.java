@@ -183,11 +183,19 @@ public class PremiumTo extends UseNet {
         return (PremiumDotToConfigInterface) super.getAccountJsonConfig(acc);
     }
 
+    private int getReadTimeout() {
+        return 90 * 1000;
+    }
+
+    private int getConnectTimeout() {
+        return 90 * 1000;
+    }
+
     private Browser prepBrowser(Browser prepBr) {
         prepBr.setFollowRedirects(true);
         prepBr.setAcceptLanguage("en, en-gb;q=0.8");
-        prepBr.setConnectTimeout(90 * 1000);
-        prepBr.setReadTimeout(90 * 1000);
+        prepBr.setConnectTimeout(getReadTimeout());
+        prepBr.setReadTimeout(getConnectTimeout());
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         return prepBr;
     }
@@ -301,6 +309,8 @@ public class PremiumTo extends UseNet {
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
         ArrayList<String> supported_hosts_storage = new ArrayList<String>();
         try {
+            // br.setConnectTimeout(5 * 1000);
+            // br.setReadTimeout(5 * 1000);
             br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("hosts");
@@ -310,6 +320,9 @@ public class PremiumTo extends UseNet {
                 }
             }
         } catch (final Throwable e) {
+        } finally {
+            // br.setConnectTimeout(getReadTimeout());
+            // br.setReadTimeout(getConnectTimeout());
         }
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
