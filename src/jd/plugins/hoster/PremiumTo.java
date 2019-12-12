@@ -681,6 +681,7 @@ public class PremiumTo extends UseNet {
         if (!StringUtils.isEmpty(responsecodeStr) && responsecodeStr.matches("\\d+")) {
             responsecode = Integer.parseInt(responsecodeStr);
         }
+        String errormessage = PluginJSonUtils.getJson(br, "message");
         switch (responsecode) {
         case 0:
             /* No error */
@@ -710,16 +711,13 @@ public class PremiumTo extends UseNet {
                 /* 2019-10-30: We cannot trust this API errormessage */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404", 5 * 60 * 1000);
             }
-        case 405:
-            /* Rare case: User has reached max. storage files limit (2019-04-15: Current limit: 200 files) */
-            /* {"code":405,"message":"Too many files"} */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
-        case 500:
-            /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Storage max files limit reached", 5 * 60 * 1000);
         default:
-            /* TODO: Unknown error */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown error", 5 * 60 * 1000);
+            /* {"code":405,"message":"Too many files"} */
+            /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
+            if (errormessage == null) {
+                errormessage = "Unknown error";
+            }
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errormessage, 5 * 60 * 1000);
         }
         if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
             /* Now handle special Storage errors / statuscodes */
