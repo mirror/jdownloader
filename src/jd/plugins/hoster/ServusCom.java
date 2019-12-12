@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servus\\.com/(?:tv/videos/|(?:de|at)/p/[^/]+)([A-Za-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servus\\.com/(?:tv/videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
 public class ServusCom extends PluginForHost {
     public ServusCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,7 +69,11 @@ public class ServusCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).toUpperCase();
+        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (fid != null) {
+            fid = fid.toUpperCase();
+        }
+        return fid;
     }
 
     @SuppressWarnings("deprecation")
