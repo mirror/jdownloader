@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace.com/m/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace\\.com/m/[A-Za-z0-9]+" })
 public class MirroraceCom extends antiDDoSForDecrypt {
     public MirroraceCom(PluginWrapper wrapper) {
         super(wrapper);

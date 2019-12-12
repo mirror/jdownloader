@@ -30,6 +30,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,14 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(www\\.)?(rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
@@ -86,7 +86,8 @@ public class RapidGatorNet extends antiDDoSForHost {
     private final String                   HOTLINK                         = "HOTLINK";
     private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
     private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static final long              FREE_RECONNECTWAIT_GENERAL      = 2 * 60 * 60 * 1000L;
+    /* 2019-12-12: Lowered from 2 to 1 hour */
+    private static final long              FREE_RECONNECTWAIT_GENERAL      = 1 * 60 * 60 * 1001L;
     private static final long              FREE_RECONNECTWAIT_DAILYLIMIT   = 3 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_OTHERS       = 30 * 60 * 1000L;
     private static final long              FREE_CAPTCHA_EXPIRE_TIME        = 105 * 1000L;
@@ -188,7 +189,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         correctDownloadLink(link);
         setBrowserExclusive();
         br.setFollowRedirects(false);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         final String redirect = br.getRedirectLocation();
         if (redirect != null) {
             br.setFollowRedirects(true);
@@ -217,27 +218,27 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
         }
         link.removeProperty(HOTLINK);
-        if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
-            link.setUrlDownload(link.getDownloadURL().replace("%", ""));
-            getPage(link.getDownloadURL());
+        if (br.containsHTML("400 Bad Request") && link.getPluginPatternMatcher().contains("%")) {
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("%", ""));
+            getPage(link.getPluginPatternMatcher());
         }
         if (br.containsHTML("File not found")) {
-            final String filenameFromURL = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
+            final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), ".+/(.+)\\.html").getMatch(0);
             if (filenameFromURL != null) {
                 link.setName(filenameFromURL);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+        final String freedlsizelimit = br.getRegex("'You can download files up to\\s*([\\d\\.]+ ?(MB|GB))\\s*in free mode<").getMatch(0);
         if (freedlsizelimit != null) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
         }
         final String md5 = br.getRegex(">MD5: ([A-Fa-f0-9]{32})</label>").getMatch(0);
-        String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
+        String filename = br.getRegex("Downloading\\s*:\\s*</strong>([^<>\"]+)</p>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
+            filename = br.getRegex("<title>Download file\\s*([^<>\"]+)</title>").getMatch(0);
         }
-        final String filesize = br.getRegex("File size:[\t\n\r ]+<strong>([^<>\"]+)</strong>").getMatch(0);
+        final String filesize = br.getRegex("File size:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -274,7 +275,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink link) throws Exception {
         // experimental code - raz
         // so called 15mins between your last download, ends up with your IP blocked for the day..
         // Trail and error until we find the sweet spot.
@@ -286,7 +287,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
             if (useExperimentalHandling) {
                 logger.info("New Download: currentIP = " + currentIP);
-                if (ipChanged(currentIP, downloadLink) == false) {
+                if (ipChanged(currentIP, link) == false) {
                     long lastdownload_timestamp = timeBefore.get();
                     if (lastdownload_timestamp == 0) {
                         lastdownload_timestamp = getPluginSavedLastDownloadTimestamp();
@@ -308,17 +309,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             String finalDownloadURL = hotLinkURL;
             if (finalDownloadURL == null) {
                 // end of experiment
-                if (br.containsHTML("File is temporarily unavailable, please try again later. Maintenance in data center.")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
-                } else if (br.containsHTML("File is temporarily not available, please try again later")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
-                } else if (br.containsHTML("You have reached your daily downloads limit\\. Please try")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", FREE_RECONNECTWAIT_DAILYLIMIT);
-                } else if (br.containsHTML(">[\\r\n ]+You have reached your hourly downloads limit\\.")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
-                } else if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", FREE_RECONNECTWAIT_OTHERS);
-                }
+                handleErrorsWebsite(this.br, link, null);
                 final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
                 if (freedlsizelimit != null && !freedlsizelimit.equalsIgnoreCase("2 GB")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -355,7 +346,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     logger.info(br2.toString());
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                sleep((wait + 5) * 1001l, downloadLink);
+                sleep((wait + 5) * 1001l, link);
                 /* needed so we have correct referrer ;) (back to original br) */
                 br2 = br.cloneBrowser();
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -412,7 +403,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String code = getCaptchaCode(cf, link);
                     checkForExpiredCaptcha(timeBeforeCaptchaInput);
                     final String chid = sm.getChallenge(code);
                     // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -444,7 +435,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     if (StringUtils.isEmpty(code)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    challenge = getCaptchaCode(challenge, downloadLink);
+                    challenge = getCaptchaCode(challenge, link);
                     if (StringUtils.isEmpty(challenge)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -480,7 +471,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalDownloadURL, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 final URLConnectionAdapter con = dl.getConnection();
                 if (con.getResponseCode() == 404) {
@@ -489,9 +480,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
                 }
                 br.followConnection();
-                if (br.containsHTML("<div class=\"error\">[\r\n ]+Error\\. Link expired. You have reached your daily limit of downloads\\.")) {
+                if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
-                } else if (br.containsHTML("<div class=\"error\">[\r\n ]+File is already downloading</div>")) {
+                } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", FREE_RECONNECTWAIT_OTHERS);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -505,7 +496,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     RapidGatorNet.timeBefore.set(System.currentTimeMillis());
                     this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
                 }
-                setIP(currentIP, downloadLink);
+                setIP(currentIP, link);
             } catch (final Throwable e) {
             }
         }
@@ -1106,9 +1097,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1164,7 +1155,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                dllink = br.getRegex("var premium_download_link = '(https?://[^<>\"']+)';").getMatch(0);
+                dllink = br.getRegex("var premium_download_link\\s*=\\s*'(https?://[^<>\"']+)';").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("'(https?://pr_srv\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
                     if (dllink == null) {
@@ -1173,25 +1164,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
             }
             if (dllink == null) {
-                if (br.containsHTML("File is temporarily unavailable, please try again later. Maintenance in data center.")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
-                } else if (br.containsHTML("File is temporarily not available, please try again later")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
-                } else if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
-                    logger.info("You've reached daily download quota for " + account.getUser() + " account");
-                    final AccountInfo ac = new AccountInfo();
-                    ac.setTrafficLeft(0);
-                    account.setAccountInfo(ac);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
-                    logger.info("Account seems to be invalid!");
-                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    account.setProperty("cookies", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    logger.warning("Could not find 'dllink'. Please report to JDownloader Development Team");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                handleErrorsWebsite(this.br, link, account);
+                /* Unknown failure */
+                logger.warning("Could not find 'dllink'. Please report to JDownloader Development Team");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 dllink = dllink.replaceFirst("^http://", "https://");
@@ -1205,6 +1181,34 @@ public class RapidGatorNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
+        }
+    }
+
+    private void handleErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (account != null) {
+            /* Errors which should only happen in account mode */
+            if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
+                logger.info("You've reached daily download quota for " + account.getUser() + " account");
+                final AccountInfo ac = new AccountInfo();
+                ac.setTrafficLeft(0);
+                account.setAccountInfo(ac);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
+                logger.info("Account seems to be invalid!");
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                account.setProperty("cookies", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        if (br.containsHTML("File is temporarily unavailable, please try again later\\. Maintenance in data center\\.")) {
+            /* 2019-12-12: Lowered waittime! This happens frequently these days! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later", 5 * 60 * 1000l);
+        } else if (br.containsHTML("File is temporarily not available, please try again later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
+        } else if (br.containsHTML(">\\s*You have reached your hourly downloads limit\\.")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
+        } else if (br.containsHTML("You can`t download not more than 1 file at a time in free mode\\.\\s*<|>\\s*Wish to remove the restrictions\\?")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", FREE_RECONNECTWAIT_OTHERS);
         }
     }
 

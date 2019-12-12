@@ -394,18 +394,19 @@ abstract public class ZeveraCore extends UseNet {
             } else {
                 if (!StringUtils.isEmpty(fair_use_used_str)) {
                     final double d = Double.parseDouble(fair_use_used_str);
-                    final int fairUsagePercent = (int) (d * 100.0);
-                    if (fairUsagePercent >= 100) {
+                    final int fairUsagePercentUsed = (int) (d * 100.0);
+                    final int fairUsagePercentLeft = 100 - fairUsagePercentUsed;
+                    if (fairUsagePercentUsed >= 100) {
                         /* Fair use limit reached --> No traffic left, no downloads possible at the moment */
                         ai.setTrafficLeft(0);
-                        ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "% (limit reached)");
+                        ai.setStatus("Premium | Fair-Use Status: 100% used [0% left - limit reached]");
                     } else {
                         ai.setUnlimitedTraffic();
-                        ai.setStatus("Premium | Fair usage: " + fairUsagePercent + "%");
+                        ai.setStatus(String.format("Premium | Fair-Use Status: %d%% used [%d%% left]", fairUsagePercentUsed, fairUsagePercentLeft));
                     }
                 } else {
                     /* This should never happen */
-                    ai.setStatus("Premium | Fair usage: unknown");
+                    ai.setStatus("Premium | Fair-Use Status: Unknown");
                     ai.setUnlimitedTraffic();
                 }
             }
