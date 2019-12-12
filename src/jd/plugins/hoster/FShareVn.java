@@ -71,17 +71,13 @@ public class FShareVn extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME                = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS             = -3;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS          = -1;
-    /** 2019-08-29: Disabled API as a workaround. TODO: Fix issues and enable it again! */
-    /** We can use mobile API for different things */
     /**
      * 2019-09-16: API is disabled for now as it only returns error 400 and 500 for us. As far as we could find out this is because their
      * API(-key) is limited to http/2 while we use http/1.
      */
     private static AtomicBoolean USE_API                               = new AtomicBoolean(false);
     private static final boolean use_api_for_premium_account_downloads = true;
-    /** 2019-05-08: API works for free- and premium accounts! */
     private static final boolean use_api_for_free_account_downloads    = true;
-    /** 2019-07-16: From now on we are able to get account information via API! */
     private static final boolean use_api_for_login_fetch_account_info  = true;
 
     public FShareVn(PluginWrapper wrapper) {

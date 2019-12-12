@@ -25,6 +25,16 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,16 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|archive/VideoArchiveStreaming|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
@@ -93,6 +93,8 @@ public class SaveTv extends PluginForHost {
     public static final String    PROPERTY_acc_username                        = "acc_username";
     public static final String    PROPERTY_ad_free                             = "ad_free";
     public static final String    PROPERTY_producecountry                      = "producecountry";
+    /* https://www.devisenrechner.info/laenderkuerzel-laenderabkuerzungen-laendercode-iso-3166.htm */
+    public static final String    PROPERTY_producecountry_short                = "producecountry_short";
     public static final String    PROPERTY_genre                               = "genre";
     public static final String    PROPERTY_type                                = "type";
     public static final String    PROPERTY_produceyear                         = "produceyear";
@@ -401,6 +403,11 @@ public class SaveTv extends PluginForHost {
         return br.getHttpConnection().getResponseCode() == 404;
     }
 
+    public static String getProduceCountryShort(final String produceCounteryLong) {
+        /* TODO: Add functionality: https://svn.jdownloader.org/issues/86984 */
+        return produceCounteryLong;
+    }
+
     @SuppressWarnings("deprecation")
     public static String getFilename(final Plugin plugin, final DownloadLink dl) throws ParseException {
         /*
@@ -517,6 +524,7 @@ public class SaveTv extends PluginForHost {
         }
         if (producecountry != null) {
             dl.setProperty(PROPERTY_producecountry, correctData(dl.getHost(), producecountry));
+            dl.setProperty(PROPERTY_producecountry_short, getProduceCountryShort(producecountry));
         }
         if (tv_station != null) {
             dl.setProperty(PROPERTY_plain_tv_station, correctData(dl.getHost(), tv_station));
@@ -1934,6 +1942,7 @@ public class SaveTv extends PluginForHost {
         final String ad_free = getAdFreeText(dl);
         final String genre = dl.getStringProperty(PROPERTY_genre, customStringForEmptyTags);
         final String producecountry = dl.getStringProperty(PROPERTY_producecountry, customStringForEmptyTags);
+        final String producecountry_short = dl.getStringProperty(PROPERTY_producecountry_short, customStringForEmptyTags);
         final String produceyear = dl.getStringProperty(PROPERTY_produceyear, customStringForEmptyTags);
         final String randomnumber = getRandomNumber(dl);
         final String telecastid = getTelecastId(dl);
@@ -1976,6 +1985,7 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*kategorie*", site_category_str);
             formattedFilename = formattedFilename.replace("*genre*", genre);
             formattedFilename = formattedFilename.replace("*produktionsland*", producecountry);
+            formattedFilename = formattedFilename.replace("*produktionsland_kurz*", producecountry_short);
             formattedFilename = formattedFilename.replace("*username*", acc_username);
             /* Insert actual filename at the end to prevent errors with tags */
             formattedFilename = formattedFilename.replace("*server_dateiname*", server_filename);
@@ -2009,6 +2019,7 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*kategorie*", site_category_str);
             formattedFilename = formattedFilename.replace("*genre*", genre);
             formattedFilename = formattedFilename.replace("*produktionsland*", producecountry);
+            formattedFilename = formattedFilename.replace("*produktionsland_kurz*", producecountry_short);
             formattedFilename = formattedFilename.replace("*username*", acc_username);
             /* Insert filename at the end to prevent errors with tags */
             formattedFilename = formattedFilename.replace("*server_dateiname*", server_filename);
@@ -2413,6 +2424,7 @@ public class SaveTv extends PluginForHost {
         description_custom_filenames_tags.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung<br />[Erscheint im oben definierten Format, wird von der save.tv Seite ausgelesen]<br />");
         description_custom_filenames_tags.append("*genre* = Das Genre<br />");
         description_custom_filenames_tags.append("*produktionsland* = Name des Produktionslandes<br />");
+        description_custom_filenames_tags.append("*produktionsland_kurz* = Name des Produktionslandes nach ISO 3166 Standard z.B. 'DE' statt 'Deutschland'<br />");
         description_custom_filenames_tags.append("*produktionsjahr* = Produktionsjahr<br />");
         description_custom_filenames_tags.append("*sendername* = Name des TV-Senders auf dem die Sendung ausgestrahlt wurde");
         description_custom_filenames_tags.append("*kategorie* = Kategorie, siehe telecast-ID Seite<br />");
