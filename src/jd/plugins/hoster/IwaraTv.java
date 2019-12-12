@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
 public class IwaraTv extends PluginForHost {
@@ -232,54 +232,68 @@ public class IwaraTv extends PluginForHost {
         return free_maxdownloads;
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
+                boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("https://" + account.getHoster());
                     if (br.containsHTML(html_loggedin)) {
-                        return;
-                    }
-                    br = prepBR(new Browser());
-                }
-                br.getPage("https://www.iwara.tv/user/login?destination=front");
-                Form loginform = br.getFormbyProperty("id", "user-login");
-                if (loginform == null) {
-                    loginform = br.getForm(0);
-                }
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        loggedIN = true;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        br = prepBR(new Browser());
                     }
                 }
-                loginform.put("name", Encoding.urlEncode(account.getUser()));
-                loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                if (loginform.containsHTML("g\\-recaptcha")) {
-                    /* 2017-04-28 */
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                if (!loggedIN) {
+                    br.getPage("https://www." + this.getHost() + "/user/login?destination=front");
+                    Form loginform = br.getFormbyProperty("id", "user-login");
+                    if (loginform == null) {
+                        /* Fallback */
+                        loginform = br.getForm(0);
                     }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
+                    if (loginform == null) {
+                        logger.warning("Failed to find loginform");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                br.submitForm(loginform);
-                if (!br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    loginform.put("name", Encoding.urlEncode(account.getUser()));
+                    loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                    if (loginform.containsHTML("g\\-recaptcha")) {
+                        /* 2017-04-28 */
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    /* 2019-12-12: Anti-anti-bot against: https://www.iwara.tv/sites/all/modules/contrib/antibot/js/antibot.js */
+                    final String key = PluginJSonUtils.getJson(br, "key");
+                    if (key != null) {
+                        loginform.put("antibot_key", key);
+                    }
+                    if (loginform.getAction() == null || loginform.getAction().contains("/antibot")) {
+                        loginform.setAction(br.getURL());
+                    }
+                    br.setCookie(br.getHost(), "has_js", "1");
+                    /* Anti-anti-bot END */
+                    br.submitForm(loginform);
+                    if (!br.containsHTML(html_loggedin)) {
+                        if (br.getURL().contains("/antibot")) {
+                            /* 2019-12-12: Anti-anti-bot failed :( */
+                            logger.warning("Login failed due to anti-bot measures");
+                        }
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -290,21 +304,21 @@ public class IwaraTv extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
         } catch (PluginException e) {
-            account.setValid(false);
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.clearCookies("");
+            }
             throw e;
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
