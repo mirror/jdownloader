@@ -717,6 +717,7 @@ public class PremiumTo extends UseNet {
             if (errormessage == null) {
                 errormessage = "Unknown error";
             }
+            errormessage = "Err" + responsecode + ": " + errormessage;
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errormessage, 5 * 60 * 1000);
         }
         if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
