@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
@@ -51,7 +52,7 @@ public class Animehub extends antiDDoSForDecrypt {
             String[][] links = br.getRegex("<div class=\"sli-name\">[ \t\r\n]+<a href=\"([^\"]+)\" title=\"Watch[^\"]+\">").getMatches();
             if (links != null && links.length > 0) {
                 for (String[] link : links) {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(link[0])));
+                    decryptedLinks.add(createDownloadlink(processPrefixSlashes(br, Encoding.htmlOnlyDecode(link[0]))));
                 }
             }
         } else if (StringUtils.containsIgnoreCase(parameter, "/watch/")) {
@@ -72,8 +73,7 @@ public class Animehub extends antiDDoSForDecrypt {
                     if (playURLs.length > 0) {
                         String playURL = Encoding.htmlDecode(playURLs[0]);
                         getPage(br2, playURL);
-                        String embedPage = br2.toString();
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(playURL)));
+                        decryptedLinks.add(createDownloadlink(processPrefixSlashes(br2, Encoding.htmlDecode(playURL))));
                     }
                 }
             }
@@ -85,5 +85,13 @@ public class Animehub extends antiDDoSForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String processPrefixSlashes(Browser br, String link) throws IOException {
+        link = link.trim().replaceAll("^//", "https://");
+        if (link.startsWith("/") || !link.startsWith("http")) {
+            link = br.getURL(link).toString();
+        }
+        return link;
     }
 }
