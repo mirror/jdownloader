@@ -20,8 +20,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -254,9 +256,9 @@ public class SaveTv extends PluginForHost {
             link.setProperty(PROPERTY_downloadable_via, account.getUser());
         } else {
             /* Find account via which we can download our url. */
-            for (final Account aatemp : all_stv_accounts) {
-                if (this.canHandle(link, aatemp)) {
-                    account = aatemp;
+            for (final Account accountTmp : all_stv_accounts) {
+                if (this.canHandle(link, accountTmp)) {
+                    account = accountTmp;
                     break;
                 }
             }
@@ -403,9 +405,297 @@ public class SaveTv extends PluginForHost {
         return br.getHttpConnection().getResponseCode() == 404;
     }
 
-    public static String getProduceCountryShort(final String produceCounteryLong) {
-        /* TODO: Add functionality: https://svn.jdownloader.org/issues/86984 */
-        return produceCounteryLong;
+    public static String getProduceCountryShort(String produceCountriesLong) {
+        if (produceCountriesLong == null) {
+            return null;
+        }
+        produceCountriesLong = produceCountriesLong.toUpperCase();
+        /* ISO2 to country-code (german) according to ISO 3166 */
+        final Map<String, String> countryMapper = new HashMap<String, String>();
+        /* 2019-12-13: I build a small 'converter' and extracted most of this list from here: https://de.switch-case.com/46232452 */
+        /* TODO: Maybe move this to another place so we can use it in other modules too! */
+        countryMapper.put("AFGHANISTAN", "AF");
+        countryMapper.put("ÅLAND", "AX");
+        countryMapper.put("ALBANIEN", "AL");
+        countryMapper.put("ALGERIEN", "DZ");
+        countryMapper.put("AMERIKANISCH-SAMOA", "AS");
+        countryMapper.put("ANDORRA", "AD");
+        countryMapper.put("ANGOLA", "AO");
+        countryMapper.put("ANGUILLA", "AI");
+        countryMapper.put("ANTARKTIKA", "AQ");
+        countryMapper.put("ANTIGUA UND BARBUDA", "AG");
+        countryMapper.put("ARGENTINIEN", "AR");
+        countryMapper.put("ARMENIEN", "AM");
+        countryMapper.put("ARUBA", "AW");
+        countryMapper.put("AUSTRALIEN", "AU");
+        countryMapper.put("ÖSTERREICH", "AT");
+        countryMapper.put("ASERBAIDSCHAN", "AZ");
+        countryMapper.put("BAHAMAS", "BS");
+        countryMapper.put("BAHRAIN", "BH");
+        countryMapper.put("BANGLADESCH", "BD");
+        countryMapper.put("BARBADOS", "BB");
+        countryMapper.put("WEISSRUSSLAND", "BY");
+        countryMapper.put("BELGIEN", "BE");
+        countryMapper.put("BELIZE", "BZ");
+        countryMapper.put("BENIN", "BJ");
+        countryMapper.put("BERMUDA", "BM");
+        countryMapper.put("BHUTAN", "BT");
+        countryMapper.put("BOLIVIEN", "BO");
+        countryMapper.put("BOSNIEN UND HERZEGOWINA", "BA");
+        countryMapper.put("BOTSWANA", "BW");
+        countryMapper.put("BOUVETINSEL", "BV");
+        countryMapper.put("BRASILIEN", "BR");
+        countryMapper.put("BRITISCHES TERRITORIUM IM INDISCHEN OZEAN", "IO");
+        countryMapper.put("KLEINERE INSELBESITZUNGEN DER VEREINIGTEN STAATEN", "UM");
+        countryMapper.put("BRITISCHE JUNGFERNINSELN", "VG");
+        countryMapper.put("AMERIKANISCHE JUNGFERNINSELN", "VI");
+        countryMapper.put("BRUNEI", "BN");
+        countryMapper.put("BULGARIEN", "BG");
+        countryMapper.put("BURKINA FASO", "BF");
+        countryMapper.put("BURUNDI", "BI");
+        countryMapper.put("KAMBODSCHA", "KH");
+        countryMapper.put("KAMERUN", "CM");
+        countryMapper.put("KANADA", "CA");
+        countryMapper.put("KAP VERDE", "CV");
+        countryMapper.put("KAIMANINSELN", "KY");
+        countryMapper.put("ZENTRALAFRIKANISCHE REPUBLIK", "CF");
+        countryMapper.put("TSCHAD", "TD");
+        countryMapper.put("CHILE", "CL");
+        countryMapper.put("CHINA", "CN");
+        countryMapper.put("WEIHNACHTSINSEL", "CX");
+        countryMapper.put("KOKOSINSELN", "CC");
+        countryMapper.put("KOLUMBIEN", "CO");
+        countryMapper.put("UNION DER KOMOREN", "KM");
+        countryMapper.put("KONGO", "CG");
+        countryMapper.put("KONGO (DEM. REP.)", "CD");
+        countryMapper.put("COOKINSELN", "CK");
+        countryMapper.put("COSTA RICA", "CR");
+        countryMapper.put("KROATIEN", "HR");
+        countryMapper.put("KUBA", "CU");
+        countryMapper.put("ZYPERN", "CY");
+        countryMapper.put("TSCHECHISCHE REPUBLIK", "CZ");
+        countryMapper.put("DÄNEMARK", "DK");
+        countryMapper.put("DSCHIBUTI", "DJ");
+        countryMapper.put("DOMINICA", "DM");
+        countryMapper.put("DOMINIKANISCHE REPUBLIK", "DO");
+        countryMapper.put("ECUADOR", "EC");
+        countryMapper.put("ÄGYPTEN", "EG");
+        countryMapper.put("EL SALVADOR", "SV");
+        countryMapper.put("ÄQUATORIAL-GUINEA", "GQ");
+        countryMapper.put("ERITREA", "ER");
+        countryMapper.put("ESTLAND", "EE");
+        countryMapper.put("ÄTHIOPIEN", "ET");
+        countryMapper.put("FALKLANDINSELN", "FK");
+        countryMapper.put("FÄRÖER-INSELN", "FO");
+        countryMapper.put("FIDSCHI", "FJ");
+        countryMapper.put("FINNLAND", "FI");
+        countryMapper.put("FRANKREICH", "FR");
+        countryMapper.put("FRANZÖSISCH GUYANA", "GF");
+        countryMapper.put("FRANZÖSISCH-POLYNESIEN", "PF");
+        countryMapper.put("FRANZÖSISCHE SÜD- UND ANTARKTISGEBIETE", "TF");
+        countryMapper.put("GABUN", "GA");
+        countryMapper.put("GAMBIA", "GM");
+        countryMapper.put("GEORGIEN", "GE");
+        countryMapper.put("DEUTSCHLAND", "DE");
+        countryMapper.put("GHANA", "GH");
+        countryMapper.put("GIBRALTAR", "GI");
+        countryMapper.put("GRIECHENLAND", "GR");
+        countryMapper.put("GRÖNLAND", "GL");
+        countryMapper.put("GRENADA", "GD");
+        countryMapper.put("GUADELOUPE", "GP");
+        countryMapper.put("GUAM", "GU");
+        countryMapper.put("GUATEMALA", "GT");
+        countryMapper.put("GUERNSEY", "GG");
+        countryMapper.put("GUINEA", "GN");
+        countryMapper.put("GUINEA-BISSAU", "GW");
+        countryMapper.put("GUYANA", "GY");
+        countryMapper.put("HAITI", "HT");
+        countryMapper.put("HEARD UND DIE MCDONALDINSELN", "HM");
+        countryMapper.put("HEILIGER STUHL", "VA");
+        countryMapper.put("HONDURAS", "HN");
+        countryMapper.put("HONG KONG", "HK");
+        countryMapper.put("UNGARN", "HU");
+        countryMapper.put("ISLAND", "IS");
+        countryMapper.put("INDIEN", "IN");
+        countryMapper.put("INDONESIEN", "ID");
+        countryMapper.put("ELFENBEINKÜSTE", "CI");
+        countryMapper.put("IRAN", "IR");
+        countryMapper.put("IRAK", "IQ");
+        countryMapper.put("IRLAND", "IE");
+        countryMapper.put("INSEL MAN", "IM");
+        countryMapper.put("ISRAEL", "IL");
+        countryMapper.put("ITALIEN", "IT");
+        countryMapper.put("JAMAIKA", "JM");
+        countryMapper.put("JAPAN", "JP");
+        countryMapper.put("JERSEY", "JE");
+        countryMapper.put("JORDANIEN", "JO");
+        countryMapper.put("KASACHSTAN", "KZ");
+        countryMapper.put("KENIA", "KE");
+        countryMapper.put("KIRIBATI", "KI");
+        countryMapper.put("KUWAIT", "KW");
+        countryMapper.put("KIRGISISTAN", "KG");
+        countryMapper.put("LAOS", "LA");
+        countryMapper.put("LETTLAND", "LV");
+        countryMapper.put("LIBANON", "LB");
+        countryMapper.put("LESOTHO", "LS");
+        countryMapper.put("LIBERIA", "LR");
+        countryMapper.put("LIBYEN", "LY");
+        countryMapper.put("LIECHTENSTEIN", "LI");
+        countryMapper.put("LITAUEN", "LT");
+        countryMapper.put("LUXEMBURG", "LU");
+        countryMapper.put("MACAO", "MO");
+        countryMapper.put("MAZEDONIEN", "MK");
+        countryMapper.put("MADAGASKAR", "MG");
+        countryMapper.put("MALAWI", "MW");
+        countryMapper.put("MALAYSIA", "MY");
+        countryMapper.put("MALEDIVEN", "MV");
+        countryMapper.put("MALI", "ML");
+        countryMapper.put("MALTA", "MT");
+        countryMapper.put("MARSHALLINSELN", "MH");
+        countryMapper.put("MARTINIQUE", "MQ");
+        countryMapper.put("MAURETANIEN", "MR");
+        countryMapper.put("MAURITIUS", "MU");
+        countryMapper.put("MAYOTTE", "YT");
+        countryMapper.put("MEXIKO", "MX");
+        countryMapper.put("MIKRONESIEN", "FM");
+        countryMapper.put("MOLDAWIE", "MD");
+        countryMapper.put("MONACO", "MC");
+        countryMapper.put("MONGOLEI", "MN");
+        countryMapper.put("MONTENEGRO", "ME");
+        countryMapper.put("MONTSERRAT", "MS");
+        countryMapper.put("MAROKKO", "MA");
+        countryMapper.put("MOSAMBIK", "MZ");
+        countryMapper.put("MYANMAR", "MM");
+        countryMapper.put("NAMIBIA", "NA");
+        countryMapper.put("NAURU", "NR");
+        countryMapper.put("NÉPAL", "NP");
+        countryMapper.put("NIEDERLANDE", "NL");
+        countryMapper.put("NEUKALEDONIEN", "NC");
+        countryMapper.put("NEUSEELAND", "NZ");
+        countryMapper.put("NICARAGUA", "NI");
+        countryMapper.put("NIGER", "NE");
+        countryMapper.put("NIGERIA", "NG");
+        countryMapper.put("NIUE", "NU");
+        countryMapper.put("NORFOLKINSEL", "NF");
+        countryMapper.put("NORDKOREA", "KP");
+        countryMapper.put("NÖRDLICHE MARIANEN", "MP");
+        countryMapper.put("NORWEGEN", "NO");
+        countryMapper.put("OMAN", "OM");
+        countryMapper.put("PAKISTAN", "PK");
+        countryMapper.put("PALAU", "PW");
+        countryMapper.put("PALÄSTINA", "PS");
+        countryMapper.put("PANAMA", "PA");
+        countryMapper.put("PAPUA-NEUGUINEA", "PG");
+        countryMapper.put("PARAGUAY", "PY");
+        countryMapper.put("PERU", "PE");
+        countryMapper.put("PHILIPPINEN", "PH");
+        countryMapper.put("PITCAIRN", "PN");
+        countryMapper.put("POLEN", "PL");
+        countryMapper.put("PORTUGAL", "PT");
+        countryMapper.put("PUERTO RICO", "PR");
+        countryMapper.put("KATAR", "QA");
+        countryMapper.put("RÉUNION", "RE");
+        countryMapper.put("RUMÄNIEN", "RO");
+        countryMapper.put("RUSSLAND", "RU");
+        countryMapper.put("RUANDA", "RW");
+        countryMapper.put("SAINT-BARTHÉLEMY", "BL");
+        countryMapper.put("SANKT HELENA", "SH");
+        countryMapper.put("ST. KITTS UND NEVIS", "KN");
+        countryMapper.put("SAINT LUCIA", "LC");
+        countryMapper.put("SAINT MARTIN", "MF");
+        countryMapper.put("SAINT-PIERRE UND MIQUELON", "PM");
+        countryMapper.put("SAINT VINCENT UND DIE GRENADINEN", "VC");
+        countryMapper.put("SAMOA", "WS");
+        countryMapper.put("SAN MARINO", "SM");
+        countryMapper.put("SÃO TOMÉ UND PRÍNCIPE", "ST");
+        countryMapper.put("SAUDI-ARABIEN", "SA");
+        countryMapper.put("SENEGAL", "SN");
+        countryMapper.put("SERBIEN", "RS");
+        countryMapper.put("SEYCHELLEN", "SC");
+        countryMapper.put("SIERRA LEONE", "SL");
+        countryMapper.put("SINGAPUR", "SG");
+        countryMapper.put("SLOWAKEI", "SK");
+        countryMapper.put("SLOWENIEN", "SI");
+        countryMapper.put("SALOMONEN", "SB");
+        countryMapper.put("SOMALIA", "SO");
+        countryMapper.put("REPUBLIK SÜDAFRIKA", "ZA");
+        countryMapper.put("SÜDGEORGIEN UND DIE SÜDLICHEN SANDWICHINSELN", "GS");
+        countryMapper.put("SÜDKOREA", "KR");
+        countryMapper.put("SÜDSUDAN", "SS");
+        countryMapper.put("SPANIEN", "ES");
+        countryMapper.put("SRI LANKA", "LK");
+        countryMapper.put("SUDAN", "SD");
+        countryMapper.put("SURINAME", "SR");
+        countryMapper.put("SVALBARD UND JAN MAYEN", "SJ");
+        countryMapper.put("SWASILAND", "SZ");
+        countryMapper.put("SCHWEDEN", "SE");
+        countryMapper.put("SCHWEIZ", "CH");
+        countryMapper.put("SYRIEN", "SY");
+        countryMapper.put("TAIWAN", "TW");
+        countryMapper.put("TADSCHIKISTAN", "TJ");
+        countryMapper.put("TANSANIA", "TZ");
+        countryMapper.put("THAILAND", "TH");
+        countryMapper.put("TIMOR-LESTE", "TL");
+        countryMapper.put("TOGO", "TG");
+        countryMapper.put("TOKELAU", "TK");
+        countryMapper.put("TONGA", "TO");
+        countryMapper.put("TRINIDAD UND TOBAGO", "TT");
+        countryMapper.put("TUNESIEN", "TN");
+        countryMapper.put("TÜRKEI", "TR");
+        countryMapper.put("TURKMENISTAN", "TM");
+        countryMapper.put("TURKS- UND CAICOSINSELN", "TC");
+        countryMapper.put("TUVALU", "TV");
+        countryMapper.put("UGANDA", "UG");
+        countryMapper.put("UKRAINE", "UA");
+        countryMapper.put("VEREINIGTE ARABISCHE EMIRATE", "AE");
+        countryMapper.put("VEREINIGTES KÖNIGREICH", "GB");
+        countryMapper.put("VEREINIGTE STAATEN VON AMERIKA", "US");
+        countryMapper.put("URUGUAY", "UY");
+        countryMapper.put("USBEKISTAN", "UZ");
+        countryMapper.put("VANUATU", "VU");
+        countryMapper.put("VENEZUELA", "VE");
+        countryMapper.put("VIETNAM", "VN");
+        countryMapper.put("WALLIS UND FUTUNA", "WF");
+        countryMapper.put("WESTSAHARA", "EH");
+        countryMapper.put("JEMEN", "YE");
+        countryMapper.put("SAMBIA", "ZM");
+        countryMapper.put("SIMBABWE", "ZW");
+        /* 2019-12-13: Special save.tv API versions go here */
+        countryMapper.put("GROSSBRITANNIEN", "GB");
+        countryMapper.put("VOLKSREPUBLIK CHINA", "CN");
+        /* 2019-12-13: Sometimes they use 'AE', sometimes 'Ä' ... */
+        countryMapper.put("RUMAENIEN", "RO");
+        countryMapper.put("OESTERREICH", "AT");
+        /*
+         * Sometimes we got multiple countries, sometimes only one. Some are already given in their short variant, most in their long
+         * variant!
+         */
+        final String[] countriesLong;
+        if (produceCountriesLong.contains("")) {
+            countriesLong = produceCountriesLong.split(" / ");
+        } else {
+            /* Single country */
+            countriesLong = new String[1];
+            countriesLong[0] = produceCountriesLong;
+        }
+        String ret = "";
+        int counter = 0;
+        for (final String produceCountryLong : countriesLong) {
+            final String countryShort;
+            if (countryMapper.containsKey(produceCountryLong)) {
+                countryShort = countryMapper.get(produceCountryLong);
+            } else {
+                /* Fallback */
+                countryShort = produceCountryLong;
+            }
+            ret += countryShort;
+            if (counter < countriesLong.length - 1) {
+                /* We are not yet at the last element --> Add 'filler' */
+                ret += " / ";
+            }
+            counter++;
+        }
+        return ret;
     }
 
     @SuppressWarnings("deprecation")
@@ -578,7 +868,7 @@ public class SaveTv extends PluginForHost {
         final String episodename = (String) entries.get("subTitle");
         /* General */
         final String genre = (String) JavaScriptEngineFactory.walkJson(entries, "tvSubCategory/name");
-        final String country = (String) entries.get("country");
+        final String producecountry = (String) entries.get("country");
         final String produceyear = Long.toString(JavaScriptEngineFactory.toLong(entries.get("year"), 0));
         final int category = (int) JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "tvCategory/id"), -1);
         final String tv_station = (String) JavaScriptEngineFactory.walkJson(entries, "tvStation/name");
@@ -595,8 +885,9 @@ public class SaveTv extends PluginForHost {
         if (genre != null) {
             dl.setProperty(PROPERTY_genre, correctData(dl.getHost(), genre));
         }
-        if (country != null) {
-            dl.setProperty(PROPERTY_producecountry, correctData(dl.getHost(), country));
+        if (producecountry != null) {
+            dl.setProperty(PROPERTY_producecountry, correctData(dl.getHost(), producecountry));
+            dl.setProperty(PROPERTY_producecountry_short, getProduceCountryShort(producecountry));
         }
         if (tv_station != null) {
             dl.setProperty(PROPERTY_plain_tv_station, correctData(dl.getHost(), tv_station));
@@ -1104,8 +1395,6 @@ public class SaveTv extends PluginForHost {
     }
 
     /**
-     * TODO: Can't we find the expire date of the account?
-     *
      * @throws Exception
      */
     private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
@@ -1281,6 +1570,9 @@ public class SaveTv extends PluginForHost {
                     parseLoginInfo(br, account);
                 } catch (final PluginException e) {
                     api_access_token = null;
+                    /* Prepare browser for full login - remove old/invalid "Authorization" header */
+                    br.clearCookies(account.getHoster());
+                    br.getHeaders().remove("Authorization");
                 }
             }
             if (api_access_token == null) {
@@ -1542,13 +1834,14 @@ public class SaveTv extends PluginForHost {
     }
 
     /** Prepare Browser for API usage. */
-    public static void api_prepBrowser(final Browser br) {
+    public static Browser api_prepBrowser(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", "JDownloader");
         /* Important header; without it, we might get XML instead! */
         br.getHeaders().put("Accept", "application/json");
         br.setAllowedResponseCodes(new int[] { 400, 422 });
+        return br;
     }
 
     /** Set Authorization header(s) for API usage. */
