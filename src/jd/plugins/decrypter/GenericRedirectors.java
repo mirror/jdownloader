@@ -72,6 +72,13 @@ public class GenericRedirectors extends antiDDoSForDecrypt {
                 declink = Encoding.urlDecode(newlink, false);
             }
         }
+        if (declink == null && !new Regex(br.getURL(), this.getSupportedLinks()).matches()) {
+            /*
+             * 2019-12-13: E.g. redirect after X-rounds of Cloudflare. E.g. xfile.link. Consider this as a workaround!
+             * https://board.jdownloader.org/showthread.php?t=82462
+             */
+            declink = br.getURL();
+        }
         // when empty it's not always an error, specially when we use lazy regex!
         if (declink != null) {
             decryptedLinks.add(createDownloadlink(declink));
