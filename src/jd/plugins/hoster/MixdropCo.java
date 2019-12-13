@@ -15,12 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,7 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class MixdropCo extends PluginForHost {
+public class MixdropCo extends antiDDoSForHost {
     public MixdropCo(PluginWrapper wrapper) {
         super(wrapper);
         /* 2019-09-30: They do not have/sell premium accounts */
@@ -114,7 +115,7 @@ public class MixdropCo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         final String fid = this.getFID(link);
         String filename = null;
@@ -125,7 +126,7 @@ public class MixdropCo extends PluginForHost {
              * https://mixdrop.co/api#fileinfo --> Also supports multiple fileIDs but as we are unsure how long this will last and this is
              * only a small filehost, we're only using this to check single fileIDs.
              */
-            br.getPage(API_BASE + "/fileinfo?email=" + getAPIMail() + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
+            getPage(API_BASE + "/fileinfo?email=" + getAPIMail() + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
             if (br.getHttpConnection().getResponseCode() == 404 || !"true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "success"))) {
                 /* E.g. {"success":false,"result":{"msg":"file not found"}} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,7 +138,7 @@ public class MixdropCo extends PluginForHost {
             filename = PluginJSonUtils.getJson(br, "title");
             filesize = PluginJSonUtils.getJson(br, "size");
         } else {
-            br.getPage(link.getPluginPatternMatcher());
+            getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/imgs/illustration-notfound\\.png")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -167,7 +168,7 @@ public class MixdropCo extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (USE_API_FOR_LINKCHECK) {
-                br.getPage(link.getPluginPatternMatcher());
+                getPage(link.getPluginPatternMatcher());
             }
             final String fid = getFID(link);
             String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -177,7 +178,15 @@ public class MixdropCo extends PluginForHost {
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
             final String url = "/f/" + fid + "?download";
-            br.postPage(url, "a=genticket&csrf=" + csrftoken);
+            getPage(url);
+            String postData = "a=genticket&csrf=" + csrftoken;
+            /* 2019-12-13: Invisible reCaptcha */
+            final boolean requiresCaptcha = true;
+            if (requiresCaptcha) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                postData += "&token=" + Encoding.urlEncode(recaptchaV2Response);
+            }
+            postPage(url, postData);
             dllink = PluginJSonUtils.getJson(br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -196,6 +205,20 @@ public class MixdropCo extends PluginForHost {
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()) {
+            @Override
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        };
+    }
+
+    public String getReCaptchaKey() {
+        /* 2019-12-13 */
+        return "6LetXaoUAAAAAB6axgg4WLG9oZ_6QLTsFXZj-5sd";
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

@@ -34,7 +34,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornze.com" }, urls = { "https?://((www|player)\\.)?pornze\\.com/(video/)?[^/]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornze.com" }, urls = { "https?://(?:(?:www|player|vidcdn)\\.)?pornze\\.com/(video/)?[^/]+/?" })
 public class PornZeCom extends antiDDoSForDecrypt {
     public PornZeCom(PluginWrapper wrapper) {
         super(wrapper);
