@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TimeZone;
 
+import org.jdownloader.plugins.components.config.BrDeConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.components.config.BrDeConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br-online.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class BrDe extends PluginForHost {
@@ -59,19 +59,20 @@ public class BrDe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        final String startLink = downloadLink.getStringProperty("mainlink");
-        if (downloadLink.getBooleanProperty("offline", false) || startLink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         dllink = downloadLink.getStringProperty("direct_link", null);
         geo_or_age_blocked = false;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(startLink);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        /* 2019-12-13: Additional check is not required anymore */
+        // final String startLink = downloadLink.getStringProperty("mainlink");
+        // if (downloadLink.getBooleanProperty("offline", false) || startLink == null) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // br.getPage(startLink);
+        // if (br.getHttpConnection().getResponseCode() == 404) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
         final String filename = downloadLink.getStringProperty("plain_filename", null);
         dllink = Encoding.htmlDecode(dllink.trim());
         downloadLink.setFinalFileName(filename);
@@ -85,6 +86,8 @@ public class BrDe extends PluginForHost {
                 if (con.getResponseCode() == 403) {
                     /* E.g. content is not available before 10PM (Germany). */
                     geo_or_age_blocked = true;
+                } else if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     server_issues = true;
                 }
