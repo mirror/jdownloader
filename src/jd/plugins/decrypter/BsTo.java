@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,9 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?bs\\.to/(serie/.*|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
@@ -122,17 +121,19 @@ public class BsTo extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            String list = br.getRegex("<ul class=\"hoster-tabs top\">(.*?)<ul class=\"hoster-tabs bottom\">").getMatch(0);
-            if (list == null || list.length() == 0) {
-                list = br.getRegex("<table class=\"episodes\">(.*?)</table>").getMatch(0);
+            /* Crawl all mirrors of a single download */
+            String mirrorlist = br.getRegex("<ul class=\"hoster-tabs top\">(.*?)<ul class=\"hoster-tabs bottom\">").getMatch(0);
+            if (mirrorlist == null || mirrorlist.length() == 0) {
+                /* Crawl all episodes of a series --> All mirrors in that */
+                mirrorlist = br.getRegex("<table class=\"episodes\">.*?</table>").getMatch(-1);
             }
-            final String[] links = new Regex(list, "<a href=\"(" + Pattern.quote(urlpart) + "/?[^\"]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
+            final String[] mirrors = new Regex(mirrorlist, "<a href=\"(/?[^\"]+)\"").getColumn(0);
+            if (mirrors == null || mirrors.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             final Set<String> duplicate = new HashSet<String>();
-            for (final String singleLink : links) {
+            for (final String singleLink : mirrors) {
                 logger.info("singleLink: " + singleLink);
                 final String url = Request.getLocation("/" + singleLink, br.getRequest());
                 if (duplicate.add(url)) {
