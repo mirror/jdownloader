@@ -78,7 +78,9 @@ public class RapidGatorNet extends antiDDoSForHost {
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
     private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM";
-    private final String                   API_BASEv1                      = "https://rapidgator.net/api/";
+    /* Old V1 endpoint */
+    // private final String API_BASEv1 = "https://rapidgator.net/api/";
+    /* https://rapidgator.net/article/api/index */
     private final String                   API_BASEv2                      = "https://rapidgator.net/api/v2/";
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
