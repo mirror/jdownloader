@@ -318,15 +318,23 @@ public class BrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        /*
+         * 2019-12-14: E.g. alternative_date required: https://www.br.de/telekolleg/faecher/englisch/telekolleg-englisch-out-about100.html
+         */
+        final String alternative_date = br.getRegex("<p class=\"detail_timestamp\">\\s*Stand\\s*:\\s*(\\d{2}\\.\\d{2}\\.\\d{4})\\s*</p>").getMatch(0);
         final String playerLinkID = JDHash.getMD5(player_link);
         br.getPage("http://www.br.de" + player_link);
         if (date == null) {
             date = getXML("broadcastDate");
         }
+        if (date == null) {
+            /* Final fallback */
+            date = alternative_date;
+        }
         String show = getXML("broadcast");
-        String plain_name = this.getXML("shareTitle");
+        String title = this.getXML("shareTitle");
         final String[] qualities = br.getRegex("<asset type=(.*?)</asset>").getColumn(0);
-        if (qualities == null || qualities.length == 0 || plain_name == null) {
+        if (qualities == null || qualities.length == 0 || title == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -334,7 +342,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
         HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
         HashMap<String, DownloadLink> tmpBestMap = new HashMap<String, DownloadLink>();
         final BrDeConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.BrDeConfigInterface.class);
-        final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
+        // final boolean grab_subtitle = cfg.isGrabSubtitleEnabled();
         final boolean grabBEST = cfg.isGrabBESTEnabled();
         String date_formatted = null;
         if (!StringUtils.isEmpty(date)) {
@@ -345,7 +353,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
             /* Show is not always given */
             show = "-";
         }
-        plain_name = encodeUnicode(Encoding.htmlDecode(plain_name).trim()).replace("\n", "");
+        title = encodeUnicode(Encoding.htmlDecode(title).trim());
         show = encodeUnicode(Encoding.htmlDecode(show).trim());
         String subtitle_url = br.getRegex("<dataTimedText url=\"(/mediathek/video/untertitel[^<>\"/]+\\.xml)\"").getMatch(0);
         if (subtitle_url != null) {
@@ -373,9 +381,13 @@ public class BrDeDecrypter extends PluginForDecrypt {
             final String resolution = width + "x" + height;
             String final_video_name = "";
             if (date_formatted != null) {
-                final_video_name = date_formatted + "_";
+                final_video_name += date_formatted + "_";
             }
-            final_video_name += "br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
+            final_video_name += "br";
+            if (show != null) {
+                final_video_name += " - " + show;
+            }
+            final_video_name += " - " + title + "_" + resolution + ".mp4";
             final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + playerLinkID);
             dl_video.setLinkID(getHost() + "://" + playerLinkID + "/" + q_string + "/" + resolution);
             dl_video.setProperty("mainlink", parameter);
@@ -463,33 +475,44 @@ public class BrDeDecrypter extends PluginForDecrypt {
             final Entry<String, DownloadLink> entry = it.next();
             final DownloadLink keep = entry.getValue();
             if (keep != null) {
-                /* Add subtitle link for every quality so players will automatically find it */
-                if (grab_subtitle && subtitle_url != null) {
-                    final String subtitle_filename = date_formatted + "_br_" + show + " - " + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
-                    final String resolution = keep.getStringProperty("plain_resolution", null);
-                    final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution + "&hash=" + playerLinkID);
-                    final String linkID = keep.getSetLinkID();
-                    if (linkID != null) {
-                        dl_subtitle.setLinkID(linkID + "/subtitle");
-                    }
-                    dl_subtitle.setProperty("mainlink", parameter);
-                    dl_subtitle.setProperty("direct_link", subtitle_url);
-                    dl_subtitle.setProperty("plain_filename", subtitle_filename);
-                    dl_subtitle.setProperty("streamingType", "subtitle");
-                    dl_subtitle.setContentUrl(parameter);
-                    dl_subtitle.setAvailable(true);
-                    dl_subtitle.setFinalFileName(subtitle_filename);
-                    decryptedLinks.add(dl_subtitle);
-                }
+                /*
+                 * 2019-12-14: Disabled subtitle grabbing for old content - waiting for user-feedback but probably their old content does
+                 * not even have subtitles anymore. Issue here: New content (via API) uses a different subtitle format which does not
+                 * require a conversion anymore!
+                 */
+                // /* Add subtitle link for every quality so players will automatically find it */
+                // if (grab_subtitle && subtitle_url != null) {
+                // final String subtitle_filename = date_formatted + "_br_" + show + " - " + plain_name + "_" +
+                // keep.getStringProperty("plain_resolution", null) + ".xml";
+                // final String resolution = keep.getStringProperty("plain_resolution", null);
+                // final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution +
+                // "&hash=" + playerLinkID);
+                // final String linkID = keep.getSetLinkID();
+                // if (linkID != null) {
+                // dl_subtitle.setLinkID(linkID + "/subtitle");
+                // }
+                // dl_subtitle.setProperty("mainlink", parameter);
+                // dl_subtitle.setProperty("direct_link", subtitle_url);
+                // dl_subtitle.setProperty("plain_filename", subtitle_filename);
+                // dl_subtitle.setProperty("streamingType", "subtitle");
+                // dl_subtitle.setContentUrl(parameter);
+                // dl_subtitle.setAvailable(true);
+                // dl_subtitle.setFinalFileName(subtitle_filename);
+                // decryptedLinks.add(dl_subtitle);
+                // }
                 decryptedLinks.add(keep);
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
         String packagename = "";
         if (date_formatted != null) {
             packagename = date_formatted + "_";
         }
-        packagename += "br_" + show + " - " + plain_name;
+        packagename += "br";
+        if (show != null) {
+            packagename += " - " + show;
+        }
+        packagename += " - " + title;
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(packagename);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
