@@ -42,7 +42,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br-online.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class BrDe extends PluginForHost {
     public BrDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,28 +58,31 @@ public class BrDe extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if (host == null || "br-online.de".equals(host)) {
+            return "br.de";
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = downloadLink.getStringProperty("direct_link", null);
+        if (dllink == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         geo_or_age_blocked = false;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* 2019-12-13: Additional check is not required anymore */
-        // final String startLink = downloadLink.getStringProperty("mainlink");
-        // if (downloadLink.getBooleanProperty("offline", false) || startLink == null) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        // br.getPage(startLink);
-        // if (br.getHttpConnection().getResponseCode() == 404) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
         final String filename = downloadLink.getStringProperty("plain_filename", null);
         dllink = Encoding.htmlDecode(dllink.trim());
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
             br.getHeaders().put("Accept-Encoding", "identity");
-            con = br.openGetConnection(dllink);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -121,24 +124,24 @@ public class BrDe extends PluginForHost {
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (dl.getConnection().getLongContentLength() == 0) {
+            /* 2019-12-14: E.g. broken/empty subtitles */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wrong length - broken file?", 30 * 60 * 1000l);
         }
-        if (this.dl.startDownload()) {
-            this.postprocess(downloadLink);
-        }
+        this.dl.startDownload();
     }
 
-    private void postprocess(final DownloadLink downloadLink) {
-        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
-            if (!convertSubtitle(downloadLink)) {
-                logger.severe("Subtitle conversion failed!");
-            } else {
-                downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null).replace(".xml", ".srt"));
-            }
-        }
-    }
-
+    // private void postprocess(final DownloadLink downloadLink) {
+    // if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+    // if (!convertSubtitle(downloadLink)) {
+    // logger.severe("Subtitle conversion failed!");
+    // } else {
+    // downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null).replace(".xml", ".srt"));
+    // }
+    // }
+    // }
     /**
-     * Converts the BR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      *
      * @return The success of the conversion.
      */
@@ -165,7 +168,7 @@ public class BrDe extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
-        final boolean success = convertSubtitleBrOnlineDe(this, downloadlink, xmlContent, 0);
+        final boolean success = convertSubtitleBrDe(this, downloadlink, xmlContent, 0);
         return success;
     }
 
@@ -174,7 +177,7 @@ public class BrDe extends PluginForHost {
      *
      * @return The success of the conversion.
      */
-    public static boolean convertSubtitleBrOnlineDe(final Plugin plugin, final DownloadLink downloadlink, final String xmlContent, long offset_reduce_milliseconds) {
+    public static boolean convertSubtitleBrDe(final Plugin plugin, final DownloadLink downloadlink, final String xmlContent, long offset_reduce_milliseconds) {
         final File source = new File(downloadlink.getFileOutput());
         final BufferedWriter dest;
         try {

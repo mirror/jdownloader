@@ -189,6 +189,14 @@ public class RapidGatorNet extends antiDDoSForHost {
         correctDownloadLink(link);
         setBrowserExclusive();
         br.setFollowRedirects(false);
+        final String custom_referer = this.getPluginConfig().getStringProperty("CUSTOM_REFERER", null);
+        if (!StringUtils.isEmpty(custom_referer)) {
+            /*
+             * 2019-12-14: According to users, some special Referer will remove the captcha in free mode (I was unable to confirm) and lower
+             * the waittime between downloads from 120 to 60 minutes.
+             */
+            br.getHeaders().put("Referer", custom_referer);
+        }
         getPage(link.getPluginPatternMatcher());
         final String redirect = br.getRedirectLocation();
         if (redirect != null) {
@@ -1325,6 +1333,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         // Some users always get server error 500 via API
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), DISABLE_API_PREMIUM, JDL.L("plugins.hoster.rapidgatornet.disableAPIPremium", "Disable API for premium downloads (use web download)?")).setDefaultValue(false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTAL_ENFORCE_SSL, JDL.L("plugins.hoster.rapidgatornet.useExperimentalEnforceSSL", "Activate experimental forced SSL for downloads?")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "CUSTOM_REFERER", "Set custom Referer here").setDefaultValue(null));
     }
 
     @Override

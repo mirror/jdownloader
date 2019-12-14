@@ -195,7 +195,7 @@ public class ZdfDeMediathek extends PluginForHost {
         final String xmlContent = xml.toString();
         /* They got two different subtitle formats */
         if (xmlContent.contains("<ebuttm:documentEbuttVersion>") || xmlContent.contains("<tts:documentEbuttVersion>")) {
-            success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(this, downloadlink, xmlContent, 0);
+            success = jd.plugins.hoster.BrDe.convertSubtitleBrDe(this, downloadlink, xmlContent, 0);
         } else {
             /* Unknown subtitle type */
             success = false;

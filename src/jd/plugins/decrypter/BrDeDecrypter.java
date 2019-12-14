@@ -253,7 +253,7 @@ public class BrDeDecrypter extends PluginForDecrypt {
             if (keep != null) {
                 /* Add subtitle link for every quality so players will automatically find it */
                 if (grab_subtitle && !StringUtils.isEmpty(subtitle_url)) {
-                    final String subtitle_filename = date_formatted + "_br_" + show + " - " + title + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                    final String subtitle_filename = date_formatted + "_br_" + show + " - " + title + "_" + keep.getStringProperty("plain_resolution", null) + ".vtt";
                     final String resolution = keep.getStringProperty("plain_resolution", null);
                     final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution + "&hash=" + videoID);
                     final String linkID = keep.getSetLinkID();
