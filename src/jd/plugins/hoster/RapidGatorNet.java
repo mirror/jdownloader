@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,6 +38,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,7 +47,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -63,7 +64,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(www\\.)?(rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -77,7 +78,8 @@ public class RapidGatorNet extends antiDDoSForHost {
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
     private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM";
-    private final String                   apiURL                          = "https://rapidgator.net/api/";
+    private final String                   API_BASEv1                      = "https://rapidgator.net/api/";
+    private final String                   API_BASEv2                      = "https://rapidgator.net/api/v2/";
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                      = new AtomicLong(0);
@@ -105,19 +107,22 @@ public class RapidGatorNet extends antiDDoSForHost {
         return super.rewriteHost(host);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        if (link.getDownloadURL().contains("rg.to/")) {
-            String url = link.getDownloadURL();
+        if (link.getPluginPatternMatcher().contains("rg.to/")) {
+            String url = link.getPluginPatternMatcher();
             url = url.replaceFirst("rg.to/", "rapidgator.net/");
-            link.setUrlDownload(url);
+            link.setPluginPatternMatcher(url);
         }
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
-        final String linkID = new Regex(link.getPluginPatternMatcher(), "/file/([a-z0-9]{32}|\\d+)").getMatch(0);
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+        final String linkID = getFID(link);
         if (linkID != null) {
             link.setLinkID(getHost() + "://" + linkID);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/file/([a-z0-9]{32}|\\d+)").getMatch(0);
     }
 
     @Override
@@ -548,61 +553,76 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (account) {
             try {
-                final String sid = login_api(account, false);
-                if (sid != null) {
-                    account.setValid(true);
-                    /* premium account */
-                    final String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
-                    final String traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
-                    final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
-                    if (expire_date != null && traffic_left != null) {
-                        /*
-                         * expire date and traffic left are available, so it is a premium account, add one day extra to prevent it from
-                         * expiring too early
-                         */
-                        ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
-                        final long left = Long.parseLong(traffic_left);
-                        ai.setTrafficLeft(left);
-                        final long TB = 1024 * 1024 * 1024 * 1024l;
-                        if (left > 3 * TB) {
-                            ai.setTrafficMax(12 * TB);
-                        } else if (left <= 3 * TB && left > TB) {
-                            ai.setTrafficMax(3 * TB);
-                        } else {
-                            ai.setTrafficMax(TB);
-                        }
-                        if (!ai.isExpired()) {
-                            account.setType(AccountType.PREMIUM);
-                            /* account still valid */
-                            account.setMaxSimultanDownloads(-1);
-                            account.setConcurrentUsePossible(true);
-                            if (account.getAccountInfo() == null) {
-                                account.setAccountInfo(ai);
-                            }
-                            if (reset_in != null) {
-                                // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
-                                // ai.setStatus("Traffic exceeded " + reset_in);
-                                // account.setAccountInfo(ai);
-                                // is reset_in == seconds, * 1000 back into ms.
-                                final Long resetInTimestamp = Long.parseLong(reset_in) * 1000;
-                                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", resetInTimestamp);
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                            }
-                            return ai;
-                        }
-                    }
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(1);
-                    account.setConcurrentUsePossible(false);
-                    return ai;
+                login_api(account, false);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
+                if (StringUtils.isEmpty(expire_date)) {
+                    /* APIv2 */
+                    expire_date = PluginJSonUtils.getJsonValue(br, "premium_end_time");
                 }
-                account.setType(null);
-                account.setProperty("session_id", Property.NULL);
-                account.setValid(false);
+                boolean is_premium = false;
+                if (entries.containsKey("is_premium")) {
+                    is_premium = ((Boolean) entries.get("is_premium")).booleanValue();
+                }
+                /*
+                 * 2019-12-14: Check which value is available in traffic-->total and use that: "traffic":{"total":null,"left":null} [= Free
+                 * Account]
+                 */
+                Object traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
+                if (traffic_left == null) {
+                    traffic_left = JavaScriptEngineFactory.walkJson(entries, "traffic/left");
+                }
+                /* 2019-12-14: TODO: Find out whether 'reset_in' still exists in APIv2 response */
+                final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
+                if (reset_in != null) {
+                    // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
+                    // ai.setStatus("Traffic exceeded " + reset_in);
+                    // account.setAccountInfo(ai);
+                    // is reset_in == seconds, * 1000 back into ms.
+                    final Long resetInTimestamp = Long.parseLong(reset_in) * 1000;
+                    account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, resetInTimestamp);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    /* 2019-12-14: New attempt: Extra short waittime on temp. disabled */
+                    account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, 1 * 60 * 1000);
+                }
+                if (expire_date != null || is_premium) {
+                    if (!StringUtils.isEmpty(expire_date)) {
+                        /*
+                         * Add one day extra to prevent it from expiring too early in JD.
+                         */
+                        ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
+                    }
+                    long left = 0;
+                    if (traffic_left != null) {
+                        left = Long.parseLong((String) traffic_left);
+                    }
+                    ai.setTrafficLeft(left);
+                    final long TB = 1024 * 1024 * 1024 * 1024l;
+                    if (left > 3 * TB) {
+                        ai.setTrafficMax(12 * TB);
+                    } else if (left <= 3 * TB && left > TB) {
+                        ai.setTrafficMax(3 * TB);
+                    } else {
+                        ai.setTrafficMax(TB);
+                    }
+                    if (!ai.isExpired()) {
+                        account.setType(AccountType.PREMIUM);
+                        /* Premium account valid */
+                        account.setMaxSimultanDownloads(-1);
+                        account.setConcurrentUsePossible(true);
+                        if (account.getAccountInfo() == null) {
+                            account.setAccountInfo(ai);
+                        }
+                        return ai;
+                    }
+                }
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
                 return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -661,7 +681,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -669,7 +688,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && account.isValid()) {
@@ -680,7 +698,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     br.setCookies(getHost(), cookies);
                     /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
                     br.setFollowRedirects(true);
-                    avoidBlock(br);
+                    accessMainpage(br);
                     if (br.containsHTML("<a href=\"/auth/logout\"")) {
                         setAccountTypeWebsite(account, br);
                         account.saveCookies(br.getCookies(getHost()), "");
@@ -689,10 +707,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
                 br = new Browser();
                 br.setFollowRedirects(true);
-                avoidBlock(br);
+                accessMainpage(br);
                 for (int i = 1; i <= 3; i++) {
                     logger.info("Site login attempt " + i + " of 3");
-                    getPage("https://rapidgator.net/auth/login");
+                    getPage("https://" + this.getHost() + "/auth/login");
                     String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                     final Form loginForm = br.getFormbyProperty("id", "login");
                     final String captcha_url = br.getRegex("\"(/auth/captcha/v/[a-z0-9]+)\"").getMatch(0);
@@ -751,7 +769,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private void setAccountTypeWebsite(final Account account, final Browser br) {
-        if (br.containsHTML("Account:\\&nbsp;<a href=\"/article/premium\">Free</a>")) {
+        if (br.containsHTML("Account\\s*:\\&nbsp;<a href=\"/article/premium\">Free</a>")) {
             account.setType(AccountType.FREE);
         } else {
             account.setType(AccountType.PREMIUM);
@@ -759,53 +777,48 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private String login_api(final Account account, boolean isDownloadMode) throws Exception {
-        URLConnectionAdapter con = null;
         synchronized (account) {
-            try {
-                final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
-                final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
-                if (pleaseWait > 5000) {
-                    throw new AccountUnavailableException("Frequest logins. Please wait!", pleaseWait);
-                }
-                avoidBlock(br);
-                con = openAntiDDoSRequestConnection(br, br.createGetRequest(apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass())));
-                handleErrors_api(null, false, null, account, con);
-                if (con.getResponseCode() == 200) {
-                    br.followConnection();
-                    final String session_id = PluginJSonUtils.getJsonValue(br, "session_id");
-                    if (session_id != null) {
-                        boolean isPremium = false;
-                        final String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
-                        final String traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
-                        if (expire_date != null && traffic_left != null) {
-                            /*
-                             * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
-                             * expiring too early
-                             */
-                            final AccountInfo ai = new AccountInfo();
-                            ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
-                            isPremium = !ai.isExpired();
-                        }
-                        if (isPremium) {
-                            account.setType(Account.AccountType.PREMIUM);
-                        } else {
-                            account.setType(Account.AccountType.FREE);
-                        }
-                        account.setProperty("session_id", session_id);
-                    }
+            final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
+            final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
+            if (pleaseWait > 5000) {
+                throw new AccountUnavailableException("Frequest logins. Please wait!", pleaseWait);
+            }
+            /* Before this was called 'avoidBlock' but it is not required anymore (in API mode)! */
+            // accessMainpage(br);
+            String session_id = account.getStringProperty("session_id", null);
+            if (session_id != null) {
+                /* First try to re-use last token */
+                getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
+                if (br.getHttpConnection().getResponseCode() == 200) {
+                    /* Stored session_id is still valid */
+                    logger.info("Successfully re-used last session_id");
                     return session_id;
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable ignore) {
+                } else {
+                    logger.info("Failed to re-use last session_id");
                 }
             }
+            /* Avoid full logins - RG will temp. block accounts on too many full logins in a short time! */
+            logger.info("Performing full login");
+            getPage(API_BASEv2 + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            /* 2019-12-14: session_id == PHPSESSID cookie */
+            session_id = PluginJSonUtils.getJsonValue(br, "session_id");
+            if (StringUtils.isEmpty(session_id)) {
+                /* 2019-12-14: APIv2 */
+                session_id = PluginJSonUtils.getJsonValue(br, "token");
+            }
+            if (StringUtils.isEmpty(session_id)) {
+                logger.info("Failed to find session_id");
+                handleErrors_api(null, false, null, account, br.getHttpConnection());
+                logger.warning("Unknown login failure");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            /* Store session_id */
+            account.setProperty("session_id", session_id);
+            return session_id;
         }
     }
 
-    private void avoidBlock(Browser br) throws Exception {
+    private void accessMainpage(Browser br) throws Exception {
         getPage(br, "https://rapidgator.net/");
     }
 
@@ -833,6 +846,9 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     public static String readErrorStream(final URLConnectionAdapter con) throws UnsupportedEncodingException, IOException {
+        if (con == null) {
+            return null;
+        }
         if (con.getRequest() != null && con.getRequest().getHtmlCode() != null) {
             return con.getRequest().getHtmlCode();
         } else if (con.getRequest() != null && !con.getRequest().isRequested()) {
@@ -864,136 +880,117 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private void handleErrors_api(final String session_id, boolean retrySameSession, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
+        if (con == null) {
+            return;
+        }
         if (link != null) {
             if (con.getResponseCode() == 404) {
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 /*
-                 * 2018-12-11: Possible API bug in premium mode which may return this error although a file is definitly online and
-                 * downloadable (double-checked in free mode!). This might only happen for stolen premium-accounts.
+                 * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and
+                 * retry instead. If the file is offline, availableStatus will find that correct status eventually! This will also happen if
+                 * you try to download in API mode using a free account!
                  */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (con.getResponseCode() == 416) {
+                // {"response":null,"response_status":404,"response_details":"Error: File not found"}
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else if (con.getResponseCode() == 416) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
-            }
-            if (con.getResponseCode() == 500) {
+            } else if (con.getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
-            }
-            if (con.getResponseCode() == 423) {
+            } else if (con.getResponseCode() == 423) {
                 // HTTP/1.1 423 Locked
                 // {"response":null,"response_status":423,"response_details":"Error: Exceeded traffic"}
                 // Hotlink?!
             }
         }
-        if (con.getResponseCode() != 200) {
-            synchronized (account) {
-                final String lang = System.getProperty("user.language");
-                final String errorMessage = RapidGatorNet.readErrorStream(con);
-                final String statusString = new Regex(errorMessage, "status\"\\s*:\\s*\"?(\\d+)").getMatch(0);
-                final long status = statusString != null ? Long.parseLong(statusString) : -1;
-                logger.info("ErrorMessage: " + errorMessage);
-                if (link != null && errorMessage.contains("Exceeded traffic")) {
-                    final AccountInfo ac = new AccountInfo();
-                    ac.setTrafficLeft(0);
-                    account.setAccountInfo(ac);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty("session_id", null));
-                if (errorMessage.contains("Please wait")) {
-                    account.setProperty("lastPleaseWait", System.currentTimeMillis());
-                    if (link == null) {
-                        /* we are inside fetchAccountInfo */
-                        throw new AccountUnavailableException("Frequent logins. Please wait", 5 * 60 * 1000l);
-                    } else {
-                        /* we are inside handlePremium */
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
-                    }
-                } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
-                    if (sessionReset) {
-                        logger.info("SessionReset:" + sessionReset);
-                        account.setProperty("session_id", Property.NULL);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } else if (errorMessage.contains("Password cannot be blank")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDas Passwortfeld darf nicht leer sein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThe password field cannot be blank!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } else if (errorMessage.contains("User is FROZEN")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount ist gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } else if (StringUtils.containsIgnoreCase(errorMessage, "Error: ACCOUNT LOCKED FOR VIOLATION OF OUR TERMS. PLEASE CONTACT SUPPORT.")) {
-                    // most likely account sharing as result of shared account dbs.
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount Locked! Violation of Terms of Service!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (errorMessage.contains("Parameter login or password is missing")) {
-                    /*
-                     * Unusual case but this may also happen frequently if users use strange chars as usernme/password so simply treat this
-                     * as "login/password wrong"!
-                     */
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
-                    // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
-                    // {"response":null,"status":401,"details":"Error. Session not exist"}
-                    if (retrySameSession) {
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "RetrySameSession");
-                    } else {
-                        if (sessionReset) {
-                            logger.info("SessionReset:" + sessionReset);
-                            account.setProperty("session_id", Property.NULL);
-                        }
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
-                    if (sessionReset) {
-                        logger.info("SessionReset:" + sessionReset);
-                        account.setProperty("session_id", Property.NULL);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if (errorMessage.contains("\"Error: Error e\\-mail or password")) {
-                    /* Usually comes with response_status 401 --> Not exactly sure what it means but probably some kind of account issue. */
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
-                    /* User needs to confirm his current IP. */
-                    String statusMessage;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
-                    } else {
-                        statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                if (con.getResponseCode() == 503 || errorMessage.contains("Service Temporarily Unavailable")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);
-                }
-                if (con.getResponseCode() == 401 || errorMessage.contains("Wrong e-mail or password")) {
-                    final String userName = account.getUser();
-                    if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Username must be an e-mail", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong e-mail or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (link != null) {
-                    // disable api?
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        synchronized (account) {
+            final String lang = System.getProperty("user.language");
+            String errorMessage = RapidGatorNet.readErrorStream(con);
+            final String statusString = new Regex(errorMessage, "status\"\\s*:\\s*\"?(\\d+)").getMatch(0);
+            final long status = statusString != null ? Long.parseLong(statusString) : -1;
+            if (errorMessage == null) {
+                /* TODO: Remove this workaround */
+                errorMessage = "None";
             }
+            logger.info("ErrorMessage: " + errorMessage);
+            if (link != null && errorMessage.contains("Exceeded traffic")) {
+                final AccountInfo ac = new AccountInfo();
+                ac.setTrafficLeft(0);
+                account.setAccountInfo(ac);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty("session_id", null));
+            if (errorMessage.contains("Please wait")) {
+                account.setProperty("lastPleaseWait", System.currentTimeMillis());
+                if (link == null) {
+                    /* we are inside fetchAccountInfo */
+                    throw new AccountUnavailableException("Frequent logins. Please wait", 5 * 60 * 1000l);
+                } else {
+                    /* we are inside handlePremium */
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
+                }
+            } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
+                if (sessionReset) {
+                    logger.info("SessionReset:" + sessionReset);
+                    account.setProperty("session_id", Property.NULL);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errorMessage.contains("Password cannot be blank")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errorMessage.contains("User is FROZEN")) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount ist gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } else if (StringUtils.containsIgnoreCase(errorMessage, "Error: ACCOUNT LOCKED FOR VIOLATION OF OUR TERMS. PLEASE CONTACT SUPPORT.")) {
+                // most likely account sharing as result of shared account dbs.
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount Locked! Violation of Terms of Service!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errorMessage.contains("Parameter login or password is missing")) {
+                /*
+                 * Unusual case but this may also happen frequently if users use strange chars as usernme/password so simply treat this as
+                 * "login/password wrong"!
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (StringUtils.containsIgnoreCase(errorMessage, "Wrong e-mail or password")) {
+                /* 2019-12-14: {"response":null,"response_status":401,"response_details":"Error: Wrong e-mail or password."} */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
+                // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
+                // {"response":null,"status":401,"details":"Error. Session not exist"}
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
+                if (sessionReset) {
+                    logger.info("SessionReset:" + sessionReset);
+                    account.setProperty("session_id", Property.NULL);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (errorMessage.contains("\"Error: Error e\\-mail or password")) {
+                /* Usually comes with response_status 401 --> Not exactly sure what it means but probably some kind of account issue. */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
+                /* User needs to confirm his current IP. */
+                String statusMessage;
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    statusMessage = "\r\nBitte bestätige deine aktuelle IP Adresse über den Bestätigungslink per E-Mail um den Account wieder nutzen zu können.";
+                } else {
+                    statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            /* Handle bare responsecodes */
+            if (con.getResponseCode() == 401) {
+                /* Invalid logindata */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (con.getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);
+            }
+            if (link != null) {
+                // disable api?
+            }
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -1002,118 +999,58 @@ public class RapidGatorNet extends antiDDoSForHost {
         String session_id = null;
         final boolean isPremium;
         synchronized (account) {
-            session_id = account.getStringProperty("session_id", null);
-            if (session_id == null) {
-                session_id = login_api(account, true);
-            }
+            session_id = login_api(account, true);
             isPremium = Account.AccountType.PREMIUM.equals(account.getType());
         }
-        if (isPremium == false) {
+        if (!isPremium) {
+            /* Free Account --> Only website possible (not API) */
             handleFree(link);
             return;
         }
         if (session_id == null) {
-            // disable api?
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        URLConnectionAdapter con = null;
         String fileName = link.getFinalFileName();
-        boolean allowSessionRetry = true;
-        if (fileName == null) {
-            /* no final filename yet, do linkcheck */
-            try {
-                final Request request = br.createGetRequest(apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-                con = openAntiDDoSRequestConnection(br, request);
+        if (fileName == null || true) {
+            /* No final filename yet? Do linkcheck! */
+            this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+            handleErrors_api(session_id, true, link, account, br.getHttpConnection());
+            br.followConnection();
+            fileName = PluginJSonUtils.getJsonValue(br, "filename");
+            if (StringUtils.isEmpty(fileName)) {
+                /* 2019-12-14: APIv2 */
+                fileName = PluginJSonUtils.getJsonValue(br, "name");
+            }
+            final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
+            final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
+            if (fileName != null) {
+                link.setFinalFileName(fileName);
+            }
+            if (fileSize != null) {
+                final long size = Long.parseLong(fileSize);
                 try {
-                    handleErrors_api(session_id, true, link, account, con);
-                } catch (PluginException e) {
-                    logger.log(e);
-                    if (e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
-                        allowSessionRetry = false;
-                        // retry session after few seconds, maybe session is not known/cached yet on download server
-                        sleep(5000, link);
-                        con = openAntiDDoSRequestConnection(br, request.cloneRequest());
-                        handleErrors_api(session_id, false, link, account, con);
-                    } else {
-                        throw e;
-                    }
+                    link.setVerifiedFileSize(size);
+                } catch (final Throwable not09581) {
+                    link.setDownloadSize(size);
                 }
-                if (con.getResponseCode() == 200) {
-                    br.followConnection();
-                    fileName = PluginJSonUtils.getJsonValue(br, "filename");
-                    final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
-                    final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
-                    if (fileName != null) {
-                        link.setFinalFileName(fileName);
-                    }
-                    if (fileSize != null) {
-                        final long size = Long.parseLong(fileSize);
-                        try {
-                            link.setVerifiedFileSize(size);
-                        } catch (final Throwable not09581) {
-                            link.setDownloadSize(size);
-                        }
-                    }
-                    if (fileHash != null) {
-                        link.setMD5Hash(fileHash);
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable ignore) {
-                }
+            }
+            if (fileHash != null) {
+                link.setMD5Hash(fileHash);
             }
         }
         String url = null;
-        try {
-            final Request request = br.createGetRequest(apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            con = openAntiDDoSRequestConnection(br, request);
-            try {
-                handleErrors_api(session_id, true, link, account, con);
-            } catch (PluginException e) {
-                logger.log(e);
-                if (allowSessionRetry && e.getLinkStatus() == LinkStatus.ERROR_RETRY && StringUtils.equalsIgnoreCase("RetrySameSession", e.getMessage())) {
-                    // retry session after few seconds, maybe session is not known/cached yet on download server
-                    sleep(5000, link);
-                    con = openAntiDDoSRequestConnection(br, request.cloneRequest());
-                    handleErrors_api(session_id, false, link, account, con);
-                } else {
-                    throw e;
-                }
-            }
-            if (con.getResponseCode() == 200) {
-                br.followConnection();
-                url = PluginJSonUtils.getJsonValue(br, "url");
-                if (url != null) {
-                    url = url.replace("\\", "");
-                    url = url.replace("//?", "/?");
-                }
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable ignore) {
-            }
+        this.getPage(API_BASEv2 + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+        handleErrors_api(session_id, false, link, account, br.getHttpConnection());
+        br.followConnection();
+        url = PluginJSonUtils.getJsonValue(br, "url");
+        if (StringUtils.isEmpty(url)) {
+            /* 2019-12-14: APIv2 */
+            url = PluginJSonUtils.getJsonValue(br, "download_url");
         }
-        if ("false".equals(url)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (url == null) {
-            // disable api?
-            // {"response":{"url":false},"response_status":200,"response_details":null}
-            /*
-             * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
-             * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
-             * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
-             * TODO: Maybe move this info handleErrors_api
-             */
-            if (br.containsHTML("\"response_details\":null")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+        if (StringUtils.isEmpty(url)) {
+            logger.warning("Failed to find final downloadurl");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
             url = url.replaceFirst("^http://", "https://");
@@ -1124,6 +1061,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             handleErrors_api(session_id, false, link, account, dl.getConnection());
             // so we can see errors maybe proxy errors etc.
             br.followConnection();
+            /* Try that errorhandling but it might not help! */
+            handleErrors_api(session_id, false, link, account, br.getHttpConnection());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
