@@ -77,7 +77,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
-    private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM";
+    private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM_2019_12_14";
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
