@@ -77,7 +77,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
-    private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM_2019_12_14";
+    private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM_2019_12_15";
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
@@ -636,6 +636,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
+                /* API returns null value for trafficleft for free accounts --> Display them as unlimited traffic! */
+                ai.setUnlimitedTraffic();
                 return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -802,12 +804,13 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (session_id != null) {
                 /* First try to re-use last token */
                 getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
-                if (br.getHttpConnection().getResponseCode() == 200) {
-                    /* Stored session_id is still valid */
+                try {
+                    handleErrors_api(null, false, null, account, br.getHttpConnection());
                     logger.info("Successfully re-used last session_id");
                     return session_id;
-                } else {
+                } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
+                    e.printStackTrace();
                 }
             }
             /* Avoid full logins - RG will temp. block accounts on too many full logins in a short time! */
