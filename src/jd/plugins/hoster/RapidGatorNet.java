@@ -575,7 +575,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                  */
                 Object traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
                 if (traffic_left == null) {
-                    traffic_left = JavaScriptEngineFactory.walkJson(entries, "traffic/left");
+                    traffic_left = JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left");
                 }
                 /* 2019-12-14: TODO: Find out whether 'reset_in' still exists in APIv2 response */
                 final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
@@ -600,7 +600,11 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                     long left = 0;
                     if (traffic_left != null) {
-                        left = Long.parseLong((String) traffic_left);
+                        if (traffic_left instanceof Integer) {
+                            left = (int) traffic_left;
+                        } else {
+                            left = Long.parseLong((String) traffic_left);
+                        }
                     }
                     ai.setTrafficLeft(left);
                     final long TB = 1024 * 1024 * 1024 * 1024l;
