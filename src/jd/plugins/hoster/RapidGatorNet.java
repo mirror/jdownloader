@@ -573,10 +573,11 @@ public class RapidGatorNet extends antiDDoSForHost {
                  * 2019-12-14: Check which value is available in traffic-->total and use that: "traffic":{"total":null,"left":null} [= Free
                  * Account]
                  */
-                Object traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
-                if (traffic_left == null) {
-                    traffic_left = JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left");
+                Object traffic_leftO = PluginJSonUtils.getJsonValue(br, "traffic_left");
+                if (traffic_leftO == null) {
+                    traffic_leftO = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left"), 0);
                 }
+                long traffic_max = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/total"), 0);
                 /* 2019-12-14: TODO: Find out whether 'reset_in' still exists in APIv2 response */
                 final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
                 if (reset_in != null) {
@@ -591,29 +592,35 @@ public class RapidGatorNet extends antiDDoSForHost {
                     /* 2019-12-14: New attempt: Extra short waittime on temp. disabled */
                     account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, 1 * 60 * 1000);
                 }
-                if (expire_date != null || is_premium) {
+                if (!StringUtils.isEmpty(expire_date) || is_premium) {
                     if (!StringUtils.isEmpty(expire_date)) {
                         /*
                          * Add one day extra to prevent it from expiring too early in JD.
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
                     }
-                    long left = 0;
-                    if (traffic_left != null) {
-                        if (traffic_left instanceof Integer) {
-                            left = (int) traffic_left;
+                    long traffic_left = 0;
+                    if (traffic_leftO != null) {
+                        if (traffic_leftO instanceof Long) {
+                            traffic_left = (long) traffic_leftO;
                         } else {
-                            left = Long.parseLong((String) traffic_left);
+                            traffic_left = Long.parseLong((String) traffic_leftO);
                         }
                     }
-                    ai.setTrafficLeft(left);
-                    final long TB = 1024 * 1024 * 1024 * 1024l;
-                    if (left > 3 * TB) {
-                        ai.setTrafficMax(12 * TB);
-                    } else if (left <= 3 * TB && left > TB) {
-                        ai.setTrafficMax(3 * TB);
+                    ai.setTrafficLeft(traffic_left);
+                    if (traffic_max > 0) {
+                        /* APIv2 */
+                        ai.setTrafficMax(traffic_max);
                     } else {
-                        ai.setTrafficMax(TB);
+                        /* APIv1/Fallback/Hardcoded */
+                        final long TB = 1024 * 1024 * 1024 * 1024l;
+                        if (traffic_left > 3 * TB) {
+                            ai.setTrafficMax(12 * TB);
+                        } else if (traffic_left <= 3 * TB && traffic_left > TB) {
+                            ai.setTrafficMax(3 * TB);
+                        } else {
+                            ai.setTrafficMax(TB);
+                        }
                     }
                     if (!ai.isExpired()) {
                         account.setType(AccountType.PREMIUM);
