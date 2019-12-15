@@ -841,6 +841,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         correctDownloadLink(link);
+        /* TODO: Maybe always check availablestatus here (via Website!) as we can not trust API 404 */
         hotLinkURL = null;
         if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
             requestFileInformation(link);
@@ -1029,6 +1030,8 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         String fileName = link.getFinalFileName();
         if (fileName == null) {
+            /* TODO: Check if this API call is working. It seems to be broken as it either returns 404 or 401. */
+            /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
             /* No final filename yet? Do linkcheck! */
             this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
             handleErrors_api(session_id, true, link, account, br.getHttpConnection());
