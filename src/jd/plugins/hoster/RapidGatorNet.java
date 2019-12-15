@@ -1028,11 +1028,10 @@ public class RapidGatorNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String fileName = link.getFinalFileName();
-        if (fileName == null || true) {
+        if (fileName == null) {
             /* No final filename yet? Do linkcheck! */
             this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
             handleErrors_api(session_id, true, link, account, br.getHttpConnection());
-            br.followConnection();
             fileName = PluginJSonUtils.getJsonValue(br, "filename");
             if (StringUtils.isEmpty(fileName)) {
                 /* 2019-12-14: APIv2 */
