@@ -601,8 +601,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                     }
                     long traffic_left = 0;
                     if (traffic_leftO != null) {
-                        if (traffic_leftO instanceof Long) {
-                            traffic_left = (long) traffic_leftO;
+                        if (traffic_leftO instanceof Number) {
+                            traffic_left = ((Number) traffic_leftO).longValue();
                         } else {
                             traffic_left = Long.parseLong((String) traffic_leftO);
                         }
@@ -810,7 +810,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     return session_id;
                 } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
-                    e.printStackTrace();
+                    logger.log(e);
                 }
             }
             /* Avoid full logins - RG will temp. block accounts on too many full logins in a short time! */
@@ -1044,11 +1044,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             if (fileSize != null) {
                 final long size = Long.parseLong(fileSize);
-                try {
-                    link.setVerifiedFileSize(size);
-                } catch (final Throwable not09581) {
-                    link.setDownloadSize(size);
-                }
+                link.setVerifiedFileSize(size);
             }
             if (fileHash != null) {
                 link.setMD5Hash(fileHash);
