@@ -708,25 +708,37 @@ public class RapidGatorNet extends antiDDoSForHost {
         return ai;
     }
 
-    private Cookies login_web(final Account account, final boolean force) throws Exception {
+    /**
+     * @param validateCookies
+     *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
+     *            false = Set stored cookies and trust them if they're not older than 300000l
+     *
+     */
+    private boolean login_web(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
+            /* Keep followRedirects information */
             final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && account.isValid()) {
+                if (cookies != null) {
                     /*
                      * Make sure that we're logged in. Doing this for every downloadlink might sound like a waste of server capacity but
                      * really it doesn't hurt anybody.
                      */
                     br.setCookies(getHost(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust login-cookies without checking as they should still be fresh");
+                        return false;
+                    }
                     /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
                     br.setFollowRedirects(true);
                     accessMainpage(br);
-                    if (br.containsHTML("<a href=\"/auth/logout\"")) {
+                    if (isLoggedINWebsite()) {
                         setAccountTypeWebsite(account, br);
                         account.saveCookies(br.getCookies(getHost()), "");
-                        return cookies;
+                        return true;
                     }
                 }
                 br = new Browser();
@@ -763,23 +775,17 @@ public class RapidGatorNet extends antiDDoSForHost {
                     } else {
                         postPage("/auth/login", loginPostData);
                     }
-                    if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
+                    if (isLoggedINWebsite()) {
                         continue;
                     }
                     break;
                 }
-                if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
-                    logger.info("disabled because of" + br.toString());
-                    final String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedINWebsite()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 setAccountTypeWebsite(account, br);
                 account.saveCookies(br.getCookies(getHost()), "");
-                return cookies;
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.setType(null);
@@ -790,6 +796,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 br.setFollowRedirects(ifr);
             }
         }
+    }
+
+    private boolean isLoggedINWebsite() {
+        return br.getCookie(RapidGatorNet.MAINPAGE, "user__", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     private void setAccountTypeWebsite(final Account account, final Browser br) {
@@ -1108,29 +1118,25 @@ public class RapidGatorNet extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         logger.info("Performing cached login sequence!!");
-        Cookies cookies = login_web(account, false);
+        boolean validated_cookies = login_web(account, false);
+        boolean logged_in = false;
         final int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
             getPage(br, link.getPluginPatternMatcher());
-            if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null && i + 1 != repeat) {
+            logged_in = this.isLoggedINWebsite();
+            if (!logged_in && !validated_cookies && i + 1 != repeat) {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...
-                logger.info("Performing full login sequence!!");
+                logger.info("Performing login sequence with cookie validation");
                 br = new Browser();
-                cookies = login_web(account, true);
+                validated_cookies = login_web(account, true);
                 continue;
-            } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null && i + 1 == repeat) {
-                // failure
-                logger.warning("handlePremium Failed! Please report to JDownloader Development Team.");
-                synchronized (account) {
-                    if (cookies == null) {
-                        account.setProperty("cookies", Property.NULL);
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 break;
             }
+        }
+        if (!logged_in) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown login failure");
         }
         if (Account.AccountType.FREE.equals(account.getType())) {
             doFree(link);
@@ -1139,9 +1145,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (dllink == null) {
                 dllink = br.getRegex("var premium_download_link\\s*=\\s*'(https?://[^<>\"']+)';").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("'(https?://pr_srv\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                    dllink = br.getRegex("'(https?://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)'").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("'(https?://pr\\d+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                        dllink = br.getRegex("'(https?://pr\\d+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)'").getMatch(0);
                     }
                 }
             }
