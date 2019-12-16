@@ -588,20 +588,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                     traffic_leftO = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left"), 0);
                 }
                 long traffic_max = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/total"), 0);
-                /* 2019-12-14: TODO: Find out whether 'reset_in' still exists in APIv2 response */
-                final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
-                if (reset_in != null) {
-                    // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
-                    // ai.setStatus("Traffic exceeded " + reset_in);
-                    // account.setAccountInfo(ai);
-                    // is reset_in == seconds, * 1000 back into ms.
-                    final Long resetInTimestamp = Long.parseLong(reset_in) * 1000;
-                    account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, resetInTimestamp);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    /* 2019-12-14: New attempt: Extra short waittime on temp. disabled */
-                    account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, 1 * 60 * 1000);
-                }
+                final long storage_used = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/storage/left"), 0);
+                ai.setUsedSpace(storage_used);
                 if (!StringUtils.isEmpty(expire_date) || is_premium) {
                     if (!StringUtils.isEmpty(expire_date)) {
                         /*
@@ -998,20 +986,23 @@ public class RapidGatorNet extends antiDDoSForHost {
                  * "login/password wrong"!
                  */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (StringUtils.containsIgnoreCase(errorMessage, "Wrong e-mail or password")) {
+            } else if (status == 401 && StringUtils.containsIgnoreCase(errorMessage, "Wrong e-mail or password")) {
                 /* 2019-12-14: {"response":null,"response_status":401,"response_details":"Error: Wrong e-mail or password."} */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                 // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                 // {"response":null,"status":401,"details":"Error. Session not exist"}
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
+                throw new AccountUnavailableException("Session expired", 5 * 60 * 1000l);
             } else if (status == 404) {
                 if (API_TRUST_404_FILE_OFFLINE) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
+                    /* TODO: Maybe validate session here */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
                 }
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
+                /* TODO: Rework this */
                 if (sessionReset) {
                     logger.info("SessionReset:" + sessionReset);
                     account.setProperty("session_id", Property.NULL);
@@ -1028,9 +1019,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                 } else {
                     statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException(statusMessage, 1 * 60 * 1000l);
             }
-            /* Unknown error?! */
+            /*
+             * Unknown error?! TODO: Throw exception here once Rapidgator plugin runs better with APIv2 and all other glitches have been
+             * taken care of!
+             */
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
