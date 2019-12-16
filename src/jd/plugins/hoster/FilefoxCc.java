@@ -226,6 +226,9 @@ public class FilefoxCc extends XFileSharingProBasic {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
                 }
             }
+        } else if (new Regex(correctedBR, ">\\s*Premium Account Required for VPS/VPN/Proxy|>\\s*Free users are not allowed to download using VPS|>\\s*Upgrade to Premium to keep usage of your VPN").matches()) {
+            /* 2019-12-16 */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Free users are not allowed to download using VPS/VPN/Proxy/Dedicated Servers", 30 * 60 * 60 * 1000l);
         }
     }
 
