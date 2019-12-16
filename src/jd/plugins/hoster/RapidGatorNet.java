@@ -496,6 +496,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 final URLConnectionAdapter con = dl.getConnection();
                 if (con.getResponseCode() == 404) {
+                    /* 2019-12-16: TODO: Re-Check if this can also mean expired session ... */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
                 } else if (con.getResponseCode() == 416) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
@@ -862,10 +863,12 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (link.getBooleanProperty(HOTLINK, false)) {
                 /* Check availablestatus via website if we have a hotlink */
                 requestFileInformation(link);
-            } else if (!API_TRUST_404_FILE_OFFLINE) {
-                /* Check availablestatus via website if API cannot be fully trusted! */
-                requestFileInformation(link);
             }
+            /* 2019-12-16: This is not required anymore as we now have a workaround for serverside bug, see handle404API() */
+            // else if (!API_TRUST_404_FILE_OFFLINE) {
+            // /* Check availablestatus via website if API cannot be fully trusted! */
+            // requestFileInformation(link);
+            // }
             if (hotLinkURL != null) {
                 doFree(link);
             } else {
@@ -908,7 +911,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private void handleErrors_api(final String session_id, boolean retrySameSession, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
+    private void handleErrors_api(final String session_id, boolean retrySameSession, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws Exception {
         if (con == null) {
             return;
         }
@@ -917,11 +920,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             /* Invalid logindata */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (con.getResponseCode() == 404) {
-            if (API_TRUST_404_FILE_OFFLINE) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-            }
+            handle404API(account);
         } else if (con.getResponseCode() == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 423) {
@@ -992,15 +991,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                 // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                 // {"response":null,"status":401,"details":"Error. Session not exist"}
-                /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
-                throw new AccountUnavailableException("Session expired", 5 * 60 * 1000l);
+                handleInvalidSession();
             } else if (status == 404) {
-                if (API_TRUST_404_FILE_OFFLINE) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    /* TODO: Maybe validate session here */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                }
+                handle404API(account);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                 /* TODO: Rework this */
                 if (sessionReset) {
@@ -1104,24 +1097,53 @@ public class RapidGatorNet extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private boolean validateSession(final DownloadLink link, final Account account) throws Exception {
-        final String session_id = account.getStringProperty("session_id", null);
-        if (session_id == null) {
-            /* This should never happen */
-            return false;
-        }
-        /*
-         * Check running remote uploads to validate session --> This should return the following for most users:
-         * {"response":[],"status":200,"details":null}
-         */
-        this.getPage(this.API_BASEv2 + "remote/info?token=" + session_id);
-        // this.getPage(this.API_BASEv2 + "trashcan/content?token=" + session_id);
-        final String status = PluginJSonUtils.getJson(br, "status");
-        if ("200".equals(status)) {
-            return true;
+    /** Workaround for serverside issue that API may returns error 404 instead of the real status if current session_id is invalid. */
+    private void handle404API(final Account account) throws Exception {
+        if (API_TRUST_404_FILE_OFFLINE) {
+            /* File offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            return false;
+            /* Either bad session_id or file offline */
+            logger.info("Checking for invalid session or 404 file not found");
+            final boolean session_valid = validateSessionAPI(account);
+            if (session_valid) {
+                /* Trust previous error --> File is offline */
+                logger.info("Session is valid --> File is offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* Gert new session_id on next accountcheck */
+                logger.info("Session is invalid");
+                handleInvalidSession();
+            }
         }
+    }
+
+    private boolean validateSessionAPI(final Account account) throws Exception {
+        synchronized (account) {
+            final String session_id = account.getStringProperty("session_id", null);
+            if (session_id == null) {
+                /* This should never happen */
+                return false;
+            }
+            /*
+             * 2019-12-16: Check running remote uploads to validate session as there is no extra API call available for verifying sessions
+             * --> This should return the following for most users: {"response":[],"status":200,"details":null}
+             */
+            this.getPage(this.API_BASEv2 + "remote/info?token=" + session_id);
+            // this.getPage(this.API_BASEv2 + "trashcan/content?token=" + session_id);
+            final String status = PluginJSonUtils.getJson(br, "status");
+            if ("200".equals(status)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    /** Call this on expired session_id! */
+    private void handleInvalidSession() throws AccountUnavailableException {
+        /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
+        throw new AccountUnavailableException("Session expired - waiting before opening new session", 1 * 60 * 1000l);
     }
 
     private final int maxPremChunks = -5; // 21.11.16, check highest that can be handled without server issues
