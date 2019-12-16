@@ -576,8 +576,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                     is_premium = ((Boolean) entries.get("is_premium")).booleanValue();
                 }
                 /*
-                 * 2019-12-14: Check which value is available in traffic-->total and use that: "traffic":{"total":null,"left":null} [= Free
-                 * Account]
+                 * E.g. "traffic":{"total":null,"left":null} --> Free Account
+                 */
+                /*
+                 * 2019-12-16: Traffic is valid for the complete runtime of a premium package. If e.g. user owns a 1-year-account and
+                 * traffic is down to 0 after one week, account is still a premium account but worthless. Not even free downloads are
+                 * possible with such accounts!
                  */
                 Object traffic_leftO = PluginJSonUtils.getJsonValue(br, "traffic_left");
                 if (traffic_leftO == null) {
@@ -655,7 +659,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
         login_web(account, true);
         if (Account.AccountType.FREE.equals(account.getType())) {
@@ -665,14 +668,15 @@ public class RapidGatorNet extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         } else {
             getPage("/profile/index");
-            String availableTraffic = br.getRegex(">Bandwith available</td>\\s+<td>\\s+([^<>\"]*?) of").getMatch(0);
-            final String availableTrafficMax = br.getRegex(">Bandwith available</td>\\s+<td>\\s+[^<>\"]*? of (\\d+(\\.\\d+)? (?:MB|GB|TB))").getMatch(0);
+            /*
+             * 2019-12-16: Traffic is valid for the complete runtime of a premium package. If e.g. user owns a 1-year-account and traffic is
+             * down to 0 after one week, account is still a premium account but worthless. Not even free downloads are possible with such
+             * accounts!
+             */
+            String availableTraffic = br.getRegex(">Bandwith available</td>\\s*<td>\\s*([^<>\"]*?) of").getMatch(0);
+            final String availableTrafficMax = br.getRegex(">Bandwith available</td>\\s*<td>\\s*[^<>\"]*? of (\\d+(\\.\\d+)? (?:MB|GB|TB))").getMatch(0);
             logger.info("availableTraffic = " + availableTraffic);
             if (availableTraffic != null) {
-                Long avtr = SizeFormatter.getSize(availableTraffic.trim());
-                if (avtr == 0) {
-                    availableTraffic = "1024 GB"; // SizeFormatter can't handle TB (Temporary workaround)
-                }
                 ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.trim()));
                 if (availableTrafficMax != null) {
                     ai.setTrafficMax(SizeFormatter.getSize(availableTrafficMax));
@@ -687,14 +691,13 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             if (expireDate == null) {
                 /**
-                 * eg subscriptions
+                 * Eg subscriptions
                  */
                 getPage("/Payment/Payment");
                 expireDate = br.getRegex("\\d+\\s*</td>\\s*<td style=\"width.*?>(\\d{4}-\\d{2}-\\d{2})<").getMatch(0);
             }
             if (expireDate == null) {
                 logger.warning("Could not find expire date!");
-                account.setValid(false);
                 return ai;
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
@@ -924,6 +927,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 // HTTP/1.1 423 Locked
                 // {"response":null,"response_status":423,"response_details":"Error: Exceeded traffic"}
                 // Hotlink?!
+                /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} --> See code below! */
             }
         }
         synchronized (account) {
@@ -936,7 +940,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 errorMessage = "None";
             }
             logger.info("ErrorMessage: " + errorMessage);
-            if (link != null && errorMessage.contains("Exceeded traffic")) {
+            if (link != null && (status == 423 || errorMessage.contains("Exceeded traffic"))) {
+                /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} */
                 final AccountInfo ac = new AccountInfo();
                 ac.setTrafficLeft(0);
                 account.setAccountInfo(ac);
@@ -1042,33 +1047,35 @@ public class RapidGatorNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* 2019-12-16: Disabled API availablecheck for now as it is unreliable. */
-        // String fileName = link.getFinalFileName();
-        // if (fileName == null) {
-        // /* 2019-12-16: TODO: This call seems to be broken as it either returns 404 or 401. */
-        // /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
-        // /* No final filename yet? Do linkcheck! */
-        // /* Check via API */
-        // this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-        // /* Error-Response maybe wrong - do not check for errors here! */
-        // // handleErrors_api(session_id, true, link, account, br.getHttpConnection());
-        // fileName = PluginJSonUtils.getJsonValue(br, "filename");
-        // if (StringUtils.isEmpty(fileName)) {
-        // /* 2019-12-14: APIv2 */
-        // fileName = PluginJSonUtils.getJsonValue(br, "name");
-        // }
-        // final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
-        // final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
-        // if (fileName != null) {
-        // link.setFinalFileName(fileName);
-        // }
-        // if (fileSize != null) {
-        // final long size = Long.parseLong(fileSize);
-        // link.setVerifiedFileSize(size);
-        // }
-        // if (fileHash != null) {
-        // link.setMD5Hash(fileHash);
-        // }
-        // }
+        if (false) {
+            String fileName = link.getFinalFileName();
+            if (fileName == null) {
+                /* 2019-12-16: TODO: This call seems to be broken as it either returns 404 or 401. */
+                /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
+                /* No final filename yet? Do linkcheck! */
+                /* Check via API */
+                this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+                /* Error-Response maybe wrong - do not check for errors here! */
+                // handleErrors_api(session_id, true, link, account, br.getHttpConnection());
+                fileName = PluginJSonUtils.getJsonValue(br, "filename");
+                if (StringUtils.isEmpty(fileName)) {
+                    /* 2019-12-14: APIv2 */
+                    fileName = PluginJSonUtils.getJsonValue(br, "name");
+                }
+                final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
+                final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
+                if (fileName != null) {
+                    link.setFinalFileName(fileName);
+                }
+                if (fileSize != null) {
+                    final long size = Long.parseLong(fileSize);
+                    link.setVerifiedFileSize(size);
+                }
+                if (fileHash != null) {
+                    link.setMD5Hash(fileHash);
+                }
+            }
+        }
         this.getPage(API_BASEv2 + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
         handleErrors_api(session_id, false, link, account, br.getHttpConnection());
         String url = PluginJSonUtils.getJsonValue(br, "url");
@@ -1105,7 +1112,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         final int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
-            getPage(br, link.getDownloadURL());
+            getPage(br, link.getPluginPatternMatcher());
             if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null && i + 1 != repeat) {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...
                 logger.info("Performing full login sequence!!");
@@ -1167,7 +1174,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 final AccountInfo ac = new AccountInfo();
                 ac.setTrafficLeft(0);
                 account.setAccountInfo(ac);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
                 logger.info("Account seems to be invalid!");
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
