@@ -826,6 +826,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 try {
                     handleErrors_api(null, false, null, account, br.getHttpConnection());
                     logger.info("Successfully re-used last session_id");
+                    account.setProperty("session_last_checked", System.currentTimeMillis());
                     return session_id;
                 } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
@@ -849,6 +850,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             /* Store session_id */
             account.setProperty("session_id", session_id);
+            account.setProperty("session_create", System.currentTimeMillis());
             return session_id;
         }
     }
@@ -1111,6 +1113,26 @@ public class RapidGatorNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean validateSession(final DownloadLink link, final Account account) throws Exception {
+        final String session_id = account.getStringProperty("session_id", null);
+        if (session_id == null) {
+            /* This should never happen */
+            return false;
+        }
+        /*
+         * Check running remote uploads to validate session --> This should return the following for most users:
+         * {"response":[],"status":200,"details":null}
+         */
+        this.getPage(this.API_BASEv2 + "remote/info?token=" + session_id);
+        // this.getPage(this.API_BASEv2 + "trashcan/content?token=" + session_id);
+        final String status = PluginJSonUtils.getJson(br, "status");
+        if ("200".equals(status)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private final int maxPremChunks = -5; // 21.11.16, check highest that can be handled without server issues
