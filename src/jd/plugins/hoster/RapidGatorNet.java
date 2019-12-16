@@ -78,6 +78,12 @@ public class RapidGatorNet extends antiDDoSForHost {
     private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
     private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM_2019_12_15";
+    /*
+     * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
+     * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
+     * Free/Expired premium account tries to download via API.
+     */
+    private final boolean                  API_TRUST_404_FILE_OFFLINE      = false;
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
@@ -841,7 +847,6 @@ public class RapidGatorNet extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         correctDownloadLink(link);
-        /* TODO: Maybe always check availablestatus here (via Website!) as we can not trust API 404 */
         hotLinkURL = null;
         if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
             requestFileInformation(link);
@@ -852,6 +857,10 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
         } else {
             if (link.getBooleanProperty(HOTLINK, false)) {
+                /* Check availablestatus via website if we have a hotlink */
+                requestFileInformation(link);
+            } else if (!API_TRUST_404_FILE_OFFLINE) {
+                /* Check availablestatus via website if API cannot be fully trusted! */
                 requestFileInformation(link);
             }
             if (hotLinkURL != null) {
@@ -902,14 +911,11 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         if (link != null) {
             if (con.getResponseCode() == 404) {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                /*
-                 * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and
-                 * retry instead. If the file is offline, availableStatus will find that correct status eventually! This will also happen if
-                 * you try to download in API mode using a free account!
-                 */
-                // {"response":null,"response_status":404,"response_details":"Error: File not found"}
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                if (API_TRUST_404_FILE_OFFLINE) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                }
             } else if (con.getResponseCode() == 416) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
             } else if (con.getResponseCode() == 500) {
@@ -978,6 +984,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                 // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                 // {"response":null,"status":401,"details":"Error. Session not exist"}
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (status == 404) {
+                if (API_TRUST_404_FILE_OFFLINE) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                }
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                 if (sessionReset) {
                     logger.info("SessionReset:" + sessionReset);
@@ -1026,38 +1038,40 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         if (session_id == null) {
             /* This should never happen */
+            logger.warning("session_id is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String fileName = link.getFinalFileName();
-        if (fileName == null) {
-            /* TODO: Check if this API call is working. It seems to be broken as it either returns 404 or 401. */
-            /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
-            /* No final filename yet? Do linkcheck! */
-            this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-            handleErrors_api(session_id, true, link, account, br.getHttpConnection());
-            fileName = PluginJSonUtils.getJsonValue(br, "filename");
-            if (StringUtils.isEmpty(fileName)) {
-                /* 2019-12-14: APIv2 */
-                fileName = PluginJSonUtils.getJsonValue(br, "name");
-            }
-            final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
-            final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
-            if (fileName != null) {
-                link.setFinalFileName(fileName);
-            }
-            if (fileSize != null) {
-                final long size = Long.parseLong(fileSize);
-                link.setVerifiedFileSize(size);
-            }
-            if (fileHash != null) {
-                link.setMD5Hash(fileHash);
-            }
-        }
-        String url = null;
+        /* 2019-12-16: Disabled API availablecheck for now as it is unreliable. */
+        // String fileName = link.getFinalFileName();
+        // if (fileName == null) {
+        // /* 2019-12-16: TODO: This call seems to be broken as it either returns 404 or 401. */
+        // /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
+        // /* No final filename yet? Do linkcheck! */
+        // /* Check via API */
+        // this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+        // /* Error-Response maybe wrong - do not check for errors here! */
+        // // handleErrors_api(session_id, true, link, account, br.getHttpConnection());
+        // fileName = PluginJSonUtils.getJsonValue(br, "filename");
+        // if (StringUtils.isEmpty(fileName)) {
+        // /* 2019-12-14: APIv2 */
+        // fileName = PluginJSonUtils.getJsonValue(br, "name");
+        // }
+        // final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
+        // final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
+        // if (fileName != null) {
+        // link.setFinalFileName(fileName);
+        // }
+        // if (fileSize != null) {
+        // final long size = Long.parseLong(fileSize);
+        // link.setVerifiedFileSize(size);
+        // }
+        // if (fileHash != null) {
+        // link.setMD5Hash(fileHash);
+        // }
+        // }
         this.getPage(API_BASEv2 + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
         handleErrors_api(session_id, false, link, account, br.getHttpConnection());
-        br.followConnection();
-        url = PluginJSonUtils.getJsonValue(br, "url");
+        String url = PluginJSonUtils.getJsonValue(br, "url");
         if (StringUtils.isEmpty(url)) {
             /* 2019-12-14: APIv2 */
             url = PluginJSonUtils.getJsonValue(br, "download_url");
