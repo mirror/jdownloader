@@ -924,23 +924,27 @@ public class RapidGatorNet extends antiDDoSForHost {
         if (con == null) {
             return;
         }
-        if (link != null) {
-            if (con.getResponseCode() == 404) {
-                if (API_TRUST_404_FILE_OFFLINE) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                }
-            } else if (con.getResponseCode() == 416) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
-            } else if (con.getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
-            } else if (con.getResponseCode() == 423) {
-                // HTTP/1.1 423 Locked
-                // {"response":null,"response_status":423,"response_details":"Error: Exceeded traffic"}
-                // Hotlink?!
-                /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} --> See code below! */
+        /* Handle bare responsecodes first, then API */
+        if (con.getResponseCode() == 401) {
+            /* Invalid logindata */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (con.getResponseCode() == 404) {
+            if (API_TRUST_404_FILE_OFFLINE) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             }
+        } else if (con.getResponseCode() == 416) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+        } else if (con.getResponseCode() == 423) {
+            // HTTP/1.1 423 Locked
+            // {"response":null,"response_status":423,"response_details":"Error: Exceeded traffic"}
+            // Hotlink?!
+            /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} --> See code below! */
+        } else if (con.getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
+        } else if (con.getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503: Service Temporarily Unavailable", 5 * 60 * 1000l);
         }
         synchronized (account) {
             final String lang = System.getProperty("user.language");
@@ -1026,16 +1030,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            /* Handle bare responsecodes */
-            if (con.getResponseCode() == 401) {
-                /* Invalid logindata */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (con.getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);
-            }
-            if (link != null) {
-                // disable api?
-            }
+            /* Unknown error?! */
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
