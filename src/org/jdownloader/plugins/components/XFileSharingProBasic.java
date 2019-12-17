@@ -1568,6 +1568,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.submitForm(br, ajaxCaptchaForm);
             if (!br.toString().equalsIgnoreCase("OK")) {
+                if (br.toString().equalsIgnoreCase("ERROR: Wrong captcha")) {
+                    /* 2019-12-14: Happens but should never happen ... */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 logger.warning("Fatal reCaptchaV2 ajax handling failure");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -2645,6 +2649,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             long expire_milliseconds_from_expiredate = 0;
             long expire_milliseconds_precise_to_the_second = 0;
             if (expireStr != null) {
+                /*
+                 * 2019-12-17: XFS premium accounts usually don't expire just before the next day. They will end to the same time of the day
+                 * when they were bought but website only displays it to the day which is why we set it to just before the next day to
+                 * prevent them from expiring too early in JD. XFS websites with API may provide more precise information on the expiredate
+                 * (down to the second).
+                 */
                 expireStr += " 23:59:59";
                 expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
             }
@@ -3100,8 +3110,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     } while (!this.isLoggedin() && login_counter <= login_counter_max);
                     if (!this.isLoggedin()) {
                         if (correctedBR.contains("op=resend_activation")) {
-                            /* User entered correct logindata but hasn't activated his account yet ... */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            /* User entered correct logindata but hasn't activated his account yet. */
+                            throw new AccountUnavailableException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you received via E-Mail and try again!", 5 * 60 * 1000l);
                         }
                         if (this.allows_multiple_login_attempts_in_one_go()) {
                             logger.info("Login failed although there were two attempts");
