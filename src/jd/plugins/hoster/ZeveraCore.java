@@ -410,7 +410,7 @@ abstract public class ZeveraCore extends UseNet {
                     ai.setUnlimitedTraffic();
                 }
             }
-            ai.setValidUntil(premium_until);
+            ai.setValidUntil(premium_until, br);
         } else {
             /* Expired == FREE */
             account.setType(AccountType.FREE);
@@ -720,8 +720,24 @@ abstract public class ZeveraCore extends UseNet {
 
     @Override
     protected String getUseNetUsername(Account account) {
-        /* Their Usenet login-servers only accept APIKEY:APIKEY */
-        return account.getPass();
+        if (supportsPairingLogin(account)) {
+            /* Login via access_token:access_token */
+            return account.getStringProperty("access_token", null);
+        } else {
+            /* Login via APIKEY:APIKEY */
+            return account.getPass();
+        }
+    }
+
+    @Override
+    protected String getUseNetPassword(Account account) {
+        if (supportsPairingLogin(account)) {
+            /* Login via access_token:access_token */
+            return account.getStringProperty("access_token", null);
+        } else {
+            /* Login via APIKEY:APIKEY */
+            return account.getPass();
+        }
     }
 
     private boolean isLoggedIn(final Browser br) {

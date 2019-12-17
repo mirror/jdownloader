@@ -409,7 +409,6 @@ public abstract class K2SApi extends PluginForHost {
         if (!inValidate(available_traffic) && available_traffic.matches("\\d+")) {
             ai.setTrafficLeft(Long.parseLong(available_traffic));
         }
-        resetAccountProperties(account);
         setAccountLimits(account);
         return ai;
     }
@@ -417,22 +416,10 @@ public abstract class K2SApi extends PluginForHost {
     protected void setAccountLimits(final Account account) {
     }
 
-    /**
-     * this resets temp values set elsewhere for clean start
-     *
-     * @param account
-     */
-    private void resetAccountProperties(final Account account) {
-        if (account != null) {
-            account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
-        }
-    }
-
     @SuppressWarnings("deprecation")
     public void handleDownload(final DownloadLink downloadLink, final Account account) throws Exception {
         logger.info(getRevisionInfo());
-        resetAccountProperties(account);
-        // linkcheck here..
+        // linkcheck
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
         String dllink = getDirectLinkAndReset(downloadLink, true);
@@ -1189,8 +1176,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Login attempt was exceed, please wait or verify your request via captcha
                     // challenge","status":"error","code":406,"errorCode":71}
                     // ^^^ OLD they now switched to 30
-                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 31 * 60 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("\r\n" + msg, 31 * 60 * 1000l);
                 case 73:
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
                     if (account != null) {

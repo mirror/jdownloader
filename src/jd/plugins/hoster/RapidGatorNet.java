@@ -184,7 +184,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             prepBr.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
             prepBr.getHeaders().put("Cache-Control", null);
             prepBr.getHeaders().put("Pragma", null);
-            prepBr.setCookie("http://rapidgator.net/", "lang", "en");
+            prepBr.setCookie("https://rapidgator.net/", "lang", "en");
             prepBr.setCustomCharset("UTF-8");
             prepBr.setReadTimeout(1 * 60 * 1000);
             prepBr.setConnectTimeout(1 * 60 * 1000);
@@ -551,7 +551,6 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
         final AccountInfo ai = new AccountInfo();
         synchronized (account) {
             if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
@@ -584,6 +583,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                  * traffic is down to 0 after one week, account is still a premium account but worthless. Not even free downloads are
                  * possible with such accounts!
                  */
+                /*
+                 * 2019-12-17: They might also have an unofficial daily trafficlimit of 50-100GB. After this the user will first get a new
+                 * password via E-Mail and if he continues to download 'too much', account might get temporarily banned.
+                 */
                 Object traffic_leftO = PluginJSonUtils.getJsonValue(br, "traffic_left");
                 if (traffic_leftO == null) {
                     traffic_leftO = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left"), 0);
@@ -592,9 +595,13 @@ public class RapidGatorNet extends antiDDoSForHost {
                 final long storage_used = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/storage/left"), 0);
                 ai.setUsedSpace(storage_used);
                 if (!StringUtils.isEmpty(expire_date) || is_premium) {
-                    if (!StringUtils.isEmpty(expire_date)) {
+                    if (!StringUtils.isEmpty(expire_date) && expire_date.matches("\\d+")) {
                         /*
                          * Add one day extra to prevent it from expiring too early in JD.
+                         */
+                        /*
+                         * 2019-12-17: TODO: Check when premium accounts really expire (note by psp: I have one which expires 2019-12-23;
+                         * will check this!)
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
                     }
@@ -689,7 +696,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 logger.warning("Could not find expire date!");
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l, br);
             }
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
@@ -852,6 +859,10 @@ public class RapidGatorNet extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         correctDownloadLink(link);
         hotLinkURL = null;
+        /*
+         * 2019-12-17: Their traffic calculation seems to work really good. No need to save- and re-use directurls in order to
+         * "save traffic".
+         */
         if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
             requestFileInformation(link);
             if (hotLinkURL != null) {
