@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kaltura.com" }, urls = { "https?://[^/]+/html5/html5lib/v\\d+\\.\\d{1,2}/mwEmbedFrame\\.php/p/\\d+/uiconf_id/\\d+/entry_id/[a-z0-9_]+.+" })
@@ -79,7 +80,11 @@ public class GenericKalturaVideoPlatformCrawler extends PluginForDecrypt {
         if (entry_id == null) {
             entry_id = new Regex(player_embed_url, "entry_id=([A-Za-z0-9_]+)").getMatch(0);
         }
-        if (partner_id == null || uiconf_id == null || entry_id == null) {
+        if (entry_id == null) {
+            /* 2019-12-17: weltderweunder.de */
+            entry_id = PluginJSonUtils.getJson(br, "entry_id");
+        }
+        if (StringUtils.isEmpty(partner_id) || StringUtils.isEmpty(uiconf_id) || StringUtils.isEmpty(entry_id)) {
             return null;
         }
         /*
@@ -156,7 +161,7 @@ public class GenericKalturaVideoPlatformCrawler extends PluginForDecrypt {
     }
 
     public static LinkedHashMap<String, DownloadLink> crawlEverything(final PluginForHost plugin, final Browser br) throws Exception {
-        final String player_embed_url = br.getRegex("(https?://[^/]+/p/\\d+/sp/\\d+/embedIframeJs/uiconf_id/\\d+/partner_id/\\d+\\?[^\"\\']+)").getMatch(0);
+        final String player_embed_url = br.getRegex("(https?://[^/]+/p/\\d+/sp/\\d+/embedIframeJs/uiconf_id/\\d+/partner_id/\\d+)").getMatch(0);
         if (player_embed_url == null) {
             return null;
         }

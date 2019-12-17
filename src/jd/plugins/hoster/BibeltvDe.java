@@ -18,11 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/videos/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/videos/[a-z0-9\\-]+\\-(\\d+)" })
 public class BibeltvDe extends PluginForHost {
     public BibeltvDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,6 @@ public class BibeltvDe extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private long                 filesize          = 0;
     private boolean              tempunavailable   = false;
 
     @Override
@@ -57,89 +56,65 @@ public class BibeltvDe extends PluginForHost {
         return "https://www.bibeltv.de/impressum/";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-        filesize = 0; // Initialize, needed for adding more than 1 links at once
+        /* This website contains video content ONLY! */
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url_filename = new Regex(link.getDownloadURL(), "/mediathek/videos/([a-z0-9\\-]+)").getMatch(0).replace("-", " ");
-        link.setName(url_filename);
-        br.setAllowedResponseCodes(500);
-        br.getPage(link.getDownloadURL());
+        br.setAllowedResponseCodes(new int[] { 500 });
+        br.getPage(String.format("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(api_id,%s)&expand=", getFID(link)));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("An error occurred while trying to")) {
-            /* Wrong url */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">Das Video ist derzeit nicht öffentlich")) {
-            /* Video not available at this moment. */
-            tempunavailable = true;
-            return AvailableStatus.TRUE;
-        } else if (br.containsHTML(">Video nicht verf|alert\">\\s*Dieses Video ist leider aus lizenzrechtlichen")) {
+        }
+        LinkedHashMap<String, Object> entries = null;
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        } catch (final Throwable e) {
+            /* 2019-12-17: No parsable json --> Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("\"video-title\">([^<>]+)<").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        String filename = (String) entries.get("name");
+        final String description = (String) entries.get("descriptionLong");
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = getFID(link);
+        }
+        if (description != null && link.getComment() == null) {
+            link.setComment(description);
         }
         dllink = br.getRegex("<source src=\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
-            String player_embed_url = this.br.getRegex("(//api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/[^<>\"]+)\"").getMatch(0);
-            if (player_embed_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            player_embed_url = Encoding.htmlDecode(player_embed_url);
-            player_embed_url = "http:" + player_embed_url;
-            String partner_id = new Regex(player_embed_url, "/partner_id/(\\d+)").getMatch(0);
-            if (partner_id == null) {
-                partner_id = "107";
-            }
-            String uiconf_id = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
-            if (uiconf_id == null) {
-                uiconf_id = "11601650";
-            }
-            String sp = new Regex(player_embed_url, "/sp/(\\d+)/").getMatch(0);
-            if (sp == null) {
-                sp = "10700";
-            }
-            String entry_id = new Regex(player_embed_url, "/entry_id/([^/]+)").getMatch(0);
-            if (entry_id == null) {
-                entry_id = new Regex(player_embed_url, "entry_id=([^\\&=]+)").getMatch(0);
-            }
-            if (entry_id == null) {
-                /* New 2016-12-07 */
-                entry_id = this.br.getRegex("/entry_id/([^/]+)").getMatch(0);
-            }
-            if (entry_id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.br.getPage("https://api.medianac.com/html5/html5lib/v2.39/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&cache_st=0&entry_id=" + entry_id + "&flashvars[streamerType]=auto&playerId=kaltura_player_664&ServiceUrl=http%3A%2F%2Fapi.medianac.com&CdnUrl=http%3A%2F%2Fapi.medianac.com&ServiceBase=%2Fapi_v3%2Findex.php%3Fservice%3D&UseManifestUrls=false&forceMobileHTML5=true&urid=2.39&callback=mwi_kalturaplayer6640");
-            String js = this.br.getRegex("kalturaIframePackageData = (\\{.*?\\}\\}\\});").getMatch(0);
-            if (js == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            js = js.replace("\\\"", "\"");
-            js = new Regex(js, "\"flavorAssets\":(\\[.*?\\])").getMatch(0);
-            if (js == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(js);
-            long max_bitrate = 0;
-            long max_bitrate_temp = 0;
-            LinkedHashMap<String, Object> entries = null;
+            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("urls");
+            long max_width = 0;
+            long max_width_temp = 0;
             for (final Object videoo : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) videoo;
-                final String flavourid = (String) entries.get("id");
-                if (flavourid == null) {
+                final String dllink_tmp = (String) entries.get("url");
+                max_width_temp = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+                if (StringUtils.isEmpty(dllink_tmp) || max_width_temp == 0) {
                     continue;
                 }
-                max_bitrate_temp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
-                if (max_bitrate_temp > max_bitrate) {
-                    dllink = "https://api.medianac.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/http/a.mp4";
-                    max_bitrate = max_bitrate_temp;
-                    filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                if (max_width_temp > max_width) {
+                    dllink = dllink_tmp;
+                    max_width = max_width_temp;
                 }
             }
             if (dllink == null) {
@@ -147,41 +122,25 @@ public class BibeltvDe extends PluginForHost {
             }
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        if (filesize > 0) {
-            filesize = filesize * 1024;
-        } else {
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
             try {
-                try {
-                    con = br2.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html")) {
-                    filesize = con.getLongContentLength();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                link.setProperty("directlink", dllink);
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                con.disconnect();
+            } catch (final Throwable e) {
             }
         }
-        link.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
 
@@ -190,7 +149,7 @@ public class BibeltvDe extends PluginForHost {
         requestFileInformation(downloadLink);
         if (tempunavailable) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video not available at the moment", 24 * 60 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
