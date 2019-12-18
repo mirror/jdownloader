@@ -603,7 +603,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     private final void invalidateAPIZeusCloudManagerSession(final Account account) throws PluginException {
         dumpAPISessionInfo(account);
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid sessionid", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        throw new AccountUnavailableException("Invalid sessionid", 5 * 60 * 1000l);
     }
 
     protected void dumpAPISessionInfo(final Account account) {
