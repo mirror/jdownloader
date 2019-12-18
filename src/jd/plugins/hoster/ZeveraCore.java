@@ -259,7 +259,7 @@ abstract public class ZeveraCore extends UseNet {
                 handleAPIErrors(this.br, link, account);
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
-            if (filesize > 0) {
+            {
                 /* 2019-12-18: TODO: This is a workaround! See: https://svn.jdownloader.org/issues/87654 */
                 link.setVerifiedFileSize(filesize);
             }
