@@ -100,26 +100,26 @@ public class BibeltvDe extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        dllink = br.getRegex("<source src=\"([^\"]+)\"").getMatch(0);
+        /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
+        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("urls");
+        long max_width = 0;
+        long max_width_temp = 0;
+        for (final Object videoo : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) videoo;
+            final String dllink_tmp = (String) entries.get("url");
+            max_width_temp = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+            final String type = (String) entries.get("type");
+            if (StringUtils.isEmpty(dllink_tmp) || max_width_temp == 0 || !"video/mp4".equals(type)) {
+                /* Skip invalid items and only grab http streams, ignore e.g. DASH streams. */
+                continue;
+            }
+            if (max_width_temp > max_width) {
+                dllink = dllink_tmp;
+                max_width = max_width_temp;
+            }
+        }
         if (dllink == null) {
-            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("urls");
-            long max_width = 0;
-            long max_width_temp = 0;
-            for (final Object videoo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoo;
-                final String dllink_tmp = (String) entries.get("url");
-                max_width_temp = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
-                if (StringUtils.isEmpty(dllink_tmp) || max_width_temp == 0) {
-                    continue;
-                }
-                if (max_width_temp > max_width) {
-                    dllink = dllink_tmp;
-                    max_width = max_width_temp;
-                }
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
