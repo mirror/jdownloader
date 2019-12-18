@@ -113,7 +113,7 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsUsenet() {
+    public boolean supportsUsenet(final Account account) {
         return false;
     }
 
@@ -123,7 +123,7 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsPairingLogin(final Account account) {
+    public boolean usePairingLogin(final Account account) {
         /** 2019-08-05: Pairing login is not supported by this service! */
         return false;
     }

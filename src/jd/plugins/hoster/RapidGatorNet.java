@@ -133,6 +133,10 @@ public class RapidGatorNet extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), "/file/([a-z0-9]{32}|\\d+)").getMatch(0);
     }
 
+    private String getURLFilename(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), ".+/(.+)\\.html$").getMatch(0);
+    }
+
     @Override
     public String filterPackageID(String packageIdentifier) {
         return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
@@ -240,11 +244,12 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         link.removeProperty(HOTLINK);
         if (br.containsHTML("400 Bad Request") && link.getPluginPatternMatcher().contains("%")) {
+            /* 2019-12-18: TODO: Check if this is still required - it shouldn't! Remove it! */
             link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("%", ""));
             getPage(link.getPluginPatternMatcher());
         }
-        if (br.containsHTML("File not found")) {
-            final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), ".+/(.+)\\.html").getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
+            final String filenameFromURL = getURLFilename(link);
             if (filenameFromURL != null) {
                 link.setName(filenameFromURL);
             }
@@ -252,9 +257,9 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         final String freedlsizelimit = br.getRegex("'You can download files up to\\s*([\\d\\.]+ ?(MB|GB))\\s*in free mode<").getMatch(0);
         if (freedlsizelimit != null) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
+            link.getLinkStatus().setStatusText("This file is restricted to Premium users only");
         }
-        final String md5 = br.getRegex(">MD5: ([A-Fa-f0-9]{32})</label>").getMatch(0);
+        final String md5 = br.getRegex(">\\s*MD5\\s*:\\s*([A-Fa-f0-9]{32})<").getMatch(0);
         String filename = br.getRegex("Downloading\\s*:\\s*</strong>([^<>\"]+)</p>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download file\\s*([^<>\"]+)</title>").getMatch(0);
@@ -353,7 +358,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 Browser br2 = br.cloneBrowser();
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                getPage(br2, "https://rapidgator.net/download/AjaxStartTimer?fid=" + fid);
+                getPage(br2, "https://" + this.getHost() + "/download/AjaxStartTimer?fid=" + fid);
                 final String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
                 String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
                 if (!"started".equalsIgnoreCase(state)) {
@@ -371,7 +376,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 /* needed so we have correct referrer ;) (back to original br) */
                 br2 = br.cloneBrowser();
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                getPage(br2, "https://rapidgator.net/download/AjaxGetDownloadLink?sid=" + sid);
+                getPage(br2, "https://" + this.getHost() + "/download/AjaxGetDownloadLink?sid=" + sid);
                 state = br2.getRegex("state\":\"(.*?)\"").getMatch(0);
                 if (!"done".equalsIgnoreCase(state)) {
                     if (br2.containsHTML("wait specified time")) {
@@ -592,8 +597,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                     traffic_leftO = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left"), 0);
                 }
                 long traffic_max = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/total"), 0);
-                final long storage_used = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/storage/left"), 0);
-                ai.setUsedSpace(storage_used);
                 if (!StringUtils.isEmpty(expire_date) || is_premium) {
                     if (!StringUtils.isEmpty(expire_date) && expire_date.matches("\\d+")) {
                         /*
@@ -690,13 +693,18 @@ public class RapidGatorNet extends antiDDoSForHost {
                  * Eg subscriptions
                  */
                 getPage("/Payment/Payment");
-                expireDate = br.getRegex("\\d+\\s*</td>\\s*<td style=\"width.*?>(\\d{4}-\\d{2}-\\d{2})<").getMatch(0);
+                expireDate = br.getRegex("\\d+\\s*</td>\\s*<td style=\"width.*?>(\\d{4}-\\d{2}-\\d{2})\\s*<").getMatch(0);
             }
             if (expireDate == null) {
                 logger.warning("Could not find expire date!");
-                return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l, br);
+                /*
+                 * 2019-12-18: Rapidgator accounts do have precise expire timestamps but we can only get them via API, see
+                 * fetchAccountInfo_api. In website mode we set it like this to make sure that the user can use his account the whole last
+                 * day no matter which exact time of the day it expires.
+                 */
+                expireDate += " 23:59:59";
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
             }
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
@@ -874,12 +882,10 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (link.getBooleanProperty(HOTLINK, false)) {
                 /* Check availablestatus via website if we have a hotlink */
                 requestFileInformation(link);
+            } else if (!API_TRUST_404_FILE_OFFLINE) {
+                /* Check availablestatus via website if API cannot be fully trusted! */
+                requestFileInformation(link);
             }
-            /* 2019-12-16: This is not required anymore as we now have a workaround for serverside bug, see handle404API() */
-            // else if (!API_TRUST_404_FILE_OFFLINE) {
-            // /* Check availablestatus via website if API cannot be fully trusted! */
-            // requestFileInformation(link);
-            // }
             if (hotLinkURL != null) {
                 doFree(link);
             } else {
@@ -1057,6 +1063,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (fileName == null) {
                 /* 2019-12-16: TODO: This call seems to be broken as it either returns 404 or 401. */
                 /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
+                // this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&url=" +
+                // Encoding.urlEncode(link.getPluginPatternMatcher()));
+                // this.getPage(API_BASEv2 + "file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
                 /* No final filename yet? Do linkcheck! */
                 /* Check via API */
                 this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
@@ -1115,16 +1124,26 @@ public class RapidGatorNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             /* Either bad session_id or file offline */
-            logger.info("Checking for invalid session or 404 file not found");
-            final boolean session_valid = validateSessionAPI(account);
-            if (session_valid) {
-                /* Trust previous error --> File is offline */
-                logger.info("Session is valid --> File is offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /*
+             * 2019-12-18: Seems like our session validity check still does not work which will lead to false positive 'file not found'
+             * errors --> Avoid this and retry later instead! Proof: jdlog://6540330900751/
+             */
+            final boolean trust_session_validity_check = false;
+            if (trust_session_validity_check) {
+                logger.info("Checking for invalid session or 404 file not found");
+                final boolean session_valid = validateSessionAPI(account);
+                if (session_valid) {
+                    /* Trust previous error --> File is offline */
+                    logger.info("Session is valid --> File is offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    /* Gert new session_id on next accountcheck */
+                    logger.info("Session is invalid");
+                    handleInvalidSession();
+                }
             } else {
-                /* Gert new session_id on next accountcheck */
-                logger.info("Session is invalid");
-                handleInvalidSession();
+                /* Session validity check cannot be trusted either --> Display error to user */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
             }
         }
     }

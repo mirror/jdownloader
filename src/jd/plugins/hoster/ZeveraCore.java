@@ -253,10 +253,15 @@ abstract public class ZeveraCore extends UseNet {
             antiCloudflare(br, dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
+            final long filesize = dl.getConnection().getLongContentLength();
+            if (contenttype.contains("html") || filesize <= 0) {
                 br.followConnection();
                 handleAPIErrors(this.br, link, account);
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
+            }
+            if (filesize > 0) {
+                /* 2019-12-18: TODO: This is a workaround! See: https://svn.jdownloader.org/issues/87654 */
+                link.setVerifiedFileSize(filesize);
             }
             this.dl.startDownload();
         } catch (final Exception e) {
@@ -266,13 +271,14 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     protected void antiCloudflare(Browser br, final String url) throws Exception {
+        /* 2019-12-18: TODO: Check if we still need this */
         final Request request = br.createHeadRequest(url);
         prepBrowser(br, request.getURL().getHost());
         final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
         con.disconnect();
     }
 
-    /** Account is not required */
+    /** Account is not required for such URLs. */
     private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
         antiCloudflare(br, link.getPluginPatternMatcher());
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -316,18 +322,20 @@ abstract public class ZeveraCore extends UseNet {
             dllink = PluginJSonUtils.getJsonValue(br, "location");
             if (!StringUtils.isEmpty(dllink)) {
                 /*
-                 * 2019-11-29: They're caching data. This means that it may also happen that a slightly different file will get delivered (=
-                 * new hash). This is a bad workaround to "disable" the hash check of our original file thus prevent JD to display CRC
-                 * errors when there are none. Premiumize is advised to at least return the correct MD5 hash so that we can set it
-                 * accordingly but for now, we only have this workaround. See also: https://svn.jdownloader.org/issues/87604
+                 * 2019-11-29: TODO: This is a workaround! They're caching data. This means that it may also happen that a slightly
+                 * different file will get delivered (= new hash). This is a bad workaround to "disable" the hash check of our original file
+                 * thus prevent JD to display CRC errors when there are none. Premiumize is advised to at least return the correct MD5 hash
+                 * so that we can set it accordingly but for now, we only have this workaround. See also:
+                 * https://svn.jdownloader.org/issues/87604
                  */
+                final boolean forceDisableCRCCheck = true;
                 final long originalSourceFilesize = link.getView().getBytesTotal();
                 long thisFilesize = 0;
                 final String thisFilesizeStr = PluginJSonUtils.getJson(br, "filesize");
                 if (thisFilesizeStr != null && thisFilesizeStr.matches("\\d+")) {
                     thisFilesize = Long.parseLong(thisFilesizeStr);
                 }
-                if (originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
+                if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
                     logger.info("Dumping existing hashes to prevent errors because of cache download");
                     link.setMD5Hash(null);
                     link.setSha1Hash(null);
@@ -424,7 +432,7 @@ abstract public class ZeveraCore extends UseNet {
         // final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
         final HashSet<String> list = new HashSet<String>();
         /* 2019-08-05: usenet is not supported when pairing login is used because then we do not have the internal Usenet-Logindata! */
-        if (supportsUsenet() && !this.supportsPairingLogin(account)) {
+        if (supportsUsenet(account)) {
             list.add("usenet");
         }
         if (account.getType() == AccountType.FREE && supportsFreeMode(account)) {
@@ -598,7 +606,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     public void loginAPI(final Browser br, final String clientID, final Account account, final boolean force) throws Exception {
-        if (supportsPairingLogin(account)) {
+        if (usePairingLogin(account)) {
             /* 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey! */
             try {
                 boolean has_tried_old_token = false;
@@ -708,7 +716,7 @@ abstract public class ZeveraCore extends UseNet {
             url += "&";
         }
         url += "client_id=" + this.getClientID();
-        if (!this.supportsPairingLogin(account)) {
+        if (!this.usePairingLogin(account)) {
             /*
              * Without pairing login we need an additional parameter. It will also work with pairing mode when that parameter is given with
              * a wrong value but that may change in the future so this is to avoid issues!
@@ -720,7 +728,7 @@ abstract public class ZeveraCore extends UseNet {
 
     @Override
     protected String getUseNetUsername(Account account) {
-        if (supportsPairingLogin(account)) {
+        if (usePairingLogin(account)) {
             /* Login via access_token:access_token */
             return account.getStringProperty("access_token", null);
         } else {
@@ -731,7 +739,7 @@ abstract public class ZeveraCore extends UseNet {
 
     @Override
     protected String getUseNetPassword(Account account) {
-        if (supportsPairingLogin(account)) {
+        if (usePairingLogin(account)) {
             /* Login via access_token:access_token */
             return account.getStringProperty("access_token", null);
         } else {
@@ -804,7 +812,7 @@ abstract public class ZeveraCore extends UseNet {
         return thread;
     }
 
-    public boolean supportsUsenet() {
+    public boolean supportsUsenet(final Account account) {
         return false;
     }
 
@@ -813,8 +821,10 @@ abstract public class ZeveraCore extends UseNet {
         return false;
     }
 
-    /** Indicates whether or not the new 'pairing' login is supported: https://alexbilbie.com/2016/04/oauth-2-device-flow-grant/ */
-    public boolean supportsPairingLogin(final Account account) {
+    /**
+     * Indicates whether or not the new 'pairing' login is supported & enabled: https://alexbilbie.com/2016/04/oauth-2-device-flow-grant/
+     */
+    public boolean usePairingLogin(final Account account) {
         return false;
     }
 
