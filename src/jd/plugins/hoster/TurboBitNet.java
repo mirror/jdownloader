@@ -33,7 +33,27 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc" };
+    public static String[]   domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc" };
+    /* Setting domains */
+    protected final String[] user_domains = new String[] { "AUTO (turbo.to)", "turbobit.net", "turbo.pw" };
+
+    @Override
+    protected String getConfiguredDomain() {
+        String ret = null;
+        final String default_domain = "turbo.to";
+        final int selected_domain_index = getPluginConfig().getIntegerProperty(TurbobitCore.SETTING_PREFERRED_DOMAIN, -1);
+        if (selected_domain_index == 0) {
+            ret = default_domain;
+        } else {
+            try {
+                ret = user_domains[selected_domain_index];
+            } catch (final Throwable de) {
+                /* Return default */
+                ret = default_domain;
+            }
+        }
+        return ret;
+    }
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
@@ -70,4 +90,10 @@ public class TurboBitNet extends TurbobitCore {
         ret.add("turbobit");
         return ret.toArray(new String[0]);
     }
+    // @Override
+    // protected void setConfigElements() {
+    // // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(),
+    // // TurbobitCore.SETTING_PREFERRED_DOMAIN, user_domains, "Select preferred domain").setDefaultValue(0));
+    // super.setConfigElements();
+    // }
 }

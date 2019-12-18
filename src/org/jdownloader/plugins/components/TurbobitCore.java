@@ -12,6 +12,14 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,14 +45,6 @@ import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
     /**
@@ -57,7 +57,8 @@ public class TurbobitCore extends antiDDoSForHost {
      */
     /* Settings */
     // private static final String SETTING_JAC = "SETTING_JAC";
-    private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS         = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    public static final String   SETTING_FREE_PARALLEL_DOWNLOADSTARTS         = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    public static final String   SETTING_PREFERRED_DOMAIN                     = "SETTING_PREFERRED_DOMAIN";
     private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING              = 20;
     private static final boolean prefer_single_linkcheck_via_mass_linkchecker = true;
     private static final String  premRedirectLinks                            = ".*//?download/redirect/[A-Za-z0-9]+/[a-z0-9]+";
@@ -350,7 +351,6 @@ public class TurbobitCore extends antiDDoSForHost {
 
     private String id = null;
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         handleFree(link, null);
@@ -1085,10 +1085,12 @@ public class TurbobitCore extends antiDDoSForHost {
         return result != null ? result.toString() : null;
     }
 
-    private void setConfigElements() {
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_JAC, "Activate parallel
-        // downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot of non-accepted
-        // captcha popups!</b></p></html>").setDefaultValue(true));
+    /** For some hosts, users can configure their preferred domain. */
+    protected String getConfiguredDomain() {
+        return this.getHost();
+    }
+
+    protected void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FREE_PARALLEL_DOWNLOADSTARTS, "Activate parallel downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot of non-accepted captcha popups!</b></p></html>").setDefaultValue(false));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "APIKEY", "Define custom APIKey (can be
         // found on website in account settings ['/user/settings'])").setDefaultValue(""));
