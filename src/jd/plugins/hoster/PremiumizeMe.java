@@ -112,7 +112,7 @@ public class PremiumizeMe extends ZeveraCore {
             }
 
             public String getEnablePairingLogin_label() {
-                return "Enable pairing login (BETA)?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
+                return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
             }
 
             public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
@@ -204,8 +204,13 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsUsenet() {
-        return true;
+    public boolean supportsUsenet(final Account account) {
+        /*
+         * 2019-12-18: At the moment usenet client support is only working with apikey login, not yet in pairing login mode. Premiumize is
+         * working on making this possible in pairing mode as well.
+         */
+        return !usePairingLogin(account);
+        // return true;
     }
 
     @Override
@@ -214,7 +219,7 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsPairingLogin(final Account account) {
+    public boolean usePairingLogin(final Account account) {
         if (this.getAccountJsonConfig(account).isEnablePairingLogin()) {
             return true;
         } else {
