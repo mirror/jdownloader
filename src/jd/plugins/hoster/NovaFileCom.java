@@ -380,7 +380,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
 
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
     @Override
-    protected boolean useAPIZeusCloudManager() {
+    protected boolean useAPIZeusCloudManager(final Account account) {
         return this.getPluginConfig().getBooleanProperty(XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, true);
     }
 
