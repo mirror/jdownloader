@@ -131,7 +131,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * issues/complicated handling which is required for website login and download! </br>
      * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
-    protected boolean useAPIZeusCloudManager() {
+    protected boolean useAPIZeusCloudManager(final Account account) {
         return true;
     }
 
@@ -171,7 +171,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     protected boolean useRUA() {
-        if (useAPIZeusCloudManager()) {
+        if (useAPIZeusCloudManager(null)) {
             /* For API mode */
             return useRandomUserAgentAPI();
         } else {
@@ -391,7 +391,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (useAPIZeusCloudManager()) {
+        if (useAPIZeusCloudManager(account)) {
             handlePremiumAPIZeusCloudManager(this.br, link, account);
         } else {
             super.handlePremium(link, account);
@@ -439,7 +439,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        if (useAPIZeusCloudManager()) {
+        if (useAPIZeusCloudManager(account)) {
             return fetchAccountInfoAPIZeusCloudManager(this.br, account);
         } else {
             return super.fetchAccountInfoWebsite(account);
@@ -448,7 +448,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     public boolean loginWebsite(final Account account, final boolean force) throws Exception {
-        if (useAPIZeusCloudManager()) {
+        if (useAPIZeusCloudManager(account)) {
             return loginAPIZeusCloudManager(this.br, account, force);
         } else {
             final long timestamp_last_api_login_failure_in_website_mode = account.getLongProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, 0);
