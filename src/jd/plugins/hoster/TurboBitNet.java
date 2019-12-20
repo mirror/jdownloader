@@ -21,10 +21,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.TurbobitCore;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.TurbobitCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurboBitNet extends TurbobitCore {
@@ -33,9 +33,9 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[]   domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc" };
+    public static String[]   domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to" };
     /* Setting domains */
-    protected final String[] user_domains = new String[] { "AUTO (turbo.to)", "turbobit.net", "turbo.pw" };
+    protected final String[] user_domains = new String[] { "turbo.to", "turbobit.net", "turbobit.pw" };
 
     @Override
     protected String getConfiguredDomain() {
