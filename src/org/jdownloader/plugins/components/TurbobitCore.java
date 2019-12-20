@@ -106,6 +106,11 @@ public class TurbobitCore extends antiDDoSForHost {
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
+            /* 2019-12-20: WTF check Cloudflare redirect handling - something is wrong here! */
+            // getPage("https://" + getConfiguredDomain() + "/linkchecker");
+            // if (br.getRedirectLocation() != null) {
+            // this.getPage(br.getRedirectLocation());
+            // }
             while (true) {
                 links.clear();
                 while (true) {
