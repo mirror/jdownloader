@@ -172,8 +172,6 @@ public class DropBoxCom extends PluginForDecrypt {
         String passCode = param.getDecrypterPassword();
         String error_summary = null;
         boolean url_is_password_protected = !StringUtils.isEmpty(passCode);
-        /** 2019-09-25: */
-        final boolean enable_password_protected_workaround = true;
         int counter = 0;
         do {
             try {
@@ -244,14 +242,6 @@ public class DropBoxCom extends PluginForDecrypt {
             ressourcelist.add(entries);
         } else {
             /* Folder */
-            if (url_is_password_protected && enable_password_protected_workaround) {
-                logger.info("Adding URL again to be crawled via website handling because an API bug prevents downloads of password protected content");
-                final DownloadLink dl = super.createDownloadlink(parameter + "?disallow_crawl_via_api=true");
-                /* We already know the correct password! Store it so we do not have to ask the user again :) */
-                dl.setDownloadPassword(passCode);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
             String postdata_shared_link = "\"shared_link\": {\"url\":\"" + parameter + "\"";
             if (url_is_password_protected) {
                 postdata_shared_link += ",\"password\":\"" + passCode + "\"";
