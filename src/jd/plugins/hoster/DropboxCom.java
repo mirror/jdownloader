@@ -410,6 +410,7 @@ public class DropboxCom extends PluginForHost {
         handleDownload(link, dllink, resume_supported);
     }
 
+    /** Downloads given directurl. */
     private void handleDownload(final DownloadLink link, final String dllink, final boolean resume) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
@@ -635,7 +636,7 @@ public class DropboxCom extends PluginForHost {
         return PluginJSonUtils.getJson(br, "error_summary");
     }
 
-    /** Returns whether or not a file/folder is password protected. */
+    /** Returns whether or not a file/folder is password protected according to current browser html code. */
     public static boolean isPasswordProtectedWebsite(final Browser br) {
         final String currentURL = br.getURL();
         final String redirectURL = br.getRedirectLocation();
@@ -820,6 +821,7 @@ public class DropboxCom extends PluginForHost {
         return account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, null);
     }
 
+    /** Returns whether or not a file/folder is password protected according to previously stored property. */
     private boolean isPasswordProtected(final DownloadLink dl) {
         /* Do NOT check this via existing password as user can set a download-password at any time even for unprotected URLs!! */
         // return dl.getDownloadPassword();
@@ -919,12 +921,8 @@ public class DropboxCom extends PluginForHost {
              * can only be downloaded via API, NOT via website!
              */
             return false;
-        } else if ((useAPI() && account != null) && (isPasswordProtected(link) || link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY))) {
-            /* API cannot download password protected files and image gallerys atm. */
-            /**
-             * 2019-09-25: Due to an API bug, password protected content is NOT downloadable via API at all! </br>
-             * TODO: Remove this once API gets updated and can handle password protected content (bug has been reported to Dropbox support!)
-             */
+        } else if ((useAPI() && account != null) && link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
+            /* API cannot download image gallerys atm as there are no API calls for such galleries but they are not widely used anyways! */
             return false;
         }
         /* All other cases should work fine via API and website! */
