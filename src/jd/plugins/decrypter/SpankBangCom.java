@@ -196,11 +196,11 @@ public class SpankBangCom extends PluginForDecrypt {
         final String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
         if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
             final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
-            final String stream_url_m3u8 = String.valueOf(map.get("stream_url_m3u8"));
+            final String stream_url_m3u8 = String.valueOf(map.get("m3u8"));
             for (final String quality : qualities) {
                 System.out.println("quality: " + quality);
                 final String qualityID = getQuality(quality);
-                final Object entry = map.get("stream_url_" + quality);
+                final Object entry = map.get(quality);
                 String value = null;
                 if (entry instanceof String) {
                     value = (String) entry;
