@@ -183,7 +183,8 @@ public class MixdropCo extends antiDDoSForHost {
             /* 2019-12-13: Invisible reCaptcha */
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaID).getToken();
                 postData += "&token=" + Encoding.urlEncode(recaptchaV2Response);
             }
             postPage(url, postData);
