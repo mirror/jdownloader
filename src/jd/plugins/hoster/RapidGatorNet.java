@@ -72,35 +72,37 @@ public class RapidGatorNet extends antiDDoSForHost {
         this.setConfigElements();
     }
 
-    private static final String            MAINPAGE                        = "https://rapidgator.net/";
-    private static final String            PREMIUMONLYTEXT                 = "This file can be downloaded by premium only</div>";
-    private static final String            PREMIUMONLYUSERTEXT             = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
-    private final String                   EXPERIMENTALHANDLING            = "EXPERIMENTALHANDLING";
-    private final String                   EXPERIMENTAL_ENFORCE_SSL        = "EXPERIMENTAL_ENFORCE_SSL";
-    private final String                   DISABLE_API_PREMIUM             = "DISABLE_API_PREMIUM_2019_12_15";
+    private static final String            MAINPAGE                               = "https://rapidgator.net/";
+    private static final String            PREMIUMONLYTEXT                        = "This file can be downloaded by premium only</div>";
+    private static final String            PREMIUMONLYUSERTEXT                    = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
+    private final String                   EXPERIMENTALHANDLING                   = "EXPERIMENTALHANDLING";
+    private final String                   EXPERIMENTAL_ENFORCE_SSL               = "EXPERIMENTAL_ENFORCE_SSL";
+    private final String                   DISABLE_API_PREMIUM                    = "DISABLE_API_PREMIUM_2019_12_15";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
      * Free/Expired premium account tries to download via API.
      */
-    private final boolean                  API_TRUST_404_FILE_OFFLINE      = false;
+    private final boolean                  API_TRUST_404_FILE_OFFLINE             = false;
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
-    private final String                   API_BASEv2                      = "https://rapidgator.net/api/v2/";
-    private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                      = new AtomicLong(0);
-    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "rapidgatornet_lastdownload_timestamp";
-    private final String                   LASTIP                          = "LASTIP";
-    private final String                   HOTLINK                         = "HOTLINK";
-    private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
-    private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final String                   API_BASEv2                             = "https://rapidgator.net/api/v2/";
+    /* Enforce new session_id once current one is > X minutes old. 0 or -1 = never refresh session_id unless it is detected as invalid. */
+    private final long                     API_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 45;
+    private final String[]                 IPCHECK                                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static AtomicBoolean           hasAttemptedDownloadstart              = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                             = new AtomicLong(0);
+    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP        = "rapidgatornet_lastdownload_timestamp";
+    private final String                   LASTIP                                 = "LASTIP";
+    private final String                   HOTLINK                                = "HOTLINK";
+    private static AtomicReference<String> lastIP                                 = new AtomicReference<String>();
+    private final Pattern                  IPREGEX                                = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     /* 2019-12-12: Lowered from 2 to 1 hour */
-    private static final long              FREE_RECONNECTWAIT_GENERAL      = 1 * 60 * 60 * 1001L;
-    private static final long              FREE_RECONNECTWAIT_DAILYLIMIT   = 3 * 60 * 60 * 1000L;
-    private static final long              FREE_RECONNECTWAIT_OTHERS       = 30 * 60 * 1000L;
-    private static final long              FREE_CAPTCHA_EXPIRE_TIME        = 105 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_GENERAL             = 1 * 60 * 60 * 1001L;
+    private static final long              FREE_RECONNECTWAIT_DAILYLIMIT          = 3 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_OTHERS              = 30 * 60 * 1000L;
+    private static final long              FREE_CAPTCHA_EXPIRE_TIME               = 105 * 1000L;
 
     @Override
     public String getAGBLink() {
@@ -825,13 +827,27 @@ public class RapidGatorNet extends antiDDoSForHost {
             // accessMainpage(br);
             String session_id = account.getStringProperty("session_id", null);
             if (session_id != null) {
+                logger.info("session_create = " + account.getLongProperty("session_create", 0));
                 /* First try to re-use last token */
                 getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
                 try {
                     handleErrors_api(null, false, null, account, br.getHttpConnection());
                     logger.info("Successfully re-used last session_id");
-                    account.setProperty("session_last_checked", System.currentTimeMillis());
-                    return session_id;
+                    final long timestamp_session_validity = account.getLongProperty("session_create", 0) + API_SESSION_ID_REFRESH_TIMEOUT_MINUTES * 60 * 1000l;
+                    if (API_SESSION_ID_REFRESH_TIMEOUT_MINUTES > 0 && System.currentTimeMillis() > timestamp_session_validity) {
+                        /*
+                         * 2019-12-23: We could avoid checking sessions as we know their age before already but I currently want all
+                         * session_ids to get checked to get better log results/find serverside issues.
+                         */
+                        logger.info("session_id seems to be valid but we'll get a new one as current session_id is older than " + API_SESSION_ID_REFRESH_TIMEOUT_MINUTES + " minutes");
+                    } else {
+                        if (API_SESSION_ID_REFRESH_TIMEOUT_MINUTES > 0) {
+                            final long timestamp_remaining_session_validity = timestamp_session_validity - System.currentTimeMillis();
+                            logger.info("Unless it expires serverside, current session_id is still considered valid for: " + TimeFormatter.formatMilliSeconds(timestamp_remaining_session_validity, 0));
+                        }
+                        account.setProperty("session_last_checked", System.currentTimeMillis());
+                        return session_id;
+                    }
                 } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
                     logger.log(e);
@@ -839,6 +855,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             /* Avoid full logins - RG will temp. block accounts on too many full logins in a short time! */
             logger.info("Performing full login");
+            /* Remove cookies from possible previous attempt to re-use old session_id! */
+            br.clearCookies(this.getHost());
             getPage(API_BASEv2 + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             /* 2019-12-14: session_id == PHPSESSID cookie */
             session_id = PluginJSonUtils.getJsonValue(br, "session_id");
@@ -1008,7 +1026,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                 // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                 // {"response":null,"status":401,"details":"Error. Session not exist"}
-                handleInvalidSession();
+                handleInvalidSession(null);
             } else if (status == 404) {
                 handle404API(account);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
@@ -1119,8 +1137,10 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     /** Workaround for serverside issue that API may returns error 404 instead of the real status if current session_id is invalid. */
     private void handle404API(final Account account) throws Exception {
+        logger.info("Error 404 happened --> Trying to find out whether session is invalid or file is offline");
         if (API_TRUST_404_FILE_OFFLINE) {
             /* File offline */
+            logger.info("Error 404 --> Trusted file offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             /* Either bad session_id or file offline */
@@ -1137,13 +1157,34 @@ public class RapidGatorNet extends antiDDoSForHost {
                     logger.info("Session is valid --> File is offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    /* Gert new session_id on next accountcheck */
+                    /* Get new session_id on next accountcheck */
                     logger.info("Session is invalid");
-                    handleInvalidSession();
+                    handleInvalidSession(null);
                 }
             } else {
-                /* Session validity check cannot be trusted either --> Display error to user */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+                /*
+                 * Session validity check cannot be trusted either --> Check if URL is really offline; if yes, display offline; temp disable
+                 * account and wait for new session
+                 */
+                if (this.getDownloadLink() != null) {
+                    try {
+                        requestFileInformation(this.getDownloadLink());
+                        logger.info("File is online --> Probably expired session");
+                    } catch (final Throwable e) {
+                        if (e instanceof PluginException) {
+                            final PluginException ep = (PluginException) e;
+                            if (ep.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                                logger.info("File is offline");
+                                throw ep;
+                            }
+                            /* Ignore other errors */
+                        }
+                    }
+                } else {
+                    logger.info("Error 404 happened outside download handling which is unusual --> Probably expired session");
+                }
+                /* Probably expired session */
+                handleInvalidSession("404");
             }
         }
     }
@@ -1171,9 +1212,14 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     /** Call this on expired session_id! */
-    private void handleInvalidSession() throws AccountUnavailableException {
+    private void handleInvalidSession(final String error_hint) throws AccountUnavailableException {
         /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
-        throw new AccountUnavailableException("Session expired - waiting before opening new session", 1 * 60 * 1000l);
+        final long waittime = 1 * 60 * 1000l;
+        if (error_hint != null) {
+            throw new AccountUnavailableException(String.format("[%s]Session expired - waiting before opening new session", error_hint), waittime);
+        } else {
+            throw new AccountUnavailableException("Session expired - waiting before opening new session", waittime);
+        }
     }
 
     private final int maxPremChunks = -5; // 21.11.16, check highest that can be handled without server issues
