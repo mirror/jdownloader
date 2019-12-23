@@ -15,11 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -27,7 +26,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -40,6 +38,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(?:#/)?((?:file_download|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?|file/[0-9a-zA-Z=_-]+/[^/]+))" })
 public class InCloudDriveCom extends antiDDoSForHost {
@@ -270,63 +269,46 @@ public class InCloudDriveCom extends antiDDoSForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://inclouddrive.com";
-    private static Object       LOCK     = new Object();
-
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    /*
+                     * 2019-12-23: TODO: Add cookie-check handling! Only perform full login if necessary! Otherwise we'll soon get errors
+                     * like this on full login: {"result":"error","message":"Your account is blocked due to security reason."}
+                     */
+                    br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(false);
-                getPage("https://www.inclouddrive.com/user/login");
+                getPage("https://www." + this.getHost() + "/user/login");
                 final String js = br.cloneBrowser().getPage("/java/mycloud.js");
                 final String appToken = new Regex(js, "app:\\s*'(.*?)',").getMatch(0);
                 ajaxPostPage("https://www.inclouddrive.com/api/0/signmein", "useraccess=&access_token=" + appToken + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
                 final String doz = Encoding.urlEncode(ajax.getRegex("\"doz\":\"([^\"]+)").getMatch(0));
-                if (!ajax.containsHTML("\"result\":\"ok\"") || doz == null || "".equals(doz)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!ajax.containsHTML("\"result\":\"ok\"") || StringUtils.isEmpty(doz)) {
+                    final String errormessage = PluginJSonUtils.getJson(ajax, "message");
+                    if (errormessage != null) {
+                        /* 2019-12-23: E.g. {"result":"error","message":"Your account is blocked due to security reason."} */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.setCookie(MAINPAGE, "userdata", doz);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = ajax.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                br.setCookie(br.getHost(), "userdata", doz);
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (inValidate(account.getUser()) || !account.getUser().matches(".+@.+")) {
@@ -334,14 +316,8 @@ public class InCloudDriveCom extends antiDDoSForHost {
         } else if (inValidate(account.getPass())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password can not be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        final String lang = System.getProperty("user.language");
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         getPage("/me");
         final String[] premExpire = br.getRegex(">(Premium)</div>[^<]*<div[^>]*>Expires on (\\d+ \\w+, \\d{4})<").getRow(0);
         if (premExpire == null) {
@@ -353,11 +329,8 @@ public class InCloudDriveCom extends antiDDoSForHost {
         } else {
             final String expire = premExpire[1];
             if (expire == null) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                logger.warning("Failed to find expiredate");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM, yyyy", Locale.ENGLISH));
             }
@@ -369,20 +342,19 @@ public class InCloudDriveCom extends antiDDoSForHost {
         }
         final String space = br.getRegex(">Used Space</div>\\s*<span[^>]*>(.*?) / \\d+ GB</span>").getMatch(0);
         if (space != null) {
-            ai.setUsedSpace(SizeFormatter.getSize(space.trim()));
-        } else {
-            logger.warning("Could not determine Used Space! Account type");
+            ai.setUsedSpace(SizeFormatter.getSize(Encoding.htmlDecode(space)));
         }
-        final String[] traffic = br.getRegex(">Used Bandwidth</div>\\s*<span[^>]*>(.*?)\\s*/\\s*(\\d+ GB)<").getRow(0);
-        if (traffic != null) {
-            final long trafficused = SizeFormatter.getSize(traffic[0].contains("&nbsp;") ? "0" : traffic[0].replace("BT", "Byte"));
-            final long trafficmax = SizeFormatter.getSize(traffic[1].replace("BT", "Byte"));
+        final Regex trafficleft = br.getRegex(">Used Bandwidth</div>\\s*(?:<span[^>]*>)?(\\d+(?:\\.\\d+)? GB)\\s*/\\s*(\\d+(?:\\.\\d+)? GB)\\s*<");
+        final String trafficusedStr = trafficleft.getMatch(0);
+        final String trafficmaxStr = trafficleft.getMatch(1);
+        if (trafficusedStr != null && trafficmaxStr != null) {
+            final long trafficused = SizeFormatter.getSize(trafficusedStr);
+            final long trafficmax = SizeFormatter.getSize(trafficmaxStr);
             ai.setTrafficMax(trafficmax);
             ai.setTrafficLeft(trafficmax - trafficused);
         } else {
-            logger.warning("Could not determine Used Bandwidth! Account type");
+            logger.warning("Could not find trafficleft!");
         }
-        account.setValid(true);
         return ai;
     }
 
