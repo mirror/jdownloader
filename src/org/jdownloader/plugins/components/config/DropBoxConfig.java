@@ -12,7 +12,9 @@ public interface DropBoxConfig extends PluginConfigInterface {
     /** 2019-09-25: Enforced API usage for all users. Consider removing this setting soon. */
     public static class TRANSLATION {
         public String getUseAPI_label() {
-            return "Use API (in account mode)? [Recommended, changing this setting does not have any effect at the moment!]";
+            return "BETA: Use API (in account mode)?";
+            // return "BETA: Use API (in account mode)? [Recommended, changing this setting does not have any effect at the moment!]";
+            // return "Use API (in account mode)? [Recommended]";
         }
     }
 
