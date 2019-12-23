@@ -90,6 +90,8 @@ public class RapidGatorNet extends antiDDoSForHost {
     private final String                   API_BASEv2                             = "https://rapidgator.net/api/v2/";
     /* Enforce new session_id once current one is > X minutes old. 0 or -1 = never refresh session_id unless it is detected as invalid. */
     private final long                     API_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 45;
+    /* TODO: 2019-12-23: Maybe add enforced session_id reset for website handling too. */
+    // private final long WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 45;
     private final String[]                 IPCHECK                                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           hasAttemptedDownloadstart              = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                             = new AtomicLong(0);
