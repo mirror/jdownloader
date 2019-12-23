@@ -102,7 +102,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 /*
                  * Possible website-crawler failure - remind user to add an account so API can be used and crawler can work more reliable!
                  */
-                /* 2019-10-03: Disabled until API gets unlocked in stable version. */
+                /* 2019-10-03: TODO: Disabled until API gets officially unlocked in stable version. */
                 // recommendAPIUsage();
             }
         }
