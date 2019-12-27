@@ -44,7 +44,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -64,7 +63,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +73,6 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     private static final String            MAINPAGE                               = "https://rapidgator.net/";
     private static final String            PREMIUMONLYTEXT                        = "This file can be downloaded by premium only</div>";
-    private static final String            PREMIUMONLYUSERTEXT                    = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private final String                   EXPERIMENTALHANDLING                   = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL               = "EXPERIMENTAL_ENFORCE_SSL";
     private final String                   DISABLE_API_PREMIUM                    = "DISABLE_API_PREMIUM_2019_12_15";
@@ -247,11 +245,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
         }
         link.removeProperty(HOTLINK);
-        if (br.containsHTML("400 Bad Request") && link.getPluginPatternMatcher().contains("%")) {
-            /* 2019-12-18: TODO: Check if this is still required - it shouldn't! Remove it! */
-            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("%", ""));
-            getPage(link.getPluginPatternMatcher());
-        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
             final String filenameFromURL = getURLFilename(link);
             if (filenameFromURL != null) {
@@ -281,10 +274,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         br.setFollowRedirects(false);
-        // Only show message if user has no active premium account
-        if (br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT) && AccountController.getInstance().getValidAccount(this) == null) {
-            link.getLinkStatus().setStatusText(RapidGatorNet.PREMIUMONLYUSERTEXT);
-        }
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
@@ -830,7 +819,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 /* First try to re-use last token */
                 getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
                 try {
-                    handleErrors_api(null, false, null, account, br.getHttpConnection());
+                    handleErrors_api(null, null, account, br.getHttpConnection());
                     logger.info("Successfully re-used last session_id");
                     final long timestamp_session_validity = account.getLongProperty("session_create", 0) + API_SESSION_ID_REFRESH_TIMEOUT_MINUTES * 60 * 1000l;
                     if (API_SESSION_ID_REFRESH_TIMEOUT_MINUTES > 0 && System.currentTimeMillis() > timestamp_session_validity) {
@@ -865,7 +854,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             if (StringUtils.isEmpty(session_id)) {
                 logger.info("Failed to find session_id");
-                handleErrors_api(null, false, null, account, br.getHttpConnection());
+                handleErrors_api(null, null, account, br.getHttpConnection());
                 logger.warning("Unknown login failure");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -945,7 +934,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private void handleErrors_api(final String session_id, boolean retrySameSession, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws Exception {
+    private void handleErrors_api(final String session_id, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws Exception {
         if (con == null) {
             return;
         }
@@ -973,7 +962,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             final String statusString = new Regex(errorMessage, "status\"\\s*:\\s*\"?(\\d+)").getMatch(0);
             final long status = statusString != null ? Long.parseLong(statusString) : -1;
             if (errorMessage == null) {
-                /* TODO: Remove this workaround */
+                /* 2019-12-17: This String is not allowed to be null! */
                 errorMessage = "None";
             }
             logger.info("ErrorMessage: " + errorMessage);
@@ -1029,13 +1018,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (status == 404) {
                 handle404API(account);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
-                /* TODO: Rework this */
-                if (sessionReset) {
-                    logger.info("SessionReset:" + sessionReset);
-                    account.setProperty("session_id", Property.NULL);
-                }
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (errorMessage.contains("\"Error: Error e\\-mail or password")) {
+                handleInvalidSession(null);
+            } else if (errorMessage.contains("\"Error: Error e-mail or password")) {
                 /* Usually comes with response_status 401 --> Not exactly sure what it means but probably some kind of account issue. */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
@@ -1108,7 +1092,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
         }
         this.getPage(API_BASEv2 + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-        handleErrors_api(session_id, false, link, account, br.getHttpConnection());
+        handleErrors_api(session_id, link, account, br.getHttpConnection());
         String url = PluginJSonUtils.getJsonValue(br, "url");
         if (StringUtils.isEmpty(url)) {
             /* 2019-12-14: APIv2 */
@@ -1124,11 +1108,11 @@ public class RapidGatorNet extends antiDDoSForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, maxPremChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
-            handleErrors_api(session_id, false, link, account, dl.getConnection());
+            handleErrors_api(session_id, link, account, dl.getConnection());
             // so we can see errors maybe proxy errors etc.
             br.followConnection();
             /* Try that errorhandling but it might not help! */
-            handleErrors_api(session_id, false, link, account, br.getHttpConnection());
+            handleErrors_api(session_id, link, account, br.getHttpConnection());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -1271,7 +1255,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, maxPremChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
-                handleErrors_api(null, false, link, account, dl.getConnection());
+                handleErrors_api(null, link, account, dl.getConnection());
                 // so we can see errors maybe proxy errors etc.
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
