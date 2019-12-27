@@ -71,10 +71,7 @@ public class InCloudDriveCom extends antiDDoSForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     private Browser prepBrowser(final Browser prepBr) {
-        try {
-            prepBr.setAllowedResponseCodes(400, 500);
-        } catch (final Throwable e) {
-        }
+        prepBr.setAllowedResponseCodes(new int[] { 400, 500 });
         prepBr.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36");
         return prepBr;
@@ -275,30 +272,34 @@ public class InCloudDriveCom extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                boolean loggedIN = false;
+                if (cookies != null) {
                     /*
-                     * 2019-12-23: TODO: Add cookie-check handling! Only perform full login if necessary! Otherwise we'll soon get errors
-                     * like this on full login: {"result":"error","message":"Your account is blocked due to security reason."}
+                     * 2019-12-27: re-use cookies whenever possible. Too many full logins may cause this:
+                     * {"result":"error","message":"Your account is blocked due to security reason."}
                      */
                     br.setCookies(this.getHost(), cookies);
-                    return;
+                    getPage("https://" + this.getHost() + "/mycloud");
+                    loggedIN = isLoggedIN();
                 }
-                br.setFollowRedirects(false);
-                getPage("https://www." + this.getHost() + "/user/login");
-                final String js = br.cloneBrowser().getPage("/java/mycloud.js");
-                final String appToken = new Regex(js, "app:\\s*'(.*?)',").getMatch(0);
-                ajaxPostPage("https://www.inclouddrive.com/api/0/signmein", "useraccess=&access_token=" + appToken + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
-                final String doz = Encoding.urlEncode(ajax.getRegex("\"doz\":\"([^\"]+)").getMatch(0));
-                if (!ajax.containsHTML("\"result\":\"ok\"") || StringUtils.isEmpty(doz)) {
-                    final String errormessage = PluginJSonUtils.getJson(ajax, "message");
-                    if (errormessage != null) {
-                        /* 2019-12-23: E.g. {"result":"error","message":"Your account is blocked due to security reason."} */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!loggedIN) {
+                    br.setFollowRedirects(false);
+                    getPage("https://www." + this.getHost() + "/user/login");
+                    final String js = br.cloneBrowser().getPage("/java/mycloud.js");
+                    final String appToken = new Regex(js, "app:\\s*'(.*?)',").getMatch(0);
+                    ajaxPostPage("https://www.inclouddrive.com/api/0/signmein", "useraccess=&access_token=" + appToken + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                    final String doz = Encoding.urlEncode(ajax.getRegex("\"doz\":\"([^\"]+)").getMatch(0));
+                    if (!ajax.containsHTML("\"result\":\"ok\"") || StringUtils.isEmpty(doz)) {
+                        final String errormessage = PluginJSonUtils.getJson(ajax, "message");
+                        if (errormessage != null) {
+                            /* 2019-12-23: E.g. {"result":"error","message":"Your account is blocked due to security reason."} */
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, errormessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
+                    br.setCookie(br.getHost(), "userdata", doz);
                 }
-                br.setCookie(br.getHost(), "userdata", doz);
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -307,6 +308,10 @@ public class InCloudDriveCom extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIN() {
+        return br.getCookie(br.getHost(), "userdata", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override

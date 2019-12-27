@@ -604,11 +604,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 if (!StringUtils.isEmpty(expire_date) || is_premium) {
                     if (!StringUtils.isEmpty(expire_date) && expire_date.matches("\\d+")) {
                         /*
-                         * Add one day extra to prevent it from expiring too early in JD.
-                         */
-                        /*
-                         * 2019-12-17: TODO: Check when premium accounts really expire (note by psp: I have one which expires 2019-12-23;
-                         * will check this!)
+                         * 2019-12-23: Premium accounts expire too early if we just set the expire-date. Using their Android App even they
+                         * will display the wrong expire date there. We have to add 24 hours to correct this.
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
                     }
