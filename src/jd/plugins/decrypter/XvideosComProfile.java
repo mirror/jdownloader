@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:xvideos|xvideos2)\\.com/(?:profiles|pornstar-channels|amateur-channels|channels)/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:xvideos|xvideos2)\\.(?:com|es)/(?:profiles|(?:pornstar-|amateur-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
 public class XvideosComProfile extends PluginForDecrypt {
     public XvideosComProfile(PluginWrapper wrapper) {
         super(wrapper);
