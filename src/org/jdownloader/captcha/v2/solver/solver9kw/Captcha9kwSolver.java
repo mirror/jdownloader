@@ -115,6 +115,7 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             qi.appendEncoded("version", "1.2");
             qi.appendEncoded("data-sitekey", rcChallenge.getSiteKey());
             qi.appendEncoded("oldsource", rcChallenge.getTypeID() + "");
+            qi.appendEncoded("isInvisible", rcChallenge.getType() + "");// required since ~12-2019 (NORMAL vs INVISIBLE)
             final Map<String, Object> v3action = rcChallenge.getV3Action();
             if (v3action != null) {
                 qi.appendEncoded("pageurl", rcChallenge.getSiteUrl());
