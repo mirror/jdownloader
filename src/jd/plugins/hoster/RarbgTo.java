@@ -39,7 +39,7 @@ public class RarbgTo extends antiDDoSForHost {
     public RarbgTo(PluginWrapper wrapper) {
         super(wrapper);
         /* 2019-01-04: Try to avoid triggering their anti-spam measures! */
-        this.setStartIntervall(10 * 1000l);
+        this.setStartIntervall(5 * 1000l);
     }
 
     @Override
