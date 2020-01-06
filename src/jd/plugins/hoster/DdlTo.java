@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,6 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -73,6 +73,16 @@ public class DdlTo extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "ddl.to" });
         return ret;
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        final String downloadURL = link.getPluginPatternMatcher();
+        if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+            link.setPluginPatternMatcher(downloadURL.replaceFirst("^https://", "http://"));
+        } else {
+            link.setPluginPatternMatcher(downloadURL.replaceFirst("^http://", "https://"));
+        }
     }
 
     @Override
@@ -243,5 +253,6 @@ public class DdlTo extends XFileSharingProBasic {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
     }
 }

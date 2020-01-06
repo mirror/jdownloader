@@ -25,13 +25,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -51,6 +47,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" })
 public class UpToBoxCom extends antiDDoSForHost {
@@ -100,6 +102,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        setConfigElements();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -148,7 +151,11 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         final String downloadURL = link.getPluginPatternMatcher();
-        link.setPluginPatternMatcher(downloadURL.replaceFirst("^http://", "https://"));
+        if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+            link.setPluginPatternMatcher(downloadURL.replaceFirst("^https://", "http://"));
+        } else {
+            link.setPluginPatternMatcher(downloadURL.replaceFirst("^http://", "https://"));
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -385,7 +392,11 @@ public class UpToBoxCom extends antiDDoSForHost {
             downloadLink.setDownloadPassword(passCode);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dllink = dllink.replaceFirst("^http://", "https://");
+        if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+            dllink = dllink.replaceFirst("^https://", "http://");
+        } else {
+            dllink = dllink.replaceFirst("^http://", "https://");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -941,5 +952,14 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
+    }
+
+    @Override
+    public String getDescription() {
+        return "Download files with the UpToBox.com plugin.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
     }
 }
