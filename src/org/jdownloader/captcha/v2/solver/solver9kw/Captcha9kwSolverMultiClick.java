@@ -62,31 +62,31 @@ public class Captcha9kwSolverMultiClick extends AbstractCaptcha9kwSolver<MultiCl
         try {
             byte[] data = null;
             final String ext = Files.getExtension(captchaChallenge.getImageFile().getName());
-            if (StringUtils.equalsIgnoreCase("kissanime.to", solverJob.getChallenge().getTypeID())) {
-                // why not add generic handling? check image size and resire if required?
-                // too big for 9kw.eu
-                // Width+Height=max.800px, width under 620px, height under 600px
-                if (ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("jpg") || ext.equalsIgnoreCase("gif")) {
-                    BufferedImage image = ImageProvider.read(captchaChallenge.getImageFile());
-                    double size = image.getWidth() + image.getHeight();
-                    int basevalue = 800;
-                    double toobig_size;
-                    double round_width = 0;
-                    double round_height = 0;
-                    for (int i = 0; i < 100; i++) {
-                        toobig_size = size / (basevalue - i);
-                        this.base_workaround = toobig_size;
-                        round_width = image.getWidth() / toobig_size;
-                        round_height = image.getHeight() / toobig_size;
-                        if (round_width < 620 && round_height < 600 && (round_height + round_width) < 800) {
-                            break;
-                        }
+            // Animations with non default delays between frames are untested
+            boolean gifok = false;
+            if (StringUtils.equalsIgnoreCase("kissanime.to", solverJob.getChallenge().getTypeID()) && ext.equalsIgnoreCase("gif")) {
+                gifok = true;
+            }
+            // image size generic handling for png and jpg if it's too big for 9kw.eu
+            // Width+Height=max.800px, width under 620px, height under 600px
+            if (ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("jpg") || gifok == true) {
+                BufferedImage image = ImageProvider.read(captchaChallenge.getImageFile());
+                double size = image.getWidth() + image.getHeight();
+                int basevalue = 800;
+                double toobig_size;
+                double round_width = 0;
+                double round_height = 0;
+                for (int i = 0; i < 300; i++) {
+                    toobig_size = size / (basevalue - i);
+                    this.base_workaround = toobig_size;
+                    round_width = image.getWidth() / toobig_size;
+                    round_height = image.getHeight() / toobig_size;
+                    if (round_width < 620 && round_height < 600 && (round_height + round_width) < 800) {
+                        break;
                     }
-                    image = (BufferedImage) ImageProvider.scaleBufferedImage(image, (int) Math.round(round_width), (int) Math.round(round_height));
-                    data = toByteArrayCaptcha(image, ext);
-                } else {
-                    data = IO.readFile(captchaChallenge.getImageFile());
                 }
+                image = (BufferedImage) ImageProvider.scaleBufferedImage(image, (int) Math.round(round_width), (int) Math.round(round_height));
+                data = toByteArrayCaptcha(image, ext);
             } else {
                 data = IO.readFile(captchaChallenge.getImageFile());
             }
