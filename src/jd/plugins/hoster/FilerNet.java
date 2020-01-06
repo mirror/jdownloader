@@ -15,10 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,6 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
@@ -69,7 +69,11 @@ public class FilerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://" + this.getHost() + "/get/" + getFileID(link));
+        if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+            link.setUrlDownload("http://" + this.getHost() + "/get/" + getFileID(link));
+        } else {
+            link.setUrlDownload("https://" + this.getHost() + "/get/" + getFileID(link));
+        }
     }
 
     private final String getFileID(DownloadLink link) {
@@ -579,6 +583,7 @@ public class FilerNet extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS", "Enable API for free- and free account downloads?\r\nBy disabling this you will force JD to use the website instead.\r\nThis could lead to unexpected errors.").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
     }
 
     @Override
