@@ -17,8 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviefap.com" }, urls = { "https?://(www\\.)?moviefap\\.com/(videos/[a-z0-9]+/[a-z0-9\\-_]+\\.html|embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviefap.com" }, urls = { "https?://(?:www\\.)?moviefap\\.com/(videos/[a-z0-9]+/[a-z0-9\\-_]+\\.html|embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+)" })
 public class MovieFapCom extends PluginForHost {
     public MovieFapCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,16 +48,17 @@ public class MovieFapCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         privatevideo = false;
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-_]+)(?:\\.html)?$").getMatch(0);
+        br.getPage(link.getDownloadURL());
+        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-_]+)(?:\\.html)?$").getMatch(0);
         String filename = null;
-        if (downloadLink.getDownloadURL().matches(EMBEDLINK)) {
-            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        if (link.getDownloadURL().matches(EMBEDLINK)) {
+            filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         } else {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("video does not exist")) {
@@ -70,6 +72,10 @@ public class MovieFapCom extends PluginForHost {
                 filename = br.getRegex("id=\"title\" name=\"title\" value=\"([^<>\"]*?)\"").getMatch(0);
             }
             String config = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"\\);").getMatch(0);
+            if (config == null) {
+                /* 2020-01-07 */
+                config = br.getRegex("id=\"config1\" name=\"config1\" value=\"(http[^<>\"]+)\"").getMatch(0);
+            }
             if (!privatevideo && config != null) {
                 br.getPage(config);
                 /* Video offline - not playable via browser either! */
@@ -89,9 +95,6 @@ public class MovieFapCom extends PluginForHost {
                 }
             }
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (filename == null) {
             filename = url_filename;
         }
@@ -99,22 +102,20 @@ public class MovieFapCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         String ext = null;
         if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, ".flv");
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         }
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
         ext = ext.replace(".fid", ".flv"); // if (ext == ".fid") doesn't work?
-        downloadLink.setFinalFileName(filename + ext);
+        link.setFinalFileName(filename + ext);
         if (dllink != null) {
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
+            br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -134,6 +135,8 @@ public class MovieFapCom extends PluginForHost {
         if (privatevideo) {
             /* Account only */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
