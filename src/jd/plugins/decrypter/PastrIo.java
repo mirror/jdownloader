@@ -40,17 +40,29 @@ public class PastrIo extends PluginForDecrypt {
         final String parameter = param.toString();
         final String pasteID = new Regex(parameter, "/([^/]+)$").getMatch(0);
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.getPage("https://pastr.io/api/view/" + pasteID);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        final boolean useAPI = false;
+        final String plaintext;
+        if (useAPI) {
+            br.getHeaders().put("User-Agent", "JDownloader");
+            br.getPage("https://" + this.getHost() + "/api/view/" + pasteID);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            plaintext = PluginJSonUtils.getJson(br, "paste");
+        } else {
+            /* 2020-01-07: API seems to be offline or does not exist anymore */
+            br.getPage("https://" + this.getHost() + "/raw/" + pasteID);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            plaintext = br.toString();
         }
-        final String plaintxt = PluginJSonUtils.getJson(br, "paste");
         /* Find URLs inside plaintext/html code */
-        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        final String[] links = HTMLParser.getHttpLinks(plaintext, "");
         if (links == null || links.length == 0) {
-            logger.info("Found no links in link: " + parameter);
+            logger.info("Found no URLs in plaintext of link: " + parameter);
             return decryptedLinks;
         }
         logger.info("Found " + links.length + " URLs in total");

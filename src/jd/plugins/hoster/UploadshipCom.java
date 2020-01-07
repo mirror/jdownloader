@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UploadshipCom extends YetiShareCore {
@@ -129,7 +129,10 @@ public class UploadshipCom extends YetiShareCore {
     @Override
     public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
         /* 2019-07-31: Special */
-        fileInfo[0] = br.getRegex("<h4>\\s*?Download File\\s*?:\\s*?([^<>\"]+)</h4>").getMatch(0);
+        fileInfo[0] = br.getRegex("<title>([^<>\"]+) \\- UploadShip</title>").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = br.getRegex("How To Free Download\\s*:\\s*<b>([^<>\"]+)<").getMatch(0);
+        }
         fileInfo[1] = br.getRegex("/" + this.getFUIDFromURL(this.getDownloadLink()) + "</font> \\- \\[ ([^<>\"\\]]+) \\][^<]+</small>").getMatch(0);
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
             /* Use default handling as fallback */

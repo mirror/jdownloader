@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "https?://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/|dl/)?[0-9A-Za-z]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "https?://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/|dl/)?[0-9A-Za-z]{2,}" })
 public class PasteBinCom extends PluginForDecrypt {
     public PasteBinCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,7 +72,8 @@ public class PasteBinCom extends PluginForDecrypt {
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
-            logger.info("Found no links in link: " + parameter);
+            logger.info("Found no URLs in link: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         logger.info("Found " + links.length + " links in total.");
