@@ -71,38 +71,41 @@ public class RapidGatorNet extends antiDDoSForHost {
         this.setConfigElements();
     }
 
-    private static final String            MAINPAGE                               = "https://rapidgator.net/";
-    private static final String            PREMIUMONLYTEXT                        = "This file can be downloaded by premium only</div>";
-    private final String                   EXPERIMENTALHANDLING                   = "EXPERIMENTALHANDLING";
-    private final String                   EXPERIMENTAL_ENFORCE_SSL               = "EXPERIMENTAL_ENFORCE_SSL";
-    private final String                   DISABLE_API_PREMIUM                    = "DISABLE_API_PREMIUM_2019_12_15";
+    private static final String            MAINPAGE                                   = "https://rapidgator.net/";
+    private static final String            PREMIUMONLYTEXT                            = "This file can be downloaded by premium only</div>";
+    private final String                   EXPERIMENTALHANDLING                       = "EXPERIMENTALHANDLING";
+    private final String                   EXPERIMENTAL_ENFORCE_SSL                   = "EXPERIMENTAL_ENFORCE_SSL";
+    private final String                   DISABLE_API_PREMIUM                        = "DISABLE_API_PREMIUM_2019_12_15";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
      * Free/Expired premium account tries to download via API.
      */
-    private final boolean                  API_TRUST_404_FILE_OFFLINE             = false;
+    private final boolean                  API_TRUST_404_FILE_OFFLINE                 = false;
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
-    private final String                   API_BASEv2                             = "https://rapidgator.net/api/v2/";
-    /* Enforce new session_id once current one is > X minutes old. 0 or -1 = never refresh session_id unless it is detected as invalid. */
-    private final long                     API_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 45;
-    /* TODO: 2019-12-23: Maybe add enforced session_id reset for website handling too. */
-    // private final long WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 45;
-    private final String[]                 IPCHECK                                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasAttemptedDownloadstart              = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                             = new AtomicLong(0);
-    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP        = "rapidgatornet_lastdownload_timestamp";
-    private final String                   LASTIP                                 = "LASTIP";
-    private final String                   HOTLINK                                = "HOTLINK";
-    private static AtomicReference<String> lastIP                                 = new AtomicReference<String>();
-    private final Pattern                  IPREGEX                                = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final String                   API_BASEv2                                 = "https://rapidgator.net/api/v2/";
+    /* Enforce new session once current one is older than X minutes. 0 or -1 = never refresh session_id unless it is detected as invalid. */
+    private final long                     API_SESSION_ID_REFRESH_TIMEOUT_MINUTES     = 45;
+    /*
+     * 2020-01-07: Use 120 minutes for the website login for now. Consider disabling this on negative feedback as frequent website logins
+     * may lead to login-captchas!
+     */
+    private final long                     WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 1;
+    private final String[]                 IPCHECK                                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static AtomicBoolean           hasAttemptedDownloadstart                  = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                                 = new AtomicLong(0);
+    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP            = "rapidgatornet_lastdownload_timestamp";
+    private final String                   LASTIP                                     = "LASTIP";
+    private final String                   HOTLINK                                    = "HOTLINK";
+    private static AtomicReference<String> lastIP                                     = new AtomicReference<String>();
+    private final Pattern                  IPREGEX                                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     /* 2019-12-12: Lowered from 2 to 1 hour */
-    private static final long              FREE_RECONNECTWAIT_GENERAL             = 1 * 60 * 60 * 1001L;
-    private static final long              FREE_RECONNECTWAIT_DAILYLIMIT          = 3 * 60 * 60 * 1000L;
-    private static final long              FREE_RECONNECTWAIT_OTHERS              = 30 * 60 * 1000L;
-    private static final long              FREE_CAPTCHA_EXPIRE_TIME               = 105 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_GENERAL                 = 1 * 60 * 60 * 1001L;
+    private static final long              FREE_RECONNECTWAIT_DAILYLIMIT              = 3 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_OTHERS                  = 30 * 60 * 1000L;
+    private static final long              FREE_CAPTCHA_EXPIRE_TIME                   = 105 * 1000L;
 
     @Override
     public String getAGBLink() {
@@ -730,16 +733,19 @@ public class RapidGatorNet extends antiDDoSForHost {
                     br.setFollowRedirects(true);
                     accessMainpage(br);
                     if (isLoggedINWebsite()) {
-                        setAccountTypeWebsite(account, br);
-                        account.saveCookies(br.getCookies(getHost()), "");
-                        return true;
+                        logger.info("Successfully validated last session");
+                        if (sessionReUseAllowed(account, "session_create_website", WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
+                            setAccountTypeWebsite(account, br);
+                            account.saveCookies(br.getCookies(getHost()), "");
+                            return true;
+                        }
                     }
                 }
                 br = new Browser();
                 br.setFollowRedirects(true);
                 accessMainpage(br);
                 for (int i = 1; i <= 3; i++) {
-                    logger.info("Site login attempt " + i + " of 3");
+                    logger.info("Website login attempt " + i + " of 3");
                     getPage("https://" + this.getHost() + "/auth/login");
                     String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                     final Form loginForm = br.getFormbyProperty("id", "login");
@@ -779,6 +785,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
                 setAccountTypeWebsite(account, br);
                 account.saveCookies(br.getCookies(getHost()), "");
+                account.setProperty("session_create_website", System.currentTimeMillis());
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -789,6 +796,32 @@ public class RapidGatorNet extends antiDDoSForHost {
             } finally {
                 br.setFollowRedirects(ifr);
             }
+        }
+    }
+
+    /**
+     * Returns whether or not session is allowed to be re-used regardless of whether it is valid or not --> Only based on the max. time we
+     * are using a session. Only call this if you have validated the session before and are sure that the current session is valid!!
+     */
+    private boolean sessionReUseAllowed(final Account account, final String session_create_property, final long session_refresh_timeout) {
+        if (session_refresh_timeout > 0) {
+            logger.info(String.format("Currently sessions are re-freshed every %d minutes", session_refresh_timeout));
+        }
+        final long timestamp_session_validity = account.getLongProperty(session_create_property, 0) + session_refresh_timeout * 60 * 1000l;
+        if (session_refresh_timeout > 0 && System.currentTimeMillis() > timestamp_session_validity) {
+            /*
+             * 2019-12-23: We could avoid checking sessions as we know their age before already but I currently want all session_ids to get
+             * checked to get better log results/find serverside issues.
+             */
+            logger.info(String.format("session seems to be valid but we'll get a new one as current session is older than %d minutes", session_refresh_timeout));
+            return false;
+        } else {
+            if (session_refresh_timeout > 0) {
+                final long timestamp_remaining_session_validity = timestamp_session_validity - System.currentTimeMillis();
+                logger.info("Unless it expires serverside, current session is internally considered valid for: " + TimeFormatter.formatMilliSeconds(timestamp_remaining_session_validity, 0));
+            }
+            logger.info("Re-using last session");
+            return true;
         }
     }
 
@@ -820,19 +853,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
                 try {
                     handleErrors_api(null, null, account, br.getHttpConnection());
-                    logger.info("Successfully re-used last session_id");
-                    final long timestamp_session_validity = account.getLongProperty("session_create", 0) + API_SESSION_ID_REFRESH_TIMEOUT_MINUTES * 60 * 1000l;
-                    if (API_SESSION_ID_REFRESH_TIMEOUT_MINUTES > 0 && System.currentTimeMillis() > timestamp_session_validity) {
-                        /*
-                         * 2019-12-23: We could avoid checking sessions as we know their age before already but I currently want all
-                         * session_ids to get checked to get better log results/find serverside issues.
-                         */
-                        logger.info("session_id seems to be valid but we'll get a new one as current session_id is older than " + API_SESSION_ID_REFRESH_TIMEOUT_MINUTES + " minutes");
-                    } else {
-                        if (API_SESSION_ID_REFRESH_TIMEOUT_MINUTES > 0) {
-                            final long timestamp_remaining_session_validity = timestamp_session_validity - System.currentTimeMillis();
-                            logger.info("Unless it expires serverside, current session_id is still considered valid for: " + TimeFormatter.formatMilliSeconds(timestamp_remaining_session_validity, 0));
-                        }
+                    logger.info("Successfully validated last session");
+                    if (sessionReUseAllowed(account, "session_create", API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
                         account.setProperty("session_last_checked", System.currentTimeMillis());
                         return session_id;
                     }

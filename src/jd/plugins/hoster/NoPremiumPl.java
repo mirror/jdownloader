@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.JDHash;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class NoPremiumPl extends PluginForHost {
@@ -67,20 +67,16 @@ public class NoPremiumPl extends PluginForHost {
         // "Invalid login" / "Banned" / "Valid login"
         if (br.containsHTML("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany")) {
             ac.setStatus("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany");
-            account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("balance")) {
             ac.setStatus("Premium Account");
-            account.setValid(true);
         } else if (br.containsHTML("Nieprawidlowa nazwa uzytkownika/haslo")) {
             ac.setStatus("Invalid login! Wrong password?");
-            account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             // unknown error
             ac.setStatus("unknown account status");
-            account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         ac.setTrafficLeft(SizeFormatter.getSize(br.getRegex("balance=(\\d+)").getMatch(0) + "MB"));
         account.setMaxSimultanDownloads(20);
