@@ -54,7 +54,7 @@ public class Paste2Org extends PluginForDecrypt {
         }
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
-            logger.info("Found no hosterlinks in plaintext from link " + parameter);
+            logger.info("Found no URLs in plaintext from link " + parameter);
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable e) {
