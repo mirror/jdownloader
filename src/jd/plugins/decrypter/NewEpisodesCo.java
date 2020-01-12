@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -35,11 +36,15 @@ public class NewEpisodesCo extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
         String fpName = br.getRegex("<title>(?:Watch\\s+)?([^<]+)(Episodes Online)?").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (StringUtils.isNotEmpty(fpName)) {
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        }
         String[] mirrorIDs = br.getRegex("<li[^>]+class\\s*=\\s*\"[^\"]*playlist_entry[^\"]*\"[^>]+id\\s*=\\s*\"\\s*([^\"]+)\\s*\"[^>]*>").getColumn(0);
         if (mirrorIDs != null && mirrorIDs.length > 0) {
             final Browser br2 = br.cloneBrowser();
@@ -48,22 +53,24 @@ public class NewEpisodesCo extends antiDDoSForDecrypt {
                 getPage(br2, br2.getURL("/embed/" + mirrorID).toString());
                 String link = br2.getRegex("<iframe[^>]+src\\s*=\\s*\"\\s*([^\"]+)\\s*\"").getMatch(0);
                 if (link != null && link.length() > 0) {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+                    DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
+                    fp.add(dl);
+                    distribute(dl);
                 }
             }
         } else {
             String[] links = br.getRegex("<div[^>]+data-type\\s*=\\s*\"[^\"]*show[^\"]*\"[^>]+class\\s*=\\s*\"list-item[^>]+>\\s*<a[^>]+href\\s*=\\s*\"[^\"]*(/watch-[^\"]+)\"[^>]+class\\s*=\\s*\"[^\"]*item-url[^\"]*\"[^>]*>").getColumn(0);
             if (links != null && links.length > 0) {
                 for (String link : links) {
-                    decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(link)).toString()));
+                    link = link.trim().replaceAll("^//", "https://");
+                    if (link.startsWith("/") || !link.startsWith("http")) {
+                        link = br.getURL(link).toString();
+                    }
+                    ret.add(createDownloadlink(link));
                 }
+                fp.addLinks(ret);
             }
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        return ret;
     }
 }
