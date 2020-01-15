@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -62,7 +61,7 @@ public class NexusmodsCom extends PluginForDecrypt {
         }
         final Account account = AccountController.getInstance().getValidAccount(plugin.getHost());
         final String apikey = jd.plugins.hoster.NexusmodsCom.getApikey(account);
-        if (apikey != null && apikey != null) {
+        if (apikey != null) {
             decryptedLinks = crawlAPI(param, account, game_domain_name, mod_id);
         } else {
             decryptedLinks = crawlWebsite(param, account, game_domain_name, mod_id);
@@ -159,23 +158,31 @@ public class NexusmodsCom extends PluginForDecrypt {
             fp.setName(fpName + " - " + category_name);
             category_name = Encoding.htmlDecode(category_name).trim();
             final String currentPath = fpName + "/" + category_name;
-            final String[][] downloads = new Regex(downnloadTypeHTML, "<span>([^<]*?)</span>.*?<li class=\"stat-filesize\">.*?class=\"stat\">(.*?)</.*?\"(/Core/Libs/Common/Widgets/DownloadPopUp?\\?id=\\d+.*?)\"").getMatches();
-            if (downloads == null || downloads.length == 0) {
+            final String[] htmls = new Regex(downnloadTypeHTML, "<dt id=\"file-expander-header-\\d+\".*?</div>\\s*</dd>").getColumn(-1);
+            if (htmls == null || htmls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (final String download[] : downloads) {
-                final String content_url = br2.getURL(download[2]).toString();
-                final DownloadLink link = createDownloadlink(content_url);
-                final String file_id = new Regex(content_url, "\\?id=(\\d+)").getMatch(0);
+            for (final String html : htmls) {
+                String file_id = new Regex(html, "\\?id=(\\d+)").getMatch(0);
+                if (file_id == null) {
+                    file_id = new Regex(html, "data-id=\"(\\d+)\"").getMatch(0);
+                }
                 if (file_id == null) {
                     logger.info("file_id is null");
                     continue;
                 }
-                final long size = SizeFormatter.getSize(download[1]);
-                if (size > 0) {
-                    link.setDownloadSize(size);
+                final String filename = new Regex(html, "data-url=\"([^<>\"]+)\"").getMatch(0);
+                final String content_url = String.format("https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=0&game_id=%s&source=FileExpander", file_id, game_id);
+                final DownloadLink link = createDownloadlink(content_url);
+                final String filesizeStr = new Regex(html, "data-size=\"(\\d+)\"").getMatch(0);
+                if (filesizeStr != null) {
+                    link.setDownloadSize(Long.parseLong(filesizeStr));
                 }
-                link.setName(file_id + "_" + Encoding.htmlOnlyDecode(download[0]));
+                if (filename != null) {
+                    link.setName(file_id + "_" + Encoding.htmlOnlyDecode(filename));
+                } else {
+                    link.setName(file_id);
+                }
                 link.setAvailable(true);
                 link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
                 link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);

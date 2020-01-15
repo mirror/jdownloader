@@ -24,8 +24,6 @@ import java.util.Random;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
@@ -35,9 +33,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -324,10 +319,10 @@ public class NexusmodsCom extends antiDDoSForHost {
                         logger.warning("Failed to find loginform");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String reCaptchaKey = br.getRegex("grecaptcha\\.execute\\('([^<>\"\\']+)'").getMatch(0);
+                    String reCaptchaKey = br.getRegex("grecaptcha\\.execute\\('([^<>\"\\']+)'").getMatch(0);
                     if (reCaptchaKey == null) {
-                        logger.warning("Failed to find reCaptchaKey");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* 2020-01-08: Fallback */
+                        reCaptchaKey = "6Lf4vsIUAAAAAN6TyJATjxQbMAcKjBZ3rOc0ijrp";
                     }
                     loginform.put("user%5Blogin%5D", Encoding.urlEncode(account.getUser()));
                     loginform.put("user%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
@@ -368,11 +363,12 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        String apikey = getApikey(account);
-        if (apikey == null && isAPIOnlyMode()) {
-            /* Either user entered apikey for the first time or we have an old username & password account here! */
+        String apikey;
+        if (isAPIOnlyMode()) {
             apikey = account.getPass();
             saveApikey(account, apikey);
+        } else {
+            apikey = getApikey(account);
         }
         if (apikey != null) {
             return fetchAccountInfoAPI(account);
@@ -444,14 +440,16 @@ public class NexusmodsCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             if (isAPIOnlyMode()) {
-                /* Free accounts cannot download via API */
+                /*
+                 * 2020-01-15: We cannot (yet) download via API via free account.
+                 */
                 ai.setTrafficLeft(0);
                 ai.setStatus("Free user [Only premium users can download via API]");
-                /*
-                 * We cannot download via API via free accounts - display precise errormessage so if user wants to use a free account for
-                 * downloading he has to change the plugin setting accordingly.
-                 */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free account!\r\nDownloads over API via free account are impossible!\r\nTo be able to download via free account, enable website login  in Settings --> Plugin Settings --> nexusmods.com\r\nThis login mask will look different afterwards and you will be able to login via username/mail & password.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* 2020-01-15: Website mode is not supported anymore. Accept free accounts and display them with ZERO trafficleft! */
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free account!\r\nDownloads over API via free account are
+                // impossible!\r\nTo be able to download via free account, enable website login in Settings --> Plugin Settings -->
+                // nexusmods.com\r\nThis login mask will look different afterwards and you will be able to login via username/mail &
+                // password.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 ai.setStatus("Free user");
             }
@@ -643,8 +641,10 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     private boolean isAPIOnlyMode() {
-        final NexusmodsConfigInterface cfg = PluginJsonConfig.get(NexusmodsCom.NexusmodsConfigInterface.class);
-        return !cfg.isEnableWebsiteMode();
+        // final NexusmodsConfigInterface cfg = PluginJsonConfig.get(NexusmodsCom.NexusmodsConfigInterface.class);
+        // return !cfg.isEnableWebsiteMode();
+        /* 2020-01-15: Website login is broken, downloads are only possible via free account */
+        return true;
     }
 
     public void getPage(Browser ibr, String page) throws Exception {
@@ -656,33 +656,28 @@ public class NexusmodsCom extends antiDDoSForHost {
         return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
-    @Override
-    public String getDescription() {
-        return "Lade Video- und Audioinhalte aus der ZDFMediathek herunter";
-    }
-
-    @Override
-    public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return NexusmodsConfigInterface.class;
-    }
-
-    public static interface NexusmodsConfigInterface extends PluginConfigInterface {
-        public static class TRANSLATION {
-            public String getEnableWebsiteMode_label() {
-                return "Enable website mode (this way you are able to use free accounts for downloading)? Do NOT enable this if you own a premium account!";
-            }
-        }
-
-        public static final TRANSLATION TRANSLATION = new TRANSLATION();
-
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        @Order(5)
-        boolean isEnableWebsiteMode();
-
-        void setEnableWebsiteMode(boolean b);
-    }
-
+    // @Override
+    // public Class<? extends PluginConfigInterface> getConfigInterface() {
+    // return NexusmodsConfigInterface.class;
+    // }
+    //
+    // public static interface NexusmodsConfigInterface extends PluginConfigInterface {
+    // public static class TRANSLATION {
+    // public String getEnableWebsiteMode_label() {
+    // return "Enable website mode (this way you are able to use free accounts for downloading)? Do NOT enable this if you own a premium
+    // account!";
+    // }
+    // }
+    //
+    // public static final TRANSLATION TRANSLATION = new TRANSLATION();
+    //
+    // @AboutConfig
+    // @DefaultBooleanValue(false)
+    // @Order(5)
+    // boolean isEnableWebsiteMode();
+    //
+    // void setEnableWebsiteMode(boolean b);
+    // }
     @Override
     public void reset() {
     }
