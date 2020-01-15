@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,11 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -61,7 +61,12 @@ public class DdlTo extends XFileSharingProBasic {
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
+        final String[] extraNames = { "ddl" };
+        final String[] officiallySupportedNames = buildSupportedNames(getPluginDomains());
+        String[] finalSupportedNames = new String[officiallySupportedNames.length + extraNames.length];
+        System.arraycopy(officiallySupportedNames, 0, finalSupportedNames, 0, officiallySupportedNames.length);
+        System.arraycopy(extraNames, 0, finalSupportedNames, officiallySupportedNames.length, extraNames.length);
+        return finalSupportedNames;
     }
 
     public static String[] getAnnotationUrls() {
@@ -216,9 +221,9 @@ public class DdlTo extends XFileSharingProBasic {
         final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
         // final String trafficusedStr = PluginJSonUtils.getJson(brc, "traffic_used");
         if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
-            long traffic_left = Long.parseLong(trafficleftStr) * 1024 * 1024;
+            long traffic_left = Long.parseLong(trafficleftStr) * 1000 * 1000;
             if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
-                final long premium_extra_traffic = Long.parseLong(premium_extra_trafficStr) * 1024 * 1024;
+                final long premium_extra_traffic = Long.parseLong(premium_extra_trafficStr) * 1000 * 1000;
                 traffic_left += premium_extra_traffic;
                 if (premium_extra_traffic > 0) {
                     if (ai.getStatus() != null) {
