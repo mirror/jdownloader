@@ -99,8 +99,8 @@ public class NexusmodsCom extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             /* TODO: Maybe find a better packagename */
             fp.setName(game_domain_name + " - " + category_name);
-            final String contentURL = String.format("https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=0&game_id=%s&source=FileExpander", file_id, game_id);
-            final DownloadLink link = this.createDownloadlink(contentURL);
+            final DownloadLink link = createDownloadlink(generatePluginPatternMatcher(file_id, game_id));
+            link.setContentUrl(generateContentURL(game_domain_name, mod_id, file_id));
             jd.plugins.hoster.NexusmodsCom.setFileInformationAPI(link, entries, game_domain_name, mod_id, file_id);
             link._setFilePackage(fp);
             /* Important! These properties are especially required for all API requests! */
@@ -172,8 +172,8 @@ public class NexusmodsCom extends PluginForDecrypt {
                     continue;
                 }
                 final String filename = new Regex(html, "data-url=\"([^<>\"]+)\"").getMatch(0);
-                final String content_url = String.format("https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=0&game_id=%s&source=FileExpander", file_id, game_id);
-                final DownloadLink link = createDownloadlink(content_url);
+                final DownloadLink link = createDownloadlink(generatePluginPatternMatcher(file_id, game_id));
+                link.setContentUrl(generateContentURL(game_domain_name, mod_id, file_id));
                 final String filesizeStr = new Regex(html, "data-size=\"(\\d+)\"").getMatch(0);
                 if (filesizeStr != null) {
                     link.setDownloadSize(Long.parseLong(filesizeStr));
@@ -196,6 +196,14 @@ public class NexusmodsCom extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private String generateContentURL(final String game_domain_name, final String mod_id, final String file_id) {
+        return String.format("https://www.nexusmods.com/%s/mods/%s?tab=files&file_id=%s", game_domain_name, mod_id, file_id);
+    }
+
+    private String generatePluginPatternMatcher(final String file_id, final String game_id) {
+        return String.format("https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=0&game_id=%s&source=FileExpander", file_id, game_id);
     }
 
     /*
