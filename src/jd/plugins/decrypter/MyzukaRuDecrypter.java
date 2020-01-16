@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzcloud.me", "myzuka.club" }, urls = { "https?://(?:www\\.)?myzcloud\\.(?:me|pro)/Album/(\\d+)", "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Album/(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzcloud.me", "myzuka.club" }, urls = { "https?://(?:www\\.)?myzcloud\\.(?:me|pro)/(?:[a-z]{2}/)?Album/(\\d+)", "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/(?:[a-z]{2}/)?Album/(\\d+)" })
 public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
     public MyzukaRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
