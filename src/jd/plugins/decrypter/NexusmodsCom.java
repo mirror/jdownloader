@@ -47,7 +47,7 @@ public class NexusmodsCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = null;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("^http://", "https://");
         final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setLogger(getLogger());
@@ -62,7 +62,16 @@ public class NexusmodsCom extends PluginForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(plugin.getHost());
         final String apikey = jd.plugins.hoster.NexusmodsCom.getApikey(account);
         if (apikey != null) {
-            decryptedLinks = crawlAPI(param, account, game_domain_name, mod_id);
+            try {
+                decryptedLinks = crawlAPI(param, account, game_domain_name, mod_id);
+            } catch (final PluginException e) {
+                /* Offline errorhandling as crawler + hosterplugins share the code for errorhandling. */
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                throw e;
+            }
         } else {
             decryptedLinks = crawlWebsite(param, account, game_domain_name, mod_id);
         }
@@ -72,21 +81,37 @@ public class NexusmodsCom extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlAPI(final CryptedLink param, final Account account, final String game_domain_name, final String mod_id) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         jd.plugins.hoster.NexusmodsCom.prepBrAPI(br, account);
-        br.getPage(jd.plugins.hoster.NexusmodsCom.API_BASE + String.format("/games/%s/mods/%s/files.json", game_domain_name, mod_id));
-        /* This will also recognize offline */
+        /* First check for offline, get game_id and name of the mod */
+        br.getPage(jd.plugins.hoster.NexusmodsCom.API_BASE + String.format("/games/%s/mods/%s.json", game_domain_name, mod_id));
+        /* 1st offline check */
         jd.plugins.hoster.NexusmodsCom.handleErrorsAPI(br);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String game_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("game_id"), -1));
+        if (game_id.equals("-1")) {
+            return null;
+        }
+        String mod_name = (String) entries.get("name");
+        if (StringUtils.isEmpty(mod_name)) {
+            /* This should never happen */
+            mod_name = "UNKNOWN";
+        }
+        br.getPage(jd.plugins.hoster.NexusmodsCom.API_BASE + String.format("/games/%s/mods/%s/files.json", game_domain_name, mod_id));
+        /* 2nd offline check */
+        jd.plugins.hoster.NexusmodsCom.handleErrorsAPI(br);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
         for (final Object fileO : files) {
             entries = ((LinkedHashMap<String, Object>) fileO);
-            final String file_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("file_id"), 0));
-            String game_id = null;
-            final String content_preview_link = (String) entries.get("content_preview_link");
-            if (content_preview_link != null) {
-                /* That's a little sketchy as they do not provide a field for this 'game_id' but we need that! */
-                game_id = new Regex(content_preview_link, "nexus-files-meta/(\\d+)/").getMatch(0);
-            }
-            if (file_id.equals("0") || StringUtils.isEmpty(game_id)) {
+            final String file_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("file_id"), -1));
+            final String description = (String) entries.get("description");
+            /* This was the old way to get the game_id */
+            // String game_id = null;
+            // final String content_preview_link = (String) entries.get("content_preview_link");
+            // if (content_preview_link != null) {
+            // /* That's a little sketchy as they do not provide a field for this 'game_id' but we need that! */
+            // game_id = new Regex(content_preview_link, "nexus-files-meta/(\\d+)/").getMatch(0);
+            // }
+            if (file_id.equals("-1")) {
                 /* Skip invalid items */
                 continue;
             }
@@ -97,8 +122,7 @@ public class NexusmodsCom extends PluginForDecrypt {
                 category_name = apiCategoryIDToString(category_id);
             }
             final FilePackage fp = FilePackage.getInstance();
-            /* TODO: Maybe find a better packagename */
-            fp.setName(game_domain_name + " - " + category_name);
+            fp.setName(game_domain_name + " - " + mod_name + " - " + category_name);
             final DownloadLink link = createDownloadlink(generatePluginPatternMatcher(file_id, game_id));
             link.setContentUrl(generateContentURL(game_domain_name, mod_id, file_id));
             jd.plugins.hoster.NexusmodsCom.setFileInformationAPI(link, entries, game_domain_name, mod_id, file_id);
@@ -107,8 +131,11 @@ public class NexusmodsCom extends PluginForDecrypt {
             link.setProperty("game_domain_name", game_domain_name);
             link.setProperty("mod_id", mod_id);
             /* Every category goes into a subfolder */
-            link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, game_domain_name + "/" + category_name);
+            link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, game_domain_name + "/" + mod_name + "/" + category_name);
             link.setAvailable(true);
+            if (!StringUtils.isEmpty(description)) {
+                link.setComment(description);
+            }
             decryptedLinks.add(link);
         }
         return decryptedLinks;
@@ -131,12 +158,12 @@ public class NexusmodsCom extends PluginForDecrypt {
         } else if (br.containsHTML(">\\s*This mod contains adult content")) {
             /* 2019-10-02: Account required + setting has to be enabled in account to be able to see/download such content! */
             logger.info("Adult content: Enable it in your account settings to be able to download such files via JD: Profile --> Settings --> Content blocking --> Show adult content");
-            throw new AccountRequiredException();
+            throw new AccountRequiredException("Adult content: Enable it in your account settings to be able to download such files via JD: Profile --> Settings --> Content blocking --> Show adult content");
         }
-        String fpName = br.getRegex("<title>([^>]+)</title>").getMatch(0);
-        if (fpName == null) {
-            /* Fallback */
-            fpName = mod_id;
+        String mod_name = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (mod_name == null) {
+            /* This should never happen */
+            mod_name = "UNKNOWN";
         }
         final Browser br2 = br.cloneBrowser();
         final String game_id = br.getRegex("game_id\\s*=\\s*(\\d+)").getMatch(0);
@@ -155,9 +182,9 @@ public class NexusmodsCom extends PluginForDecrypt {
                 category_name = "Unknown_category_" + counter;
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName + " - " + category_name);
+            fp.setName(game_domain_name + " - " + mod_name + " - " + category_name);
             category_name = Encoding.htmlDecode(category_name).trim();
-            final String currentPath = fpName + "/" + category_name;
+            final String currentPath = game_domain_name + "/" + mod_name + "/" + category_name;
             final String[] htmls = new Regex(downnloadTypeHTML, "<dt id=\"file-expander-header-\\d+\".*?</div>\\s*</dd>").getColumn(-1);
             if (htmls == null || htmls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -225,7 +252,7 @@ public class NexusmodsCom extends PluginForDecrypt {
         case 6:
             return "OLD FILES";
         default:
-            return "Unknown_category_" + cetegoryID;
+            return "UNKNOWN_CATEGORY_ID_" + cetegoryID;
         }
     }
 }

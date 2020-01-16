@@ -58,7 +58,7 @@ import jd.plugins.components.PluginJSonUtils;
 public class NexusmodsCom extends antiDDoSForHost {
     public NexusmodsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.nexusmods.com/signup");
+        this.enablePremium("https://users.nexusmods.com/register/memberships");
     }
 
     @Override
@@ -140,6 +140,10 @@ public class NexusmodsCom extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         final String url = link.getPluginPatternMatcher();
+        /*
+         * 2020-01-17: TODO: Find a way to set the correct content-URL when users in free mode open up URLs to generate NXM URLs. This would
+         * require "nmm" to be "1"!
+         */
         if (StringUtils.contains(url, "nmm=1")) {
             link.setPluginPatternMatcher(url.replace("nmm=1", "nmm=0"));
         }
@@ -697,6 +701,21 @@ public class NexusmodsCom extends antiDDoSForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_FREE_MAXDOWNLOADS;
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            /* Downloads without account are not possible */
+            return false;
+        } else if (account.getType() != AccountType.PREMIUM && !isSpecialDownloadmanagerURL(link)) {
+            /* Free account users can only download special URLs which contain authorization information. */
+            return false;
+        } else if (!linkIsAPICompatible(link)) {
+            /* E.g. older URLs or in case important properties got lost somehow, a download (via API) is not possible at all! */
+            return false;
+        }
+        return true;
     }
 
     // @Override
