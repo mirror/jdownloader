@@ -150,6 +150,12 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-01-16: Special */
+        return false;
+    }
+
+    @Override
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* 2019-08-14: Special: This might increase downloadspeed for free users */
         if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
@@ -195,9 +201,11 @@ public class DdlTo extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "<div class=\"name\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
+        fileInfo[0] = new Regex(correctedBR, "<div class=\"name\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
+        fileInfo[1] = new Regex(correctedBR, "<span>Uploaded on 2020-01-14</span>\\s*<span>([^<>\"]+)</span>").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
+            /* Fallback to template handling */
+            super.scanInfo(fileInfo);
         }
         return fileInfo;
     }
