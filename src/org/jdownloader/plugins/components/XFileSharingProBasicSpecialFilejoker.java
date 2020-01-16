@@ -117,14 +117,16 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
-    private static final String PROPERTY_SESSIONID                              = "cookie_zeus_cloud_sessionid";
-    private static final String PROPERTY_EMAIL                                  = "cookie_email";
-    private static final String PROPERTY_USERNAME                               = "cookie_username";
-    private static final String PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE = "timestamp_last_api_login_failure_in_website_mode";
-    private static final String PROPERTY_LASTDOWNLOAD_API                       = "lastdownload_timestamp_api";
-    private static final String PROPERTY_LASTDOWNLOAD_WEBSITE                   = "lastdownload_timestamp_website";
-    private static final String PROPERTY_COOKIES_API                            = "PROPERTY_COOKIES_API";
-    public static final String  PROPERTY_SETTING_USE_API                        = "USE_API_2019_09";
+    private static final String PROPERTY_SESSIONID                                   = "cookie_zeus_cloud_sessionid";
+    private static final String PROPERTY_EMAIL                                       = "cookie_email";
+    private static final String PROPERTY_USERNAME                                    = "cookie_username";
+    private static final String PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE      = "timestamp_last_api_login_failure_in_website_mode";
+    private static final String PROPERTY_LASTDOWNLOAD_API                            = "lastdownload_timestamp_api";
+    private static final String PROPERTY_LASTDOWNLOAD_WEBSITE                        = "lastdownload_timestamp_website";
+    private static final String PROPERTY_COOKIES_API                                 = "PROPERTY_COOKIES_API";
+    public static final String  PROPERTY_SETTING_USE_API                             = "USE_API_2020_01";
+    public static final String  PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK         = "PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK";
+    public static final boolean default_PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK = false;
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
@@ -133,6 +135,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      */
     protected boolean useAPIZeusCloudManager(final Account account) {
         return true;
+    }
+
+    protected boolean internal_useAPIZeusCloudManager(final Account account) {
+        return useAPIZeusCloudManager(account) && !isAPITempDisabled(account);
     }
 
     /** If enabled, random User-Agent will be used in API mode! */
@@ -171,7 +177,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     protected boolean useRUA() {
-        if (useAPIZeusCloudManager(null)) {
+        if (internal_useAPIZeusCloudManager(null)) {
             /* For API mode */
             return useRandomUserAgentAPI();
         } else {
@@ -391,7 +397,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (useAPIZeusCloudManager(account)) {
+        if (internal_useAPIZeusCloudManager(account)) {
             handlePremiumAPIZeusCloudManager(this.br, link, account);
         } else {
             super.handlePremium(link, account);
@@ -437,9 +443,36 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         }
     }
 
+    /**
+     * Sets a timestamp so we can e.g. disable API downloads for 60 minutes hardcoded (= use website) and try again via API then.
+     *
+     * @throws PluginException
+     */
+    private void tempDisableAPI(final Account account, final String failure_reason) throws PluginException {
+        account.setProperty(PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK, System.currentTimeMillis());
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait for retry via website because: " + failure_reason, 1 * 60 * 1000l);
+    }
+
+    protected boolean isAPITempDisabled(final Account account) {
+        if (account == null) {
+            return false;
+        }
+        final long api_failure_timestamp = account.getLongProperty(PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK, -1);
+        if (api_failure_timestamp == -1) {
+            return false;
+        }
+        final long api_disabled_until = api_failure_timestamp + 60 * 60 * 1000;
+        if (System.currentTimeMillis() < api_disabled_until) {
+            final long disabled_remaining_time = api_disabled_until - System.currentTimeMillis();
+            logger.info("API is temporarily disabled for another: " + TimeFormatter.formatMilliSeconds(disabled_remaining_time, 0));
+            return true;
+        }
+        return false;
+    }
+
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        if (useAPIZeusCloudManager(account)) {
+        if (internal_useAPIZeusCloudManager(account)) {
             return fetchAccountInfoAPIZeusCloudManager(this.br, account);
         } else {
             return super.fetchAccountInfoWebsite(account);
@@ -448,7 +481,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     public boolean loginWebsite(final Account account, final boolean force) throws Exception {
-        if (useAPIZeusCloudManager(account)) {
+        if (internal_useAPIZeusCloudManager(account)) {
             return loginAPIZeusCloudManager(this.br, account, force);
         } else {
             final long timestamp_last_api_login_failure_in_website_mode = account.getLongProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, 0);
@@ -458,7 +491,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 final long timestamp_api_login_retry_allowed = timestamp_last_api_login_failure_in_website_mode + api_login_retry_limit;
                 if (System.currentTimeMillis() < timestamp_api_login_retry_allowed) {
                     final long time_until_new_api_login_in_website_mode_allowed = timestamp_api_login_retry_allowed - System.currentTimeMillis();
-                    logger.info("try_api_login is not allowed because API login attempt  failed recently - retry allowed in: " + TimeFormatter.formatMilliSeconds(time_until_new_api_login_in_website_mode_allowed, 0));
+                    logger.info("try_api_login is not allowed because last API login attempt failed - retry allowed in: " + TimeFormatter.formatMilliSeconds(time_until_new_api_login_in_website_mode_allowed, 0));
                     try_api_login_in_website_mode = false;
                 }
             }
@@ -474,9 +507,13 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                     // loginAPIZeusCloudManager(apiBR, account, force);
                     fetchAccountInfoAPIZeusCloudManager(apiBR, account);
                     logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
-                } catch (final Throwable e) {
-                    logger.warning("API login failed --> Falling back to website");
-                    account.setProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, System.currentTimeMillis());
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                        logger.warning("API login failed --> Falling back to website");
+                        account.setProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, System.currentTimeMillis());
+                    }
+                    logger.info("Error happened during API login in website mode");
+                    throw e;
                 }
             }
             return super.loginWebsite(account, force);
@@ -568,10 +605,25 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  * again with new Cloudflare-cookies frequently.
                  */
                 throw new AccountUnavailableException("Try again later: API error '" + error + "'", 15 * 60 * 1000l);
+            } else if (error.equalsIgnoreCase("API downloads disabled for you")) {
+                /*
+                 * 2020-01-16: novafile.com (premium, download1)
+                 */
+                tempDisableAPI(account, error);
+            } else if (error.equalsIgnoreCase("API download disabled for your account")) {
+                /*
+                 * 2020-01-16: filejoker.com (premium, download1)
+                 */
+                tempDisableAPI(account, error);
+            } else if (error.equalsIgnoreCase("session error")) {
+                /*
+                 * 2020-01-16: novafile.com (free, download2)
+                 */
+                tempDisableAPI(account, error);
             } else {
                 /* This should not happen. If it does, improve errorhandling! */
                 logger.warning("Unknown API error:" + error);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown API error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown API error: " + error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         } else if (!StringUtils.isEmpty(message)) {
             if (message.contains("This file can only be downloaded by Premium")) {

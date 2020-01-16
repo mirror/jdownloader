@@ -48,6 +48,11 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
         this.setConfigElements();
+        /*
+         * 2020-01-16: Without waiting between downloads, users are more likely to experience error-response 503 and will get more captchas
+         * in premium mode. Captchas in premium mode will always happen - even with long delays between starting downloads!
+         */
+        this.setStartIntervall(10000l);
     }
 
     /**
@@ -163,12 +168,12 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         }
     }
 
-    @Override
-    protected String getRelativeAccountInfoURL() {
-        /* 2019-08-20: Special */
-        return "/profile";
-    }
-
+    /* 2020-01-16: Not required anymore as they're using '?op=my_account' again. */
+    // @Override
+    // protected String getRelativeAccountInfoURL() {
+    // /* 2019-08-20: Special */
+    // return "/profile";
+    // }
     @Override
     protected boolean allows_multiple_login_attempts_in_one_go() {
         /* 2019-08-21: Special */
@@ -381,7 +386,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
     @Override
     protected boolean useAPIZeusCloudManager(final Account account) {
-        return this.getPluginConfig().getBooleanProperty(XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, true);
+        return this.getPluginConfig().getBooleanProperty(XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, default_PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK);
     }
 
     @Override
