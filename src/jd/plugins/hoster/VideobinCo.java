@@ -90,16 +90,22 @@ public class VideobinCo extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-01-16: Special */
+        return false;
     }
 }
