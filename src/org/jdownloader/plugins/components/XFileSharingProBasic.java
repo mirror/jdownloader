@@ -3079,6 +3079,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             }
                             loginForm = findLoginform(this.br);
                             if (loginForm == null) {
+                                /* E.g. 503 error during login */
+                                checkResponseCodeErrors(br.getHttpConnection());
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
