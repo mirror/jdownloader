@@ -1645,7 +1645,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 captchaForm.put("adcopy_challenge", chid);
                 captchaForm.put("adcopy_response", "manual_challenge");
             } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                logger.info("Detected captcha method \"keycaptca\"");
+                logger.info("Detected captcha method \"keycaptcha\"");
                 String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                 if (result == null) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
