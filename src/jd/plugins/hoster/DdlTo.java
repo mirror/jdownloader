@@ -264,6 +264,16 @@ public class DdlTo extends XFileSharingProBasic {
         }
     }
 
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        /* 2020-01-17: Special */
+        if (new Regex(correctedBR, ">\\s*This file was banned by copyright").matches()) {
+            /* "<strong>Oops!</strong> This file was banned by copyright owner's report" */
+            return true;
+        }
+        return super.isOffline(link);
+    }
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
