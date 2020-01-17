@@ -498,6 +498,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                     // loginAPIZeusCloudManager(apiBR, account, force);
                     final AccountInfo ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
                     logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
+                    /*
+                     * Set cookies converted from API handling --> Website-cookies to verify them. Only trust API login if we are sure that
+                     * API login cookies are valid in website mode!!
+                     */
                     br.setCookies(getMainPage(), account.loadCookies(""));
                     this.getPage(this.getMainPage());
                     if (!this.isLoggedin()) {
