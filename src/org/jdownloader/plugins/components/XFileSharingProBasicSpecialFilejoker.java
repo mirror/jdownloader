@@ -190,9 +190,9 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * @return true = verified cookies/session </br>
      *         false = did not verify cookies/session
      */
-    private final boolean loginAPIZeusCloudManager(final Browser br, final Account account, final boolean validateSession) throws Exception {
+    private final boolean loginAPIZeusCloudManager(final Browser apibr, final Account account, final boolean validateSession) throws Exception {
         synchronized (account) {
-            prepAPIZeusCloudManager(br);
+            prepAPIZeusCloudManager(apibr);
             boolean validatedSession = false;
             String sessionid = getAPIZeusCloudManagerSession(account);
             try {
@@ -207,22 +207,22 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                         logger.info("Verify login-sessionid: age=" + TimeFormatter.formatMilliSeconds(age, 0));
                     }
                     /* First check if old session is still valid */
-                    getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
-                    final String error = PluginJSonUtils.getJson(br, "error");
+                    getPage(apibr, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
+                    final String error = PluginJSonUtils.getJson(apibr, "error");
                     /* Check for e.g. "{"error":"invalid session"}" */
                     /*
                      * 2019-08-28: Errors may happen at this stage but we only want to perform a full login if we're absolutely sure that
                      * our current sessionID is invalid!
                      */
-                    if (!StringUtils.equalsIgnoreCase(error, "invalid session") && br.getHttpConnection().getResponseCode() == 200) {
+                    if (!StringUtils.equalsIgnoreCase(error, "invalid session") && apibr.getHttpConnection().getResponseCode() == 200) {
                         validatedSession = true;
-                        this.checkErrorsAPIZeusCloudManager(this.br, null, account);
+                        this.checkErrorsAPIZeusCloudManager(apibr, null, account);
                     }
                 }
                 if (!validatedSession) {
-                    getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + String.format(getRelativeAPILoginParamsFormatAPIZeusCloudManager(), Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass())));
-                    sessionid = PluginJSonUtils.getJson(br, "session");
-                    this.checkErrorsAPIZeusCloudManager(this.br, null, account);
+                    getPage(apibr, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + String.format(getRelativeAPILoginParamsFormatAPIZeusCloudManager(), Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass())));
+                    sessionid = PluginJSonUtils.getJson(apibr, "session");
+                    this.checkErrorsAPIZeusCloudManager(apibr, null, account);
                     if (StringUtils.isEmpty(sessionid)) {
                         /* All errors should be handled by checkErrorsAPIZeusCloudManager already so this might happen but is unusual. */
                         logger.info("Login failed for unknown reasons");
@@ -475,15 +475,6 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         if (internal_useAPIZeusCloudManager(account)) {
             return fetchAccountInfoAPIZeusCloudManager(this.br, account);
         } else {
-            return super.fetchAccountInfoWebsite(account);
-        }
-    }
-
-    @Override
-    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
-        if (internal_useAPIZeusCloudManager(account)) {
-            return loginAPIZeusCloudManager(this.br, account, force);
-        } else {
             final long timestamp_last_api_login_failure_in_website_mode = account.getLongProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, 0);
             boolean try_api_login_in_website_mode = tryAPILoginInWebsiteMode();
             if (try_api_login_in_website_mode) {
@@ -496,26 +487,48 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 }
             }
             if (try_api_login_in_website_mode) {
-                logger.info("Trying API in website as an attempt to avoid login captchas");
+                logger.info("Trying API fetchAccountInfoAPIZeusCloudManager in website as an attempt to avoid login captchas and get more precise account information");
                 try {
                     /*
                      * Use a new Browser instance as we do not want to continue via API afterwards thus we do not want to have API
-                     * headers/cookies!
+                     * headers/cookies especially as in API mode, different user-agent could be used!
                      */
                     final Browser apiBR = new Browser();
                     /* Do not only call login as we need the email/username cookie which we only get when obtaining AccountInfo! */
                     // loginAPIZeusCloudManager(apiBR, account, force);
-                    fetchAccountInfoAPIZeusCloudManager(apiBR, account);
+                    final AccountInfo ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
                     logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
+                    br.setCookies(getMainPage(), account.loadCookies(""));
+                    this.getPage(this.getMainPage());
+                    if (!this.isLoggedin()) {
+                        logger.info("We are NOT loggedIN according to website --> Either wrong logindata or some other kind of issue");
+                        /* Throw exception which will set property to avoid API login next time. */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        /* All okay, return account information obtained via API although we are in website mode! */
+                        logger.info("Successfully logged in via API and used cookies via website");
+                        return ai;
+                    }
                 } catch (final PluginException e) {
                     if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                         logger.warning("API login failed --> Falling back to website");
                         account.setProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, System.currentTimeMillis());
+                        /* Next do fetchAccountInfoWebsite */
+                    } else {
+                        logger.info("Error happened during API login in website mode");
+                        throw e;
                     }
-                    logger.info("Error happened during API login in website mode");
-                    throw e;
                 }
             }
+            return super.fetchAccountInfoWebsite(account);
+        }
+    }
+
+    @Override
+    public boolean loginWebsite(final Account account, final boolean force) throws Exception {
+        if (internal_useAPIZeusCloudManager(account)) {
+            return loginAPIZeusCloudManager(this.br, account, force);
+        } else {
             return super.loginWebsite(account, force);
         }
     }
@@ -529,9 +542,9 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         return getMainPage() + "/login";
     }
 
-    private final void checkErrorsAPIZeusCloudManager(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
-        final String error = PluginJSonUtils.getJson(br, "error");
-        final String message = PluginJSonUtils.getJson(br, "message");
+    private final void checkErrorsAPIZeusCloudManager(final Browser apibr, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
+        final String error = PluginJSonUtils.getJson(apibr, "error");
+        final String message = PluginJSonUtils.getJson(apibr, "message");
         /* 2019-08-21: Special: Waittime errormessage can be in "error" or in "message". */
         final String waittimeRegex = ".*(You have reached the download(\\-| )limit|You have to wait|Wait .*? to download for free|You will not be able to download for).*";
         String wait = !StringUtils.isEmpty(error) ? new Regex(error, waittimeRegex).getMatch(-1) : null;
@@ -636,7 +649,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             }
             logger.warning("Possibly unhandled API errormessage: " + message);
         }
-        checkResponseCodeErrors(br.getHttpConnection());
+        checkResponseCodeErrors(apibr.getHttpConnection());
     }
 
     private final String getAPIZeusCloudManagerSession(final Account account) {
