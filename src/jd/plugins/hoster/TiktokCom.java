@@ -17,10 +17,12 @@ package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -100,10 +102,20 @@ public class TiktokCom extends antiDDoSForHost {
             filename += user + "_";
         }
         filename += fid + ".mp4";
-        dllink = String.format("https://www.tiktok.com/node/video/playwm?id=%s", fid);
-        br.getPage(link.getPluginPatternMatcher());
+        // br.getPage(link.getPluginPatternMatcher());
+        br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final boolean use_new_way = true;
+        if (use_new_way) {
+            final String videoJson = br.getRegex(">window\\.__INIT_PROPS__\\s*=\\s*(\\{.*?\\}\\})</script>").getMatch(0);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+            entries = (LinkedHashMap<String, Object>) entries.get("/embed/:id");
+            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos/video/urls/{0}");
+        } else {
+            /* Rev. 40928 and earlier */
+            dllink = String.format("https://www.tiktok.com/node/video/playwm?id=%s", fid);
         }
         br.setFollowRedirects(true);
         if (!StringUtils.isEmpty(dllink)) {
