@@ -86,11 +86,12 @@ public class MovieFapCom extends PluginForHost {
                 for (final String vp : vps) {
                     dllink = br.getRegex("<res>" + vp + "</res>\\s*<videoLink>((https?:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                     if (dllink != null) {
-                        dllink = Encoding.htmlDecode(dllink);
+                        // dllink = Encoding.htmlDecode(dllink);
                         break;
                     }
                 }
                 if (dllink == null) {
+                    /* 2020-01-18: Old content which will still require flashplayer via browser */
                     dllink = br.getRegex("<videoLink>((?:https?:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                 }
             }
@@ -110,6 +111,9 @@ public class MovieFapCom extends PluginForHost {
         ext = ext.replace(".fid", ".flv"); // if (ext == ".fid") doesn't work?
         link.setFinalFileName(filename + ext);
         if (dllink != null) {
+            if (Encoding.isHtmlEntityCoded(dllink)) {
+                dllink = Encoding.htmlDecode(dllink);
+            }
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
