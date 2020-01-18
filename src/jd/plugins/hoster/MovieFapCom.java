@@ -77,12 +77,19 @@ public class MovieFapCom extends PluginForHost {
                 config = br.getRegex("id=\"config1\" name=\"config1\" value=\"(http[^<>\"]+)\"").getMatch(0);
             }
             if (!privatevideo && config != null) {
+                if (Encoding.isUrlCoded(config)) {
+                    /*
+                     * 2020-01-18: Required sometimes otherwise the "secure" parameter will not be inside final downloadurls which then
+                     * become invalid and time out.
+                     */
+                    config = Encoding.htmlDecode(config);
+                }
                 br.getPage(config);
                 /* Video offline - not playable via browser either! */
                 if (br.toString().length() < 30) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String[] vps = { "720p", "360p", "240p" }; // Vertical pixel
+                final String[] vps = { "1080p", "720p", "360p", "240p" }; // Vertical pixel
                 for (final String vp : vps) {
                     dllink = br.getRegex("<res>" + vp + "</res>\\s*<videoLink>((https?:)?//[^<>\"]*?)</videoLink>").getMatch(0);
                     if (dllink != null) {
