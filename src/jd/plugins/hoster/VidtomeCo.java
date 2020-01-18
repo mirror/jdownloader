@@ -120,4 +120,15 @@ public class VidtomeCo extends XFileSharingProBasic {
         /* 2019-10-16: Special */
         return true;
     }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        /* 2020-01-18: Special */
+        final boolean isOffline = new Regex(correctedBR, ">\\s*File deleted|vidtome\\.stream/404\\.php").matches();
+        if (isOffline) {
+            return isOffline;
+        }
+        /* Fallback to template */
+        return super.isOffline(link);
+    }
 }
