@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,8 +36,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net", "tanix.net", "japanhub.net", "thatav.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tanix\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?japanhub\\.net/video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?thatav\\.net/video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class HighpornNet extends PluginForDecrypt {
@@ -55,7 +55,7 @@ public class HighpornNet extends PluginForDecrypt {
         final String fpName = getTitle(br, parameter);
         boolean singleVideo = false;
         final String videoLink = br.getRegex("data-src\\s*=\\s*\"(https?[^<>\"]+)\"").getMatch(0); // If single link, no videoID
-        String[] videoIDs = br.getRegex("data-src\\s*=\\s*\"(\\d+)\"").getColumn(0);
+        String[] videoIDs = br.getRegex("data-src\\s*=\\s*\"([^\"]+)\"").getColumn(0);
         if (videoIDs == null || videoIDs.length == 0) {
             if (videoLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

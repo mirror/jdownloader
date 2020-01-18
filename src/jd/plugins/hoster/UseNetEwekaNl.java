@@ -43,6 +43,11 @@ public class UseNetEwekaNl extends UseNet {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
     }
 
+    private boolean isLoggedIN() {
+        String logintoken = br.getCookie(getHost(), "auth-token", Cookies.NOTDELETEDPATTERN);
+        return !StringUtils.isEmpty(logintoken) && !logintoken.equals("\"\"");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
@@ -52,56 +57,58 @@ public class UseNetEwekaNl extends UseNet {
         try {
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://www.eweka.nl/myeweka/?lang=en");
-                if (br.getCookie(getHost(), "PHPSESSID") == null || br.containsHTML("\\$\\('#login-form'\\);")) {
+                br.getPage("https://www." + this.getHost() + "/en/myeweka?p=pro");
+                if (!isLoggedIN()) {
                     br.getCookies(getHost()).clear();
                 }
             }
-            if (br.getCookie(getHost(), "PHPSESSID") == null) {
+            if (!isLoggedIN()) {
                 account.clearCookies("");
-                br.getPage("https://www.eweka.nl/myeweka/?lang=en");
-                final Form form = new Form();
-                form.setAction("auth.php");
-                form.setMethod(MethodType.POST);
-                form.put("u", Encoding.urlEncode(account.getUser()));
-                form.put("p", Encoding.urlEncode(account.getPass()));
-                br.submitForm(form);
-                if (br.getCookie(getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) == null || br.containsHTML("\\$\\('#login-form'\\);") || !"1".equals(br.toString())) {
+                br.getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
+                final Form loginform = br.getFormbyProperty("id", "login-form");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.setMethod(MethodType.POST);
+                loginform.put("identifier", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://www.eweka.nl/myeweka/?lang=en")) {
-                // switch to english
-                br.getPage("https://www.eweka.nl/myeweka/?lang=en");
-            }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String server = br.getRegex("<td><b>Server</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
-            final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
+            // final String server = br.getRegex("<td><b>Server</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
+            // final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
             // TODO: use these infos for available servers
+            br.getPage("/myeweka?p=acd");
             final String connections = br.getRegex("<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
             if (connections != null) {
                 account.setMaxSimultanDownloads(Integer.parseInt(connections));
             } else {
+                /* Fallback */
                 account.setMaxSimultanDownloads(8);
             }
-            final String userName = br.getRegex("<td><b>Username</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
+            String userName = br.getRegex("name=\"username\" value=\"([^<>\"]+)\"").getMatch(0);
+            if (userName == null) {
+                /* Final fallback */
+                userName = account.getUser();
+            }
             if (userName == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 account.setProperty(USENET_USERNAME, userName);
             }
-            final String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?([^<>\"\\' ]+)").getMatch(0);
-            if (validUntil != null && validUntil.matches("\\d+-\\d+-\\d+\\s+\\d+:\\d+")) {
+            final String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+            if (validUntil != null) {
                 final long date = TimeFormatter.getMilliSeconds(validUntil, "dd'-'MM'-'yyyy' 'HH:mm", null);
                 if (date > 0) {
                     ai.setValidUntil(date);
                 }
                 account.setType(AccountType.PREMIUM);
-            } else if (validUntil != null && validUntil.equalsIgnoreCase("Inactive")) {
+            } else {
                 account.setType(AccountType.FREE);
                 ai.setTrafficLeft(0);
-            } else {
-                account.setType(AccountType.UNKNOWN);
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Date;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,10 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://(.+)" })
 public class HighpornNet extends antiDDoSForHost {
     @Override
     public String[] siteSupportedNames() {
@@ -64,7 +64,6 @@ public class HighpornNet extends antiDDoSForHost {
      */
     private final int           free_maxdownloads = 1;
     private String              dllink            = null;
-    private String              fid               = null;
     private boolean             server_issues     = false;
     boolean                     isSingleVideo     = false;
     private SubConfiguration    cfg               = getPluginConfig();
@@ -74,7 +73,10 @@ public class HighpornNet extends antiDDoSForHost {
         return "http://highporn.net/static/terms";
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         server_issues = false;
@@ -91,7 +93,7 @@ public class HighpornNet extends antiDDoSForHost {
         if (jd.plugins.decrypter.HighpornNet.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String fid = getFID(link);
         String filename = link.getStringProperty("decryptername");
         if (filename == null) {
             /* Fallback */
@@ -161,13 +163,13 @@ public class HighpornNet extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        isSingleVideo = downloadLink.getBooleanProperty("singlevideo", false);
+    public void handleFree(final DownloadLink link) throws Exception {
+        isSingleVideo = link.getBooleanProperty("singlevideo", false);
         final boolean resumes = cfg.getBooleanProperty("Allow_resume", true);
         logger.info("resumes: " + resumes);
-        dllink = downloadLink.getStringProperty("directlink");
+        dllink = link.getStringProperty("directlink");
+        final String fid = getFID(link);
         if (!isSingleVideo) {
-            fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             PostRequest postRequest = new PostRequest("https://play.openhub.tv/playurl?random=" + (new Date().getTime() / 1000));
             postRequest.setContentType("application/x-www-form-urlencoded");
             postRequest.addVariable("v", fid);
@@ -176,10 +178,10 @@ public class HighpornNet extends antiDDoSForHost {
         }
         if (dllink != null) {
             // cached downloadlink doesn't have a browser session, which leads to 403.
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("mainlink", null));
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
+            br.getHeaders().put("Referer", link.getStringProperty("mainlink", null));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403 || dl.getConnection().getLongContentLength() == -1 || (dl.getConnection().getLongContentLength() < 10 && dl.getConnection().getContentType().equals("application/octet-stream"))) {
-                downloadLink.setProperty("directlink", Property.NULL);
+                link.setProperty("directlink", Property.NULL);
                 dllink = null;
                 try {
                     dl.getConnection().disconnect();
@@ -190,7 +192,7 @@ public class HighpornNet extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            requestFileInformation(downloadLink);
+            requestFileInformation(link);
             if (dllink == null) {
                 final Browser br = this.br.cloneBrowser();
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -208,7 +210,7 @@ public class HighpornNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl == null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, free_maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 try {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -224,7 +226,7 @@ public class HighpornNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
