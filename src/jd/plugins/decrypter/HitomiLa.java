@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -58,69 +58,91 @@ public class HitomiLa extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        /* Avoid https, prefer http */
-        getPage("https://hitomi.la/reader/" + guid + ".html");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
-        // get the image host.
-        // retval = subdomain_from_galleryid(g) + retval;
-        String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
-        if (links == null || links.length == 0) {
-            final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + guid + "\\.js)\"").getMatch(0);
-            if (js != null) {
-                final Browser brc = br.cloneBrowser();
-                getPage(brc, js);
-                final String names[] = brc.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getColumn(0);
-                if (names != null && names.length > 0) {
-                    final ArrayList<String> urls = new ArrayList<String>();
-                    for (String name : names) {
-                        urls.add("/" + guid + "/" + name);
-                    }
-                    links = urls.toArray(new String[0]);
-                }
-            }
-        }
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final int numberOfPages = links.length;
-        final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         int i = 0;
         String imghost = getImageHost(guid) + "a";
-        boolean checked = false;
-        for (final String singleLink : links) {
-            ++i;
-            if (!checked) {
-                HeadRequest head = br.createHeadRequest("https://" + imghost + ".hitomi.la/galleries" + singleLink);
-                URLConnectionAdapter con = br.cloneBrowser().openRequestConnection(head);
-                try {
-                    if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
-                        checked = true;
-                    } else {
-                        con.disconnect();
-                        head = br.createHeadRequest("https://0a.hitomi.la/galleries" + singleLink);
-                        con = br.cloneBrowser().openRequestConnection(head);
-                        if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
-                            checked = true;
-                            imghost = "0a";
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int numberOfPages;
+        final boolean use_Thumbnails = false;
+        if (use_Thumbnails) {
+            this.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            final String[] thumbnails = br.getRegex("<img src=\"//tn\\.hitomi\\.la/bigtn/(./\\d+/[a-f0-9]+)\\.jpg\">").getColumn(0);
+            numberOfPages = thumbnails.length;
+            final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
+            for (final String thumbnail : thumbnails) {
+                final DownloadLink dl = createDownloadlink("directhttp://https://" + imghost + ".hitomi.la/webp/" + thumbnail + ".webp");
+                dl.setProperty("Referer", br.getURL());
+                dl.setProperty("requestType", "GET");
+                dl.setAvailable(true);
+                dl.setFinalFileName(df.format(i) + ".webp");
+                decryptedLinks.add(dl);
+            }
+        } else {
+            /* Old */
+            /* Avoid https, prefer http */
+            getPage("https://hitomi.la/reader/" + guid + ".html");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            // get the image host.
+            // retval = subdomain_from_galleryid(g) + retval;
+            String[] links = br.getRegex("(/" + guid + "/(?:[^<>\"]*?\\.[a-z]+)+)").getColumn(0);
+            if (links == null || links.length == 0) {
+                final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + guid + "\\.js)\"").getMatch(0);
+                if (js != null) {
+                    final Browser brc = br.cloneBrowser();
+                    getPage(brc, js);
+                    final String names[] = brc.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getColumn(0);
+                    if (names != null && names.length > 0) {
+                        final ArrayList<String> urls = new ArrayList<String>();
+                        for (String name : names) {
+                            urls.add("/" + guid + "/" + name);
                         }
+                        links = urls.toArray(new String[0]);
                     }
-                } finally {
-                    con.disconnect();
                 }
             }
-            final DownloadLink dl = createDownloadlink("directhttp://https://" + imghost + ".hitomi.la/galleries" + singleLink);
-            dl.setProperty("Referer", br.getURL());
-            dl.setProperty("requestType", "GET");
-            dl.setAvailable(true);
-            dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(singleLink, ".jpg"));
-            decryptedLinks.add(dl);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            numberOfPages = links.length;
+            final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
+            boolean checked = false;
+            for (final String singleLink : links) {
+                ++i;
+                if (!checked) {
+                    HeadRequest head = br.createHeadRequest("https://" + imghost + ".hitomi.la/galleries" + singleLink);
+                    URLConnectionAdapter con = br.cloneBrowser().openRequestConnection(head);
+                    try {
+                        if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
+                            checked = true;
+                        } else {
+                            con.disconnect();
+                            head = br.createHeadRequest("https://0a.hitomi.la/galleries" + singleLink);
+                            con = br.cloneBrowser().openRequestConnection(head);
+                            if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "image")) {
+                                checked = true;
+                                imghost = "0a";
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                    } finally {
+                        con.disconnect();
+                    }
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://https://" + imghost + ".hitomi.la/galleries" + singleLink);
+                dl.setProperty("Referer", br.getURL());
+                dl.setProperty("requestType", "GET");
+                dl.setAvailable(true);
+                dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(singleLink, ".jpg"));
+                decryptedLinks.add(dl);
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
