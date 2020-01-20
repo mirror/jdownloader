@@ -17,6 +17,13 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,14 +42,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/[A-Za-z0-9\\-_]+(/.+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdupload.com" }, urls = { "https?://(?:www\\.)?wdupload\\.com/file/([A-Za-z0-9\\-_]+)(/.+)?" })
 public class WduploadCom extends antiDDoSForHost {
     public WduploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,33 +67,50 @@ public class WduploadCom extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "/file/([^/]+)").getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    public String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null, filesize = null;
+        final String fid = this.getFID(link);
+        final boolean use_API = true;
+        if (use_API) {
+            /* 2020-01-20 */
+            this.getPage("http://wduphp." + this.getHost() + "/api/filemanager/details/" + fid);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = PluginJSonUtils.getJson(br, "name");
+            filesize = PluginJSonUtils.getJson(br, "file_size");
+        } else {
+            getPage(link.getPluginPatternMatcher());
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("class=\"file-header text-center\">\\s*?<h1>([^<>\"]+)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(link.getPluginPatternMatcher(), "file/[^/]+/(.+)").getMatch(0);
+            }
+            if (filename == null) {
+                filename = this.getLinkID(link);
+            }
+            filesize = br.getRegex("class=\"file\\-size\">([^<>\"]+)<").getMatch(0);
         }
-        String filename = br.getRegex("class=\"file-header text-center\">\\s*?<h1>([^<>\"]+)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(link.getPluginPatternMatcher(), "file/[^/]+/(.+)").getMatch(0);
-        }
-        if (filename == null) {
-            filename = this.getLinkID(link);
-        }
-        String filesize = br.getRegex("class=\"file\\-size\">([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Fallback */
+            filename = fid;
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(filename);
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -112,9 +129,11 @@ public class WduploadCom extends antiDDoSForHost {
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            if (br.containsHTML("This link only for premium")) {
+            final String premiumonly_api = PluginJSonUtils.getJson(br, "premium_only_files");
+            if (br.containsHTML("This link only for premium") || !StringUtils.isEmpty(premiumonly_api)) {
                 throw new AccountRequiredException();
             }
+            /* 2020-01-20: TODO: Fix this! */
             final String dl_server = br.getRegex("freeaccess=\"(http[^<>\"]+)\"").getMatch(0);
             final String dl_token = br.getRegex("freetoken=\"([^<>\"]+)\"").getMatch(0);
             final String userid = br.getRegex("uid\\s*?=\\s*?\"(\\d+)\"").getMatch(0);
@@ -194,39 +213,70 @@ public class WduploadCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(account.getHoster(), cookies);
-                    return;
-                }
-                getPage("https://www." + getHost());
-                final boolean use_static_access_token = false;
-                final String access_token;
-                if (use_static_access_token) {
-                    /* 2018-10-19 */
-                    access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
+                final boolean use_webapi_2020 = true;
+                if (use_webapi_2020) {
+                    /* 2020-01-20: New */
+                    String token = account.getStringProperty("logintoken", null);
+                    final Cookies cookies = account.loadCookies("");
+                    if (cookies != null && token != null) {
+                        br.setCookies(account.getHoster(), cookies);
+                        br.getHeaders().put("Authorization", "Bearer " + token);
+                        br.getHeaders().put("Content-Type", "application/json");
+                        this.getPage("http://wduphp." + this.getHost() + "/api/users/login-history?page_no=1&limit=10");
+                        if (br.toString().startsWith("{") && br.getHttpConnection().getResponseCode() == 200) {
+                            logger.info("Login via stored token was successful");
+                            return;
+                        }
+                        logger.info("Login via stored token failed");
+                        /* Drop old cookies & headers */
+                        br = new Browser();
+                    }
+                    /* 2020-01-20: TODO: Check for login captcha. Currently website will ask for it but it can be skipped! */
+                    this.getPage("http://www." + this.getHost() + "/login");
+                    final String postData = String.format("{\"email\":\"%s\",\"password\":\"%s\"}", account.getUser(), account.getPass());
+                    this.postPageRaw("http://wduphp." + this.getHost() + "/api/auth/login", postData, true);
+                    final String success = PluginJSonUtils.getJson(br, "success");
+                    token = PluginJSonUtils.getJson(br, "token");
+                    if (!"true".equalsIgnoreCase(success) || StringUtils.isEmpty(token)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    account.setProperty("logintoken", token);
+                    br.getHeaders().put("Authorization", "Bearer " + token);
                 } else {
-                    getPage("https://www." + account.getHoster() + "/java/mycloud.js");
-                    access_token = br.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+                    final Cookies cookies = account.loadCookies("");
+                    if (cookies != null && !force) {
+                        br.setCookies(account.getHoster(), cookies);
+                        return;
+                    }
+                    getPage("https://www." + getHost());
+                    final boolean use_static_access_token = false;
+                    final String access_token;
+                    if (use_static_access_token) {
+                        /* 2018-10-19 */
+                        access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
+                    } else {
+                        getPage("https://www." + account.getHoster() + "/java/mycloud.js");
+                        access_token = br.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(access_token)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.getHeaders().put("Origin", "https://www." + account.getHoster());
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    postPage(br, "https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
+                    final String result = PluginJSonUtils.getJson(br, "result");
+                    String userdata = PluginJSonUtils.getJson(br, "doz");
+                    if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    userdata = URLEncode.encodeURIComponent(userdata);
+                    br.setCookie(br.getHost(), "userdata", userdata);
                 }
-                if (StringUtils.isEmpty(access_token)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getHeaders().put("Origin", "https://www." + account.getHoster());
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage(br, "https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
-                final String result = PluginJSonUtils.getJson(br, "result");
-                String userdata = PluginJSonUtils.getJson(br, "doz");
-                if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                userdata = URLEncode.encodeURIComponent(userdata);
-                br.setCookie(br.getHost(), "userdata", userdata);
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -237,71 +287,125 @@ public class WduploadCom extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
-        getPage("/me");
-        final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>\\s*([^<>]+)\\s*</span>").getMatch(0);
-        /* E.g. Lifetime Free Account */
-        if (accounttype == null || accounttype.contains("Free")) {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setUnlimitedTraffic();
-            ai.setStatus("Registered (free) user");
-        } else {
-            final Regex bandwidth = br.getRegex("<b>Bandwidth</b></p>\\s*?<h4 class=\"text\\-center\">(\\d+(?:\\.\\d+)? ?(?:KB|MB|GB)) of (\\d+(?:\\.\\d+)? ?(KB|MB|GB))</h4>");
-            final String trafficUsedStr = bandwidth.getMatch(0);
-            String trafficMaxStr = bandwidth.getMatch(1);
-            if (trafficMaxStr == null) {
-                /* Use static value as fallback (according to website 2018-10-19) */
-                trafficMaxStr = "35GB";
+        final boolean use_webapi_2020 = true;
+        /* 2020-01-20: Static fallback according to website */
+        final long trafficmax_fallback = 35000000000l;
+        if (use_webapi_2020) {
+            this.getPage("/api/users");
+            // final String plan_type = PluginJSonUtils.getJson(br, "plan_type");
+            long validUntil = 0;
+            final String expiredateStr = PluginJSonUtils.getJson(br, "end_date");
+            final String trafficMaxStr = PluginJSonUtils.getJson(br, "bandwidth");
+            final String trafficUsedStr = PluginJSonUtils.getJson(br, "total_bandwith_downloaded");
+            if (expiredateStr != null && expiredateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                validUntil = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd", Locale.ENGLISH);
             }
-            final String expire = br.getRegex("Premium expires on <span [^<>]+>(\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
-            if (expire != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
-            }
-            final long trafficMax = SizeFormatter.getSize(trafficMaxStr);
-            if (trafficUsedStr != null) {
-                final long trafficUsed = SizeFormatter.getSize(trafficUsedStr);
+            if (System.currentTimeMillis() > validUntil) {
+                account.setType(AccountType.FREE);
+                /* free accounts can still have captcha */
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(false);
+                ai.setUnlimitedTraffic();
+                ai.setStatus("Registered (free) user");
+            } else {
+                /* TODO: Add expire date, trafficleft and so on */
+                ai.setTrafficMax(trafficmax_fallback);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Premium account");
+                ai.setValidUntil(validUntil);
+                final long trafficMax;
+                long trafficUsed = 0;
+                if (trafficMaxStr != null && trafficMaxStr.matches("\\d+")) {
+                    trafficMax = Long.parseLong(trafficMaxStr);
+                } else {
+                    trafficMax = trafficmax_fallback;
+                }
+                if (trafficUsedStr != null && trafficUsedStr.matches("\\d+")) {
+                    trafficUsed = Long.parseLong(trafficUsedStr);
+                }
                 ai.setTrafficLeft(trafficMax - trafficUsed);
                 ai.setTrafficMax(trafficMax);
-            } else {
-                /* Use hardcoded trafficMax value for both */
-                ai.setTrafficLeft(trafficMax);
-                ai.setTrafficMax(trafficMax);
             }
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
+        } else {
+            getPage("/me");
+            final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>\\s*([^<>]+)\\s*</span>").getMatch(0);
+            /* E.g. Lifetime Free Account */
+            if (accounttype == null || accounttype.contains("Free")) {
+                account.setType(AccountType.FREE);
+                /* free accounts can still have captcha */
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(false);
+                ai.setUnlimitedTraffic();
+                ai.setStatus("Registered (free) user");
+            } else {
+                final Regex bandwidth = br.getRegex("<b>Bandwidth</b></p>\\s*?<h4 class=\"text\\-center\">(\\d+(?:\\.\\d+)? ?(?:KB|MB|GB)) of (\\d+(?:\\.\\d+)? ?(KB|MB|GB))</h4>");
+                final String trafficUsedStr = bandwidth.getMatch(0);
+                final String trafficMaxStr = bandwidth.getMatch(1);
+                final String expire = br.getRegex("Premium expires on <span [^<>]+>(\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
+                if (expire != null) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+                }
+                final long trafficMax;
+                if (trafficMaxStr != null) {
+                    trafficMax = SizeFormatter.getSize(trafficMaxStr);
+                } else {
+                    trafficMax = trafficmax_fallback;
+                }
+                if (trafficUsedStr != null) {
+                    final long trafficUsed = SizeFormatter.getSize(trafficUsedStr);
+                    ai.setTrafficLeft(trafficMax - trafficUsed);
+                    ai.setTrafficMax(trafficMax);
+                } else {
+                    /* Use hardcoded trafficMax value for both */
+                    ai.setTrafficLeft(trafficMax);
+                    ai.setTrafficMax(trafficMax);
+                }
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Premium account");
+            }
         }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
         login(this.br, account, false);
         if (account.getType() == AccountType.FREE) {
+            requestFileInformation(link);
             getPage(link.getPluginPatternMatcher());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink_2");
             if (dllink == null) {
                 br.setFollowRedirects(false);
-                getPage(link.getPluginPatternMatcher());
-                /* First check if user has direct download enabled */
-                dllink = br.getRedirectLocation();
-                /* Direct download disabled? We have to find the final downloadurl. */
-                if (StringUtils.isEmpty(dllink)) {
-                    dllink = br.getRegex("\"(https?://[^/]+/download\\.php[^<>\"]+)\"").getMatch(0);
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    dllink = br.getRegex("<p>Click here to download</p>\\s*?<a href=\"(https?://[^<>\"]+)\"").getMatch(0);
+                final boolean use_api_2020 = true;
+                if (use_api_2020) {
+                    requestFileInformation(link);
+                    final String logintoken = account.getStringProperty("logintoken", null);
+                    final String file_uploading_api_url = PluginJSonUtils.getJson(br, "file_uploading_api_url");
+                    if (StringUtils.isEmpty(file_uploading_api_url)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    dllink = String.format("%s/%s?token=%s", file_uploading_api_url, this.getFID(link), logintoken);
+                } else {
+                    getPage(link.getPluginPatternMatcher());
+                    /* First check if user has direct download enabled */
+                    dllink = br.getRedirectLocation();
+                    /* Direct download disabled? We have to find the final downloadurl. */
+                    if (StringUtils.isEmpty(dllink)) {
+                        dllink = br.getRegex("\"(https?://[^/]+/download\\.php[^<>\"]+)\"").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(dllink)) {
+                        dllink = br.getRegex("<p>Click here to download</p>\\s*?<a href=\"(https?://[^<>\"]+)\"").getMatch(0);
+                    }
                 }
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
