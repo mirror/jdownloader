@@ -20,7 +20,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(www\\.)?mangadex\\.cc/(title|chapter)/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(www\\.)?mangadex\\.(?:cc|org)/(title|chapter)/\\d+" })
 public class MangadexOrg extends antiDDoSForDecrypt {
     public MangadexOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -29,7 +29,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        getPage(parameter.getCryptedUrl());
+        getPage(parameter.getCryptedUrl().replace("mangadex.cc", "mangadex.org"));
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/title/")) {
             String[] chapters = br.getRegex("<a[^>]+href\\s*=\\s*[\"']([^\"']*/chapter/[^\"'/]*)").getColumn(0);
