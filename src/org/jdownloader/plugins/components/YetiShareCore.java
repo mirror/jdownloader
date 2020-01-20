@@ -24,6 +24,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -200,8 +200,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -252,7 +252,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br> This is only rarely needed (e.g. badshare.io). </br> default = false
+     * Enforces old, non-ajax login-method. </br>
+     * This is only rarely needed (e.g. badshare.io). </br>
+     * default = false
      */
     protected boolean enforce_old_login_method() {
         return false;
@@ -470,7 +472,7 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             /* Passwords are usually before waittime. */
             handlePassword(link);
-            /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
+            /* Handle up to x pre-download pages before the (eventually existing) captcha */
             final int startValue = 1;
             /* loopLog holds information about the continue_link of each loop so afterwards we get an overview via logger */
             String loopLog = continue_link;
