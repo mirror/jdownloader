@@ -45,7 +45,8 @@ import jd.plugins.components.PluginJSonUtils;
 public class TwitterCom extends PluginForHost {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://twitter.com/signup");
+        /* 2020-01-20: Disabled login functionality as it is broken */
+        // this.enablePremium("https://twitter.com/signup");
     }
 
     @Override

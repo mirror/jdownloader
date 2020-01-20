@@ -295,6 +295,10 @@ public class WduploadCom extends antiDDoSForHost {
         /* 2020-01-20: Static fallback according to website */
         final long trafficmax_fallback = 35000000000l;
         if (use_webapi_2020) {
+            /*
+             * 2020-01-20: This will result in error response 500 for freeusers but we do not require any special data for those anyways so
+             * that can be ignored. Free accounts will be listed without any issues.
+             */
             this.getPage("/api/users");
             // final String plan_type = PluginJSonUtils.getJson(br, "plan_type");
             long validUntil = 0;
