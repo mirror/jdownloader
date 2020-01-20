@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -28,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangatown.com" }, urls = { "https?://(?:www\\.)?mangatown\\.com/manga/[^/]+/c\\d+/\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangatown.com" }, urls = { "https?://(?:www\\.)?mangatown\\.com/manga/[^/]+/c\\d+/(?:\\d+\\.html)?" })
 public class MangatownCom extends PluginForDecrypt {
-
     public MangatownCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,47 +42,40 @@ public class MangatownCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "mangatown\\.com/manga/([^/]+)/c(\\d+)/\\d+\\.html");
+        final Regex urlinfo = new Regex(parameter, "mangatown\\.com/manga/([^/]+)/c(\\d+)/");
         final String chapter_str = urlinfo.getMatch(1);
         final short chapter = Short.parseShort(chapter_str);
         final String url_name = urlinfo.getMatch(0);
         final String url_fpname = url_name + "_chapter_" + chapter_str;
         final DecimalFormat df_chapter = new DecimalFormat("0000");
         final DecimalFormat df_page = new DecimalFormat("000");
-
-        final Regex downloadinfo = this.br.getRegex("(https?://a\\.mangatown\\.com/store/manga/[^<>\"]*?)p\\d+(\\.[A-Za-z]+)\\?v=\\d+");
+        final Regex downloadinfo = this.br.getRegex("([A-Za-z0-9\\-]+\\.mangatown\\.com/store/manga/[^<>\"\\']+r)\\d+(\\.[A-Za-z0-9]+)");
         final String server_urlpart = downloadinfo.getMatch(0);
         final String ext = downloadinfo.getMatch(1);
-
         if (server_urlpart == null || ext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         short page_max = 1;
-        final String[] pages = this.br.getRegex("<option value=\"http[^<>\"]+\"[^<>]+>(\\d+)</option>").getColumn(0);
+        final String[] pages = this.br.getRegex("<option value=\"[^<>\"]+\"[^<>]*>(\\d+)</option>").getColumn(0);
         for (final String page_temp_str : pages) {
             final short page_temp = Short.parseShort(page_temp_str);
             if (page_temp > page_max) {
                 page_max = page_temp;
             }
         }
-
         for (short page = 1; page <= page_max; page++) {
             final String chapter_formatted = df_chapter.format(chapter);
             final String page_formatted = df_page.format(page);
-            final String finallink = "directhttp://" + server_urlpart + "p" + page_formatted + ext;
+            final String finallink = "directhttp://https://" + server_urlpart + "p" + page_formatted + ext;
             final DownloadLink dl = this.createDownloadlink(finallink);
             dl.setFinalFileName(url_name + "_" + chapter_formatted + "_" + page_formatted + ext);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_fpname);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
