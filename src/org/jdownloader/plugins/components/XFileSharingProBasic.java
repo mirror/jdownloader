@@ -119,7 +119,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.4.2.1<br />
+     * DEV NOTES XfileSharingProBasic Version 4.4.2.2<br />
      * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
@@ -1408,49 +1408,76 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Match on line - safe attempt but this may not include filesize! */
             videoQualityHTMLs = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
         }
-        long widthMax = 0;
-        long sizeTmp = 0;
+        /** TODO: Add quality selection: Low, Medium, Original Example: deltabit.co */
+        /*
+         * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
+         */
+        final HashMap<String, Integer> qualityMap = new HashMap<String, Integer>();
+        qualityMap.put("l", 20); // low
+        qualityMap.put("n", 40); // normal
+        qualityMap.put("h", 60); // high
+        qualityMap.put("o", 80); // original
+        long maxInternalQualityValue = 0;
         String filesizeStr = null;
+        String videoQualityStr = null;
+        String videoHash = null;
         String targetHTML = null;
         if (videoQualityHTMLs.length > 0) {
-            /** TODO: Add quality selection: Low, Medium, Original Example: deltabit.co */
-            /*
-             * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
-             */
-            logger.info("Trying to find selected quality for official video download");
+            // logger.info("Trying to find selected quality for official video download");
+            logger.info("Trying to find highest quality for official video download");
             for (final String videoQualityHTML : videoQualityHTMLs) {
-                final String filesizeTmpStr = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
-                if (filesizeTmpStr != null) {
-                    /* Usually, filesize for official video downloads will be given! */
-                    sizeTmp = SizeFormatter.getSize(filesizeTmpStr);
-                    if (sizeTmp > widthMax) {
-                        widthMax = sizeTmp;
-                        targetHTML = videoQualityHTML;
-                        filesizeStr = filesizeTmpStr;
-                    }
-                } else {
-                    /* This should not happen */
-                    logger.warning("Failed to find highest-quality-video-download-html-snippet --> Returning the first one");
-                    targetHTML = videoQualityHTML;
-                    break;
+                final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
+                // final String vid = videoinfo.getMatch(0);
+                final Regex videoinfo = new Regex(videoQualityHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
+                // final String vid = videoinfo.getMatch(0);
+                /* Usually this will be 'o' standing for "original quality" */
+                final String videoQualityStrTmp = videoinfo.getMatch(1);
+                final String videoHashTmp = videoinfo.getMatch(2);
+                if (StringUtils.isEmpty(videoQualityStrTmp) || StringUtils.isEmpty(videoHashTmp)) {
+                    /*
+                     * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything
+                     * fails!
+                     */
+                    continue;
+                } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
+                    /*
+                     * 2020-01-18: There shouldn't be any unknown values but we should consider allowing such in the future maybe as final
+                     * fallback.
+                     */
+                    logger.info("Skipping unknown quality: " + videoQualityStrTmp);
+                    continue;
                 }
+                final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
+                if (internalQualityValueTmp < maxInternalQualityValue) {
+                    /* Only continue with qualities that are higher than the highest we found so far. */
+                    continue;
+                }
+                maxInternalQualityValue = internalQualityValueTmp;
+                videoQualityStr = videoQualityStrTmp;
+                videoHash = videoHashTmp;
+                if (filesizeStrTmp != null) {
+                    /*
+                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                     * RegEx fails e.g. for supervideo.tv.
+                     */
+                    filesizeStr = filesizeStrTmp;
+                }
+                targetHTML = videoQualityHTML;
             }
         }
         if (returnFilesize) {
             /* E.g. in availablecheck */
             return filesizeStr;
         }
+        if (targetHTML == null) {
+            if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
+                /* This should never happen */
+                logger.info(String.format("Failed to find officially downloadable video quality although there are %d qualities available", videoQualityHTMLs.length));
+            }
+            return null;
+        }
         if (targetHTML != null) {
             try {
-                final Regex videoinfo = new Regex(targetHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
-                // final String vid = videoinfo.getMatch(0);
-                /* Usually this will be 'o' standing for "original quality" */
-                final String q = videoinfo.getMatch(1);
-                final String hash = videoinfo.getMatch(2);
-                if (StringUtils.isEmpty(q) || StringUtils.isEmpty(hash)) {
-                    logger.warning("Failed to find required parameters");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
                 /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
                 this.waitTime(link, System.currentTimeMillis());
                 final Browser brc = br.cloneBrowser();
@@ -1458,7 +1485,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * TODO: Fix issue where first request leads to '<br><b class="err">Security error</b>' (reproduced over multiple filehosts
                  * e.g. xvideosharing.com)
                  */
-                getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + q + "&hash=" + hash);
+                getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
                 /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
                 final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
                 if (download1 != null) {
@@ -1510,9 +1537,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (!this.preDownloadWaittimeSkippable()) {
             final String waitStr = regexWaittime();
             if (waitStr != null && waitStr.matches("\\d+")) {
-                final int waitSeconds = Integer.parseInt(waitStr);
-                final int reCaptchaV2TimeoutSeconds = rc2.getSolutionTimeout();
-                if (waitSeconds > reCaptchaV2TimeoutSeconds) {
+                final int preDownloadWaittime = Integer.parseInt(waitStr) * 1001;
+                final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
+                if (preDownloadWaittime > reCaptchaV2Timeout) {
                     /*
                      * Admins may sometimes setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180 seconds
                      * of pre-download-waittime --> User solves captcha immediately --> Captcha-solution times out after 120 seconds -->
@@ -1524,10 +1551,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      * seconds after the user has solved the captcha. If the waittime is higher than 120 seconds, we'll wait two times:
                      * Before AND after the captcha!
                      */
-                    final int prePreWait = waitSeconds % reCaptchaV2TimeoutSeconds;
+                    final int prePrePreDownloadWait = preDownloadWaittime - reCaptchaV2Timeout;
                     logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
-                    logger.info("Pre-pre download waittime seconds: " + prePreWait);
-                    this.sleep(prePreWait * 1000l, link);
+                    logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+                    this.sleep(prePrePreDownloadWait, link);
                 }
             }
         }
@@ -1552,11 +1579,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final Form ajaxCaptchaForm = new Form();
             ajaxCaptchaForm.setMethod(MethodType.POST);
             ajaxCaptchaForm.setAction("/ddl");
-            final InputField if_Rand = captchaForm.getInputFieldByName("rand");
+            final InputField inputField_Rand = captchaForm.getInputFieldByName("rand");
             final String file_id = PluginJSonUtils.getJson(br, "file_id");
-            if (if_Rand != null) {
+            if (inputField_Rand != null) {
                 /* This is usually given */
-                ajaxCaptchaForm.put("rand", if_Rand.getValue());
+                ajaxCaptchaForm.put("rand", inputField_Rand.getValue());
             }
             if (!StringUtils.isEmpty(file_id)) {
                 /* This is usually given */
