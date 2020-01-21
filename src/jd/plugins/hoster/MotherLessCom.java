@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.)?(?:members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
 public class MotherLessCom extends PluginForHost {
     public static final String html_subscribedFailed       = "Failed to subscribe to the owner of the video";
     public static final String html_contentSubscriberVideo = "Here's another video instead\\.";
