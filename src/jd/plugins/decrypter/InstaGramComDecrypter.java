@@ -90,6 +90,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             if (retry > 1) {
                 logger.info(String.format("Trying to get around rate limit %d / %d", retry, maxtries));
+                /* 2020-01-21: Changing User-Agent or Cookies will not help us to get around this limit earlier! */
                 // br.clearCookies(br.getHost());
                 // br.getHeaders().put("User-Agent", "iPad");
             }
