@@ -105,4 +105,9 @@ public class VipergirlsTo extends antiDDoSForDecrypt {
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 }
