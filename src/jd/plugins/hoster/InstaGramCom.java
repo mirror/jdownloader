@@ -63,7 +63,8 @@ public class InstaGramCom extends PluginForHost {
     private static final boolean RESUME                            = true;
     /* Chunkload makes no sense for pictures/small files */
     private static final int     MAXCHUNKS_pictures                = 1;
-    private static final int     MAXCHUNKS_videos                  = 0;
+    /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
+    private static final int     MAXCHUNKS_videos                  = 1;
     private static final int     MAXDOWNLOADS                      = -1;
     private static final String  MAINPAGE                          = "https://www.instagram.com";
     public static final String   QUIT_ON_RATE_LIMIT_REACHED        = "QUIT_ON_RATE_LIMIT_REACHED";
@@ -354,7 +355,9 @@ public class InstaGramCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        synchronized (account) {
+            login(this.br, account, true);
+        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
@@ -373,7 +376,7 @@ public class InstaGramCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36");
         br.setCookie(MAINPAGE, "ig_pr", "1");
         // 429 == too many requests, we need to rate limit requests.
-        br.setAllowedResponseCodes(400, 429);
+        br.setAllowedResponseCodes(new int[] { 400, 429 });
         br.setRequestIntervalLimit("instagram.com", 250);
         br.setFollowRedirects(true);
         return br;

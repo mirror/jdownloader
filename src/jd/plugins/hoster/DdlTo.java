@@ -34,6 +34,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -272,6 +273,17 @@ public class DdlTo extends XFileSharingProBasic {
             return true;
         }
         return super.isOffline(link);
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        /* 2020-01-20: Special */
+        if (new Regex(correctedBR, ">\\s*This server is in maintenance mode").matches()) {
+            /* <strong>Oops!</strong> This server is in maintenance mode. Refresh this page in some minutes. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
+        }
+        /* Now execute template handling */
+        super.checkErrors(link, account, checkAll);
     }
 
     private void setConfigElements() {

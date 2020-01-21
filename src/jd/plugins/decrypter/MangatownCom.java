@@ -49,7 +49,7 @@ public class MangatownCom extends PluginForDecrypt {
         final String url_fpname = url_name + "_chapter_" + chapter_str;
         final DecimalFormat df_chapter = new DecimalFormat("0000");
         final DecimalFormat df_page = new DecimalFormat("000");
-        final Regex downloadinfo = this.br.getRegex("([A-Za-z0-9\\-]+\\.mangatown\\.com/store/manga/[^<>\"\\']+r)\\d+(\\.[A-Za-z0-9]+)");
+        final Regex downloadinfo = this.br.getRegex("([A-Za-z0-9\\-]+\\.mangatown\\.com/store/manga/[^<>\"\\']+[a-z])\\d+(\\.[A-Za-z0-9]+)");
         final String server_urlpart = downloadinfo.getMatch(0);
         final String ext = downloadinfo.getMatch(1);
         if (server_urlpart == null || ext == null) {
@@ -67,8 +67,8 @@ public class MangatownCom extends PluginForDecrypt {
         for (short page = 1; page <= page_max; page++) {
             final String chapter_formatted = df_chapter.format(chapter);
             final String page_formatted = df_page.format(page);
-            final String finallink = "directhttp://https://" + server_urlpart + "p" + page_formatted + ext;
-            final DownloadLink dl = this.createDownloadlink(finallink);
+            final String content_url = String.format("https://www.mangatown.com/manga/%s/c%s/%d.html", url_name, chapter_str, page);
+            final DownloadLink dl = this.createDownloadlink(content_url);
             dl.setFinalFileName(url_name + "_" + chapter_formatted + "_" + page_formatted + ext);
             dl.setAvailable(true);
             decryptedLinks.add(dl);

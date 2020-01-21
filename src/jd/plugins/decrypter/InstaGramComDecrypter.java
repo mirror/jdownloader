@@ -25,6 +25,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,11 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!explore/)(p/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?)" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -74,7 +75,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private void getPage(CryptedLink link, final Browser br, String url, final String rhxGis, final String variables) throws Exception {
         int retry = 0;
-        while (retry < 10 && !isAbort()) {
+        final int maxtries = 30;
+        long totalWaittime = 0;
+        while (retry < maxtries && !isAbort()) {
+            retry++;
             final GetRequest get = br.createGetRequest(url);
             if (rhxGis != null && variables != null) {
                 if (false) {
@@ -84,16 +88,27 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     get.getHeaders().put("X-Instagram-GIS", sig);
                 }
             }
+            if (retry > 1) {
+                logger.info(String.format("Trying to get around rate limit %d / %d", retry, maxtries));
+                // br.clearCookies(br.getHost());
+                // br.getHeaders().put("User-Agent", "iPad");
+            }
             br.getPage(get);
             final int responsecode = br.getHttpConnection().getResponseCode();
             if (responsecode == 502) {
-                sleep(20000 + 15000 * retry++, link);
+                final int waittime = 20000 + 15000 * retry;
+                totalWaittime += waittime;
+                logger.info(String.format("Waiting %d seconds on error 502 until retry", waittime / 1000));
+                sleep(waittime, link);
             } else if (responsecode == 403 || responsecode == 429) {
                 if (SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED)) {
                     logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
                     break;
                 } else {
-                    sleep(20000 + 15000 * retry++, link);
+                    final int waittime = 20000 + 15000 * retry;
+                    totalWaittime += waittime;
+                    logger.info(String.format("Waiting %d seconds on error 403/429 until retry", waittime / 1000));
+                    sleep(waittime, link);
                 }
             } else {
                 break;
@@ -101,6 +116,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         if (br.getHttpConnection().getResponseCode() == 502) {
             throw br.new BrowserException(new IOException("ResponseCode:502"), br.getRequest());
+        } else if (retry > 1) {
+            logger.info("Total time waited to get around rate limit: " + TimeFormatter.formatMilliSeconds(totalWaittime, 0));
         }
     }
 
@@ -269,9 +286,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     if (responsecode == 404) {
                         logger.warning("Error occurred: 404");
                         return decryptedLinks;
-                    }
-                    /* Stop on too many 403s as 403 is not a rate limit issue! */
-                    if (responsecode == 403 || responsecode == 429) {
+                    } else if (responsecode == 403 || responsecode == 429) {
+                        /* Stop on too many 403s as 403 is not a rate limit issue! */
                         logger.warning("Failed to bypass rate-limit!");
                         return decryptedLinks;
                     } else if (responsecode == 439) {
@@ -492,7 +508,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        return 4;
+        /* 2020-01-21: Set to 1 to avoid download issues and try not to perform too many requests at the same time. */
+        return 1;
     }
 
     private final int getPadLength(final int size) {
