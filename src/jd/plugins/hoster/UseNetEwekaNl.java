@@ -99,11 +99,19 @@ public class UseNetEwekaNl extends UseNet {
             } else {
                 account.setProperty(USENET_USERNAME, userName);
             }
-            final String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+            String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+            if (validUntil == null) {
+                /* 2020-01-21 */
+                validUntil = br.getRegex(">Next billing at</b></td>\\s*<td>(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+            }
+            if (validUntil == null) {
+                /* 2020-01-21 - wide open RegEx as fallback */
+                validUntil = br.getRegex("(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+            }
             if (validUntil != null) {
                 final long date = TimeFormatter.getMilliSeconds(validUntil, "dd'-'MM'-'yyyy' 'HH:mm", null);
                 if (date > 0) {
-                    ai.setValidUntil(date);
+                    ai.setValidUntil(date, br);
                 }
                 account.setType(AccountType.PREMIUM);
             } else {
