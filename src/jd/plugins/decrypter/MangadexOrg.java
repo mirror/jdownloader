@@ -20,7 +20,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(www\\.)?mangadex\\.(?:cc|org)/(title|chapter)/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.(?:org|cc)/title/\\d+/[a-z0-9\\-]+/covers/?|https?://(www\\.)?mangadex\\.(?:cc|org)/(title|chapter)/\\d+" })
 public class MangadexOrg extends antiDDoSForDecrypt {
     public MangadexOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -30,8 +30,27 @@ public class MangadexOrg extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         getPage(parameter.getCryptedUrl().replace("mangadex.cc", "mangadex.org"));
+        String urlTitle = new Regex(parameter.getCryptedUrl(), "/title/\\d+/([^/]+)").getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/title/")) {
+        if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/covers")) {
+            String[] covers = br.getRegex("<a[^>]+href\\s*=\\s*[\"']([^\"']*/covers/[^\"'/]*)").getColumn(0);
+            if (covers != null && covers.length > 0) {
+                for (String cover : covers) {
+                    cover = cover.trim().replaceAll("^//", "https://");
+                    if (cover.startsWith("/") || !cover.startsWith("http")) {
+                        cover = br.getURL(cover).toString();
+                    }
+                    final DownloadLink dl = createDownloadlink(cover);
+                    dl.setAvailable(true);
+                    ret.add(dl);
+                }
+                if (urlTitle != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(urlTitle);
+                    fp.addLinks(ret);
+                }
+            }
+        } else if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/title/")) {
             String[] chapters = br.getRegex("<a[^>]+href\\s*=\\s*[\"']([^\"']*/chapter/[^\"'/]*)").getColumn(0);
             if (chapters != null && chapters.length > 0) {
                 for (String chapter : chapters) {

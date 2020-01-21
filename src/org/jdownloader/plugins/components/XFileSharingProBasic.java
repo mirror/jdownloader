@@ -2461,7 +2461,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else if (isPremiumOnlyURL()) {
             logger.info("Only downloadable via premium");
             throw new AccountRequiredException();
-        } else if (correctedBR.contains(">Expired download session")) {
+        } else if (new Regex(correctedBR, ">\\s*Expired download session").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
         if (isWebsiteUnderMaintenance()) {
@@ -2469,7 +2469,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         /* Host-type specific errors */
         /* Videohoster */
-        if (correctedBR.contains(">\\s*Video is processing now")) {
+        if (new Regex(correctedBR, ">\\s*Video is processing now").matches()) {
             /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
         }
