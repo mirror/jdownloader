@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -15,11 +20,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pureusenet.nl" }, urls = { "" })
 public class PureUseNetNL extends UseNet {
@@ -56,7 +56,7 @@ public class PureUseNetNL extends UseNet {
             Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://www.pureusenet.nl/en/member");
+                br.getPage("https://www." + this.getHost() + "/en/member");
                 login = br.getFormbyActionRegex(".*/login");
                 if (login != null && login.containsHTML("name=\"password\"")) {
                     br.getCookies(getHost()).clear();
@@ -65,12 +65,13 @@ public class PureUseNetNL extends UseNet {
                 }
             }
             if (!containsSessionCookie(br)) {
+                logger.info("Performing full login");
                 account.clearCookies("");
                 final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for pureusenet.nl website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getPage("https://www.pureusenet.nl/en/login");
+                br.getPage("https://www." + this.getHost() + "/en/login");
                 login = br.getFormbyActionRegex(".*/login");
                 login.put("email", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
@@ -82,8 +83,8 @@ public class PureUseNetNL extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://www.pureusenet.nl/en/member")) {
-                br.getPage("https://www.pureusenet.nl/en/member");
+            if (!StringUtils.containsIgnoreCase(br.getURL(), "/en/member")) {
+                br.getPage("/en/member");
             }
             account.saveCookies(br.getCookies(getHost()), "");
             final String packageType = br.getRegex("<h3>Your package:\\s*<span class=\"font-primary.*?\">(.*?)<").getMatch(0);
@@ -125,17 +126,27 @@ public class PureUseNetNL extends UseNet {
                     account.setMaxSimultanDownloads(5);
                 }
             }
-            final String expireDate = br.getRegex("<li><b>Expiration date:</b>\\s*(\\d+-\\d+-\\d+)\\s*<").getMatch(0);
+            String expireDate = br.getRegex("<li><b>Expiration date:</b>\\s*(\\d{4}-\\d{2}-\\d{2})\\s*<").getMatch(0);
+            if (expireDate == null) {
+                /* 2020-01-21 */
+                expireDate = br.getRegex(">Next Billing:</b>\\s*(\\d{4}-\\d{2}-\\d{2})\\s*</li>").getMatch(0);
+            }
+            if (expireDate == null) {
+                /* 2020-01-21 - wide open RegEx --> Last chance */
+                expireDate = br.getRegex("(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            }
             if (expireDate != null) {
                 final long date = TimeFormatter.getMilliSeconds(expireDate, "yyyy'-'MM'-'dd", null);
                 if (date > 0) {
+                    /* Add one extra day */
                     ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
                     ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                     account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
                     return ai;
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /* Free account or plugin failure */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
