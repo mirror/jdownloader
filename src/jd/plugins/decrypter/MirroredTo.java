@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.AbortException;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,17 +33,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-import org.jdownloader.plugins.components.AbortException;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(?:www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" })
-public class MirrorCreatorCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrored.to" }, urls = { "https?://(?:www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}|https?://(?:www\\.)?mirrored\\.to/multilinks/[a-z0-9]+" })
+public class MirroredTo extends PluginForDecrypt {
     private String                  userAgent      = null;
     private ArrayList<DownloadLink> decryptedLinks = null;
     private FilePackage             fp             = null;
     private String                  uid            = null;
     private CryptedLink             param          = null;
 
-    public MirrorCreatorCom(PluginWrapper wrapper) {
+    public MirroredTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -54,6 +55,18 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 userAgent = UserAgents.stringUserAgent();
             }
             br.getHeaders().put("User-Agent", userAgent);
+            if (param.toString().contains("/multilinks/")) {
+                br.getPage(param.toString());
+                final String[] urls = br.getRegex("(https?://[^<>\"]+/files/[^<>\"]+)").getColumn(0);
+                if (urls == null || urls.length == 0) {
+                    return null;
+                }
+                for (final String url : urls) {
+                    decryptedLinks.add(this.createDownloadlink(url));
+                }
+                /* These URLs will go back into this decrypter! */
+                return decryptedLinks;
+            }
             final String parameter = "https://www.mirrored.to/download.php?uid=" + uid;
             param.setCryptedUrl(parameter);
             br.setFollowRedirects(true);
@@ -61,7 +74,8 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             br.setFollowRedirects(false);
             // set packagename
             // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
-            String fpName = br.getRegex("<title>Download links for ([^<]+) - (Mirrorcreator|Mirrored\\.to)").getMatch(0);
+            String fpName = br.getRegex("<title>([^<>\"]+) \\- Mirrored\\.to").getMatch(0);
+            final String filesize = br.getRegex(">File size\\s*:\\s*<span>([^<>\"]+)<").getMatch(0);
             if (fpName != null) {
                 // here we will strip extensions!
                 String ext;
@@ -91,7 +105,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 }
             }
             /* Error handling */
-            if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable|>Sorry, an error occured)")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable|>Sorry, an error occured)")) {
                 logger.info("The following link should be offline: " + param.toString());
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
@@ -109,7 +123,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 for (final Form form : forms) {
                     final Browser br2 = br.cloneBrowser();
                     br2.submitForm(form);
-                    handleLink(br2);
+                    handleLink(br2, filesize);
                 }
             } else {
                 // older shit
@@ -123,9 +137,12 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                     }
                 }
                 for (String link : links) {
+                    if (this.isAbort()) {
+                        break;
+                    }
                     Browser br2 = br.cloneBrowser();
                     br2.getPage(link);
-                    handleLink(br2);
+                    handleLink(br2, filesize);
                 }
             }
             logger.info("Task Complete! : " + parameter);
@@ -148,7 +165,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         return null;
     }
 
-    private void handleLink(final Browser br) throws Exception {
+    private void handleLink(final Browser br, final String filesize) throws Exception {
         if (this.isAbort()) {
             logger.info("Decryption aborted...");
             throw new AbortException();
@@ -170,6 +187,11 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(finallink);
                 if (fp != null) {
                     fp.add(dl);
+                    dl.setName(fp.getName());
+                }
+                /* 2020-01-21: Good for e.g. offline services or GEO-blocked such as Zippyshare. */
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 distribute(dl);
                 decryptedLinks.add(dl);
@@ -212,6 +234,12 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             distribute(fina);
             decryptedLinks.add(fina);
         }
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-01-21: Avoid IP block! */
+        return 1;
     }
 
     /* NO OVERRIDE!! */

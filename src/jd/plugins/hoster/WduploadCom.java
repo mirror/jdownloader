@@ -55,15 +55,17 @@ public class WduploadCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = false;
-    private final int     FREE_MAXCHUNKS               = 1;
-    private final int     FREE_MAXDOWNLOADS            = 1;
-    private final boolean ACCOUNT_FREE_RESUME          = false;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
+    private final boolean        FREE_RESUME                  = false;
+    private final int            FREE_MAXCHUNKS               = 1;
+    private final int            FREE_MAXDOWNLOADS            = 1;
+    private final boolean        ACCOUNT_FREE_RESUME          = false;
+    private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private final int            ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
+    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
+    /* New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 */
+    private static final boolean useWebAPI                    = false;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -83,8 +85,8 @@ public class WduploadCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         String filename = null, filesize = null;
         final String fid = this.getFID(link);
-        final boolean use_API = true;
-        if (use_API) {
+        final boolean use_API = false;
+        if (useWebAPI) {
             /* 2020-01-20 */
             this.getPage("http://wduphp." + this.getHost() + "/api/filemanager/details/" + fid);
             if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
@@ -218,8 +220,7 @@ public class WduploadCom extends antiDDoSForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final boolean use_webapi_2020 = true;
-                if (use_webapi_2020) {
+                if (useWebAPI) {
                     /* 2020-01-20: New */
                     String token = account.getStringProperty("logintoken", null);
                     final Cookies cookies = account.loadCookies("");
@@ -291,10 +292,9 @@ public class WduploadCom extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
-        final boolean use_webapi_2020 = true;
         /* 2020-01-20: Static fallback according to website */
         final long trafficmax_fallback = 35000000000l;
-        if (use_webapi_2020) {
+        if (useWebAPI) {
             /*
              * 2020-01-20: This will result in error response 500 for freeusers but we do not require any special data for those anyways so
              * that can be ignored. Free accounts will be listed without any issues.
@@ -390,8 +390,7 @@ public class WduploadCom extends antiDDoSForHost {
             String dllink = this.checkDirectLink(link, "premium_directlink_2");
             if (dllink == null) {
                 br.setFollowRedirects(false);
-                final boolean use_api_2020 = true;
-                if (use_api_2020) {
+                if (useWebAPI) {
                     requestFileInformation(link);
                     final String logintoken = account.getStringProperty("logintoken", null);
                     final String file_uploading_api_url = PluginJSonUtils.getJson(br, "file_uploading_api_url");
