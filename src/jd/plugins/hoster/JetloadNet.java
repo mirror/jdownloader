@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,11 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|p|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
@@ -66,6 +67,7 @@ public class JetloadNet extends PluginForHost {
     private static final String  API_KEY                      = "b9yEWYHSNVZq1a2y";
     private static final boolean prefer_linkcheck_via_API     = true;
     private boolean              api_used                     = true;
+    private static final boolean useNewWay2020                = true;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -82,7 +84,7 @@ public class JetloadNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         api_used = false;
         this.setBrowserExclusive();
         AvailableStatus status = AvailableStatus.UNCHECKABLE;
@@ -91,7 +93,7 @@ public class JetloadNet extends PluginForHost {
         }
         if (status == AvailableStatus.UNCHECKABLE) {
             /* Fallback to website(or API usage was disabled) - this should never happen! */
-            status = requestFileInformationWebsite(link);
+            status = requestFileInformationWebsite(link, false);
             api_used = false;
         }
         return status;
@@ -141,32 +143,47 @@ public class JetloadNet extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         /* 2019-05-08: Very similar to their API but not exactly the same */
-        // br.getHeaders().put("X-XSRF-TOKEN", ""); /* 2019-05-08: We don't need this */
-        br.getPage(String.format("https://jetload.net/api/get_direct_video/%s", this.getFID(link)));
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("file can\\'t be found") || !br.containsHTML(this.getFID(link))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filename = PluginJSonUtils.getJson(br, "origin_filename");
-        final String filesize = PluginJSonUtils.getJson(br, "file_size");
-        if (filename != null) {
-            link.setFinalFileName(filename);
-        } else {
-            link.setName(this.getFID(link));
-        }
-        if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
-            link.setDownloadSize(Long.parseLong(filesize));
-        }
-        final String encoding_status = PluginJSonUtils.getJson(br, "encoding_status");
-        if (StringUtils.equalsIgnoreCase("pending", encoding_status) || StringUtils.equalsIgnoreCase("started", encoding_status)) {
-            // downloading hls stream
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still encoding!", 60 * 60 * 1000l);
-        } else {
+        if (useNewWay2020) {
+            if (!isDownload) {
+                /* Do not request captchas during availablecheck */
+                return AvailableStatus.UNCHECKABLE;
+            }
+            final String fid = this.getFID(link);
+            br.getPage(link.getPluginPatternMatcher());
+            /* 2020-01-22: Hardcoded reCaptchaV2 key */
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lc90MkUAAAAAOrqIJqt4iXY_fkXb7j3zwgRGtUI").getToken();
+            final String postData = String.format("{\"token\":\"%s\",\"stream_code\":\"%s\"}", recaptchaV2Response, fid);
+            br.postPageRaw("https://" + this.getHost() + "/jet_secure", postData);
             return AvailableStatus.TRUE;
+        } else {
+            // br.getHeaders().put("X-XSRF-TOKEN", ""); /* 2019-05-08: We don't need this */
+            /* 2020-01-22: This will always return 404 */
+            br.getPage(String.format("https://jetload.net/api/get_direct_video/%s", this.getFID(link)));
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("file can\\'t be found") || !br.containsHTML(this.getFID(link))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String filename = PluginJSonUtils.getJson(br, "origin_filename");
+            final String filesize = PluginJSonUtils.getJson(br, "file_size");
+            if (filename != null) {
+                link.setFinalFileName(filename);
+            } else {
+                link.setName(this.getFID(link));
+            }
+            if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
+                link.setDownloadSize(Long.parseLong(filesize));
+            }
+            final String encoding_status = PluginJSonUtils.getJson(br, "encoding_status");
+            if (StringUtils.equalsIgnoreCase("pending", encoding_status) || StringUtils.equalsIgnoreCase("started", encoding_status)) {
+                // downloading hls stream
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still encoding!", 60 * 60 * 1000l);
+            } else {
+                return AvailableStatus.TRUE;
+            }
         }
     }
 
@@ -191,79 +208,86 @@ public class JetloadNet extends PluginForHost {
         if (dllink == null) {
             if (this.api_used) {
                 /* We need to access it via the website here if this has not happened before. */
-                requestFileInformationWebsite(link);
+                requestFileInformationWebsite(link, true);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            /*
-             * Attention! This is NOT the filename we use - it is only required to get a working downloadlink (wrong value = downloadlink
-             * leads to 404)
-             */
-            /* 2019-10-04: E.g. video: "encoding_status":"completed" */
-            final boolean is_video = !"file".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status"));
-            final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
-            final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
-            final String archiveValue = getString(entries, "file/archive");
-            final boolean archive = "1".equals(archiveValue);
-            final String lowValue = getString(entries, "file/low");
-            final String medValue = getString(entries, "file/med");
-            final String highValue = getString(entries, "file/high");
-            final boolean low = "1".equals(lowValue);
-            final boolean med = "1".equals(medValue);
-            if (StringUtils.isEmpty(filename_internal)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (StringUtils.isEmpty(ext)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (is_video) {
-                final String hostname = (String) JavaScriptEngineFactory.walkJson(entries, "server/hostname");
-                if (StringUtils.isEmpty(hostname)) {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            if (useNewWay2020) {
+                /* 2020-01-22: New */
+                entries = (LinkedHashMap<String, Object>) entries.get("src");
+                dllink = (String) entries.get("src");
+            } else {
+                /* Old */
+                /*
+                 * Attention! This is NOT the filename we use - it is only required to get a working downloadlink (wrong value =
+                 * downloadlink leads to 404)
+                 */
+                /* 2019-10-04: E.g. video: "encoding_status":"completed" */
+                final boolean is_video = !"file".equalsIgnoreCase((String) JavaScriptEngineFactory.walkJson(entries, "file/encoding_status"));
+                final String filename_internal = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_name");
+                final String ext = (String) JavaScriptEngineFactory.walkJson(entries, "file/file_ext");
+                final String archiveValue = getString(entries, "file/archive");
+                final boolean archive = "1".equals(archiveValue);
+                final String lowValue = getString(entries, "file/low");
+                final String medValue = getString(entries, "file/med");
+                final String highValue = getString(entries, "file/high");
+                final boolean low = "1".equals(lowValue);
+                final boolean med = "1".equals(medValue);
+                if (StringUtils.isEmpty(filename_internal)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (StringUtils.isEmpty(ext)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // br.getPage("/api/get_direct_video/" + this.getFID(link));
-                // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                // ng-visitor/js/play.js
-                Browser brc = null;
-                if (lowValue == null && medValue == null && highValue == null) {
-                    brc = br.cloneBrowser();
-                    brc.setFollowRedirects(true);
-                    brc.getPage(link.getPluginPatternMatcher());
-                }
-                final String hlsPlayerSource = brc != null ? brc.getRegex("<\\s*source\\s*src\\s*=\\s*\"([^\"]*\\.m3u8)\"").getMatch(0) : null;
-                if (hlsPlayerSource != null) {
-                    dllink = hlsPlayerSource;
-                } else {
-                    final String m3u8;
-                    if (low && med) {
-                        m3u8 = "master.m3u8";
-                    } else if (med) {
-                        m3u8 = "med.m3u8";
-                    } else {
-                        m3u8 = "low.m3u8";
-                    }
-                    if (archive) {
-                        dllink = String.format("%s/v2/schema/archive/%s/" + m3u8, hostname, filename_internal);
-                    } else {
-                        dllink = String.format("%s/v2/schema/%s/" + m3u8, hostname, filename_internal);
-                    }
-                }
-            } else {
-                /*
-                 * Official download via API. Can also be used to download videos but will often fail for videos (error 404) - we're only
-                 * using it to download non-video-files!
-                 */
-                String serverID = getString(entries, "server/id");
-                if (StringUtils.isEmpty(serverID)) {
-                    // server/id available for encoding_status: "completed"
-                    serverID = getString(entries, "file/srv_id");
-                    // file/srv_id always available for encoding_status: "pending"
-                    if (StringUtils.isEmpty(serverID)) {
+                if (is_video) {
+                    final String hostname = (String) JavaScriptEngineFactory.walkJson(entries, "server/hostname");
+                    if (StringUtils.isEmpty(hostname)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    // br.getPage("/api/get_direct_video/" + this.getFID(link));
+                    // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    // ng-visitor/js/play.js
+                    Browser brc = null;
+                    if (lowValue == null && medValue == null && highValue == null) {
+                        brc = br.cloneBrowser();
+                        brc.setFollowRedirects(true);
+                        brc.getPage(link.getPluginPatternMatcher());
+                    }
+                    final String hlsPlayerSource = brc != null ? brc.getRegex("<\\s*source\\s*src\\s*=\\s*\"([^\"]*\\.m3u8)\"").getMatch(0) : null;
+                    if (hlsPlayerSource != null) {
+                        dllink = hlsPlayerSource;
+                    } else {
+                        final String m3u8;
+                        if (low && med) {
+                            m3u8 = "master.m3u8";
+                        } else if (med) {
+                            m3u8 = "med.m3u8";
+                        } else {
+                            m3u8 = "low.m3u8";
+                        }
+                        if (archive) {
+                            dllink = String.format("%s/v2/schema/archive/%s/" + m3u8, hostname, filename_internal);
+                        } else {
+                            dllink = String.format("%s/v2/schema/%s/" + m3u8, hostname, filename_internal);
+                        }
+                    }
+                } else {
+                    /*
+                     * Official download via API. Can also be used to download videos but will often fail for videos (error 404) - we're
+                     * only using it to download non-video-files!
+                     */
+                    String serverID = getString(entries, "server/id");
+                    if (StringUtils.isEmpty(serverID)) {
+                        // server/id available for encoding_status: "completed"
+                        serverID = getString(entries, "file/srv_id");
+                        // file/srv_id always available for encoding_status: "pending"
+                        if (StringUtils.isEmpty(serverID)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                    final PostRequest downloadReq = br.createJSonPostRequest("/api/download", String.format("{\"file_name\":\"%s.%s\",\"srv\":\"%s\"}", filename_internal, ext, serverID));
+                    br.openRequestConnection(downloadReq);
+                    br.loadConnection(null);
+                    dllink = br.toString();
                 }
-                final PostRequest downloadReq = br.createJSonPostRequest("/api/download", String.format("{\"file_name\":\"%s.%s\",\"srv\":\"%s\"}", filename_internal, ext, serverID));
-                br.openRequestConnection(downloadReq);
-                br.loadConnection(null);
-                dllink = br.toString();
             }
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
