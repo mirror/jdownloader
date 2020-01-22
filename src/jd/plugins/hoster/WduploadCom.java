@@ -64,7 +64,10 @@ public class WduploadCom extends antiDDoSForHost {
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-    /* New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 */
+    /*
+     * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br> They will probably re-introduce
+     * their changes! In this case, simply setting this to true should fix availablecheck, login and (premium) download!
+     */
     private static final boolean useWebAPI                    = false;
 
     @Override
