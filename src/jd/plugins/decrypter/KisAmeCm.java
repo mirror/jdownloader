@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -594,23 +595,34 @@ public class KisAmeCm extends antiDDoSForDecrypt implements RefreshSessionLink {
     private File getStitchedImage(final String[] captchaImages, final BufferedImage[] images) throws Exception {
         int i = -1;
         for (final String ci : captchaImages) {
+            i++;
             if (isAbort()) {
                 throw new InterruptedException();
             }
-            // download each image
-            URLConnectionAdapter con = null;
-            try {
-                i++;
-                final Browser img = br.cloneBrowser();
-                img.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
-                con = img.openGetConnection(ci);
-                images[i] = ImageIO.read(con.getInputStream());
-            } finally {
+            if (ci.matches("[a-zA-Z0-9_/\\+\\=]+")) {
+                /* base64 encoded image */
+                byte[] image_bytes = org.appwork.utils.encoding.Base64.decode(ci);
+                if (image_bytes == null || image_bytes.length == 0) {
+                    image_bytes = org.appwork.utils.encoding.Base64.decodeFast(ci);
+                }
+                final ByteArrayInputStream bis = new ByteArrayInputStream(image_bytes);
+                images[i] = ImageIO.read(bis);
+                bis.close();
+            } else {
+                /* Assume we have a valid URL --> Exception will be thrown if we have not! */
+                URLConnectionAdapter con = null;
                 try {
-                    if (con != null) {
-                        con.disconnect();
+                    final Browser img = br.cloneBrowser();
+                    img.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                    con = img.openGetConnection(ci);
+                    images[i] = ImageIO.read(con.getInputStream());
+                } finally {
+                    try {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    } catch (final Throwable e) {
                     }
-                } catch (final Throwable e) {
                 }
             }
         }
