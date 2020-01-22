@@ -233,6 +233,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             return decryptedLinks;
         } else if (parameter.matches(TYPE_STORY)) {
+            if (!logged_in) {
+                logger.info("Account required to download stories");
+                return decryptedLinks;
+            }
             this.crawlStory(entries, param);
             return decryptedLinks;
         } else {
@@ -336,16 +340,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     private void crawlStory(LinkedHashMap<String, Object> entries, final CryptedLink param) throws Exception {
-        final String queryHash = getByUserIDQueryHash(br);
+        final boolean pluginNotYetDone = true;
+        if (pluginNotYetDone) {
+            return;
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "*/*");
         username_url = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
-        if (username_url == null) {
+        final String story_user_id = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/StoriesPage/{0}/user/id");
+        final String queryHash = getByUserIDQueryHash(br);
+        if (username_url == null || StringUtils.isEmpty(story_user_id) || StringUtils.isEmpty(queryHash)) {
             /* This should never happen! */
             return;
         }
-        final String url = "/graphql/query/?query_hash=" + queryHash + "&variables=%7B%22reel_ids%22%3A%5B%22" + "TODO" + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
-        // getPage(param, br, url, null, null);
+        final String url = "/graphql/query/?query_hash=" + queryHash + "&variables=%7B%22reel_ids%22%3A%5B%22" + story_user_id + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
+        br.getPage(url);
+        getPage(param, br, url, null, null);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/reels_media/{0}/items");
         ArrayList<Object> qualities;

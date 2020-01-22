@@ -75,7 +75,6 @@ public class InstaGramCom extends PluginForHost {
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED = false;
     public static final boolean  defaultONLY_GRAB_X_ITEMS          = false;
     public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER   = 25;
-    private static Object        LOCK                              = new Object();
     private boolean              is_private_url                    = false;
 
     @SuppressWarnings("deprecation")
@@ -268,9 +267,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
