@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,37 +24,41 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(www\\.)?rmz\\.cr/(?:release/)?[^/]+" })
-public class RmzCr extends antiDDoSForDecrypt {
-    public RmzCr(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "embedo.to" }, urls = { "https?://(?:www\\.)?embedo\\.to/e/[A-Za-z0-9]+" })
+public class EmbedoTo extends PluginForDecrypt {
+    public EmbedoTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        String fpName = br.getRegex("<title>RapidMoviez\\s+-\\s+([^<]+)</title>").getMatch(0);
-        String linkBlock = br.getRegex("(<div id=\"(?:title_release_after_download_title|title_release_after_imdb)\">[^$]+<div id=\"title_release_after_links\">)").getMatch(0);
-        if (linkBlock != null) {
-            /* 2020-01-22 */
-            String[] links = new Regex(linkBlock, "id=\"l\\d+\">([^<>\"]+)</pre>").getColumn(0);
-            for (String link : links) {
-                if (link.startsWith("/")) {
-                    // link = br.getURL(link).toString();
-                    /* 2020-01-22: Skip URLs which would lead to this crawler again */
-                    continue;
-                }
-                decryptedLinks.add(createDownloadlink(link));
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        String fpName = br.getRegex("<title>([^<>\"]+) \\| Embedo\\.to</title>").getMatch(0);
+        final String[] links = br.getRegex("data-id=\"([^<>\"]+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.setFollowRedirects(false);
+        for (final String singleLink : links) {
+            br.getPage("/r/" + singleLink);
+            final String finallink = br.getRedirectLocation();
+            decryptedLinks.add(createDownloadlink(finallink));
+            if (this.isAbort()) {
+                break;
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty("ALLOW_MERGE", true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

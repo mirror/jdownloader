@@ -22,6 +22,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,10 +46,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
@@ -99,17 +99,10 @@ public class PornHubCom extends PluginForDecrypt {
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(form);
         }
-        if (br.containsHTML(">Sorry, but this video is private") && br.containsHTML("href=\"/login\"") && account != null) {
-            logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
-            jd.plugins.hoster.PornHubCom.login(this, br, account, true);
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            if (br.containsHTML("href=\"/login\"")) {
-                logger.info("Debug info: href= /login is found for registered user, re-login failed?");
-            }
-            if (br.containsHTML("class=\"g-recaptcha\"")) {
-                // logger.info("Debug info: captcha handling is required now!");
-                throw new DecrypterException("Decrypter broken, captcha handling is required now!");
-            }
+        if (br.containsHTML(">Sorry, but this video is private")) {
+            logger.info("Private video and/or login failure");
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
         final boolean ret;
         if (parameter.matches("(?i).*/playlist/.*")) {
@@ -119,6 +112,7 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Gif");
             ret = decryptAllGifsOfAUser();
         } else if (parameter.matches("(?i).*/(model|pornstar)/.*")) {
+            /* Main profile URL --> Assume user wants to have all videos of that profile */
             logger.info("Model/Pornstar");
             ret = decryptAllVideosOfAPornstar();
         } else if (parameter.matches("(?i).*/(?:users|channels)/.*")) {
@@ -139,18 +133,20 @@ public class PornHubCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /** Handles pornhub.com/bla/(model|pornstar)/bla */
     private boolean decryptAllVideosOfAPornstar() throws Exception {
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (isOfflineGeneral(br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
+        }
+        if (!br.getURL().endsWith("/videos")) {
+            /* 2020-01-22: Without this we will not get all items! */
+            br.getPage(br.getURL() + "/videos");
         }
         final Set<String> dupes = new HashSet<String>();
         final Set<String> pages = new HashSet<String>();
         do {
-            if (this.isAbort()) {
-                return true;
-            }
-            final String[] viewkeys = br.getRegex("<a href=\"(?:https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?.(?:com|org))?/view_video.php\\?viewkey=([^\"]+?)\"").getColumn(0);
+            final String[] viewkeys = br.getRegex("/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
             logger.info("Links found: " + viewkeys.length);
             for (final String viewkey : viewkeys) {
                 logger.info("viewkey: " + viewkey);
@@ -165,6 +161,9 @@ public class PornHubCom extends PluginForDecrypt {
                 br.getPage(next);
             } else {
                 break;
+            }
+            if (this.isAbort()) {
+                return true;
             }
         } while (true);
         return true;
@@ -461,7 +460,7 @@ public class PornHubCom extends PluginForDecrypt {
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
-        if (isOffline(br)) {
+        if (isOfflineVideo(br)) {
             final DownloadLink dl = createOfflinelink(parameter);
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);
@@ -576,8 +575,12 @@ public class PornHubCom extends PluginForDecrypt {
         }
     }
 
-    public static boolean isOffline(final Browser br) {
-        return br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || br.getHttpConnection().getResponseCode() == 404;
+    public static boolean isOfflineVideo(final Browser br) {
+        return !br.containsHTML("\\'embedSWF\\'") || isOfflineGeneral(br);
+    }
+
+    public static boolean isOfflineGeneral(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     private DownloadLink getDecryptDownloadlink(final String viewKey, final String format, final String quality) {
