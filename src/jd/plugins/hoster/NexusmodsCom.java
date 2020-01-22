@@ -19,7 +19,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Random;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -580,10 +579,11 @@ public class NexusmodsCom extends antiDDoSForHost {
             if (ressourcelist == null || ressourcelist.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unable to find downloadlink");
             }
-            /* TODO: Maybe add mirror (location) selection */
-            final int randomMirrorSelector = new Random().nextInt(ressourcelist.size());
-            final Object randomMirrorO = ressourcelist.get(randomMirrorSelector);
-            entries = (LinkedHashMap<String, Object>) randomMirrorO;
+            /*
+             * First element = User preferred mirror. Users can set their preferred mirror here: https://www.nexusmods.com/users/myaccount
+             * --> Premium membership preferences
+             */
+            entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
             final String mirrorName = (String) entries.get("name");
             this.dllink = (String) entries.get("URI");
             if (StringUtils.isEmpty(this.dllink)) {
