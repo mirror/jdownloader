@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivoox.com" }, urls = { "https?://(?:(?:www|de)\\.)?ivoox\\.com/(?:en/)?[a-z0-9\\-]+audios\\-mp3_rf_\\d+_\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivoox.com" }, urls = { "https?://(?:[a-z]+\\.)?ivoox\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+audios\\-mp3_rf_\\d+_\\d+\\.html" })
 public class IvooxCom extends PluginForHost {
     public IvooxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,7 +75,11 @@ public class IvooxCom extends PluginForHost {
         String official_download = br.getRegex("downloadlink\\'\\)\\.load\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
         if (official_download != null) {
             if (!official_download.startsWith("/")) {
-                official_download = "/" + official_download;
+                /*
+                 * 2020-01-22: Use getBaseURL because if we don't, we might fail to include the language part e.g. '/de/' --> It will then
+                 * redirect to mainpage --> Failure
+                 */
+                official_download = br.getBaseURL() + official_download;
             }
             br.getPage(official_download);
             dllink = br.getRegex("downloadFollow\\(event,\\'(https[^<>\"]+)\\'\\)").getMatch(0);
@@ -102,6 +106,11 @@ public class IvooxCom extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
+                    /*
+                     * 2020-01-22: Final downloadurl contains temp. token and is only valid once but redirects to static final downloadurl
+                     * --> Use that as final downloadurl later
+                     */
+                    dllink = con.getURL().toString();
                 } else {
                     server_issues = true;
                 }
