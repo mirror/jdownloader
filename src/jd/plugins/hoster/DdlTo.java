@@ -41,7 +41,7 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
     private final String   maxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT_2019_06";
-    private final String[] maxSimultaneousDownloads       = new String[] { "DEFAULT", "2", "1" };
+    private final String[] maxSimultaneousDownloads       = new String[] { "DEFAULT", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
 
     public DdlTo(final PluginWrapper wrapper) {
         super(wrapper);
