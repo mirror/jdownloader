@@ -968,7 +968,6 @@ public class YoutubeHelper {
                 if (descrambler == null) {
                     descrambler = new Regex(html5PlayerSource, "([a-zA-Z0-9$]+)\\s*=\\s*function\\((\\w+)\\)\\{\\s*\\2=\\s*\\2\\.split\\(\"\"\\)").getMatch(0);
                     if (descrambler == null) {
-                        //
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -976,9 +975,15 @@ public class YoutubeHelper {
             final String func = Pattern.quote(descrambler) + "\\s*=\\s*function\\(([^)]+)\\)\\{(.+?return.*?)\\};";
             des = new Regex(html5PlayerSource, Pattern.compile(func, Pattern.DOTALL)).getMatch(1);
             all = new Regex(html5PlayerSource, Pattern.compile(Pattern.quote(descrambler) + "\\s*=\\s*function\\(([^)]+)\\)\\{(.+?return.*?)\\};.*?", Pattern.DOTALL)).getMatch(-1);
+            if (all == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String requiredObjectName = new Regex(des, "([\\w\\d\\$]+)\\.([\\w\\d]{2})\\(").getMatch(0);
             if (requiredObjectName != null) {
                 final String requiredObject = new Regex(html5PlayerSource, Pattern.compile("var " + Pattern.quote(requiredObjectName) + "=\\{.*?\\}\\};", Pattern.DOTALL)).getMatch(-1);
+                if (requiredObject == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 all += requiredObject;
             }
             all += ";";
