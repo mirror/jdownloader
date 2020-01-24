@@ -473,8 +473,14 @@ public class NexusmodsCom extends antiDDoSForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
+            /*
+             * 2020-01-24: Free account downloads are not possible at all because we cannot easily catch the URLs which are ment to go into
+             * their own official downloadmanager as they have their own protocol: NXM://blabla. Code for this has been added nontheless.
+             */
+            ai.setTrafficLeft(0);
             if (isAPIOnlyMode()) {
-                ai.setStatus("Free user [Only NXM URLs can be downloaded]");
+                // ai.setStatus("Free user [Only NXM URLs can be downloaded]");
+                ai.setStatus("Free user");
                 /* 2020-01-15: Website mode is not supported anymore. Accept free accounts and display them with ZERO trafficleft! */
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free account!\r\nDownloads over API via free account are
                 // impossible!\r\nTo be able to download via free account, enable website login in Settings --> Plugin Settings -->
