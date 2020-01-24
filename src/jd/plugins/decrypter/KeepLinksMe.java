@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.abstractSafeLinking;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
@@ -24,9 +26,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.plugins.components.abstractSafeLinking;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.org" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu|co|org)/(p\\d*|d)/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.org" }, urls = { "https?://(?:www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(?:www\\.)?keeplinks\\.(me|eu|co|org)/(p\\d*|d)/[a-z0-9]+" })
 public class KeepLinksMe extends abstractSafeLinking {
     public KeepLinksMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -163,10 +163,15 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     protected boolean supportsContainers() {
-        if ("kprotector.com".equals(getHost())) {
-            return false;
-        }
-        return super.supportsContainers();
+        // if ("kprotector.com".equals(getHost())) {
+        // return false;
+        // }
+        // return super.supportsContainers();
+        /*
+         * 2020-01-24: Seems like none of both websites support containers anymore. keeplinks.org displays them but all container types lead
+         * to empty files.
+         */
+        return false;
     }
 
     @Override

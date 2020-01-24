@@ -13,13 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.plugins.components.abstractSafeLinking;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+import org.jdownloader.plugins.components.abstractSafeLinking;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,14 +31,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 //Similar to SafeUrlMe (safeurl.me)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SflnkgNt extends abstractSafeLinking {
-
     /**
      * Returns the annotations names array
      *
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "linkvault.pw", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "jessica.suyalynx.com", "linkler.us", "links.sceper.ws", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "safe.linkninja.net", "safelinking.net", "safelinking.com", "safelinking.mobi", "vault.vhsclub.com", "yls.re", "sflk.in" };
+        return new String[] { "3download.safelinking.net", "deni1743-safelink.tk", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "protect.mmportal.info", "safelinking.net", "safelinking.com", "safelinking.mobi", "vault.vhsclub.com", "sflk.in" };
         // add new domains at the beginning of the array, not the END
     }
 
@@ -112,5 +110,4 @@ public class SflnkgNt extends abstractSafeLinking {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SafeLinking_SafeLinking;
     }
-
 }
