@@ -119,7 +119,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.4.2.2<br />
+     * DEV NOTES XfileSharingProBasic Version 4.4.2.3<br />
      * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
@@ -1253,83 +1253,91 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * download-start-procedure!
          */
         String dllink = checkDirectLink(link, directlinkproperty);
-        /**
-         * Try to find a downloadlink. Check different methods sorted from "usually available" to "rarely available" (e.g. there are a lot
-         * of sites which support video embedding but nearly none support mp3-embedding).
-         */
         if (StringUtils.isEmpty(dllink)) {
-            dllink = getDllinkViaOfficialVideoDownload(link, account, false);
-        }
-        /* Check for streaming/direct links on the first page. */
-        if (StringUtils.isEmpty(dllink)) {
-            checkErrors(link, account, false);
-            dllink = getDllink(link, account);
-        }
-        /* Do they support standard video embedding? */
-        if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed()) {
-            try {
-                logger.info("Trying to get link via embed");
-                dllink = requestFileInformationVideoEmbed(link, account, false);
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.info("FAILED to get link via embed");
-                } else {
-                    logger.info("Successfully found link via embed");
-                }
-            } catch (final Throwable e) {
-                e.printStackTrace();
-                logger.info("Failed to get link via embed");
-            }
-        }
-        /* Do they provide direct video URLs? */
-        if (StringUtils.isEmpty(dllink) && this.isVideohosterDirect()) {
-            /* Legacy - most XFS videohosts do not support this anymore! */
-            try {
-                logger.info("Trying to get link via vidembed");
-                final Browser brv = br.cloneBrowser();
-                getPage(brv, "/vidembed-" + fuid, false);
-                dllink = brv.getRedirectLocation();
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.info("Failed to get link via vidembed because: " + br.toString());
-                } else {
-                    logger.info("Successfully found link via vidembed");
-                }
-            } catch (final Throwable e) {
-                logger.info("Failed to get link via vidembed");
-            }
-        }
-        /* Do we have an imagehost? */
-        if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
-            checkErrors(link, account, false);
-            Form imghost_next_form = null;
+            int download1counter = 0;
+            final int download1max = 1;
             do {
-                imghost_next_form = findImageForm(this.br);
-                if (imghost_next_form != null) {
-                    /* end of backward compatibility */
-                    submitForm(imghost_next_form);
+                logger.info(String.format("Handling download1 loop %d / %d", download1counter + 1, download1max + 1));
+                /**
+                 * Try to find a downloadlink. Check different methods sorted from "usually available" to "rarely available" (e.g. there are
+                 * a lot of sites which support video embedding).
+                 */
+                dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                /* Check for streaming/direct links on the first page. */
+                if (StringUtils.isEmpty(dllink)) {
                     checkErrors(link, account, false);
                     dllink = getDllink(link, account);
-                    /* For imagehosts, filenames are often not given until we can actually see/download the image! */
-                    final String image_filename = regexImagehosterFilename(correctedBR);
-                    if (image_filename != null) {
-                        link.setName(Encoding.htmlOnlyDecode(image_filename));
+                }
+                /* Do they support standard video embedding? */
+                if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed()) {
+                    try {
+                        logger.info("Trying to get link via embed");
+                        dllink = requestFileInformationVideoEmbed(link, account, false);
+                        if (StringUtils.isEmpty(dllink)) {
+                            logger.info("FAILED to get link via embed");
+                        } else {
+                            logger.info("Successfully found link via embed");
+                        }
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                        logger.info("Failed to get link via embed");
                     }
                 }
-            } while (imghost_next_form != null);
-        }
-        /* Continue like normal */
-        if (StringUtils.isEmpty(dllink)) {
-            /*
-             * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and most
-             * likely end up with error "Fatal countdown error (countdown skipped)"
-             */
-            checkErrors(link, account, false);
-            final Form download1 = findFormDownload1Free();
-            if (download1 != null) {
-                /* end of backward compatibility */
-                submitForm(download1);
-                checkErrors(link, account, false);
-                dllink = getDllink(link, account);
-            }
+                /* Do they provide direct video URLs? */
+                if (StringUtils.isEmpty(dllink) && this.isVideohosterDirect()) {
+                    /* Legacy - most XFS videohosts do not support this anymore! */
+                    try {
+                        logger.info("Trying to get link via vidembed");
+                        final Browser brv = br.cloneBrowser();
+                        getPage(brv, "/vidembed-" + fuid, false);
+                        dllink = brv.getRedirectLocation();
+                        if (StringUtils.isEmpty(dllink)) {
+                            logger.info("Failed to get link via vidembed because: " + br.toString());
+                        } else {
+                            logger.info("Successfully found link via vidembed");
+                        }
+                    } catch (final Throwable e) {
+                        logger.info("Failed to get link via vidembed");
+                    }
+                }
+                /* Do we have an imagehost? */
+                if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
+                    checkErrors(link, account, false);
+                    Form imghost_next_form = null;
+                    do {
+                        imghost_next_form = findImageForm(this.br);
+                        if (imghost_next_form != null) {
+                            /* end of backward compatibility */
+                            submitForm(imghost_next_form);
+                            checkErrors(link, account, false);
+                            dllink = getDllink(link, account);
+                            /* For imagehosts, filenames are often not given until we can actually see/download the image! */
+                            final String image_filename = regexImagehosterFilename(correctedBR);
+                            if (image_filename != null) {
+                                link.setName(Encoding.htmlOnlyDecode(image_filename));
+                            }
+                        }
+                    } while (imghost_next_form != null);
+                }
+                /* Check for errors and download1 Form. Only execute this once! */
+                if (StringUtils.isEmpty(dllink) && download1counter == 0) {
+                    /*
+                     * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it
+                     * and most likely end up with error "Fatal countdown error (countdown skipped)"
+                     */
+                    checkErrors(link, account, false);
+                    final Form download1 = findFormDownload1Free();
+                    if (download1 != null) {
+                        logger.info("Found download1 Form");
+                        submitForm(download1);
+                        checkErrors(link, account, false);
+                        dllink = getDllink(link, account);
+                    } else {
+                        logger.info("Failed to find download1 Form");
+                    }
+                }
+                download1counter++;
+            } while (download1counter <= download1max);
         }
         if (StringUtils.isEmpty(dllink)) {
             Form dlForm = findFormDownload2Free();
@@ -1337,12 +1345,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(link, account, false);
                 /* Okay we finally have no idea what happened ... */
-                logger.warning("Failed to find F1 dlForm via findFormF1");
+                logger.warning("Failed to find download2 Form");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            logger.info("Found download1 Form");
             /* Define how many forms deep do we want to try? */
-            int repeat = 2;
-            for (int i = 0; i <= repeat; i++) {
+            final int download2max = 2;
+            for (int download2counter = 0; download2counter <= download2max; download2counter++) {
+                logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 if (isPasswordProtectedHTM()) {
@@ -1375,7 +1385,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 checkErrors(link, account, true);
                 dllink = getDllink(link, account);
                 final boolean dlformIsThere = findFormDownload2Free() != null;
-                if (StringUtils.isEmpty(dllink) && (!dlformIsThere || i == repeat)) {
+                if (StringUtils.isEmpty(dllink) && (!dlformIsThere || download2counter == download2max)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (StringUtils.isEmpty(dllink) && dlformIsThere) {
@@ -1469,61 +1479,58 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* E.g. in availablecheck */
             return filesizeStr;
         }
-        if (targetHTML == null) {
+        if (targetHTML == null || videoQualityStr == null || videoHash == null) {
             if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
                 /* This should never happen */
                 logger.info(String.format("Failed to find officially downloadable video quality although there are %d qualities available", videoQualityHTMLs.length));
             }
             return null;
         }
-        if (targetHTML != null) {
-            try {
-                /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
-                this.waitTime(link, System.currentTimeMillis());
-                final Browser brc = br.cloneBrowser();
+        try {
+            /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
+            this.waitTime(link, System.currentTimeMillis());
+            final Browser brc = br.cloneBrowser();
+            /*
+             * TODO: Fix issue where first request leads to '<br><b class="err">Security error</b>' (reproduced over multiple filehosts e.g.
+             * xvideosharing.com)
+             */
+            getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
+            /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
+            final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
+            if (download1 != null) {
+                this.submitForm(brc, download1);
                 /*
-                 * TODO: Fix issue where first request leads to '<br><b class="err">Security error</b>' (reproduced over multiple filehosts
-                 * e.g. xvideosharing.com)
+                 * 2019-08-29: TODO: A 'checkErrors' is supposed to be here but at the moment not possible if we do not use our 'standard'
+                 * browser
                  */
-                getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
-                /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
-                final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
-                if (download1 != null) {
-                    this.submitForm(brc, download1);
-                    /*
-                     * 2019-08-29: TODO: A 'checkErrors' is supposed to be here but at the moment not possible if we do not use our
-                     * 'standard' browser
-                     */
-                }
-                /*
-                 * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g.
-                 * for streaming URLs) which are completely useless here.
-                 */
-                dllink = this.getDllink(link, account, brc, brc.toString());
-                if (StringUtils.isEmpty(dllink)) {
-                    /* 2019-05-30: Test - worked for: xvideosharing.com */
-                    dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    /* 2019-08-29: Test - worked for: deltabit.co */
-                    dllink = regexVideoStreamDownloadURL(brc.toString());
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.info("Failed to find final downloadurl");
-                }
-            } catch (final Throwable e) {
-                e.printStackTrace();
-                logger.warning("Official video download failed: Exception occured");
-                /*
-                 * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for
-                 * us.
-                 */
+            }
+            /*
+             * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g. for
+             * streaming URLs) which are completely useless here.
+             */
+            dllink = this.getDllink(link, account, brc, brc.toString());
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2019-05-30: Test - worked for: xvideosharing.com */
+                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find dllink via official video download");
-            } else {
-                logger.info("Successfully found dllink via official video download");
+                /* 2019-08-29: Test - worked for: deltabit.co */
+                dllink = regexVideoStreamDownloadURL(brc.toString());
             }
+            if (StringUtils.isEmpty(dllink)) {
+                logger.info("Failed to find final downloadurl");
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            logger.warning("Official video download failed: Exception occured");
+            /*
+             * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for us.
+             */
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+        } else {
+            logger.info("Successfully found dllink via official video download");
         }
         return dllink;
     }
@@ -2227,17 +2234,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
-     * which is based on fuid. 2019-06-12: TODO: Review this, check if this is still required for ANY XFS host!
+     * which is based on fuid. 2019-06-12: TODO: Review this, check if this is still required for ANY XFS host! --> 2020-01-22: Yes it is
+     * e.g. filejoker.net
      *
      * @version 0.4
      * @author raztoki
      */
     protected void fixFilename(final DownloadLink downloadLink) {
+        /* TODO: Maybe make use of already given methods to e.g. extract filename without extension from String. */
+        /* Previous (e.h. html) filename without extension */
         String orgName = null;
-        String orgExt = null;
+        /* Server filename without extension */
         String servName = null;
+        /* Server filename with extension */
         String servExt = null;
+        /* Either final filename from previous download attempt or filename found in HTML. */
         String orgNameExt = downloadLink.getFinalFileName();
+        /* Extension of orgNameExt */
+        String orgExt = null;
         if (StringUtils.isEmpty(orgNameExt)) {
             orgNameExt = downloadLink.getName();
         }
@@ -2247,6 +2261,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (!StringUtils.isEmpty(orgExt)) {
             orgName = new Regex(orgNameExt, "(.+)" + Pattern.quote(orgExt)).getMatch(0);
         } else {
+            /* No extension given */
             orgName = orgNameExt;
         }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
@@ -2255,25 +2270,33 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
             servName = new Regex(servNameExt, "(.+)" + Pattern.quote(servExt)).getMatch(0);
         } else {
+            /* No extension given */
             servName = servNameExt;
         }
         final String FFN;
         if (StringUtils.equalsIgnoreCase(orgName, fuid)) {
+            /* Current filename only consists of fuid --> Prefer full server filename */
             FFN = servNameExt;
-            logger.info("fixFileName(1): before=" + orgNameExt + "|after=" + FFN);
+            logger.info("fixFileName case 1: orgName == fuid --> Use servNameExt");
         } else if (StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && (StringUtils.containsIgnoreCase(servName, orgName) && !StringUtils.equalsIgnoreCase(servName, orgName))) {
             /*
-             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             * When partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             * --> Prefer server filename
              */
             FFN = servNameExt;
-            logger.info("fixFileName(2): before=" + orgNameExt + "|after=" + FFN);
+            logger.info("fixFileName case 2: previous filename had no extension given && servName contains orgName while servName != orgName --> Use servNameExt");
         } else if (!StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && !StringUtils.equalsIgnoreCase(orgExt, servExt)) {
+            /*
+             * Current filename has extension given but server filename has other extension --> Swap extensions, trust the name we have but
+             * use extension from server
+             */
             FFN = orgName + servExt;
-            logger.info("fixFileName(3): before=" + orgNameExt + "|after=" + FFN);
+            logger.info(String.format("fixFileName case 3: Previous filename had no extension given && servName contains orgName while servName != orgName --> Use orgName + servExt | Old ext: %s | New ext: %s", orgExt, servExt));
         } else {
             FFN = orgNameExt;
-            logger.info("fixFileName(4): before=" + orgNameExt + "|after=" + FFN);
+            logger.info("fixFileName case 4: Use orgNameExt");
         }
+        logger.info("fixFileName: before=" + orgNameExt + "|after=" + FFN);
         downloadLink.setFinalFileName(FFN);
     }
 
