@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -19,6 +23,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -27,11 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -318,6 +318,29 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        // final Form captchaForm = br.getFormByInputFieldPropertyKeyValue("name", "frmprotect");
+        // if (captchaForm != null) {
+        // final InputField captchaTypeField = captchaForm.getInputFieldByName("captchatype");
+        // if (captchaTypeField != null && "re".equalsIgnoreCase(captchaTypeField.getValue())) {
+        // /* reCaptchaV2 */
+        // final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+        // }
+        // }
+        handleCaptcha_oldStyle(param);
+        String plaintext = br.getRegex("<textarea class=\"link_textarea trurl form-control2\"(.*?)</textarea>").getMatch(0);
+        if (plaintext == null) {
+            /* Fallback */
+            logger.info("Failed to find plaintext --> Use complete html as fallback");
+            plaintext = br.toString();
+        }
+        String[] urls = HTMLParser.getHttpLinks(plaintext, "");
+        for (final String url : urls) {
+            if (new Regex(url, this.getSupportedLinks()).matches()) {
+                /* Skip URLs that would go back into this crawler */
+                continue;
+            }
+            decryptedLinks.add(this.createDownloadlink(url));
+        }
         // shortlink i assume
         if (parameter.matches(regexLinkShort())) {
             String newparameter = br.getRedirectLocation();
@@ -345,7 +368,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         if (parameter.matches(regexLinkD())) {
             decryptedLinks.add(decryptSingleLink(br));
         } else {
-            handleCaptcha(param);
+            handleCaptcha_oldStyle(param);
             decryptedLinks.addAll(decryptMultipleLinks(param));
         }
         if (decryptedLinks.isEmpty()) {
@@ -467,7 +490,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     }
 
     protected String regexCaptchaRecaptcha() {
-        return "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+        return "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|id=\"captchatype\" value=\"Re\")";
     }
 
     protected String regexCaptchaBasic() {
@@ -494,7 +517,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         return "\"https?://[^/]*" + regexSupportedDomains() + "/includes/captcha_factory/catsdogs/catdogcaptcha\\.php\\?";
     }
 
-    protected void handleCaptcha(final CryptedLink param) throws Exception {
+    protected void handleCaptcha_oldStyle(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
         LinkedHashMap<String, String> captchaRegex = new LinkedHashMap<String, String>();
         captchaRegex.put("solvemedia", regexCaptchaSolveMedia());
@@ -512,7 +535,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             boolean password = formInputFieldContainsProperties(protectedForm, formPasswordInputProperties());
             prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
             final int repeat = 5;
+            int timesNoCaptcha = 0;
+            final int timesNoCaptchaLimit = 1;
             for (int i = 0; i < repeat; i++) {
+                if (timesNoCaptcha > timesNoCaptchaLimit) {
+                    /* Fail-safe */
+                    logger.info("Too many times no captcha --> Stepping out of captcha loop --> Possible plugin failure");
+                    break;
+                }
                 while (protectedForm.hasInputFieldByName("%5C")) {
                     protectedForm.remove("%5C");
                 }
@@ -557,15 +587,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         break;
                     }
                 case 2: {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.parse();
-                    rc.load();
-                    File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode(cfRe, param);
-                    /* Sometimes that field already exists containing the value "manuel_challenge" */
-                    protectedForm.remove("recaptcha_response_field");
-                    protectedForm.put("recaptcha_challenge_field", rc.getChallenge());
-                    protectedForm.put("recaptcha_response_field", Encoding.urlEncode(code));
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    protectedForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     break;
                 }
                 case 3: {
@@ -603,7 +626,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 case 9:
                 case 10:
                 case 11: {
-                    // kprotector.com, click to proceed step, prior to captcha. && keeplinks also though not in submit value
+                    timesNoCaptcha++;
+                    // no captcha or pre-captcha-Form: kprotector.com, click to proceed step, prior to captcha. && keeplinks also though not
+                    // in submit value
                     if (protectedForm.getInputFieldByType("button") != null && ("Click+To+Proceed".equals(protectedForm.getInputFieldByType("button").getValue()) || protectedForm.containsHTML(">\\s*Click To Proceed\\s*</button>"))) {
                         submitForm(protectedForm);
                         protectedForm = formProtected();
@@ -655,12 +680,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         if (i + 1 > repeat) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
+                        logger.info("Wrong captcha");
                         prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
                         continue;
                     }
                 }
                 break;
             }
+            /* TODO: Add check for invalid captcha */
         }
     }
 
@@ -737,7 +764,11 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     }
 
     protected Form formProtected() {
-        final Form f = br.getFormbyProperty("id", "protected-form");
+        Form f = br.getFormbyProperty("id", "protected-form");
+        if (f == null) {
+            /* 2020-01-24 */
+            f = br.getFormByInputFieldPropertyKeyValue("name", "frmprotect");
+        }
         return f;
     }
 
