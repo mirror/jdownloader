@@ -21,6 +21,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,11 +42,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|([^/]+/)?artworks/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|(?:[a-z]{2}/)?artworks/\\d+|(?:[a-z]{2}/)?users/\\d+/artworks)" })
 public class PixivNet extends PluginForDecrypt {
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -239,6 +239,13 @@ public class PixivNet extends PluginForDecrypt {
             }
         } else {
             /* Decrypt user */
+            if (lid == null) {
+                /* 2020-01-27 */
+                lid = new Regex(parameter, "users/(\\d+)").getMatch(0);
+            }
+            if (lid == null) {
+                return null;
+            }
             br.getPage(parameter);
             fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?)(?:\\s*\\[pixiv\\])?\">").getMatch(0);
             if (fpName == null) {
@@ -255,50 +262,45 @@ public class PixivNet extends PluginForDecrypt {
             int numberofitems_found_on_current_page = 0;
             final int max_numbeofitems_per_page = 20;
             int page = 0;
+            /* 2020-01-27: Ajax is also used for non-loggedin users! */
+            final boolean useNewMethod2020 = true;
             do {
-                if (this.isAbort()) {
-                    break;
-                }
                 final HashSet<String> dups = new HashSet<String>();
-                if (loggedIn) {
+                if (loggedIn || useNewMethod2020) {
                     final Browser brc = br.cloneBrowser();
                     brc.setLoadLimit(5 * 1024 * 1024);
-                    brc.getPage("https://www.pixiv.net/ajax/user/" + lid + "/profile/all");
+                    brc.getPage("https://www." + br.getHost() + "/ajax/user/" + lid + "/profile/all");
                     final java.util.Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                    if (map != null) {
-                        final java.util.Map<String, Object> body = (Map<String, Object>) map.get("body");
-                        if (body != null) {
-                            final java.util.Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
-                            if (illusts != null) {
-                                for (Map.Entry<String, Object> entry : illusts.entrySet()) {
-                                    if (this.isAbort()) {
-                                        break;
-                                    }
-                                    final String galleryID = entry.getKey();
-                                    if (dups.add(galleryID)) {
-                                        final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
-                                        decryptedLinks.add(dl);
-                                        distribute(dl);
-                                    }
-                                }
-                            }
-                            final java.util.Map<String, Object> manga = (Map<String, Object>) body.get("manga");
-                            if (manga != null) {
-                                for (Map.Entry<String, Object> entry : manga.entrySet()) {
-                                    if (this.isAbort()) {
-                                        break;
-                                    }
-                                    final String galleryID = entry.getKey();
-                                    if (dups.add(galleryID)) {
-                                        final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
-                                        decryptedLinks.add(dl);
-                                        distribute(dl);
-                                    }
-                                }
-                            }
-                        }
+                    if (map == null) {
                         break;
                     }
+                    final java.util.Map<String, Object> body = (Map<String, Object>) map.get("body");
+                    if (body == null) {
+                        break;
+                    }
+                    final java.util.Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
+                    if (illusts != null) {
+                        for (Map.Entry<String, Object> entry : illusts.entrySet()) {
+                            final String galleryID = entry.getKey();
+                            if (dups.add(galleryID)) {
+                                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                                decryptedLinks.add(dl);
+                                distribute(dl);
+                            }
+                        }
+                    }
+                    final java.util.Map<String, Object> manga = (Map<String, Object>) body.get("manga");
+                    if (manga != null) {
+                        for (Map.Entry<String, Object> entry : manga.entrySet()) {
+                            final String galleryID = entry.getKey();
+                            if (dups.add(galleryID)) {
+                                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
+                                decryptedLinks.add(dl);
+                                distribute(dl);
+                            }
+                        }
+                    }
+                    break;
                 }
                 if (page > 0) {
                     br.getPage(String.format("/member_illust.php?id=%s&type=all&p=%s", lid, Integer.toString(page)));
@@ -326,7 +328,7 @@ public class PixivNet extends PluginForDecrypt {
                 }
                 numberofitems_found_on_current_page = links.length;
                 page++;
-            } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page);
+            } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && !this.isAbort());
         }
         if (fpName == null) {
             fpName = lid;
