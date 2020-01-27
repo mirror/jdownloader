@@ -225,8 +225,8 @@ public class PremiumTo extends UseNet {
                     } catch (final Exception e) {
                         /* E.g. API logindata has changed */
                         if (username_and_pw_is_userid_and_apikey) {
-                            /* No need to try anything. User initially entered userid + apikey as username & password --> */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
+                            /* Probably wrong logindata. */
+                            loginFailure();
                         }
                         logger.log(e);
                         logger.info("Login via apikey failed, trying via username + password");
@@ -241,11 +241,7 @@ public class PremiumTo extends UseNet {
                 final boolean login_via_username_and_password_possible = true;
                 final boolean logindata_looks_like_api_logindata = new Regex(account.getUser(), Pattern.compile("[a-z0-9]+", Pattern.CASE_INSENSITIVE)).matches() && new Regex(account.getPass(), Pattern.compile("[a-z0-9]{32}", Pattern.CASE_INSENSITIVE)).matches();
                 if (!login_via_username_and_password_possible && !logindata_looks_like_api_logindata) {
-                    if (System.getProperty("user.language").equals("de")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername/Passwort!\r\nBitte verwende die extra für JDownloader zur Verfügung gestellten API Zugangsdaten.\r\nDiese findest du hier:\r\npremium.to Webseite --> Account Tab\r\n--> 'JDownloader username / API userid' UND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password!\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab\r\n--> 'JDownloader username / API userid' AND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    loginFailure();
                 }
                 logger.info("Logging in with username + password");
                 br.getPage(API_BASE + "/getapicredentials.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
@@ -259,11 +255,7 @@ public class PremiumTo extends UseNet {
                     apikey = account.getPass();
                 }
                 if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) {
-                    if (System.getProperty("user.language").equals("de")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername/Passwort!\r\nBitte verwende die extra für JDownloader zur Verfügung gestellten API Zugangsdaten.\r\nDiese findest du hier:\r\npremium.to Webseite --> Account Tab\r\n--> 'JDownloader username / API userid' UND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password!\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab\r\n--> 'JDownloader username / API userid' AND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    loginFailure();
                 }
                 /* Save API logindata */
                 account.setProperty(PROPERTY_APIKEY, apikey);
@@ -279,6 +271,14 @@ public class PremiumTo extends UseNet {
                 }
                 throw e;
             }
+        }
+    }
+
+    private void loginFailure() throws PluginException {
+        if (System.getProperty("user.language").equals("de")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername/Passwort!\r\nHast due die extra für JDownloader generierten Zugangsdaten eingegeben?\r\nBitte verwende die extra für JDownloader zur Verfügung gestellten API Zugangsdaten.\r\nDiese findest du hier:\r\npremium.to Webseite --> Account Tab\r\n--> 'JDownloader username / API userid' UND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password!\r\nDid you enter the logindata which was especially generated for JDownloader?\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab\r\n--> 'JDownloader username / API userid' AND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
