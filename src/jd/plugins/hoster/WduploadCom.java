@@ -218,70 +218,107 @@ public class WduploadCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    public void login(Browser brlogin, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
+                brlogin.setFollowRedirects(true);
+                brlogin.setCookiesExclusive(true);
                 if (useWebAPI) {
                     /* 2020-01-20: New */
                     String token = account.getStringProperty("logintoken", null);
                     final Cookies cookies = account.loadCookies("");
                     if (cookies != null && token != null) {
-                        br.setCookies(account.getHoster(), cookies);
-                        br.getHeaders().put("Authorization", "Bearer " + token);
-                        br.getHeaders().put("Content-Type", "application/json");
+                        brlogin.setCookies(account.getHoster(), cookies);
+                        brlogin.getHeaders().put("Authorization", "Bearer " + token);
+                        brlogin.getHeaders().put("Content-Type", "application/json");
                         this.getPage("http://wduphp." + this.getHost() + "/api/users/login-history?page_no=1&limit=10");
-                        if (br.toString().startsWith("{") && br.getHttpConnection().getResponseCode() == 200) {
+                        if (brlogin.toString().startsWith("{") && brlogin.getHttpConnection().getResponseCode() == 200) {
                             logger.info("Login via stored token was successful");
                             return;
                         }
                         logger.info("Login via stored token failed");
                         /* Drop old cookies & headers */
-                        br = new Browser();
+                        brlogin = new Browser();
                     }
                     /* 2020-01-20: TODO: Check for login captcha. Currently website will ask for it but it can be skipped! */
-                    this.getPage("http://www." + this.getHost() + "/login");
+                    this.getPage(brlogin, "http://www." + this.getHost() + "/login");
                     final String postData = String.format("{\"email\":\"%s\",\"password\":\"%s\"}", account.getUser(), account.getPass());
-                    this.postPageRaw("http://wduphp." + this.getHost() + "/api/auth/login", postData, true);
-                    final String success = PluginJSonUtils.getJson(br, "success");
-                    token = PluginJSonUtils.getJson(br, "token");
+                    this.postPageRaw(brlogin, "http://wduphp." + this.getHost() + "/api/auth/login", postData, true);
+                    final String success = PluginJSonUtils.getJson(brlogin, "success");
+                    token = PluginJSonUtils.getJson(brlogin, "token");
                     if (!"true".equalsIgnoreCase(success) || StringUtils.isEmpty(token)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     account.setProperty("logintoken", token);
-                    br.getHeaders().put("Authorization", "Bearer " + token);
+                    brlogin.getHeaders().put("Authorization", "Bearer " + token);
                 } else {
                     final Cookies cookies = account.loadCookies("");
-                    if (cookies != null && !force) {
-                        br.setCookies(account.getHoster(), cookies);
-                        return;
+                    if (cookies != null) {
+                        logger.info("Attempting cookie login");
+                        brlogin.setCookies(account.getHoster(), cookies);
+                        getPage(brlogin, "https://www." + getHost() + "/me");
+                        if (brlogin.getCookie(brlogin.getHost(), "userdata", Cookies.NOTDELETEDPATTERN) != null) {
+                            logger.info("Login via stored cookies successful");
+                            account.saveCookies(brlogin.getCookies(account.getHoster()), "");
+                            return;
+                        }
+                        logger.info("Login via stored cookies failed");
+                        /* Perform full login */
                     }
-                    getPage("https://www." + getHost());
+                    logger.info("Performing full login");
+                    getPage(brlogin, "https://www." + getHost() + "/user/login");
                     final boolean use_static_access_token = false;
                     final String access_token;
                     if (use_static_access_token) {
                         /* 2018-10-19 */
                         access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
                     } else {
-                        getPage("https://www." + account.getHoster() + "/java/mycloud.js");
-                        access_token = br.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+                        getPage(brlogin, "https://www." + account.getHoster() + "/java/mycloud.js");
+                        access_token = brlogin.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
                     }
                     if (StringUtils.isEmpty(access_token)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    br.getHeaders().put("Origin", "https://www." + account.getHoster());
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    postPage(br, "https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1");
-                    final String result = PluginJSonUtils.getJson(br, "result");
-                    String userdata = PluginJSonUtils.getJson(br, "doz");
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    String recaptchaV2Response = null;
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        /* 2020-01-27: New and always required */
+                        String reCaptchaKey = brlogin.getRegex("class=\"g-recaptcha\" data-sitekey=\"([^\"]+)\"").getMatch(0);
+                        if (reCaptchaKey == null) {
+                            /* 2020-01-27 */
+                            logger.info("Falling back to static reCaptchaV2 key");
+                            reCaptchaKey = "6Lc0vNIUAAAAAPs7i05tOzupSGG2ikUHobmDoZJa";
+                        }
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brlogin, reCaptchaKey).getToken();
+                    } catch (final Throwable e) {
+                        logger.info("Possible login captcha failure");
+                        e.printStackTrace();
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    brlogin.getHeaders().put("Origin", "https://www." + account.getHoster());
+                    brlogin.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    String postData = "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1";
+                    if (recaptchaV2Response != null) {
+                        postData += "&captcha=" + Encoding.urlEncode(recaptchaV2Response);
+                    }
+                    postPage(brlogin, "https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, postData);
+                    final String result = PluginJSonUtils.getJson(brlogin, "result");
+                    String userdata = PluginJSonUtils.getJson(brlogin, "doz");
                     if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     userdata = URLEncode.encodeURIComponent(userdata);
-                    br.setCookie(br.getHost(), "userdata", userdata);
+                    brlogin.setCookie(brlogin.getHost(), "userdata", userdata);
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(brlogin.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -340,7 +377,9 @@ public class WduploadCom extends antiDDoSForHost {
                 ai.setTrafficMax(trafficMax);
             }
         } else {
-            getPage("/me");
+            if (!br.getURL().endsWith("/me")) {
+                getPage("/me");
+            }
             final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>\\s*([^<>]+)\\s*</span>").getMatch(0);
             /* E.g. Lifetime Free Account */
             if (accounttype == null || accounttype.contains("Free")) {

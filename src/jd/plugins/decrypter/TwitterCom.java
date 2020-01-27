@@ -225,6 +225,9 @@ public class TwitterCom extends PornEmbedParser {
             }
         } else {
             /* All posts / reposts / media of a user */
+            if (!br.getURL().endsWith("/media")) {
+                br.getPage(br.getURL() + "/media");
+            }
             final String twitter_reload_url_format;
             if (parameter.endsWith("/media")) {
                 twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + username + "/media_timeline?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
@@ -238,10 +241,6 @@ public class TwitterCom extends PornEmbedParser {
             String maxid = br.getRegex("data\\-min\\-position=\"(\\d+)\"").getMatch(0);
             DownloadLink dl = null;
             do {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted at reload " + reloadNumber);
-                    return decryptedLinks;
-                }
                 if (reloadNumber == 1) {// For testing only!
                     // break;
                 }
@@ -352,6 +351,9 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 if (addedlinks_all == 0 || maxid == null) {
                     break;
+                } else if (this.isAbort()) {
+                    logger.info("Decryption aborted at reload " + reloadNumber);
+                    return decryptedLinks;
                 }
                 getPage(String.format(twitter_reload_url_format, maxid));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));

@@ -30,18 +30,29 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzcloud.me", "myzuka.club" }, urls = { "https?://(?:www\\.)?myzcloud\\.(?:me|pro)/(?:[a-z]{2}/)?Album/(\\d+)", "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/(?:[a-z]{2}/)?Album/(\\d+)" })
-public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
-    public MyzukaRuDecrypter(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzcloud.me", "myzuka.club" }, urls = { "https?://(?:www\\.)?myzcloud\\.(?:me|pro)/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?", "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?" })
+public class MyzcloudMe extends antiDDoSForDecrypt {
+    public MyzcloudMe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced https */
-        final String parameter = "https://" + getHost() + "/Album/" + new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+        final String parameter = param.toString().replace("http://", "https://");
         br.setFollowRedirects(true);
         getPage(parameter);
+        final String albumID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        String url_title = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        if (url_title != null) {
+            /* Make this title nicer */
+            url_title = url_title.replace("/", "");
+            final String year = new Regex(url_title, "(\\d{4})").getMatch(0);
+            if (year != null) {
+                url_title = url_title.replace("-", " ");
+                url_title = url_title.replace(year, "(" + year + ")");
+            }
+        }
         /* offline|abused */
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Альбом удален по просьбе правообладателя")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
@@ -54,16 +65,18 @@ public class MyzukaRuDecrypter extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String fpName = br.getRegex("<h1 class=\"green\">([^<>\"]*?)</h1>").getMatch(0);
+        String fpName = br.getRegex("class=\"content__title\"><h1>([^<>\"]+)<").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            /* Fallback */
+            fpName = url_title;
         }
         if (fpName == null) {
-            fpName = new Regex(br.getURL(), this.getSupportedLinks()).getMatch(0);
+            /* Final fallback */
+            fpName = albumID;
         }
         for (final String singleLink : info) {
-            final String url = new Regex(singleLink, "href=\"(/Song/\\d+/[^<>\"/]+)\"").getMatch(0);
-            final String title = new Regex(singleLink, "href=\"/Song/\\d+/[^<>\"/]+\">([^<>\"]*?)<").getMatch(0);
+            final String url = new Regex(singleLink, "(/Song/\\d+/[^<>]+)\"").getMatch(0);
+            final String title = new Regex(singleLink, "href=\"[^\"]*?Song/\\d+/[^<>]+\">([^<>\"]*?)<").getMatch(0);
             final String artist = new Regex(singleLink, "data-artist=\"([^<>\"]+)\"").getMatch(0);
             String filesize = new Regex(singleLink, "class=\"time\">([^<>\"]*?)<").getMatch(0);
             if (url == null || title == null) {
