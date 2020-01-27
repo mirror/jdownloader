@@ -192,7 +192,6 @@ public class InCloudDriveCom extends antiDDoSForHost {
                     break;
                 }
             }
-            //
             br.setFollowRedirects(false);
             getPage(Encoding.urlDecode(dlserver, false) + "download.php?accesstoken=" + token);
             dllink = br.getRedirectLocation();
@@ -271,6 +270,7 @@ public class InCloudDriveCom extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedIN = false;
                 if (cookies != null) {
@@ -278,11 +278,19 @@ public class InCloudDriveCom extends antiDDoSForHost {
                      * 2019-12-27: re-use cookies whenever possible. Too many full logins may cause this:
                      * {"result":"error","message":"Your account is blocked due to security reason."}
                      */
+                    logger.info("Attempting to re-use cookies");
                     br.setCookies(this.getHost(), cookies);
-                    getPage("https://" + this.getHost() + "/mycloud");
-                    loggedIN = isLoggedIN();
+                    getPage("https://www." + this.getHost() + "/mycloud");
+                    if (isLoggedIN()) {
+                        logger.info("Successfully re-used cookies");
+                        loggedIN = true;
+                    } else {
+                        logger.info("Failed to re-use cookies");
+                        loggedIN = false;
+                    }
                 }
                 if (!loggedIN) {
+                    logger.info("Performing full login");
                     br.setFollowRedirects(false);
                     getPage("https://www." + this.getHost() + "/user/login");
                     final String js = br.cloneBrowser().getPage("/java/mycloud.js");

@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,10 +37,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadfiles.io" }, urls = { "https?://(?:www\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
 public class UploadfilesIo extends antiDDoSForHost {
@@ -51,15 +53,19 @@ public class UploadfilesIo extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        return "://" + this.getHost() + this.getFID(link);
+    }
+
+    private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXCHUNKS               = -5;
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -5;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
@@ -73,14 +79,11 @@ public class UploadfilesIo extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>Uploadfiles\\.io \\- Download ([^<>\"]*?)(?: for free)?</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"Uploadfiles\\.io \\- ([^<>\"]*?)(?: for free)?\"").getMatch(0);
-        }
-        String filesize = br.getRegex("Size: (\\d+[^<>\"]+)").getMatch(0);
+        String filename = br.getRegex("class=\"file-name\">([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex("File Size\\s*:([^<>\"]+)").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */
-            filename = this.getLinkID(link);
+            filename = this.getFID(link);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
@@ -96,18 +99,32 @@ public class UploadfilesIo extends antiDDoSForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (br.containsHTML(">Premium Access Only")) {
                 throw new AccountRequiredException();
             }
-            dllink=br.getRegex("(https?://[a-z0-9\\-]+\\.(uploadfiles|ufile).io/get/[a-zA-Z0-9]+)").getMatch(0);
+            final String fileID = this.getFID(link);
+            final String csrftest = br.getRegex("name=\"csrf_test_name\" value=\"([a-f0-9]+)\"").getMatch(0);
+            if (csrftest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* 2020-01-27: They've added reCaptchaV2 (invisible) */
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            String postData = "csrf_test_name=" + csrftest + "&slug=" + fileID + "&token=" + Encoding.urlEncode(recaptchaV2Response);
+            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            br.postPage("/ajax/generate_download/", postData);
+            if (!br.toString().startsWith("\"http")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = PluginJSonUtils.unescape(br.toString().replace("\"", ""));
             if (StringUtils.isEmpty(dllink)) {
+                logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -116,7 +133,7 @@ public class UploadfilesIo extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 

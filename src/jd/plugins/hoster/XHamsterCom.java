@@ -24,6 +24,13 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,6 +45,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
@@ -49,14 +57,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.(com|xxx|desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx|desi)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.(?:com|xxx|desi|one)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx|desi|one)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -103,8 +104,8 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.(?:com|xxx|desi)/.+";
-    private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx|desi)/(?:x?embed\\.php\\?video=|embed/)\\d+$";
+    private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.+";
+    private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.[^/]+/(?:x?embed\\.php\\?video=|embed/)\\d+$";
     private static final String NORESUME       = "NORESUME";
     private static Object       ctrlLock       = new Object();
     private final String        recaptchav2    = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
@@ -607,6 +608,7 @@ public class XHamsterCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBr();
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.getPage("https://" + account.getHoster() + "/");
@@ -626,7 +628,6 @@ public class XHamsterCom extends PluginForHost {
                     /* Reset Browser */
                     br.clearCookies(null);
                 }
-                br.setFollowRedirects(true);
                 br.getPage("https://xhamster.com/login");
                 final String currentDomain = br.getHost();
                 if (htmlIsOldDesign(br)) {
@@ -760,8 +761,24 @@ public class XHamsterCom extends PluginForHost {
             login(account, true);
         }
         ai.setUnlimitedTraffic();
-        ai.setStatus("Free Account");
-        account.setProperty("free", true);
+        br.getPage("https://xhamster.com/premium/out?xhMedium=button");
+        final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+; url=(https[^<>\"]+)").getMatch(0);
+        if (redirect != null) {
+            /* --> 'xhamsterpremium.com/auth/xhamster-auth?login=<username>&signature=sig' */
+            br.getPage(redirect);
+            if (br.getRedirectLocation() != null) {
+                /* --> 'gold.xhamsterpremium.com/?utm_campaign=guest&utm_content=mainpage&utm_medium=button&utm_source=xhamster' */
+                br.getPage(br.getRedirectLocation());
+            }
+        }
+        if (br.getURL().contains("/join")) {
+            /* E.g. https://gold.xhamsterpremium.com/join?utm_campaign=user&utm_content=landingpage&utm_medium=button&utm_source=xhamster */
+            ai.setStatus("Free Account");
+            account.setType(AccountType.FREE);
+        } else {
+            ai.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
+        }
         return ai;
     }
 
@@ -800,18 +817,5 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 }
