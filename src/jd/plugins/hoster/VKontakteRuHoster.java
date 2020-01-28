@@ -110,7 +110,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKPHOTO_CORRECT_FINAL_LINKS                                                 = "VKPHOTO_CORRECT_FINAL_LINKS";
     public static final String  VKWALL_USE_API                                                              = "VKWALL_USE_API_2019_07";
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS                                             = "VKWALL_STORE_PICTURE_DIRECTURLS";
-    public static final String  VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY                                  = "VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY";
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT";
     /* html patterns */
     public static final String  HTML_VIDEO_NO_ACCESS                                                        = "NO_ACCESS";
@@ -384,13 +383,53 @@ public class VKontakteRuHoster extends PluginForHost {
                 finalUrl = link.getStringProperty(PROPERTY_picturedirectlink, null);
                 String dllink_temp = null;
                 if (finalUrl == null) {
-                    final String photo_list_id = link.getStringProperty("photo_list_id", null);
+                    String photo_list_id = link.getStringProperty("photo_list_id", null);
                     final String module = link.getStringProperty("photo_module", null);
                     final String photoID = getPhotoID(link);
-                    if (module != null && photo_list_id != null) {
-                        /* Access photo inside wall-post */
+                    if (module != null) {
+                        /* Access photo inside wall-post or qwall reply or photo album */
+                        if (photo_list_id == null) {
+                            photo_list_id = "";
+                        }
                         setHeadersPhoto(this.br);
-                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&al_ad=0&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
+                        int photo_counter = 0;
+                        boolean photo_list_id_workaround_failed = false;
+                        do {
+                            photo_counter++;
+                            if (photo_counter > 1) {
+                                photo_list_id_workaround_failed = true;
+                                /*
+                                 * 2020-01-28: Some content needs a photo_list_id which is generated when accessing the html page so this
+                                 * can be seen as a workaround but sometimes it is mandatory!
+                                 */
+                                final String content_url = link.getContentUrl();
+                                if (content_url == null || !content_url.contains(photoID)) {
+                                    break;
+                                }
+                                if (content_url != null && content_url.contains(photoID)) {
+                                    logger.info("Attempting photo_list_id workaround");
+                                    this.getPageSafe(aa, link, content_url);
+                                    photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
+                                    if (photo_list_id == null) {
+                                        logger.warning("photo_list_id workaround failed");
+                                        break;
+                                    } else {
+                                        logger.warning("Successfully found new photo_list_id");
+                                        photo_list_id_workaround_failed = false;
+                                    }
+                                }
+                            }
+                            /*
+                             * 2020-01-27: Browser request would also contain "&dmcah=" - at least for items which came from walls
+                             * (module=wall)
+                             */
+                            String postData = String.format("act=show&al=1&al_ad=0&list=%s&module=%s&photo=%s", photo_list_id, module, photoID);
+                            postPageSafe(aa, link, getBaseURL() + "/al_photos.php", postData);
+                        } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
+                        if (photo_list_id_workaround_failed) {
+                            logger.warning("Failed to get photo because photo_list_id_workaround_failed");
+                            throw new AccountRequiredException();
+                        }
                         checkErrorsPhoto();
                     } else {
                         /* Access normal photo / photo inside album */
@@ -1385,11 +1424,18 @@ public class VKontakteRuHoster extends PluginForHost {
         return directurl;
     }
 
-    public static String getHighestQualityPicFromSavedJson(final String picture_preview_json) {
+    public static String getHighestQualityPicFromSavedJson(String picture_preview_json) {
         String dllink = null;
+        if (Encoding.isHtmlEntityCoded(picture_preview_json)) {
+            picture_preview_json = Encoding.htmlDecode(picture_preview_json);
+        }
         if (picture_preview_json != null) {
             try {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(picture_preview_json);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(picture_preview_json);
+                if (entries.containsKey("temp")) {
+                    /* 2020-01-28 */
+                    entries = (LinkedHashMap<String, Object>) entries.get("temp");
+                }
                 final String base = (String) entries.get("base");
                 final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 int qualityMax = 0;
@@ -1577,7 +1623,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                                                 = false;
     public static final boolean  default_VKWALL_USE_API                                                              = false;
     public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS                                             = false;
-    public static final boolean  default_VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY                                  = false;
     public static final String   default_user_agent                                                                  = UserAgents.stringUserAgent(BrowserName.Firefox);
     public static final long     defaultSLEEP_PAGINATION_GENERAL                                                     = 1000;
     public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO                                       = 1000;
@@ -1639,8 +1684,7 @@ public class VKontakteRuHoster extends PluginForHost {
         /* 2019-08-06: Disabled API setting for now as API requires authorization which we do not (yet) support! */
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(),
         // VKontakteRuHoster.VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, "For 'vk.com/wall' links: Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\n WARNING: This may use a lot of RAM!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY, "Crawl posts & comments separately?\r\nThis might increase speed in some constellations.").setDefaultValue(default_VKWALL_CRAWL_POSTS_AND_COMMENTS_SEPARATELY));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, "For 'vk.com/wall' links: Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_COMMUNITY_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationCommunityVideos", "Define sleep time for community videos pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO));
