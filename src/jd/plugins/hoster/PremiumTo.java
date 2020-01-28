@@ -297,11 +297,9 @@ public class PremiumTo extends UseNet {
         final long nT = Long.parseLong(PluginJSonUtils.getJson(br, "traffic"));
         /* Special traffic */
         final long spT = Long.parseLong(PluginJSonUtils.getJson(br, "specialtraffic"));
-        /* Storage traffic, 2019-04-17: According to admin, this type of traffic does not exist anymore(API will always return 0) */
-        final long stT = 0;
-        ac.setTrafficLeft(nT + spT + stT);
+        ac.setTrafficLeft(nT + spT);
         // set both so we can check in canHandle.
-        account.setProperty(normalTraffic, nT + stT);
+        account.setProperty(normalTraffic, nT);
         account.setProperty(specialTraffic, spT);
         if (nT > 0 && spT > 0) {
             additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
@@ -309,8 +307,6 @@ public class PremiumTo extends UseNet {
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
         ArrayList<String> supported_hosts_storage = new ArrayList<String>();
         try {
-            // br.setConnectTimeout(5 * 1000);
-            // br.setReadTimeout(5 * 1000);
             br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("hosts");
@@ -320,9 +316,8 @@ public class PremiumTo extends UseNet {
                 }
             }
         } catch (final Throwable e) {
+            logger.info("Failure to find regular supported hosts");
         } finally {
-            // br.setConnectTimeout(getReadTimeout());
-            // br.setReadTimeout(getConnectTimeout());
         }
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
@@ -584,14 +579,14 @@ public class PremiumTo extends UseNet {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, maxConnections);
             if (dl.getConnection().getResponseCode() == 404) {
-                /* file offline */
+                /* File offline */
                 dl.getConnection().disconnect();
-                mhm.handleErrorGeneric(account, link, "server_error_404", 2, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "server_error_404", 50, 5 * 60 * 1000l);
             }
             if (!dl.getConnection().isContentDisposition()) {
                 if (dl.getConnection().getResponseCode() == 420) {
                     dl.close();
-                    mhm.handleErrorGeneric(account, link, "server_error_420", 2, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, link, "server_error_420", 50, 5 * 60 * 1000l);
                 }
                 br.followConnection();
                 this.handleErrorsAPI(account, false);
@@ -606,16 +601,17 @@ public class PremiumTo extends UseNet {
                 } else if (br.containsHTML("Not enough traffic")) {
                     /*
                      * With our special traffic it's a bit complicated. When you still have a little Special Traffic but you have enough
-                     * standard traffic, it will show you "Not enough traffic" for the filehost Uploaded.net for example.
+                     * standard traffic which can be used for other filehosts, it will show you "Not enough traffic" for the filehost
+                     * Uploaded.net for example.
                      */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic to download from this host");
                 } else if (br.containsHTML("No premium account available")) {
-                    mhm.putError(account, link, 60 * 60 * 1000l, "No premium account available");
+                    mhm.putError(account, link, 3 * 60 * 1000l, "No premium account available");
                 }
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
-                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 2, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 3 * 60 * 1000l);
             }
             /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
             final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
@@ -766,6 +762,7 @@ public class PremiumTo extends UseNet {
             } else {
                 for (final Account acc : accs) {
                     login(acc, false);
+                    /* Pick first account */
                     return getDirecturlStatus(link, acc);
                 }
                 return AvailableStatus.UNCHECKABLE;
@@ -802,11 +799,12 @@ public class PremiumTo extends UseNet {
         } finally {
             try {
                 con.disconnect();
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
             }
         }
     }
 
+    /** Generates final downloadurl of files hosted on premium.to in user's accounts. */
     private String getDirectURL(final DownloadLink link, final Account account) {
         final String dllink;
         if (link.getPluginPatternMatcher().matches(type_storage_file)) {
