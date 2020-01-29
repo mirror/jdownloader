@@ -363,11 +363,17 @@ public class PremiumTo extends UseNet {
         real_supported_hosts_storage = ac.getMultiHostSupport();
         {
             /* Handling for Storage hosts */
-            final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
-            final boolean onlyAllowWhitelistedStorageHosts = config.isEnableStorageWhiteListing();
+            boolean onlyAllowWhitelistedStorageHosts = false;
+            String whitelistedStorageHostsCommaSeparated = null;
+            try {
+                /* 2020-01-29: Temp. workaround for ClassCastException see also: jdlog://6337230900751/ */
+                final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
+                onlyAllowWhitelistedStorageHosts = config.isEnableStorageWhiteListing();
+                whitelistedStorageHostsCommaSeparated = config.getWhitelistedStorageHosts();
+            } catch (final Throwable e) {
+            }
             if (onlyAllowWhitelistedStorageHosts) {
                 logger.info("User enabled whitelisting of Storage hosts");
-                final String whitelistedStorageHostsCommaSeparated = config.getWhitelistedStorageHosts();
                 if (!StringUtils.isEmpty(whitelistedStorageHostsCommaSeparated)) {
                     final String[] whitelistedHosts = whitelistedStorageHostsCommaSeparated.split(",");
                     for (final String whitelistedHost : whitelistedHosts) {
