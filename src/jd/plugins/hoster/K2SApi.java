@@ -1128,7 +1128,6 @@ public abstract class K2SApi extends PluginForHost {
                     if (subErrs != null) {
                         handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     }
-                    handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
                     /* 2020-01-29: {"status":"error","code":406,"message":"File is blocked","errorCode":22} */
