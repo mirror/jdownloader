@@ -26,6 +26,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -53,16 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -650,14 +650,14 @@ public class OneFichierCom extends PluginForHost {
         performAPIRequest(API_BASE + "/user/info.cgi", "");
         final AccountInfo ai = new AccountInfo();
         final String apierror = this.getAPIErrormessage();
-        final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: User Locked.*?");
+        final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: (User|IP) Locked.*?");
         if (apiTempBlocked) {
             if (account.lastUpdateTime() > 0) {
                 logger.info("Cannot get account details because of API limits but account has been checked before and is ok");
             } else {
                 /*
-                 * Account got added for the first time but API is blocked at the moment. We know the account must be premium but we cannot
-                 * get any information at the moment ...
+                 * Account got added for the first time but API is blocked at the moment. We know the account must be premium because only
+                 * premium users can generate APIKeys but we cannot get any information at the moment ...
                  */
                 logger.info("Cannot get account details because of API limits and account has never been checked before --> Adding account without info");
             }

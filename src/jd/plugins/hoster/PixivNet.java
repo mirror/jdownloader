@@ -258,7 +258,7 @@ public class PixivNet extends PluginForHost {
                 loginform.put("recaptcha_v3_token", recaptchaResponse);
                 br.submitForm(loginform);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
-                if (br.getCookie(account.getHoster(), "device_token") == null || "true".equals(error)) {
+                if (br.getCookie(account.getHoster(), "device_token", Cookies.NOTDELETEDPATTERN) == null || "true".equals(error)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -276,22 +276,27 @@ public class PixivNet extends PluginForHost {
     }
 
     public static boolean isLoggedIN(final Browser br) {
-        return br.containsHTML("logout\\.php");
+        return br.getCookie(br.getHost(), "device_token", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(this, this.br, account, true, true);
         ai.setUnlimitedTraffic();
+        /* 2020-01-29: There are different account types but they do not affect the download limits! */
+        if (br.containsHTML("premium\\s*:\\s*\\'yes\\'")) {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Account");
+        } else {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Account");
+        }
         /* 2017-02-06: So far there are only free accounts available for this host. */
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 

@@ -8,14 +8,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.http.Cookies;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -26,6 +18,14 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+
+import jd.PluginWrapper;
+import jd.http.Cookies;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenet.farm" }, urls = { "" })
 public class UseNetFarm extends UseNet {
@@ -154,7 +154,7 @@ public class UseNetFarm extends UseNet {
             if (br.getCookie(getHost(), "sessid") == null) {
                 account.clearCookies("");
                 if (!StringUtils.containsIgnoreCase(account.getPass(), "uuid") || !StringUtils.startsWithCaseInsensitive(account.getPass(), "http")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter the complete login URL!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter the complete login URL!\r\nIf you are using JD in Headless mode, enter your login URL in the username & password fields.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // login url
                 br.setAllowedResponseCodes(400);// Bad Request on invalid Login
