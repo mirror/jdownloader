@@ -1056,6 +1056,10 @@ public abstract class K2SApi extends PluginForHost {
         if (!inValidate(errCode) && errCode.matches("\\d+")) {
             final int err = Integer.parseInt(errCode);
             String msg = getErrorMessage(err);
+            if (StringUtils.isEmpty(msg)) {
+                /* No language String available for errormessage? Fallback to provided errormessage */
+                msg = PluginJSonUtils.getJson(br, "message");
+            }
             try {
                 switch (err) {
                 case 1:
@@ -1120,9 +1124,15 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download is not
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
+                    final String subErrs = PluginJSonUtils.getJsonArray(brString, "errors");
+                    if (subErrs != null) {
+                        handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
+                    }
                     handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
+                    /* 2020-01-29: {"status":"error","code":406,"message":"File is blocked","errorCode":22} */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
                 case 23:
                     // {"message":"file_id is folder","status":"error","code":406,"errorCode":23}
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
