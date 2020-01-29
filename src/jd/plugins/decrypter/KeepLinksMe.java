@@ -94,14 +94,6 @@ public class KeepLinksMe extends abstractSafeLinking {
     }
 
     @Override
-    protected String getCaptchaFancyUrl() {
-        if ("kprotector.com".equals(getHost())) {
-            return "/fancycaptcha/captcha/captcha.php";
-        }
-        return super.getCaptchaFancyUrl();
-    }
-
-    @Override
     protected String getCaptchaFancyInputfieldName() {
         if ("kprotector.com".equals(getHost())) {
             return "captcha";

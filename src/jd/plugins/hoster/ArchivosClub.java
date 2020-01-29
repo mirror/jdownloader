@@ -115,7 +115,7 @@ public class ArchivosClub extends YetiShareCore {
     }
 
     @Override
-    protected boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
+    protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
         /* 2020-01-18: Special */
         return br.getHttpConnection().getResponseCode() == 404;
     }

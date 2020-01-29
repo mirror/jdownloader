@@ -138,8 +138,11 @@ public class TurbobitCore extends antiDDoSForHost {
                 for (final DownloadLink dllink : links) {
                     final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]*<td>([^<]*)</td>[\t\n\r ]*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
+                        /*
+                         * 2020-01-27: E.g. "<p>Number of requests exceeded the limit. Please wait 5 minutes to check links again</p></div>"
+                         */
+                        dllink.setAvailableStatus(AvailableStatus.UNCHECKED);
+                        logger.warning("Unable to check link: " + dllink.getDownloadURL());
                     } else {
                         if (fileInfo.getMatch(1).equals("error")) {
                             dllink.setAvailable(false);
