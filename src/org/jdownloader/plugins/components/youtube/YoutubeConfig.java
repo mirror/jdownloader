@@ -101,8 +101,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
             public String getLabel() {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
             }
-        },
-        ;
+        },;
     }
 
     public static class NotNullCustomGetter extends AbstractCustomValueGetter<String> {
@@ -245,6 +244,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     //
     // void setBestGroupVariantEnabled(boolean b);
     @AboutConfig
+    @DescriptionForConfigEntry("Use this if you want to get more than 1 subtitle per video e.g. [\"de\", \"en\", \"ar\", \"zh-HK\", \"ru\", \"tr\"]")
     ArrayList<String> getExtraSubtitles();
 
     @AboutConfig

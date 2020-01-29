@@ -2234,8 +2234,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
-     * which is based on fuid. 2019-06-12: TODO: Review this, check if this is still required for ANY XFS host! --> 2020-01-22: Yes it is
-     * e.g. filejoker.net
+     * which is based on fuid.
      *
      * @version 0.4
      * @author raztoki
@@ -2277,24 +2276,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (StringUtils.equalsIgnoreCase(orgName, fuid)) {
             /* Current filename only consists of fuid --> Prefer full server filename */
             FFN = servNameExt;
-            logger.info("fixFileName case 1: orgName == fuid --> Use servNameExt");
+            logger.info("fixFileName case 1: prefer servNameExt: orgName == fuid --> Use servNameExt");
         } else if (StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && (StringUtils.containsIgnoreCase(servName, orgName) && !StringUtils.equalsIgnoreCase(servName, orgName))) {
             /*
              * When partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
              * --> Prefer server filename
              */
             FFN = servNameExt;
-            logger.info("fixFileName case 2: previous filename had no extension given && servName contains orgName while servName != orgName --> Use servNameExt");
+            logger.info("fixFileName case 2: prefer servNameExt: previous filename had no extension given && servName contains orgName while servName != orgName --> Use servNameExt");
         } else if (!StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && !StringUtils.equalsIgnoreCase(orgExt, servExt)) {
             /*
              * Current filename has extension given but server filename has other extension --> Swap extensions, trust the name we have but
              * use extension from server
              */
             FFN = orgName + servExt;
-            logger.info(String.format("fixFileName case 3: Previous filename had no extension given && servName contains orgName while servName != orgName --> Use orgName + servExt | Old ext: %s | New ext: %s", orgExt, servExt));
+            logger.info(String.format("fixFileName case 3: prefer orgName + servExt: Previous filename had no extension given && servName contains orgName while servName != orgName --> Use orgName + servExt | Old ext: %s | New ext: %s", orgExt, servExt));
         } else {
             FFN = orgNameExt;
-            logger.info("fixFileName case 4: Use orgNameExt");
+            logger.info("fixFileName case 4: prefer orgNameExt");
         }
         logger.info("fixFileName: before=" + orgNameExt + "|after=" + FFN);
         downloadLink.setFinalFileName(FFN);

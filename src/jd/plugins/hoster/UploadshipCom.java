@@ -122,7 +122,7 @@ public class UploadshipCom extends YetiShareCore {
     }
 
     @Override
-    protected boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
+    protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
         return br.getHttpConnection().getResponseCode() == 404;
     }
 

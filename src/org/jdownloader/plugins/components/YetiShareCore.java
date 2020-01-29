@@ -296,7 +296,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else if (isPremiumOnlyURL()) {
                     return AvailableStatus.TRUE;
                 }
-                if (isOfflineWebsite(link, true)) {
+                if (isOfflineWebsite(link)) {
                     /*
                      * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
                      * to redirect to a error-page so we would not be able to see any filename information at this stage but the file may
@@ -864,7 +864,7 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
-        if (isOfflineWebsite(link, false)) {
+        if (isOfflineWebsite(link)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
@@ -887,10 +887,11 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online
+     * @return true = file is offline, false = file is online </br>
+     *         Be sure to always call checkErrors before calling this!
      * @throws PluginException
      */
-    protected boolean isOfflineWebsite(final DownloadLink link, final boolean checkErrors) throws PluginException {
+    protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
         final boolean isDownloadable = this.getContinueLink() != null;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         /*
@@ -902,9 +903,6 @@ public class YetiShareCore extends antiDDoSForHost {
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
         final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
         if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
-            if (checkErrors) {
-                checkErrors(link, null);
-            }
             return true;
         }
         return false;
