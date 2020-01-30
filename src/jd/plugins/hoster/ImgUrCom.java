@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,8 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
@@ -213,7 +213,9 @@ public class ImgUrCom extends PluginForHost {
         }
         if (type != null) {
             // uniqueID depends on preferred type
-            link.setLinkID(type + "/" + imgUID);
+            link.setLinkID("://" + this.getHost() + type + "/" + imgUID);
+        } else {
+            link.setLinkID("://" + this.getHost() + "/" + imgUID);
         }
         if (filename_formatted != null) {
             if (start_DL) {
@@ -570,23 +572,23 @@ public class ImgUrCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
-            put("LABEL_FILENAME", "Define custom filename:");
-            put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-            put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

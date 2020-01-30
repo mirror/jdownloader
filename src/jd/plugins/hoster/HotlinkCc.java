@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -26,9 +29,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -185,5 +185,17 @@ public class HotlinkCc extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
+    }
+
+    @Override
+    public boolean isPremiumOnlyHTML() {
+        /*
+         * 2020-01-30: Special because template code matches also on ">\\s*Available Only for Premium Members" which is always present in
+         * their html
+         */
+        final boolean premiumonly_filehost = new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
+        /* 2019-05-30: Example: xvideosharing.com */
+        final boolean premiumonly_videohost = new Regex(correctedBR, ">\\s*This video is available for Premium users only").matches();
+        return premiumonly_filehost || premiumonly_videohost;
     }
 }

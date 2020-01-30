@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -27,6 +28,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -43,11 +45,12 @@ public class TwitterCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    private static final String TYPE_CARD      = "https?://(?:www\\.)?twitter\\.com/i/cards/tfw/v1/\\d+";
-    private static final String TYPE_USER_ALL  = "https?://(?:www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+(?:/media)?";
-    private static final String TYPE_USER_POST = "https?://(?:www\\.)?twitter\\.com.*?status/\\d+.*?";
-    private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
-    private String              username       = null;
+    private static final String     TYPE_CARD      = "https?://(?:www\\.)?twitter\\.com/i/cards/tfw/v1/\\d+";
+    private static final String     TYPE_USER_ALL  = "https?://(?:www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+(?:/media)?";
+    private static final String     TYPE_USER_POST = "https?://(?:www\\.)?twitter\\.com.*?status/\\d+.*?";
+    private static final String     TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
+    private String                  username       = null;
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -57,7 +60,6 @@ public class TwitterCom extends PornEmbedParser {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setAllowedResponseCodes(new int[] { 429 });
         final String parameter = param.toString().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
         final String urlfilename = getUrlFname(parameter);
@@ -178,6 +180,10 @@ public class TwitterCom extends PornEmbedParser {
             }
         } else if (parameter.matches(TYPE_USER_POST)) {
             /* Single Tweet */
+            if (switchtoMobile()) {
+                crawlMobileWebsiteTweet(parameter);
+                return decryptedLinks;
+            }
             tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             final String twitter_text = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (br.containsHTML("data\\-autoplay\\-src=|video:url")) {
@@ -227,6 +233,10 @@ public class TwitterCom extends PornEmbedParser {
             /* All posts / reposts / media of a user */
             if (!br.getURL().endsWith("/media")) {
                 br.getPage(br.getURL() + "/media");
+            }
+            if (switchtoMobile()) {
+                crawlMobileWebsiteUser(parameter);
+                return decryptedLinks;
             }
             final String twitter_reload_url_format;
             if (parameter.endsWith("/media")) {
@@ -367,6 +377,84 @@ public class TwitterCom extends PornEmbedParser {
         return decryptedLinks;
     }
 
+    private boolean switchtoMobile() throws IOException {
+        /*
+         * 2020-01-30: They're now using a json web-API for which we cannot easily get the auto parameters --> Try mobile website as
+         * fallback ...
+         */
+        logger.info("Trying to switch to mobile website");
+        final Form nojs_form = br.getFormbyActionRegex(".+nojs_router.+");
+        if (nojs_form != null) {
+            logger.info("Switching to mobile website");
+            br.submitForm(nojs_form);
+            logger.warning("Successfully switched to to mobile website");
+            return true;
+        } else {
+            logger.warning("Failed to switch to mobile website");
+            return false;
+        }
+    }
+
+    private void crawlMobileWebsiteTweet(final String parameter) throws IOException {
+        logger.info("Crawling mobile website tweet");
+        // br.getPage("/Lin_Manuel/status/1208019162657906690/photo/1");
+        final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
+        if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
+            /* Video */
+            final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
+            decryptedLinks.add(dl);
+        } else {
+            /* Picture or text */
+            /* 2020-01-30: TODO: .gif download might fail: /Lin_Manuel/status/1208019162657906690 */
+            final String[] regexes = { "(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+(\\.(?:jpg|png|gif):[a-z]+))" };
+            for (final String regex : regexes) {
+                final String[] alllinks = br.getRegex(regex).getColumn(0);
+                if (alllinks != null && alllinks.length > 0) {
+                    for (String alink : alllinks) {
+                        final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/[^/]+/([A-Za-z0-9\\-_]+)\\.([a-z0-9]+)(?::[a-z]+)?$");
+                        final String servername = fin_al.getMatch(0);
+                        final String ending = fin_al.getMatch(1);
+                        final String final_filename = tweet_id + "_" + servername + "." + ending;
+                        alink = Encoding.htmlDecode(alink.trim());
+                        final DownloadLink dl = createDownloadlink(alink, tweet_id);
+                        dl.setAvailable(true);
+                        dl.setProperty("decryptedfilename", final_filename);
+                        dl.setName(final_filename);
+                        decryptedLinks.add(dl);
+                    }
+                }
+            }
+            if (decryptedLinks.isEmpty()) {
+                logger.warning("Found nothing - either only text or plugin broken :(");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            }
+        }
+    }
+
+    /* 2020-01-30: Mobile website will only show 1 tweet per page */
+    private void crawlMobileWebsiteUser(final String parameter) throws IOException {
+        logger.info("Crawling mobile website user");
+        final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
+        int index = 0;
+        String nextURL = null;
+        do {
+            logger.info("Crawling page " + (index + 1));
+            if (nextURL != null) {
+                br.getPage(nextURL);
+            }
+            final String current_tweet_id = br.getRegex("name=\"tweet_(\\d+)\"").getMatch(0);
+            if (current_tweet_id == null) {
+                logger.warning("Failed to find current_tweet_id");
+                break;
+            }
+            final DownloadLink dl = this.createDownloadlink(String.format("https://twitter.com/%s/status/%s", username, current_tweet_id));
+            decryptedLinks.add(dl);
+            distribute(dl);
+            index++;
+            nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
+        } while (nextURL != null && !this.isAbort());
+    }
+
     @Override
     public DownloadLink createDownloadlink(final String url) {
         final DownloadLink dl = super.createDownloadlink(url);
@@ -424,9 +512,13 @@ public class TwitterCom extends PornEmbedParser {
         try {
             ((jd.plugins.hoster.TwitterCom) hostPlugin).login(br, aa, force);
         } catch (final PluginException e) {
-            aa.setValid(false);
             return false;
         }
         return true;
+    }
+
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-01-30: We have to perform a lot of requests --> Set this to 1. */
+        return 1;
     }
 }

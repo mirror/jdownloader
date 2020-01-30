@@ -251,17 +251,25 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /** Checks single URLs via API, TODO: Add crawler compatibility once crawler is done */
-    public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account) throws IOException, PluginException {
-        prepareBrowserAPI(br, null);
+    public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account, final boolean isDownload) throws IOException, PluginException {
+        prepareBrowserAPI(br, account);
         performAPIRequest(API_BASE + "/file/info.cgi", "{\"url\":\"" + link.getPluginPatternMatcher() + "\"}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. message": "Resource not found #469" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
-            /* Password-protected (no information given at all but we know that file is online) */
+            /* 2020-01-30: e.g. {"status":"KO","message":"Resource not allowed #631"} */
+            /*
+             * Password-protected (no information given at all but we know that file is online). Example reasons: file is not allowed to be
+             * downloaded in current country, by current user, file is private
+             */
             pwProtected = true;
             link.setProperty("privatelink", true);
             // link.setName(this.getLinkID(link));
+            if (isDownload) {
+                throwErrorPrivateLink();
+            }
+            /* Else all is fine - URL is online but we won't be able to download it. */
             return AvailableStatus.TRUE;
         }
         /* 2019-04-05: This type of checksum is not supported by JDonloader so far */
@@ -282,6 +290,8 @@ public class OneFichierCom extends PluginForHost {
         if (!StringUtils.isEmpty(description) && link.getComment().isEmpty()) {
             link.setComment(description);
         }
+        /* 2020-01-30: We cannot work with this checksum */
+        // final String checksum = PluginJSonUtils.getJson(br, "checksum");
         return AvailableStatus.TRUE;
     }
 
@@ -861,7 +871,6 @@ public class OneFichierCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
         requestFileInformation(link);
-        checkDownloadable(account);
         br = new Browser();
         if (AccountType.FREE.equals(account.getType()) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
@@ -925,7 +934,7 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /* 2019-04-05: At the moment there are no benefits for us when using this. */
-        // requestFileInformationAPI(this.br, link, account);
+        requestFileInformationAPI(this.br, link, account, true);
         setPremiumAPIHeaders(br, account);
         /* Do NOT trust pwProtected as this is obtained via website or old mass-linkcheck API!! */
         String dllink = null;
@@ -1207,11 +1216,15 @@ public class OneFichierCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons", 60 * 60 * 1000l);
                 }
             } else {
-                /** TODO: Check this case - check if that still exists */
-                logger.info("Link is PRIVATE");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
+                /** 2020-01-30: URL is online but private and we have no rights to download it. */
+                throwErrorPrivateLink();
             }
         }
+    }
+
+    private void throwErrorPrivateLink() throws PluginException {
+        logger.info("Link is PRIVATE");
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
     }
 
     /** This function is there to make sure that we're really logged in (handling without API). */
@@ -1276,7 +1289,9 @@ public class OneFichierCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("Content-Type", "application/json");
         br.setAllowedResponseCodes(new int[] { 401, 403, 503 });
-        setPremiumAPIHeaders(br, account);
+        if (account != null) {
+            setPremiumAPIHeaders(br, account);
+        }
         return br;
     }
 
