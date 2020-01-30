@@ -155,6 +155,14 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         return false;
     }
 
+    /**
+     * If disabled[and tryAPILoginInWebsiteMode enabled], API can be used to login in website mode but account information will be obtained
+     * from website.
+     */
+    protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api() {
+        return true;
+    }
+
     /** Override this depending on host */
     protected String getRelativeAPIBaseAPIZeusCloudManager() {
         return null;
@@ -496,8 +504,15 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                     final Browser apiBR = new Browser();
                     /* Do not only call login as we need the email/username cookie which we only get when obtaining AccountInfo! */
                     // loginAPIZeusCloudManager(apiBR, account, force);
-                    final AccountInfo ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
-                    logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
+                    AccountInfo ai = null;
+                    if (tryAPILoginInWebsiteMode_get_account_info_from_api()) {
+                        logger.info("API in website mode is allowed to login and fetchAccountInfo");
+                        ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
+                        logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
+                    } else {
+                        logger.info("API in website mode is only allowed to login");
+                        loginAPIZeusCloudManager(br, account, true);
+                    }
                     /*
                      * Set cookies converted from API handling --> Website-cookies to verify them. Only trust API login if we are sure that
                      * API login cookies are valid in website mode!!
@@ -510,8 +525,13 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         /* All okay, return account information obtained via API although we are in website mode! */
-                        logger.info("Successfully logged in via API and used cookies via website");
-                        return ai;
+                        logger.info("Successfully logged in via API and used API cookies for website");
+                        if (ai != null) {
+                            logger.info("Returning AccountInfo from API");
+                            return ai;
+                        } else {
+                            logger.info("NOT returning AccountInfo from API --> Continue via website handling from now on");
+                        }
                     }
                 } catch (final PluginException e) {
                     if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

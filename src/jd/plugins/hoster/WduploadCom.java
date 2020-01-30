@@ -268,17 +268,23 @@ public class WduploadCom extends antiDDoSForHost {
                     logger.info("Performing full login");
                     getPage(brlogin, "https://www." + getHost() + "/user/login");
                     final boolean use_static_access_token = false;
-                    final String access_token;
+                    String access_token;
+                    final String hardcoded_access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
                     if (use_static_access_token) {
                         /* 2018-10-19 */
-                        access_token = "br68ufmo5ej45ue1q10w68781069v666l2oh1j2ijt94";
+                        access_token = hardcoded_access_token;
                     } else {
                         getPage(brlogin, "https://www." + account.getHoster() + "/java/mycloud.js");
                         access_token = brlogin.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
                     }
                     if (StringUtils.isEmpty(access_token)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* 2020-01-30: Their access_token has not changed for oever one year --> We're using it as a fallback */
+                        logger.info("Failed to find access_token --> Using static access_token as fallback");
+                        access_token = hardcoded_access_token;
                     }
+                    // if (StringUtils.isEmpty(access_token)) {
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // }
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     String recaptchaV2Response = null;
                     try {

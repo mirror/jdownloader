@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -41,13 +46,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ImgUrCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.|m\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.|m\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/[A-Za-z0-9]{5,7}|https?://(?:www\\.)?imgur\\.com/r/[^/]+/$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.|m\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://(?:www\\.)?i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.|m\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/[A-Za-z0-9]{5,7}|https?://(?:www\\.)?imgur\\.com/r/[^/]+/$" })
 public class ImgurCom extends PluginForDecrypt {
     public ImgurCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -30,6 +32,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -423,7 +427,7 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void handleDL(final Account acc, final DownloadLink link, final String genlink) throws Exception {
+    private void handleDL(final Account acc, final DownloadLink link, String genlink) throws Exception {
         if (genlink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -486,6 +490,11 @@ public class AllDebridCom extends antiDDoSForHost {
                 return host;
             }
         };
+        if (!PluginJsonConfig.get(AlldebridComConfig.class).isUseHTTPSForDownloads()) {
+            logger.info("https for final downloadurls is disabled");
+            genlink = genlink.replace("https://", "http://");
+            logger.info("New final downloadurl: " + genlink);
+        }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, 0);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
@@ -597,6 +606,27 @@ public class AllDebridCom extends antiDDoSForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return AlldebridComConfig.class;
+    }
+
+    public static interface AlldebridComConfig extends PluginConfigInterface {
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        public static class TRANSLATION {
+            public String getUseHTTPSForDownloads_label() {
+                return "Use https for final downloadurls?";
+            }
+        }
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        boolean isUseHTTPSForDownloads();
+
+        void setUseHTTPSForDownloads(boolean b);
     }
 
     @Override

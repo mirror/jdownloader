@@ -371,6 +371,7 @@ public class PremiumTo extends UseNet {
                 onlyAllowWhitelistedStorageHosts = config.isEnableStorageWhiteListing();
                 whitelistedStorageHostsCommaSeparated = config.getWhitelistedStorageHosts();
             } catch (final Throwable e) {
+                logger.warning("Error while trying to load user-settings --> Using default settings");
             }
             if (onlyAllowWhitelistedStorageHosts) {
                 logger.info("User enabled whitelisting of Storage hosts");
