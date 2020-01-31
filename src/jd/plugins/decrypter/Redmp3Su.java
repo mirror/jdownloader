@@ -33,6 +33,10 @@ public class Redmp3Su extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * 2020-01-31: They GEO-block certain countries. All links will lead to 404 when you're blocked. I was able to make it work with a
+     * polish VPN.
+     */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -42,7 +46,7 @@ public class Redmp3Su extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(?:\\s*Album(?:\\s*:)?)?([^<>]+)</title>").getMatch(0);
         final String[] links = br.getRegex("(/\\d+/[a-z0-9\\-]+\\.html)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
