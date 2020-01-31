@@ -397,7 +397,6 @@ public class TwitterCom extends PornEmbedParser {
 
     private void crawlMobileWebsiteTweet(final String parameter) throws IOException {
         logger.info("Crawling mobile website tweet");
-        // br.getPage("/Lin_Manuel/status/1208019162657906690/photo/1");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
             /* Video */
