@@ -101,7 +101,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
             public String getLabel() {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
             }
-        },;
+        };
     }
 
     public static class NotNullCustomGetter extends AbstractCustomValueGetter<String> {
