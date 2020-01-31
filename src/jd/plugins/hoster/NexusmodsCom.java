@@ -397,13 +397,7 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        String apikey;
-        if (isAPIOnlyMode() && getApikey(account) == null) {
-            apikey = account.getPass();
-            saveApikey(account, apikey);
-        } else {
-            apikey = getApikey(account);
-        }
+        String apikey = getApikey(account);
         if (apikey != null) {
             return fetchAccountInfoAPI(account);
         }
@@ -462,7 +456,10 @@ public class NexusmodsCom extends antiDDoSForHost {
             final String censored_email = "***" + email.substring(3);
             account.setUser(censored_email);
         }
-        account.setPass(null);
+        if (!isAPIOnlyMode()) {
+            /* Do not store any old website login credentials */
+            account.setPass(null);
+        }
         if ("true".equalsIgnoreCase(is_premium)) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -540,7 +537,11 @@ public class NexusmodsCom extends antiDDoSForHost {
         if (account == null) {
             return null;
         }
-        return account.getStringProperty("apikey");
+        if (isAPIOnlyMode()) {
+            return account.getPass();
+        } else {
+            return account.getStringProperty("apikey");
+        }
     }
 
     private void saveApikey(final Account account, final String apikey) {
@@ -693,7 +694,7 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isAPIOnlyMode() {
+    private static boolean isAPIOnlyMode() {
         // final NexusmodsConfigInterface cfg = PluginJsonConfig.get(NexusmodsCom.NexusmodsConfigInterface.class);
         // return !cfg.isEnableWebsiteMode();
         /* 2020-01-15: Website login is broken, downloads are only possible via free account */

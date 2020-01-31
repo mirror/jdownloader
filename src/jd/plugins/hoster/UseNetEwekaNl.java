@@ -56,15 +56,20 @@ public class UseNetEwekaNl extends UseNet {
         final Cookies cookies = account.loadCookies("");
         try {
             if (cookies != null) {
+                logger.info("Checking login cookies");
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://www." + this.getHost() + "/en/myeweka?p=pro");
+                getPage("https://www." + this.getHost() + "/en/myeweka?p=pro");
                 if (!isLoggedIN()) {
+                    logger.info("Failed to login via cookies");
                     br.getCookies(getHost()).clear();
+                } else {
+                    logger.info("Successfully loggedin via cookies");
                 }
             }
             if (!isLoggedIN()) {
+                logger.info("Performing full login");
                 account.clearCookies("");
-                br.getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
+                getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
                 final Form loginform = br.getFormbyProperty("id", "login-form");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -72,7 +77,7 @@ public class UseNetEwekaNl extends UseNet {
                 loginform.setMethod(MethodType.POST);
                 loginform.put("identifier", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
+                submitForm(loginform);
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -81,7 +86,7 @@ public class UseNetEwekaNl extends UseNet {
             // final String server = br.getRegex("<td><b>Server</b></td>.*?<td.*?>(.*?)</td>").getMatch(0);
             // final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
             // TODO: use these infos for available servers
-            br.getPage("/myeweka?p=acd");
+            getPage("/myeweka?p=acd");
             final String connections = br.getRegex("<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
             if (connections != null) {
                 account.setMaxSimultanDownloads(Integer.parseInt(connections));

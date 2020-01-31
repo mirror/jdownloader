@@ -81,6 +81,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
     private boolean               friendsOnly                     = false;
     public static final String    domain_premium                  = "xhamsterpremium.com";
+    public static final String    api_base_premium                = "https://gold.xhamsterpremium.com/api";
 
     private void setConfigElements() {
         String user_text;
@@ -674,13 +675,21 @@ public class XHamsterCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBr();
                 br.setFollowRedirects(true);
+                /*
+                 * 2020-01-31: They got their free page xhamster.com and paid xhamsterpremium.com. This plugin will always try to login into
+                 * both. Free users can also login to xhamsterpremium.to they just cannot watch anything. Failures of premium login will be
+                 * ignored and account will be accepted as free account then.
+                 */
                 final Cookies cookies = account.loadCookies("");
+                final Cookies premiumCookies = account.loadCookies("premium");
+                boolean isloggedinNormal = false;
+                boolean isloggedinPremium = false;
+                String currentDomain = null;
                 if (cookies != null) {
                     logger.info("Trying cookie login");
                     br.getPage("https://" + account.getHoster() + "/");
-                    final String currentDomain = br.getHost();
+                    currentDomain = br.getHost();
                     br.setCookies(currentDomain, cookies, true);
-                    final Cookies premiumCookies = account.loadCookies("premium");
                     if (premiumCookies != null) {
                         logger.info("Found stored premium cookies");
                         br.setCookies(domain_premium, premiumCookies);
@@ -695,97 +704,124 @@ public class XHamsterCom extends PluginForHost {
                     br.getPage("https://" + currentDomain + "/");
                     if (isLoggedInHTML(br)) {
                         /* Save new cookie timestamp */
-                        account.saveCookies(br.getCookies(currentDomain), "");
-                        return;
+                        isloggedinNormal = true;
+                    } else {
+                        /* Reset Browser */
+                        br.clearCookies(null);
                     }
-                    /* Reset Browser */
-                    br.clearCookies(null);
                 }
-                br.getPage("https://xhamster.com/login");
-                final String currentDomain = br.getHost();
-                if (htmlIsOldDesign(br)) {
-                    final Form login = br.getFormbyProperty("name", "loginForm");
-                    if (login == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (!isloggedinNormal) {
+                    if (currentDomain == null) {
+                        br.getPage("https://" + account.getHoster() + "/");
+                        currentDomain = br.getHost();
                     }
-                    /* set action, website changes action in js! */
-                    login.setAction(br.getURL("/ajax/login.php").toExternalForm());
-                    Browser br = this.br.cloneBrowser();
-                    final long now = System.currentTimeMillis();
-                    final String xsid;
-                    {
-                        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-                        final ScriptEngine engine = manager.getEngineByName("javascript");
-                        engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
-                        engine.eval("now = " + now);
-                        engine.eval("res2 = now.toString(16).substring(0,8);");
-                        xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
-                    }
-                    // set in login form and cookie to the correct section
-                    login.put("stats", Encoding.urlEncode(xsid));
-                    br.setCookie(currentDomain, "xsid", xsid);
-                    // now some other fingerprint set via js, again cookie and login form
-                    final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
-                    br.setCookie(currentDomain, "fingerprint", fingerprint);
-                    login.put("fingerprint", fingerprint);
-                    login.put("username", Encoding.urlEncode(account.getUser()));
-                    login.put("password", Encoding.urlEncode(account.getPass()));
-                    login.put("remember", "on");
-                    // login.put("_", now + "");
-                    br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.submitForm(login);
-                    /* Account is fine but we need a stupid login captcha */
-                    if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
-                        if (this.getDownloadLink() == null) {
-                            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
-                            this.setDownloadLink(dummyLink);
+                    if (htmlIsOldDesign(br)) {
+                        final Form login = br.getFormbyProperty("name", "loginForm");
+                        if (login == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        br = this.br.cloneBrowser();
-                        login.put("_", System.currentTimeMillis() + "");
+                        /* set action, website changes action in js! */
+                        login.setAction(br.getURL("/ajax/login.php").toExternalForm());
+                        Browser br = this.br.cloneBrowser();
+                        final long now = System.currentTimeMillis();
+                        final String xsid;
+                        {
+                            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+                            final ScriptEngine engine = manager.getEngineByName("javascript");
+                            engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
+                            engine.eval("now = " + now);
+                            engine.eval("res2 = now.toString(16).substring(0,8);");
+                            xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
+                        }
+                        // set in login form and cookie to the correct section
+                        login.put("stats", Encoding.urlEncode(xsid));
+                        br.setCookie(currentDomain, "xsid", xsid);
+                        // now some other fingerprint set via js, again cookie and login form
+                        final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
+                        br.setCookie(currentDomain, "fingerprint", fingerprint);
+                        login.put("fingerprint", fingerprint);
+                        login.put("username", Encoding.urlEncode(account.getUser()));
+                        login.put("password", Encoding.urlEncode(account.getPass()));
+                        login.put("remember", "on");
+                        // login.put("_", now + "");
                         br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         br.submitForm(login);
-                    }
-                } else {
-                    String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
-                    String requestData = "r=[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"" + createID() + "\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null";
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getPage("/x-api?" + requestData + "}}]");
-                    if (br.containsHTML("showCaptcha\":true")) {
-                        if (this.getDownloadLink() == null) {
-                            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
-                            this.setDownloadLink(dummyLink);
+                        /* Account is fine but we need a stupid login captcha */
+                        if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
+                            if (this.getDownloadLink() == null) {
+                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
+                                this.setDownloadLink(dummyLink);
+                            }
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            br = this.br.cloneBrowser();
+                            login.put("_", System.currentTimeMillis() + "");
+                            br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
+                            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                            login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            br.submitForm(login);
                         }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
-                        br.postPageRaw("/x-api", requestData + ",\"captcha\":\"" + recaptchaV2Response + "\"}}]");
-                    }
-                }
-                if (br.getCookie(currentDomain, "UID", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(currentDomain, "_id", Cookies.NOTDELETEDPATTERN) == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
+                        String requestData = "r=[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"" + createID() + "\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null";
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        br.getPage("/x-api?" + requestData + "}}]");
+                        if (br.containsHTML("showCaptcha\":true")) {
+                            if (this.getDownloadLink() == null) {
+                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
+                                this.setDownloadLink(dummyLink);
+                            }
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                            br.postPageRaw("/x-api", requestData + ",\"captcha\":\"" + recaptchaV2Response + "\"}}]");
+                        }
+                    }
+                    if (br.getCookie(currentDomain, "UID", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(currentDomain, "_id", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(currentDomain), "");
-                logger.info("Login successful --> Trying to login in xhamsterpremium.com too");
-                br.getHeaders().put("Referer", null);
-                /* Login premium --> Same logindata */
-                br.getPage("https://gold.xhamsterpremium.com/");
-                final String csrftoken = br.getRegex("data-name=\"csrf-token\" content=\"([^<>\"]+)\"").getMatch(0);
-                if (csrftoken != null) {
-                    br.getHeaders().put("x-csrf-token", csrftoken);
+                logger.info("Checking premium login state");
+                if (premiumCookies != null) {
+                    /* Cookies have already been set in lines above */
+                    logger.info("Checking premium cookies");
+                    br.getPage(api_base_premium + "/subscription/get");
+                    if (br.getHttpConnection().getContentType().contains("json")) {
+                        logger.info("Successfully checked premium cookies");
+                        isloggedinPremium = true;
+                    } else {
+                        logger.info("Premium cookies seem to be invalid");
+                        isloggedinPremium = false;
+                    }
                 }
-                br.postPageRaw("https://gold.xhamsterpremium.com/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\"}", account.getUser(), account.getPass()));
-                final String success = PluginJSonUtils.getJson(br, "success");
-                if ("true".equalsIgnoreCase(success)) {
-                    logger.info("Premium login successful");
+                if (!isloggedinPremium) {
+                    logger.info("Performing full premium login");
+                    br.getHeaders().put("Referer", null);
+                    /* Login premium --> Same logindata */
+                    br.getPage("https://gold.xhamsterpremium.com/");
+                    if (this.getDownloadLink() == null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamsterpremium.com", "http://xhamsterpremium.com", true);
+                        this.setDownloadLink(dummyLink);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    final String recaptchaV2Response_json = "\"" + recaptchaV2Response + "\"";
+                    final String csrftoken = br.getRegex("data-name=\"csrf-token\" content=\"([^<>\"]+)\"").getMatch(0);
+                    if (csrftoken != null) {
+                        br.getHeaders().put("x-csrf-token", csrftoken);
+                    } else {
+                        logger.warning("Failed to find csrftoken --> Premium login might fail because of this");
+                    }
+                    br.postPageRaw("https://gold.xhamsterpremium.com/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":%s}", account.getUser(), account.getPass(), recaptchaV2Response_json));
+                    final String success = PluginJSonUtils.getJson(br, "success");
+                    if ("true".equalsIgnoreCase(success)) {
+                        logger.info("Premium login successful");
+                        isloggedinPremium = true;
+                    } else {
+                        logger.info("Premium login failed");
+                    }
+                }
+                if (isloggedinPremium) {
+                    /* Only save cookies if login was successful */
                     account.saveCookies(br.getCookies(br.getHost()), "premium");
-                } else {
-                    logger.info("Premium login failed");
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -830,22 +866,26 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
+    /** THIS DOES NOT WORK Checks login state for xhamsterpremium.com */
+    // private boolean isLoggedInHTMLPremium(final Browser br) {
+    // return br.containsHTML("class=\"header__user-title\"");
+    // }
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
         /* Now check whether this is a free- or a premium account. */
-        final Browser brc = br.cloneBrowser();
-        brc.setAllowedResponseCodes(new int[] { 400 });
-        brc.getPage("https://gold.xhamsterpremium.com/api/subscription/get");
+        if (br.getURL() == null || !br.getURL().contains("/subscription/get")) {
+            br.getPage(api_base_premium + "/subscription/get");
+        }
         /*
          * E.g. error 400 for free users:
          * {"errors":{"_global":["Payment system temporary unavailable. Please try later."]},"userId":1234567}
          */
         long expire = 0;
-        final String expireStr = PluginJSonUtils.getJson(brc, "expiredAt");
-        final String isTrial = PluginJSonUtils.getJson(brc, "isTrial");
+        final String expireStr = PluginJSonUtils.getJson(br, "expiredAt");
+        final String isTrial = PluginJSonUtils.getJson(br, "isTrial");
         if (!StringUtils.isEmpty(expireStr)) {
             expire = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
@@ -867,6 +907,7 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, true);
+        /* No need to login as we'll already be loggedin via requestFileInformation. */
         // login(account, false);
         doFree(link);
     }
@@ -876,7 +917,7 @@ public class XHamsterCom extends PluginForHost {
             br.setCookie(host, "lang", "en");
             br.setCookie(host, "playerVer", "old");
         }
-        br.setAllowedResponseCodes(new int[] { 410, 423, 452 });
+        br.setAllowedResponseCodes(new int[] { 400, 410, 423, 452 });
     }
 
     @Override
