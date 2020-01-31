@@ -42,7 +42,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|(?:[a-z]{2}/)?artworks/\\d+|(?:[a-z]{2}/)?users/\\d+/artworks)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|(?:[a-z]{2}/)?artworks/\\d+|(?:[a-z]{2}/)?users/\\d+/(?:bookmarks/)?artworks)" })
 public class PixivNet extends PluginForDecrypt {
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -262,73 +262,77 @@ public class PixivNet extends PluginForDecrypt {
             int numberofitems_found_on_current_page = 0;
             final int max_numbeofitems_per_page = 20;
             int page = 0;
-            /* 2020-01-27: Ajax is also used for non-loggedin users! */
-            final boolean useNewMethod2020 = true;
+            int maxitemsperpage = 100;
+            int offset = 0;
+            String url = null;
+            boolean isBookmarks = false;
+            if (parameter.contains("/bookmarks")) {
+                url = String.format("https://www.%s/ajax/user/%s/illusts/bookmarks", br.getHost(), lid);
+                isBookmarks = true;
+            } else {
+                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), lid);
+                /* All items on one page! */
+                maxitemsperpage = -1;
+            }
             do {
+                numberofitems_found_on_current_page = 0;
                 final HashSet<String> dups = new HashSet<String>();
-                if (loggedIn || useNewMethod2020) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.setLoadLimit(5 * 1024 * 1024);
-                    brc.getPage("https://www." + br.getHost() + "/ajax/user/" + lid + "/profile/all");
-                    final java.util.Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                    if (map == null) {
-                        break;
-                    }
-                    final java.util.Map<String, Object> body = (Map<String, Object>) map.get("body");
-                    if (body == null) {
-                        break;
-                    }
-                    final java.util.Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
-                    if (illusts != null) {
-                        for (Map.Entry<String, Object> entry : illusts.entrySet()) {
-                            final String galleryID = entry.getKey();
-                            if (dups.add(galleryID)) {
-                                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
-                                decryptedLinks.add(dl);
-                                distribute(dl);
-                            }
-                        }
-                    }
-                    final java.util.Map<String, Object> manga = (Map<String, Object>) body.get("manga");
-                    if (manga != null) {
-                        for (Map.Entry<String, Object> entry : manga.entrySet()) {
-                            final String galleryID = entry.getKey();
-                            if (dups.add(galleryID)) {
-                                final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
-                                decryptedLinks.add(dl);
-                                distribute(dl);
-                            }
-                        }
-                    }
+                final Browser brc = br.cloneBrowser();
+                brc.setLoadLimit(5 * 1024 * 1024);
+                if (page == 0 && !isBookmarks) {
+                    brc.getPage(url);
+                } else {
+                    brc.getPage(url + String.format("?tag=&offset=%d&limit=%d&rest=show", offset, maxitemsperpage));
+                }
+                final java.util.Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                if (map == null) {
                     break;
                 }
-                if (page > 0) {
-                    br.getPage(String.format("/member_illust.php?id=%s&type=all&p=%s", lid, Integer.toString(page)));
-                    if (br.getURL().matches(".*?/member\\.php\\?id=\\d+$")) {
-                        logger.info("Abort: it seems account is required to access more items!");
-                        break;
-                    }
-                }
-                if (br.containsHTML("No results found for your query")) {
+                final java.util.Map<String, Object> body = (Map<String, Object>) map.get("body");
+                if (body == null) {
                     break;
                 }
-                final String[][] links = br.getRegex("<a href=\"[^<>\"]*?[^/]+illust_id=(\\d+)\"\\s*(class=\"(.*?)\")?").getMatches();
-                for (final String[] link : links) {
-                    final String galleryID = link[0];
-                    if (dups.add(galleryID)) {
-                        final DownloadLink dl;
-                        if (link.length > 1 && StringUtils.contains(link[1], "multiple")) {
-                            dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
-                        } else {
-                            dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                if (body.containsKey("works")) {
+                    /* E.g. bookmarks */
+                    final ArrayList<Object> works = (ArrayList<Object>) body.get("works");
+                    for (final Object workO : works) {
+                        final java.util.Map<String, Object> entries = (Map<String, Object>) workO;
+                        final String galleryID = (String) entries.get("illustId");
+                        if (dups.add(galleryID)) {
+                            final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                            decryptedLinks.add(dl);
+                            distribute(dl);
+                            numberofitems_found_on_current_page++;
                         }
-                        decryptedLinks.add(dl);
-                        distribute(dl);
                     }
                 }
-                numberofitems_found_on_current_page = links.length;
+                final java.util.Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
+                if (illusts != null) {
+                    for (Map.Entry<String, Object> entry : illusts.entrySet()) {
+                        final String galleryID = entry.getKey();
+                        if (dups.add(galleryID)) {
+                            final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                            decryptedLinks.add(dl);
+                            distribute(dl);
+                            numberofitems_found_on_current_page++;
+                        }
+                    }
+                }
+                final java.util.Map<String, Object> manga = (Map<String, Object>) body.get("manga");
+                if (manga != null) {
+                    for (Map.Entry<String, Object> entry : manga.entrySet()) {
+                        final String galleryID = entry.getKey();
+                        if (dups.add(galleryID)) {
+                            final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
+                            decryptedLinks.add(dl);
+                            distribute(dl);
+                            numberofitems_found_on_current_page++;
+                        }
+                    }
+                }
+                offset += numberofitems_found_on_current_page;
                 page++;
-            } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && !this.isAbort());
+            } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && maxitemsperpage != -1 && !this.isAbort());
         }
         if (fpName == null) {
             fpName = lid;
