@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3-red.ru" }, urls = { "https?://(?:www\\.)?(red3?-?mp3|mp3-?red)\\.(cc|co|su|ru|me|org)/album/\\d+/[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mp3-red.ru" }, urls = { "https?://(?:www\\.)?(?:red3?-?mp3|mp3-?red)\\.(?:cc|co|su|ru|me|org)/album/(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class Redmp3Su extends PluginForDecrypt {
     public Redmp3Su(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,25 @@ public class Redmp3Su extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>(?:\\s*Album(?:\\s*:)?)?([^<>]+)</title>").getMatch(0);
+        final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        String artistName = br.getRegex("class=\"artist-link\">([^<>\"]+)<").getMatch(0);
+        if (artistName != null) {
+            artistName = artistName.trim();
+        }
+        /* 2020-01-02: full_title = <album_name> - <year> - <artist> (year might not always be included) */
+        String full_title = br.getRegex("<title>(?:\\s*Album(?:\\s*:)?)?([^<>]+)</title>").getMatch(0);
+        String fpName = null;
+        if (artistName != null && full_title != null && full_title.contains(artistName)) {
+            /* Modify full title to: <artist> - <album_name> - <year> (year might not always be included) */
+            fpName = full_title.trim().replace(artistName, "");
+            fpName = fpName.trim();
+            fpName = artistName + " - " + fpName;
+        } else if (full_title != null) {
+            fpName = full_title.trim();
+        } else {
+            /* Final fallback */
+            fpName = url_name.replace("-", " ").trim();
+        }
         final String[] links = br.getRegex("(/\\d+/[a-z0-9\\-]+\\.html)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -64,11 +82,9 @@ public class Redmp3Su extends PluginForDecrypt {
             // dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

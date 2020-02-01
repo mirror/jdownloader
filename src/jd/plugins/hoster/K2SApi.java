@@ -507,17 +507,21 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account);
                 final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
+                final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
                 if (inValidate(free_download_key)) {
                     logger.warning("free_download_key is null");
                     this.handleErrors(account, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+")) {
+                    logger.warning("Failed to find pre-download-waittime");
+                    this.handleErrors(account, this.br);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!inValidate(PluginJSonUtils.getJsonValue(br, "time_wait"))) {
-                    sleep(Integer.parseInt(PluginJSonUtils.getJsonValue(br, "time_wait")) * 1001l, downloadLink);
-                } else {
-                    // fail over
-                    sleep(31 * 1001l, downloadLink);
+                final int wait_seconds = Integer.parseInt(wait_seconds_str);
+                if (wait_seconds > 180) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1001l);
                 }
+                sleep(wait_seconds * 1001l, downloadLink);
                 getURL.put("free_download_key", free_download_key);
                 getURL.remove("captcha_challenge");
                 getURL.remove("captcha_response");
