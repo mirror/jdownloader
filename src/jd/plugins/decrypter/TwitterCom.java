@@ -181,7 +181,7 @@ public class TwitterCom extends PornEmbedParser {
         } else if (parameter.matches(TYPE_USER_POST)) {
             /* Single Tweet */
             if (switchtoMobile()) {
-                crawlMobileWebsiteTweet(parameter);
+                crawlMobileWebsiteTweet(parameter, null);
                 return decryptedLinks;
             }
             tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
@@ -395,13 +395,26 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    private void crawlMobileWebsiteTweet(final String parameter) throws IOException {
+    private void crawlMobileWebsiteTweet(final String parameter, final FilePackage fp) throws IOException {
         logger.info("Crawling mobile website tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
             /* Video */
             final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
             decryptedLinks.add(dl);
+            if (fp != null) {
+                dl._setFilePackage(fp);
+            }
+            distribute(dl);
+        } else if (br.containsHTML("/tweet_video_thumb/")) {
+            /* TODO: Check what happens ifthere is a video/gif + pictures in one post. */
+            /* .gif --> Can be downloaded as .mp4 video */
+            final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
+            decryptedLinks.add(dl);
+            if (fp != null) {
+                dl._setFilePackage(fp);
+            }
+            distribute(dl);
         } else {
             /* Picture or text */
             /* 2020-01-30: TODO: .gif download might fail: /Lin_Manuel/status/1208019162657906690 */
@@ -410,16 +423,25 @@ public class TwitterCom extends PornEmbedParser {
                 final String[] alllinks = br.getRegex(regex).getColumn(0);
                 if (alllinks != null && alllinks.length > 0) {
                     for (String alink : alllinks) {
-                        final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/[^/]+/([A-Za-z0-9\\-_]+)\\.([a-z0-9]+)(?::[a-z]+)?$");
+                        final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/[^/]+/([A-Za-z0-9\\-_]+)\\.([a-z0-9]+)(:[a-z]+)?$");
                         final String servername = fin_al.getMatch(0);
                         final String ending = fin_al.getMatch(1);
+                        final String quality = fin_al.getMatch(2);
                         final String final_filename = tweet_id + "_" + servername + "." + ending;
                         alink = Encoding.htmlDecode(alink.trim());
+                        /* Always get the best quality. Possible qualities: thumb, small, medium, large, orig */
+                        if (!quality.equalsIgnoreCase("large")) {
+                            alink = alink.replace(quality, ":large");
+                        }
                         final DownloadLink dl = createDownloadlink(alink, tweet_id);
                         dl.setAvailable(true);
                         dl.setProperty("decryptedfilename", final_filename);
                         dl.setName(final_filename);
+                        if (fp != null) {
+                            dl._setFilePackage(fp);
+                        }
                         decryptedLinks.add(dl);
+                        distribute(dl);
                     }
                 }
             }
@@ -436,6 +458,9 @@ public class TwitterCom extends PornEmbedParser {
         final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
         int index = 0;
         String nextURL = null;
+        final boolean crawl_tweets_separately = false;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
         do {
             logger.info("Crawling page " + (index + 1));
             if (nextURL != null) {
@@ -446,12 +471,19 @@ public class TwitterCom extends PornEmbedParser {
                 logger.warning("Failed to find current_tweet_id");
                 break;
             }
-            final DownloadLink dl = this.createDownloadlink(String.format("https://twitter.com/%s/status/%s", username, current_tweet_id));
-            decryptedLinks.add(dl);
-            distribute(dl);
+            final String tweet_url = String.format("https://twitter.com/%s/status/%s", username, current_tweet_id);
+            if (crawl_tweets_separately) {
+                /* These URLs will go back into the crawler to get crawled separately */
+                final DownloadLink dl = this.createDownloadlink(tweet_url);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            } else {
+                crawlMobileWebsiteTweet(tweet_url, fp);
+            }
             index++;
             nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
         } while (nextURL != null && !this.isAbort());
+        logger.info(String.format("Done after %d pages", index));
     }
 
     @Override
