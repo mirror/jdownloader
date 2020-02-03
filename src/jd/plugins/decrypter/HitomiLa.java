@@ -143,7 +143,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 dl.setProperty("Referer", br.getURL());
                 dl.setProperty("requestType", "GET");
                 dl.setAvailable(true);
-                dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(hash, ".webp"));
+                dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(hash, "." + ext));
                 decryptedLinks.add(dl);
             }
         }

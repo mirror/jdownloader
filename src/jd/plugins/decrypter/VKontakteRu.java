@@ -1561,7 +1561,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private String[] getWallPostHTMLSnippets(final String html) {
-        return new Regex(html, "(<div class=\"_post_content\">.*?page_post_thumb_last_column page_post_thumb_last_row)").getColumn(0);
+        return new Regex(html, "(<div class=\"_post_content\">.*?post_view_hash=\"[a-f0-9]+\">)").getColumn(0);
     }
 
     /**
@@ -1722,12 +1722,15 @@ public class VKontakteRu extends PluginForDecrypt {
             /* url_source = not an URL but our wall_IDs */
             isContentFromWall = true;
             photo_module = "wall";
-            String reply_ids = new Regex(html, "id=\"post((?:\\-)?\\d+_\\d+)\" class=\"reply reply_dived clear  _post\"").getMatch(0);
-            reply_ids = new Regex(html, "wall_reply((?:-)?\\d+_\\d+)").getMatch(0);
-            /* This != null determines whether we are currently crawling a post or a reply/comment located below a post */
-            if (reply_ids != null) {
-                final String[] wall_post_reply_IDs = reply_ids.split("_");
-                wall_post_reply_content_id = wall_post_reply_IDs[1];
+            if (this.vkwall_comments_grab_comments) {
+                /* Fail-safe: Do not even try to grab reply IDs if user does not want to crawl content of replies */
+                String reply_ids = new Regex(html, "id=\"post((?:\\-)?\\d+_\\d+)\" class=\"reply reply_dived clear  _post\"").getMatch(0);
+                reply_ids = new Regex(html, "wall_reply((?:-)?\\d+_\\d+)").getMatch(0);
+                /* This != null determines whether we are currently crawling a post or a reply/comment located below a post */
+                if (reply_ids != null) {
+                    final String[] wall_post_reply_IDs = reply_ids.split("_");
+                    wall_post_reply_content_id = wall_post_reply_IDs[1];
+                }
             }
             /*
              * No matter whether we crawl the content of a post or comment/reply below, we always need the IDs of the post to e.g. build

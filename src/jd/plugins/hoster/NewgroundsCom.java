@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,10 +35,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
 public class NewgroundsCom extends antiDDoSForHost {
@@ -92,6 +92,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         final boolean checkForFilesize;
         String url_filename = null;
         if (downloadLink.getDownloadURL().matches(ARTLINK)) {
+            /* 2020-02-03: Such URLs are handled by the crawler from now on as they can lead to multiple pictures. */
             url_filename = new Regex(downloadLink.getDownloadURL(), "/view/(.+)").getMatch(0).replace("/", "_");
             checkForFilesize = true;
             dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
