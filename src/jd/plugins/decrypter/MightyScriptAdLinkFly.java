@@ -67,9 +67,9 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** 2019-10-30: exe.io domains */
             "exe.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz",
             /** 2019-08-29: 4snip.pw domains, handles by FoursnipPw plugin */
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            /*
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * "4snip.pw",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             */
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           /*
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            * "4snip.pw",
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            */
             /** 2019-11-13: linkjust.com domains */
             "linkjust.com", "thegreatfuture.com", "siha.xyz", "akltu.com", "rahlatt.com", "ekhtr.com",
             /** 2020-01-21: encurta.net domains */
@@ -546,7 +546,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return result;
     }
 
-    private String getFinallink() {
+    private String getFinallink() throws Exception {
         /* For >90%, this json-attempt should work! */
         String finallink = PluginJSonUtils.getJsonValue(br, "url");
         if (inValidate(finallink) || !finallink.startsWith("http")) {
@@ -555,10 +555,17 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 finallink = br.getRegex(".+<a\\s+[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
             }
         }
+        /* 2020-02-03: clk.in: p.clk.in/?n=bla */
+        if (!this.inValidate(finallink) && finallink.matches("https?://p\\.[^/]+/\\?n=.+")) {
+            logger.info("Special case: Finallink seems to lead to another step");
+            this.getPage(finallink);
+            finallink = br.getRegex("<div class=\"button\">\\s*?<center>\\s*?<a name=\"a\"\\s*?href=\"(http[^\"]+)\">").getMatch(0);
+        }
         return finallink;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        /* Most of all providers will require the user to solve a reCaptchaV2. */
         return true;
     }
 

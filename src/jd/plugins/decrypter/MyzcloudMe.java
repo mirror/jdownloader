@@ -65,7 +65,7 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String fpName = br.getRegex("class=\"content__title\"><h1>([^<>\"]+)<").getMatch(0);
+        String fpName = br.getRegex("class=\"content__title\">\\s*?<h1>([^<>\"]+)<").getMatch(0);
         if (fpName == null) {
             /* Fallback */
             fpName = url_title;

@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
@@ -74,13 +74,6 @@ public class ShorteSt extends antiDDoSForDecrypt {
             parameter = redirect;
             getPage(parameter);
         }
-        if (br.containsHTML(">page not found<")) {
-            if (!parameter.contains("!/")) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(createOfflinelink(parameter));
-            }
-            return decryptedLinks;
-        }
         br.setFollowRedirects(true);
         handleSiteVerification(parameter);
         String finallink = null;
@@ -115,6 +108,14 @@ public class ShorteSt extends antiDDoSForDecrypt {
             }
         }
         if (finallink == null) {
+            /* 2020-02-03: Offline can happen after siteVerification & captcha */
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">page not found<")) {
+                if (!parameter.contains("!/")) {
+                    logger.info("Link offline: " + parameter);
+                    decryptedLinks.add(createOfflinelink(parameter));
+                }
+                return decryptedLinks;
+            }
             final String timer = PluginJSonUtils.getJsonValue(br, "seconds");
             final String cb = PluginJSonUtils.getJsonValue(br, "callbackUrl");
             final String sid = PluginJSonUtils.getJsonValue(br, "sessionId");

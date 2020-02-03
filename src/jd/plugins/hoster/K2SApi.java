@@ -855,12 +855,19 @@ public abstract class K2SApi extends PluginForHost {
                     } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
                         postPageRaw(cbr, "/requestrecaptcha", "", account);
                         final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
-                        final String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
+                        String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
                         // Dependency
                         if (inValidate(challenge)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else if (inValidate(captcha_url)) {
+                        } else if (inValidate(captcha_url) || !captcha_url.startsWith("http")) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (captcha_url.startsWith("https://")) {
+                            logger.info("captcha_url is already https");
+                        } else {
+                            /* 2020-02-03: Possible workaround for this issue: board.jdownloader.org/showthread.php?t=82989 */
+                            logger.info("captcha_url is not https --> Changing it to https");
+                            captcha_url = captcha_url.replace("http://", "https://");
                         }
                         cbr.getPage(captcha_url);
                         final boolean dummyLink = getDownloadLink() == null;

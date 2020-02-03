@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -33,9 +34,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentainexus.com" }, urls = { "https?://(www\\.)?hentainexus\\.com/((?:view|read)/.+|(page/[^/]+)\\?q=.+)" })
-public class HentaiNexus extends antiDDoSForDecrypt {
-    public HentaiNexus(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentainexus.com" }, urls = { "https?://(?:www\\.)?hentainexus\\.com/(?:view/(\\d+)|(page/[^/]+)\\?q=.+)" })
+public class HentainexusCom extends antiDDoSForDecrypt {
+    public HentainexusCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,27 +45,50 @@ public class HentaiNexus extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String fpName = br.getRegex("<title>\\s*(?:\\[[^\\]]+\\]\\s*)?([^<]+)\\s+::\\s+HentaiNexus").getMatch(0);
+        final String id = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        String author = br.getRegex("<a href=\"/\\?q=artist:[^\"]+\" class=\"has-text-primary\">([^<>]+)</a>").getMatch(0);
+        String magazine = br.getRegex("<a href=\"/\\?q=magazine:[^\"]+\" class=\"has-text-primary\">([^<>]+)</a>").getMatch(0);
+        String title = br.getRegex("<title>\\s*(?:\\[[^\\]]+\\]\\s*)?([^<]+)\\s+::\\s+HentaiNexus").getMatch(0);
+        final String fpName;
+        if (author != null && magazine != null && title != null) {
+            author = Encoding.htmlDecode(author).trim();
+            magazine = Encoding.htmlDecode(magazine).trim();
+            title = Encoding.htmlDecode(title).trim();
+            fpName = String.format(" [%s] %s (%s)", author, title, magazine);
+        } else if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            fpName = title;
+        } else {
+            /* Final fallback */
+            fpName = id;
+        }
         ArrayList<String> links = new ArrayList<String>();
         Collections.addAll(links, br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]*/read/[^\"]+)\"[^>]*>\\s*<div[^>]+class\\s*=\\s*\"card\"[^>]*>").getColumn(0));
         if (parameter.contains("?q=")) {
             Collections.addAll(links, br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]*/view/[^\"]+)\"[^>]*>\\s*<div[^>]+class\\s*=\\s*\"card\"[^>]*>").getColumn(0));
             Collections.addAll(links, br.getRegex("<a[^>]+class\\s*=\\s*\"[^\"]*pagination-(?:next|previous)?[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
         }
+        final DecimalFormat df = new DecimalFormat("000");
+        int page = 0;
         for (String link : links) {
+            page++;
             link = processPrefixSlashes(br, Encoding.htmlDecode(link));
-            decryptedLinks.add(createDownloadlink(link));
-        }
-        String image = br.getRegex("<img[^>]+src\\s*=\\s*\"([^\"]+)\"[^>]+id\\s*=\\s*\"currImage\"[^>]*>").getMatch(0);
-        if (StringUtils.isNotEmpty(image)) {
-            String page = new Regex(parameter, "/read/[^/]+/([^/]+)").getMatch(0);
-            image = processPrefixSlashes(br, Encoding.htmlDecode(image));
-            DownloadLink dl = createDownloadlink(image);
-            if (StringUtils.isNotEmpty(fpName) && StringUtils.isNotEmpty(page)) {
-                dl.setFinalFileName(fpName + "_" + page + getFileNameExtensionFromString(image, ".png"));
-            }
+            final DownloadLink dl = createDownloadlink(link);
+            dl.setFinalFileName(fpName + "_" + df.format(page) + ".png");
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
+        /* 2020-02-03: Not required anymore --> We got a host plugin now */
+        // String image = br.getRegex("<img[^>]+src\\s*=\\s*\"([^\"]+)\"[^>]+id\\s*=\\s*\"currImage\"[^>]*>").getMatch(0);
+        // if (StringUtils.isNotEmpty(image)) {
+        // String page = new Regex(parameter, "/read/[^/]+/([^/]+)").getMatch(0);
+        // image = processPrefixSlashes(br, Encoding.htmlDecode(image));
+        // DownloadLink dl = createDownloadlink(image);
+        // if (StringUtils.isNotEmpty(fpName) && StringUtils.isNotEmpty(page)) {
+        // dl.setFinalFileName(fpName + "_" + page + getFileNameExtensionFromString(image, ".png"));
+        // }
+        // decryptedLinks.add(dl);
+        // }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

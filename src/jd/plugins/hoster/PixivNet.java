@@ -113,6 +113,7 @@ public class PixivNet extends PluginForHost {
         dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         if (account != null) {
+            logger.info("Account is available --> Trying to download original quality");
             String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
             try {
                 con = br.openHeadConnection(original);
@@ -127,6 +128,7 @@ public class PixivNet extends PluginForHost {
                     }
                 }
                 if (!con.getContentType().contains("html") && con.isOK()) {
+                    logger.info("Original download: success");
                     dllink = original;
                     final String urlExtension = getFileNameExtensionFromURL(original);
                     final String nameExtension = Files.getExtension(link.getName());
@@ -135,6 +137,8 @@ public class PixivNet extends PluginForHost {
                     }
                     link.setDownloadSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
+                } else {
+                    logger.info("Original download: failure");
                 }
             } finally {
                 try {
@@ -144,6 +148,8 @@ public class PixivNet extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
+        } else {
+            logger.info("Account is not available --> NOT trying to download original quality");
         }
         try {
             con = br.openHeadConnection(dllink);

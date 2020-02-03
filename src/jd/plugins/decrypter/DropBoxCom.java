@@ -574,6 +574,10 @@ public class DropBoxCom extends PluginForDecrypt {
                     logger.warning("Failed to find more content than the first page");
                     break;
                 }
+                String sub_path = PluginJSonUtils.getJson(current_folder_json_source, "subPath");
+                if (sub_path == null) {
+                    sub_path = "";
+                }
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -585,7 +589,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 pagination_form.put("link_key", link_key);
                 pagination_form.put("link_type", "s");
                 pagination_form.put("secure_hash", secure_hash);
-                pagination_form.put("sub_path", "");
+                pagination_form.put("sub_path", sub_path);
                 next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
                 next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
                 // next_request_voucher = next_request_voucher.replaceAll("", "");
