@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -29,14 +30,15 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
@@ -51,6 +53,8 @@ public class TwitterCom extends PornEmbedParser {
     private static final String     TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
     private String                  username       = null;
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private static Object           LOCK           = new Object();
+    private String                  guest_token    = null;
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -179,196 +183,18 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(this.createDownloadlink(url_extern));
             }
         } else if (parameter.matches(TYPE_USER_POST)) {
-            /* Single Tweet */
-            if (switchtoMobile()) {
-                crawlMobileWebsiteTweet(parameter, null);
-                return decryptedLinks;
-            }
-            tweet_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
-            final String twitter_text = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            if (br.containsHTML("data\\-autoplay\\-src=|video:url")) {
-                final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
-                decryptedLinks.add(dl);
-            } else {
-                final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "(?:<source video\\-src=|video_url\":)\"(https?://[^<>\"]*?)\"" };
-                for (final String regex : regexes) {
-                    final String[] alllinks = br.getRegex(regex).getColumn(0);
-                    if (alllinks != null && alllinks.length > 0) {
-                        for (String alink : alllinks) {
-                            final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/[^/]+/([A-Za-z0-9\\-_]+)\\.([a-z0-9]+)(?::large)?$");
-                            final String servername = fin_al.getMatch(0);
-                            final String ending = fin_al.getMatch(1);
-                            final String final_filename = tweet_id + "_" + servername + "." + ending;
-                            alink = Encoding.htmlDecode(alink.trim());
-                            final DownloadLink dl = createDownloadlink(alink, tweet_id);
-                            dl.setAvailable(true);
-                            dl.setProperty("decryptedfilename", final_filename);
-                            dl.setName(final_filename);
-                            decryptedLinks.add(dl);
-                        }
-                    }
-                }
-                if (br.containsHTML("<meta[^<>]*?property=\"og:type\"[^<>]*?content=\"video\"[^<>]*?>")) {
-                    /* Seems like we have a single video */
-                    final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
-                    decryptedLinks.add(dl);
-                }
-                if (twitter_text != null) {
-                    /* Maybe the tweet only consists of text which maybe contains URLs which maybe lead to content. */
-                    final String[] urls_in_text = HTMLParser.getHttpLinks(twitter_text, "");
-                    if (urls_in_text != null) {
-                        for (final String url : urls_in_text) {
-                            decryptedLinks.add(createDownloadlink(url));
-                        }
-                    }
-                }
-                if (decryptedLinks.size() == 0) {
-                    /* Probably Tweet does not contain any media */
-                    logger.info("Could not find any media in this Tweet");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
+            final boolean prefer_mobile_website = false;
+            if (prefer_mobile_website) {
+                /* Single Tweet */
+                if (switchtoMobile()) {
+                    crawlMobileWebsiteTweet(parameter, null);
                     return decryptedLinks;
                 }
+                /* Fallback to API/normal website */
             }
+            crawlAPITweet(parameter, null);
         } else {
-            /* All posts / reposts / media of a user */
-            if (!br.getURL().endsWith("/media")) {
-                br.getPage(br.getURL() + "/media");
-            }
-            if (switchtoMobile()) {
-                crawlMobileWebsiteUser(parameter);
-                return decryptedLinks;
-            }
-            final String twitter_reload_url_format;
-            if (parameter.endsWith("/media")) {
-                twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + username + "/media_timeline?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
-            } else {
-                twitter_reload_url_format = "https://twitter.com/i/profiles/show/" + username + "/timeline/tweets?include_available_features=1&include_entities=1&max_position=%s&reset_error_state=false";
-            }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            /* 2016-11-30: Seems like twitter limits their website to a max "load more" calls of 40. */
-            int reloadNumber = 0;
-            /* Get start-id */
-            String maxid = br.getRegex("data\\-min\\-position=\"(\\d+)\"").getMatch(0);
-            DownloadLink dl = null;
-            do {
-                if (reloadNumber == 1) {// For testing only!
-                    // break;
-                }
-                logger.info("Decrypting reloadnumber " + reloadNumber + ", found " + decryptedLinks.size() + " links till now");
-                if (reloadNumber > 0) {
-                    maxid = br.getRegex("\"min_position\"\\s*?:\\s*?\"(\\d+)").getMatch(0);
-                }
-                int addedlinks_all = 0;
-                final String[] tweetsources = br.getRegex("li class=\"js\\-stream\\-item stream\\-item stream\\-item(.*?)ProfileTweet\\-actionCount").getColumn(0);
-                if (tweetsources == null || tweetsources.length == 0) {
-                    logger.info("tweetsources == null || tweetsources.length == 0, regex is broken eventually");
-                    break;
-                }
-                for (final String tweetsource : tweetsources) {
-                    // logger.info("tweetsource: " + tweetsource);
-                    Boolean found = false;
-                    tweet_id = new Regex(tweetsource, "id=\"stream\\-item\\-tweet\\-(\\d+)\"").getMatch(0);
-                    if (tweet_id == null) {
-                        logger.info("tweet_id == null");
-                        return null;
-                    }
-                    final String[] embedurl_regexes = new String[] { "\"(https?://(?:www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://(?:www\\.)?vine\\.co/v/[A-Za-z0-9]+)\"" };
-                    for (final String regex : embedurl_regexes) {
-                        final String[] embed_links = new Regex(tweetsource, regex).getColumn(0);
-                        if (embed_links != null && embed_links.length > 0) {
-                            found = true;
-                            for (final String single_embed_ink : embed_links) {
-                                dl = createDownloadlink(single_embed_ink, tweet_id);
-                                if (fp != null) {
-                                    fp.add(dl);
-                                }
-                                distribute(dl);
-                                decryptedLinks.add(dl);
-                                addedlinks_all++;
-                            }
-                        }
-                    }
-                    final String[] directlink_regexes = new String[] { "data-image-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(?:jpg|png|gif))", "\"(https://amp\\.twimg\\.com/[^<>\"]*?)\"", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "(?:data\\-img\\-src=|img src=)\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
-                    for (final String regex : directlink_regexes) {
-                        final String[] piclinks = new Regex(tweetsource, regex).getColumn(0);
-                        if (piclinks != null && piclinks.length > 0) {
-                            found = true;
-                            for (String singleLink : piclinks) {
-                                final String remove = new Regex(singleLink, "(:[a-z0-9]+)").getMatch(0);
-                                if (remove != null) {
-                                    singleLink = singleLink.replace(remove, "");
-                                }
-                                singleLink = Encoding.htmlDecode(singleLink.trim());
-                                dl = createDownloadlink(singleLink, tweet_id);
-                                if (fp != null) {
-                                    fp.add(dl);
-                                }
-                                dl.setAvailable(true);
-                                distribute(dl);
-                                decryptedLinks.add(dl);
-                                addedlinks_all++;
-                            }
-                        }
-                    }
-                    /* Video #1 */
-                    final String stream_id = new Regex(tweetsource, "\"/i/cards/tfw/v1/(\\d+)\\?cardname=__entity_video").getMatch(0);
-                    if (stream_id != null) {
-                        found = true;
-                        /* Our post is a stream */
-                        /* Usually stream_id == tweet_id */
-                        dl = createDownloadlink(createVideourl(stream_id), tweet_id);
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                        distribute(dl);
-                        decryptedLinks.add(dl);
-                        addedlinks_all++;
-                    }
-                    /* Video #2 */
-                    final Regex vinfo = new Regex(tweetsource, "(video data-media-id=\"[0-9]+\".*?source video-src=\"[^\"]+\")");
-                    // logger.info("vinfo: " + vinfo);
-                    final String vid = vinfo.getMatch(0);
-                    final String vsrc = vinfo.getMatch(1);
-                    if (vid != null && vsrc != null) {
-                        found = true;
-                        dl = createDownloadlink(vsrc, tweet_id);
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                        dl.setContentUrl(vsrc);
-                        dl.setLinkID(vid);
-                        dl.setName(vid + ".mp4");
-                        dl.setAvailable(true);
-                        distribute(dl);
-                        decryptedLinks.add(dl);
-                        addedlinks_all++;
-                    } else if (tweetsource.contains("is-generic-video")) {
-                        /* Video #3 2016-10-21 */
-                        found = true;
-                        dl = this.createDownloadlink(createVideourl(tweet_id));
-                        distribute(dl);
-                        decryptedLinks.add(dl);
-                        addedlinks_all++;
-                    }
-                    if (!found) {
-                        dl = createDownloadlink(createVideourl(tweet_id), tweet_id);
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                        decryptedLinks.add(dl);
-                        addedlinks_all++;
-                    }
-                }
-                if (addedlinks_all == 0 || maxid == null) {
-                    break;
-                } else if (this.isAbort()) {
-                    logger.info("Decryption aborted at reload " + reloadNumber);
-                    return decryptedLinks;
-                }
-                getPage(String.format(twitter_reload_url_format, maxid));
-                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                reloadNumber++;
-            } while (br.containsHTML("\"has_more_items\":true"));
+            crawlMobileWebsiteUser(parameter);
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Could not find any media, decrypter might be broken");
@@ -395,6 +221,75 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
+    private void crawlAPITweet(final String parameter, final FilePackage fp) throws Exception {
+        logger.info("Crawling API tweet");
+        final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
+        /* 2020-02-03: Static authtoken */
+        br.getHeaders().put("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA");
+        br.getHeaders().put("x-csrf-token", "undefined");
+        br.getHeaders().put("x-twitter-active-user", "yes");
+        br.getHeaders().put("x-twitter-client-language", "de");
+        getAndSetGuestToken();
+        br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweet_id + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
+        if (ressourcelist == null) {
+            logger.info("Current tweet does not contain any media objects");
+            this.decryptedLinks.add(this.createOfflinelink(parameter));
+            return;
+        }
+        logger.info(String.format("Found %d media objects", ressourcelist.size()));
+        for (final Object mediaO : ressourcelist) {
+            /* TODO: Check what happens when there is more than one video in a single tweet. */
+            entries = (LinkedHashMap<String, Object>) mediaO;
+            crawlMediaObject(tweet_id, entries);
+        }
+    }
+
+    private void getAndSetGuestToken() throws DecrypterException, IOException {
+        synchronized (LOCK) {
+            if (guest_token == null) {
+                logger.info("Generating new guest_token");
+                br.getHeaders().put("x-csrf-token", "undefined");
+                br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+                /** TODO: Save guest_token throughout session so we do not generate them so frequently */
+                guest_token = PluginJSonUtils.getJson(br, "guest_token");
+                if (StringUtils.isEmpty(guest_token)) {
+                    logger.warning("Failed to find guest_token");
+                    throw new DecrypterException("Plugin broken");
+                }
+            } else {
+                logger.info("Re-using existing guest-token");
+            }
+            br.getHeaders().put("x-guest-token", guest_token);
+        }
+    }
+
+    /** Crawls single media objects obtained via API. */
+    private void crawlMediaObject(final String tweet_id, final LinkedHashMap<String, Object> entries) {
+        String url = (String) entries.get("media_url_https");
+        if (StringUtils.isEmpty(url)) {
+            /* Ignore invalid items */
+            return;
+        }
+        final DownloadLink dl;
+        if (url.contains("/tweet_video_thumb/")) {
+            /* Video thumbnail --> Download video */
+            this.createVideourl("");
+            dl = this.createDownloadlink(this.createVideourl(tweet_id));
+            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        } else {
+            /* Photo */
+            if (!url.contains("?name=")) {
+                url += "?name=orig";
+            }
+            dl = this.createDownloadlink("directhttp://" + url);
+        }
+        dl.setAvailable(true);
+        decryptedLinks.add(dl);
+    }
+
     private void crawlMobileWebsiteTweet(final String parameter, final FilePackage fp) throws IOException {
         logger.info("Crawling mobile website tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
@@ -407,7 +302,7 @@ public class TwitterCom extends PornEmbedParser {
             }
             distribute(dl);
         } else if (br.containsHTML("/tweet_video_thumb/")) {
-            /* TODO: Check what happens ifthere is a video/gif + pictures in one post. */
+            /* TODO: Check what happens if there is a video/gif + pictures in one post. */
             /* .gif --> Can be downloaded as .mp4 video */
             final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
             decryptedLinks.add(dl);
@@ -451,10 +346,47 @@ public class TwitterCom extends PornEmbedParser {
             }
         }
     }
+    // private void crawlAPIUser(final String parameter) throws IOException {
+    // logger.info("Crawling API user");
+    // final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
+    // int index = 0;
+    // String nextURL = null;
+    // final boolean crawl_tweets_separately = false;
+    // final FilePackage fp = FilePackage.getInstance();
+    // fp.setName(username);
+    // do {
+    // logger.info("Crawling page " + (index + 1));
+    // if (nextURL != null) {
+    // br.getPage(nextURL);
+    // }
+    // final String current_tweet_id = br.getRegex("name=\"tweet_(\\d+)\"").getMatch(0);
+    // if (current_tweet_id == null) {
+    // logger.warning("Failed to find current_tweet_id");
+    // break;
+    // }
+    // final String tweet_url = String.format("https://twitter.com/%s/status/%s", username, current_tweet_id);
+    // if (crawl_tweets_separately) {
+    // /* These URLs will go back into the crawler to get crawled separately */
+    // final DownloadLink dl = this.createDownloadlink(tweet_url);
+    // decryptedLinks.add(dl);
+    // distribute(dl);
+    // } else {
+    // crawlMobileWebsiteTweet(tweet_url, fp);
+    // }
+    // index++;
+    // nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
+    // } while (nextURL != null && !this.isAbort());
+    // logger.info(String.format("Done after %d pages", index));
+    // }
 
     /* 2020-01-30: Mobile website will only show 1 tweet per page */
     private void crawlMobileWebsiteUser(final String parameter) throws IOException {
         logger.info("Crawling mobile website user");
+        br.getPage(parameter);
+        if (!this.switchtoMobile()) {
+            logger.warning("Unable to crawl: Failed to switch to mobile website");
+            return;
+        }
         final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
         int index = 0;
         String nextURL = null;
