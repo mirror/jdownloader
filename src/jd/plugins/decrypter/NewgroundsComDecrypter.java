@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -27,11 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)/?$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)?/?$" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +48,28 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "https?://([^/]+)\\.newgrounds\\.com/").getMatch(0);
+        String fpName = null;
+        if (parameter.contains("/view/")) {
+            /*
+             * 2020-02-03: New: Such URLs may contain multiple URLs --> Crawl all of them. This linktype was initially handled in the
+             * hosterplugin.
+             */
+            fpName = new Regex(parameter, "/view/(.+)").getMatch(0);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            final String[] pics = br.getRegex("\"(https?://art\\.ngfiles\\.com/comments/[^<>\"]+)\"").getColumn(0);
+            if (pics == null || pics.length == 0) {
+                return null;
+            }
+            for (final String pic : pics) {
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + pic);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                dl._setFilePackage(fp);
+            }
+            return decryptedLinks;
+        }
+        fpName = new Regex(parameter, "https?://([^/]+)\\.newgrounds\\.com/").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         int page = 0;
