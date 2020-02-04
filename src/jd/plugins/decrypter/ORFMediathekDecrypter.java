@@ -26,6 +26,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -39,10 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
@@ -140,6 +140,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 }
                 for (final Object videoo : video) {
                     final LinkedHashMap<String, Object> entries_video = (LinkedHashMap<String, Object>) videoo;
+                    final String thumbnail = (String) entries_video.get("preview_image_url");
                     final ArrayList<Object> sources_video = (ArrayList) entries_video.get("sources");
                     ArrayList<Object> subtitle_list = null;
                     final Object sources_subtitle_o = entries_video.get("subtitles");
@@ -355,6 +356,15 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                 }
                             }
                         }
+                    }
+                    if (thumbnail != null && cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_THUMBNAIL, false)) {
+                        final DownloadLink dl = this.createDownloadlink("directhttp://" + thumbnail);
+                        dl.setFinalFileName(titlethis + ".jpeg");
+                        if (fp != null) {
+                            dl._setFilePackage(fp);
+                        }
+                        dl.setAvailable(true);
+                        ret.add(dl);
                     }
                     if (BEST) {
                         final String[] qualities = { "VERYHIGH", "HIGH", "MEDIUM", "LOW" };

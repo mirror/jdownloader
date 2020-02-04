@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,17 +39,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
     private static final String NEW_URLFORMAT = "https?://tvthek\\.orf\\.atdecrypted\\d+";
     private static final String TYPE_AUDIO    = "https?://ooe\\.orf\\.at/radio/stories/\\d+/";
     public static final String  Q_SUBTITLES   = "Q_SUBTITLES";
+    public static final String  Q_THUMBNAIL   = "Q_THUMBNAIL";
     public static final String  Q_BEST        = "Q_BEST_2";
     public static final String  Q_LOW         = "Q_LOW";
     public static final String  Q_MEDIUM      = "Q_MEDIUM";
@@ -251,7 +252,8 @@ public class ORFMediathek extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.orf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle whenever possible").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail whenever possible").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.orf.best", "Load Best Version ONLY")).setDefaultValue(true);
         getConfig().addEntry(bestonly);
