@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/album/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/album/\\d+" })
 public class PornHubComGallery extends PluginForDecrypt {
     public PornHubComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,38 +45,31 @@ public class PornHubComGallery extends PluginForDecrypt {
         parameter = parameter.replaceAll("https://", "http://");
         parameter = parameter.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "https://www.");
         br.setFollowRedirects(true);
+        Boolean premium = false;
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (account != null) {
+            try {
+                jd.plugins.hoster.PornHubCom.login(this, br, account, false);
+                if (AccountType.PREMIUM.equals(account.getType())) {
+                    premium = true;
+                }
+            } catch (PluginException e) {
+                logger.info("Login failure");
+                handleAccountException(account, e);
+            }
+        }
+        if (premium) {
+            parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
+        } else {
+            parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
+        }
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         boolean privateImage = false;
         if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage)) {
             privateImage = true;
-            Boolean premium = false;
-            final Account account = AccountController.getInstance().getValidAccount(getHost());
-            if (account != null) {
-                try {
-                    jd.plugins.hoster.PornHubCom.login(this, br, account, false);
-                    if (AccountType.PREMIUM.equals(account.getType())) {
-                        premium = true;
-                    }
-                } catch (PluginException e) {
-                    handleAccountException(account, e);
-                }
-            }
-            if (premium) {
-                parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
-            } else {
-                parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
-            }
-            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-            if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage)) {
-                return decryptedLinks;
-            }
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("class=\"photoAlbumTitleV2\">\\s*([^<>\"]*?)\\s*<").getMatch(0);
