@@ -42,6 +42,11 @@ public class RapidcryptNet extends antiDDoSForDecrypt {
         }
         final String finallink = this.br.getRegex("class=(?:\"|\\')push_button blue(?:\"|\\') href=(?:\"|\\')?([^\"\\'>]+)(?:\"|\\')?>").getMatch(0);
         if (finallink == null) {
+            if (br.containsHTML("class=\"push_button blue\" href=> Click To Continue</a>")) {
+                /* Dead URL e.g. https://rapidcrypt.net/ddlto/12345678 */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         } else if (finallink.equals("")) {
