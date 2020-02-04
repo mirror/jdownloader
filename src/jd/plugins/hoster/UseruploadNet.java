@@ -112,6 +112,10 @@ public class UseruploadNet extends XFileSharingProBasic {
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"zmdi zmdi-file visible-xs\"></i>([^<>\"]+)<").getMatch(0);
         }
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            /* 2020-02-04 */
+            fileInfo[0] = new Regex(correctedBR, "class=\"name\">\\s*<h4>([^<>\"]+)<").getMatch(0);
+        }
         if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = new Regex(correctedBR, "<strong>Size:</strong>([^<>\"]+)</li>").getMatch(0);
         }
