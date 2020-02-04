@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -147,5 +148,19 @@ public class GounlimitedTo extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        /* 2020-02-04: Prefer filename from other place as it sometimes contains more details than what template plugin would grab. */
+        super.scanInfo(fileInfo);
+        final String better_filename = new Regex(correctedBR, "<h2 class=\"the_title mb-2\">([^<>\"]+)</h2>").getMatch(0);
+        if (better_filename != null) {
+            logger.info("Found better_filename");
+            fileInfo[0] = better_filename;
+        } else {
+            logger.info("Failed to find better_filename");
+        }
+        return fileInfo;
     }
 }
