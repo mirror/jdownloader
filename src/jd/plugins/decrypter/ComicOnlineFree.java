@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\.)?(comiconlinefree\\.com|viewcomics//.me)/(?:comic/|[^/]+/issue-)[^\\s/]+(?:/full)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\.)?(comiconlinefree\\.com|viewcomics\\.me)/(?:comic/|[^/]+/issue-)[^\\s/]+(?:/full)?" })
 public class ComicOnlineFree extends antiDDoSForDecrypt {
     public ComicOnlineFree(PluginWrapper wrapper) {
         super(wrapper);
