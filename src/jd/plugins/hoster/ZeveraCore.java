@@ -20,15 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,6 +39,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -163,12 +163,19 @@ abstract public class ZeveraCore extends UseNet {
     protected AvailableStatus requestFileInformationDirectURL(final Browser br, final DownloadLink link) throws Exception {
         URLConnectionAdapter con = null;
         try {
-            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(link.getPluginPatternMatcher()));
-            if (!con.getContentType().contains("html") && con.isOK()) {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(link.getPluginPatternMatcher()));
+            if (!StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) {
                 if (link.getFinalFileName() == null) {
                     link.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(con), false));
                 }
-                link.setVerifiedFileSize(con.getLongContentLength());
+                final long completeContentLength = con.getCompleteContentLength();
+                final long verifiedFileSize = link.getVerifiedFileSize();
+                if (completeContentLength != verifiedFileSize) {
+                    logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
+                    link.setVerifiedFileSize(completeContentLength);
+                }
                 return AvailableStatus.TRUE;
             } else if (con.getResponseCode() == 404) {
                 /* Usually 404 == offline */
@@ -182,8 +189,10 @@ abstract public class ZeveraCore extends UseNet {
             }
         } finally {
             try {
-                /* make sure we close connection */
-                con.disconnect();
+                if (con != null) {
+                    /* make sure we close connection */
+                    con.disconnect();
+                }
             } catch (final Throwable e) {
             }
         }
@@ -252,16 +261,17 @@ abstract public class ZeveraCore extends UseNet {
         try {
             antiCloudflare(br, dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            final String contenttype = dl.getConnection().getContentType();
-            final long filesize = dl.getConnection().getLongContentLength();
-            if (contenttype.contains("html") || filesize <= 0) {
+            final String contentType = dl.getConnection().getContentType();
+            final long completeContentLength = dl.getConnection().getCompleteContentLength();
+            if (StringUtils.containsIgnoreCase(contentType, "text") || !dl.getConnection().isOK() || completeContentLength <= 0) {
                 br.followConnection();
                 handleAPIErrors(this.br, link, account);
                 mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
-            {
-                /* 2019-12-18: TODO: This is a workaround! See: https://svn.jdownloader.org/issues/87654 */
-                link.setVerifiedFileSize(filesize);
+            final long verifiedFileSize = link.getVerifiedFileSize();
+            if (completeContentLength != verifiedFileSize) {
+                logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
+                link.setVerifiedFileSize(completeContentLength);
             }
             this.dl.startDownload();
         } catch (final Exception e) {
@@ -354,16 +364,19 @@ abstract public class ZeveraCore extends UseNet {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (StringUtils.containsIgnoreCase(con.getContentType(), "text") || con.getResponseCode() != 200 || con.getCompleteContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
-                    con.disconnect();
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 } catch (final Throwable e) {
                 }
             }
@@ -829,9 +842,8 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
-     * Some users find this annoying and will deactivate it. </br>
-     * default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
+     * users find this annoying and will deactivate it. </br> default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -839,10 +851,9 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
-     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
-     * JDownloader and will not be able to download any more files then. </br>
-     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
+     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
+     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
