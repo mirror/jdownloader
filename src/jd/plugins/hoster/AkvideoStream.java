@@ -21,10 +21,13 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AkvideoStream extends XFileSharingProBasic {
@@ -116,5 +119,21 @@ public class AkvideoStream extends XFileSharingProBasic {
     protected boolean isVideohoster_enforce_video_filename() {
         /* 2020-01-21: Special */
         return true;
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        final String ret = super.getDllinkViaOfficialVideoDownload(brc, link, account, returnFilesize);
+        if (ret != null) {
+            return ret;
+        }
+        /*
+         * 2020-02-04: Rare error. If this happens and we return null, template will fallback to stream download and not download the
+         * highest quality! <br><b class="err">Security error</b>
+         */
+        if (brc.containsHTML(">\\s*Security error")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Security error'", 1 * 60 * 1000l);
+        }
+        return null;
     }
 }

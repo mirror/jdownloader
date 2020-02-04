@@ -826,7 +826,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     try {
-                        fileInfo[1] = getDllinkViaOfficialVideoDownload(null, null, true);
+                        fileInfo[1] = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), null, null, true);
                     } catch (final Throwable e) {
                         /* This should never happen */
                         e.printStackTrace();
@@ -1262,7 +1262,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * Try to find a downloadlink. Check different methods sorted from "usually available" to "rarely available" (e.g. there are
                  * a lot of sites which support video embedding).
                  */
-                dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 /* Check for streaming/direct links on the first page. */
                 if (StringUtils.isEmpty(dllink)) {
                     checkErrors(link, account, false);
@@ -1337,7 +1337,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 download1counter++;
-            } while (download1counter <= download1max);
+            } while (download1counter <= download1max && dllink == null);
         }
         if (StringUtils.isEmpty(dllink)) {
             Form dlForm = findFormDownload2Free();
@@ -1410,7 +1410,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *            true = Only return filesize of selected quality. Use this in availablecheck. </br>
      *            false = return final downloadurl of selected quality. Use this in download mode.
      */
-    protected String getDllinkViaOfficialVideoDownload(final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+    protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
         String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
@@ -1432,52 +1432,48 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String videoQualityStr = null;
         String videoHash = null;
         String targetHTML = null;
-        if (videoQualityHTMLs.length > 0) {
-            // logger.info("Trying to find selected quality for official video download");
-            logger.info("Trying to find highest quality for official video download");
-            for (final String videoQualityHTML : videoQualityHTMLs) {
-                final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
-                // final String vid = videoinfo.getMatch(0);
-                final Regex videoinfo = new Regex(videoQualityHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
-                // final String vid = videoinfo.getMatch(0);
-                /* Usually this will be 'o' standing for "original quality" */
-                final String videoQualityStrTmp = videoinfo.getMatch(1);
-                final String videoHashTmp = videoinfo.getMatch(2);
-                if (StringUtils.isEmpty(videoQualityStrTmp) || StringUtils.isEmpty(videoHashTmp)) {
-                    /*
-                     * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything
-                     * fails!
-                     */
-                    continue;
-                } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
-                    /*
-                     * 2020-01-18: There shouldn't be any unknown values but we should consider allowing such in the future maybe as final
-                     * fallback.
-                     */
-                    logger.info("Skipping unknown quality: " + videoQualityStrTmp);
-                    continue;
-                }
-                final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
-                if (internalQualityValueTmp < maxInternalQualityValue) {
-                    /* Only continue with qualities that are higher than the highest we found so far. */
-                    continue;
-                }
-                maxInternalQualityValue = internalQualityValueTmp;
-                videoQualityStr = videoQualityStrTmp;
-                videoHash = videoHashTmp;
-                if (filesizeStrTmp != null) {
-                    /*
-                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
-                     * RegEx fails e.g. for supervideo.tv.
-                     */
-                    filesizeStr = filesizeStrTmp;
-                }
-                targetHTML = videoQualityHTML;
-            }
+        if (videoQualityHTMLs.length == 0) {
+            logger.info("Failed to find any official video downloads");
         }
-        if (returnFilesize) {
-            /* E.g. in availablecheck */
-            return filesizeStr;
+        // logger.info("Trying to find selected quality for official video download");
+        logger.info("Trying to find highest quality for official video download");
+        for (final String videoQualityHTML : videoQualityHTMLs) {
+            final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
+            // final String vid = videoinfo.getMatch(0);
+            final Regex videoinfo = new Regex(videoQualityHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
+            // final String vid = videoinfo.getMatch(0);
+            /* Usually this will be 'o' standing for "original quality" */
+            final String videoQualityStrTmp = videoinfo.getMatch(1);
+            final String videoHashTmp = videoinfo.getMatch(2);
+            if (StringUtils.isEmpty(videoQualityStrTmp) || StringUtils.isEmpty(videoHashTmp)) {
+                /*
+                 * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything fails!
+                 */
+                continue;
+            } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
+                /*
+                 * 2020-01-18: There shouldn't be any unknown values but we should consider allowing such in the future maybe as final
+                 * fallback.
+                 */
+                logger.info("Skipping unknown quality: " + videoQualityStrTmp);
+                continue;
+            }
+            final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
+            if (internalQualityValueTmp < maxInternalQualityValue) {
+                /* Only continue with qualities that are higher than the highest we found so far. */
+                continue;
+            }
+            maxInternalQualityValue = internalQualityValueTmp;
+            videoQualityStr = videoQualityStrTmp;
+            videoHash = videoHashTmp;
+            if (filesizeStrTmp != null) {
+                /*
+                 * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                 * RegEx fails e.g. for supervideo.tv.
+                 */
+                filesizeStr = filesizeStrTmp;
+            }
+            targetHTML = videoQualityHTML;
         }
         if (targetHTML == null || videoQualityStr == null || videoHash == null) {
             if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
@@ -1486,10 +1482,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             return null;
         }
+        logger.info("Selected videoquality: " + videoQualityStr);
+        if (returnFilesize) {
+            /* E.g. in availablecheck */
+            return filesizeStr;
+        }
         try {
             /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
             this.waitTime(link, System.currentTimeMillis());
-            final Browser brc = br.cloneBrowser();
             /*
              * TODO: Fix issue where first request leads to '<br><b class="err">Security error</b>' (reproduced over multiple filehosts e.g.
              * xvideosharing.com)
@@ -3379,7 +3379,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     /*
                      * First check for official video download as this is sometimes only available via account (example: xvideosharing.com)!
                      */
-                    dllink = getDllinkViaOfficialVideoDownload(link, account, false);
+                    dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                     if (StringUtils.isEmpty(dllink)) {
                         dllink = getDllink(link, account);
                     }
