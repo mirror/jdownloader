@@ -566,10 +566,6 @@ public class DropBoxCom extends PluginForDecrypt {
                 final Regex urlinfo = new Regex(parameter, "https?://[^/]+/sh/([^/]+)/([^/]+)");
                 final String link_key = urlinfo.getMatch(0);
                 final String secure_hash = urlinfo.getMatch(1);
-                // next_request_voucher = PluginJSonUtils.getJson(br, "next_request_voucher");
-                // if (StringUtils.isEmpty(next_request_voucher)) {
-                // next_request_voucher = br.getRegex("next_request_voucher..\\s*:\\s*..(\\{.*?).\"\\}\"\\)\\}\\);").getMatch(0);
-                // }
                 final String cookie_t = br.getCookie(getHost(), "t");
                 if (StringUtils.isEmpty(next_request_voucher) || cookie_t == null || link_key == null || secure_hash == null) {
                     logger.warning("Failed to find more content");
