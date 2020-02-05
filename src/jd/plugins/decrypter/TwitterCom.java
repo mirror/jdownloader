@@ -409,6 +409,7 @@ public class TwitterCom extends PornEmbedParser {
                 crawlTweetMediaObjectsAPI(entries);
                 numberof_items_on_current_page++;
             }
+            logger.info(String.format("Numberof tweets on current page: %d of expected max %d", numberof_items_on_current_page, items_per_page));
             /* Done - now try to find string required to access next page */
             try {
                 LinkedHashMap<String, Object> pagination_info_entries = (LinkedHashMap<String, Object>) pagination_info.get(pagination_info.size() - 1);
@@ -421,6 +422,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
             } catch (final Throwable e) {
                 e.printStackTrace();
+                logger.info("Failed to get nextCursor");
             }
             index++;
             this.sleep(3000l, param);

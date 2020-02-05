@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|(?:[a-z]{2}/)?artworks/\\d+|(?:[a-z]{2}/)?users/\\d+/(?:bookmarks/)?artworks)" })
@@ -82,6 +83,8 @@ public class PixivNet extends PluginForDecrypt {
         String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String fpName = null;
+        String title = null;
+        String username = null;
         Boolean single = null;
         if (parameter.matches(TYPE_GALLERY) || parameter.matches(TYPE_ARTWORKS)) {
             if (parameter.matches(TYPE_ARTWORKS)) {
@@ -121,9 +124,9 @@ public class PixivNet extends PluginForDecrypt {
                 if (single == null) {
                     br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
                 }
-                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
+                if (title == null) {
+                    title = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
                 boolean found = add(links, br, "data-illust-id=\"\\d+\"><img src=\"(https?[^<>\"']+)\"");
                 if (!found) {
@@ -147,11 +150,19 @@ public class PixivNet extends PluginForDecrypt {
                 if (links.isEmpty()) {
                     add(links, br, "pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"");
                 }
-                final String userIllust = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
-                if (userIllust != null && userIllust.matches(".*\"illustType\"\\s*:\\s*2.*")) {
+                final String json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+                if (json != null && json.matches(".*\"illustType\"\\s*:\\s*2.*")) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage("https://www.pixiv.net/ajax/illust/" + lid + "/ugoira_meta");
                     add(links, brc, "(https?.*?)\"");
+                }
+                if (json != null) {
+                    username = PluginJSonUtils.getJson(json, "userName");
+                    final String illustTitle = PluginJSonUtils.getJson(json, "illustTitle");
+                    if (!StringUtils.isEmpty(illustTitle)) {
+                        /* Prefer this over title grabbed from html */
+                        title = illustTitle;
+                    }
                 }
                 if (links.isEmpty() && isOffline(br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
@@ -175,9 +186,9 @@ public class PixivNet extends PluginForDecrypt {
                     logger.info("Adult content: Account required");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM);
                 }
-                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
+                if (title == null) {
+                    title = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
                 // old layout
                 boolean found = add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
@@ -197,8 +208,14 @@ public class PixivNet extends PluginForDecrypt {
                     }
                 }
             }
-            if (fpName != null) {
-                fpName = Encoding.htmlOnlyDecode(fpName);
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
+            } else {
+                /* Fallback */
+                title = lid;
+            }
+            if (title != null) {
+                fpName = title;
                 if (!fpName.startsWith("「")) {
                     fpName = "「" + fpName;
                 }
@@ -212,7 +229,23 @@ public class PixivNet extends PluginForDecrypt {
                 String filename;
                 final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
                 if (picNumberStr != null) {
-                    filename = lid + "_p" + picNumberStr + (fpName != null ? fpName : "");
+                    String thistitle;
+                    if (title == null) {
+                        /* Should never happen */
+                        thistitle = "";
+                    } else {
+                        thistitle = title;
+                        if (!thistitle.startsWith("「")) {
+                            thistitle = "「" + thistitle;
+                        }
+                    }
+                    if (username != null) {
+                        thistitle += " - " + username;
+                    }
+                    if (!thistitle.endsWith("」")) {
+                        thistitle += "」";
+                    }
+                    filename = lid + "_p" + picNumberStr + thistitle;
                 } else {
                     /* Fallback - just use the given filename (minus extension)! */
                     filename = filename_url.substring(0, filename_url.lastIndexOf("."));
