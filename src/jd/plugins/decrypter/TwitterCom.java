@@ -17,7 +17,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -52,9 +54,10 @@ public class TwitterCom extends PornEmbedParser {
     private static final String     TYPE_USER_POST = "https?://(?:www\\.)?twitter\\.com.*?status/\\d+.*?";
     private static final String     TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
     private String                  username       = null;
+    private FilePackage             fp             = null;
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private static Object           LOCK           = new Object();
-    private String                  guest_token    = null;
+    private static String           guest_token    = null;
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -187,14 +190,14 @@ public class TwitterCom extends PornEmbedParser {
             if (prefer_mobile_website) {
                 /* Single Tweet */
                 if (switchtoMobile()) {
-                    crawlMobileWebsiteTweet(parameter, null);
+                    crawlTweetViaMobileWebsite(parameter, null);
                     return decryptedLinks;
                 }
                 /* Fallback to API/normal website */
             }
             crawlAPITweet(parameter, null);
         } else {
-            crawlMobileWebsiteUser(parameter);
+            crawlUserViaAPI(parameter);
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Could not find any media, decrypter might be broken");
@@ -224,27 +227,20 @@ public class TwitterCom extends PornEmbedParser {
     private void crawlAPITweet(final String parameter, final FilePackage fp) throws Exception {
         logger.info("Crawling API tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
+        prepareAPI();
+        br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweet_id + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
+        crawlTweetMediaObjectsAPI(entries);
+    }
+
+    private void prepareAPI() throws DecrypterException, IOException {
         /* 2020-02-03: Static authtoken */
         br.getHeaders().put("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA");
         br.getHeaders().put("x-csrf-token", "undefined");
         br.getHeaders().put("x-twitter-active-user", "yes");
         br.getHeaders().put("x-twitter-client-language", "de");
         getAndSetGuestToken();
-        br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweet_id + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
-        if (ressourcelist == null) {
-            logger.info("Current tweet does not contain any media objects");
-            this.decryptedLinks.add(this.createOfflinelink(parameter));
-            return;
-        }
-        logger.info(String.format("Found %d media objects", ressourcelist.size()));
-        for (final Object mediaO : ressourcelist) {
-            /* TODO: Check what happens when there is more than one video in a single tweet. */
-            entries = (LinkedHashMap<String, Object>) mediaO;
-            crawlMediaObject(tweet_id, entries);
-        }
     }
 
     private void getAndSetGuestToken() throws DecrypterException, IOException {
@@ -267,7 +263,26 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     /** Crawls single media objects obtained via API. */
-    private void crawlMediaObject(final String tweet_id, final LinkedHashMap<String, Object> entries) {
+    private void crawlTweetMediaObjectsAPI(LinkedHashMap<String, Object> entries) {
+        final String tweet_id = (String) entries.get("id_str");
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
+        if (ressourcelist == null) {
+            logger.info("Current tweet does not contain any media objects");
+            return;
+        } else if (StringUtils.isEmpty(tweet_id)) {
+            logger.warning("Failed to find tweet_id");
+            return;
+        }
+        logger.info(String.format("Found %d media objects", ressourcelist.size()));
+        for (final Object mediaO : ressourcelist) {
+            /* TODO: Check what happens when there is more than one video in a single tweet. */
+            entries = (LinkedHashMap<String, Object>) mediaO;
+            crawlMediaObjectAPI(tweet_id, entries);
+        }
+    }
+
+    /** Crawls single media objects obtained via API. */
+    private void crawlMediaObjectAPI(final String tweet_id, final LinkedHashMap<String, Object> entries) {
         String url = (String) entries.get("media_url_https");
         if (StringUtils.isEmpty(url)) {
             /* Ignore invalid items */
@@ -288,9 +303,10 @@ public class TwitterCom extends PornEmbedParser {
         }
         dl.setAvailable(true);
         decryptedLinks.add(dl);
+        distribute(dl);
     }
 
-    private void crawlMobileWebsiteTweet(final String parameter, final FilePackage fp) throws IOException {
+    private void crawlTweetViaMobileWebsite(final String parameter, final FilePackage fp) throws IOException {
         logger.info("Crawling mobile website tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
@@ -346,51 +362,87 @@ public class TwitterCom extends PornEmbedParser {
             }
         }
     }
-    // private void crawlAPIUser(final String parameter) throws IOException {
-    // logger.info("Crawling API user");
-    // final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
-    // int index = 0;
-    // String nextURL = null;
-    // final boolean crawl_tweets_separately = false;
-    // final FilePackage fp = FilePackage.getInstance();
-    // fp.setName(username);
-    // do {
-    // logger.info("Crawling page " + (index + 1));
-    // if (nextURL != null) {
-    // br.getPage(nextURL);
-    // }
-    // final String current_tweet_id = br.getRegex("name=\"tweet_(\\d+)\"").getMatch(0);
-    // if (current_tweet_id == null) {
-    // logger.warning("Failed to find current_tweet_id");
-    // break;
-    // }
-    // final String tweet_url = String.format("https://twitter.com/%s/status/%s", username, current_tweet_id);
-    // if (crawl_tweets_separately) {
-    // /* These URLs will go back into the crawler to get crawled separately */
-    // final DownloadLink dl = this.createDownloadlink(tweet_url);
-    // decryptedLinks.add(dl);
-    // distribute(dl);
-    // } else {
-    // crawlMobileWebsiteTweet(tweet_url, fp);
-    // }
-    // index++;
-    // nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
-    // } while (nextURL != null && !this.isAbort());
-    // logger.info(String.format("Done after %d pages", index));
-    // }
+
+    private void crawlUserViaAPI(final String parameter) throws Exception {
+        logger.info("Crawling API user");
+        final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
+        this.prepareAPI();
+        final boolean use_old_api_to_get_userid = true;
+        LinkedHashMap<String, Object> entries;
+        final String user_id;
+        if (use_old_api_to_get_userid) {
+            /* https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
+            br.getPage("https://api.twitter.com/1.1/users/lookup.json?screen_name=" + username);
+            user_id = PluginJSonUtils.getJson(br, "id_str");
+        } else {
+            br.getPage("https://api.twitter.com/graphql/DO_NOT_USE_ATM_2020_02_05/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + username + "%22%2C%22withHighlightedLabel%22%3Afalse%7D");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
+            user_id = (String) entries.get("rest_id");
+        }
+        if (StringUtils.isEmpty(user_id)) {
+            logger.warning("Failed to find user_id");
+            throw new DecrypterException("Decrypter broken");
+        }
+        int index = 0;
+        fp = FilePackage.getInstance();
+        fp.setName(username);
+        final int items_per_page = 20;
+        int numberof_items_on_current_page = 0;
+        String nextCursor = null;
+        /* TODO: 2020-02-05: Check for rate-limit and add waittime- and retry for this case! */
+        do {
+            logger.info("Crawling page " + (index + 1));
+            numberof_items_on_current_page = 0;
+            String extraArgs = "";
+            if (!StringUtils.isEmpty(nextCursor)) {
+                extraArgs = "&cursor=" + Encoding.urlEncode(nextCursor);
+            }
+            br.getPage(String.format("https://api.twitter.com/2/timeline/profile/%s.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&include_tweet_replies=false&userId=%s&count=%d&ext=mediaStats%%2CcameraMoment%s", user_id, user_id, items_per_page, extraArgs));
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final ArrayList<Object> pagination_info = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "timeline/instructions/{0}/addEntries/entries");
+            final LinkedHashMap<String, Object> tweetMap = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets");
+            final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                entries = (LinkedHashMap<String, Object>) entry.getValue();
+                crawlTweetMediaObjectsAPI(entries);
+                numberof_items_on_current_page++;
+            }
+            /* Done - now try to find string required to access next page */
+            try {
+                LinkedHashMap<String, Object> pagination_info_entries = (LinkedHashMap<String, Object>) pagination_info.get(pagination_info.size() - 1);
+                final String entryId = (String) pagination_info_entries.get("entryId");
+                if (entryId.contains("cursor-bottom")) {
+                    logger.info("Found correct cursor object --> Trying to get cursor String");
+                    nextCursor = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
+                } else {
+                    logger.info("Found wrong cursor object --> Plugin needs update");
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+            index++;
+            this.sleep(3000l, param);
+        } while (!StringUtils.isEmpty(nextCursor) && !this.isAbort() && numberof_items_on_current_page >= items_per_page);
+        logger.info(String.format("Done after %d pages", index));
+    }
 
     /* 2020-01-30: Mobile website will only show 1 tweet per page */
-    private void crawlMobileWebsiteUser(final String parameter) throws IOException {
+    private void crawlUserViaMobileWebsite(final String parameter) throws IOException {
         logger.info("Crawling mobile website user");
         br.getPage(parameter);
-        if (!this.switchtoMobile()) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return;
+        } else if (!this.switchtoMobile()) {
             logger.warning("Unable to crawl: Failed to switch to mobile website");
             return;
         }
         final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
         int index = 0;
         String nextURL = null;
-        final boolean crawl_tweets_separately = false;
+        final boolean crawl_tweets_separately = true;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         do {
@@ -410,7 +462,7 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(dl);
                 distribute(dl);
             } else {
-                crawlMobileWebsiteTweet(tweet_url, fp);
+                crawlTweetViaMobileWebsite(tweet_url, fp);
             }
             index++;
             nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);
@@ -424,6 +476,9 @@ public class TwitterCom extends PornEmbedParser {
         if (this.username != null && !"i".equalsIgnoreCase(this.username)) {
             /* This can e.g. be used via packagizer */
             dl.setProperty("username", this.username);
+        }
+        if (fp != null) {
+            dl._setFilePackage(fp);
         }
         return dl;
     }
