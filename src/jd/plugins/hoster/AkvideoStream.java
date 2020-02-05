@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -28,6 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AkvideoStream extends XFileSharingProBasic {
@@ -126,14 +126,16 @@ public class AkvideoStream extends XFileSharingProBasic {
         final String ret = super.getDllinkViaOfficialVideoDownload(brc, link, account, returnFilesize);
         if (ret != null) {
             return ret;
+        } else {
+            /*
+             * 2020-02-04: Rare error. If this happens and we return null, template will fallback to stream download and not download the
+             * highest quality! <br><b class="err">Security error</b>
+             */
+            if (brc.containsHTML(">\\s*Security error")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Security error'", 1 * 60 * 1000l);
+            } else {
+                return null;
+            }
         }
-        /*
-         * 2020-02-04: Rare error. If this happens and we return null, template will fallback to stream download and not download the
-         * highest quality! <br><b class="err">Security error</b>
-         */
-        if (brc.containsHTML(">\\s*Security error")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Security error'", 1 * 60 * 1000l);
-        }
-        return null;
     }
 }
