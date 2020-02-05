@@ -549,6 +549,7 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         int current_numberof_items;
         int page_num = 0;
+        String next_request_voucher = null;
         do {
             page_num++;
             current_numberof_items = 0;
@@ -565,13 +566,13 @@ public class DropBoxCom extends PluginForDecrypt {
                 final Regex urlinfo = new Regex(parameter, "https?://[^/]+/sh/([^/]+)/([^/]+)");
                 final String link_key = urlinfo.getMatch(0);
                 final String secure_hash = urlinfo.getMatch(1);
-                String next_request_voucher = PluginJSonUtils.getJson(br, "next_request_voucher");
-                if (StringUtils.isEmpty(next_request_voucher)) {
-                    next_request_voucher = br.getRegex("next_request_voucher..\\s*:\\s*..(\\{.*?).\"\\}\"\\)\\}\\);").getMatch(0);
-                }
+                // next_request_voucher = PluginJSonUtils.getJson(br, "next_request_voucher");
+                // if (StringUtils.isEmpty(next_request_voucher)) {
+                // next_request_voucher = br.getRegex("next_request_voucher..\\s*:\\s*..(\\{.*?).\"\\}\"\\)\\}\\);").getMatch(0);
+                // }
                 final String cookie_t = br.getCookie(getHost(), "t");
                 if (StringUtils.isEmpty(next_request_voucher) || cookie_t == null || link_key == null || secure_hash == null) {
-                    logger.warning("Failed to find more content than the first page");
+                    logger.warning("Failed to find more content");
                     break;
                 }
                 String sub_path = PluginJSonUtils.getJson(current_folder_json_source, "subPath");
@@ -590,9 +591,10 @@ public class DropBoxCom extends PluginForDecrypt {
                 pagination_form.put("link_type", "s");
                 pagination_form.put("secure_hash", secure_hash);
                 pagination_form.put("sub_path", sub_path);
-                next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
-                next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
-                // next_request_voucher = next_request_voucher.replaceAll("", "");
+                /* Only escape if it does not fit already */
+                if (next_request_voucher.contains("\\\\")) {
+                    next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
+                }
                 pagination_form.put("voucher", Encoding.urlEncode(next_request_voucher));
                 pagination_form.put("t", cookie_t);
                 br.submitForm(pagination_form);
@@ -604,6 +606,7 @@ public class DropBoxCom extends PluginForDecrypt {
             /* 2017-01-27 new */
             boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            next_request_voucher = (String) entries.get("next_request_voucher");
             final List<Object> ressourcelist_folders = getFoldersList(entries, isShared);
             final List<Object> ressourcelist_files = getFilesList(entries, isShared);
             final boolean isSingleFileInsideFolder = ressourcelist_files != null && ressourcelist_files.size() == 1 && (ressourcelist_folders == null || ressourcelist_folders.size() == 0);
