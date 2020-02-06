@@ -1,26 +1,26 @@
 action_tooltip=Permettre l'arrêt du système une fois que les téléchargements sont finis
-addons_jdshutdown_statusmessage_disabled=Le Système ne sera pas arrêté par JDownloader
-addons_jdshutdown_statusmessage_enabled=JDownloader arrêtera le Système après les téléchargements complétés
-config_active_by_default=Laisser l'arret automatique actif
+addons_jdshutdown_statusmessage_disabled=Le système ne sera pas arrêté par JDownloader...
+addons_jdshutdown_statusmessage_enabled=JDownloader arrêtera le système une fois les téléchargements complétés...
+config_active_by_default=Laisser l'arrêt automatique actif
 config_toolbarbutton=Bouton de la barre d'outils visible
-gui_config_jdshutdown_close=Fermer JD
-gui_config_jdshutdown_forceshutdown=Forcer la mise hors tension (pas pour tous les OS)
-gui_config_jdshutdown_hibernate=Mise en veille prolongée (pas pour tous les OS)
+gui_config_jdshutdown_close=Fermer JDownloader
+gui_config_jdshutdown_forceshutdown=Forcer la mise hors tension (non disponible sur tous les OS)
+gui_config_jdshutdown_hibernate=Mise en veille prolongée (non disponible sur tous les OS)
 gui_config_jdshutdown_mode=Mode :
-gui_config_jdshutdown_shutdown=Arrêt PC
-gui_config_jdshutdown_standby=Mise en veille (pas pour tous les OS)
+gui_config_jdshutdown_shutdown=Arrêt de l'ordinateur
+gui_config_jdshutdown_standby=Mise en veille (non disponible sur tous les OS)
 install_force=Installation de l'arrêt forcé
-install_msg=Voulez vous préparer votre système pour la fonctionnalité de redémarrage forcé
+install_msg=Voulez-vous préparer votre système à la fonctionnalité de redémarrage forcé ?
 install_title=Installation de l'arrêt forcé
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader va être fermé !</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Le système va être mis en mode veille prolongée !</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Le système va être arrêté !</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Le système sera mis en mode veille !</font></h2>
-interaction_shutdown_dialog_title_closejd=Fermer JD ?
+interaction_shutdown_dialog_title_closejd=Fermer JDownloader ?
 interaction_shutdown_dialog_title_hibernate=Mettre en veille ?
-interaction_shutdown_dialog_title_shutdown=Arrêt PC ?
+interaction_shutdown_dialog_title_shutdown=Arrêt de l'ordinateur ?
 interaction_shutdown_dialog_title_standby=Mise en veille ?
-jd_plugins_optional_jdshutdown=JD Mise hors tension
-jd_plugins_optional_jdshutdown_description=Extinction, Mise en veille ou Hibernation automatique à la fin des téléchargements
+jd_plugins_optional_jdshutdown=JDownloader - Mise hors tension
+jd_plugins_optional_jdshutdown_description=Extinction, mise en veille ou hibernation automatique à la fin des téléchargements
 lit_shutdownn=Arrêt
-show_admin=Les droits Administrateur sont nécessaires pour modifier le mode Mise en veille de JDownloader
+show_admin=Les droits d'administrateur sont nécessaires afin de modifier le mode "Mise en veille" de JDownloader.
