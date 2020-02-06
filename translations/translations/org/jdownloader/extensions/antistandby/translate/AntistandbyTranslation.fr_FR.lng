@@ -1,5 +1,5 @@
-gui_config_antistandby_whiledl2=Téléchargement en cours
-gui_config_antistandby_whilejd2=Jdownloader est en cours d'exécution
-jd_plugins_optional_antistandby_jdantistandby=Anti mise en veille
-jd_plugins_optional_antistandby_jdantistandby_description=Empêche la mise en veille de votre pc, pour garder vos téléchargement actifs
-mode=Empêcher la mise en veille quand
+gui_config_antistandby_whiledl2=Téléchargement en cours...
+gui_config_antistandby_whilejd2=Jdownloader est en cours d'exécution...
+jd_plugins_optional_antistandby_jdantistandby=Anti veille
+jd_plugins_optional_antistandby_jdantistandby_description=Empêche la mise en veille de votre ordinateur afin de garder vos téléchargement actifs.
+mode=Empêcher la mise en veille quand :
