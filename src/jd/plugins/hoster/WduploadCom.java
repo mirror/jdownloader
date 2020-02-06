@@ -287,27 +287,32 @@ public class WduploadCom extends antiDDoSForHost {
                     // }
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     String recaptchaV2Response = null;
-                    try {
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                            this.setDownloadLink(dl_dummy);
+                    if (br.containsHTML("g-recaptcha")) {
+                        logger.info("Login captcha required");
+                        try {
+                            final DownloadLink dl_dummy;
+                            if (dlinkbefore != null) {
+                                dl_dummy = dlinkbefore;
+                            } else {
+                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                this.setDownloadLink(dl_dummy);
+                            }
+                            /* 2020-01-27: New and sometimes required */
+                            String reCaptchaKey = brlogin.getRegex("class=\"g-recaptcha\" data-sitekey=\"([^\"]+)\"").getMatch(0);
+                            if (reCaptchaKey == null) {
+                                /* 2020-01-27 */
+                                logger.info("Falling back to static reCaptchaV2 key");
+                                reCaptchaKey = "6Lc0vNIUAAAAAPs7i05tOzupSGG2ikUHobmDoZJa";
+                            }
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brlogin, reCaptchaKey).getToken();
+                        } catch (final Throwable e) {
+                            logger.info("Possible login captcha failure");
+                            e.printStackTrace();
+                        } finally {
+                            this.setDownloadLink(dlinkbefore);
                         }
-                        /* 2020-01-27: New and always required */
-                        String reCaptchaKey = brlogin.getRegex("class=\"g-recaptcha\" data-sitekey=\"([^\"]+)\"").getMatch(0);
-                        if (reCaptchaKey == null) {
-                            /* 2020-01-27 */
-                            logger.info("Falling back to static reCaptchaV2 key");
-                            reCaptchaKey = "6Lc0vNIUAAAAAPs7i05tOzupSGG2ikUHobmDoZJa";
-                        }
-                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brlogin, reCaptchaKey).getToken();
-                    } catch (final Throwable e) {
-                        logger.info("Possible login captcha failure");
-                        e.printStackTrace();
-                    } finally {
-                        this.setDownloadLink(dlinkbefore);
+                    } else {
+                        logger.info("Login captcha NOT required");
                     }
                     brlogin.getHeaders().put("Origin", "https://www." + account.getHoster());
                     brlogin.getHeaders().put("X-Requested-With", "XMLHttpRequest");
