@@ -390,7 +390,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     @Override
-    protected boolean tryAPILoginInWebsiteMode() {
+    protected boolean tryAPILoginInWebsiteMode(final Account account) {
         /* 2019-09-12: Verified and working */
         return true;
     }
