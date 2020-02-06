@@ -482,6 +482,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                     finalDownloadURL = br.getRegex("location\\.href = '(https?://.*?)'").getMatch(0);
                 }
                 if (finalDownloadURL == null) {
+                    /* 2020-02-06 */
+                    finalDownloadURL = br.getRegex("(https?://[^/]+/download/[^<>\"\\']+)").getMatch(0);
+                }
+                if (finalDownloadURL == null) {
                     logger.info(br.toString());
                     if (br.getRegex("location\\.href = '/\\?r=download/index&session_id=[A-Za-z0-9]+'").matches()) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
