@@ -1,11 +1,11 @@
-EnableInfoBarGuiAction=Afficher la barre d'infos
+EnableInfoBarGuiAction=Afficher la barre d'informations
 InfoBarGuiToggleAction_deselected=Ouvrir la barre d'informations
 InfoBarGuiToggleAction_deselected_tt=Ouvrir la barre d'informations
-InfoBarGuiToggleAction_selected=Fermer la barre d'infos
+InfoBarGuiToggleAction_selected=Fermer la barre d'informations
 InfoBarGuiToggleAction_selected_tt=Fermer la barre d'informations
-jd_plugins_optional_infobar_InfoDialog_help=Zone glisser-déposer
-jd_plugins_optional_infobar_InfoDialog_hideWindow=Cacher la barre d'infos
+jd_plugins_optional_infobar_InfoDialog_help=Zone de glisser-déposer
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Cacher la barre d'informations
 jd_plugins_optional_infobar_docking=Activer le magnétisme des bords
 jd_plugins_optional_infobar_dropLocation2=Activer l'emplacement du glisser-déposer
-jd_plugins_optional_infobar_jdinfobar=Barre d'infos
-jd_plugins_optional_infobar_opacity=Opacité de la barre [%]
+jd_plugins_optional_infobar_jdinfobar=Barre d'informations
+jd_plugins_optional_infobar_opacity=Opacité de la barre (en %)
