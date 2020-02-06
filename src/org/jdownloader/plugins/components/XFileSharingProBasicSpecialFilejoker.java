@@ -151,7 +151,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * resulting cookies will be used in website mode. Only enable this if tested! </br>
      * default = false
      */
-    protected boolean tryAPILoginInWebsiteMode() {
+    protected boolean tryAPILoginInWebsiteMode(final Account account) {
         return false;
     }
 
@@ -159,7 +159,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * If disabled[and tryAPILoginInWebsiteMode enabled], API can be used to login in website mode but account information will be obtained
      * from website.
      */
-    protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api() {
+    protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api(final Account account) {
         return true;
     }
 
@@ -239,7 +239,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                         validatedSession = true;
                     }
                 }
-                // reduce refresh to avoid false *hack activity*
+                /* reduce refresh to avoid false *hack activity* */
                 account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
                 return validatedSession;
             } catch (final PluginException e) {
@@ -262,7 +262,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     /** This is different from the official XFS "API-Mod" API!! */
     private final AccountInfo fetchAccountInfoAPIZeusCloudManager(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPIZeusCloudManager(br, account, true);
+        /* Only access this page if it has not been accessed before! */
+        if (br.getURL() == null || !br.getURL().contains(getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account")) {
+            loginAPIZeusCloudManager(br, account, true);
+        }
         final String sessionid = getAPIZeusCloudManagerSession(account);
         if (br.getURL() == null || !br.getURL().contains(getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=")) {
             getPage(br, this.getMainPage() + getRelativeAPIBaseAPIZeusCloudManager() + "?op=my_account&session=" + sessionid);
@@ -484,7 +487,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             return fetchAccountInfoAPIZeusCloudManager(this.br, account);
         } else {
             final long timestamp_last_api_login_failure_in_website_mode = account.getLongProperty(PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE, 0);
-            boolean try_api_login_in_website_mode = tryAPILoginInWebsiteMode();
+            boolean try_api_login_in_website_mode = tryAPILoginInWebsiteMode(account);
             if (try_api_login_in_website_mode) {
                 final long api_login_retry_limit = 24 * 60 * 60 * 1000l;
                 final long timestamp_api_login_retry_allowed = timestamp_last_api_login_failure_in_website_mode + api_login_retry_limit;
@@ -505,13 +508,19 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                     /* Do not only call login as we need the email/username cookie which we only get when obtaining AccountInfo! */
                     // loginAPIZeusCloudManager(apiBR, account, force);
                     AccountInfo ai = null;
-                    if (tryAPILoginInWebsiteMode_get_account_info_from_api()) {
+                    if (tryAPILoginInWebsiteMode_get_account_info_from_api(account)) {
                         logger.info("API in website mode is allowed to login and fetchAccountInfo");
                         ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
                         logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
                     } else {
-                        logger.info("API in website mode is only allowed to login");
+                        logger.info("API in website mode is only allowed to login - AccountInfo will be obtained from website");
                         loginAPIZeusCloudManager(br, account, true);
+                        /*
+                         * Now get AccountInfo anyways because if we don't we will not get the users' mail/username --> We have no chance to
+                         * use API cookies for website login to e.g. avoid login captchas.
+                         */
+                        logger.info("Requesting AccountInfo from API anyways but only to set correct website cookies --> API AccountInfo will not be set!");
+                        fetchAccountInfoAPIZeusCloudManager(apiBR, account);
                     }
                     /*
                      * Set cookies converted from API handling --> Website-cookies to verify them. Only trust API login if we are sure that
