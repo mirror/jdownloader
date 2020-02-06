@@ -20,7 +20,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(?:fembed\\.com|there\\.to|gcloud\\.live|plycdn\\.xyz|hlsmp4\\.com|svpri\\.xyz|asianclub\\.tv|javcl\\.me)/(?:f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(?:fembed\\.com|there\\.to|gcloud\\.live|plycdn\\.xyz|hlsmp4\\.com|svpri\\.xyz|asianclub\\.tv|javcl\\.me|feurl\\.com|zidiplay\\.com)/(?:f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -29,17 +29,22 @@ public class FEmbedDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         String file_id = new Regex(parameter.getCryptedUrl(), "/(?:f|v|api/sources?)/([a-zA-Z0-9_-]+)").getMatch(0);
         String name = new Regex(parameter.getCryptedUrl(), "#javclName=([a-fA-F0-9]+)").getMatch(0);
         if (name != null) {
             name = new String(HexFormatter.hexToByteArray(name), "UTF-8");
         }
+        String fembedHost = null;
         if (name == null) {
             br.getPage(parameter.getCryptedUrl());
+            fembedHost = br.getHost();
             name = br.getRegex("<title>\\s*([^<]*?)\\s*(-\\s*Free\\s*download)?\\s*</title>").getMatch(0);
         }
-        final String fembedHost = Browser.getHost(parameter.getCryptedUrl());
-        final PostRequest postRequest = new PostRequest("https://www." + fembedHost + "/api/source/" + file_id);
+        if (fembedHost == null) {
+            fembedHost = Browser.getHost(parameter.getCryptedUrl());
+        }
+        final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
         if (!Boolean.TRUE.equals(response.get("success"))) {
             final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
