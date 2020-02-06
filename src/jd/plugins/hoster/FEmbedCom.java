@@ -3,6 +3,11 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.URLConnectionAdapter;
@@ -13,11 +18,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "decryptedforFEmbedHosterPlugin://.*" })
 public class FEmbedCom extends PluginForHost {
@@ -52,7 +52,7 @@ public class FEmbedCom extends PluginForHost {
         String file_id = new Regex(parameter.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
         final String fembedHost = parameter.getStringProperty("fembedHost", getHost());
         br.setFollowRedirects(true);
-        final PostRequest postRequest = new PostRequest("https://www." + fembedHost + "/api/source/" + file_id);
+        final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
         if (!Boolean.TRUE.equals(response.get("success"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

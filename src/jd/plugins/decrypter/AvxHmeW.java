@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhm\\.is|avxhome\\.(?:se|in)|avxhm\\.se|avaxhome\\.unblocker\\.xyz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhm.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhm\\.is|avxhome\\.(?:se|in)|avxhm\\.se|avaxhome\\.unblocker\\.xyz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public AvxHmeW(PluginWrapper wrapper) {
@@ -79,7 +79,7 @@ public class AvxHmeW extends PluginForDecrypt {
         if (!parameter.contains("avaxhome.pro/")) {
             // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
             // images/self site refs + imdb refs
-            String[] links = br.getRegex("<a href=\"(/go/\\d+/[^\"]+)").getColumn(0);
+            String[] links = br.getRegex("<a[^>]*?href=\"(/go/\\d+/[^\"]+)").getColumn(0);
             if (links == null || links.length == 0) {
                 links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
             }
