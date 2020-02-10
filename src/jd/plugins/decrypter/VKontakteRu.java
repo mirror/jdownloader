@@ -67,6 +67,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
+    @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
