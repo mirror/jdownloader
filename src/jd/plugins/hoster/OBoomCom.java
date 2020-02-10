@@ -12,6 +12,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -28,11 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" })
 public class OBoomCom extends antiDDoSForHost {
@@ -287,7 +287,7 @@ public class OBoomCom extends antiDDoSForHost {
                 for (String fileInfo : fileInfos) {
                     final String directdownload = PluginJSonUtils.getJsonValue(fileInfo, "ddl");
                     final String id = PluginJSonUtils.getJsonValue(fileInfo, "id");
-                    final String size = PluginJSonUtils.getJsonValue(fileInfo, "size");
+                    final String sizeStr = PluginJSonUtils.getJsonValue(fileInfo, "size");
                     final String name = PluginJSonUtils.getJsonValue(fileInfo, "name");
                     final String state = PluginJSonUtils.getJsonValue(fileInfo, "state");
                     final String refToken = PluginJSonUtils.getJsonValue(fileInfo, "ref_token");
@@ -302,12 +302,18 @@ public class OBoomCom extends antiDDoSForHost {
                         link.setFinalFileName(name);
                     }
                     link.setProperty("obm_directdownload", Boolean.parseBoolean(directdownload));
-                    try {
-                        if (size != null) {
-                            link.setDownloadSize(Long.parseLong(size));
-                            link.setVerifiedFileSize(Long.parseLong(size));
+                    if (sizeStr != null && sizeStr.matches("\\d+")) {
+                        final long size = Long.parseLong(sizeStr);
+                        if (size == 0) {
+                            /*
+                             * 2020-01-10: Files with a filesize of 0b are usually not downloadable[error 503 will happen on dl attempt] -->
+                             * Display them as offline right away. RE: forum https://board.jdownloader.org/showthread.php?t=83053
+                             */
+                            link.setAvailable(false);
+                            continue;
                         }
-                    } catch (final Throwable e) {
+                        link.setDownloadSize(Long.parseLong(sizeStr));
+                        link.setVerifiedFileSize(Long.parseLong(sizeStr));
                     }
                     if ("online".equals(state)) {
                         setLatestRefID(refToken);
@@ -444,10 +450,10 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-         * account != null &&
-         */
-                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+             * account != null &&
+             */
+        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
         handleErrorResponseCodes();

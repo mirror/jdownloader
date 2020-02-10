@@ -229,23 +229,7 @@ public class PixivNet extends PluginForDecrypt {
                 String filename;
                 final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
                 if (picNumberStr != null) {
-                    String thistitle;
-                    if (title == null) {
-                        /* Should never happen */
-                        thistitle = "";
-                    } else {
-                        thistitle = title;
-                        if (!thistitle.startsWith("「")) {
-                            thistitle = "「" + thistitle;
-                        }
-                    }
-                    if (username != null) {
-                        thistitle += " - " + username;
-                    }
-                    if (!thistitle.endsWith("」")) {
-                        thistitle += "」";
-                    }
-                    filename = lid + "_p" + picNumberStr + thistitle;
+                    filename = this.generateFilename(lid, title, username, picNumberStr, null);
                 } else {
                     /* Fallback - just use the given filename (minus extension)! */
                     filename = filename_url.substring(0, filename_url.lastIndexOf("."));
@@ -297,6 +281,7 @@ public class PixivNet extends PluginForDecrypt {
             int page = 0;
             int maxitemsperpage = 100;
             int offset = 0;
+            int itemcounter = 0;
             String url = null;
             boolean isBookmarks = false;
             if (parameter.contains("/bookmarks")) {
@@ -332,6 +317,7 @@ public class PixivNet extends PluginForDecrypt {
                         final java.util.Map<String, Object> entries = (Map<String, Object>) workO;
                         final String galleryID = (String) entries.get("illustId");
                         if (dups.add(galleryID)) {
+                            itemcounter++;
                             final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
                             decryptedLinks.add(dl);
                             distribute(dl);
@@ -344,6 +330,7 @@ public class PixivNet extends PluginForDecrypt {
                     for (Map.Entry<String, Object> entry : illusts.entrySet()) {
                         final String galleryID = entry.getKey();
                         if (dups.add(galleryID)) {
+                            itemcounter++;
                             final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
                             decryptedLinks.add(dl);
                             distribute(dl);
@@ -356,6 +343,7 @@ public class PixivNet extends PluginForDecrypt {
                     for (Map.Entry<String, Object> entry : manga.entrySet()) {
                         final String galleryID = entry.getKey();
                         if (dups.add(galleryID)) {
+                            itemcounter++;
                             final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
                             decryptedLinks.add(dl);
                             distribute(dl);
@@ -377,6 +365,30 @@ public class PixivNet extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    /** Returns filename without extension */
+    private String generateFilename(final String galleryID, final String title, final String username, final String picNumberStr, final String extension) {
+        if (galleryID == null || picNumberStr == null) {
+            return null;
+        }
+        String thistitle;
+        if (title == null) {
+            /* Should never happen */
+            thistitle = "";
+        } else {
+            thistitle = title;
+            if (!thistitle.startsWith("「")) {
+                thistitle = "「" + thistitle;
+            }
+        }
+        if (username != null) {
+            thistitle += " - " + username;
+        }
+        if (!thistitle.endsWith("」")) {
+            thistitle += "」";
+        }
+        return galleryID + "_p" + picNumberStr + thistitle;
     }
 
     private boolean add(Set<String> set, Browser br, final String pattern) {
