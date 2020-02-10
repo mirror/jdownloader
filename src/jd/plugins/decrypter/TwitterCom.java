@@ -288,9 +288,6 @@ public class TwitterCom extends PornEmbedParser {
             /* Ignore invalid items */
             return;
         }
-        if (url.contains("/amplify_video_thumb/")) {
-            logger.info("WTF");
-        }
         final DownloadLink dl;
         /* 2020-02-10: Recognize videos by this URL. If it is a thumbnail --< It is a video */
         if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/")) {
