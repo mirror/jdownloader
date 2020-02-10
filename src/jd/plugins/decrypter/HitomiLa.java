@@ -17,7 +17,11 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -33,6 +37,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
 /**
@@ -49,17 +54,17 @@ public class HitomiLa extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String guid = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
-        if (guid == null) {
-            guid = new Regex(parameter, "/[^/]+/.*?-(\\d+)\\.html").getMatch(0);
+        String gallery_id = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
+        if (gallery_id == null) {
+            gallery_id = new Regex(parameter, "/[^/]+/.*?-(\\d+)\\.html").getMatch(0);
         }
-        if (guid == null) {
+        if (gallery_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
         String fpName = null;
         int i = 0;
-        String imghost = getImageHost(guid) + "a";
+        String imghost = getImageHost(gallery_id) + "a";
         int numberOfPages;
         final boolean use_Thumbnails = false;
         if (use_Thumbnails) {
@@ -81,7 +86,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             }
         } else {
             /* Avoid https, prefer http */
-            getPage("https://hitomi.la/reader/" + guid + ".html");
+            getPage("https://hitomi.la/reader/" + gallery_id + ".html");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
@@ -89,7 +94,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
             // get the image host.
             // retval = subdomain_from_galleryid(g) + retval;
-            final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + guid + "\\.js)\"").getMatch(0);
+            final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + gallery_id + "\\.js)\"").getMatch(0);
             if (js == null) {
                 return null;
             }
@@ -102,22 +107,30 @@ public class HitomiLa extends antiDDoSForDecrypt {
             // boolean checked = false;
             for (final Object picO : ressourcelist) {
                 ++i;
-                entries = (LinkedHashMap<String, Object>) picO;
-                final String hash = (String) entries.get("hash");
-                final long haswebp = JavaScriptEngineFactory.toLong(entries.get("haswebp"), 1);
-                final String type;
-                final String ext;
-                if (haswebp == 1) {
-                    type = "webp";
-                    ext = "webp";
+                final Map<String, String> picInfo = (HashMap<String, String>) picO;
+                boolean use_new_way = true;
+                String url = null;
+                String ext = null;
+                if (use_new_way) {
+                    url = "https:" + url_from_url_from_hash(gallery_id, picInfo, null, null, null);
+                    ext = Plugin.getFileNameExtensionFromURL(url);
                 } else {
-                    type = "images";
-                    ext = "jpg";
-                    imghost = "ba";
+                    entries = (LinkedHashMap<String, Object>) picO;
+                    final String hash = (String) entries.get("hash");
+                    final long haswebp = JavaScriptEngineFactory.toLong(entries.get("haswebp"), 1);
+                    final String type;
+                    if (haswebp == 1) {
+                        type = "webp";
+                        ext = ".webp";
+                    } else {
+                        type = "images";
+                        ext = ".jpg";
+                        imghost = "ba";
+                    }
+                    final String last_char_two = hash.substring(hash.length() - 3, hash.length() - 1);
+                    final String last_char = hash.substring(hash.length() - 1);
+                    url = String.format("https://%s.hitomi.la/%s/%s/%s/%s.%s", imghost, type, last_char, last_char_two, hash, ext);
                 }
-                final String last_char_two = hash.substring(hash.length() - 3, hash.length() - 1);
-                final String last_char = hash.substring(hash.length() - 1);
-                String url = String.format("https://%s.hitomi.la/%s/%s/%s/%s.%s", imghost, type, last_char, last_char_two, hash, ext);
                 // if (!checked) {
                 // HeadRequest head = br.createHeadRequest(url);
                 // URLConnectionAdapter con = br.cloneBrowser().openRequestConnection(head);
@@ -143,7 +156,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 dl.setProperty("Referer", br.getURL());
                 dl.setProperty("requestType", "GET");
                 dl.setAvailable(true);
-                dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(hash, "." + ext));
+                dl.setFinalFileName(df.format(i) + ext);
                 decryptedLinks.add(dl);
             }
         }
@@ -172,5 +185,65 @@ public class HitomiLa extends antiDDoSForDecrypt {
         }
         final String subdomain = Character.toString((char) (97 + (Integer.parseInt(g) % i)));
         return subdomain;
+    }
+
+    /* 2020-02-10: See also: https://board.jdownloader.org/showpost.php?p=457258&postcount=16 */
+    /* ####################################################################################################################### */
+    public static final Pattern SUBDOMAIN_FROM_URL_PATTERN  = Pattern.compile("/[0-9a-f]/([0-9a-f]{2})/");
+    public static final Pattern URL_FROM_URL_PATTERN        = Pattern.compile("//..?\\.hitomi\\.la/");
+    public static final Pattern FULL_PATH_FROM_HASH_PATTERN = Pattern.compile("^.*(..)(.)$");
+
+    String subdomain_from_galleryid(int g, int number_of_frontends) {
+        int o = g % number_of_frontends;
+        return String.valueOf((char) (97 + o));
+    }
+
+    String subdomain_from_url(String url, String base) {
+        String retval = "a";
+        if (base != null) {
+            retval = base;
+        }
+        int number_of_frontends = 3;
+        Matcher m = SUBDOMAIN_FROM_URL_PATTERN.matcher(url);
+        if (!m.find()) {
+            return retval;
+        }
+        try {
+            int g = Integer.parseInt(m.group(1), 16);
+            if (g < 0x30) {
+                number_of_frontends = 2;
+            }
+            if (g < 0x09) {
+                g = 1;
+            }
+            retval = subdomain_from_galleryid(g, number_of_frontends) + retval;
+        } catch (NumberFormatException ignore) {
+        }
+        return retval;
+    }
+
+    String url_from_url(String url, String base) {
+        return URL_FROM_URL_PATTERN.matcher(url).replaceAll("//" + subdomain_from_url(url, base) + ".hitomi.la/");
+    }
+
+    String full_path_from_hash(String hash) {
+        if (hash.length() < 3) {
+            return hash;
+        }
+        return FULL_PATH_FROM_HASH_PATTERN.matcher(hash).replaceAll("$2/$1/" + hash);
+    }
+
+    String url_from_hash(String galleryid, Map<String, String> image, String dir, String ext) {
+        ext = isNotBlank(ext) ? ext : (isNotBlank(dir) ? dir : image.get("name").split("\\.")[1]);
+        dir = isNotBlank(dir) ? dir : "images";
+        return "//a.hitomi.la/" + dir + '/' + full_path_from_hash(image.get("hash")) + '.' + ext;
+    }
+
+    String url_from_url_from_hash(String galleryid, Map<String, String> image, String dir, String ext, String base) {
+        return url_from_url(url_from_hash(galleryid, image, dir, ext), base);
+    }
+
+    boolean isNotBlank(String str) {
+        return str != null && !str.isEmpty();
     }
 }

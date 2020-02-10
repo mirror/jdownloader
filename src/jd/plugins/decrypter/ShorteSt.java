@@ -55,6 +55,12 @@ public class ShorteSt extends antiDDoSForDecrypt {
         return result;
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-02-10: Try not to trigger their "Site verification" which would lead to (more) captchas. */
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("//clkme.in/", "//cllkme.com/");
@@ -77,24 +83,26 @@ public class ShorteSt extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         handleSiteVerification(parameter);
         String finallink = null;
-        if (br.containsHTML("g-recaptcha\"|google\\.com/recaptcha/")) {
+        if (br.containsHTML("g-recaptcha\"|google\\.com/recaptcha/") || true) {
             // https://github.com/adsbypasser/adsbypasser/blob/master/src/sites/link/sh.st.js
-            Form captchaForm = br.getForm(0);
-            if (captchaForm == null) {
+            Form continueForm = br.getForm(0);
+            if (continueForm == null) {
                 /* 2019-03-08: Form might not necessarily be present in html anymore */
-                captchaForm = new Form();
-                captchaForm.setMethod(MethodType.POST);
+                continueForm = new Form();
+                continueForm.setMethod(MethodType.POST);
                 if (br.getURL().contains("?r=")) {
-                    captchaForm.setAction(br.getURL());
+                    continueForm.setAction(br.getURL());
                 } else {
-                    captchaForm.setAction(br.getURL() + "?r=");
+                    continueForm.setAction(br.getURL() + "?r=");
                 }
             }
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+            if (br.containsHTML("displayCaptcha\\s*:\\s*true")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                continueForm.put("g-recaptcha-response", recaptchaV2Response);
+            }
             /* 2019-03-08: Finallink may also be given via direct-redirect */
             br.setFollowRedirects(false);
-            submitForm(captchaForm);
+            submitForm(continueForm);
             redirect = br.getRedirectLocation();
             if (redirect != null) {
                 if (new Regex(redirect, this.getSupportedLinks()).matches()) {
@@ -152,13 +160,27 @@ public class ShorteSt extends antiDDoSForDecrypt {
 
     /** 2019-01-25: 'site-verification' without captcha */
     private void handleSiteVerification(final String parameter) throws Exception {
-        if (br.containsHTML("BROWSER VERIFICATION")) {
+        /* 2020-01-10: <strong>You are not allowed to access requested page </strong> <br> upon successful verification. </p> */
+        if (br.containsHTML("BROWSER VERIFICATION|>You are not allowed to access requested page")) {
+            final Form captchaForm = br.getFormbyActionRegex(".+grey_wizard_captcha.+");
+            logger.info("Handling browser-verification ...");
+            if (captchaForm != null) {
+                /* 2020-01-10: New: First captcha, then wait + cookies */
+                logger.info("Handling browser-verification: captcha");
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", recaptchaV2Response);
+                this.submitForm(br, captchaForm);
+            }
             final String jsurl = br.getRegex("<script src=\\'(/grey_wizard_rewrite_js/\\?[^<>\"\\']+)\\'>").getMatch(0);
             if (jsurl != null) {
-                logger.info("Handling browser-verification ...");
-                getPage(jsurl);
-                final String c_value = br.getRegex("c_value = \\'([^<>\"\\']+)\\'").getMatch(0);
-                final String waitStr = br.getRegex(">Please wait (\\d+) seconds").getMatch(0);
+                logger.info("Handling browser-verification: js and waittime");
+                String waitStr = br.getRegex("timeToWait\\s*:\\s*(\\d+)").getMatch(0);
+                final Browser brc = br.cloneBrowser();
+                getPage(brc, jsurl);
+                final String c_value = brc.getRegex("c_value = \\'([^<>\"\\']+)\\'").getMatch(0);
+                if (waitStr == null) {
+                    brc.getRegex(">Please wait (\\d+) seconds").getMatch(0);
+                }
                 if (c_value == null) {
                     throw new DecrypterException("SITE_VERIFICATION_FAILED");
                 }

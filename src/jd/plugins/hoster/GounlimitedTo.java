@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 public class GounlimitedTo extends XFileSharingProBasic {
     public GounlimitedTo(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
