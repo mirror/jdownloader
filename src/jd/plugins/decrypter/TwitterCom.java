@@ -288,10 +288,13 @@ public class TwitterCom extends PornEmbedParser {
             /* Ignore invalid items */
             return;
         }
+        if (url.contains("/amplify_video_thumb/")) {
+            logger.info("WTF");
+        }
         final DownloadLink dl;
-        if (url.contains("/tweet_video_thumb/")) {
+        /* 2020-02-10: Recognize videos by this URL. If it is a thumbnail --< It is a video */
+        if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/")) {
             /* Video thumbnail --> Download video */
-            this.createVideourl("");
             dl = this.createDownloadlink(this.createVideourl(tweet_id));
             dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         } else {

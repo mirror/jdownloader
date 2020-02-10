@@ -18,7 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -26,9 +31,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadBoyCom extends XFileSharingProBasic {
@@ -128,5 +130,15 @@ public class UploadBoyCom extends XFileSharingProBasic {
             /* Fallback to normal handling */
             super.handleCaptcha(link, captchaForm);
         }
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /* 2020-02-10: Special */
+        String dllink = super.getDllink(link, account, br, src);
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = new Regex(correctedBR, "(https?://[^/]+/d/[a-z0-9]{12}/[^<>\"\\']+)").getMatch(0);
+        }
+        return dllink;
     }
 }
