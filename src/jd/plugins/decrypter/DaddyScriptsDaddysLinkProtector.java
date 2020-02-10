@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
@@ -56,6 +56,7 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
         Form confirmationForm = null;
         String passCode = null;
         do {
+            counter++;
             confirmationForm = br.getForm(0);
             if (confirmationForm == null) {
                 passwordFail = false;
@@ -65,7 +66,14 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
                 /* 2017-01-30: Either captcha OR password */
                 if (confirmationForm.hasInputFieldByName("security_code")) {
                     captchaFail = true;
-                    final String code = this.getCaptchaCode("ziddu.com", "/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
+                    final String captcha_method_name;
+                    if (counter > 1) {
+                        /* 3rd try, ask user and do not rely on auto-solver */
+                        captcha_method_name = "ziddu.com_manualcaptcha";
+                    } else {
+                        captcha_method_name = "ziddu.com";
+                    }
+                    final String code = this.getCaptchaCode(captcha_method_name, "/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
                     confirmationForm.put("security_code", Encoding.urlEncode(code));
                 } else if (confirmationForm.hasInputFieldByName("Pass1")) {
                     passwordFail = true;
@@ -84,9 +92,8 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
                     break;
                 }
                 submitForm(confirmationForm);
-                counter++;
             }
-        } while (confirmationForm != null && counter <= 2);
+        } while (confirmationForm != null && counter <= 4);
         if (captchaFail) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (passwordFail) {

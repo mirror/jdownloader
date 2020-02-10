@@ -123,10 +123,13 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
     @Override
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-07-23: Special */
-        super.checkErrors(link, account, checkAll);
-        final String reconnect_hours = new Regex(correctedBR, "You have downloaded \\d+ files? per (\\d+) hours?").getMatch(0);
+        String reconnect_hours = new Regex(correctedBR, "You have downloaded \\d+ files? per (\\d+) hours?").getMatch(0);
+        if (reconnect_hours == null) {
+            reconnect_hours = new Regex(correctedBR, ">\\s*You have reached your download limit \\d+ files? for (\\d+) hours?").getMatch(0);
+        }
         if (reconnect_hours != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(reconnect_hours) * 60 * 60 * 1001l);
         }
+        super.checkErrors(link, account, checkAll);
     }
 }
