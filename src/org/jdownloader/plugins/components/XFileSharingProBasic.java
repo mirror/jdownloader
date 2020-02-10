@@ -1904,7 +1904,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             // }
             if (dllink == null) {
                 /* Finally try without hardcoded domains */
-                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.']+") + ")(\"|')(\\s+|\\s*>|\\s*\\)|\\s*;)").getMatch(0);
+                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.]+") + ")(\"|\\')(\\s+|\\s*>|\\s*\\)|\\s*;)").getMatch(0);
             }
             // if (dllink == null) {
             // /* Try short version */
@@ -1956,6 +1956,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("image download-candidates were all identified as thumbnails --> Using first result anyways as it is likely that it is not a thumbnail!");
                 dllink = possibleDllinks[0];
             }
+        }
+        if (Encoding.isHtmlEntityCoded(dllink)) {
+            /* 2020-02-10: E.g. files.im */
+            dllink = Encoding.htmlOnlyDecode(dllink);
         }
         return dllink;
     }
@@ -2150,7 +2154,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public String getGenericDownloadlinkRegExFile() {
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*?";
+        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
     }
 
     /*

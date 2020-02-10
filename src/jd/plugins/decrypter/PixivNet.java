@@ -119,6 +119,7 @@ public class PixivNet extends PluginForDecrypt {
             }
             /* Decrypt gallery */
             final Set<String> links = new HashSet<String>();
+            String json = null;
             if (Boolean.TRUE.equals(single) || (single == null && br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<"))) {
                 /* Not multiple urls --> Switch to single-url view */
                 if (single == null) {
@@ -150,19 +151,11 @@ public class PixivNet extends PluginForDecrypt {
                 if (links.isEmpty()) {
                     add(links, br, "pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"");
                 }
-                final String json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
                 if (json != null && json.matches(".*\"illustType\"\\s*:\\s*2.*")) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage("https://www.pixiv.net/ajax/illust/" + lid + "/ugoira_meta");
                     add(links, brc, "(https?.*?)\"");
-                }
-                if (json != null) {
-                    username = PluginJSonUtils.getJson(json, "userName");
-                    final String illustTitle = PluginJSonUtils.getJson(json, "illustTitle");
-                    if (!StringUtils.isEmpty(illustTitle)) {
-                        /* Prefer this over title grabbed from html */
-                        title = illustTitle;
-                    }
                 }
                 if (links.isEmpty() && isOffline(br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
@@ -207,6 +200,16 @@ public class PixivNet extends PluginForDecrypt {
                         }
                     }
                 }
+                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+            }
+            final String tags = br.getRegex("<title>([^<>\"]+)\\s*/[^<>]*?</title>").getMatch(0);
+            if (json != null) {
+                username = PluginJSonUtils.getJson(json, "userName");
+                final String illustTitle = PluginJSonUtils.getJson(json, "illustTitle");
+                if (!StringUtils.isEmpty(illustTitle)) {
+                    /* Prefer this over title grabbed from html */
+                    title = illustTitle;
+                }
             }
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
@@ -229,7 +232,7 @@ public class PixivNet extends PluginForDecrypt {
                 String filename;
                 final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
                 if (picNumberStr != null) {
-                    filename = this.generateFilename(lid, title, username, picNumberStr, null);
+                    filename = this.generateFilename(lid, title, username, tags, picNumberStr, null);
                 } else {
                     /* Fallback - just use the given filename (minus extension)! */
                     filename = filename_url.substring(0, filename_url.lastIndexOf("."));
@@ -368,19 +371,31 @@ public class PixivNet extends PluginForDecrypt {
     }
 
     /** Returns filename without extension */
-    private String generateFilename(final String galleryID, final String title, final String username, final String picNumberStr, final String extension) {
+    private String generateFilename(final String galleryID, final String title, final String username, final String tags, final String picNumberStr, final String extension) {
         if (galleryID == null || picNumberStr == null) {
             return null;
         }
         String thistitle;
-        if (title == null) {
+        if (tags == null) {
             /* Should never happen */
             thistitle = "";
         } else {
-            thistitle = title;
+            thistitle = tags;
             if (!thistitle.startsWith("「")) {
                 thistitle = "「" + thistitle;
             }
+            thistitle += tags;
+        }
+        if (title != null) {
+            if (thistitle.isEmpty()) {
+                thistitle = "「";
+            } else {
+                if (!thistitle.startsWith("「")) {
+                    thistitle = "「" + thistitle;
+                }
+                thistitle += " _ ";
+            }
+            thistitle += title;
         }
         if (username != null) {
             thistitle += " - " + username;
