@@ -1348,10 +1348,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.warning("Failed to find download2 Form");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("Found download1 Form");
+            logger.info("Found download2 Form");
+            /*
+             * E.g. html contains text which would lead to error ERROR_IP_BLOCKED --> We're not checking for it as there is a download Form
+             * --> Then when submitting it, html will contain another error e.g. 'Skipped countdown' --> In this case we want to prefer the
+             * first thrown Exception. Why do we not check errors before submitting download2 Form? Because html could contain faulty
+             * errormessages!
+             */
+            Exception exceptionBeforeDownload2Submit = null;
+            try {
+                checkErrors(link, account, false);
+            } catch (final Exception e) {
+                exceptionBeforeDownload2Submit = e;
+                logger.info("Found Exception before download2 Form submit");
+            }
             /* Define how many forms deep do we want to try? */
+            final int download2start = 0;
             final int download2max = 2;
-            for (int download2counter = 0; download2counter <= download2max; download2counter++) {
+            for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
                 logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
@@ -1386,6 +1400,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 dllink = getDllink(link, account);
                 final boolean dlformIsThere = findFormDownload2Free() != null;
                 if (StringUtils.isEmpty(dllink) && (!dlformIsThere || download2counter == download2max)) {
+                    if (download2counter == download2start + 1 && exceptionBeforeDownload2Submit != null) {
+                        logger.info("Throwing exceptionBeforeDownload2Submit");
+                        throw exceptionBeforeDownload2Submit;
+                    }
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (StringUtils.isEmpty(dllink) && dlformIsThere) {
@@ -1729,6 +1747,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dlForm == null) {
             dlForm = br.getFormByInputFieldKeyValue("op", "download2");
+        }
+        if (dlForm != null && dlForm.hasInputFieldByName("adblock_detected")) {
+            final InputField adb = dlForm.getInputField("adblock_detected");
+            if (StringUtils.isEmpty(adb.getValue())) {
+                dlForm.removeInputField(adb);
+                adb.setValue("0");
+                dlForm.addInputField(adb);
+            }
         }
         return dlForm;
     }
