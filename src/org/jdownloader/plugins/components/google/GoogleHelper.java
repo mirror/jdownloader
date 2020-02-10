@@ -174,7 +174,8 @@ public class GoogleHelper {
 
     public boolean login(Account account) throws Exception {
         try {
-            final boolean pluginBroken = true;
+            /* 2020-02-10: Seems like Google Login is still working for some users. https://svn.jdownloader.org/issues/86318 */
+            final boolean pluginBroken = false;
             if (pluginBroken) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nGoogle login is broken!\r\nA bugfix in the near future is very unlikely.\r\nSee svn.jdownloader.org/issues/86318 ", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
