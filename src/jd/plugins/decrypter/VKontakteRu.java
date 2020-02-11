@@ -1798,6 +1798,14 @@ public class VKontakteRu extends PluginForDecrypt {
                             single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + url_source;
                             photo_list_id = url_source;
                         }
+                    } else if (photo_list_id_tmp != null && photo_list_id_tmp.matches("tag-?\\d+")) {
+                        /* Different type of wall photos which again need different IDs and have different contentURLs. */
+                        photo_list_id = photo_list_id_tmp;
+                        if (!isPostContentURLGivenAndTheSameForAllItems) {
+                            /* Try to find post_id - if this goes wrong we might not be able to download the content later on. */
+                            final String tag_id = new Regex(photo_list_id, "(-?\\d+)$").getMatch(0);
+                            single_photo_content_url = String.format("https://vk.com/photo%s?tag=%s", photoContentStr, tag_id);
+                        }
                     }
                     picture_preview_json = new Regex(photo_html, "(\\{(?:\"|\\&quot;)(?:base|temp)(?:\"|\\&quot;).*?\\}),[^\\{\\}]+\\)").getMatch(0);
                 }
