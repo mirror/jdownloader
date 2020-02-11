@@ -36,7 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oxy.cloud" }, urls = { "https?://(?:www\\.)?oxy\\.cloud/d/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oxy.cloud" }, urls = { "https?://(?:www\\.)?oxy\\.(?:cloud|st)/d/([A-Za-z0-9]+)" })
 public class OxyCloud extends antiDDoSForHost {
     public OxyCloud(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,12 +50,16 @@ public class OxyCloud extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     /* Connection stuff */
@@ -75,17 +79,17 @@ public class OxyCloud extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final String linkid = this.getLinkID(link);
+        final String fid = this.getFID(link);
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(linkid)) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Language independant RegEx */
         String filename = br.getRegex("text_font_text text-block__text\" data\\-reactid=\"19\">[^<]+<b>([^<>\"]+)</b>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */
-            filename = this.getLinkID(link);
+            filename = fid;
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
@@ -101,14 +105,14 @@ public class OxyCloud extends antiDDoSForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("predirect\\s*=\\s*(https?[^\"\\&]+)\"").getMatch(0);
+            dllink = br.getRegex("((?:%2Fd%2[A-Za-z0-9]+%2F\\d+%2F|/d/[^/]+/\\d+/)[a-f0-9]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.htmlDecode(dllink);
             getPage(dllink);
             /* --> This one will redirect to the final URL */
-            dllink = br.getRegex("(/get/[a-f0-9]+)").getMatch(0);
+            dllink = br.getRegex("(/get/[a-f0-9]{22,})").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

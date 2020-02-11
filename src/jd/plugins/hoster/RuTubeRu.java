@@ -46,6 +46,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.RuTubeVariant;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.decryptedrutube\\.ru/[0-9a-f]{32}" })
@@ -125,9 +126,16 @@ public class RuTubeRu extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+        final String contenttype = br.getRequest().getResponseHeader("Content-Type");
+        String filename = null;
         final XPath xPath = XPathFactory.newInstance().newXPath();
-        String filename = getText(doc, xPath, "/root/title");
+        if (contenttype != null && contenttype.contains("json")) {
+            /* 2020-02-11 */
+            filename = PluginJSonUtils.getJson(br, "title");
+        } else {
+            final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+            filename = getText(doc, xPath, "/root/title");
+        }
         if (filename == null) {
             /* Fallback */
             filename = nextId;
@@ -136,7 +144,7 @@ public class RuTubeRu extends PluginForHost {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + var.getHeight() + "p" + ".mp4");
         }
         /* 2019-09-19: This value was usually something else than 'nextId' but it seems to be the same now! */
-        final String vid = br.getRegex("/play/embed/([^/<>\"]+)").getMatch(0);
+        final String vid = br.getRegex("/play/embed/([^/<>\"\\\\]+)").getMatch(0);
         if (vid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
