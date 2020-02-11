@@ -43,7 +43,7 @@ public class DLCFactory extends D {
         }
         final String key = encrypt[1];
         xml = encrypt[0];
-        final String service = "http://service.jdownloader.org/dlcrypt/service.php";
+        final String service = "https://service.jdownloader.org/dlcrypt/service.php";
         try {
             final String dlcKey = callService(service, key);
             if (dlcKey == null) {

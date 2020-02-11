@@ -125,7 +125,7 @@ public class D extends PluginsC {
         java.util.List<URL> s1;
         try {
             s1 = new ArrayList<URL>();
-            s1.add(0, new URL("http://service.jdownloader.org/dlcrypt/service.php"));
+            s1.add(0, new URL("https://service.jdownloader.org/dlcrypt/service.php"));
             Iterator<URL> it = s1.iterator();
             while (it.hasNext()) {
                 String x = null;
