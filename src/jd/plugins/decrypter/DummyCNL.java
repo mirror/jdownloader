@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -60,7 +61,7 @@ public class DummyCNL extends PluginForDecrypt {
     }
 
     public static DownloadLink createDummyCNL(String crypted, final String jk, String k, final String source) throws Exception {
-        final HashMap<String, String> infos = new HashMap<String, String>();
+        final Map<String, String> infos = new HashMap<String, String>();
         infos.put("crypted", crypted);
         if (jk != null) {
             infos.put("jk", jk);
