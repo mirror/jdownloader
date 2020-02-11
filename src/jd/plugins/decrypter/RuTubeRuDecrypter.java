@@ -26,6 +26,12 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -40,12 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.RuTubeVariant;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((?:www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\w+(.*?p=[A-Za-z0-9\\-_]+)?|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
@@ -164,7 +164,8 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 final Browser br = this.br.cloneBrowser();
                 // since we know the embed url for player/embed link types no need todo this step
                 getPage(br, "http://rutube.ru/api/video/" + id);
-                if (br.containsHTML("<root><detail>Not found</detail></root>")) {
+                /* 2020-02-11: This may return HTTP/1.1 401 UNAUTHORIZED for normal offline content too. */
+                if (br.containsHTML("<root><detail>Not found</detail></root>") || br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 404) {
                     return createOfflinelink(parameter);
                 }
                 vid = br.getRegex("/embed/(\\d{3,})").getMatch(0);
