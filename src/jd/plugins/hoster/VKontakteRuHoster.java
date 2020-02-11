@@ -123,14 +123,20 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String ALPHANUMERIC                                                                = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
     private String              vkID                                                                        = null;
     /* Properties */
-    public static final String  PROPERTY_picturedirectlink                                                  = "picturedirectlink";
-    public static final String  PROPERTY_directurls_fallback                                                = "directurls_fallback";
+    /* General */
+    public static final String  PROPERTY_GENERAL_owner_id                                                   = "owner_id";
+    public static final String  PROPERTY_GENERAL_content_id                                                 = "content_id";
+    /* For single photos */
+    public static final String  PROPERTY_PHOTOS_picturedirectlink                                           = "picturedirectlink";
+    public static final String  PROPERTY_PHOTOS_directurls_fallback                                         = "directurls_fallback";
+    public static final String  PROPERTY_PHOTOS_photo_list_id                                               = "photo_list_id";
+    public static final String  PROPERTY_PHOTOS_photo_module                                                = "photo_module";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
         this.setConfigElements();
-        // need this twice, because hoster plugin might not be loaded yet
+        /* need this twice, because hoster plugin might not be loaded yet */
         try {
             Browser.setRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
         } catch (final Throwable e) {
@@ -380,10 +386,10 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
             } else {
-                finalUrl = link.getStringProperty(PROPERTY_picturedirectlink, null);
+                finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink, null);
                 String dllink_temp = null;
                 if (finalUrl == null) {
-                    String photo_list_id = link.getStringProperty("photo_list_id", null);
+                    String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id, null);
                     final String module = link.getStringProperty("photo_module", null);
                     final String photoID = getPhotoID(link);
                     if (module != null) {
@@ -479,9 +485,9 @@ public class VKontakteRuHoster extends PluginForHost {
                         if (isDownload) {
                             this.finalUrl = getHighestQualityPictureDownloadurl(link, true);
                             if (StringUtils.isEmpty(this.finalUrl)) {
-                                this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), true);
+                                this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), true);
                             }
-                            if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_directurls_fallback, null) == null) {
+                            if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null) == null) {
                                 /* 2019-08-08: Just a hint */
                                 logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
                             }
@@ -492,7 +498,7 @@ public class VKontakteRuHoster extends PluginForHost {
                              */
                             dllink_temp = getHighestQualityPictureDownloadurl(link, false);
                             if (StringUtils.isEmpty(dllink_temp)) {
-                                dllink_temp = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), false);
+                                dllink_temp = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), false);
                             }
                         }
                     } catch (final Throwable e) {
@@ -547,7 +553,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (finalUrl != null) {
                     if (!photolinkOk(link, null, false, finalUrl)) {
                         // failed, lets nuke cached entry and retry.
-                        link.setProperty(PROPERTY_picturedirectlink, Property.NULL);
+                        link.setProperty(PROPERTY_PHOTOS_picturedirectlink, Property.NULL);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
@@ -561,7 +567,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 if (finalUrl == null) {
                     /* Final fallback */
-                    finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_directurls_fallback, null), true);
+                    finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), true);
                 }
             }
         } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
@@ -999,7 +1005,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 finalfilename = Encoding.htmlDecode(getFileNameFromHeader(con));
             }
             link.setFinalFileName(finalfilename);
-            link.setProperty(PROPERTY_picturedirectlink, downloadurl);
+            link.setProperty(PROPERTY_PHOTOS_picturedirectlink, downloadurl);
             if (isDownload) {
                 closeConnection = false;
             }
@@ -1390,7 +1396,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
      * online. This function is made to check the information which has been saved via decrypter as the property
-     * PROPERTY_directurls_fallback on the DownloadLink.
+     * PROPERTY_PHOTOS_directurls_fallback on the DownloadLink.
      *
      * @throws IOException
      * @param checkDownloadability
