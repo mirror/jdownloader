@@ -33,10 +33,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DeluxemusicTv;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxemusic\\.tv/.*?\\.html|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
-public class DeluxemusicTv extends PluginForDecrypt {
-    public DeluxemusicTv(PluginWrapper wrapper) {
+public class DeluxemusicTvPlaylist extends PluginForDecrypt {
+    public DeluxemusicTvPlaylist(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -53,6 +54,62 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            /* New 2020-02-13 */
+            final String app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
+            final String content_id = br.getRegex("contentId\\s*:\\s*(\\d+)").getMatch(0);
+            if (app_id != null && content_id != null) {
+                // br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playerData?htmlPreset=just-music&noflash=true&content=%s&theov=2.64.0&hls=true",
+                // app_id, content_id));
+                br.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
+                br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playlist", app_id));
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "additional/pl/entries");
+                for (final Object videoO : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) videoO;
+                    String title = (String) entries.get("title");
+                    if (StringUtils.isEmpty(title)) {
+                        logger.warning("Failed to find title");
+                        return null;
+                    }
+                    title = DeluxemusicTv.nicerDicerTitle(title, false);
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(title);
+                    final String description = (String) entries.get("description");
+                    final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("videos");
+                    long maxbandwidth = 0;
+                    /* TODO: Maybe add a "BEST quality only" setting. */
+                    DownloadLink bestQuality = null;
+                    for (final Object qualityO : qualities) {
+                        entries = (LinkedHashMap<String, Object>) qualityO;
+                        final String url = (String) entries.get("href");
+                        final long width = JavaScriptEngineFactory.toLong(entries.get("width"), -1);
+                        final long height = JavaScriptEngineFactory.toLong(entries.get("bandwidth"), -1);
+                        if (StringUtils.isEmpty(url) || !url.startsWith("http") || width == -1 || height == -1) {
+                            /* Skip invalid items */
+                            continue;
+                        }
+                        final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                        dl.setFinalFileName(title + "_" + width + "x" + height + ".mp4");
+                        dl.setAvailable(true);
+                        if (!StringUtils.isEmpty(description)) {
+                            dl.setComment(description);
+                        }
+                        dl._setFilePackage(fp);
+                        decryptedLinks.add(dl);
+                        final long bandwidthTmp = JavaScriptEngineFactory.toLong(entries.get("bandwidth"), 1);
+                        if (bandwidthTmp > maxbandwidth) {
+                            maxbandwidth = bandwidthTmp;
+                            bestQuality = dl;
+                        }
+                    }
+                }
+                return decryptedLinks;
+            }
+            /* Old: For old website, rev. 40970 and before */
             final String playlist_embed_id = this.br.getRegex("playlist_id=\"(\\d+)\"").getMatch(0);
             if (playlist_embed_id == null) {
                 logger.info("Seems like this page does not contain any playlist");
@@ -87,9 +144,9 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 final String filename;
                 if (StringUtils.isEmpty(title)) {
                     /* Fallback */
-                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(mediakey);
+                    filename = DeluxemusicTv.nicerDicerTitle(mediakey, true);
                 } else {
-                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(title);
+                    filename = DeluxemusicTv.nicerDicerTitle(title, true);
                 }
                 dl.setContentUrl(url);
                 dl.setLinkID(mediakey);
@@ -162,9 +219,9 @@ public class DeluxemusicTv extends PluginForDecrypt {
                 final String filename;
                 if (StringUtils.isEmpty(title)) {
                     /* Last chance fallback */
-                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(mediakey);
+                    filename = DeluxemusicTv.nicerDicerTitle(mediakey, true);
                 } else {
-                    filename = jd.plugins.hoster.DeluxemusicTv.nicerDicerFilename(title);
+                    filename = DeluxemusicTv.nicerDicerTitle(title, true);
                 }
                 dl.setContentUrl(url);
                 dl._setFilePackage(fp);

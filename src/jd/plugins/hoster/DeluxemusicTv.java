@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,10 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxetv\\-vimp\\.mivitec\\.net/.*?/?video/[^/]+/[a-f0-9]{32}.*|https?://deluxetv\\-vimp\\.mivitec\\.net/getMedium/[a-f0-9]{32}\\.mp4" })
 public class DeluxemusicTv extends PluginForHost {
@@ -123,7 +123,7 @@ public class DeluxemusicTv extends PluginForHost {
         } else {
             dllink = "https://deluxetv-vimp.mivitec.net/getMedium/" + fid + ".mp4";
         }
-        filename = nicerDicerFilename(filename);
+        filename = nicerDicerTitle(filename, true);
         if (dllink != null && !fastlinkcheck) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
@@ -153,7 +153,7 @@ public class DeluxemusicTv extends PluginForHost {
     }
 
     /* Improve filenames */
-    public static String nicerDicerFilename(String name) {
+    public static String nicerDicerTitle(String name, final boolean addExtension) {
         if (name == null) {
             return null;
         }
@@ -169,7 +169,9 @@ public class DeluxemusicTv extends PluginForHost {
         }
         name = Encoding.htmlDecode(name);
         name = name.trim();
-        name += default_extension;
+        if (addExtension) {
+            name += default_extension;
+        }
         return name;
     }
 
