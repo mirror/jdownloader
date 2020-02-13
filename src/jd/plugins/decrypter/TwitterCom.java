@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -227,30 +228,42 @@ public class TwitterCom extends PornEmbedParser {
     private void crawlAPITweet(final String parameter, final FilePackage fp) throws Exception {
         logger.info("Crawling API tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
-        prepareAPI();
+        prepareAPI(this.br);
         br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweet_id + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
         crawlTweetMediaObjectsAPI(entries);
     }
 
-    private void prepareAPI() throws DecrypterException, IOException {
-        /* 2020-02-03: Static authtoken */
+    public static Browser prepAPIHeaders(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA");
-        br.getHeaders().put("x-csrf-token", "undefined");
+        final String csrftoken = br.getCookie("twitter.com", "ct0", Cookies.NOTDELETEDPATTERN);
+        if (csrftoken != null) {
+            /* Indicates that the user is loggedin. */
+            br.getHeaders().put("x-csrf-token", csrftoken);
+        } else {
+            br.getHeaders().put("x-csrf-token", "undefined");
+        }
         br.getHeaders().put("x-twitter-active-user", "yes");
         br.getHeaders().put("x-twitter-client-language", "de");
-        getAndSetGuestToken();
+        br.getHeaders().put("x-twitter-polling", "true");
+        return br;
     }
 
-    private void getAndSetGuestToken() throws DecrypterException, IOException {
+    private Browser prepareAPI(final Browser br) throws DecrypterException, IOException {
+        /* 2020-02-03: Static authtoken */
+        prepAPIHeaders(br);
+        getAndSetGuestToken(br);
+        return br;
+    }
+
+    private void getAndSetGuestToken(final Browser br) throws DecrypterException, IOException {
         synchronized (LOCK) {
             if (guest_token == null) {
                 logger.info("Generating new guest_token");
-                br.getHeaders().put("x-csrf-token", "undefined");
                 br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
                 /** TODO: Save guest_token throughout session so we do not generate them so frequently */
-                guest_token = PluginJSonUtils.getJson(br, "guest_token");
+                guest_token = generateNewGuestToken(br);
                 if (StringUtils.isEmpty(guest_token)) {
                     logger.warning("Failed to find guest_token");
                     throw new DecrypterException("Plugin broken");
@@ -260,6 +273,12 @@ public class TwitterCom extends PornEmbedParser {
             }
             br.getHeaders().put("x-guest-token", guest_token);
         }
+    }
+
+    public static String generateNewGuestToken(final Browser br) throws IOException, DecrypterException {
+        br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+        /** TODO: Save guest_token throughout session so we do not generate them so frequently */
+        return PluginJSonUtils.getJson(br, "guest_token");
     }
 
     /** Crawls single media objects obtained via API. */
@@ -366,7 +385,7 @@ public class TwitterCom extends PornEmbedParser {
     private void crawlUserViaAPI(final String parameter) throws Exception {
         logger.info("Crawling API user");
         final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
-        this.prepareAPI();
+        this.prepareAPI(br);
         final boolean use_old_api_to_get_userid = true;
         LinkedHashMap<String, Object> entries;
         final String user_id;
@@ -400,6 +419,12 @@ public class TwitterCom extends PornEmbedParser {
             }
             br.getPage(String.format("https://api.twitter.com/2/timeline/profile/%s.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&include_tweet_replies=false&userId=%s&count=%d&ext=mediaStats%%2CcameraMoment%s", user_id, user_id, items_per_page, extraArgs));
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Object errors = entries.get("errors");
+            if (errors != null) {
+                logger.info("Twitter error happened - probably offline- or protected content");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return;
+            }
             final ArrayList<Object> pagination_info = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "timeline/instructions/{0}/addEntries/entries");
             final LinkedHashMap<String, Object> tweetMap = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets");
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();

@@ -132,9 +132,21 @@ public class TwobayOrg extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            // final String testStr = br.getRegex("/abuse\\.php\\?url=https?://2bay\\.org/([a-f0-9]+)").getMatch(0);
+            // for (int i = 0; i <= 10; i++) {
+            // br.getPage(link.getPluginPatternMatcher());
+            // dllink = br.getRegex("(/intersheel\\.php\\?id=[A-Za-z0-9]+)").getMatch(0);
+            // if (dllink != null) {
+            // break;
+            // }
+            // this.sleep(5000, link);
+            // }
             dllink = br.getRegex("(/intersheel\\.php\\?id=[A-Za-z0-9]+)").getMatch(0);
+            // if (StringUtils.isEmpty(dllink) && testStr != null) {
+            // dllink = "/intersheel.php?id=" + testStr;
+            // }
             if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download is impossible at the moment", 2 * 60 * 1000l);
             }
             br.getPage(dllink);
             dllink = br.getRegex("([a-z0-9]+\\.2bay\\.org/db/[^<>\"\\']+)").getMatch(0);

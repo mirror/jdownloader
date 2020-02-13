@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -94,6 +95,15 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
                 submitForm(confirmationForm);
             }
         } while (confirmationForm != null && counter <= 4);
+        /*
+         * 2020-02-12: Some hosts will only require a captcha on the first try and allow all further URLs to be processed without captchas
+         * --> Based on their PHPSESSID cookie --> Store those
+         */
+        final Cookies cookies = br.getCookies(br.getHost());
+        // save the session!
+        synchronized (antiDDoSCookies) {
+            antiDDoSCookies.put(br.getHost(), cookies);
+        }
         if (captchaFail) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (passwordFail) {
@@ -126,5 +136,10 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.DaddyScripts_DaddysLinkProtector;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 }
