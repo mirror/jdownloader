@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
@@ -46,7 +47,7 @@ public class TwitterCom extends PluginForHost {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
         /* 2020-01-20: Disabled login functionality as it is broken */
-        // this.enablePremium("https://twitter.com/signup");
+        this.enablePremium("https://twitter.com/signup");
     }
 
     @Override
@@ -87,6 +88,8 @@ public class TwitterCom extends PluginForHost {
             tweetid = dl.getStringProperty("tweetid", null);
         }
     }
+
+    private static Object LOCK = new Object();
 
     /** 2017-11-29: TODO: For videos: Check this way https://api.twitter.com/1.1/videos/tweet/config/<tweetid>.json */
     @SuppressWarnings("deprecation")
@@ -154,13 +157,15 @@ public class TwitterCom extends PluginForHost {
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweet_id);
             synchronized (LOCK) {
                 if (guest_token == null) {
-                    br.getHeaders().put("x-csrf-token", "undefined");
-                    br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+                    /* TODO: Improve this */
                     /** TODO: Save guest_token throughout session so we do not generate them so frequently */
-                    guest_token = PluginJSonUtils.getJson(br, "guest_token");
+                    jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
+                    guest_token = jd.plugins.decrypter.TwitterCom.generateNewGuestToken(br);
                 }
                 if (guest_token != null) {
                     br.getHeaders().put("x-guest-token", guest_token);
+                } else {
+                    logger.warning("Failed to get guesttoken");
                 }
                 /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
                 br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
@@ -384,14 +389,12 @@ public class TwitterCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "https://twitter.com";
-    private static Object       LOCK     = new Object();
-
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                br.setFollowRedirects(true);
                 if (cookies != null) {
                     /*
                      * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings
@@ -400,31 +403,45 @@ public class TwitterCom extends PluginForHost {
                     br.setCookies(account.getHoster(), cookies);
                     // br.getHeaders().put("Referer", "https://twitter.com/");
                     br.getPage("https://" + account.getHoster() + "/");
-                    final String auth_cookie = br.getCookie(MAINPAGE, "auth_token");
-                    if (auth_cookie != null && !"deleted".equalsIgnoreCase(auth_cookie)) {
+                    final String auth_cookie = br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN);
+                    if (auth_cookie != null) {
                         /* Set new cookie timestamp */
                         br.setCookies(account.getHoster(), cookies);
                         return;
                     }
                     /* Force full login */
                 }
-                br.setFollowRedirects(false);
-                // br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
-                br.getPage("https://" + account.getHoster() + "/login");
-                final String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
-                if (authenticytoken == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
-                br.postPage("/sessions", postData);
-                if (br.getCookie(MAINPAGE, "auth_token") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final boolean use_cookie_workaround = account.getPass().startsWith("[");
+                if (use_cookie_workaround) {
+                    /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
+                    LinkedHashMap<String, Object> entries;
+                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(account.getPass());
+                    for (final Object cookieO : ressourcelist) {
+                        entries = (LinkedHashMap<String, Object>) cookieO;
+                        final String cookiename = (String) entries.get("name");
+                        final String cookievalue = (String) entries.get("value");
+                        if (cookiename == null || cookievalue == null) {
+                            continue;
+                        }
+                        br.setCookie(account.getHoster(), cookiename, cookievalue);
                     }
+                    br.getPage("https://" + account.getHoster() + "/home");
+                } else {
+                    br.getPage("https://" + account.getHoster() + "/login");
+                    String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
+                    if (authenticytoken == null) {
+                        authenticytoken = br.getCookie(br.getHost(), "_mb_tk", Cookies.NOTDELETEDPATTERN);
+                    }
+                    if (authenticytoken == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
+                    br.postPage("/sessions", postData);
                 }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -434,14 +451,12 @@ public class TwitterCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
@@ -449,7 +464,6 @@ public class TwitterCom extends PluginForHost {
         account.setMaxSimultanDownloads(1);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 

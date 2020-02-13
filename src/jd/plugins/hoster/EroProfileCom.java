@@ -22,6 +22,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -32,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(?:www\\.)?eroprofile\\.com/m/(?:videos|photos)/view/([A-Za-z0-9\\-_]+)" })
 public class EroProfileCom extends PluginForHost {
     public EroProfileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,6 +43,20 @@ public class EroProfileCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
     private String dllink = null;
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
 
     @Override
     public String getAGBLink() {
@@ -56,47 +71,59 @@ public class EroProfileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
-        br.setCookie("http://eroprofile.com/", "lang", "en");
-        br.getPage(downloadLink.getDownloadURL());
+        br.setCookie(this.getHost(), "lang", "en");
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML(NOACCESS)) {
-            downloadLink.getLinkStatus().setStatusText("Only available for registered users");
+            link.getLinkStatus().setStatusText("Only available for registered users");
             return AvailableStatus.TRUE;
         }
-        if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
+        final String fid = this.getFID(link);
+        if (link.getDownloadURL().matches(VIDEOLINK)) {
             if (br.containsHTML("(>Video not found|>The video could not be found|<title>EroProfile</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = getFilename();
+            if (filename == null) {
+                /* Fallback */
+                filename = fid;
+            }
             if (br.containsHTML(PREMIUMONLY)) {
-                downloadLink.setName(filename + ".m4v");
-                downloadLink.getLinkStatus().setStatusText("This file is only available to premium members");
+                link.setName(filename + ".m4v");
+                link.getLinkStatus().setStatusText("This file is only available to premium members");
                 return AvailableStatus.TRUE;
             }
             dllink = br.getRegex("file:\\'(https?://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<source src=(?:'|\")(https?[^<>\"]*?)/?(?:'|\")").getMatch(0);
+                dllink = br.getRegex("<source src=(?:'|\")([^<>\"\\']*?)/?(?:'|\")").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (dllink.startsWith("//")) {
+                dllink = "https:" + dllink;
+            }
             dllink = Encoding.htmlDecode(dllink);
             final String ext = getFileNameExtensionFromString(dllink, ".m4v");
-            downloadLink.setFinalFileName(filename + ext);
+            link.setFinalFileName(filename + ext);
         } else {
             if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = getFilename();
+            if (filename == null) {
+                /* Fallback */
+                filename = fid;
+            }
             dllink = br.getRegex("<\\s*div\\s+class=\"viewPhotoContainer\">\\s*<\\s*a\\s+href=\"((?:https?:)?//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.htmlDecode(dllink);
             final String ext = getFileNameExtensionFromString(dllink, ".jpg");
-            downloadLink.setFinalFileName(filename + ext);
+            link.setFinalFileName(filename + ext);
         }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -105,7 +132,7 @@ public class EroProfileCom extends PluginForHost {
         try {
             con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -201,10 +228,10 @@ public class EroProfileCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>EroProfile \\- ([^<>\"]*?)</title>").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename.trim());
         }
-        return Encoding.htmlDecode(filename.trim());
+        return filename;
     }
 
     @Override
