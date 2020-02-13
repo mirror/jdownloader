@@ -205,10 +205,14 @@ public class PremiumTo extends UseNet {
             try {
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                String apikey = this.getAPIKey(account);
                 String userid = this.getUserID(account);
+                String apikey = this.getAPIKey(account);
                 boolean attemptedAPIKeyLogin = false;
                 if (!StringUtils.isEmpty(apikey) && !StringUtils.isEmpty(userid)) {
+                    /* 2020-02-13: Save new API logindata - remove property handling in a few weeks! */
+                    account.setUser(userid);
+                    account.setPass(apikey);
+                    account.setProperty("new_credentials_active", true);
                     if (!force) {
                         /* Trust existing data without check */
                         return false;
@@ -438,12 +442,20 @@ public class PremiumTo extends UseNet {
     private final String PROPERTY_APIKEY = "apikey";
     private final String PROPERTY_USERID = "userid";
 
-    private String getAPIKey(final Account account) {
-        return account.getStringProperty(PROPERTY_APIKEY, null);
+    private String getUserID(final Account account) {
+        if (account.getBooleanProperty("new_credentials_active", false)) {
+            return account.getUser();
+        } else {
+            return account.getStringProperty(PROPERTY_USERID, null);
+        }
     }
 
-    private String getUserID(final Account account) {
-        return account.getStringProperty(PROPERTY_USERID, null);
+    private String getAPIKey(final Account account) {
+        if (account.getBooleanProperty("new_credentials_active", false)) {
+            return account.getPass();
+        } else {
+            return account.getStringProperty(PROPERTY_APIKEY, null);
+        }
     }
 
     @Override
