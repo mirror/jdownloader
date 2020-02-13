@@ -63,6 +63,7 @@ public class DeluxemusicTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* 2020-02-13: This is basically not required anymore. */
         dllink = null;
         server_issues = false;
         final String fid = getLinkID(link);
