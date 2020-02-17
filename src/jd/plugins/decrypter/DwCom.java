@@ -42,20 +42,25 @@ public class DwCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        String url_title = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        url_title = Encoding.htmlDecode(url_title);
         final String[] links = br.getRegex("(http[^\"]+\\.mp4)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        String title_for_filename = url_title.replace("-", " ");
         for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + singleLink));
+            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+            final String quality_part = new Regex(singleLink, "(_[a-z]+_[a-z]+\\.mp4)").getMatch(0);
+            if (quality_part != null) {
+                dl.setFinalFileName(title_for_filename + quality_part);
+            }
+            decryptedLinks.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(url_title);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

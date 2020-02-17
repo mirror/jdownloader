@@ -186,7 +186,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     public static LinkedHashMap<String, Object> findPINMap(final Browser br, final boolean loggedIN, final String contentURL, final String source_url, final String boardid, final String username) throws Exception {
         final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(contentURL);
         LinkedHashMap<String, Object> pinMap = null;
-        final ArrayList<Object> resource_data_cache;
+        ArrayList<Object> resource_data_cache = null;
         if (loggedIN && source_url != null && boardid != null && username != null) {
             String pin_ressource_url = "http://www.pinterest.com/resource/PinResource/get/?source_url=";
             String options = "/pin/%s/&data={\"options\":{\"field_set_key\":\"detailed\",\"link_selection\":true,\"fetch_visual_search_objects\":true,\"id\":\"%s\"},\"context\":{},\"module\":{\"name\":\"CloseupContent\",\"options\":{\"unauth_pin_closeup\":false}},\"render_type\":1}&module_path=App()>BoardPage(resource=BoardResource(username=amazvicki,+slug=))>Grid(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>GridItems(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>Pin(show_pinner=false,+show_pinned_from=true,+show_board=false,+squish_giraffe_pins=false,+component_type=0,+resource=PinResource(id=%s))";
@@ -227,10 +227,22 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 br.getPage(pin_json_url);
                 json = br.toString();
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                resource_data_cache = (ArrayList) entries.get("resource_data_cache");
+                if (entries.containsKey("resource_data_cache")) {
+                    resource_data_cache = (ArrayList) entries.get("resource_data_cache");
+                } else {
+                    /* 2020-02-17 */
+                    final Object pinO = entries.get("resource_response");
+                    if (pinO != null) {
+                        resource_data_cache = new ArrayList<Object>();
+                        resource_data_cache.add(pinO);
+                    }
+                }
             }
         }
         final boolean grabThis;
+        if (resource_data_cache == null) {
+            return null;
+        }
         if (resource_data_cache.size() == 1) {
             // logger.info("resource_data_cache contains only 1 item --> This should be the one, we want");
             grabThis = true;

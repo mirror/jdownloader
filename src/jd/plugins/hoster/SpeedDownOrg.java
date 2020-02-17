@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RareFileNet extends XFileSharingProBasic {
-    public RareFileNet(final PluginWrapper wrapper) {
+public class SpeedDownOrg extends XFileSharingProBasic {
+    public SpeedDownOrg(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,15 +36,67 @@ public class RareFileNet extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2020-02-17: 4dignum<br />
+     * limit-info: 2019-04-05: Premium untested, set FREE account limits<br />
+     * captchatype-info: reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rarefile.net" });
+        ret.add(new String[] { "speed-down.org", "4downfiles.co", "4downfile.org", "4downfiles.org", "4downfiles.com", "4downfiles.net" });
         return ret;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return true;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return true;
+        }
+    }
+
+    @Override
+    public int getMaxChunks(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return -2;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return -2;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return -2;
+        }
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, (String[]) null);
+    }
+
+    @Override
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultaneousFreeAccountDownloads() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     public static String[] getAnnotationNames() {
@@ -54,71 +106,5 @@ public class RareFileNet extends XFileSharingProBasic {
     @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
-    }
-
-    @Override
-    public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return false;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
-            return true;
-        } else {
-            /* Free(anonymous) and unknown account type */
-            return false;
-        }
-    }
-
-    @Override
-    public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return 1;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
-            return 0;
-        } else {
-            /* Free(anonymous) and unknown account type */
-            return 1;
-        }
-    }
-
-    @Override
-    public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    protected boolean supports_https() {
-        /* 2020-02-17: Special */
-        return false;
-    }
-
-    @Override
-    public ArrayList<String> getCleanupHTMLRegexes() {
-        /* 2020-02-17: Special */
-        final ArrayList<String> regexStuff = new ArrayList<String>();
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
-        /* generic cleanup */
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
-        regexStuff.add("(<div style=\"display:none\"><BR>.*?<br><br>)");
-        return regexStuff;
     }
 }

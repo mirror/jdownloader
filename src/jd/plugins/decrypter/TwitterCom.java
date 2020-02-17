@@ -237,7 +237,7 @@ public class TwitterCom extends PornEmbedParser {
 
     public static Browser prepAPIHeaders(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA");
-        final String csrftoken = br.getCookie("twitter.com", "ct0", Cookies.NOTDELETEDPATTERN);
+        final String csrftoken = br.getCookie("twitter.com", jd.plugins.hoster.TwitterCom.COOKIE_KEY_LOGINED_CSRFTOKEN, Cookies.NOTDELETEDPATTERN);
         if (csrftoken != null) {
             /* Indicates that the user is loggedin. */
             br.getHeaders().put("x-csrf-token", csrftoken);
@@ -261,7 +261,6 @@ public class TwitterCom extends PornEmbedParser {
         synchronized (LOCK) {
             if (guest_token == null) {
                 logger.info("Generating new guest_token");
-                br.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
                 /** TODO: Save guest_token throughout session so we do not generate them so frequently */
                 guest_token = generateNewGuestToken(br);
                 if (StringUtils.isEmpty(guest_token)) {

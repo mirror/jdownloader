@@ -95,6 +95,9 @@ public class ImDbCom extends PluginForHost {
             if (json == null) {
                 /* 2017-07-18 */
                 json = this.br.getRegex("IMDbReactInitialState\\.push\\((\\{.*?\\})\\);\\s+").getMatch(0);
+                if (json == null) {
+                    json = this.br.getRegex("window\\.IMDbMediaViewerInitialState\\s*=\\s*(\\{.*?\\});").getMatch(0);
+                }
                 newWay = true;
             }
             Map<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
@@ -125,12 +128,13 @@ public class ImDbCom extends PluginForHost {
             if (filename == null || dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dllink.contains("@@")) {
-                final String qualityPart = dllink.substring(dllink.lastIndexOf("@@") + 2);
-                if (qualityPart != null) {
-                    dllink = dllink.replace(qualityPart, "");
-                }
-            }
+            /* 2020-02-17: Not required anymore? This may cripple final downloadurls! */
+            // if (dllink.contains("@@")) {
+            // final String qualityPart = dllink.substring(dllink.lastIndexOf("@@") + 2);
+            // if (qualityPart != null) {
+            // dllink = dllink.replace(qualityPart, "");
+            // }
+            // }
             filename = Encoding.htmlDecode(filename.trim());
             final String fid = new Regex(downloadLink.getDownloadURL(), "rm(\\d+)").getMatch(0);
             String artist = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);
