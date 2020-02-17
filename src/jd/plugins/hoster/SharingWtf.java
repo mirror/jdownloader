@@ -22,10 +22,14 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SharingWtf extends YetiShareCore {
@@ -136,8 +140,28 @@ public class SharingWtf extends YetiShareCore {
         /* Their html contains a commented-out line of code which is what our template code would normally pick up --> Endless loop */
         String continue_link = br.getRegex("\\$\\(\\'\\.download-timer\\'\\)\\.html.+\\$\\(\\'\\.download-timer\\'\\)\\.html\\(\"[^\\)]+\\'(https://[^\\']+)").getMatch(0);
         if (continue_link == null) {
+            /* 2020-02-17: For premium mode */
+            continue_link = br.getRegex("(https?://transfer[a-z0-9]*?\\.[^/]+/jdb\\?url=[^\"]+)").getMatch(0);
+            if (continue_link != null) {
+                continue_link = Encoding.htmlDecode(continue_link);
+                final String[] urls = HTMLParser.getHttpLinks(continue_link, "");
+                if (urls.length > 1) {
+                    continue_link = urls[urls.length - 1];
+                }
+            }
+        }
+        if (continue_link == null) {
             continue_link = super.getContinueLink();
         }
         return continue_link;
+    }
+
+    @Override
+    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+        /* 2020-02-17: Special */
+        if (br.containsHTML("you need to be a registered user to download any files")) {
+            throw new AccountRequiredException();
+        }
+        super.checkErrors(link, account);
     }
 }

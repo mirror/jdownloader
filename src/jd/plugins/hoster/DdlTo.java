@@ -243,6 +243,12 @@ public class DdlTo extends XFileSharingProBasic {
                 }
             }
             ai.setTrafficLeft(traffic_left);
+            /*
+             * 2020-02-17: Their API has a bug where it randomly returns wrong values for some users and they did not fix it within 2 weeks:
+             * https://board.jdownloader.org/showthread.php?t=82525&page=2
+             */
+            logger.info("Setting unlimited traffic instead of API trafficleft value " + traffic_left + " to prefer website value");
+            ai.setUnlimitedTraffic();
         } else {
             /*
              * They will return "traffic_left":"0" for free accounts which is wrong. It is unlimited on their website. By setting it to

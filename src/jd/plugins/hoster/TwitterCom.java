@@ -60,23 +60,24 @@ public class TwitterCom extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    private static final String  TYPE_VIDEO                = "https?://amp\\.twimg\\.com/v/.+";
-    private static final String  TYPE_VIDEO_VMAP           = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
-    public static final String   TYPE_VIDEO_EMBED          = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
+    private static final String  TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
+    private static final String  TYPE_VIDEO                   = "https?://amp\\.twimg\\.com/v/.+";
+    private static final String  TYPE_VIDEO_VMAP              = "https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap";
+    public static final String   TYPE_VIDEO_EMBED             = "https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+";
     /* Connection stuff - don't allow chunks as we only download small pictures */
-    private static final boolean FREE_RESUME               = true;
-    private static final int     FREE_MAXCHUNKS            = 1;
-    private static final int     FREE_MAXDOWNLOADS         = 20;
-    private static final boolean ACCOUNT_FREE_RESUME       = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    private String               dllink                    = null;
-    private boolean              account_required          = false;
-    private boolean              geo_blocked               = false;
-    private boolean              server_issues             = false;
-    private String               tweetid                   = null;
-    private String               guest_token               = null;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private String               dllink                       = null;
+    private boolean              account_required             = false;
+    private boolean              geo_blocked                  = false;
+    private boolean              server_issues                = false;
+    private String               tweetid                      = null;
+    private String               guest_token                  = null;
+    public static String         COOKIE_KEY_LOGINED_CSRFTOKEN = "ct0";
 
     private void setconstants(final DownloadLink dl) {
         dllink = null;
@@ -395,7 +396,7 @@ public class TwitterCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 br.setFollowRedirects(true);
-                if (cookies != null) {
+                if (cookies != null && !true) {
                     /*
                      * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings
                      * via E-Mail
@@ -425,7 +426,11 @@ public class TwitterCom extends PluginForHost {
                         }
                         br.setCookie(account.getHoster(), cookiename, cookievalue);
                     }
-                    br.getPage("https://" + account.getHoster() + "/home");
+                    jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
+                    br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
+                    if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 } else {
                     br.getPage("https://" + account.getHoster() + "/login");
                     String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
@@ -437,9 +442,9 @@ public class TwitterCom extends PluginForHost {
                     }
                     final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
                     br.postPage("/sessions", postData);
-                }
-                if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
