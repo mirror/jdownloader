@@ -396,7 +396,7 @@ public class TwitterCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 br.setFollowRedirects(true);
-                if (cookies != null && !true) {
+                if (cookies != null) {
                     /*
                      * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings
                      * via E-Mail
