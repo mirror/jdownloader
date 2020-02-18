@@ -17,6 +17,10 @@ public interface DeluxemusicTvConfigInterface extends PluginConfigInterface {
         public String getEnableCategoryCrawler_label() {
             return "Enable category crawler? This may add huge amounts of URLs!";
         }
+
+        public String getOnlyGrabBestQuality_label() {
+            return "Only grab best quality?";
+        }
     }
 
     public static final DeluxemusicTvConfigInterface.TRANSLATION TRANSLATION = new TRANSLATION();
@@ -32,4 +36,10 @@ public interface DeluxemusicTvConfigInterface extends PluginConfigInterface {
     boolean isEnableCategoryCrawler();
 
     void setEnableCategoryCrawler(boolean b);
+
+    @DefaultBooleanValue(false)
+    @Order(20)
+    boolean isOnlyGrabBestQuality();
+
+    void setOnlyGrabBestQuality(boolean b);
 }

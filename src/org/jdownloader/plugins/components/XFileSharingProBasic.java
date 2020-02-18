@@ -760,7 +760,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (StringUtils.isEmpty(fileInfo[0])) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                        fileInfo[0] = new Regex(correctedBR, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
                     }
                 }
             }
@@ -2676,7 +2676,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (api_success && !ai.isUnlimitedTraffic()) {
             /* trafficleft given via API. TODO: Allow fetchAccountInfoAPI to set unlimited traffic and trust it here. */
-            logger.info("Successfully found AccountInfo with filesize via API");
+            logger.info("Successfully found complete AccountInfo with filesize via API");
             return ai;
         }
         /*
@@ -2689,7 +2689,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
             trafficLeftStr = Encoding.htmlDecode(trafficLeftStr);
             trafficLeftStr.trim();
-            /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+            /* Need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
             long trafficLeft = 0;
             if (trafficLeftStr.startsWith("-")) {
                 /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
@@ -2707,7 +2707,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         }
         if (api_success) {
-            logger.info("Successfully found AccountInfo without filesize via API");
+            logger.info("Successfully found AccountInfo without filesize via API (fetched filesize via website)");
             return ai;
         }
         final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
@@ -3463,6 +3463,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final String fileid_to_download;
             if (requires_api_getdllink_clone_workaround(account)) {
                 logger.info("Trying to download file via clone workaround");
+                String fuid_to_clone = this.fuid;
+                if (fuid_to_clone == null) {
+                    /* 2020-02-15: Required because requestFileInformationWebsite has not necessarily been called before! */
+                    fuid_to_clone = this.getFUIDFromURL(link);
+                }
                 getPage(this.getAPIBase() + "/file/clone?key=" + apikey + "&file_code=" + this.fuid);
                 this.checkErrorsAPI(this.br, link, account);
                 fileid_to_download = PluginJSonUtils.getJson(br, "filecode");

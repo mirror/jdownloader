@@ -54,6 +54,9 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface.class);
+            final boolean bestONLY = cfg.isOnlyGrabBestQuality();
+            final String website_title = "deluxemusic_" + new Regex(parameter, "([^/]+)\\.html$").getMatch(0);
             /* New 2020-02-13 */
             final String app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
             final String content_id = br.getRegex("contentId\\s*:\\s*(\\d+)").getMatch(0);
@@ -77,34 +80,45 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                     }
                     title = DeluxemusicTv.nicerDicerTitle(title, false);
                     final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(title);
+                    if (bestONLY) {
+                        /* Merge all into one package otherwise we'd have many packages with only one item each! */
+                        fp.setName(website_title);
+                    } else {
+                        fp.setName(title);
+                    }
                     final String description = (String) entries.get("description");
                     final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("videos");
                     long maxbandwidth = 0;
                     /* TODO: Maybe add a "BEST quality only" setting. */
                     DownloadLink bestQuality = null;
+                    final ArrayList<DownloadLink> allQualities = new ArrayList<DownloadLink>();
                     for (final Object qualityO : qualities) {
                         entries = (LinkedHashMap<String, Object>) qualityO;
                         final String url = (String) entries.get("href");
                         final long width = JavaScriptEngineFactory.toLong(entries.get("width"), -1);
-                        final long height = JavaScriptEngineFactory.toLong(entries.get("bandwidth"), -1);
+                        final long height = JavaScriptEngineFactory.toLong(entries.get("height"), -1);
+                        final long bandwidthTmp = JavaScriptEngineFactory.toLong(entries.get("bandwidth"), 1);
                         if (StringUtils.isEmpty(url) || !url.startsWith("http") || width == -1 || height == -1) {
                             /* Skip invalid items */
                             continue;
                         }
                         final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
-                        dl.setFinalFileName(title + "_" + width + "x" + height + ".mp4");
+                        dl.setFinalFileName(title + "_" + width + "x" + height + "_" + bandwidthTmp + ".mp4");
                         dl.setAvailable(true);
                         if (!StringUtils.isEmpty(description)) {
                             dl.setComment(description);
                         }
                         dl._setFilePackage(fp);
-                        decryptedLinks.add(dl);
-                        final long bandwidthTmp = JavaScriptEngineFactory.toLong(entries.get("bandwidth"), 1);
+                        allQualities.add(dl);
                         if (bandwidthTmp > maxbandwidth) {
                             maxbandwidth = bandwidthTmp;
                             bestQuality = dl;
                         }
+                    }
+                    if (bestONLY) {
+                        decryptedLinks.add(bestQuality);
+                    } else {
+                        decryptedLinks.addAll(allQualities);
                     }
                 }
                 return decryptedLinks;
