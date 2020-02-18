@@ -16,7 +16,7 @@ import org.appwork.utils.IO;
 
 public class JDServUtils {
     // private static String BASE = "http://nas:81/thomas/fcgi/"
-    private static String BASE = "http://update3.jdownloader.org/jdserv/";
+    public final static String BASE = "https://update3.jdownloader.org/jdserv/UploadInterface/";
 
     public static String uploadLog(File zip, String id) throws IOException {
         return uploadLog(zip, "", id);
@@ -28,7 +28,7 @@ public class JDServUtils {
 
     public static String upload(byte[] bytes, String name, String id) {
         final Browser br = new Browser();
-        String url = BASE + "UploadInterface/upload";
+        String url = BASE + "upload";
         br.setProxySelector(ProxyController.getInstance());
         URLConnectionAdapter con = null;
         try {
@@ -50,7 +50,5 @@ public class JDServUtils {
                 con.disconnect();
             }
         }
-
     }
-
 }

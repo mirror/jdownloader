@@ -28,12 +28,14 @@ public class UserAgentController {
     private final UserAgentEventSender                                eventSender;
     private final LogSource                                           logger;
     private final ConcurrentHashMap<ConnectedDevice, DelayedRunnable> timeoutcheck;
+    private final ConcurrentHashMap<String, UserAgentInfo>            uaCache;
 
     public UserAgentController() {
         eventSender = new UserAgentEventSender();
         logger = LogController.getInstance().getLogger("UserAgentController");
         map = new ConcurrentHashMap<String, ConnectedDevice>();
         timeoutcheck = new ConcurrentHashMap<ConnectedDevice, DelayedRunnable>();
+        uaCache = new ConcurrentHashMap<String, UserAgentInfo>();
     }
 
     protected void checkTimeouted() {
@@ -49,38 +51,48 @@ public class UserAgentController {
             ConnectedDevice ua = map.get(nuaID);
             if (ua == null) {
                 ua = createNewUserAgent(request, nuaID);
-                final ConnectedDevice fua = ua;
                 map.put(nuaID, ua);
-                new Thread("UserAgentCreater") {
-                    {
-                        setDaemon(true);
-                    }
+                if (!ConnectedDevice.isApp(ua.getUserAgentString())) {
+                    final UserAgentInfo cachedUA = uaCache.get(ua.getUserAgentString());
+                    if (cachedUA != null) {
+                        ua.setInfo(cachedUA);
+                    } else {
+                        final ConnectedDevice fua = ua;
+                        new Thread("UserAgentCreater:" + fua.getUserAgentString()) {
+                            {
+                                setDaemon(true);
+                            }
 
-                    public void run() {
-                        try {
-                            final String json = new Browser().getPage("http://update3.jdownloader.org/jdserv/ua/get?" + Encoding.urlEncode(fua.getUserAgentString()));
-                            final UserAgentInfo info = JSonStorage.restoreFromString(json, new TypeRef<UserAgentInfo>() {
-                            });
-                            fua.setInfo(info);
-                        } catch (Throwable e) {
-                            logger.log(e);
-                        }
-                        final DelayedRunnable delayed;
-                        timeoutcheck.put(fua, delayed = new DelayedRunnable(fua.getTimeout()) {
-                            @Override
-                            public void delayedrun() {
-                                onTimeout(fua);
-                            }
-                        });
-                        delayed.resetAndStart();
-                        eventSender.fireEvent(new UserAgentEvent() {
-                            @Override
-                            public void fireTo(UserAgentListener listener) {
-                                listener.onNewAPIUserAgent(fua);
-                            }
-                        });
-                    };
-                }.start();
+                            public void run() {
+                                try {
+                                    final String json = new Browser().getPage("https://update3.jdownloader.org/jdserv/ua/get?" + Encoding.urlEncode(fua.getUserAgentString()));
+                                    final UserAgentInfo info = JSonStorage.restoreFromString(json, new TypeRef<UserAgentInfo>() {
+                                    });
+                                    if (info != null) {
+                                        uaCache.put(fua.getUserAgentString(), info);
+                                        fua.setInfo(info);
+                                    }
+                                } catch (Throwable e) {
+                                    logger.log(e);
+                                }
+                                final DelayedRunnable delayed;
+                                timeoutcheck.put(fua, delayed = new DelayedRunnable(fua.getTimeout()) {
+                                    @Override
+                                    public void delayedrun() {
+                                        onTimeout(fua);
+                                    }
+                                });
+                                delayed.resetAndStart();
+                                eventSender.fireEvent(new UserAgentEvent() {
+                                    @Override
+                                    public void fireTo(UserAgentListener listener) {
+                                        listener.onNewAPIUserAgent(fua);
+                                    }
+                                });
+                            };
+                        }.start();
+                    }
+                }
             }
             final DelayedRunnable delayed = timeoutcheck.get(ua);
             if (delayed != null) {

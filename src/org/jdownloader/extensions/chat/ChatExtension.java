@@ -55,14 +55,11 @@ import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.http.Browser;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -317,18 +314,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     }
 
     public String getNickname() {
-        String loc = null;
-        Browser br = new Browser();
-        try {
-            loc = JSonStorage.restoreFromString(br.getPage("http://update3.jdownloader.org/jdserv/GeoDBInterface/getCountryCode"), TypeRef.STRING);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        if (loc == null) {
-            loc = System.getProperty("user.country");
-        } else {
-            loc = loc.toLowerCase();
-        }
+        final String loc = System.getProperty("user.country");
         final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         String nick = getSettings().getNick();
         if (nick == null || nick.equalsIgnoreCase("")) {

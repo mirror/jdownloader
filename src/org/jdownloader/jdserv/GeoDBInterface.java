@@ -5,8 +5,8 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 
 @ApiNamespace("GeoDBInterface")
+@Deprecated
 public interface GeoDBInterface extends RemoteAPIInterface {
-
     public String getIP(RemoteAPIRequest request);
 
     public String getCountryCodebyIP(String ip, RemoteAPIRequest request);
@@ -20,5 +20,4 @@ public interface GeoDBInterface extends RemoteAPIInterface {
     public String getCountryName(RemoteAPIRequest request);
 
     public String getASN(RemoteAPIRequest request);
-
 }

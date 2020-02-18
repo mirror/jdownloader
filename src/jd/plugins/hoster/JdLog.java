@@ -47,6 +47,7 @@ import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.auth.Login;
+import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
@@ -84,7 +85,7 @@ public class JdLog extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        final String url = "http://update3.jdownloader.org/jdserv/UploadInterface/logunsorted?" + uid;
+        final String url = JDServUtils.BASE + "logunsorted?" + uid;
         final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().getSortedAuthenticationFactories(URLHelper.createURL(url), null);
         authenticationFactories.add(new CallbackAuthenticationFactory() {
             protected Authentication remember = null;
@@ -189,7 +190,6 @@ public class JdLog extends PluginForHost {
                     }
                 });
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // dllink = "http://update3.jdownloader.org/jdserv/UploadInterface/logsorted?" + uid;
             }
         }
     }

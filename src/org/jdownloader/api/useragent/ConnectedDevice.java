@@ -1,8 +1,5 @@
 package org.jdownloader.api.useragent;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -145,29 +142,20 @@ public class ConnectedDevice {
         return frontEnd;
     }
 
-    private boolean isAndroidApp(final String userAgent) {
+    public static boolean isAndroidApp(final String userAgent) {
         return StringUtils.startsWithCaseInsensitive(userAgent, "MyJDownloader Android App");
     }
 
-    private boolean isFileReconApp(final String userAgent) {
+    public static boolean isFileReconApp(final String userAgent) {
         return StringUtils.startsWithCaseInsensitive(userAgent, "MyJDownloader file.recon App");
     }
 
-    private boolean isJDUniversalApp(final String userAgent) {
+    public static boolean isJDUniversalApp(final String userAgent) {
         return StringUtils.startsWithCaseInsensitive(userAgent, "MyJDownloader JD Universal App");
     }
 
-    private static boolean isThisMyIpAddress(InetAddress addr) {
-        // Check if the address is a valid special local or loop back
-        if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) {
-            return true;
-        }
-        // Check if the address is defined on any interface
-        try {
-            return NetworkInterface.getByInetAddress(addr) != null;
-        } catch (SocketException e) {
-            return false;
-        }
+    public static boolean isApp(final String userAgent) {
+        return isAndroidApp(userAgent) || isFileReconApp(userAgent) || isJDUniversalApp(userAgent);
     }
 
     public String getConnectionString() {
