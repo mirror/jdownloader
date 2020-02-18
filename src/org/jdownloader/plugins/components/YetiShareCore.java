@@ -611,6 +611,10 @@ public class YetiShareCore extends antiDDoSForHost {
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
          * connections) --> Should work fine after the next try.
          */
+        if (dl == null) {
+            checkErrors(link, account);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         checkResponseCodeErrors(dl.getConnection());
         if (!dl.getConnection().isContentDisposition()) {
