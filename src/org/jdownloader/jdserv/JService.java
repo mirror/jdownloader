@@ -10,8 +10,8 @@ import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
 
 @ApiNamespace("JService")
+@Deprecated
 public interface JService extends RemoteAPIInterface, RemoteAPISignatureHandler {
-
     public String st1(String id, String os, RemoteAPIRequest request) throws RemoteAPIException;
 
     public String st(String id, String version, String os, RemoteAPIRequest request) throws RemoteAPIException;
@@ -31,5 +31,4 @@ public interface JService extends RemoteAPIInterface, RemoteAPISignatureHandler 
 
     @ApiSignatureRequired
     public JsonMap getMemoryUsage();
-
 }

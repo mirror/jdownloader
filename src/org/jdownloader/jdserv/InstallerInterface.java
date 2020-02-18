@@ -7,6 +7,7 @@ import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 
 @ApiNamespace("InstallerInterface")
+@Deprecated
 public interface InstallerInterface extends RemoteAPIInterface {
     String getLatestInstallerUrl(String id, String version, String os, boolean win64);
 
