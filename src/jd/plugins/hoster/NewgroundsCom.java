@@ -136,7 +136,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 }
                 ext = ".mp3";
             } else {
-                if (br.containsHTML("requires a Newgrounds account to play\\.<")) {
+                if (br.containsHTML("requires a Newgrounds account to play\\.\\s*<")) {
                     accountneeded = true;
                     return AvailableStatus.TRUE;
                 }
@@ -237,7 +237,7 @@ public class NewgroundsCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         final int chunks;
-        if (!downloadLink.getDownloadURL().matches(ARTLINK)) {
+        if (!downloadLink.getPluginPatternMatcher().matches(ARTLINK)) {
             // avoid 429, You're making too many requests. Wait a bit before trying again
             sleep(30 * 1000l, downloadLink);
             chunks = 1;
@@ -270,6 +270,11 @@ public class NewgroundsCom extends antiDDoSForHost {
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
+            }
+            /* 2020-02-18: https://board.jdownloader.org/showthread.php?t=81805 */
+            final boolean art_zip_download_broken_serverside = true;
+            if (downloadLink.getName().contains(".zip") && art_zip_download_broken_serverside) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside please wait for a fix, then contact us to fix our plugin");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
