@@ -42,7 +42,7 @@ public class FourfileNet extends XFileSharingProBasic {
      * captchatype-info: 2019-02-21: reCaptchaV2<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "4file.net", "filedwon.info", "filedwon.net", "filedwon.com" };
+    private static String[] domains = new String[] { "4file.net", "filedwon.info", "filedwon.net", "filedwon.com", "4file.win" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
