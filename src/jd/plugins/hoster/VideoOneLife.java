@@ -33,9 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/[a-z0-9]+" })
-public class VideoOneCom extends PluginForHost {
-    public VideoOneCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/(?:[a-z]+/)?pornvideo/([a-z0-9]+)" })
+public class VideoOneLife extends PluginForHost {
+    public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
@@ -56,8 +56,16 @@ public class VideoOneCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if (host == null || "video-one.com".equals(host)) {
+            return "video-one.life";
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getLinkID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")

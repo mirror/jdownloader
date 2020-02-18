@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -39,6 +40,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -306,6 +308,7 @@ public class TwitterCom extends PornEmbedParser {
             /* Ignore invalid items */
             return;
         }
+        String filename = null;
         final DownloadLink dl;
         /* 2020-02-10: Recognize videos by this URL. If it is a thumbnail --< It is a video */
         if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/")) {
@@ -314,10 +317,20 @@ public class TwitterCom extends PornEmbedParser {
             dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         } else {
             /* Photo */
+            try {
+                filename = Plugin.getFileNameFromURL(new URL(url));
+                if (filename != null) {
+                    filename = tweet_id + "_" + filename;
+                }
+            } catch (final Throwable e) {
+            }
             if (!url.contains("?name=")) {
                 url += "?name=orig";
             }
             dl = this.createDownloadlink("directhttp://" + url);
+        }
+        if (filename != null) {
+            dl.setFinalFileName(filename);
         }
         dl.setAvailable(true);
         decryptedLinks.add(dl);

@@ -24,18 +24,23 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/[a-z0-9]+" })
-public class VideoOneCom extends PornEmbedParser {
-    public VideoOneCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/(?:[a-z]+/)?pornvideo/([a-z0-9]+)" })
+public class VideoOneLife extends PornEmbedParser {
+    public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String filename = new Regex(parameter, "https?://(?:www\\.)?video\\-one\\.com/(?:[a-z]+/)?pornvideo/([a-z0-9]+)").getMatch(0);
-        final boolean isOffline = jd.plugins.hoster.VideoOneCom.isOffline(this.br);
+        if (!br.getURL().contains(fuid) || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        final boolean isOffline = jd.plugins.hoster.VideoOneLife.isOffline(this.br);
         if (br.containsHTML("embedframe")) {
             String xvl = br.getRegex("src=\"(https://www.xvideos.com/embedframe/\\d+)\"").getMatch(0);
             if (xvl != null) {
@@ -60,14 +65,14 @@ public class VideoOneCom extends PornEmbedParser {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getPage("http://m.8-d.com/in?r=&p=http://video-one.com/video/" + filename + ".html&t=" + t + "&h=" + h);
+        br.getPage("http://m.8-d.com/in?r=&p=http://video-one.com/video/" + fuid + ".html&t=" + t + "&h=" + h);
         t = br.getRegex("var t=\\'(\\d+)\\';").getMatch(0);
         h = br.getRegex("var h=\\'([a-z0-9]+)\\';").getMatch(0);
         if (t == null || h == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getPage("http://video-one.com/newvid/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
+        br.getPage("http://video-one.com/newvid/" + fuid + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
         if (br.containsHTML(">Video Content Not Available<|No htmlCode read")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -129,7 +134,7 @@ public class VideoOneCom extends PornEmbedParser {
             return decryptedLinks;
         }
         /** Or not crypted... */
-        decryptedLinks.addAll(findEmbedUrls(filename));
+        decryptedLinks.addAll(findEmbedUrls(fuid));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
