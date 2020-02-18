@@ -394,7 +394,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 if (this.finalUrl == null) {
                     String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id, null);
-                    final String module = link.getStringProperty("photo_module", null);
+                    final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module, null);
                     final String photoID = getPhotoID(link);
                     if (module != null) {
                         /* Access photo inside wall-post or qwall reply or photo album */
