@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
@@ -21,6 +20,7 @@ import java.util.HashMap;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -34,11 +34,24 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "http://(www\\.)?videowood\\.tv/(embed|video)/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "https?://(?:www\\.)?videowood\\.tv/(?:embed|video)/([A-Za-z0-9]+)" })
 public class VideoWoodTv extends antiDDoSForHost {
-
     public VideoWoodTv(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -71,9 +84,10 @@ public class VideoWoodTv extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">This video doesn't exist|>Was deleted by user")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This video doesn't exist|>Was deleted by user")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("This video is not ready yet")) {
             link.getLinkStatus().setStatusText("Host says 'This video is not ready yet'");
@@ -84,7 +98,8 @@ public class VideoWoodTv extends antiDDoSForHost {
             filename = br.getRegex("title:\\s*(\"|')(.*?)\\1").getMatch(1);
         }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Fallback */
+            filename = getFID(link) + ".mp4";
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -146,5 +161,4 @@ public class VideoWoodTv extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

@@ -57,7 +57,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             fpName = new Regex(parameter, "/view/(.+)").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            final String[] pics = br.getRegex("\"(https?://art\\.ngfiles\\.com/comments/[^<>\"]+)\"").getColumn(0);
+            final String[] pics = br.getRegex("\"(https?://art\\.ngfiles\\.com/(?:comments|images)/[^<>\"]+)\"").getColumn(0);
             if (pics == null || pics.length == 0) {
                 return null;
             }

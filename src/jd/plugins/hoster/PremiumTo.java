@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -205,66 +204,37 @@ public class PremiumTo extends UseNet {
             try {
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                String userid = this.getUserID(account);
-                String apikey = this.getAPIKey(account);
-                boolean attemptedAPIKeyLogin = false;
-                if (!StringUtils.isEmpty(apikey) && !StringUtils.isEmpty(userid)) {
+                final String userid = this.getUserID(account);
+                final String apikey = this.getAPIKey(account);
+                if (!force) {
+                    /* Trust existing data without check */
+                    return false;
+                }
+                boolean username_and_pw_is_userid_and_apikey = false;
+                try {
+                    username_and_pw_is_userid_and_apikey = account.getUser().equals(userid) && account.getPass().equals(apikey);
+                } catch (final Throwable e) {
+                }
+                br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
+                try {
+                    this.handleErrorsAPI(account, false);
                     /* 2020-02-13: Save new API logindata - remove property handling in a few weeks! */
                     account.setUser(userid);
                     account.setPass(apikey);
                     account.setProperty("new_credentials_active", true);
-                    if (!force) {
-                        /* Trust existing data without check */
-                        return false;
+                    return true;
+                } catch (final Exception e) {
+                    /* E.g. API logindata has changed */
+                    if (username_and_pw_is_userid_and_apikey) {
+                        /* Probably wrong logindata. */
+                        loginFailure();
                     }
-                    boolean username_and_pw_is_userid_and_apikey = false;
-                    try {
-                        username_and_pw_is_userid_and_apikey = account.getUser().equals(userid) && account.getPass().equals(apikey);
-                    } catch (final Throwable e) {
-                    }
-                    br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
-                    try {
-                        this.handleErrorsAPI(account, false);
-                        return true;
-                    } catch (final Exception e) {
-                        /* E.g. API logindata has changed */
-                        if (username_and_pw_is_userid_and_apikey) {
-                            /* Probably wrong logindata. */
-                            loginFailure();
-                        }
-                        logger.log(e);
-                        logger.info("Login via apikey failed, trying via username + password");
-                        attemptedAPIKeyLogin = true;
-                    }
-                }
-                /* First try old way via username & password */
-                /*
-                 * TODO: Set this to false once account 'conversion' is done (= login is only possible via userid & apikey;
-                 * getapicredentials.php will not work anymore then!)
-                 */
-                final boolean login_via_username_and_password_possible = true;
-                final boolean logindata_looks_like_api_logindata = new Regex(account.getUser(), Pattern.compile("[a-z0-9]+", Pattern.CASE_INSENSITIVE)).matches() && new Regex(account.getPass(), Pattern.compile("[a-z0-9]{32}", Pattern.CASE_INSENSITIVE)).matches();
-                if (!login_via_username_and_password_possible && !logindata_looks_like_api_logindata) {
-                    loginFailure();
-                }
-                logger.info("Logging in with username + password");
-                br.getPage(API_BASE + "/getapicredentials.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                apikey = PluginJSonUtils.getJson(br, PROPERTY_APIKEY);
-                userid = PluginJSonUtils.getJson(br, PROPERTY_USERID);
-                /* Failed? Hmm user might have entered 'new' API logindata, see premium.to homepage --> Account */
-                if ((StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) && logindata_looks_like_api_logindata && !attemptedAPIKeyLogin) {
-                    logger.info("User might have entered new API username (userid) and api password (apikey)");
-                    br.getPage(API_BASE + "/traffic.php?userid=" + account.getUser() + "&apikey=" + account.getPass());
-                    userid = account.getUser();
-                    apikey = account.getPass();
-                }
-                if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(userid)) {
-                    loginFailure();
+                    logger.log(e);
+                    logger.info("Login via apikey failed, trying via username + password");
                 }
                 /* Save API logindata */
                 account.setProperty(PROPERTY_APIKEY, apikey);
                 account.setProperty(PROPERTY_USERID, userid);
-                /* TODO: Dump originally stored username + password to protect them in case e.g. account database gets stolen! */
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -443,18 +413,20 @@ public class PremiumTo extends UseNet {
     private final String PROPERTY_USERID = "userid";
 
     private String getUserID(final Account account) {
-        if (account.getBooleanProperty("new_credentials_active", false)) {
+        final String userid_via_property = account.getStringProperty(PROPERTY_USERID, null);
+        if (account.getBooleanProperty("new_credentials_active", false) || userid_via_property == null) {
             return account.getUser();
         } else {
-            return account.getStringProperty(PROPERTY_USERID, null);
+            return userid_via_property;
         }
     }
 
     private String getAPIKey(final Account account) {
-        if (account.getBooleanProperty("new_credentials_active", false)) {
+        final String apikey_property = account.getStringProperty(PROPERTY_APIKEY, null);
+        if (account.getBooleanProperty("new_credentials_active", false) || apikey_property == null) {
             return account.getPass();
         } else {
-            return account.getStringProperty(PROPERTY_APIKEY, null);
+            return apikey_property;
         }
     }
 

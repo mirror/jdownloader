@@ -517,11 +517,15 @@ public abstract class K2SApi extends PluginForHost {
                     this.handleErrors(account, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final int wait_seconds = Integer.parseInt(wait_seconds_str);
+                /*
+                 * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer:
+                 * {"status":"success","code":200,"message":"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
+                 */
+                final int wait_seconds = Integer.parseInt(wait_seconds_str) + 2;
                 if (wait_seconds > 180) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1001l);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
                 }
-                sleep(wait_seconds * 1001l, downloadLink);
+                sleep(wait_seconds * 1000l, downloadLink);
                 getURL.put("free_download_key", free_download_key);
                 getURL.remove("captcha_challenge");
                 getURL.remove("captcha_response");
