@@ -38,7 +38,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -110,6 +109,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKPHOTO_CORRECT_FINAL_LINKS                                                 = "VKPHOTO_CORRECT_FINAL_LINKS";
     public static final String  VKWALL_USE_API                                                              = "VKWALL_USE_API_2019_07";
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS                                             = "VKWALL_STORE_PICTURE_DIRECTURLS";
+    public static final String  VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS                    = "VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS";
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT";
     /* html patterns */
     public static final String  HTML_VIDEO_NO_ACCESS                                                        = "NO_ACCESS";
@@ -131,6 +131,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  PROPERTY_PHOTOS_directurls_fallback                                         = "directurls_fallback";
     public static final String  PROPERTY_PHOTOS_photo_list_id                                               = "photo_list_id";
     public static final String  PROPERTY_PHOTOS_photo_module                                                = "photo_module";
+    public static final String  PROPERTY_PHOTOS_album_id                                                    = "albumid";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -386,9 +387,12 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
             } else {
-                finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink, null);
-                String dllink_temp = null;
-                if (finalUrl == null) {
+                /* Single photo --> Complex handling */
+                this.finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink, null);
+                if (this.finalUrl == null && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS) && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS)) {
+                    this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                }
+                if (this.finalUrl == null) {
                     String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id, null);
                     final String module = link.getStringProperty("photo_module", null);
                     final String photoID = getPhotoID(link);
@@ -403,6 +407,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         do {
                             photo_counter++;
                             if (photo_counter > 1) {
+                                /* 2nd loop */
                                 photo_list_id_workaround_failed = true;
                                 /*
                                  * 2020-01-28: Some content needs a photo_list_id which is generated when accessing the html page so this
@@ -439,7 +444,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         checkErrorsPhoto();
                     } else {
                         /* Access normal photo / photo inside album */
-                        String albumID = link.getStringProperty("albumid");
+                        String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
                         boolean jsonSourceAvailableFromHtml = false;
                         if (albumID == null) {
                             /* No albumID available? Search it in the html! */
@@ -464,7 +469,7 @@ public class VKontakteRuHoster extends PluginForHost {
                             }
                             if (albumID != null) {
                                 /* Save this! Important! */
-                                link.setProperty("albumid", albumID);
+                                link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
                             }
                             if (picturesGetJsonFromHtml() != null) {
                                 jsonSourceAvailableFromHtml = true;
@@ -482,40 +487,26 @@ public class VKontakteRuHoster extends PluginForHost {
                         }
                     }
                     try {
-                        if (isDownload) {
-                            this.finalUrl = getHighestQualityPictureDownloadurl(link, true);
-                            if (StringUtils.isEmpty(this.finalUrl)) {
-                                this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), true);
-                            }
-                            if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null) == null) {
-                                /* 2019-08-08: Just a hint */
-                                logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
-                            }
-                        } else {
-                            /*
-                             * We're only doing this to get our filename at this stage!! 'Real' downloadlink will be grabbed once user
-                             * starts the download!
-                             */
-                            dllink_temp = getHighestQualityPictureDownloadurl(link, false);
-                            if (StringUtils.isEmpty(dllink_temp)) {
-                                dllink_temp = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), false);
-                            }
+                        this.finalUrl = getHighestQualityPictureDownloadurl(link, isDownload);
+                        if (StringUtils.isEmpty(this.finalUrl)) {
+                            /* Fallback but this will only work if the user enabled a specified plugin setting. */
+                            this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                        }
+                        if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null) == null) {
+                            /* 2019-08-08: Just a hint */
+                            logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
                         }
                     } catch (final Throwable e) {
+                        logger.info("Error occured while trying to find highest quality image downloadurl");
                         logger.log(e);
                     }
                 }
                 /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
                 setHeaderRefererPhoto(this.br);
-                final String temp_name;
-                if (this.finalUrl != null) {
-                    /* Download */
-                    temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
-                } else {
-                    /* Only linkcheck */
-                    temp_name = photoGetFinalFilename(getPhotoID(link), null, dllink_temp);
-                }
-                if (temp_name != null) {
+                final String temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
+                if (isDownload && temp_name != null) {
+                    link.setFinalFileName(temp_name);
+                } else if (!isDownload && temp_name != null) {
                     link.setName(temp_name);
                 }
             }
@@ -547,38 +538,20 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public void doFree(final DownloadLink link) throws Exception, PluginException {
-        if (link.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
-            // this is for resume of cached link.
-            if (dl == null) {
-                if (finalUrl != null) {
-                    if (!photolinkOk(link, null, false, finalUrl)) {
-                        // failed, lets nuke cached entry and retry.
-                        link.setProperty(PROPERTY_PHOTOS_picturedirectlink, Property.NULL);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-                // virgin download.
-                if (finalUrl == null) {
-                    /*
-                     * Because of the availableCheck, we already know that the picture is online but we can't be sure that it really is
-                     * downloadable!
-                     */
-                    finalUrl = getHighestQualityPictureDownloadurl(link, true);
-                }
-                if (finalUrl == null) {
-                    /* Final fallback */
-                    finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), true);
-                }
-            }
-        } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+        if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
             if (br.containsHTML("This document is available only to its owner\\.")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
+                logger.info("This document is available only to its owner");
+                throw new AccountRequiredException("This document is available only to its owner");
             }
         }
         if (dl == null) {
+            if (StringUtils.isEmpty(this.finalUrl)) {
+                logger.warning("Failed to find final downloadurl");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // most if not all components already opened connection via either linkOk or photolinkOk
             br.getHeaders().put("Accept-Encoding", "identity");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
         }
         handleServerErrors(link);
         dl.startDownload();
@@ -1422,7 +1395,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         if (!foundValidURL) {
             logger.info("No saved downloadlink available");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         } else if (!success) {
             logger.info("Saved downloadlink(s) did not work");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
@@ -1629,6 +1602,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS                                                 = false;
     public static final boolean  default_VKWALL_USE_API                                                              = false;
     public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS                                             = false;
+    public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS                    = false;
     public static final String   default_user_agent                                                                  = UserAgents.stringUserAgent(BrowserName.Firefox);
     public static final long     defaultSLEEP_PAGINATION_GENERAL                                                     = 1000;
     public static final long     defaultSLEEP_SLEEP_PAGINATION_COMMUNITY_VIDEO                                       = 1000;
@@ -1684,7 +1658,9 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/photo' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, "Use (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: '<server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, "Use oid_id AND (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: 'oid_id - <server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, "Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS));
+        final ConfigEntry cfg_store_directurls = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, "Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS);
+        this.getConfig().addEntry(cfg_store_directurls);
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, "Prefer usage of saved crawler picture-directlinks --> This can really speed-up download process if you have many items").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS).setEnabledCondidtion(cfg_store_directurls, true));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
