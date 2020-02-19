@@ -460,7 +460,14 @@ public class PornHubCom extends PluginForDecrypt {
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
-        if (isOfflineVideo(br)) {
+        if (this.br.containsHTML("Video_PurchaseFlow_Params")) {
+            /* 2020-02-19: Some videos have to be purchased separately even if the user owns a premium account */
+            logger.info("This video has to be purchased separately");
+            final DownloadLink dl = createOfflinelink(parameter);
+            dl.setFinalFileName("This video has to be purchased separately_viewkey=" + viewkey);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        } else if (isOfflineVideo(br)) {
             final DownloadLink dl = createOfflinelink(parameter);
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);

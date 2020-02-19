@@ -129,10 +129,14 @@ public class OxycloudCom extends YetiShareCore {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = super.fetchAccountInfo(account);
-        if (account.getType() != AccountType.PREMIUM) {
-            /* 2019-04-15: Special: Anonymous downloads possible but FREE-ACCOUNT downloads NOT possible! */
-            ai.setTrafficLeft(0);
-        }
+        /*
+         * 2020-02-19: Free accounts can now be used to download files which are not downloadable without account --> Template will set
+         * unlimited traffic!
+         */
+        // if (account.getType() != AccountType.PREMIUM) {
+        // /* 2019-04-15: Special: Anonymous downloads possible but FREE-ACCOUNT downloads NOT possible! */
+        // ai.setTrafficLeft(0);
+        // }
         return ai;
     }
 
