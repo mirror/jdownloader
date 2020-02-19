@@ -5,12 +5,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.http.requests.HeadRequest;
 import jd.http.requests.PutRequest;
 import jd.plugins.Account;
@@ -23,15 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/(mp4/download(/[^/]*)?|download(/[^/]*)?)|zipstream/\\d+.*|download/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
+    private final String API_BASE      = "https://api.put.io/v2";
     private final String CLIENT_ID     = "181";
     private final String CLIENT_SECRET = "ga38bm4yv546pzauepok";
 
@@ -55,19 +55,24 @@ public class PutIO extends PluginForHost {
         }
     }
 
+    private Browser prepBR(final Browser br) {
+        br.getHeaders().put(new HTTPHeader("User-Agent", "jdownloader", false));
+        br.getHeaders().put(new HTTPHeader("Accept", "application/json", false));
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final String access_token = login(account);
         final AccountInfo ai = new AccountInfo();
-        final GetRequest infoRequest = new GetRequest("https://api.put.io/v2/account/info");
-        infoRequest.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
-        infoRequest.getHeaders().put(new HTTPHeader("User-Agent", "jdownloader", false));
-        infoRequest.getHeaders().put(new HTTPHeader("Accept", "application/json", false));
-        br.setFollowRedirects(true);
-        br.getPage(infoRequest);
-        final int responseCode = br.getHttpConnection().getResponseCode();
-        if (responseCode != 200) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL() == null || !br.getURL().contains("/account/info")) {
+            prepBR(br);
+            br.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
+            br.getPage(API_BASE + "/account/info");
+            if (br.getHttpConnection().getResponseCode() != 200) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         }
         final HashMap<String, Object> infoResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
         final HashMap<String, Object> info = (HashMap<String, Object>) infoResponse.get("info");
@@ -149,7 +154,22 @@ public class PutIO extends PluginForHost {
 
     private String login(final Account account) throws Exception {
         synchronized (account) {
-            final PutRequest authRequest = new PutRequest("https://api.put.io/v2/oauth2/authorizations/clients/" + CLIENT_ID + "?client_secret=" + CLIENT_SECRET);
+            String access_token = account.getStringProperty("access_token", null);
+            if (!StringUtils.isEmpty(access_token)) {
+                logger.info("Trying to re-use saved access_token");
+                prepBR(br);
+                br.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
+                br.getPage(API_BASE + "/account/info");
+                if (br.getHttpConnection().getResponseCode() == 200) {
+                    logger.info("Successfully re-used access_token");
+                    return access_token;
+                } else {
+                    logger.info("Failed to re-use access_token --> Full login required");
+                }
+            }
+            logger.info("Performing full login");
+            br = prepBR(new Browser());
+            final PutRequest authRequest = new PutRequest(API_BASE + "/oauth2/authorizations/clients/" + CLIENT_ID + "?client_secret=" + CLIENT_SECRET);
             final String credentials = account.getUser() + ":" + account.getPass();
             final String auth = org.appwork.utils.encoding.Base64.encodeToString(credentials.getBytes("UTF-8"));
             authRequest.getHeaders().put(new HTTPHeader("Authorization", "Basic " + auth, false));
@@ -158,20 +178,16 @@ public class PutIO extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(authRequest);
             final int responseCode = br.getHttpConnection().getResponseCode();
-            if (responseCode == 200) {
-                final HashMap<String, Object> authResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
-                final String access_token = (String) authResponse.get("access_token");
-                if (access_token != null) {
-                    account.setProperty("access_token", access_token);
-                    return access_token;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else if (responseCode == 401) {
+            if (responseCode != 200) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
+            }
+            final HashMap<String, Object> authResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
+            access_token = (String) authResponse.get("access_token");
+            if (StringUtils.isEmpty(access_token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            account.setProperty("access_token", access_token);
+            return access_token;
         }
     }
 
@@ -187,7 +203,7 @@ public class PutIO extends PluginForHost {
             } else if (access_token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            finalLink = "https://api.put.io/v2/files/" + id + "/download?oauth_token=" + access_token;
+            finalLink = API_BASE + "/files/" + id + "/download?oauth_token=" + access_token;
         }
         if (finalLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

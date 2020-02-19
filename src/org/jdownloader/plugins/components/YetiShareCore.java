@@ -18,6 +18,7 @@ package org.jdownloader.plugins.components;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -868,9 +869,13 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
-        if (isOfflineWebsite(link)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        /*
+         * 2020-02-19: Do NOT check for offline ind checkErrors --> This check should only performed once when we accessed the main URL.
+         * Doing it in other places will result in invalid offline errors!
+         */
+        // if (isOfflineWebsite(link)) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -912,6 +917,21 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
+    private String getCurrentURLDecoded() {
+        if (br.getURL() != null) {
+            String currentURL = br.getURL();
+            if (Encoding.isUrlCoded(currentURL)) {
+                try {
+                    currentURL = URLDecoder.decode(currentURL, "UTF-8");
+                } catch (final Throwable e) {
+                    logger.info("Failed to urldecode current URL: " + br.getURL());
+                }
+            }
+            return currentURL;
+        }
+        return null;
+    }
+
     /**
      * Checks premiumonly status via current Browser-URL.
      *
@@ -919,7 +939,13 @@ public class YetiShareCore extends antiDDoSForHost {
      *         false: Link is downloadable for all users.
      */
     public boolean isPremiumOnlyURL() {
-        return br.getURL() != null && new Regex(br.getURL(), Pattern.compile("(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+)", Pattern.CASE_INSENSITIVE)).matches();
+        /*
+         * 2020-02-19: E.g. Polish:
+         * https://oxycloud.com/error.html?e=Ten+plik+jest+za+du%C5%BCy+do+pobrania+dla+darmowego+u%C5%BCytkownika+.+Wykup+premium%2C+lub+
+         * zaloguj+si%C4%99+na+swoje+konto+aby+pobra%C4%87+ten+plik+%21.
+         */
+        final String url = getCurrentURLDecoded();
+        return url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /**
@@ -933,11 +959,8 @@ public class YetiShareCore extends antiDDoSForHost {
          * 2019-08-09: Maybe try to change errorhandling to work via their language-strings so we could make it language-independant e.g.
          * for this case: "error_you_must_wait_between_downloads"
          */
-        String url = br.getURL();
-        if (url != null && url.contains("%")) {
-            url = Encoding.htmlDecode(url);
-        }
-        return url != null && new Regex(url, Pattern.compile(".*?e=(You\\+must\\+wait\\+|Você.deve.esperar).*?", Pattern.CASE_INSENSITIVE)).matches();
+        final String url = getCurrentURLDecoded();
+        return url != null && new Regex(url, Pattern.compile(".*?\\?e=(You must wait |Você deve esperar).*?", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /** Returns pre-download-waittime (seconds) from inside HTML. */
