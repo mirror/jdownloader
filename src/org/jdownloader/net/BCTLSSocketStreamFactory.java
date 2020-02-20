@@ -16,6 +16,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -24,6 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
@@ -34,10 +42,12 @@ import org.bouncycastle.crypto.tls.CertificateRequest;
 import org.bouncycastle.crypto.tls.CipherSuite;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ExtensionType;
+import org.bouncycastle.crypto.tls.ProtocolVersion;
 import org.bouncycastle.crypto.tls.TlsAuthentication;
 import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.crypto.tls.TlsCredentials;
 import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * @author daniel
@@ -231,6 +241,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName, sniEnabled, getEnabledCipherSuites(CIPHERSUITES, options != null ? options.getDisabledCipherSuites() : null));
         protocol.connect(client);
         final Integer selectedCipherSuite = client.getSelectedCipherSuite();
+        final ProtocolVersion clientVersion = client.getClientVersion();
         final String selectedCipherSuiteName = getCipherSuiteName(selectedCipherSuite);
         return new SSLSocketStreamInterface() {
             @Override
@@ -261,8 +272,46 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
             @Override
             public String getCipherSuite() {
-                return "BC:" + selectedCipherSuiteName;
+                return "BC|Protocol:" + clientVersion + "|Cipher:" + selectedCipherSuiteName;
             }
         };
+    }
+
+    private static TrustManager[]               trustAllCerts = new TrustManager[] { new X509TrustManager() {
+        @Override
+        public void checkClientTrusted(final java.security.cert.X509Certificate[] chain, final String authType) throws CertificateException {
+        }
+
+        @Override
+        public void checkServerTrusted(final java.security.cert.X509Certificate[] chain, final String authType) throws CertificateException {
+        }
+
+        @Override
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            /*
+             * returning null here can cause a NPE in some java versions!
+             */
+             return new java.security.cert.X509Certificate[0];
+        }
+    } };
+    protected static final BouncyCastleProvider BC            = new BouncyCastleProvider();
+
+    protected SSLContext getSSLContext(final boolean trustAll) throws IOException {
+        try {
+            final SSLContext sslContext = SSLContext.getInstance("SSL", BC);
+            if (trustAll) {
+                sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            }
+            return sslContext;
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        } catch (KeyManagementException e) {
+            throw new IOException(e);
+        }
+    }
+
+    @Override
+    public SSLSocketFactory getSSLSocketFactory(boolean trustAll) throws IOException {
+        return getSSLContext(trustAll).getSocketFactory();
     }
 }
