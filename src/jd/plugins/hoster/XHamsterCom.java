@@ -61,7 +61,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.(?:com|xxx|desi|one)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|xhamster\\.(?:com|xxx|desi|one)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.(?:xhamster\\.(?:com|xxx|desi|one)|xhamster1\\.desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|(?:xhamster\\.(?:com|xxx|desi|one)|xhamster1\\.desi)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
