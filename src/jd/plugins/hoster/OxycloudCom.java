@@ -114,7 +114,7 @@ public class OxycloudCom extends YetiShareCore {
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
