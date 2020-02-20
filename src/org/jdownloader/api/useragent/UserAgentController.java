@@ -52,24 +52,25 @@ public class UserAgentController {
             if (ua == null) {
                 ua = createNewUserAgent(request, nuaID);
                 map.put(nuaID, ua);
-                if (!ConnectedDevice.isApp(ua.getUserAgentString())) {
-                    final UserAgentInfo cachedUA = uaCache.get(ua.getUserAgentString());
+                final String userAgent = ua.getUserAgentString();
+                if (userAgent != null && StringUtils.isNotEmpty(userAgent) && !ConnectedDevice.isApp(userAgent)) {
+                    final UserAgentInfo cachedUA = uaCache.get(userAgent);
                     if (cachedUA != null) {
                         ua.setInfo(cachedUA);
                     } else {
                         final ConnectedDevice fua = ua;
-                        new Thread("UserAgentCreater:" + fua.getUserAgentString()) {
+                        new Thread("UserAgentCreater:" + userAgent) {
                             {
                                 setDaemon(true);
                             }
 
                             public void run() {
                                 try {
-                                    final String json = new Browser().getPage("https://update3.jdownloader.org/jdserv/ua/get?" + Encoding.urlEncode(fua.getUserAgentString()));
+                                    final String json = new Browser().getPage("https://update3.jdownloader.org/jdserv/ua/get?" + Encoding.urlEncode(userAgent));
                                     final UserAgentInfo info = JSonStorage.restoreFromString(json, new TypeRef<UserAgentInfo>() {
                                     });
                                     if (info != null) {
-                                        uaCache.put(fua.getUserAgentString(), info);
+                                        uaCache.put(userAgent, info);
                                         fua.setInfo(info);
                                     }
                                 } catch (Throwable e) {
