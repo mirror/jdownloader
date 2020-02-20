@@ -6,7 +6,6 @@ import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.StorageException;
 import org.appwork.utils.os.CrossSystem;
@@ -22,7 +21,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
         this.addDescription(_GUI.T.RemoteControlPanel_description());
         this.addHeader("Webinterface @ my.jdownloader.org", new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
         this.addDescription(_GUI.T.RemoteControlPanel_Webinterface());
-        addButton("http://my.jdownloader.org?referer=JDownloader", IconKey.ICON_BOTTY_ROBOT_INFO, "<html>" + _GUI.T.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://my.jdownloader.org/?referer=JDownloader", IconKey.ICON_BOTTY_ROBOT_INFO, "<html>" + _GUI.T.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
         this.addHeader("Mobile Apps", new AbstractIcon(IconKey.ICON_MOBILE, 32));
         this.addDescription(_GUI.T.RemoteControlPanel_mobile_desc());
         addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", IconKey.ICON_LOGO_ANDROID, "<html>" + _GUI.T.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
@@ -47,7 +46,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    CrossSystem.openURL("http://update3.jdownloader.org/jdserv/RedirectInterface/redirect?" + Encoding.urlEncode(url));
+                    CrossSystem.openURL(url);
                 } catch (StorageException e1) {
                     e1.printStackTrace();
                 }
