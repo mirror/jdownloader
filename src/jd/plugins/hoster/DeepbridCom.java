@@ -54,11 +54,9 @@ public class DeepbridCom extends antiDDoSForHost {
     private static final String          API_BASE            = "https://www.deepbrid.com/backend-dl/index.php";
     private static final String          NICE_HOST           = "deepbrid.com";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("deepbrid.com");
-    private static final String          NICE_HOSTproperty   = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final int             defaultMAXDOWNLOADS = -1;
     private static final int             defaultMAXCHUNKS    = 0;
     private static final boolean         defaultRESUME       = true;
-    private static Object                LOCK                = new Object();
 
     public DeepbridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -169,7 +167,7 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
             final boolean use_api_for_downloads = true;
@@ -183,7 +181,7 @@ public class DeepbridCom extends antiDDoSForHost {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -312,51 +310,52 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     private void login(final Account account, final boolean forceFullLogin) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust login cookies as they're not that old");
                         return;
                     }
-                    loggedInViaCookies = isLoggedinAPI();
+                    logger.info("Trying to login via cookies");
                     if (isLoggedinAPI()) {
                         /* Save new cookie-timestamp */
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
+                    logger.info("Cookie login failed --> Full login required");
                 }
-                if (!loggedInViaCookies) {
-                    getPage("https://www." + account.getHoster());
-                    getPage("https://www." + account.getHoster() + "/login");
-                    final Form loginform = br.getFormbyProperty("name", "login");
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("Attempting full login");
+                getPage("https://www." + account.getHoster());
+                getPage("https://www." + account.getHoster() + "/login");
+                final Form loginform = br.getFormbyProperty("name", "login");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
+                loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
+                loginform.put("remember_login", "1");
+                if (br.containsHTML("google\\.com/recaptcha/api")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
-                    loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
-                    loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
-                    loginform.put("remember_login", "1");
-                    if (br.containsHTML("google\\.com/recaptcha/api")) {
-                        final DownloadLink dlinkbefore = this.getDownloadLink();
-                        if (dlinkbefore == null) {
-                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
-                        }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        if (dlinkbefore != null) {
-                            this.setDownloadLink(dlinkbefore);
-                        }
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
                     }
-                    submitForm(loginform);
-                    if (!isLoggedinAPI()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                submitForm(loginform);
+                if (!isLoggedinAPI()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
