@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -26,8 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AkvideoStream extends XFileSharingProBasic {
@@ -137,5 +137,29 @@ public class AkvideoStream extends XFileSharingProBasic {
                 return null;
             }
         }
+    }
+
+    @Override
+    protected String regexWaittime() {
+        /*
+         * 2020-02-20: Special: Workaround - if we do not wait some seconds in getDllinkViaOfficialVideoDownload we will get errormessage
+         * "Security error".
+         */
+        return "2";
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /*
+         * 2020-02-20: Special: Seems like they sometimes provide fake final downloadurls or failures were caused by forgotten html code of
+         * them.
+         */
+        final String dllink = br.getRegex("class=\"dwbutt\" href=\"(https?://[^<>\"]+)\"\\s*onclick=\"window\\.open").getMatch(0);
+        if (dllink != null) {
+            logger.info("Found dllink via special RegEx");
+            return dllink;
+        }
+        logger.info("Failed to find dllink via special RegEx");
+        return super.getDllink(link, account, br, src);
     }
 }
