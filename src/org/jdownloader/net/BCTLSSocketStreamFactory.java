@@ -46,6 +46,7 @@ import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
 public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
     // raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
     // openssl.org/docs/man1.0.1/apps/ciphers.html
+    // TODO: sort strength
     protected static final String                   CIPHERS          = "CHACHA20:EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!anon:!eNULL:!DHE:!SRP:!EXPORT:!DES:!MD5:!PSK:!RC4";
     protected static final HashMap<Integer, String> CIPHERSUITENAMES = new HashMap<Integer, String>();
     protected static int[]                          CIPHERSUITES;
