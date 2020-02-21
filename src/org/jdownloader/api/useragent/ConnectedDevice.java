@@ -6,7 +6,6 @@ import java.util.regex.Pattern;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpserver.RawHttpConnectionInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
@@ -160,29 +159,26 @@ public class ConnectedDevice {
 
     public String getConnectionString() {
         final List<MyJDownloaderHttpConnection> list = MyJDownloaderHttpConnection.getConnectionsByToken(getConnectToken());
-        final int num;
-        if (list == null) {
+        if (list == null || list.size() == 0) {
             return "0 Connections";
         } else {
-            num = list.size();
-        }
-        final RawHttpConnectionInterface con = latestRequest.getHttpRequest().getConnection();
-        if (con instanceof MyJDownloaderDirectHttpConnection) {
-            if (num == 0) {
-                return "0 Direct Connections via my.jdownloader";
-            } else {
-                final String ip = latestRequest.getHttpRequest().getRemoteAddress().get(0);
-                if (num > 1) {
-                    return Integer.toString(num).concat(" Direct Connections from " + ip);
+            int remote = 0;
+            int direct = 0;
+            for (MyJDownloaderHttpConnection con : list) {
+                if (con instanceof MyJDownloaderDirectHttpConnection) {
+                    direct++;
                 } else {
-                    return Integer.toString(num).concat(" Direct Connection from " + ip);
+                    remote++;
                 }
             }
-        } else {
-            if (num > 1 || num == 0) {
-                return Integer.toString(num).concat(" Remote Connections via my.jdownloader");
+            if (direct > 0 && remote > 0) {
+                return direct + " Direct Connection(s) and " + remote + " Remote Connection(s)";
+            } else if (direct > 0) {
+                return direct + " Direct Connection(s)";
+            } else if (remote > 0) {
+                return remote + " Remote Connection(s)";
             } else {
-                return Integer.toString(num).concat(" Remote Connection via my.jdownloader");
+                return "0 Connections";
             }
         }
     }
