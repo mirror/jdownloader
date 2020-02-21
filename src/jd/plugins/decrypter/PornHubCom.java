@@ -70,19 +70,16 @@ public class PornHubCom extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
-        Boolean premium = false;
-        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
             try {
                 jd.plugins.hoster.PornHubCom.login(this, br, account, false);
-                if (AccountType.PREMIUM.equals(account.getType())) {
-                    premium = true;
-                }
             } catch (PluginException e) {
                 handleAccountException(account, e);
+                account = null;
             }
         }
-        if (premium) {
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
             parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
         } else {
             parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
@@ -102,6 +99,11 @@ public class PornHubCom extends PluginForDecrypt {
         if (br.containsHTML(">\\s*Sorry, but this video is private") && br.containsHTML("href\\s*=\\s*\"/login\"") && account != null) {
             logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
             jd.plugins.hoster.PornHubCom.login(this, br, account, true);
+            if (AccountType.PREMIUM.equals(account.getType())) {
+                parameter = parameter.replace("pornhub.com", "pornhubpremium.com");
+            } else {
+                parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
+            }
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
             if (br.containsHTML("href\\s*=\\s*\"/login\"")) {
                 logger.info("Debug info: href= /login is found for registered user, re-login failed?");
