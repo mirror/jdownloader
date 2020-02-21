@@ -65,7 +65,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
     protected int[] modifyCipherSuites(int[] cipherSuites, final SSLSocketStreamOptions options) {
         if (cipherSuites != null && options != null) {
-            final List<String> avoid = new ArrayList<String>();
+            final List<String> avoided = new ArrayList<String>();
             final List<String> preferred = new ArrayList<String>();
             final List<String> disabled = new ArrayList<String>();
             final ArrayList<String> list = new ArrayList<String>();
@@ -73,47 +73,55 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
                 list.add(getCipherSuiteName(cipherSuite));
             }
             if (options.getDisabledCipherSuites().size() > 0) {
-                for (final String cipherBlacklistEntry : options.getDisabledCipherSuites()) {
+                for (final String disabledEntry : options.getDisabledCipherSuites()) {
                     final Iterator<String> it = list.iterator();
                     while (it.hasNext()) {
                         final String next = it.next();
-                        if (StringUtils.containsIgnoreCase(next, cipherBlacklistEntry)) {
+                        if (StringUtils.containsIgnoreCase(next, disabledEntry)) {
                             it.remove();
                             disabled.add(next);
                         }
                     }
                 }
             }
-            if (options.getAvoidCipherSuites().size() > 0) {
-                for (final String cipherBlacklistEntry : options.getAvoidCipherSuites()) {
+            if (options.getAvoidedCipherSuites().size() > 0) {
+                for (final String avoidedEntry : options.getAvoidedCipherSuites()) {
                     final Iterator<String> it = list.iterator();
                     while (it.hasNext()) {
                         final String next = it.next();
-                        if (StringUtils.containsIgnoreCase(next, cipherBlacklistEntry)) {
+                        if (StringUtils.containsIgnoreCase(next, avoidedEntry)) {
                             it.remove();
-                            avoid.add(next);
+                            avoided.add(next);
                         }
                     }
                 }
             }
             if (options.getPreferredCipherSuites().size() > 0) {
-                for (final String cipherBlacklistEntry : options.getPreferredCipherSuites()) {
-                    final Iterator<String> it = list.iterator();
+                for (final String preferredEntry : options.getPreferredCipherSuites()) {
+                    Iterator<String> it = list.iterator();
                     while (it.hasNext()) {
                         final String next = it.next();
-                        if (StringUtils.containsIgnoreCase(next, cipherBlacklistEntry)) {
+                        if (StringUtils.containsIgnoreCase(next, preferredEntry)) {
+                            it.remove();
+                            preferred.add(next);
+                        }
+                    }
+                    it = avoided.iterator();
+                    while (it.hasNext()) {
+                        final String next = it.next();
+                        if (StringUtils.containsIgnoreCase(next, preferredEntry)) {
                             it.remove();
                             preferred.add(next);
                         }
                     }
                 }
             }
-            if (disabled.size() > 0 || preferred.size() > 0 || avoid.size() > 0) {
+            if (disabled.size() > 0 || preferred.size() > 0 || avoided.size() > 0) {
                 if (preferred.size() > 0) {
                     list.addAll(0, preferred);
                 }
-                if (avoid.size() > 0) {
-                    list.addAll(avoid);
+                if (avoided.size() > 0) {
+                    list.addAll(avoided);
                 }
             }
             final String[] sortedCipherSuites = options.sortCipherSuites(list.toArray(new String[0]));
