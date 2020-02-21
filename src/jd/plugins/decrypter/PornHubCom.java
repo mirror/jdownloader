@@ -99,10 +99,17 @@ public class PornHubCom extends PluginForDecrypt {
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(form);
         }
-        if (br.containsHTML(">Sorry, but this video is private")) {
-            logger.info("Private video and/or login failure");
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.containsHTML(">\\s*Sorry, but this video is private") && br.containsHTML("href\\s*=\\s*\"/login\"") && account != null) {
+            logger.info("Debug info: href= /login is found for private video + registered user, re-login now");
+            jd.plugins.hoster.PornHubCom.login(this, br, account, true);
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+            if (br.containsHTML("href\\s*=\\s*\"/login\"")) {
+                logger.info("Debug info: href= /login is found for registered user, re-login failed?");
+            }
+            if (br.containsHTML("class=\"g-recaptcha\"")) {
+                // logger.info("Debug info: captcha handling is required now!");
+                throw new DecrypterException("Decrypter broken, captcha handling is required now!");
+            }
         }
         final boolean ret;
         if (parameter.matches("(?i).*/playlist/.*")) {

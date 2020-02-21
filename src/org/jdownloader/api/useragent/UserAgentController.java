@@ -5,10 +5,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jd.controlling.TaskQueue;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.scheduler.DelayedRunnable;
@@ -22,6 +18,10 @@ import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
+
+import jd.controlling.TaskQueue;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public class UserAgentController {
     private final ConcurrentHashMap<String, ConnectedDevice>          map;
@@ -76,40 +76,39 @@ public class UserAgentController {
                                 } catch (Throwable e) {
                                     logger.log(e);
                                 }
-                                final DelayedRunnable delayed;
-                                timeoutcheck.put(fua, delayed = new DelayedRunnable(fua.getTimeout()) {
-                                    @Override
-                                    public void delayedrun() {
-                                        onTimeout(fua);
-                                    }
-                                });
-                                delayed.resetAndStart();
-                                eventSender.fireEvent(new UserAgentEvent() {
-                                    @Override
-                                    public void fireTo(UserAgentListener listener) {
-                                        listener.onNewAPIUserAgent(fua);
-                                    }
-                                });
                             };
                         }.start();
                     }
                 }
-            }
-            final DelayedRunnable delayed = timeoutcheck.get(ua);
-            if (delayed != null) {
-                delayed.resetAndStart();
-            }
-            final String pre = ua.getConnectionString();
-            ua.setLatestRequest(request);
-            if (!StringUtils.equals(pre, ua.getConnectionString())) {
                 final ConnectedDevice fua = ua;
+                final DelayedRunnable delayed;
+                timeoutcheck.put(fua, delayed = new DelayedRunnable(fua.getTimeout()) {
+                    @Override
+                    public void delayedrun() {
+                        onTimeout(fua);
+                    }
+                });
+                delayed.resetAndStart();
                 eventSender.fireEvent(new UserAgentEvent() {
                     @Override
                     public void fireTo(UserAgentListener listener) {
-                        listener.onAPIUserAgentUpdate(fua);
+                        listener.onNewAPIUserAgent(fua);
                     }
                 });
+            } else {
+                final DelayedRunnable delayed = timeoutcheck.get(ua);
+                if (delayed != null) {
+                    delayed.resetAndStart();
+                }
             }
+            final ConnectedDevice fua = ua;
+            ua.setLatestRequest(request);
+            eventSender.fireEvent(new UserAgentEvent() {
+                @Override
+                public void fireTo(UserAgentListener listener) {
+                    listener.onAPIUserAgentUpdate(fua);
+                }
+            });
         }
     }
 
