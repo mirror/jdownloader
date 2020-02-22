@@ -762,7 +762,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isLoggedInHtml(final Browser br) {
-        return br != null && br.containsHTML("class=\"signOut\"");
+        return br != null && br.containsHTML("class\\s*=\\s*\"signOut\"");
     }
 
     public static boolean isLoggedInHtmlPremium(final Browser br) {
