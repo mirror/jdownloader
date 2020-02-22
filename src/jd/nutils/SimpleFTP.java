@@ -65,7 +65,6 @@ import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.Login;
@@ -408,7 +407,8 @@ public abstract class SimpleFTP {
         case EXPLICIT_OPTIONAL_CC_DC:
         case EXPLICIT_REQUIRED_CC_DC:
             try {
-                return getSSLSocketStreamFactory().create(ret, address.getAddress().getHostAddress(), address.getPort(), true, new SSLSocketStreamOptions(isSSLTrustALL()));
+                // TODO: add SSLSocketStream options support, caching + retry + trustAll
+                return getSSLSocketStreamFactory().create(ret, address.getAddress().getHostAddress(), address.getPort(), true, null);
             } catch (IOException e) {
                 socket.close();
                 throw e;
@@ -749,7 +749,8 @@ public abstract class SimpleFTP {
         sendLine("AUTH TLS");
         final String response = readLines(new int[] { 234, 500, 502, 530 }, "AUTH_TLS FAILED");
         if (StringUtils.startsWithCaseInsensitive(response, "234")) {
-            socket = getSSLSocketStreamFactory().create(getControlSocket(), "", getPort(), true, new SSLSocketStreamOptions(isSSLTrustALL()));
+            // TODO: add SSLSocketStream options support, caching + retry + trustAll
+            socket = getSSLSocketStreamFactory().create(getControlSocket(), "", getPort(), true, null);
             return true;
         } else {
             return false;
