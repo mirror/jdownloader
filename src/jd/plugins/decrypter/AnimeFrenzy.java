@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animefrenzy.eu" }, urls = { "https?://(www\\.)?animefrenzy\\.eu/(?:anime|watch)/\\d+-[\\w-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animefrenzy.eu" }, urls = { "https?://(www\\\\.)?animefrenzy\\.(?:eu|net)/(?:anime|cartoon|watch)/(?:watch/)?\\d+-[\\w-]+" })
 public class AnimeFrenzy extends antiDDoSForDecrypt {
     public AnimeFrenzy(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,13 +43,17 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         String fpName = br.getRegex("<title>(?:Watch\\s+)?([^<]+)\\s+(?:- Watch Anime Online|English\\s+[SD]ub\\s+)").getMatch(0);
         ArrayList<String> links = new ArrayList<String>();
         Collections.addAll(links, br.getRegex("<li[^>]*>\\s*<a[^>]+href\\s*=\\s*[\"']([^\"']+/watch/[^\"']+)[\"']").getColumn(0));
-        String[][] hostLinks = br.getRegex("\\{\\s*\"host\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"id\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"type\"\\s*:\\s*\"subbed\"").getMatches();
+        Collections.addAll(links, br.getRegex("<a[^>]+class\\s*=\\s*[\"']noepia[\"'][^>]+href\\s*=\\s*[\"']([^\"']+)[\"']").getColumn(0));
+        String[][] hostLinks = br.getRegex("\\\"(?:host|id)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"[^\\}]+\\\"(?:host|id)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"[^\\}]+\\\"type\\\"\\s*:\\s*\\\"(?:subbed|cartoon)\\\"").getMatches();
         for (String[] hostLink : hostLinks) {
             links.add(buildEmbedURL(hostLink[0], hostLink[1]));
+            links.add(buildEmbedURL(hostLink[1], hostLink[0]));
         }
         for (String link : links) {
-            link = processPrefixSlashes(Encoding.htmlDecode(link));
-            decryptedLinks.add(createDownloadlink(link));
+            if (link != null) {
+                link = processPrefixSlashes(Encoding.htmlDecode(link));
+                decryptedLinks.add(createDownloadlink(link));
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
@@ -68,7 +72,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
     }
 
     private String buildEmbedURL(String host, String id) {
-        String result = "";
+        String result = null;
         if (host.equals("trollvid")) {
             result = "https//trollvid.net/embed/" + id;
         } else if (host.equals("mp4.sh")) {
