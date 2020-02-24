@@ -33,7 +33,7 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[]   domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to" };
+    public static String[]   domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw" };
     /* Setting domains */
     protected final String[] user_domains = new String[] { "turbo.to", "turb.to", "turbobit.net", "turbobit.pw" };
 

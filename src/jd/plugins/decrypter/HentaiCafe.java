@@ -13,14 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,13 +32,11 @@ import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai.cafe" }, urls = { "https?://(?:www\\.)?hentai\\.cafe/(?:manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/|(?!artists/|78-2/|category/)[\\w\\-]+/$)" })
 public class HentaiCafe extends antiDDoSForDecrypt {
-
     public HentaiCafe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Tags: MangaPictureCrawler */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -49,6 +46,7 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        String fpName = br.getRegex("<title>([^<>\"]+)\\s*:: Chapter \\d+[^<]+</title>").getMatch(0);
         if (new URL(parameter).getPath().matches("/[\\w\\-]+/$")) {
             // their can be multiples
             final String[] eps = br.getRegex("https?://(?:www\\.)?hentai\\.cafe/manga/read/[a-z0-9\\-_]+/[a-z]{2}/\\d+/\\d+/").getColumn(-1);
@@ -64,21 +62,21 @@ public class HentaiCafe extends antiDDoSForDecrypt {
         final String url_chapter = urlinfo.getMatch(0);
         final String url_name = urlinfo.getMatch(1);
         String ext = null;
-
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(url_chapter + "_" + url_name);
-
+        if (fpName == null) {
+            /* Fallback */
+            fpName = url_chapter + "_" + url_name;
+        }
+        fp.setName(fpName);
         final String[] images = br.getRegex("\"url\":\"(http[^<>\"]+)\"").getColumn(0);
         final int padLength = getPadLength(images.length);
         short page = 0;
-
         for (final String image : images) {
             page++;
             if (this.isAbort()) {
                 return decryptedLinks;
             }
             final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
-
             final String finallink = PluginJSonUtils.unescape(image);
             if (finallink == null) {
                 return null;
@@ -88,7 +86,6 @@ public class HentaiCafe extends antiDDoSForDecrypt {
                 ext = extension_fallback;
             }
             final String filename = url_chapter + "_" + url_name + "_" + page_formatted + ext;
-
             final DownloadLink dl = this.createDownloadlink(finallink);
             dl._setFilePackage(fp);
             dl.setFinalFileName(filename);
@@ -97,7 +94,6 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
             distribute(dl);
         }
-
         return decryptedLinks;
     }
 
@@ -120,5 +116,4 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             return 8;
         }
     }
-
 }
