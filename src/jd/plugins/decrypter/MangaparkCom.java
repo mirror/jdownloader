@@ -17,6 +17,10 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,9 +30,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me|net)/manga/[\\w\\-\\.\\%]+/i\\d+/v\\d+/c\\d+" })
 public class MangaparkCom extends PluginForDecrypt {
     /**
      * @author raztoki & pspzockerscene
@@ -52,7 +57,7 @@ public class MangaparkCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://(?:www\\.)manga\\.(?:com|me)", "://https://mangapark.me");
+        final String parameter = param.toString().replace("://[^/]+", "://https://mangapark.net");
         HOST = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         prepBrowser();
         br.setFollowRedirects(true);
@@ -99,6 +104,28 @@ public class MangaparkCom extends PluginForDecrypt {
         fp.setProperty("CLEANUP_NAME", false);
         fp.setName(fpName);
         final DecimalFormat df = new DecimalFormat("00");
+        final String json = br.getRegex("var _load_pages\\s*=\\s*(\\[[^\\]]+\\])").getMatch(0);
+        if (json != null) {
+            /* 2020-02-24 */
+            LinkedHashMap<String, Object> entries;
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            int counter = 0;
+            for (final Object picO : ressourcelist) {
+                counter++;
+                entries = (LinkedHashMap<String, Object>) picO;
+                final String url = (String) entries.get("u");
+                if (StringUtils.isEmpty(url) || !url.startsWith("http")) {
+                    continue;
+                }
+                final DownloadLink link = createDownloadlink("directhttp://" + url);
+                final String thisExt = Plugin.getFileNameExtensionFromURL(url);
+                link.setFinalFileName((fpName + " – page " + df.format(counter) + thisExt).replace(" ", "_"));
+                link.setAvailable(true);
+                fp.add(link);
+                decryptedLinks.add(link);
+            }
+            return decryptedLinks;
+        }
         if (srv_link != null && extension != null) {
             for (int i = 1; i <= numberOfPages; i++) {
                 final String img = srv_link + i + extension;
