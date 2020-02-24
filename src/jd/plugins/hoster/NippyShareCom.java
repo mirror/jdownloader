@@ -13,10 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,13 +25,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/[a-z0-9]+" }) 
-public class NippyShareCom extends PluginForHost {
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/[a-z0-9]+" })
+public class NippyShareCom extends antiDDoSForHost {
     public NippyShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +41,6 @@ public class NippyShareCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -55,7 +50,6 @@ public class NippyShareCom extends PluginForHost {
 
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* forced https */
@@ -64,10 +58,10 @@ public class NippyShareCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getURL().endsWith(".html") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -132,7 +126,6 @@ public class NippyShareCom extends PluginForHost {
     // }
     // return dllink;
     // }
-
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
@@ -149,5 +142,4 @@ public class NippyShareCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

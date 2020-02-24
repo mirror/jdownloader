@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.net.URLDecoder;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -28,10 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "https?://(www\\.)?vivo\\.sx/[a-z0-9]{10}" })
 public class VivoSx extends antiDDoSForHost {
@@ -57,7 +57,7 @@ public class VivoSx extends antiDDoSForHost {
         }
         final String streamContent = br.getRegex("\"stream-content\"\\s*data-name\\s*=\\s*\"(.*?)\"").getMatch(0);
         final String dataType = br.getRegex("data\\-type=\"video\">(Watch|Listen to) ([^<>\"]*?)(\\&hellip;)?(\\&nbsp;)?<strong>").getMatch(1);
-        String filename = br.getRegex("og:description\" content=\"(Watch|Listen to) (\\&#34;)?([^<>\"]*?)(\\&#34;)? on").getMatch(2);
+        String filename = br.getRegex("<h1>Watch ([^<>\"]+)(\\&nbsp;)?<").getMatch(0);
         if (filename == null) {
             filename = dataType;
         }

@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -163,5 +164,40 @@ public class SharingWtf extends YetiShareCore {
             throw new AccountRequiredException();
         }
         super.checkErrors(link, account);
+    }
+
+    @Override
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /* 2020-02-24: Hack/Workaround */
+        if (link.getName().contains(".mp3") || link.getName().contains(".m4a") || link.getName().contains(".mp4") | link.getName().contains(".mkv")) {
+            logger.info("Attempting embed workaround");
+            final String fuid = getFUIDFromURL(link);
+            final Browser brc = br.cloneBrowser();
+            String dllink = null;
+            try {
+                this.getPage(brc, String.format("https://www.sharing.wtf/embed.php?u=%s&source=sharingwtf", fuid));
+                dllink = brc.getRegex("\\.jPlayer\\(\"setMedia\", \\{\\s*m4a\\s*:\\s*\"(http[^\"]+)").getMatch(0);
+            } catch (final Throwable e) {
+                logger.warning("Failure in embed handling");
+            }
+            if (dllink != null) {
+                logger.info("Embed workaround successful");
+                final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+                link.setProperty(directlinkproperty, dllink);
+                // final boolean resume = this.isResumeable(link, account);
+                // final int maxchunks = this.getMaxChunks(account);
+                /* 2020-02-24: Resume & chunkload not possible for embedded content */
+                final boolean resume = false;
+                final int maxchunks = 1;
+                this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+                this.dl.startDownload();
+            } else {
+                logger.info("Embed workaround failed");
+                super.handleDownload(link, account);
+            }
+        } else {
+            logger.info("NOT attempting embed workaround");
+            super.handleDownload(link, account);
+        }
     }
 }
