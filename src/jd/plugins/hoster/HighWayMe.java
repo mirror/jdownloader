@@ -737,13 +737,13 @@ public class HighWayMe extends UseNet {
                 statusMessage = "Temporary error";
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "temporary_error", 5, 5 * 60 * 1000l);
             case 9:
-                /* No account found -> Disable link for 10 minutes */
+                /* No account found -> Host temp. unavailable -> Skip to next download candidate */
                 statusMessage = "No account found";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             case 10:
-                /* Host offline or invalid url -> Remove host from array of supported hosts */
-                statusMessage = "Invalid link --> Probably unsupported host";
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "invalid_link", 5, 5 * 60 * 1000l);
+                /* Host offline or invalid url -> Skip to next download candidate */
+                statusMessage = "Invalid URL or unsupported host";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             case 11:
                 /* Host itself is currently unavailable (maintenance) -> Disable host */
                 statusMessage = "Host itself is currently unavailable";
@@ -751,10 +751,10 @@ public class HighWayMe extends UseNet {
             case 12:
                 /* MOCH itself is under maintenance */
                 if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nDieser Anbieter führt momentan Wartungsarbeiten durch!";
+                    statusMessage = "\r\nAnbieter führt momentan Wartungsarbeiten durch!";
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
-                    statusMessage = "\r\nThis service is doing maintenance work!";
+                    statusMessage = "\r\nService is doing maintenance work!";
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             case 13:
