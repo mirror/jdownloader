@@ -50,6 +50,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
@@ -132,6 +133,10 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  PROPERTY_PHOTOS_photo_list_id                                               = "photo_list_id";
     public static final String  PROPERTY_PHOTOS_photo_module                                                = "photo_module";
     public static final String  PROPERTY_PHOTOS_album_id                                                    = "albumid";
+    /* For single audio items */
+    public static final String  PROPERTY_AUDIO_special_id                                                   = "audio_special_id";
+    /* For single video items */
+    public static final String  PROPERTY_VIDEO_video_id                                                     = "videoid";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -240,7 +245,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* 2019-07-26: TODO: Improve this handling */
                 final Account acc = account != null ? account : AccountController.getInstance().getValidAccount(this);
                 if (acc != null) {
-                    login(br, acc);
+                    login(br, acc, false);
                     br.setFollowRedirects(true);
                     br.getPage(link.getPluginPatternMatcher());
                 }
@@ -269,14 +274,14 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         } else {
             /* Check if login is required to check/download */
-            final boolean noLogin = checkNoLoginNeeded(link);
+            final boolean anonymousDownloadPossible = checkNoLoginNeeded(link);
             final Account aa = account != null ? account : AccountController.getInstance().getValidAccount(this.getHost());
-            if (!noLogin && aa == null) {
+            if (!anonymousDownloadPossible && aa == null) {
                 link.getLinkStatus().setStatusText("Only downlodable via account!");
                 return AvailableStatus.UNCHECKABLE;
             } else if (aa != null) {
                 /* Always login if possible. */
-                login(br, aa);
+                login(br, aa, false);
             }
             if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
                 String finalFilename = link.getFinalFileName();
@@ -328,7 +333,7 @@ public class VKontakteRuHoster extends PluginForHost {
                          * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's try
                          * both variants.
                          */
-                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID + "," + ownerID + "_" + contentID);
+                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
                         url = audioGetDirectURL();
                         if (url == null) {
                             postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
@@ -345,7 +350,7 @@ public class VKontakteRuHoster extends PluginForHost {
                              * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had a
                              * good test case to identify offline urls.
                              */
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - track might be offline", 5 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - content might be offline", 5 * 60 * 1000l);
                         }
                         logger.warning("Failed to refresh audiolink directlink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -366,7 +371,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (checkstatus != 1) {
                     /* Refresh directlink */
                     final String oid = link.getStringProperty("userid", null);
-                    final String id = link.getStringProperty("videoid", null);
+                    final String id = link.getStringProperty(PROPERTY_VIDEO_video_id, null);
                     accessVideo(this.br, oid, id, null, false);
                     if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -657,7 +662,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return result;
     }
 
-    private String decryptURL(final String url) throws PluginException {
+    private String decryptAudioURL(final String url) throws PluginException {
         String result = url;
         if (!url.contains("audio_api_unavailable")) {
             return result;
@@ -693,7 +698,7 @@ public class VKontakteRuHoster extends PluginForHost {
         String url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
         if (url != null) {
             url = url.replace("\\", "");
-            url = decryptURL(url);
+            url = decryptAudioURL(url);
             if (!audioIsValidDirecturl(url)) {
                 url = null;
             }
@@ -751,21 +756,18 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            logger.info("Logging in without cookies (forced login)...");
-            login(br, account);
-            logger.info("Logged in successfully without cookies (forced login)!");
+            login(br, account, true);
         } catch (final PluginException e) {
             logger.info("Login failed!");
-            account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
         ai.setStatus("Free Account");
+        account.setType(AccountType.FREE);
         return ai;
     }
 
@@ -811,7 +813,7 @@ public class VKontakteRuHoster extends PluginForHost {
             requestFileInformation(downloadLink, null, true);
             doFree(downloadLink);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         }
     }
 
@@ -1062,24 +1064,28 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
-    public void login(Browser br, final Account account) throws Exception {
+    public void login(Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
             br.setCookiesExclusive(true);
             prepBrowser(br, false);
+            br.setFollowRedirects(true);
             this.vkID = account.getStringProperty("vkid");
             final Cookies cookies = account.loadCookies("");
             try {
                 if (cookies != null) {
+                    logger.info("Attempting cookie login");
                     br.setCookies(DOMAIN, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !forceCookieCheck) {
                         /* We trust these cookies --> Do not check them */
+                        logger.info("Trust login cookies as they're not yet that old");
                         return;
                     }
                     /* Check cookies */
-                    br.setFollowRedirects(true);
+                    logger.info("Trying cookie login");
                     br.getPage(getBaseURL());
                     // non language, check
                     if (br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
+                        logger.info("Cookie login successful");
                         // language set in user profile, so after 'login' OR 'login check' it could be changed!
                         if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
                             br.setCookie(DOMAIN, "remixlang", "3");
@@ -1090,9 +1096,10 @@ public class VKontakteRuHoster extends PluginForHost {
                         return;
                     }
                     /* Delete cookies / Headers to perform a full login */
+                    logger.info("Cookie login failed");
                     br = prepBrowser(new Browser(), false);
                 }
-                br.setFollowRedirects(true);
+                logger.info("Performing full login");
                 br.getPage(getBaseURL() + "/");
                 final Form login = br.getFormbyProperty("id", "quick_login_form");
                 if (login == null) {
@@ -1155,12 +1162,12 @@ public class VKontakteRuHoster extends PluginForHost {
         if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
-            login(br, acc);
+            login(br, acc, false);
             br.getPage(page);
         } else if (acc != null && br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+|\\d+<!><\\!>.+/login\\.php\\?act=security_check.+")) {
             logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
             // Force login
-            login(br, acc);
+            login(br, acc, false);
             br.getPage(page);
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().replaceAll("https?://(\\w+\\.)?vk\\.com", "").equals(page.replaceAll("https?://(\\w+\\.)?vk\\.com", ""))) {
             br.getPage(br.getRedirectLocation());
@@ -1173,13 +1180,13 @@ public class VKontakteRuHoster extends PluginForHost {
         if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
-            login(br, acc);
+            login(br, acc, false);
             br.postPage(page, postData);
         } else if (acc != null && br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+|\\d+<!><\\!>.+/login\\.php\\?act=security_check.+")) {
             logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
             // TODO: Change/remove this - should not be needed anymore!
             // Force login
-            login(br, acc);
+            login(br, acc, false);
             br.postPage(page, postData);
         }
         generalErrorhandling();

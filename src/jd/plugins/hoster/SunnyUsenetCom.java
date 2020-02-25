@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -15,14 +20,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sunnyusenet.com" }, urls = { "" })
 public class SunnyUsenetCom extends UseNet {
-
     public SunnyUsenetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.sunnyusenet.com/en/packages");
@@ -75,9 +74,9 @@ public class SunnyUsenetCom extends UseNet {
                 }
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String yourPackage = br.getRegex("Your package:\\s*<span.*?>\\s*(Sunny.*?)\\s*<").getMatch(0);
+            final String yourPackage = br.getRegex(">Plan Type:</h5>\\s*<div class=\"server-settings__value\"><b\\s*class=\"server-settings__value-b\">([^<>\"]+)</b>").getMatch(0);
             final String expireDate = br.getRegex("Expiration date:\\s*</b>\\s*(\\d+-\\d+-\\d+)\\s*<").getMatch(0);
-            final String connections = br.getRegex("Connections:\\s*</b>\\s*(\\d+)\\s*<").getMatch(0);
+            final String connections = br.getRegex(">Connections</h5>\\s*<div class=\"server-settings__value\">\\s*(\\d+)").getMatch(0);
             final int packageConnections;
             if (StringUtils.containsIgnoreCase(yourPackage, "UNL")) {
                 packageConnections = 20;
@@ -102,9 +101,10 @@ public class SunnyUsenetCom extends UseNet {
                 account.setMaxSimultanDownloads(packageConnections);
             }
             ai.setStatus("Your package: " + yourPackage);
+            /* 2020-02-25: They have packages without expire date e.g. "Sunny UNL" */
             if (expireDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy'-'MM'-'dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
-            } else {
+            } else if (yourPackage == null || !yourPackage.contains("UNL")) {
                 ai.setExpired(true);
             }
         } catch (final PluginException e) {

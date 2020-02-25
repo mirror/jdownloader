@@ -22,6 +22,10 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,18 +40,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
 public class RtveEs extends PluginForHost {
-    private static final String TYPE_NORMAL  = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
-    private static final String TYPE_SERIES  = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
-    private static final String TYPE_RIO2016 = "https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html";
-    private String              dllink       = null;
-    private String              BLOWFISHKEY  = "eWVMJmRhRDM=";
-    private String              dl_now_now   = null;
-    private boolean             geo_blocked  = false;
+    private static final String TYPE_NORMAL = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_SERIES = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
+    private String              dllink      = null;
+    private String              BLOWFISHKEY = "eWVMJmRhRDM=";
+    private String              dl_now_now  = null;
+    private boolean             geo_blocked = false;
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -94,9 +94,86 @@ public class RtveEs extends PluginForHost {
         return -1;
     }
 
+    final boolean use_api_for_availablecheck = true;
+
+    @SuppressWarnings("deprecation")
+    private AvailableStatus requestVideo(final DownloadLink link) throws IOException, PluginException {
+        br.setFollowRedirects(true);
+        String filename = null;
+        if (use_api_for_availablecheck) {
+            final String fid = new Regex(link.getPluginPatternMatcher(), "/(\\d+)/?.*?$").getMatch(0);
+            if (fid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(String.format("https://www.rtve.es/api/videos/%s.json", fid));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = PluginJSonUtils.getJson(br, "longTitle");
+            if (StringUtils.isEmpty(filename)) {
+                filename = fid;
+            }
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.|id=\"errorndispo\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("No hay vídeos o audios para la búsqueda efectuada")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("/alacarta20/i/imgError/video\\.png")) {
+                this.geo_blocked = true;
+                return AvailableStatus.TRUE;
+            }
+            if (link.getDownloadURL().matches(TYPE_SERIES)) {
+                final Regex finfo = new Regex(link.getDownloadURL(), "rtve.es/infantil/serie/([^/]+)/video/([^/]+)/");
+                filename = finfo.getMatch(0) + " - " + finfo.getMatch(1);
+            } else {
+                filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
+                }
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename.trim());
+            dl_now_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
+            if (dl_now_now != null) {
+                link.getLinkStatus().setStatusText("Server error: " + dl_now_now);
+                link.setName(filename + ".mp4");
+                return AvailableStatus.TRUE;
+            }
+        }
+        link.setName(filename + ".mp4");
+        return AvailableStatus.TRUE;
+    }
+
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (use_api_for_availablecheck) {
+            br.getPage(link.getPluginPatternMatcher());
+        }
+        String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
+        if (flashVars == null || flashVars.length != 4) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* encrypt request query */
+        String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
+        getEncData = getEncData.replaceAll("/", "_");
+        Browser enc = br.cloneBrowser();
+        enc.getPage("https://ztnr.rtve.es/ztnr/res/" + getEncData);
+        /* Check for empty page */
+        if (enc.toString().length() <= 22) {
+            logger.info("Empty page --> Content offline?");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* decrypt response body */
+        dllink = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (geo_blocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         } else if (dl_now_now != null) {
@@ -116,12 +193,12 @@ public class RtveEs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
         } else {
             /* HTTP download */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -139,7 +216,7 @@ public class RtveEs extends PluginForHost {
         // if (dl_now_now != null) {
         // return AvailableStatus.TRUE;
         // }
-        if (!dllink.contains("/manifest")) {
+        if (dllink != null && !dllink.contains("/manifest")) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);
@@ -157,83 +234,6 @@ public class RtveEs extends PluginForHost {
                 }
             }
         }
-        return AvailableStatus.TRUE;
-    }
-
-    @SuppressWarnings("deprecation")
-    private AvailableStatus requestVideo(final DownloadLink downloadLink) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.|id=\"errorndispo\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("No hay vídeos o audios para la búsqueda efectuada")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("/alacarta20/i/imgError/video\\.png")) {
-            this.geo_blocked = true;
-            return AvailableStatus.TRUE;
-        }
-        String filename = null;
-        if (downloadLink.getDownloadURL().matches(TYPE_RIO2016)) {
-            String videoid = PluginJSonUtils.getJsonValue(this.br, "VideoID");
-            if (videoid == null) {
-                videoid = PluginJSonUtils.getJsonValue(this.br, "s.forgeid");
-            }
-            if (videoid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.br.getPage("/VideoData/" + videoid + ".xml");
-            filename = this.br.getRegex(" <title><\\!\\[CDATA\\[([^<>\"]+)\\]\\]></title>").getMatch(0);
-            if (filename == null) {
-                /* Fallback */
-                filename = videoid;
-            }
-            dllink = this.br.getRegex("<videoSource format=\"HLS\" offset=\"\\d+:\\d+:\\d+\">[+\t\n\r ]*?<uri>(http[^<>\"]*?)</uri>").getMatch(0);
-        } else {
-            if (downloadLink.getDownloadURL().matches(TYPE_SERIES)) {
-                final Regex finfo = new Regex(downloadLink.getDownloadURL(), "rtve.es/infantil/serie/([^/]+)/video/([^/]+)/");
-                filename = finfo.getMatch(0) + " - " + finfo.getMatch(1);
-            } else {
-                filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
-                }
-            }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            filename = Encoding.htmlDecode(filename.trim());
-            dl_now_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
-            if (dl_now_now != null) {
-                downloadLink.getLinkStatus().setStatusText("Server error: " + dl_now_now);
-                downloadLink.setName(filename + ".mp4");
-                return AvailableStatus.TRUE;
-            }
-            String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
-            if (flashVars == null || flashVars.length != 4) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* encrypt request query */
-            String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
-            getEncData = getEncData.replaceAll("/", "_");
-            Browser enc = br.cloneBrowser();
-            enc.getPage("http://ztnr.rtve.es/ztnr/res/" + getEncData);
-            /* Check for empty page */
-            if (enc.toString().length() <= 22) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* decrypt response body */
-            dllink = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (ext == null || ext.contains("m3u8")) {
-            ext = ".mp4";
-        }
-        downloadLink.setName(filename + ext);
         return AvailableStatus.TRUE;
     }
 
