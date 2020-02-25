@@ -23,12 +23,13 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(?:www\\.)?rmz\\.cr/release/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(?:www\\.)?(?:rapidmoviez\\.(?:com|eu|cr)|rmz\\.rezavn|rmz\\.cr)/release/[^/]+" })
 public class RmzCr extends antiDDoSForDecrypt {
     public RmzCr(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,6 +45,16 @@ public class RmzCr extends antiDDoSForDecrypt {
         String fpName = br.getRegex("<div id=\"title_release_before_title\"></div>\\s*<h2>([^<>\"]+)<").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>RapidMoviez\\s+-\\s+([^<]+)</title>").getMatch(0);
+        }
+        final String thumbnailsHTML = br.getRegex("<div class=\"fullsize\">Click on the image to see full size</div>(.*?)</div>\\s+</div>").getMatch(0);
+        final String thumbnails[] = HTMLParser.getHttpLinks(thumbnailsHTML, "");
+        if (thumbnails != null) {
+            logger.info("Found thumbnails");
+            for (final String link : thumbnails) {
+                decryptedLinks.add(createDownloadlink(link));
+            }
+        } else {
+            logger.info("Failed to find thumbnails");
         }
         String linkBlock = br.getRegex("(<div id=\"(?:title_release_after_download_title|title_release_after_imdb)\">[^$]+<div id=\"title_release_after_links\">)").getMatch(0);
         if (linkBlock != null) {
