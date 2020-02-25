@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -415,21 +416,52 @@ public class TwitterCom extends PornEmbedParser {
             logger.warning("Failed to find user_id");
             throw new DecrypterException("Decrypter broken");
         }
+        /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
+        final boolean isMediaFromOriginalPosterOnly = parameter.endsWith("/media");
         int index = 0;
         fp = FilePackage.getInstance();
         fp.setName(username);
         final int items_per_page = 20;
         int numberof_items_on_current_page = 0;
         String nextCursor = null;
+        final UrlQuery query = new UrlQuery();
+        query.append("include_profile_interstitial_type", "1", false);
+        query.append("include_blocking", "1", false);
+        query.append("include_blocked_by", "1", false);
+        query.append("include_followed_by", "1", false);
+        query.append("include_want_retweets", "1", false);
+        query.append("include_mute_edge", "1", false);
+        query.append("include_can_dm", "1", false);
+        query.append("include_can_media_tag", "1", false);
+        query.append("skip_status", "1", false);
+        query.append("cards_platform", "Web-12", false);
+        query.append("include_cards", "1", false);
+        query.append("include_composer_source", "true", false);
+        query.append("include_ext_alt_text", "true", false);
+        query.append("include_reply_count", "1", false);
+        query.append("tweet_mode", "extended", false);
+        query.append("include_entities", "true", false);
+        query.append("include_user_entities", "true", false);
+        query.append("include_ext_media_color", "true", false);
+        query.append("include_ext_media_availability", "true", false);
+        query.append("send_error_codes", "true", false);
+        query.append("simple_quoted_tweets", "true", false);
+        if (isMediaFromOriginalPosterOnly) {
+        } else {
+            query.append("include_tweet_replies", "false", false);
+        }
+        query.append("userId", user_id, false);
+        query.append("count", items_per_page + "", false);
+        query.append("ext", "mediaStats,cameraMoment", true);
         /* TODO: 2020-02-05: Check for rate-limit and add waittime- and retry for this case! */
         do {
             logger.info("Crawling page " + (index + 1));
             numberof_items_on_current_page = 0;
-            String extraArgs = "";
+            final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
-                extraArgs = "&cursor=" + Encoding.urlEncode(nextCursor);
+                thisquery.append("cursor", nextCursor, true);
             }
-            br.getPage(String.format("https://api.twitter.com/2/timeline/profile/%s.json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&include_tweet_replies=false&userId=%s&count=%d&ext=mediaStats%%2CcameraMoment%s", user_id, user_id, items_per_page, extraArgs));
+            br.getPage(String.format("https://api.twitter.com/2/timeline/profile/%s.json?", user_id) + thisquery.toString());
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Object errors = entries.get("errors");
             if (errors != null) {
