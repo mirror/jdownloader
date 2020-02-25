@@ -186,7 +186,7 @@ public class RtveEs extends PluginForHost {
             /* HLS download */
             this.br.getPage(dllink);
             if (this.br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
             }
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
@@ -199,6 +199,9 @@ public class RtveEs extends PluginForHost {
         } else {
             /* HTTP download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
