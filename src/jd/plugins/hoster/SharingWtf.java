@@ -176,7 +176,7 @@ public class SharingWtf extends YetiShareCore {
             String dllink = null;
             try {
                 this.getPage(brc, String.format("https://www.sharing.wtf/embed.php?u=%s&source=sharingwtf", fuid));
-                dllink = brc.getRegex("\\.jPlayer\\(\"setMedia\", \\{\\s*m4a\\s*:\\s*\"(http[^\"]+)").getMatch(0);
+                dllink = brc.getRegex("\\.jPlayer\\(\"setMedia\", \\{\\s*[a-z0-9]+\\s*:\\s*\"([^\"]+)").getMatch(0);
             } catch (final Throwable e) {
                 logger.warning("Failure in embed handling");
             }

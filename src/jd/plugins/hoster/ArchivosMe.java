@@ -30,8 +30,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class ArchivosClub extends YetiShareCore {
-    public ArchivosClub(PluginWrapper wrapper) {
+public class ArchivosMe extends YetiShareCore {
+    public ArchivosMe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -47,8 +47,14 @@ public class ArchivosClub extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "archivos.club" });
+        ret.add(new String[] { "archivos.me", "archivos.club" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2020-02-26: archivos.club --> archivos.me */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
