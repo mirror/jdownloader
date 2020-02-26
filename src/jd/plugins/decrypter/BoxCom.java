@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -36,10 +40,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
 public class BoxCom extends antiDDoSForDecrypt {
@@ -198,6 +198,13 @@ public class BoxCom extends antiDDoSForDecrypt {
         if (fp != null) {
             fp.setName(Encoding.unicodeDecode(fpName));
         }
+        String subFolder = getAdoptedCloudFolderStructure();
+        if (subFolder == null) {
+            subFolder = fpName;
+        }
+        if (subFolder == null) {
+            subFolder = "";
+        }
         do {
             // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
             final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\})").getColumn(0);
@@ -205,11 +212,19 @@ public class BoxCom extends antiDDoSForDecrypt {
                 logger.info("Links found: " + results.length);
                 for (final String result : results) {
                     final String type = new Regex(result, "\"type\":\"([^\"]*?)\"").getMatch(0);
+                    final String item_name = new Regex(result, "\"name\":\"([^\"]*?)\"").getMatch(0);
+                    if (StringUtils.isEmpty(type) || StringUtils.isEmpty(item_name)) {
+                        /* Skip invalid items --> This should never happen */
+                        continue;
+                    }
                     if ("file".equals(type)) {
                         final String size = new Regex(result, "\"itemSize\":(\\d+),").getMatch(0);
-                        final String filename = new Regex(result, "\"name\":\"([^\"]*?)\"").getMatch(0);
                         final String fuid = new Regex(result, "\"typedID\":\"f_(\\d+)\"").getMatch(0);
-                        final String link = new Regex(cryptedlink, "(https?://[^/]*?box.com/s/[a-z0-9]+)").getMatch(0) + "/file/" + fuid;
+                        if (StringUtils.isEmpty(size) || StringUtils.isEmpty(fuid)) {
+                            /* Skip invalid items --> This should never happen */
+                            continue;
+                        }
+                        final String link = new Regex(cryptedlink, "(https?://[^/]*?box\\.com/s/[a-z0-9]+)").getMatch(0) + "/file/" + fuid;
                         // logger.info("cryptedlink: " + cryptedlink);
                         // logger.info("link: " + link);
                         if (!dupe.add(link)) {
@@ -217,10 +232,15 @@ public class BoxCom extends antiDDoSForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink(link);
                         dl.setLinkID("box.com://file/" + fuid);
-                        dl.setProperty("passCode", passCode);
-                        dl.setName(Encoding.unicodeDecode(filename));
+                        if (passCode != null) {
+                            dl.setDownloadPassword(passCode);
+                        }
+                        dl.setName(Encoding.unicodeDecode(item_name));
                         dl.setVerifiedFileSize(Long.parseLong(size));
                         dl.setAvailable(true);
+                        if (StringUtils.isNotEmpty(subFolder)) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                        }
                         decryptedLinks.add(dl);
                         if (fp != null) {
                             fp.add(dl);
@@ -241,7 +261,11 @@ public class BoxCom extends antiDDoSForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink(link);
                         dl.setLinkID("box.com://folder/" + duid);
-                        dl.setProperty("passCode", passCode);
+                        if (passCode != null) {
+                            dl.setDownloadPassword(passCode);
+                        }
+                        final String thisSubfolder = subFolder + "/" + item_name;
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisSubfolder);
                         decryptedLinks.add(dl);
                         if (fp != null) {
                             fp.add(dl);
