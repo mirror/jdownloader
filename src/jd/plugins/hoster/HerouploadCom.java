@@ -18,19 +18,17 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class CnubisCom extends YetiShareCore {
-    public CnubisCom(PluginWrapper wrapper) {
+public class HerouploadCom extends YetiShareCore {
+    public HerouploadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -39,14 +37,14 @@ public class CnubisCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2020-02-26: no limits at all <br />
-     * captchatype-info: 2020-02-26: reCaptchaV2<br />
+     * limit-info:<br />
+     * captchatype-info: null solvemedia reCaptchaV2<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "cnubis.com" });
+        ret.add(new String[] { "heroupload.com", "heroupload.us" });
         return ret;
     }
 
@@ -63,8 +61,7 @@ public class CnubisCom extends YetiShareCore {
         final List<String[]> pluginDomains = getPluginDomains();
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            /* 2020-02-26: Special */
-            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
     }
@@ -86,50 +83,27 @@ public class CnubisCom extends YetiShareCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public boolean requires_WWW() {
-        /* 2020-02-26: Special (override not necessarily required) */
-        return false;
-    }
-
-    @Override
-    protected String getDllink(final Browser br) {
-        /* 2020-02-26: Temp. workaround, will remove this once next version of YetiShareCore is ready! */
-        String ret = br.getRegex("\"((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
-        if (StringUtils.isEmpty(ret)) {
-            ret = br.getRegex("\"(https?://[^\"]+/files/[^\"]+)\"").getMatch(0);
-        }
-        if (isDownloadlink(ret)) {
-            return ret;
-        } else if (ret != null) {
-            logger.info("isDownloadlink false:" + ret);
-            return null;
-        } else {
-            return null;
-        }
+        return 1;
     }
 }
