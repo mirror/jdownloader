@@ -36,6 +36,18 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    protected boolean useRUA() {
+        /* 2020-02-26: Try to prevent IP bans. */
+        return true;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-02-26: Try to prevent IP bans. */
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced https */

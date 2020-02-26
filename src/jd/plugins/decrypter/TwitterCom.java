@@ -402,10 +402,16 @@ public class TwitterCom extends PornEmbedParser {
         final boolean use_old_api_to_get_userid = true;
         LinkedHashMap<String, Object> entries;
         final String user_id;
+        /* = numberof tweets */
+        String statuses_count = null;
+        /* = number of media tweets (NOT total numberof items - this may even be higher! A tweet can e.g. contain multiple photos!) */
+        String media_count = null;
         if (use_old_api_to_get_userid) {
             /* https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
             br.getPage("https://api.twitter.com/1.1/users/lookup.json?screen_name=" + username);
             user_id = PluginJSonUtils.getJson(br, "id_str");
+            statuses_count = PluginJSonUtils.getJson(br, "statuses_count");
+            media_count = PluginJSonUtils.getJson(br, "media_count");
         } else {
             br.getPage("https://api.twitter.com/graphql/DO_NOT_USE_ATM_2020_02_05/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + username + "%22%2C%22withHighlightedLabel%22%3Afalse%7D");
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -417,6 +423,8 @@ public class TwitterCom extends PornEmbedParser {
             throw new DecrypterException("Decrypter broken");
         }
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
+        final String content_type;
+        String max_count;
         final boolean isMediaFromOriginalPosterOnly = parameter.endsWith("/media");
         int index = 0;
         fp = FilePackage.getInstance();
@@ -447,13 +455,22 @@ public class TwitterCom extends PornEmbedParser {
         query.append("send_error_codes", "true", false);
         query.append("simple_quoted_tweets", "true", false);
         if (isMediaFromOriginalPosterOnly) {
+            content_type = "media";
+            max_count = media_count;
         } else {
+            content_type = "profile";
+            max_count = statuses_count;
             query.append("include_tweet_replies", "false", false);
+        }
+        if (StringUtils.isEmpty(max_count)) {
+            /* This should never happen */
+            max_count = "??";
         }
         query.append("userId", user_id, false);
         query.append("count", items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
         /* TODO: 2020-02-05: Check for rate-limit and add waittime- and retry for this case! */
+        int crawled_tweet_count = 0;
         do {
             logger.info("Crawling page " + (index + 1));
             numberof_items_on_current_page = 0;
@@ -461,7 +478,8 @@ public class TwitterCom extends PornEmbedParser {
             if (!StringUtils.isEmpty(nextCursor)) {
                 thisquery.append("cursor", nextCursor, true);
             }
-            br.getPage(String.format("https://api.twitter.com/2/timeline/profile/%s.json?", user_id) + thisquery.toString());
+            final String url = String.format("https://api.twitter.com/2/timeline/%s/%s.json", content_type, user_id);
+            br.getPage(url + "?" + thisquery.toString());
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Object errors = entries.get("errors");
             if (errors != null) {
@@ -477,8 +495,10 @@ public class TwitterCom extends PornEmbedParser {
                 entries = (LinkedHashMap<String, Object>) entry.getValue();
                 crawlTweetMediaObjectsAPI(entries);
                 numberof_items_on_current_page++;
+                crawled_tweet_count++;
             }
             logger.info(String.format("Numberof tweets on current page: %d of expected max %d", numberof_items_on_current_page, items_per_page));
+            logger.info(String.format("Numberof total tweets crawled: %d of expected total %s", crawled_tweet_count, max_count));
             /* Done - now try to find string required to access next page */
             try {
                 LinkedHashMap<String, Object> pagination_info_entries = (LinkedHashMap<String, Object>) pagination_info.get(pagination_info.size() - 1);

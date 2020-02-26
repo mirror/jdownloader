@@ -90,12 +90,14 @@ public class RareFileNet extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        /* 2020-02-26: Once long waittime happens, user can start more downloads afterwards e.g. one more every hour */
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        /* 2020-02-26: Once long waittime happens, user can start more downloads afterwards e.g. one more every hour */
+        return -1;
     }
 
     @Override

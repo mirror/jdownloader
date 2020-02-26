@@ -48,6 +48,12 @@ public class MyzcloudMe extends antiDDoSForHost {
         }
     }
 
+    @Override
+    protected boolean useRUA() {
+        /* 2020-02-26: Try to prevent IP bans. */
+        return true;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
