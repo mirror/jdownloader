@@ -70,7 +70,7 @@ public class KingfilePl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - login required?", 30 * 60 * 1000l);
         }
         String filename = br.getRegex("class=\"fileName\">([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex(">Rozmiar: ([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex(">Rozmiar\\s*:\\s*([^<>\"]+)<").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
