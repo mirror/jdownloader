@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servus\\.com/(?:tv/videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:tv/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
 public class ServusCom extends PluginForHost {
     public ServusCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,6 +50,7 @@ public class ServusCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
+        /* 2020-02-27: servustv.com does still exist and is still used but we've already switched to servus.com a long time ago ... */
         if ("servustv.com".equals(getHost())) {
             if (host == null || "servustv.com".equals(host)) {
                 return "servus.com";
@@ -81,7 +82,13 @@ public class ServusCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("https://stv.rbmbtnx.net/api/v1/manifests/" + this.getFID(link) + "/metadata");
+        final String fid = this.getFID(link);
+        if (fid == null) {
+            /* This should never happen */
+            logger.warning("fid is null");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage("https://stv.rbmbtnx.net/api/v1/manifests/" + fid + "/metadata");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
