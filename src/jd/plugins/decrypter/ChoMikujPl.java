@@ -512,22 +512,12 @@ public class ChoMikujPl extends PluginForDecrypt {
                     }
                 }
                 dl.setProperty("fileid", fid);
-                if (__RequestVerificationToken_Lw__ != null) {
-                    dl.setProperty("__RequestVerificationToken_Lw__", __RequestVerificationToken_Lw__);
-                }
                 dl.setProperty("plain_filename", filename);
                 dl.setName(filename);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
-                if (saveLink != null && savePost != null && FOLDERPASSWORD != null) {
-                    dl.setProperty("savedlink", saveLink);
-                    dl.setProperty("savedpost", savePost);
-                    // password for the folder, must be sent as a cookie when requesting file
-                    dl.setProperty("chomikID", chomikID);
-                    dl.setProperty("password", FOLDERPASSWORD);
-                }
-                if (REQUESTVERIFICATIONTOKEN != null) {
-                    dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
+                if (FOLDERPASSWORD != null) {
+                    dl.setDownloadPassword(FOLDERPASSWORD);
                 }
                 fp.add(dl);
                 dl.setContentUrl(content_url);
@@ -548,7 +538,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 if (folderLink.contains(linkPart) && !folderLink.equals(parameter)) {
                     final DownloadLink dl = createDownloadlink(folderLink);
                     if (FOLDERPASSWORD != null) {
-                        dl.setProperty("password", FOLDERPASSWORD);
+                        dl.setDownloadPassword(FOLDERPASSWORD);
                     }
                     fp.add(dl);
                     distribute(dl);
@@ -575,6 +565,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 for (int i = 0; i <= 3; i++) {
                     FOLDERPASSWORD = param.getDecrypterPassword();
                     if (FOLDERPASSWORD == null) {
+                        /* Try last working password first */
                         FOLDERPASSWORD = this.getPluginConfig().getStringProperty("password");
                     }
                     if (FOLDERPASSWORD == null) {
@@ -585,6 +576,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                         return false;
                     }
                     pass.put("Password", FOLDERPASSWORD);
+                    pass.remove("Remember");
+                    /* This is set to true in host plugin - we will try to save- and re-use cookies there! */
+                    pass.put("Remember", "False");
                     submitForm(pass);
                     /* Important! The other parts of this plugin cannot handle escaped results! */
                     br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
@@ -593,7 +587,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         this.getPluginConfig().setProperty("password", FOLDERPASSWORD);
                         break;
                     } else {
-                        // Maybe password was saved before but has changed in the meantime!
+                        // Last working password was saved before but has changed in the meantime!
                         this.getPluginConfig().setProperty("password", Property.NULL);
                         param.setDecrypterPassword(null);
                         continue;
