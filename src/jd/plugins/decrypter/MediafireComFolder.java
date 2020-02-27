@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -69,6 +70,7 @@ public class MediafireComFolder extends PluginForDecrypt {
             return decryptedLinks;
         } else if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         subFolder = getAdoptedCloudFolderStructure();
@@ -132,15 +134,30 @@ public class MediafireComFolder extends PluginForDecrypt {
             }
             return decryptedLinks;
         } else {
-            br.setFollowRedirects(false);
             // Private link? Login needed!
             if (getUserLogin()) {
                 logger.info("Decrypting with logindata...");
             } else {
                 logger.info("Decrypting without logindata...");
             }
+            final UrlQuery query = UrlQuery.parse(parameter);
+            final String old_sharekey = query.get("sharekey");
+            String contentID = null;
+            if (old_sharekey != null) {
+                logger.info("Detected old sharekey --> Trying to get corresponding new 'quick_key'");
+                br.setFollowRedirects(true);
+                br.getPage(parameter);
+                contentID = new Regex(br.getURL(), "([a-z0-9]+)$").getMatch(0);
+                if (contentID == null || contentID.equals(old_sharekey)) {
+                    logger.warning("Unable to find new 'quick_key' --> URL might be offline");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                logger.info("Found new 'quick_key': " + contentID);
+            } else {
+                contentID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            }
             // Check if we have a single link or multiple folders/files
-            final String contentID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
             Boolean isFile = null;
             Boolean isFolder = null;
             try {
@@ -301,7 +318,6 @@ public class MediafireComFolder extends PluginForDecrypt {
             return null;
         }
         final DownloadLink link = createDownloadlink(LINKPART_SINGLE + id);
-        link.setLinkID(this.getHost() + "://" + id);
         if (StringUtils.isNotEmpty(subFolder)) {
             link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
         }
