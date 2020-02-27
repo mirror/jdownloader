@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingfile.pl" }, urls = { "http://(?:www\\.)?kingfile\\.pl/download/[A-Za-z0-9]+" })
 public class KingfilePl extends PluginForHost {
-
     public KingfilePl(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -51,7 +49,6 @@ public class KingfilePl extends PluginForHost {
     private final boolean FREE_RESUME       = true;
     private final int     FREE_MAXCHUNKS    = 1;
     private final int     FREE_MAXDOWNLOADS = 1;
-
     private String        fid               = null;
 
     @SuppressWarnings("deprecation")
@@ -69,6 +66,8 @@ public class KingfilePl extends PluginForHost {
         }
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Plik który chcesz pobrać zmienił swój adres lub został usunięty<|>Nie znaleziono szukanego pliku<|>Nie znaleziono pliku|>Szukany plik zmienił swój adres lub")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - login required?", 30 * 60 * 1000l);
         }
         String filename = br.getRegex("class=\"fileName\">([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex(">Rozmiar: ([^<>\"]+)<").getMatch(0);
@@ -175,5 +174,4 @@ public class KingfilePl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
