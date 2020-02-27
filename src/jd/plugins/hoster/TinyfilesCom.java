@@ -20,10 +20,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -155,5 +158,18 @@ public class TinyfilesCom extends XFileSharingProBasic {
             ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/([a-f0-9]{24}/\\d+/[^/]+/?|(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?)");
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+        /* 2020-02-27: Special reCaptchaV2 invisible */
+        final String reCaptchaKey = br.getRegex("grecaptcha\\.execute\\('([^<>\"\\']+)'").getMatch(0);
+        if (captchaForm != null && captchaForm.containsHTML("googletoken") && reCaptchaKey != null) {
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
+            captchaForm.put("googletoken", Encoding.urlEncode(recaptchaV2Response));
+        } else {
+            /* Fallback to template handling and hope that it will work */
+            super.handleCaptcha(link, captchaForm);
+        }
     }
 }

@@ -44,8 +44,22 @@ public class MyzcloudMe extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /* Florced https */
         if ("myzuka.ru".equals(getHost())) {
-            link.setUrlDownload("http://myzuka.club/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
+            link.setUrlDownload("https://myzuka.me/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
         }
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -54,12 +68,13 @@ public class MyzcloudMe extends antiDDoSForHost {
         return true;
     }
 
+    /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(500);
+        br.setAllowedResponseCodes(new int[] { 500 });
         getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 500 || br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,7 +99,7 @@ public class MyzcloudMe extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("\"(/Song/Download/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(/Song/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(/Song/Play/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -107,14 +122,14 @@ public class MyzcloudMe extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
             br.setFollowRedirects(false);
             br.getPage(dllink);
-            br.setFollowRedirects(true);
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            dllink = dllink + "?t=" + System.currentTimeMillis();
         }
+        /* 2020-02-27: Not required anymore */
+        // dllink = dllink + "?t=" + System.currentTimeMillis();
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("gif")) {
             try {
