@@ -17,6 +17,11 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,12 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(www\\.)?fastshare\\.cz/\\d+/[^<>\"#]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(?:www\\.)?(?:fastshare|netshare)\\.cz/(\\d+)/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,6 +52,20 @@ public class FastShareCz extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return "https://www.fastshare.cz/podminky";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     private static final String MAINPAGE = "https://www.fastshare.cz";
