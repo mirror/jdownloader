@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -422,6 +423,7 @@ public class TwitterCom extends PornEmbedParser {
             logger.warning("Failed to find user_id");
             throw new DecrypterException("Decrypter broken");
         }
+        final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
         String max_count;
@@ -454,10 +456,12 @@ public class TwitterCom extends PornEmbedParser {
         query.append("include_ext_media_availability", "true", false);
         query.append("send_error_codes", "true", false);
         query.append("simple_quoted_tweets", "true", false);
-        if (isMediaFromOriginalPosterOnly) {
+        if (isMediaFromOriginalPosterOnly || setting_force_grab_media) {
+            logger.info("Grabbing self posted media only");
             content_type = "media";
             max_count = media_count;
         } else {
+            logger.info("Grabbing ALL media e.g. also retweets");
             content_type = "profile";
             max_count = statuses_count;
             query.append("include_tweet_replies", "false", false);

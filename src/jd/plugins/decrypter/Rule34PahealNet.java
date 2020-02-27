@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "https?://(?:www\\.)?rule34\\.paheal\\.net/post/(list/[\\w\\-\\.%!]+|view)/\\d+" })
 public class Rule34PahealNet extends PluginForDecrypt {
-
     public Rule34PahealNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,10 +49,6 @@ public class Rule34PahealNet extends PluginForDecrypt {
         String next = null;
         final HashSet<String> dups = new HashSet<String>();
         do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
-            }
             if (next != null) {
                 sleep(1000, param);
                 br.getPage(next);
@@ -80,7 +74,7 @@ public class Rule34PahealNet extends PluginForDecrypt {
                 }
             }
             next = br.getRegex("\"(/post/[^<>\"]*?)\">Next</a>").getMatch(0);
-        } while (next != null && loop.add(next));
+        } while (!this.isAbort() && next != null && loop.add(next));
         return decryptedLinks;
     }
 
@@ -93,5 +87,4 @@ public class Rule34PahealNet extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Danbooru;
     }
-
 }

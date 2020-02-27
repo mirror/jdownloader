@@ -71,9 +71,9 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** 2019-10-30: exe.io domains */
             "exe.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz",
             /** 2019-08-29: 4snip.pw domains, handles by FoursnipPw plugin */
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       /*
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        * "4snip.pw",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        */
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   /*
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    * "4snip.pw",
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    */
             /** 2019-11-13: linkjust.com domains */
             "linkjust.com", "thegreatfuture.com", "siha.xyz", "akltu.com", "rahlatt.com", "ekhtr.com",
             /** 2020-01-21: encurta.net domains */
@@ -81,7 +81,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** 2020-01-20: 7r6.com domains */
             "7r6.com",
             /** 2019-11-13: linkshorty */
-            "linkshorty.com", "americansvsarabs.com", "mat3sports.com",
+            "linkshorty.com", "americansvsarabs.com", "mat3sports.com", "shortyup.com",
             /** 2019-11-13: ex-foary.com */
             "ex-foary.com",
             /** 2019-11-13: Zoom Link */
@@ -452,12 +452,16 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         // if ("yes" !== app_vars.enable_captcha) return !0;
         final String source_host = Browser.getHost(url_source);
         boolean hasCaptcha;
-        String captchaIndicatorValue = getAppVarsResult("enable_captcha");
-        if (captchaIndicatorValue != null) {
+        // String captchaIndicatorValue = getAppVarsResult("enable_captcha");
+        final String captchaIndicator = getAppVarsResult("captcha_shortlink");
+        if (captchaIndicator != null) {
             /* Most website will contain this boolean-like value telling us whether we need to solve a captcha or not. */
-            if ("yes".equals(captchaIndicatorValue)) {
+            logger.info("Found captchaIndicator");
+            if ("yes".equals(captchaIndicator)) {
+                logger.info("Negative captchaIndicator --> No captcha required(?)");
                 hasCaptcha = true;
             } else {
+                logger.info("Positive captchaIndicator --> Captcha required(?)");
                 hasCaptcha = false;
             }
         } else {

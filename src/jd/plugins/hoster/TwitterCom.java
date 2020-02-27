@@ -18,11 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -477,6 +480,27 @@ public class TwitterCom extends PluginForHost {
         login(this.br, account, false);
         requestFileInformation(link);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return TwitterConfigInterface.class;
+    }
+
+    public static interface TwitterConfigInterface extends PluginConfigInterface {
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        public static class TRANSLATION {
+            public String getForceGrabMediaOnlyEnabled_label() {
+                return "Force grab media? Disable this to also crawl media of retweets and other content from users' timelines (only if you add URLs without '/media'!)";
+            }
+        }
+
+        @DefaultBooleanValue(true)
+        @AboutConfig
+        boolean isForceGrabMediaOnlyEnabled();
+
+        void setForceGrabMediaOnlyEnabled(boolean b);
     }
 
     @Override

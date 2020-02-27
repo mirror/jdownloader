@@ -58,6 +58,7 @@ public class SpankWireCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        br.setAllowedResponseCodes(new int[] { 410 });
         br.setFollowRedirects(true);
         br.setCookie("http://spankwire.com/", "performance_timing", "video");
         br.setCookie("http://spankwire.com/", "Tablet_False", "");
@@ -69,7 +70,10 @@ public class SpankWireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Link offline
-        if (br.containsHTML(">This (article|video) has been (deleted|disabled)|\"video__info\">\\s+</div>") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">This (article|video) has been (deleted|disabled)|\"video__info\">\\s+</div>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
+            /* 2020-02-27: They're typically using 410 at this moment. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // No content
