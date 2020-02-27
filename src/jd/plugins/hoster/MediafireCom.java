@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,13 +59,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.|m\\.|download\\d+\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
@@ -170,7 +170,6 @@ public class MediafireCom extends PluginForHost {
         try {
             login(br, account, true);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
         account.setValid(true);
@@ -226,7 +225,7 @@ public class MediafireCom extends PluginForHost {
             }
             this.requestFileInformation(downloadLink);
             if (downloadLink.getBooleanProperty("privatefile") && account == null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFILE);
+                throw new AccountRequiredException(PRIVATEFILE);
             }
             // Check for direct link
             br.setFollowRedirects(true);
@@ -389,7 +388,17 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private String getFUID(DownloadLink link) {
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFUID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFUID(final DownloadLink link) {
         String fileID = new Regex(link.getDownloadURL(), "https?://.*?/(file|file\\.php|download|download\\.php)/?\\??([a-zA-Z0-9]+)").getMatch(1);
         if (fileID == null) {
             fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
@@ -734,20 +743,28 @@ public class MediafireCom extends PluginForHost {
                             final String hash = (String) file_info.get("hash");
                             final String privacy = (String) file_info.get("privacy");
                             final String pass = (String) file_info.get("password_protected");
-                            if (StringUtils.isNotEmpty(name)) {
+                            final String content_url = (String) JavaScriptEngineFactory.walkJson(file_info, "links/normal_download");
+                            if (!StringUtils.isEmpty(name)) {
                                 item.setFinalFileName(name);
                             }
                             if (size != null && size >= 0) {
                                 item.setVerifiedFileSize(size);
                             }
-                            if (StringUtils.isNotEmpty(hash)) {
+                            if (!StringUtils.isEmpty(hash)) {
                                 item.setHashInfo(HashInfo.parse(hash));
                             }
-                            if (privacy != null) {
+                            if (!StringUtils.isEmpty(privacy)) {
                                 item.setProperty("privacy", privacy);
                             }
-                            if (pass != null) {
+                            if (!StringUtils.isEmpty(pass)) {
                                 item.setProperty("passwordRequired", PluginJSonUtils.parseBoolean(pass));
+                            }
+                            if (!StringUtils.isEmpty(content_url)) {
+                                /*
+                                 * 2020-02-27: This may sometimes fix encoding issues: https://board.jdownloader.org/showthread.php?t=83274
+                                 */
+                                item.setContentUrl(content_url);
+                                item.setUrlDownload(content_url);
                             }
                         }
                     }
