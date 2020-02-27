@@ -48,6 +48,7 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
         return 1;
     }
 
+    /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced https */

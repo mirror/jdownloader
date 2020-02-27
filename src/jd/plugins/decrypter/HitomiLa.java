@@ -45,7 +45,7 @@ import jd.plugins.PluginException;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html|[^/]+/.*?-\\d+\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(?:www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html|[^/]+/.*?-\\d+\\.html)" })
 public class HitomiLa extends antiDDoSForDecrypt {
     public HitomiLa(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,6 +58,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         if (gallery_id == null) {
             gallery_id = new Regex(parameter, "/[^/]+/.*?-(\\d+)\\.html").getMatch(0);
         }
+        final String url_name = new Regex(parameter, "https?://(?:www\\.)?hitomi\\.la/(?:(?:galleries|reader)/)?(.*?)(?:-\\d+)?\\.html$").getMatch(0);
         if (gallery_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -85,13 +86,21 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            /* Avoid https, prefer http */
-            getPage("https://hitomi.la/reader/" + gallery_id + ".html");
+            getPage("https://hitomi.la/galleries/" + gallery_id + ".html");
+            // this.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            final String extra_redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;url=(http[^\"]+)\">").getMatch(0);
+            if (extra_redirect != null) {
+                this.getPage(extra_redirect);
+            }
             fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
+            if (fpName == null) {
+                /* Fallback */
+                fpName = url_name;
+            }
             // get the image host.
             // retval = subdomain_from_galleryid(g) + retval;
             final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + gallery_id + "\\.js)\"").getMatch(0);
@@ -101,7 +110,14 @@ public class HitomiLa extends antiDDoSForDecrypt {
             final Browser brc = br.cloneBrowser();
             getPage(brc, js);
             LinkedHashMap<String, Object> entries = null;
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(brc.toString().replace("var galleryinfo = ", ""));
+            final Object picsO = JavaScriptEngineFactory.jsonToJavaObject(brc.toString().replace("var galleryinfo = ", ""));
+            final ArrayList<Object> ressourcelist;
+            if (picsO instanceof ArrayList) {
+                ressourcelist = (ArrayList<Object>) picsO;
+            } else {
+                entries = (LinkedHashMap<String, Object>) picsO;
+                ressourcelist = (ArrayList<Object>) entries.get("files");
+            }
             numberOfPages = ressourcelist.size();
             final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
             // boolean checked = false;
