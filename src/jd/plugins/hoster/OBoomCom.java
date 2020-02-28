@@ -12,14 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" })
 public class OBoomCom extends antiDDoSForHost {
     private static Map<Account, Map<String, String>> ACCOUNTINFOS          = new HashMap<Account, Map<String, String>>();
@@ -45,7 +44,7 @@ public class OBoomCom extends antiDDoSForHost {
 
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("https://www.oboom.com");
+        enablePremium("https://www.oboom.com/ref/22BE94");
     }
 
     @Override
@@ -64,34 +63,6 @@ public class OBoomCom extends antiDDoSForHost {
             link.setLinkID(linkID);
         } catch (Throwable e) {
             link.setProperty("LINKDUPEID", linkID);
-        }
-    }
-
-    @Override
-    public String getBuyPremiumUrl() {
-        return "https://www.oboom.com/ref/C0ACB0?ref_token=" + getLatestRefID();
-    }
-
-    private String getLatestRefID() {
-        String refID = "";
-        try {
-            final SubConfiguration pluginConfig = getPluginConfig();
-            if (pluginConfig != null) {
-                refID = pluginConfig.getStringProperty(REF_TOKEN, null);
-                if (refID == null || refID.trim().length() == 0) {
-                    refID = "";
-                }
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        return refID;
-    }
-
-    private void setLatestRefID(String ID) {
-        final SubConfiguration pluginConfig = getPluginConfig();
-        if (pluginConfig != null) {
-            pluginConfig.setPropertyWithoutMark(REF_TOKEN, ID);
         }
     }
 
@@ -316,7 +287,6 @@ public class OBoomCom extends antiDDoSForHost {
                         link.setVerifiedFileSize(Long.parseLong(sizeStr));
                     }
                     if ("online".equals(state)) {
-                        setLatestRefID(refToken);
                         link.setAvailable(true);
                     } else {
                         link.setAvailable(false);
@@ -370,7 +340,6 @@ public class OBoomCom extends antiDDoSForHost {
         if (!"online".equals(state)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        setLatestRefID(refToken);
         return AvailableStatus.TRUE;
     }
 
@@ -450,10 +419,10 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
         handleErrorResponseCodes();

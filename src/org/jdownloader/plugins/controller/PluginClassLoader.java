@@ -159,67 +159,70 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         // class loading must NOT be interrupted! may result in NoClassDefFoundError which requires a restart
-        private Class<?> loadAndDefineClass(final URL myUrl, final String name) throws Exception {
-            int tryAgain = 5;
-            byte data[] = null;
-            boolean interrupted = false;
+        private Class<?> loadAndDefineClass(final URL myUrl, final String name) throws ClassFormatError, IOException {
+            int retryCounter = 5;
+            int loopCounter = 0;
+            boolean interruptFlag = false;
             LogInterface logger = null;
             try {
                 while (true) {
+                    loopCounter++;
+                    byte data[] = null;
                     try {
+                        data = IO.readURL(myUrl);
                         try {
-                            data = IO.readURL(myUrl);
+                            if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
+                                final String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
+                                final String clExtension = System.getProperty(id);
+                                data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
+                            }
+                        } catch (Throwable e) {
+                            throw new ClassFormatError("No Class File");
+                        }
+                        if (data == null || data.length == 0) {
+                            throw new ClassFormatError("No Class File");
+                        }
+                        return defineClass(name, data, 0, data.length);
+                    } catch (ClassFormatError e) {
+                        logger = getLogger(logger);
+                        if (data != null) {
+                            logger.severe("loop:" + loopCounter + "|retry:" + retryCounter + "|ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
+                        } else {
+                            logger.severe("loop:" + loopCounter + "|retry:" + retryCounter + "|ClassFormatError:class=" + name + "|file=" + myUrl);
+                        }
+                        logger.log(e);
+                        if (--retryCounter == 0) {
+                            throw e;
+                        } else {
                             try {
-                                if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
-                                    final String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
-                                    final String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
-                                    data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
-                                }
-                            } catch (Throwable e) {
-                                throw new ClassFormatError("No Class File");
-                            }
-                            if (data == null || data.length == 0) {
-                                throw new ClassFormatError("No Class File");
-                            }
-                            return defineClass(name, data, 0, data.length);
-                        } catch (ClassFormatError e) {
-                            logger = getLogger(logger);
-                            if (data != null) {
-                                logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
-                            } else {
-                                logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl);
-                            }
-                            logger.log(e);
-                            if (--tryAgain == 0) {
-                                throw e;
-                            } else {
                                 Thread.sleep(150);
-                            }
-                        } catch (ClosedByInterruptException e) {
-                            logger = getLogger(logger);
-                            logger.severe("ClosedByInterruptException:class=" + name + "|file=" + myUrl);
-                            logger.log(e);
-                            interrupted = true;
-                        } catch (IOException e) {
-                            logger = getLogger(logger);
-                            logger.severe("IOException:class=" + name + "|file=" + myUrl);
-                            logger.log(e);
-                            if (--tryAgain == 0) {
-                                throw e;
-                            } else {
-                                Thread.sleep(150);
+                            } catch (final InterruptedException ie) {
+                                interruptFlag = true;
                             }
                         }
-                    } catch (InterruptedException e) {
+                    } catch (ClosedByInterruptException e) {
+                        interruptFlag = true;
+                        Thread.interrupted();
                         logger = getLogger(logger);
-                        logger.severe("InterruptedException:class=" + name + "|file=" + myUrl);
+                        logger.severe("loop:" + loopCounter + "|retry:" + retryCounter + "|ClosedByInterruptException:class=" + name + "|file=" + myUrl);
                         logger.log(e);
-                        // class loading must NOT be interrupted! may result in NoClassDefFoundError which requires a restart
-                        interrupted = true;
+                    } catch (IOException e) {
+                        logger = getLogger(logger);
+                        logger.severe("loop:" + loopCounter + "|retry:" + retryCounter + "|IOException:class=" + name + "|file=" + myUrl);
+                        logger.log(e);
+                        if (--retryCounter == 0) {
+                            throw e;
+                        } else {
+                            try {
+                                Thread.sleep(150);
+                            } catch (final InterruptedException ie) {
+                                interruptFlag = true;
+                            }
+                        }
                     }
                 }
             } finally {
-                if (interrupted) {
+                if (interruptFlag) {
                     Thread.currentThread().interrupt();
                 }
             }
@@ -348,25 +351,25 @@ public class PluginClassLoader extends URLClassLoader {
                 if (name.startsWith("jd.plugins.hoster.RTMPDownload")) {
                     return super.loadClass(name);
                 }
-                PluginClassLoaderClass c = null;
+                PluginClassLoaderClass pCLc = null;
                 final Class<?> clazz;
                 synchronized (LOADEDCLASSES) {
-                    c = LOADEDCLASSES.get(name);
-                    if (c == null) {
+                    pCLc = LOADEDCLASSES.get(name);
+                    if (pCLc == null) {
                         final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                         if (myUrl == null) {
                             throw new ClassNotFoundException("Class does not exist(anymore): " + name);
                         }
                         clazz = loadAndDefineClass(myUrl, name);
-                        c = new PluginClassLoaderClass(clazz);
-                        LOADEDCLASSES.put(name, c);
+                        pCLc = new PluginClassLoaderClass(clazz);
+                        LOADEDCLASSES.put(name, pCLc);
                     } else {
-                        clazz = c.getClazz();
+                        clazz = pCLc.getClazz();
                     }
                 }
-                if (c.initialized.get() == false) {
+                if (pCLc.initialized.get() == false) {
                     mapStaticFields(clazz);
-                    c.initialized.set(true);
+                    pCLc.initialized.set(true);
                 }
                 return clazz;
             } catch (Exception e) {
@@ -374,11 +377,11 @@ public class PluginClassLoader extends URLClassLoader {
                 logger.log(e);
                 if (e instanceof UpdateRequiredClassNotFoundException) {
                     throw (UpdateRequiredClassNotFoundException) e;
-                }
-                if (e instanceof ClassNotFoundException) {
+                } else if (e instanceof ClassNotFoundException) {
                     throw (ClassNotFoundException) e;
+                } else {
+                    throw new ClassNotFoundException(name, e);
                 }
-                throw new ClassNotFoundException(name, e);
             }
         }
 
