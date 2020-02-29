@@ -174,38 +174,50 @@ public class EPornerCom extends PluginForHost {
         boolean q480 = cfg.getBooleanProperty("480p", false);
         boolean q720 = cfg.getBooleanProperty("720p", false);
         boolean q1080 = cfg.getBooleanProperty("1080p", false);
+        boolean q1440 = cfg.getBooleanProperty("1440p", false);
+        boolean q2160 = cfg.getBooleanProperty("2160p", false);
         if (cfg.getBooleanProperty("ALLOW_BEST", false) == true) {
+            q2160 = true;
+            q1440 = true;
             q1080 = true;
             q720 = true;
             q480 = true;
             q360 = true;
             q240 = true;
         }
+        if (q2160) {
+            vq = "2160p";
+            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
+        }
+        if (q1440) {
+            vq = "1440p";
+            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
+        }
         if (q1080) {
             vq = "1080p";
-            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\">Download MP4 \\(" + vq).getMatch(0);
+            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
         }
         if (dllink == null) {
             if (q720) {
                 vq = "720p";
-                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\">Download MP4 \\(" + vq).getMatch(0);
+                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
             }
         }
         if (dllink == null) {
             if (q480) {
                 vq = "480p";
-                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\">Download MP4 \\(" + vq).getMatch(0);
+                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
             }
         }
         if (dllink == null) {
             if (q360) {
                 vq = "360p";
-                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\">Download MP4 \\(" + vq).getMatch(0);
+                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
             }
         }
         if (dllink == null) {
             vq = "240p"; // Default
-            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\">Download MP4 \\(" + vq).getMatch(0);
+            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
         }
         return;
     }
@@ -218,6 +230,8 @@ public class EPornerCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.EPornerCom.check480p", "Choose 480p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.EPornerCom.check720p", "Choose 720p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "1080p", JDL.L("plugins.hoster.EPornerCom.check1080p", "Choose 1080p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "1440p", JDL.L("plugins.hoster.EPornerCom.check1080p", "Choose 1440p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "2160p", JDL.L("plugins.hoster.EPornerCom.check1080p", "Choose 2160p?")).setDefaultValue(true));
     }
 
     @Override
