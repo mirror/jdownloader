@@ -23,12 +23,10 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
-import jd.plugins.hoster.TurboBitNet.TurbobitConfig.PreferredDomain;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.components.TurbobitCore;
+import org.jdownloader.plugins.components.config.TurbobitConfig;
+import org.jdownloader.plugins.components.config.TurbobitConfig.PreferredDomain;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -98,32 +96,5 @@ public class TurboBitNet extends TurbobitCore {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return TurbobitConfig.class;
-    }
-
-    public static interface TurbobitConfig extends PluginConfigInterface {
-        public static enum PreferredDomain implements LabelInterface {
-            DEFAULT {
-                @Override
-                public String getLabel() {
-                    return "default (= turbobit.net)";
-                }
-            },
-            DOMAIN1 {
-                @Override
-                public String getLabel() {
-                    return "turbo-bit.pw";
-                }
-            };
-            // DOMAIN2 {
-            // @Override
-            // public String getLabel() {
-            // return "default (= turbobit.net)";
-            // }
-            // };
-        }
-
-        @AboutConfig
-        @DefaultEnumValue("DEFAULT")
-        PreferredDomain getPreferredDomain();
     }
 }
