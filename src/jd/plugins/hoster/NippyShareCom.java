@@ -20,13 +20,14 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com", "nippyspace.com", "nippyfile.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/([a-z0-9]+)", "https?://(?:www\\.)?nippyspace\\.com/v/([a-z0-9]+)", "https?://(?:www\\.)?nippyfile\\.com/v/([a-z0-9]+)" })
 public class NippyShareCom extends antiDDoSForHost {
     public NippyShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,22 +57,39 @@ public class NippyShareCom extends antiDDoSForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.getURL().endsWith(".html") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("li>Name: ([^<>\"]*?)</li>").getMatch(0);
         String filesize = br.getRegex("li>Size: ([^<>\"]*?)</li>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            /* Fallback */
+            filename = this.getFID(link);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -88,17 +106,15 @@ public class NippyShareCom extends antiDDoSForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "https://nippyshare.com" + dllink;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
-
     // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
     // String dllink = downloadLink.getStringProperty(property);
     // if (dllink != null) {
@@ -126,9 +142,6 @@ public class NippyShareCom extends antiDDoSForHost {
     // }
     // return dllink;
     // }
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
