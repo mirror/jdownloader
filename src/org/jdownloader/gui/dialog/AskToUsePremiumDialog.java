@@ -11,7 +11,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class AskToUsePremiumDialog extends ConfirmDialog implements AskToUsePremiumDialogInterface {
-
     private final String domain;
 
     public AskToUsePremiumDialog(String domain, PluginForHost plugin) {
@@ -27,7 +26,7 @@ public class AskToUsePremiumDialog extends ConfirmDialog implements AskToUsePrem
 
     @Override
     public String getPremiumUrl() {
-        return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog";
+        return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + getDomain() + "&freedialog";
     }
 
     @Override
