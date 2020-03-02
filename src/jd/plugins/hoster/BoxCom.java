@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -36,6 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:com|net)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})/file/\\d+" })
 public class BoxCom extends antiDDoSForHost {
@@ -94,7 +94,12 @@ public class BoxCom extends antiDDoSForHost {
             final String sharedname = dlIds.getMatch(0);
             final String fileid = dlIds.getMatch(1);
             final String rootFolder = new Regex(parameter.getPluginPatternMatcher(), "(.+)/file/\\d+").getMatch(0);
-            final String passCode = parameter.getDownloadPassword();
+            final String passCode;
+            if (parameter.hasProperty("passCode")) {
+                passCode = parameter.getStringProperty("passCode", null);
+            } else {
+                passCode = parameter.getDownloadPassword();
+            }
             if (passCode != null) {
                 br.postPage(rootFolder, "password=" + Encoding.urlEncode(passCode));
             } else {
