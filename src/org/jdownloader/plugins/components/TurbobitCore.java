@@ -66,7 +66,7 @@ public class TurbobitCore extends antiDDoSForHost {
     public TurbobitCore(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        enablePremium(getMainpage() + "/turbo/emoney/");
+        enablePremium("https://" + this.getHost() + "/turbo/emoney/");
     }
 
     @SuppressWarnings("deprecation")
