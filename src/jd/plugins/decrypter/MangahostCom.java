@@ -29,15 +29,45 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "https?://(?:www\\.)?(?:br\\.)?(mangahost(?:-?br)?\\.(?:com|net|me|org|cc)|mangahosts\\.com|mangahost(?:1|2)\\.com|yesmangas\\.net|mangahosted.com)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MangahostCom extends antiDDoSForDecrypt {
     public MangahostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    final static String[] domains = { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "mangahost.cc", "yesmangas.net", "mangahosts.com", "mangahost1.com", "mangahost2.com", "mangahosted.com" };
+
+    /**
+     * returns the annotation pattern array
+     *
+     */
+    public static String[] getAnnotationUrls() {
+        // construct pattern
+        final String host = getHostsPattern();
+        return new String[] { host + "/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" };
+    }
+
+    private static String getHostsPattern() {
+        final StringBuilder pattern = new StringBuilder();
+        for (final String name : domains) {
+            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+        }
+        final String hosts = "https?://(?:www\\.)?" + "(?:" + pattern.toString() + ")";
+        return hosts;
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "mangahost.cc", "yesmangas.net", "mangahosts.com", "mangahost1.com", "mangahost2.com", "mangahosted.com" };
+        return domains;
+    }
+
+    /**
+     * Returns the annotations names array
+     *
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "mangahost.com" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

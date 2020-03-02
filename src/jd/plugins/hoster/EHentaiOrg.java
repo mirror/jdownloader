@@ -353,7 +353,7 @@ public class EHentaiOrg extends PluginForHost {
         if (cleanup == null) {
             cleanup = new Regex(b, "<div id=\"i3\">(.*?)</div").getMatch(0);
         }
-        dllink = new Regex(cleanup, "<img [^>]*src=(\"|')([^\"\\'<>]*?)\\1").getMatch(1);
+        dllink = new Regex(cleanup, "<img [^>]*src=(\"|\\')([^\"\\'<>]+)\\1").getMatch(1);
         if (dllink == null) {
             /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
             dllink = new Regex(b, "<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png|gif))\\1").getMatch(1);

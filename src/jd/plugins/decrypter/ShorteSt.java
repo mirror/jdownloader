@@ -161,7 +161,11 @@ public class ShorteSt extends antiDDoSForDecrypt {
     /** 2019-01-25: 'site-verification' without captcha */
     private void handleSiteVerification(final String parameter) throws Exception {
         /* 2020-01-10: <strong>You are not allowed to access requested page </strong> <br> upon successful verification. </p> */
-        if (br.containsHTML("BROWSER VERIFICATION|>You are not allowed to access requested page")) {
+        int counter = 0;
+        final int maxcount = 3;
+        while (br.containsHTML("BROWSER VERIFICATION|>You are not allowed to access requested page") && counter <= maxcount) {
+            counter++;
+            logger.info("Browser verification loop: " + counter);
             final Form captchaForm = br.getFormbyActionRegex(".+grey_wizard_captcha.+");
             logger.info("Handling browser-verification ...");
             if (captchaForm != null) {
