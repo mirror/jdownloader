@@ -56,22 +56,6 @@ public class TurboBitNet extends TurbobitCore {
         case DOMAIN1:
             return "turbo-bit.pw";
         }
-        // if (cfgdomain == PreferredDomain.DEFAULT) {
-        // }
-        // String ret = null;
-        // final String default_domain = "turbo.to";
-        // final int selected_domain_index = getPluginConfig().getIntegerProperty(TurbobitCore.SETTING_PREFERRED_DOMAIN, -1);
-        // if (selected_domain_index == 0) {
-        // ret = default_domain;
-        // } else {
-        // try {
-        // ret = user_domains[selected_domain_index];
-        // } catch (final Throwable de) {
-        // /* Return default */
-        // ret = default_domain;
-        // }
-        // }
-        // return ret;
     }
 
     public static String[] getAnnotationNames() {
