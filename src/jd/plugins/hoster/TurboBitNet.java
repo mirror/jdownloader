@@ -21,16 +21,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.plugins.HostPlugin;
+import jd.plugins.hoster.TurboBitNet.TurbobitConfig.PreferredDomain;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.components.TurbobitCore;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-
-import jd.PluginWrapper;
-import jd.plugins.HostPlugin;
-import jd.plugins.hoster.TurboBitNet.TurbobitConfig.PreferredDomain;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurboBitNet extends TurbobitCore {
@@ -40,21 +40,22 @@ public class TurboBitNet extends TurbobitCore {
 
     /* Keep this up2date! */
     public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw" };
+
     /* Setting domains */
     // protected final String[] user_domains = new String[] { "turbo.to", "turb.to", "turbobit.net", "turbobit.pw" };
-
     @Override
     protected String getConfiguredDomain() {
         /* Returns user-set value which can be used to circumvent government based GEO-block. */
-        final PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitConfig.class).getPreferredDomain();
-        final String default_domain = this.getHost();
+        PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitConfig.class).getPreferredDomain();
+        if (cfgdomain == null) {
+            cfgdomain = PreferredDomain.DEFAULT;
+        }
         switch (cfgdomain) {
-        default:
-            return default_domain;
-        case DEFAULT:
-            return default_domain;
         case DOMAIN1:
             return "turbo-bit.pw";
+        case DEFAULT:
+        default:
+            return this.getHost();
         }
     }
 
