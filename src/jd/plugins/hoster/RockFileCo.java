@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +61,16 @@ public class RockFileCo extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
+        /* 2020-03-02: Special */
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?:/(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?|/f/[a-z0-9]+-[a-z0-9]+\\.html)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -107,14 +118,31 @@ public class RockFileCo extends XFileSharingProBasic {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null) {
-            /* 2019-07-02: Special: Requires '.html' at the end!! */
-            final String url_with_html_ending = getMainPage() + "/" + fuid + ".html";
-            link.setPluginPatternMatcher(url_with_html_ending);
-            link.setContentUrl(url_with_html_ending);
-            link.setLinkID(getHost() + "://" + fuid);
+        /* 2020-03-02: Do not modify URLs at all anymore! */
+        // final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        // if (fuid != null) {
+        // /* 2019-07-02: Special: Requires '.html' at the end!! */
+        // final String url_with_html_ending = getMainPage() + "/" + fuid + ".html";
+        // link.setPluginPatternMatcher(url_with_html_ending);
+        // link.setContentUrl(url_with_html_ending);
+        // link.setLinkID(getHost() + "://" + fuid);
+        // }
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink dl) {
+        /* 2020-03-02: Special */
+        try {
+            String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/[a-z0-9]+-([a-z0-9]+)\\.html").getMatch(0);
+            if (result == null) {
+                /* Fallback to template handling */
+                result = super.getFUIDFromURL(dl);
+            }
+            return result;
+        } catch (MalformedURLException e) {
+            logger.log(e);
         }
+        return null;
     }
 
     @Override

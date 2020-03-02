@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,10 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" })
 public class SuicidegirlsCom extends PluginForHost {
@@ -87,7 +89,7 @@ public class SuicidegirlsCom extends PluginForHost {
             }
             dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\" type=\\'video/mp4\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(https?://[^/]+/videos/[^/]+\\.mp4)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://[^/]+/videos/[^/]+\\.(?:mp4|m3u8))\"").getMatch(0);
             }
             filename = br.getRegex("<h2 class=\"title\">(?:SuicideGirls:\\s*)?([^<>\"]*?)</h2>").getMatch(0);
             if (filename == null) {
@@ -100,30 +102,31 @@ public class SuicidegirlsCom extends PluginForHost {
             filename = link.getStringProperty("imageName", null);
             dllink = link.getStringProperty("directlink", null);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null && !dllink.contains(".m3u8")) {
+            URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (con.isOK() && !con.getContentType().contains("text")) {
-                link.setDownloadSize(con.getLongContentLength());
-                if (filename == null) {
-                    filename = getFileNameFromHeader(con);
+                try {
+                    con = br.openHeadConnection(dllink);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (con.isOK() && !con.getContentType().contains("text")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    if (filename == null) {
+                        filename = getFileNameFromHeader(con);
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                link.setProperty("directlink", dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-            link.setProperty("directlink", dllink);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else {
+            link.setName(filename);
         }
         if (link.getFinalFileName() != null) {
             filename = encodeUnicode(filename);
@@ -133,12 +136,12 @@ public class SuicidegirlsCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         // String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // if (dllink == null) {
         // dllink = br.getRegex("").getMatch(0);
@@ -146,18 +149,35 @@ public class SuicidegirlsCom extends PluginForHost {
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
         // }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
+        if (dllink == null) {
+            logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
+        if (dllink.contains(".m3u8")) {
+            /* 2020-03-02: New: HLS streams */
+            br.getPage(dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+            }
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
+        }
     }
 
     @Override

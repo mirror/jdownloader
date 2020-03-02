@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -161,5 +162,24 @@ public class AkvideoStream extends XFileSharingProBasic {
         }
         logger.info("Failed to find dllink via special RegEx");
         return super.getDllink(link, account, br, src);
+    }
+
+    @Override
+    protected Form findFormDownload2Free() {
+        /* 2020-03-02: Special */
+        Form dlForm = super.findFormDownload2Free();
+        if (dlForm == null) {
+            dlForm = br.getFormbyProperty("id", "F1");
+        }
+        return dlForm;
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        /* 2020-03-02: Special --> Support offline after Form F1 */
+        if (this.isOffline(link)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        super.checkErrors(link, account, checkAll);
     }
 }
