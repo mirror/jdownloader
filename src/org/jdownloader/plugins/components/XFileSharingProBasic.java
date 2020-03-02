@@ -16,6 +16,7 @@ package org.jdownloader.plugins.components;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -856,6 +857,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return fileInfo;
     }
 
+    public AvailableStatus requestFileInformationWebsiteMassLinkcheckerSingle(final DownloadLink downloadLink, final boolean setWeakFilename) throws IOException, PluginException {
+        massLinkcheckerWebsite(new DownloadLink[] { downloadLink }, setWeakFilename);
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
     /**
      * Use this to Override 'checkLinks(final DownloadLink[])' in supported plugins. <br />
      * Used by getFilesizeViaAvailablecheckAlt <br />
@@ -863,6 +875,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
      * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br>
      * - If used for single URLs inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
+     * - If the normal way via website is blocked somehow e.g. 'site-verification' captcha </br>
      * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
     public boolean massLinkcheckerWebsite(final DownloadLink[] urls, final boolean setWeakFilename) {
@@ -963,13 +976,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 for (final DownloadLink dl : links) {
                     final String fuid = this.getFUIDFromURL(dl);
+                    boolean isNewLinkchecker = true;
                     String html_for_fuid = br.getRegex("<tr>((?!</?tr>).)*?" + fuid + "((?!</?tr>).)*?</tr>").getMatch(-1);
                     if (html_for_fuid == null) {
                         /*
                          * 2019-07-10: E.g. for old linkcheckers which only return online/offline status in a single line and not as a html
                          * table.
                          */
-                        html_for_fuid = br.getRegex("<font color=\\'green\\'>[^>]*?" + fuid + "[^>]*?</font>").getMatch(-1);
+                        html_for_fuid = br.getRegex("<font color=\\'(?:green|red)\\'>[^>]*?" + fuid + "[^>]*?</font>").getMatch(-1);
+                        isNewLinkchecker = false;
                     }
                     if (html_for_fuid == null) {
                         logger.warning("Failed to find html_for_fuid --> Possible linkchecker failure");
@@ -977,7 +992,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         dl.setAvailableStatus(AvailableStatus.UNCHECKED);
                         return false;
                     }
-                    if (new Regex(html_for_fuid, "Not found").matches()) {
+                    final boolean isOffline;
+                    if (isNewLinkchecker) {
+                        isOffline = new Regex(html_for_fuid, "Not found").matches();
+                    } else {
+                        isOffline = new Regex(html_for_fuid, "<font color='red").matches();
+                    }
+                    if (isOffline) {
                         dl.setAvailable(false);
                     } else {
                         /* We know that the file is online - let's try to find the filesize ... */
@@ -1177,6 +1198,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * Get filesize via massLinkchecker/alternative availablecheck.<br />
+     * Wrapper for requestFileInformationWebsiteMassLinkcheckerSingle which contains a bit of extra log output </br>
      * Often used as fallback if o.g. officially only logged-in users can see filesize or filesize is not given in html code for whatever
      * reason.<br />
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
@@ -1186,16 +1208,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * In case there is no filesize given, offline status will still be recognized! <br/>
      *
      * @return isOnline
+     * @throws IOException
      */
-    protected final boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException {
+    protected final boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException, IOException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
-        massLinkcheckerWebsite(new DownloadLink[] { link }, false);
+        requestFileInformationWebsiteMassLinkcheckerSingle(link, false);
         final boolean isChecked = link.isAvailabilityStatusChecked();
         if (isChecked) {
             logger.info("Successfully checked URL via massLinkchecker | filesize: " + link.getView().getBytesTotal());
-        } else if (!link.isAvailable()) {
-            logger.info("massLinkchecker detected offline URL");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            logger.info("Failed to find filesize");
         }
         return isChecked;
     }
@@ -1397,7 +1419,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 logger.info("Submitted DLForm");
                 checkErrors(link, account, true);
-                dllink = getDllink(link, account);
+                /* 2020-03-02: E.g. akvideo.stream */
+                dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
+                if (dllink == null) {
+                    dllink = getDllink(link, account);
+                }
                 final boolean dlformIsThere = findFormDownload2Free() != null;
                 if (StringUtils.isEmpty(dllink) && (!dlformIsThere || download2counter == download2max)) {
                     if (download2counter == download2start + 1 && exceptionBeforeDownload2Submit != null) {
