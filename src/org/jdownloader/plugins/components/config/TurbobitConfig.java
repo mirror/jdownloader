@@ -4,7 +4,10 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.Type;
 
+@PluginHost(host = "turbobit.net", type = Type.HOSTER)
 public interface TurbobitConfig extends PluginConfigInterface {
     public static enum PreferredDomain implements LabelInterface {
         DEFAULT {
