@@ -99,18 +99,15 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
         try {
-            final Browser br = new Browser();
-            prepBrowserWebsite(br, null);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setCookiesExclusive(true);
+            final Browser br_linkcheck = new Browser();
+            prepBrowserWebsite(br_linkcheck, null);
+            br_linkcheck.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br_linkcheck.setCookiesExclusive(true);
+            br_linkcheck.setFollowRedirects(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
-            /* 2019-12-20: WTF check Cloudflare redirect handling - something is wrong here! */
-            // getPage("https://" + getConfiguredDomain() + "/linkchecker");
-            // if (br.getRedirectLocation() != null) {
-            // this.getPage(br.getRedirectLocation());
-            // }
+            getPage(br_linkcheck, "https://" + getConfiguredDomain() + "/linkchecker");
             while (true) {
                 links.clear();
                 while (true) {
@@ -134,9 +131,9 @@ public class TurbobitCore extends antiDDoSForHost {
                  * '/linkchecker/csv' is the official "API" method but this will only return fileID and online/offline - not even the
                  * filename
                  */
-                postPage(br, "https://" + this.getHost() + "/linkchecker/check", sb.toString());
+                postPage(br_linkcheck, "https://" + br_linkcheck.getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]*<td>([^<]*)</td>[\t\n\r ]*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
+                    final Regex fileInfo = br_linkcheck.getRegex("<td>" + getFUID(dllink) + "</td>\\s*<td>([^<]*)</td>\\s*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         /*
                          * 2020-01-27: E.g. "<p>Number of requests exceeded the limit. Please wait 5 minutes to check links again</p></div>"
@@ -203,7 +200,8 @@ public class TurbobitCore extends antiDDoSForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowserWebsite(br, userAgent.get());
-        getPage(link.getDownloadURL());
+        final String fuid = this.getFUID(link);
+        getPage("https://" + getConfiguredDomain() + "/" + fuid + ".html");
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -364,9 +362,14 @@ public class TurbobitCore extends antiDDoSForHost {
         handleFree(link, null);
     }
 
+    private void accessDownloadURL(final Browser thisbr, final DownloadLink link) throws Exception {
+        final String fuid = getFUID(link);
+        getPage(thisbr, "https://" + getConfiguredDomain() + "/" + fuid + ".html");
+    }
+
     protected void handleFree(final DownloadLink link, Account account) throws Exception {
         /* support for public premium links */
-        if (link.getDownloadURL().matches(premRedirectLinks)) {
+        if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
             handlePremiumLink(link);
             return;
         }
@@ -377,10 +380,9 @@ public class TurbobitCore extends antiDDoSForHost {
         br = new Browser();
         dupe.clear();
         prepBrowserWebsite(br, userAgent.get());
-        String dllink = link.getDownloadURL();
         sleep(2500, link);
         br.setFollowRedirects(true);
-        getPage(dllink);
+        accessDownloadURL(br, link);
         simulateBrowser();
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -658,16 +660,15 @@ public class TurbobitCore extends antiDDoSForHost {
      * @return
      * @throws PluginException
      */
-    @SuppressWarnings("deprecation")
-    private String getFUID(DownloadLink downloadLink) throws PluginException {
+    private String getFUID(final DownloadLink downloadLink) throws PluginException {
         /* standard links turbobit.net/uid.html && turbobit.net/uid/filename.html */
-        String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
+        String fuid = new Regex(downloadLink.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
         if (fuid == null) {
             // download/free/
-            fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([A-Za-z0-9]+)").getMatch(0);
+            fuid = new Regex(downloadLink.getPluginPatternMatcher(), "download/free/([A-Za-z0-9]+)").getMatch(0);
             if (fuid == null) {
                 // support for public premium links
-                fuid = new Regex(downloadLink.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-zA-F0-9]+)").getMatch(0);
+                fuid = new Regex(downloadLink.getPluginPatternMatcher(), "download/redirect/[A-Za-z0-9]+/([a-zA-F0-9]+)").getMatch(0);
                 if (fuid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -690,7 +691,7 @@ public class TurbobitCore extends antiDDoSForHost {
             requestFileInformation(link);
             login(account, false);
             sleep(2000, link);
-            getPage(link.getDownloadURL());
+            getPage("https://" + this.getConfiguredDomain() + "/" + this.getFUID(link) + ".html");
             String dllink = null;
             final String[] mirrors = br.getRegex("('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
             if (mirrors == null || mirrors.length == 0) {
@@ -846,11 +847,10 @@ public class TurbobitCore extends antiDDoSForHost {
 
     public void handlePremiumLink(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.setCookie(getMainpage(), "JD", "1");
-        String dllink = link.getDownloadURL();
+        br.setCookie(br.getURL(), "JD", "1");
         br.setFollowRedirects(false);
-        getPage(dllink);
-        dllink = br.getRedirectLocation();
+        accessDownloadURL(br, link);
+        final String dllink = br.getRedirectLocation();
         handleDownloadRedirectErrors(dllink, link);
         initDownload(DownloadType.GUEST_PREMIUMLINK, link, dllink, true);
         handleServerErrors();
@@ -924,14 +924,17 @@ public class TurbobitCore extends antiDDoSForHost {
                 prepBrowserWebsite(br, ua);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
+                getPage(this.getMainpage());
+                final String curr_domain = br.getHost();
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
-                    br.setCookies(this.getMainpage(), cookies);
-                    getPage(this.getMainpage());
+                    br.setCookies(curr_domain, cookies);
+                    /* Request same URL again, this time with cookies set */
+                    getPage(br.getURL());
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         /* Set new cookie timestamp */
-                        br.setCookies(getMainpage(), cookies);
+                        br.setCookies(curr_domain, cookies);
                         return;
                     }
                     logger.info("cookie login failed: Full login is required");
@@ -940,8 +943,9 @@ public class TurbobitCore extends antiDDoSForHost {
                     }
                 }
                 /* lets set a new User-Agent */
+                logger.info("Performing full login");
                 prepBrowserWebsite(br, null);
-                getPage(getMainpage() + "login");
+                getPage("https://" + curr_domain + "/login");
                 Form loginform = findAndPrepareLoginForm(br, account);
                 submitForm(loginform);
                 if (findLoginForm(br, account) != null) {
@@ -974,7 +978,7 @@ public class TurbobitCore extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.\r\n3. Access the following site and disable the login captcha protection of your account and try again: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(getMainpage()), "");
+                account.saveCookies(br.getCookies(curr_domain), "");
                 account.setProperty("UA", userAgent.get());
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -1040,9 +1044,9 @@ public class TurbobitCore extends antiDDoSForHost {
 
     public String getMainpage() {
         if (supports_https()) {
-            return "https://" + this.getHost() + "/";
+            return "https://" + this.getConfiguredDomain() + "/";
         } else {
-            return "http://" + this.getHost() + "/";
+            return "http://" + this.getConfiguredDomain() + "/";
         }
     }
 
@@ -1099,7 +1103,7 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     protected void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FREE_PARALLEL_DOWNLOADSTARTS, "Activate parallel downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot of non-accepted captcha popups!</b></p></html>").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FREE_PARALLEL_DOWNLOADSTARTS, "Activate parallel downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot ofnon-accepted captcha popups!</b></p></html>").setDefaultValue(false));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "APIKEY", "Define custom APIKey (can be
         // found on website in account settings ['/user/settings'])").setDefaultValue(""));
     }

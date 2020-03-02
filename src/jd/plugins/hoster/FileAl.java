@@ -77,13 +77,15 @@ public class FileAl extends XFileSharingProBasic {
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         /* 2019-05-08: Serverside limited to 1 */
-        return 1;
+        /* 2020-03-02: Set to unlimited due to user request */
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
         /* 2019-05-08: Serverside limited to 1 */
-        return 1;
+        /* 2020-03-02: Set to unlimited due to user request */
+        return -1;
     }
 
     @Override

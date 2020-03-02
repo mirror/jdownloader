@@ -783,7 +783,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
         public static class TRANSLATION {
-            public String getClearDownloadHistory_label() {
+            public String getClearDownloadHistoryEnabled_label() {
                 return "Clear download history after each successful download?";
             }
         }
