@@ -21,10 +21,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.components.TurbobitCore;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
+import jd.plugins.hoster.TurboBitNet.TurbobitConfig.PreferredDomain;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurboBitNet extends TurbobitCore {
@@ -33,26 +39,39 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[]   domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw" };
+    public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw" };
     /* Setting domains */
-    protected final String[] user_domains = new String[] { "turbo.to", "turb.to", "turbobit.net", "turbobit.pw" };
+    // protected final String[] user_domains = new String[] { "turbo.to", "turb.to", "turbobit.net", "turbobit.pw" };
 
     @Override
     protected String getConfiguredDomain() {
-        String ret = null;
-        final String default_domain = "turbo.to";
-        final int selected_domain_index = getPluginConfig().getIntegerProperty(TurbobitCore.SETTING_PREFERRED_DOMAIN, -1);
-        if (selected_domain_index == 0) {
-            ret = default_domain;
-        } else {
-            try {
-                ret = user_domains[selected_domain_index];
-            } catch (final Throwable de) {
-                /* Return default */
-                ret = default_domain;
-            }
+        /* Returns user-set value which can be used to circumvent government based GEO-block. */
+        final PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitConfig.class).getPreferredDomain();
+        final String default_domain = this.getHost();
+        switch (cfgdomain) {
+        default:
+            return default_domain;
+        case DEFAULT:
+            return default_domain;
+        case DOMAIN1:
+            return "turbo-bit.pw";
         }
-        return ret;
+        // if (cfgdomain == PreferredDomain.DEFAULT) {
+        // }
+        // String ret = null;
+        // final String default_domain = "turbo.to";
+        // final int selected_domain_index = getPluginConfig().getIntegerProperty(TurbobitCore.SETTING_PREFERRED_DOMAIN, -1);
+        // if (selected_domain_index == 0) {
+        // ret = default_domain;
+        // } else {
+        // try {
+        // ret = user_domains[selected_domain_index];
+        // } catch (final Throwable de) {
+        // /* Return default */
+        // ret = default_domain;
+        // }
+        // }
+        // return ret;
     }
 
     public static String[] getAnnotationNames() {
@@ -90,10 +109,36 @@ public class TurboBitNet extends TurbobitCore {
         ret.add("turbobit");
         return ret.toArray(new String[0]);
     }
-    // @Override
-    // protected void setConfigElements() {
-    // // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(),
-    // // TurbobitCore.SETTING_PREFERRED_DOMAIN, user_domains, "Select preferred domain").setDefaultValue(0));
-    // super.setConfigElements();
-    // }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return TurbobitConfig.class;
+    }
+
+    public static interface TurbobitConfig extends PluginConfigInterface {
+        public static enum PreferredDomain implements LabelInterface {
+            DEFAULT {
+                @Override
+                public String getLabel() {
+                    return "default (= turbobit.net)";
+                }
+            },
+            DOMAIN1 {
+                @Override
+                public String getLabel() {
+                    return "turbo-bit.pw";
+                }
+            };
+            // DOMAIN2 {
+            // @Override
+            // public String getLabel() {
+            // return "default (= turbobit.net)";
+            // }
+            // };
+        }
+
+        @AboutConfig
+        @DefaultEnumValue("DEFAULT")
+        PreferredDomain getPreferredDomain();
+    }
 }
