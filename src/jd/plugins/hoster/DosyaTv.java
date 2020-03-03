@@ -59,12 +59,7 @@ public class DosyaTv extends YetiShareCore {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String[]> pluginDomains = getPluginDomains();
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
-        }
-        return ret.toArray(new String[0]);
+        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override

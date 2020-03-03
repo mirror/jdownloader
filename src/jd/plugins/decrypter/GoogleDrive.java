@@ -262,7 +262,7 @@ public class GoogleDrive extends PluginForDecrypt {
                                  * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after
                                  * the name of the root dir.
                                  */
-                                final String root_dir_name = new Regex(folder_path, "^([^/]+)").getMatch(0);
+                                final String root_dir_name = new Regex(folder_path, "^/?([^/]+)").getMatch(0);
                                 if (root_dir_name != null) {
                                     dl.setProperty("root_dir", root_dir_name);
                                 }

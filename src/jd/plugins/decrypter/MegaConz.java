@@ -18,6 +18,11 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -30,11 +35,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -98,9 +98,9 @@ public class MegaConz extends PluginForDecrypt {
         while (true) {
             synchronized (lock) {
                 final URLConnectionAdapter con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                /*
+                 * + "&domain=meganz
+                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                 // ->
                 // !nocache,
                 // commands.cpp
@@ -254,6 +254,16 @@ public class MegaConz extends PluginForDecrypt {
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
                 link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                if (path != null) {
+                    /*
+                     * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after the name of
+                     * the root dir.
+                     */
+                    final String root_dir_name = new Regex(path, "^/?([^/]+)").getMatch(0);
+                    if (root_dir_name != null) {
+                        link.setProperty("root_dir", root_dir_name);
+                    }
+                }
                 link.setAvailable(true);
                 link.setVerifiedFileSize(nodeSize);
                 if (fp != null) {

@@ -73,6 +73,10 @@ public class YiffyfurTube extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
@@ -138,8 +142,8 @@ public class YiffyfurTube extends antiDDoSForHost {
                             /* E.g. '360p' */
                             quality_temp = Long.parseLong(new Regex(quality_temp_str, "(\\d+)p").getMatch(0));
                         } else {
-                            /* Bad / Unsupported format */
-                            continue;
+                            /* Bad / Unsupported format --> Try to use height as fallback */
+                            quality_temp = JavaScriptEngineFactory.toLong(entries.get("height"), 1);
                         }
                     }
                     if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
@@ -184,21 +188,32 @@ public class YiffyfurTube extends antiDDoSForHost {
         }
         link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(dllink)) {
-            if (!dllink.startsWith("http")) {
+            /* Now try to find correct host and base (2020-03-03: hardcoded ) */
+            br.getPage(link.getPluginPatternMatcher());
+            final String host = br.getRegex("h264Base\\s*=\\s*\\'(https?://[^<>\"\\']+)\\'\\s*\\+ h264Base;").getMatch(0);
+            String base = br.getRegex("var h264Base\\s*=\\s*\\'([^<>\"\\']+)\\';").getMatch(0);
+            /* 2020-03-03: Hardcode base! */
+            base = "/videos/" + streamtype + "/";
+            if (host != null && base != null) {
+                dllink = host + base + dllink;
+            } else if (!dllink.startsWith("http")) {
                 dllink = String.format("https://cdn.beastialitytube.link/static/webseed/%s/%s", streamtype, dllink);
             }
-            URLConnectionAdapter con = null;
-            try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getLongContentLength());
-                }
-            } finally {
+            if (!isDownload) {
+                /* Do not check URL if user wants to download otherwise we'll get an error 403. */
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                    if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                        server_issues = true;
+                    } else {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -207,7 +222,7 @@ public class YiffyfurTube extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {

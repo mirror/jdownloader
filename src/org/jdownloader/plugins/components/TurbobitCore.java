@@ -2,10 +2,8 @@ package org.jdownloader.plugins.components;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -26,8 +24,6 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -69,21 +65,20 @@ public class TurbobitCore extends antiDDoSForHost {
         enablePremium("https://" + this.getHost() + "/turbo/emoney/");
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
         // changing to temp hosts (subdomains causes issues with multihosters.
-        final String protocol = new Regex(link.getDownloadURL(), "https?://").getMatch(-1);
+        final String protocol = new Regex(link.getPluginPatternMatcher(), "https?://").getMatch(-1);
         final String uid = getFUID(link);
         if (uid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Not all added URLs have to be corrected! */
-        if (!link.getDownloadURL().matches(premRedirectLinks)) {
+        if (!link.getPluginPatternMatcher().matches(premRedirectLinks)) {
             String newDownloadURL = protocol + this.getHost() + "/" + uid;
             if (downloadurls_need_html_ending()) {
                 newDownloadURL += ".html";
             }
-            link.setUrlDownload(newDownloadURL);
+            link.setPluginPatternMatcher(newDownloadURL);
             link.setLinkID(uid);
         }
     }
@@ -122,7 +117,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
                     correctDownloadLink(dl);
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append(Encoding.urlEncode(dl.getPluginPatternMatcher()));
                     sb.append("%0A");
                 }
                 /* remove last */
@@ -139,7 +134,7 @@ public class TurbobitCore extends antiDDoSForHost {
                          * 2020-01-27: E.g. "<p>Number of requests exceeded the limit. Please wait 5 minutes to check links again</p></div>"
                          */
                         dllink.setAvailableStatus(AvailableStatus.UNCHECKED);
-                        logger.warning("Unable to check link: " + dllink.getDownloadURL());
+                        logger.warning("Unable to check link: " + dllink.getPluginPatternMatcher());
                     } else {
                         if (fileInfo.getMatch(1).equals("error")) {
                             dllink.setAvailable(false);
@@ -194,7 +189,7 @@ public class TurbobitCore extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformation_Web(final DownloadLink link) throws Exception {
         /* premium links should not be accessed here, we will just return true */
-        if (link.getDownloadURL().matches(premRedirectLinks)) {
+        if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
             return AvailableStatus.TRUE;
         }
         setBrowserExclusive();
@@ -234,7 +229,7 @@ public class TurbobitCore extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         /* premium links should not be accessed here, we will just return true */
-        if (link.getDownloadURL().matches(premRedirectLinks)) {
+        if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
             return AvailableStatus.TRUE;
         }
         br.setFollowRedirects(true);
@@ -364,7 +359,11 @@ public class TurbobitCore extends antiDDoSForHost {
 
     private void accessDownloadURL(final Browser thisbr, final DownloadLink link) throws Exception {
         final String fuid = getFUID(link);
-        getPage(thisbr, "https://" + getConfiguredDomain() + "/" + fuid + ".html");
+        String downloadurl = "https://" + getConfiguredDomain() + "/" + fuid;
+        if (downloadurls_need_html_ending()) {
+            downloadurl += ".html";
+        }
+        getPage(thisbr, downloadurl);
     }
 
     protected void handleFree(final DownloadLink link, Account account) throws Exception {
@@ -383,7 +382,9 @@ public class TurbobitCore extends antiDDoSForHost {
         sleep(2500, link);
         br.setFollowRedirects(true);
         accessDownloadURL(br, link);
-        simulateBrowser();
+        /* 2020-03-03: Not required anymore? */
+        // simulateBrowser();
+        // accessDownloadURL(br, link);
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -399,10 +400,14 @@ public class TurbobitCore extends antiDDoSForHost {
             link.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
         id = getFUID(link);
-        /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
-        br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
-        getPage("/download/free/" + id);
-        simulateBrowser();
+        /**
+         * 2020-03-03: Removed, not needed anymore 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so
+         * let's set it anyways.
+         */
+        // br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
+        getPage(br, "/download/free/" + id);
+        /* 2020-03-03: Not required anymore? */
+        // simulateBrowser();
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isPremiumOnly(link, account, br, false)) {
@@ -515,7 +520,8 @@ public class TurbobitCore extends antiDDoSForHost {
             invalidateLastChallengeResponse();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        simulateBrowser();
+        /* 2020-03-03: Not required anymore? */
+        // simulateBrowser();
         /** 2019-05-09: TODO: Remove this old overcomplicated handling */
         /* Ticket Time */
         String ttt = parseImageUrl(br.getRegex(IMAGEREGEX(null)).getMatch(0), true);
@@ -677,14 +683,13 @@ public class TurbobitCore extends antiDDoSForHost {
         return fuid;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
             this.handleFree(link, account);
         } else {
             /* support for public premium links */
-            if (link.getDownloadURL().matches(premRedirectLinks)) {
+            if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
                 handlePremiumLink(link);
                 return;
             }
@@ -1144,61 +1149,63 @@ public class TurbobitCore extends antiDDoSForHost {
 
     private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
 
-    private void simulateBrowser() throws InterruptedException {
-        // dupe.clear();
-        final AtomicInteger requestQ = new AtomicInteger(0);
-        final AtomicInteger requestS = new AtomicInteger(0);
-        final ArrayList<String> links = new ArrayList<String>();
-        String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
-        if (l1 != null) {
-            links.addAll(Arrays.asList(l1));
-        }
-        l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
-        if (l1 != null) {
-            links.addAll(Arrays.asList(l1));
-        }
-        for (final String link : links) {
-            // lets only add links related to this hoster.
-            final String correctedLink = Request.getLocation(link, br.getRequest());
-            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") && !correctedLink.contains("'")) {
-                if (dupe.add(correctedLink)) {
-                    final Thread simulate = new Thread("SimulateBrowser") {
-                        public void run() {
-                            final Browser rb = br.cloneBrowser();
-                            rb.getHeaders().put("Cache-Control", null);
-                            // open get connection for images, need to confirm
-                            if (correctedLink.matches(".+\\.png.*")) {
-                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
-                            } else if (correctedLink.matches(".+\\.js.*")) {
-                                rb.getHeaders().put("Accept", "*/*");
-                            } else if (correctedLink.matches(".+\\.css.*")) {
-                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
-                            }
-                            URLConnectionAdapter con = null;
-                            try {
-                                requestQ.getAndIncrement();
-                                con = rb.openGetConnection(correctedLink);
-                            } catch (final Exception e) {
-                            } finally {
-                                try {
-                                    con.disconnect();
-                                } catch (final Exception e) {
-                                }
-                                requestS.getAndIncrement();
-                            }
-                            return;
-                        }
-                    };
-                    simulate.start();
-                    Thread.sleep(100);
-                }
-            }
-        }
-        while (requestQ.get() != requestS.get()) {
-            Thread.sleep(1000);
-        }
-    }
-
+    /* 2020-03-03: Not required anymore? */
+    // private void simulateBrowser() throws InterruptedException {
+    // // dupe.clear();
+    // final AtomicInteger requestQ = new AtomicInteger(0);
+    // final AtomicInteger requestS = new AtomicInteger(0);
+    // final ArrayList<String> links = new ArrayList<String>();
+    // String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
+    // if (l1 != null) {
+    // links.addAll(Arrays.asList(l1));
+    // }
+    // l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
+    // if (l1 != null) {
+    // links.addAll(Arrays.asList(l1));
+    // }
+    // for (final String link : links) {
+    // // lets only add links related to this hoster.
+    // final String correctedLink = Request.getLocation(link, br.getRequest());
+    // if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") &&
+    // !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") &&
+    // !correctedLink.contains("'")) {
+    // if (dupe.add(correctedLink)) {
+    // final Thread simulate = new Thread("SimulateBrowser") {
+    // public void run() {
+    // final Browser rb = br.cloneBrowser();
+    // rb.getHeaders().put("Cache-Control", null);
+    // // open get connection for images, need to confirm
+    // if (correctedLink.matches(".+\\.png.*")) {
+    // rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+    // } else if (correctedLink.matches(".+\\.js.*")) {
+    // rb.getHeaders().put("Accept", "*/*");
+    // } else if (correctedLink.matches(".+\\.css.*")) {
+    // rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+    // }
+    // URLConnectionAdapter con = null;
+    // try {
+    // requestQ.getAndIncrement();
+    // con = rb.openGetConnection(correctedLink);
+    // } catch (final Exception e) {
+    // } finally {
+    // try {
+    // con.disconnect();
+    // } catch (final Exception e) {
+    // }
+    // requestS.getAndIncrement();
+    // }
+    // return;
+    // }
+    // };
+    // simulate.start();
+    // Thread.sleep(100);
+    // }
+    // }
+    // }
+    // while (requestQ.get() != requestS.get()) {
+    // Thread.sleep(1000);
+    // }
+    // }
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Turbobit_Turbobit;
