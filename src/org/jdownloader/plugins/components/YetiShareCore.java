@@ -313,8 +313,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else if (isPremiumOnlyURL()) {
                     return AvailableStatus.TRUE;
                 }
-                /* DEBUG YetiShare Upgrade */
-                this.checkErrors(link, account);
+                // /* DEBUG YetiShare Upgrade */
+                // this.checkErrors(link, account);
                 if (isOfflineWebsite(link)) {
                     /*
                      * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
@@ -1008,7 +1008,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        checkErrorsNew(link, account);
+        /* DEBUG YetiShare Upgrade */
+        // checkErrorsNew(link, account);
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
