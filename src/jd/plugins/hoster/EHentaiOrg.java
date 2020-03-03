@@ -364,6 +364,7 @@ public class EHentaiOrg extends PluginForHost {
             if (account == null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
             } else {
+                /* 2020-03-03: This should not be required anymore --> Lead to timeouts */
                 // br.getPage("http://exhentai.org/home.php");
                 // account.saveCookies(br.getCookies(MAINPAGE), "");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
