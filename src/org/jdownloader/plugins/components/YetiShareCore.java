@@ -20,15 +20,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -84,6 +89,10 @@ public class YetiShareCore extends antiDDoSForHost {
     // }
     // return ret.toArray(new String[0]);
     // }
+    // @Override
+    // public String rewriteHost(String host) {
+    // return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    // }
     public static final String getDefaultAnnotationPatternPart() {
         return "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?";
     }
@@ -102,7 +111,6 @@ public class YetiShareCore extends antiDDoSForHost {
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
-     * other: Last compatible YetiShareBasic Version: YetiShareBasic 1.2.0-psp<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/admin/api_documentation.php#account-info Examples for websites which have the API enabled (but not
      * necessarily unlocked for all users, usually only special-uploaders): userscdn.com[down 2019-10-04]. Insufficient rights will mostly
@@ -305,6 +313,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else if (isPremiumOnlyURL()) {
                     return AvailableStatus.TRUE;
                 }
+                /* DEBUG YetiShare Upgrade */
+                this.checkErrors(link, account);
                 if (isOfflineWebsite(link)) {
                     /*
                      * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
@@ -644,7 +654,7 @@ public class YetiShareCore extends antiDDoSForHost {
             continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
         }
         if (continue_link == null) {
-            continue_link = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            continue_link = br.getRegex("<div class=\"captchaPageTable\">\\s*<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = br.getRegex("(https?://[^/]+/[^<>\"\\':]*pt=[^<>\"\\']*)(?:\"|\\')").getMatch(0);
@@ -673,7 +683,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /** If overridden, make sure to make isDownloadlink compatible as well! */
     protected String getDllink(final Browser br) {
-        String ret = br.getRegex("\"(https?://[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
+        /* 2020-02-26: Example without 'http': cnubis.com */
+        String ret = br.getRegex("\"((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
         if (StringUtils.isEmpty(ret)) {
             ret = br.getRegex("\"(https?://[^\"]+/files/[^\"]+)\"").getMatch(0);
         }
@@ -820,7 +831,184 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    /* https://stackoverflow.com/questions/10664434/escaping-special-characters-in-java-regular-expressions/25853507 */
+    static Pattern SPECIAL_REGEX_CHARS = Pattern.compile("[{}()\\[\\].+*?^$\\\\|]");
+
+    static String escapeSpecialRegexChars(String str) {
+        return SPECIAL_REGEX_CHARS.matcher(str).replaceAll("\\\\$0");
+    }
+
+    private HashMap<String, Object> getErrorKeyFromErrorMessage(final String errorStr) {
+        if (StringUtils.isEmpty(errorStr)) {
+            return null;
+        }
+        try {
+            final String language_keys_json = br.getRegex("l\\s*=\\s*(\\{.*?\\});\\s*?return").getMatch(0);
+            final HashMap<String, Object> language_keys_map = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(language_keys_json);
+            final Iterator<Entry<String, Object>> iterator = language_keys_map.entrySet().iterator();
+            String found_key_for_errormessage = null;
+            final HashMap<String, String> errorProperties = new HashMap<String, String>();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final String key = entry.getKey();
+                final String langStr = (String) entry.getValue();
+                final String[] dynamicVarsNames = new Regex(langStr, "\\[\\[\\[([^\\]]+)\\]\\]\\]").getColumn(0);
+                if (dynamicVarsNames.length > 0) {
+                    /* First escape alll special chars in our langString */
+                    String langStr2 = escapeSpecialRegexChars(langStr);
+                    /* Now we have to replace the placeholders so that we can match the whole String against errorStr. */
+                    langStr2 = langStr2.replaceAll("\\\\\\[\\\\\\[\\\\\\[[^\\]]+\\\\\\]\\\\\\]\\\\\\]", "(.*?)");
+                    // Pattern langStrEscaped = Pattern.compile(langStr.replaceAll("\\[\\[\\[[^\\]]+\\]\\]\\]", ".*?"));
+                    final Regex langStrRegEx = new Regex(errorStr, langStr2);
+                    if (!langStrRegEx.matches()) {
+                        continue;
+                    }
+                    found_key_for_errormessage = key;
+                    for (int index = 0; index < dynamicVarsNames.length; index++) {
+                        final String dynamicVarName = dynamicVarsNames[index];
+                        final String dynamicVarValue = langStrRegEx.getMatch(index);
+                        errorProperties.put(dynamicVarName, dynamicVarValue);
+                    }
+                    break;
+                } else {
+                    /* Easy - static String */
+                    if (langStr.equalsIgnoreCase(errorStr)) {
+                        found_key_for_errormessage = key;
+                        break;
+                    }
+                }
+            }
+            if (found_key_for_errormessage != null) {
+                HashMap<String, Object> errorMap = new HashMap<String, Object>();
+                errorMap.put("error_key", found_key_for_errormessage);
+                if (!errorProperties.isEmpty()) {
+                    errorMap.put("error_properties", errorProperties);
+                }
+                return errorMap;
+            } else {
+                return null;
+            }
+        } catch (final Throwable e) {
+            logger.warning("Error occured");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void checkErrorsNew(final DownloadLink link, final Account account) throws PluginException {
+        String errorMsg = null;
+        try {
+            final UrlQuery query = UrlQuery.parse(br.getURL());
+            errorMsg = query.get("e");
+            errorMsg = URLDecoder.decode(errorMsg, "UTF-8");
+        } catch (final Throwable e) {
+        }
+        if (!StringUtils.isEmpty(errorMsg)) {
+            logger.info("Found errormessage in current URL");
+            final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsg);
+            if (errorMap == null) {
+                logger.warning("Failed to find error_key");
+                return;
+            }
+            final String errorkey = (String) errorMap.get("error_key");
+            logger.info("Found key to errormessage: " + errorkey);
+            HashMap<String, String> errorProperties = null;
+            if (errorMap.containsKey("error_properties")) {
+                errorProperties = (HashMap<String, String>) errorMap.get("error_properties");
+                final Iterator<Entry<String, String>> dynVarsIterator = errorProperties.entrySet().iterator();
+                int counter = 0;
+                while (dynVarsIterator.hasNext()) {
+                    counter++;
+                    final Entry<String, String> entry = dynVarsIterator.next();
+                    final String key = entry.getKey();
+                    final String value = entry.getValue();
+                    logger.info("Found ErrorProperty" + counter + counter + ": " + key + " --> " + value);
+                }
+            }
+            final long default_waittime = 15 * 60 * 1000l;
+            /* Now handle errors */
+            if (errorkey.equalsIgnoreCase("error_file_has_been_removed_by_admin") || errorkey.equalsIgnoreCase("error_file_has_been_removed_by_user") || errorkey.equalsIgnoreCase("error_file_has_been_removed_due_to_copyright") || errorkey.equalsIgnoreCase("error_file_has_expired")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsg);
+            }
+            /* TODO: Decide whether or not we want to use original given errormessages or rather spit out all errors in English. */
+            /** premiumonly errorhandling */
+            else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
+                throw new AccountRequiredException(errorMsg);
+            } else if (errorkey.equalsIgnoreCase("error_you_must_be_a_x_user_to_download_this_file")) {
+                throw new AccountRequiredException(errorMsg);
+            } else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
+                throw new AccountRequiredException(errorMsg);
+            } else if (errorkey.equalsIgnoreCase("error_file_is_not_publicly_shared")) {
+                throw new AccountRequiredException(errorMsg);
+            } /** Limit errorhandling */
+            else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
+            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
+                /* "You do not have enough bandwidth left to download this file." */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, default_waittime);
+            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_daily_download_limit")) {
+                /* "You have reached the maximum download bandwidth today, please upgrade or try again later." */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
+            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_daily_download_limit_this_file")) {
+                /* "You do not have enough bandwidth left today to download this file." */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, default_waittime);
+            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
+            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_max_permitted_downloads")) {
+                /*
+                 * "You have reached the maximum concurrent downloads. Please wait for your existing downloads to complete or register for a premium account above."
+                 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsg, default_waittime);
+            } else if (errorkey.equalsIgnoreCase("error_you_must_wait_between_downloads")) {
+                // VERIFIED
+                /* E.g. "30 minutes" */
+                final String waitStr = errorProperties.get("WAITING_TIME_LABEL");
+                long waittime = parseWaittime(waitStr);
+                if (waittime <= 0) {
+                    waittime = default_waittime;
+                }
+                if (waittime < 180000) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsg, waittime);
+                } else if (account != null) {
+                    throw new AccountUnavailableException(errorMsg, waittime);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, waittime);
+                }
+            } else {
+                logger.warning("Unknown errorkey");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error: " + errorMsg);
+            }
+        }
+    }
+
+    private long parseWaittime(final String src) {
+        /*
+         * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we need!
+         */
+        final String wait_hours = new Regex(src, "(\\d+)\\s*?hour?").getMatch(0);
+        final String wait_minutes = new Regex(src, "(\\d+)\\s*?minutes?").getMatch(0);
+        final String wait_seconds = new Regex(src, "(\\d+)\\s*?(?:seconds?|segundos)").getMatch(0);
+        int minutes = 0, seconds = 0, hours = 0;
+        if (wait_hours != null) {
+            hours = Integer.parseInt(wait_hours);
+        }
+        if (wait_minutes != null) {
+            minutes = Integer.parseInt(wait_minutes);
+        }
+        if (wait_seconds != null) {
+            seconds = Integer.parseInt(wait_seconds);
+        }
+        final int extraWaittimeSeconds = 1;
+        int waittime = ((3600 * hours) + (60 * minutes) + seconds + extraWaittimeSeconds) * 1000;
+        if (waittime <= 0) {
+            /* Fallback */
+            logger.info("Waittime RegExes seem to be broken or given String does not contain any waittime");
+        }
+        return waittime;
+    }
+
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+        checkErrorsNew(link, account);
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -1053,7 +1241,6 @@ public class YetiShareCore extends antiDDoSForHost {
                 prepBrowser(this.br, account.getHoster());
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
@@ -1062,108 +1249,110 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(this.getMainPage() + "/account_home.html");
-                    loggedInViaCookies = br.containsHTML("/logout.html");
+                    if (br.containsHTML("/logout\\.html")) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Failed to login via cookies");
+                    }
                 }
-                if (loggedInViaCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    logger.info("Performing full login");
-                    getPage(this.getProtocol() + this.getHost() + "/login.html");
-                    Form loginform;
-                    if (br.containsHTML("flow\\-login\\.js") && !enforce_old_login_method()) {
-                        final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                        /* New (ajax) login method - mostly used - example: iosddl.net */
-                        logger.info("Using new login method");
-                        /* These headers are important! */
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                        loginform = br.getFormbyProperty("id", "form_login");
-                        if (loginform == null) {
-                            logger.info("Fallback to custom built loginform");
-                            loginform = new Form();
-                            loginform.put("submitme", "1");
+                logger.info("Performing full login");
+                getPage(this.getProtocol() + this.getHost() + "/login.html");
+                Form loginform;
+                if (br.containsHTML("flow\\-login\\.js") && !enforce_old_login_method()) {
+                    final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
+                    /* New (ajax) login method - mostly used - example: iosddl.net */
+                    logger.info("Using new login method");
+                    /* These headers are important! */
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    loginform = br.getFormbyProperty("id", "form_login");
+                    if (loginform == null) {
+                        logger.info("Fallback to custom built loginform");
+                        loginform = new Form();
+                        loginform.put("submitme", "1");
+                    }
+                    loginform.put("username", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    loginform.setAction(action);
+                    if (loginform.containsHTML("class=\"g\\-recaptcha\"")) {
+                        /* E.g. crazyshare.cc */
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                         }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    submitForm(loginform);
+                    if (!br.containsHTML("\"login_status\":\"success\"")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else {
+                    /* Old login method - rare case! Example: udrop.net */
+                    logger.info("Using old login method");
+                    loginform = br.getFormbyProperty("id", "form_login");
+                    if (loginform == null) {
+                        loginform = br.getFormbyKey("loginUsername");
+                    }
+                    if (loginform == null) {
+                        logger.info("Fallback to custom built loginform");
+                        loginform = new Form();
+                        loginform.setMethod(MethodType.POST);
+                        loginform.put("submit", "Login");
+                        loginform.put("submitme", "1");
+                    }
+                    if (loginform.hasInputFieldByName("loginUsername") && loginform.hasInputFieldByName("loginPassword")) {
+                        /* 2019-07-08: Rare case: Example: freaktab.org */
+                        loginform.put("loginUsername", Encoding.urlEncode(account.getUser()));
+                        loginform.put("loginPassword", Encoding.urlEncode(account.getPass()));
+                    } else {
                         loginform.put("username", Encoding.urlEncode(account.getUser()));
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
-                        final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
-                        loginform.setAction(action);
-                        if (loginform.containsHTML("class=\"g\\-recaptcha\"")) {
-                            final DownloadLink dlinkbefore = this.getDownloadLink();
-                            if (dlinkbefore == null) {
-                                this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                    }
+                    /* 2019-07-31: At the moment only this older login method supports captchas. Examplehost: uploadship.com */
+                    if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        /* Handle login-captcha if required */
+                        DownloadLink dlinkbefore = this.getDownloadLink();
+                        try {
+                            final DownloadLink dl_dummy;
+                            if (dlinkbefore != null) {
+                                dl_dummy = dlinkbefore;
+                            } else {
+                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                this.setDownloadLink(dl_dummy);
                             }
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                            if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                                sm.setSecure(true);
+                            }
+                            File cf = null;
+                            try {
+                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                            } catch (final Exception e) {
+                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                                }
+                                throw e;
+                            }
+                            final String code = getCaptchaCode("solvemedia", cf, dl_dummy);
+                            final String chid = sm.getChallenge(code);
+                            loginform.put("adcopy_challenge", chid);
+                            loginform.put("adcopy_response", "manual_challenge");
+                        } finally {
                             if (dlinkbefore != null) {
                                 this.setDownloadLink(dlinkbefore);
                             }
-                            loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         }
-                        submitForm(loginform);
-                        if (!br.containsHTML("\"login_status\":\"success\"")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    } else {
-                        /* Old login method - rare case! Example: udrop.net */
-                        logger.info("Using old login method");
-                        loginform = br.getFormbyProperty("id", "form_login");
-                        if (loginform == null) {
-                            loginform = br.getFormbyKey("loginUsername");
-                        }
-                        if (loginform == null) {
-                            logger.info("Fallback to custom built loginform");
-                            loginform = new Form();
-                            loginform.setMethod(MethodType.POST);
-                            loginform.put("submit", "Login");
-                            loginform.put("submitme", "1");
-                        }
-                        if (loginform.hasInputFieldByName("loginUsername") && loginform.hasInputFieldByName("loginPassword")) {
-                            /* 2019-07-08: Rare case: Example: freaktab.org */
-                            loginform.put("loginUsername", Encoding.urlEncode(account.getUser()));
-                            loginform.put("loginPassword", Encoding.urlEncode(account.getPass()));
-                        } else {
-                            loginform.put("username", Encoding.urlEncode(account.getUser()));
-                            loginform.put("password", Encoding.urlEncode(account.getPass()));
-                        }
-                        /* 2019-07-31: At the moment only this older login method supports captchas. Examplehost: uploadship.com */
-                        if (br.containsHTML("solvemedia\\.com/papi/")) {
-                            /* Handle login-captcha if required */
-                            DownloadLink dlinkbefore = this.getDownloadLink();
-                            try {
-                                final DownloadLink dl_dummy;
-                                if (dlinkbefore != null) {
-                                    dl_dummy = dlinkbefore;
-                                } else {
-                                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                                    this.setDownloadLink(dl_dummy);
-                                }
-                                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                                if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
-                                    sm.setSecure(true);
-                                }
-                                File cf = null;
-                                try {
-                                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                                } catch (final Exception e) {
-                                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                                    }
-                                    throw e;
-                                }
-                                final String code = getCaptchaCode("solvemedia", cf, dl_dummy);
-                                final String chid = sm.getChallenge(code);
-                                loginform.put("adcopy_challenge", chid);
-                                loginform.put("adcopy_response", "manual_challenge");
-                            } finally {
-                                if (dlinkbefore != null) {
-                                    this.setDownloadLink(dlinkbefore);
-                                }
-                            }
-                        }
-                        submitForm(loginform);
-                        if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                    }
+                    submitForm(loginform);
+                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -1246,22 +1435,23 @@ public class YetiShareCore extends antiDDoSForHost {
     protected long parseExpireTimeStamp(Account account, final String expireString) {
         final String first = new Regex(expireString, "^(\\d+)/").getMatch(0);
         final String second = new Regex(expireString, "^\\d+/(\\d+)").getMatch(0);
-        final int firstCheck = Integer.parseInt(first);
-        if (firstCheck > 12) {
-            // higher than 12, must be days
-            return TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
+        final int firstNumber = Integer.parseInt(first);
+        final int secondNumber = Integer.parseInt(second);
+        long timestamp_daysfirst = 0;
+        long timestamp_dayssecond = 0;
+        /* Days first */
+        if (secondNumber <= 12) {
+            timestamp_daysfirst = TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
         }
-        final int secondCheck = Integer.parseInt(second);
-        if (secondCheck > 12) {
-            // higher than 12, must be days
-            return TimeFormatter.getMilliSeconds(expireString, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+        /* Months first */
+        if (firstNumber <= 12) {
+            timestamp_dayssecond = TimeFormatter.getMilliSeconds(expireString, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
         }
-        // default
-        return TimeFormatter.getMilliSeconds(expireString, getDefaultTimePattern(account, expireString), Locale.ENGLISH);
-    }
-
-    protected String getDefaultTimePattern(Account account, final String expireString) {
-        return "MM/dd/yyyy hh:mm:ss";
+        if (timestamp_daysfirst > timestamp_dayssecond) {
+            return timestamp_daysfirst;
+        } else {
+            return timestamp_dayssecond;
+        }
     }
 
     @Override
