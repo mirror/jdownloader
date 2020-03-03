@@ -364,11 +364,9 @@ public class EHentaiOrg extends PluginForHost {
             if (account == null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
             } else {
-                br.getPage("http://exhentai.org/home.php");
-                if (account != null) { // todo: ensure this works?
-                    account.saveCookies(br.getCookies(MAINPAGE), "");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "509.gif", 2 * 60 * 1000l);
-                }
+                // br.getPage("http://exhentai.org/home.php");
+                // account.saveCookies(br.getCookies(MAINPAGE), "");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
         if (requiresAccount(dllink)) {

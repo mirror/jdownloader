@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class WdfilesRu extends YetiShareCore {
-    public WdfilesRu(PluginWrapper wrapper) {
+public class CloudSaikoanimesNet extends YetiShareCore {
+    public CloudSaikoanimesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -37,15 +37,20 @@ public class WdfilesRu extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2<br />
+     * limit-info: 2020-03-03: No limits at all <br />
+     * captchatype-info: 2020-03-03: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wdfiles.ru" });
+        ret.add(new String[] { "cloud.saikoanimes.net", "saikoanimes.net", "saikocloud.ml" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
@@ -100,12 +105,6 @@ public class WdfilesRu extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public boolean supports_https() {
-        /* 2020-03-03: Special */
-        return false;
     }
 
     @Override
