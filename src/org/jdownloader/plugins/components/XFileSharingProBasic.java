@@ -101,7 +101,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return "/(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
     }
 
-    public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart());

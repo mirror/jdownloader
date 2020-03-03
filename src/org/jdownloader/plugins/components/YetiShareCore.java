@@ -88,6 +88,14 @@ public class YetiShareCore extends antiDDoSForHost {
         return "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?";
     }
 
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareCore Version 2.0.0.6-psp<br />
