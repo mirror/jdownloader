@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,10 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopy.to" }, urls = { "https?://(?:www\\.)?nopy\\.to/([A-Za-z0-9]+)/([^<>/\"]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopy.to" }, urls = { "https?://(?:www\\.)?nopy\\.to/([A-Za-z0-9]+)/([^<>/\"#]+)" })
 public class NopyTo extends PluginForHost {
     public NopyTo(PluginWrapper wrapper) {
         super(wrapper);
