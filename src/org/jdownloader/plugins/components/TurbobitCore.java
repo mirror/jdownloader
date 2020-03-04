@@ -2,21 +2,12 @@ package org.jdownloader.plugins.components;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,6 +31,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -377,7 +376,6 @@ public class TurbobitCore extends antiDDoSForHost {
             super.showFreeDialog(getHost());
         }
         br = new Browser();
-        dupe.clear();
         prepBrowserWebsite(br, userAgent.get());
         sleep(2500, link);
         br.setFollowRedirects(true);
@@ -1147,65 +1145,6 @@ public class TurbobitCore extends antiDDoSForHost {
         return false;
     }
 
-    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-
-    /* 2020-03-03: Not required anymore? */
-    // private void simulateBrowser() throws InterruptedException {
-    // // dupe.clear();
-    // final AtomicInteger requestQ = new AtomicInteger(0);
-    // final AtomicInteger requestS = new AtomicInteger(0);
-    // final ArrayList<String> links = new ArrayList<String>();
-    // String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
-    // if (l1 != null) {
-    // links.addAll(Arrays.asList(l1));
-    // }
-    // l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
-    // if (l1 != null) {
-    // links.addAll(Arrays.asList(l1));
-    // }
-    // for (final String link : links) {
-    // // lets only add links related to this hoster.
-    // final String correctedLink = Request.getLocation(link, br.getRequest());
-    // if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") &&
-    // !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/") &&
-    // !correctedLink.contains("'")) {
-    // if (dupe.add(correctedLink)) {
-    // final Thread simulate = new Thread("SimulateBrowser") {
-    // public void run() {
-    // final Browser rb = br.cloneBrowser();
-    // rb.getHeaders().put("Cache-Control", null);
-    // // open get connection for images, need to confirm
-    // if (correctedLink.matches(".+\\.png.*")) {
-    // rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
-    // } else if (correctedLink.matches(".+\\.js.*")) {
-    // rb.getHeaders().put("Accept", "*/*");
-    // } else if (correctedLink.matches(".+\\.css.*")) {
-    // rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
-    // }
-    // URLConnectionAdapter con = null;
-    // try {
-    // requestQ.getAndIncrement();
-    // con = rb.openGetConnection(correctedLink);
-    // } catch (final Exception e) {
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Exception e) {
-    // }
-    // requestS.getAndIncrement();
-    // }
-    // return;
-    // }
-    // };
-    // simulate.start();
-    // Thread.sleep(100);
-    // }
-    // }
-    // }
-    // while (requestQ.get() != requestS.get()) {
-    // Thread.sleep(1000);
-    // }
-    // }
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Turbobit_Turbobit;
