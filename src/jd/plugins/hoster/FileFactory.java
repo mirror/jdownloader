@@ -227,10 +227,10 @@ public class FileFactory extends PluginForHost {
     }
 
     /** Handles errors according to: https://api.filefactory.com/#appendix-error-matrix */
-    private void checkErrorsAPI(final DownloadLink link, final Account account, final String apiKey) throws PluginException {
-        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(this.br, "type"))) {
-            final String errorcodeStr = PluginJSonUtils.getJsonValue(this.br, "code");
-            String errormessage = getErrormsgAPI(this.br);
+    private void checkErrorsAPI(Browser br, final DownloadLink link, final Account account, final String apiKey) throws PluginException {
+        if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type"))) {
+            final String errorcodeStr = PluginJSonUtils.getJsonValue(br, "code");
+            String errormessage = getErrormsgAPI(br);
             if (StringUtils.isEmpty(errormessage)) {
                 errormessage = "Unknown API error";
             }
@@ -1369,7 +1369,7 @@ public class FileFactory extends PluginForHost {
                     account.setProperty(PROPERTY_APIKEY, apikey);
                     return apikey;
                 } else {
-                    checkErrorsAPI(null, account, apikey);
+                    checkErrorsAPI(this.br, null, account, apikey);
                 }
             }
             return apikey;
@@ -1412,7 +1412,7 @@ public class FileFactory extends PluginForHost {
         } else {
             ibr.getPage(url);
         }
-        this.checkErrorsAPI(downloadLink, account, apiKey);
+        this.checkErrorsAPI(ibr, downloadLink, account, apiKey);
     }
 
     private String getErrormsgAPI(final Browser ibr) {

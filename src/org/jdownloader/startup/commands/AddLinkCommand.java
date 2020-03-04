@@ -12,7 +12,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.logging.LogController;
 
 public class AddLinkCommand extends AbstractStartupCommand {
-
     public AddLinkCommand() {
         super("add-links", "add-link", "a");
     }
@@ -28,17 +27,14 @@ public class AddLinkCommand extends AbstractStartupCommand {
     public static boolean add(final LinkOrigin linkOrigin, final String parameter) {
         if (StringUtils.isNotEmpty(parameter)) {
             SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
                         final LinkCollectingJob job;
-                        if (StringUtils.startsWithCaseInsensitive(parameter, "http")) {
-                            job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
-                        } else if (StringUtils.startsWithCaseInsensitive(parameter, "file:/")) {
-                            job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
-                        } else {
+                        if (new File(parameter).isFile()) {
                             job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), new File(parameter).toURI().toString());
+                        } else {
+                            job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
                         }
                         LinkCollector.getInstance().addCrawlerJob(job);
                     } catch (final Throwable e) {
@@ -60,5 +56,4 @@ public class AddLinkCommand extends AbstractStartupCommand {
     public String getDescription() {
         return "Add Links to the LinkGrabber";
     }
-
 }
