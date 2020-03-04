@@ -518,7 +518,12 @@ public class EHentaiOrg extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        getPage("https://e-hentai.org/home.php");
+        /*
+         * 2020-03-04: Workaround for serverside bug: Without doing this, accounts with higher credit limits per day (usually >5000), all
+         * accounts can be stuck with the daily 5000 limit. Accessing this page first and then '/home.php' fixes this.
+         */
+        getPage("https://e-hentai.org/hathperks.php");
+        getPage("/home.php");
         final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
         final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
         if (items_downloadedStr != null && items_maxStr != null) {
