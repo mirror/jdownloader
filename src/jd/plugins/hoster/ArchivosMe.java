@@ -47,7 +47,7 @@ public class ArchivosMe extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "archivos.me", "archivos.club" });
+        ret.add(new String[] { "95.215.205.103", "archivos.club", "archivos.me" });
         return ret;
     }
 
@@ -166,5 +166,17 @@ public class ArchivosMe extends YetiShareCore {
             /* Fallback to template handling */
             return super.fetchAccountInfo(account);
         }
+    }
+
+    @Override
+    public boolean supports_https() {
+        /* 2020-03-04: Special */
+        return false;
+    }
+
+    @Override
+    public boolean requires_WWW() {
+        /* 2020-03-04: Special */
+        return false;
     }
 }
