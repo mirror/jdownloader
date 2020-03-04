@@ -33,6 +33,8 @@ import jd.plugins.PluginException;
 public class MyzcloudMe extends antiDDoSForHost {
     public MyzcloudMe(PluginWrapper wrapper) {
         super(wrapper);
+        /* 2020-03-04: Try to avoid IP block: https://board.jdownloader.org/showthread.php?t=80894 */
+        this.setStartIntervall(10 * 1000l);
     }
 
     @Override
@@ -42,9 +44,11 @@ public class MyzcloudMe extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        /* Florced https */
+        /* Forced https */
         if ("myzuka.ru".equals(getHost())) {
-            link.setUrlDownload("https://myzuka.me/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
+            final String newURL = "https://myzuka.me/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+            link.setUrlDownload(newURL);
+            link.setPluginPatternMatcher(newURL);
         }
     }
 
@@ -69,13 +73,12 @@ public class MyzcloudMe extends antiDDoSForHost {
     }
 
     /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 500 || br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -99,6 +102,9 @@ public class MyzcloudMe extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 403 (limit reached?)", 30 * 60 * 1000l);
+        }
         String dllink = br.getRegex("\"(/Song/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(/Song/Play/[^<>\"]*?)\"").getMatch(0);
@@ -139,11 +145,11 @@ public class MyzcloudMe extends antiDDoSForHost {
             }
             if (dl.getConnection().getContentType().contains("gif")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
+            } else if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (limit reached?)", 5 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-            }
-            if (dl.getConnection().getResponseCode() == 500) {
+            } else if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
