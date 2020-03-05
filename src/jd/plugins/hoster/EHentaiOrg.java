@@ -128,6 +128,13 @@ public class EHentaiOrg extends antiDDoSForHost {
             } catch (final Throwable e) {
                 loggedin = false;
             }
+        } else if (ENABLE_RANDOM_UA) {
+            /* Be sure only to use random UA when an account is not used! */
+            /*
+             * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses as it
+             * tricks it into thinking that we re a lot of users and not only one.
+             */
+            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         }
         prepBR(br);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
@@ -172,13 +179,6 @@ public class EHentaiOrg extends antiDDoSForHost {
         uid_page = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         final String mainlink = getMainlink(link);
         br.setFollowRedirects(true);
-        if (ENABLE_RANDOM_UA) {
-            /*
-             * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses as it
-             * tricks it into thinking that we re a lot of users and not only one.
-             */
-            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-        }
         getPage(mainlink);
         if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
             if (account == null) {
@@ -221,11 +221,11 @@ public class EHentaiOrg extends antiDDoSForHost {
                 link.setDownloadSize(SizeFormatter.getSize(html_filesize));
             }
         }
-        getDllink(account);
+        getDllink(link, account);
         final String originalFileName = br.getRegex("<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
         final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         final String ext = getFileNameExtensionFromString(dllink, ".png");
-        // package customiser altered, or user altered value, we need to update this value.
+        /* package customiser altered, or user altered value, we need to update this value. */
         if (link.getForcedFileName() != null) {
             link.setForcedFileName(namepart + ext);
         } else {
@@ -233,6 +233,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && link.getForcedFileName() != null && !link.getForcedFileName().endsWith(ext)) {
                 link.setForcedFileName(namepart + ext);
             } else if (link.getFinalFileName() == null) {
+                /* Set filename based on user setting */
                 if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
                     link.setFinalFileName(originalFileName);
                 } else {
@@ -246,17 +247,17 @@ public class EHentaiOrg extends antiDDoSForHost {
             /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
             dllink = dllink_fullsize;
             if (requiresAccount(dllink)) {
-                if (account != null) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Automatically logged out?");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                }
+                maybeLoginFailure(account);
             } else {
                 return AvailableStatus.TRUE;
             }
         }
         if (dllink != null) {
             /* 2020-03-05: Check if this is still required */
+            if (true) {
+                /* Wait for user-feedback */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             while (true) {
                 if (!dupe.add(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -276,7 +277,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                        getDllink(account);
+                        getDllink(link, account);
                         if (dllink != null) {
                             continue;
                         } else {
@@ -290,7 +291,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                         final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
                         if (failed != null && failed.length == 2) {
                             getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                            getDllink(account);
+                            getDllink(link, account);
                             if (dllink != null) {
                                 continue;
                             } else {
@@ -332,7 +333,7 @@ public class EHentaiOrg extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404;
     }
 
-    private void getDllink(final Account account) throws Exception {
+    private void getDllink(final DownloadLink link, final Account account) throws Exception {
         // g.e-hentai.org = free non account
         // error
         // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img"
@@ -354,27 +355,61 @@ public class EHentaiOrg extends antiDDoSForHost {
         // src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg"
         // style="height:1800px;width:1273px" /></a></div>
         // best solution is to apply cleanup?
-        final String b = br.toString();
-        String cleanup = new Regex(b, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
-        if (cleanup == null) {
-            cleanup = new Regex(b, "<div id=\"i3\">(.*?)</div").getMatch(0);
-        }
-        dllink = new Regex(cleanup, "<img [^>]*src=(\"|\\')([^\"\\'<>]+)\\1").getMatch(1);
-        if (dllink == null) {
-            /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
-            dllink = new Regex(b, "<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png|gif))\\1").getMatch(1);
-        }
-        // ok so we want to make sure it isn't 509.gif
-        final String filename = extractFileNameFromURL(dllink);
-        if (filename != null && filename.equals("509.gif")) {
+        /* 2020-03-05: I've created this workaround but it is not required anymore --> Just keep counter_max set to 0 then it'll be fine! */
+        boolean limitReached = false;
+        int counter = 0;
+        int counter_max = 0;
+        /* URL to current image */
+        final String targetURL = br.getURL();
+        do {
+            counter++;
+            logger.info(String.format("Getdllink attempt %d / %d", counter, counter_max));
+            if (limitReached) {
+                this.sleep(3000l, link);
+                // this.getPage("https://e-hentai.org/home.php");
+                /*
+                 * script we require!
+                 */
+                this.getPage("https://e-hentai.org/hathperks.php");
+                this.getPage(targetURL);
+            }
+            final String b = br.toString();
+            String cleanup = new Regex(b, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
+            if (cleanup == null) {
+                cleanup = new Regex(b, "<div id=\"i3\">(.*?)</div").getMatch(0);
+            }
+            dllink = new Regex(cleanup, "<img [^>]*src=(\"|\\')([^\"\\'<>]+)\\1").getMatch(1);
+            if (dllink == null) {
+                /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
+                dllink = new Regex(b, "<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png|gif))\\1").getMatch(1);
+            }
+            // ok so we want to make sure it isn't 509.gif
+            /* E.g. https://ehgt.org/g/509.gif */
+            final String filename = extractFileNameFromURL(dllink);
+            if (filename != null && filename.equals("509.gif")) {
+                limitReached = true;
+            } else {
+                limitReached = false;
+            }
+            if (dllink == null) {
+                logger.info("Failed to find final downloadurl");
+                break;
+            }
+        } while (limitReached && counter <= counter_max);
+        if (limitReached) {
+            logger.info("Failed to get around limit - limit is definitely reached!");
             limitReached(account);
         }
         if (requiresAccount(dllink)) {
-            if (account != null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
+            maybeLoginFailure(account);
+        }
+    }
+
+    private void maybeLoginFailure(final Account account) throws PluginException {
+        if (account != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unexpected logout happened");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 
@@ -434,20 +469,22 @@ public class EHentaiOrg extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (requiresAccount(dl.getConnection().getURL().toString()) || (dl.getConnection().getCompleteContentLength() > 0 && dl.getConnection().getLongContentLength() < minimal_filesize)) {
-            if (account != null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
+            maybeLoginFailure(account);
         }
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://e-hentai.org";
+    private static final String MAINPAGE = "https://e-hentai.org";
 
     /** 2019-11-26: Alternative way to login: https://e-hentai.org/bounce_login.php?b=d&bt=1-1 */
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
+            /* About 'hathperks.php': */
+            /*
+             * 2020-03-04: About 'hathperks.php': Workaround for serverside bug: Without doing this, accounts with higher credit limits per
+             * day (usually >5000), all accounts can be stuck with the daily 5000 limit. Accessing this page first and then '/home.php'
+             * fixes this. Accessing hathperks will set two additional cookies: 'sk' and 'hath_perks'
+             */
             try {
                 br.setCookiesExclusive(true);
                 Cookies cookies = account.loadCookies("");
@@ -461,7 +498,8 @@ public class EHentaiOrg extends antiDDoSForHost {
                         logger.info("Trust login cookies as they're not yet that old");
                         return;
                     }
-                    getPage(br, "https://forums.e-hentai.org/index.php?");
+                    // getPage(br, "https://forums.e-hentai.org/index.php?");
+                    getPage(br, "https://e-hentai.org/hathperks.php");
                     if (this.isLoggedIn(br)) {
                         logger.info("Successfully logged in via cookies");
                         account.saveCookies(br.getCookies(MAINPAGE), "");
@@ -503,8 +541,8 @@ public class EHentaiOrg extends antiDDoSForHost {
                 if (failed) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                /* 2019-07-17: Now required anymore */
-                // br.getPage("https://exhentai.org/");
+                /* This will set two more important cookies! */
+                getPage(br, "https://e-hentai.org/hathperks.php");
                 account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -526,11 +564,6 @@ public class EHentaiOrg extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        /*
-         * 2020-03-04: Workaround for serverside bug: Without doing this, accounts with higher credit limits per day (usually >5000), all
-         * accounts can be stuck with the daily 5000 limit. Accessing this page first and then '/home.php' fixes this.
-         */
-        getPage("https://e-hentai.org/hathperks.php");
         getPage("/home.php");
         final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
         final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
