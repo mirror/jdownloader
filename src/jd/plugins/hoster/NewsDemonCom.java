@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -13,10 +17,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newsdemon.com" }, urls = { "" })
 public class NewsDemonCom extends UseNet {
@@ -131,6 +131,9 @@ public class NewsDemonCom extends UseNet {
         // force euorpean server
         ret.addAll(UsenetServer.createServerList("eu.newsdemon.com", false, 119, 23, 443, 3128, 7000, 8000, 8080, 9000));
         ret.addAll(UsenetServer.createServerList("eu.newsdemon.com", true, 563, 80, 81, 9119));
+        // force Amsterdam server
+        ret.addAll(UsenetServer.createServerList("nl.newsdemon.com", false, 119, 23, 443, 3128, 7000, 8000, 8080, 9000));
+        ret.addAll(UsenetServer.createServerList("nl.newsdemon.com", true, 563, 80, 81, 9119));
         return ret;
     }
 }
