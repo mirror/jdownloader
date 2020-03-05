@@ -14,10 +14,19 @@ public class OpenURLAction extends AppAction {
     /**
      *
      */
-    private static final long   serialVersionUID = -7939070621339510855L;
-    private final DomainInfo    info;
+    private static final long serialVersionUID = -7939070621339510855L;
+    private final DomainInfo  info;
+
+    public DomainInfo getInfo() {
+        return info;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     private final String        id;
-    private final static String NAME             = _GUI.T.OpenURLAction_OpenURLAction_();
+    private final static String NAME = _GUI.T.OpenURLAction_OpenURLAction_();
 
     public OpenURLAction(DomainInfo info, String id) {
         super();

@@ -698,10 +698,10 @@ public abstract class AbstractFFmpegBinary {
                                     if (len > 0) {
                                         updateLastUpdateTimestamp();
                                         outputStream.write(readWriteBuffer, 0, len);
-                                        if (segment != null) {
-                                            segment.setLoaded(true);
-                                        }
                                         fileBytesMap.mark(position, len);
+                                        if (segment != null) {
+                                            segment.setLoaded(fileBytesMap.getMarkedBytes());
+                                        }
                                         position += len;
                                     } else if (len == -1) {
                                         break;

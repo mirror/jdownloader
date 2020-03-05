@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jd.controlling.TaskQueue;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.scheduler.DelayedRunnable;
@@ -18,10 +22,6 @@ import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
-
-import jd.controlling.TaskQueue;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 public class UserAgentController {
     private final ConcurrentHashMap<String, ConnectedDevice>          map;

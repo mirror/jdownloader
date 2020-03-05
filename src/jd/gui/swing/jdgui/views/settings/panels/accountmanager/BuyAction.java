@@ -62,8 +62,8 @@ public class BuyAction extends AbstractAction {
     }
 
     public static String getPreselectedHoster() {
-        Sponsor sp = SponsorUtils.getSponsor();
-        String host = sp.getPreSelectedInAddAccountDialog();
+        final Sponsor sp = SponsorUtils.getSponsor();
+        final String host = sp.getPreSelectedInAddAccountDialog();
         if (host != null) {
             return host;
         } else {

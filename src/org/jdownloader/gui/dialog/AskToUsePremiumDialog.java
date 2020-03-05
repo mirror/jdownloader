@@ -2,6 +2,7 @@ package org.jdownloader.gui.dialog;
 
 import java.awt.Dialog.ModalityType;
 
+import jd.controlling.AccountController;
 import jd.plugins.PluginForHost;
 
 import org.appwork.uio.UIOManager;
@@ -26,7 +27,7 @@ public class AskToUsePremiumDialog extends ConfirmDialog implements AskToUsePrem
 
     @Override
     public String getPremiumUrl() {
-        return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + getDomain() + "&freedialog";
+        return AccountController.createFullBuyPremiumUrl(getDomain(), "freedialog");
     }
 
     @Override
