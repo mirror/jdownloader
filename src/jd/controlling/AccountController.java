@@ -16,8 +16,10 @@
 package jd.controlling;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -848,6 +850,8 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     public static String createFullBuyPremiumUrl(String buyPremiumUrl, String id) {
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("ddMMYYYY'_'HHmm");
+        id = id + "/" + simpleDateFormat.format(new Date());
         return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
 

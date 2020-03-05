@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,15 +35,12 @@ import jd.plugins.components.SmoozedTranslation;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
-import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -232,20 +228,10 @@ public class SmoozedCom extends antiDDoSForHost {
     }
 
     @Override
-    protected void showFreeDialog(final String domain) {
-        final AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this) {
-            @Override
-            public String getDontShowAgainKey() {
-                return "adsPremium_" + domain;
-            }
-        };
-        try {
-            d.setMessage(TranslationFactory.create(SmoozedTranslation.class).free_trial_end());
-            UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
-            CrossSystem.openURL(new URL(d.getPremiumUrl()));
-        } catch (Throwable e) {
-            LogSource.exception(logger, e);
-        }
+    protected AskToUsePremiumDialog createAskToUsePremiumDialog(String domain) {
+        final AskToUsePremiumDialog ret = super.createAskToUsePremiumDialog(domain);
+        ret.setMessage(TranslationFactory.create(SmoozedTranslation.class).free_trial_end());
+        return ret;
     }
 
     @SuppressWarnings("unchecked")

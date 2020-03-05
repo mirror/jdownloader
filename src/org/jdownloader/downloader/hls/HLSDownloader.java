@@ -97,9 +97,11 @@ import org.jdownloader.translate._JDT;
 public class HLSDownloader extends DownloadInterface {
     private class PartFile {
         private final File          file;
+        private final int           index;
         private final AtomicBoolean flag = new AtomicBoolean(false);
 
-        private PartFile(File file) {
+        private PartFile(int index, File file) {
+            this.index = index;
             this.file = file;
         }
     }
@@ -1244,9 +1246,6 @@ public class HLSDownloader extends DownloadInterface {
                                             final int len;
                                             try {
                                                 len = meteredThrottledInputStream.read(readWriteBuffer);
-                                                if (segment != null) {
-                                                    segment.setLoaded(true);
-                                                }
                                             } catch (IOException e) {
                                                 requestLogger.log(e);
                                                 if (onSegmentReadException(connection, e, fileBytesMap, retry, requestLogger)) {
@@ -1265,12 +1264,18 @@ public class HLSDownloader extends DownloadInterface {
                                                 }
                                                 try {
                                                     fileBytesMap.mark(position, len);
+                                                    if (segment != null) {
+                                                        segment.setLoaded(fileBytesMap.getMarkedBytes());
+                                                    }
                                                 } catch (IllegalArgumentException e) {
                                                     requestLogger.log(e);
                                                     if (fileBytesMap.getFinalSize() != -1) {
                                                         requestLogger.info("apply 'Ignore Content-Length' workaround!");
                                                         fileBytesMap.setFinalSize(-1);
                                                         fileBytesMap.mark(position, len);
+                                                        if (segment != null) {
+                                                            segment.setLoaded(fileBytesMap.getMarkedBytes());
+                                                        }
                                                     } else {
                                                         throw e;
                                                     }
@@ -1291,10 +1296,10 @@ public class HLSDownloader extends DownloadInterface {
                                     } finally {
                                         try {
                                             if (segment != null) {
-                                                requestLogger.info("Segment:" + segment.getUrl() + "|Loaded:" + segment.isLoaded());
                                                 if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
                                                     segment.setSize(Math.max(length, fileBytesMap.getSize()));
                                                 }
+                                                logger.severe("Segment(" + segmentIndex + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
                                             }
                                             requestLogger.info(fileBytesMap.toString());
                                         } finally {
@@ -1430,9 +1435,9 @@ public class HLSDownloader extends DownloadInterface {
                 runDownload();
                 if (outputPartFiles.size() > 1) {
                     for (PartFile partFile : outputPartFiles) {
-                        if (!partFile.flag.get()) {
-                            logger.severe("PartFile:" + partFile.file + " not loaded");
-                            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "PartFile:" + partFile.file + " not loaded");
+                        if (!isPartFileComplete(partFile)) {
+                            logger.severe("PartFile:" + partFile.file + " not complete");
+                            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "PartFile:" + partFile.file + " not complete");
                         }
                     }
                     runConcat();
@@ -1452,8 +1457,7 @@ public class HLSDownloader extends DownloadInterface {
                 }
                 downloadable.removePluginProgress(downloadPluginProgress);
             }
-            onDownloadReady();
-            return handleErrors();
+            return onDownloadReady();
         } finally {
             downloadable.unlockFiles(requiredFiles.toArray(new File[0]));
             cleanupDownladInterface();
@@ -1474,16 +1478,18 @@ public class HLSDownloader extends DownloadInterface {
         terminate();
     }
 
-    protected void onDownloadReady() throws Exception {
+    protected boolean onDownloadReady() throws Exception {
         cleanupDownladInterface();
-        if (!handleErrors() && !isAcceptDownloadStopAsValidEnd()) {
-            return;
-        }
-        if (outputPartFiles.size() == 1) {
-            final boolean renameOkay = downloadable.rename(outputPartFiles.get(0).file, outputCompleteFile);
-            if (!renameOkay) {
-                error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+        if (!handleErrors()) {
+            return false;
+        } else {
+            if (outputPartFiles.size() == 1) {
+                final boolean renameOkay = downloadable.rename(outputPartFiles.get(0).file, outputCompleteFile);
+                if (!renameOkay) {
+                    error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+                }
             }
+            return true;
         }
     }
 
@@ -1501,42 +1507,63 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    protected boolean isM3U8SegmentLoaded(M3U8Segment segment) {
+        if (segment != null) {
+            final long loaded = segment.getLoaded();
+            final long size = Math.max(loaded, segment.getSize());
+            final double done = (loaded / size) * 100d;
+            return done > 90d;
+        } else {
+            return false;
+        }
+    }
+
     private boolean handleErrors() throws PluginException {
-        if (externalDownloadStop()) {
+        if (externalDownloadStop() && !isAcceptDownloadStopAsValidEnd()) {
             return false;
         } else if (caughtPluginException != null) {
             throw caughtPluginException;
         } else if (!isAcceptDownloadStopAsValidEnd()) {
             for (final M3U8Playlist m3u8Playlist : m3u8Playlists) {
                 for (int index = 0; index < m3u8Playlist.size(); index++) {
-                    if (!m3u8Playlist.isSegmentLoaded(index)) {
-                        logger.severe("Segment:" + index + ":" + m3u8Playlist.getSegment(index).getUrl() + " not loaded");
+                    final M3U8Segment segment = m3u8Playlist.getSegment(index);
+                    if (!isM3U8SegmentLoaded(segment)) {
+                        logger.severe("Segment(" + index + "):" + segment.getUrl() + "|Loaded:" + segment.getLoaded() + "|Size:" + segment.getSize());
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Segment:" + index + " not loaded");
                     }
                 }
             }
         }
         for (final PartFile partFile : outputPartFiles) {
-            if (!partFile.flag.get()) {
-                logger.severe("PartFile:" + partFile.file + " not loaded");
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "PartFile:" + partFile.file + " not loaded");
+            if (!isPartFileComplete(partFile)) {
+                logger.severe("PartFile:" + partFile.file + " not complete");
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "PartFile:" + partFile.file + " not complete");
             }
         }
-        if (outputPartFiles.size() == 1 && outputPartFiles.get(0).file.exists()) {
-            downloadable.setLinkStatus(LinkStatus.FINISHED);
-            final long fileSize = outputPartFiles.get(0).file.length();
-            downloadable.setDownloadBytesLoaded(fileSize);
-            downloadable.setVerifiedFileSize(fileSize);
+        if (outputPartFiles.size() == 1 && isPartFileComplete(outputPartFiles.get(0))) {
+            finalizeDownload(outputPartFiles.get(0).file);
             return true;
-        } else if (outputCompleteFile.exists()) {
-            downloadable.setLinkStatus(LinkStatus.FINISHED);
-            final long fileSize = outputCompleteFile.length();
-            downloadable.setDownloadBytesLoaded(fileSize);
-            downloadable.setVerifiedFileSize(fileSize);
+        } else if (isOutputFileComplete(0, outputCompleteFile)) {
+            finalizeDownload(outputCompleteFile);
             return true;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    protected void finalizeDownload(File file) {
+        final long fileSize = file.length();
+        downloadable.setLinkStatus(LinkStatus.FINISHED);
+        downloadable.setDownloadBytesLoaded(fileSize);
+        downloadable.setVerifiedFileSize(fileSize);
+    }
+
+    protected boolean isPartFileComplete(PartFile partFile) {
+        return partFile.flag.get() && isOutputFileComplete(partFile.index, partFile.file);
+    }
+
+    protected boolean isOutputFileComplete(int index, File file) {
+        return file.isFile() && file.length() > 1024;
     }
 
     private List<File> createOutputChannel() throws SkipReasonException {
@@ -1548,10 +1575,10 @@ public class HLSDownloader extends DownloadInterface {
             outputPartFiles.clear();
             if (m3u8Playlists.size() > 1) {
                 for (int index = 0; index < m3u8Playlists.size(); index++) {
-                    outputPartFiles.add(new PartFile(new File(downloadable.getFileOutputPart() + index + ".part")));
+                    outputPartFiles.add(new PartFile(index, new File(downloadable.getFileOutputPart() + index + ".part")));
                 }
             } else {
-                outputPartFiles.add(new PartFile(new File(downloadable.getFileOutputPart())));
+                outputPartFiles.add(new PartFile(0, new File(downloadable.getFileOutputPart())));
             }
             for (final PartFile partFile : outputPartFiles) {
                 requiredFiles.add(partFile.file);

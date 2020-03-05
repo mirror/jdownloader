@@ -11,6 +11,11 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.dialog.AddAccountDialog;
+import jd.gui.swing.dialog.InputOKButtonAdapter;
+import jd.plugins.Account;
+import jd.plugins.PluginForHost;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -27,26 +32,15 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
-import jd.gui.swing.dialog.AddAccountDialog;
-import jd.gui.swing.dialog.InputOKButtonAdapter;
-import jd.plugins.Account;
-import jd.plugins.PluginForHost;
-
 public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements BuyAndAddPremiumDialogInterface, InputChangedCallbackInterface {
-
-    private DomainInfo                   info;
-
-    private String                       id;
-
     private AccountBuilderInterface      accountBuilderUI;
-
     private final PluginClassLoaderChild cl;
+    private final OpenURLAction          openURLAction;
 
     public BuyAndAddPremiumAccount(DomainInfo info, String id) {
         super(0, _GUI.T.BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_(), null, null, null);
-        this.info = info;
-        this.id = id;
         cl = PluginClassLoader.getInstance().getChild();
+        openURLAction = new OpenURLAction(info, id == null ? "BuyAndAddDialog" : id);
     }
 
     @Override
@@ -54,12 +48,15 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         return null;
     }
 
+    public OpenURLAction getOpenURLAction() {
+        return openURLAction;
+    }
+
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.okButton) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().fine("Answer: Button<OK:" + this.okButton.getText() + ">");
-
             Account ac = accountBuilderUI.getAccount();
-            ac.setHoster(info.getTld());
+            ac.setHoster(getOpenURLAction().getInfo().getTld());
             try {
                 if (!AddAccountDialog.addAccount(ac)) {
                     return;
@@ -78,7 +75,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
     }
 
     protected void layoutDialog() {
-
+        final DomainInfo info = getOpenURLAction().getInfo();
         final Image back = NewTheme.I().hasIcon("fav/footer." + info.getTld()) ? NewTheme.I().getImage("fav/footer." + info.getTld(), -1) : null;
         super.layoutDialog();
         getDialog().setContentPane(new JPanel() {
@@ -91,7 +88,6 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
                 super.paintComponent(g);
                 if (back != null) {
                     final Graphics2D g2 = (Graphics2D) g;
-
                     double faktor = Math.max((double) back.getWidth(null) / getWidth(), (double) back.getHeight(null) / getHeight());
                     int width = Math.max((int) (back.getWidth(null) / faktor), 1);
                     int height = Math.max((int) (back.getHeight(null) / faktor), 1);
@@ -103,17 +99,15 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
 
     @Override
     public JComponent layoutDialogContent() {
-
+        final DomainInfo info = getOpenURLAction().getInfo();
         final MigPanel ret = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]");
         final Image logo = NewTheme.I().hasIcon("fav/large." + info.getTld()) ? NewTheme.I().getImage("fav/large." + info.getTld(), -1) : null;
-
         if (logo != null) {
             JLabel ico = new JLabel(new ImageIcon(logo));
             ret.add(ico);
         }
-
         ret.add(header(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_get()), "gapleft 15,pushx,growx");
-        ExtButton bt = new ExtButton(new OpenURLAction(info, id == null ? "BuyAndAddDialog" : id));
+        ExtButton bt = new ExtButton(openURLAction);
         ret.add(bt, "gapleft 27");
         ret.add(header(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_enter()), "gapleft 15,pushx,growx");
         PluginForHost plg;
