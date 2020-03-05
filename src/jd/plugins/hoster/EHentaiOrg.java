@@ -102,7 +102,7 @@ public class EHentaiOrg extends antiDDoSForHost {
 
     private Browser prepBR(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
-        br.setConnectTimeout(3 * 60 * 1000);
+        // br.setConnectTimeout(3 * 60 * 1000);
         return br;
     }
 
