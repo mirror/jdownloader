@@ -17,14 +17,21 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ExLoadCom extends XFileSharingProBasic {
@@ -37,7 +44,7 @@ public class ExLoadCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2020-03-03: null<br />
+     * captchatype-info: 2020-03-05: Plaintext Captcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -101,5 +108,44 @@ public class ExLoadCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
+    }
+
+    @Override
+    protected String regexWaittime() {
+        /* 2020-03-05: Special */
+        String waitStr = super.regexWaittime();
+        if (waitStr == null) {
+            waitStr = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*</div>").getMatch(0);
+        }
+        return waitStr;
+    }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+        /* 2020-03-05: Special */
+        if (captchaForm.containsHTML(";background:#ccc;text-align")) {
+            logger.info("Detected captcha method \"Plaintext Captcha\"");
+            /** Captcha method by ManiacMansion */
+            String[][] letters = captchaForm.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
+            if (letters == null || letters.length == 0) {
+                letters = new Regex(br.toString(), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                if (letters == null || letters.length == 0) {
+                    logger.warning("plaintext captchahandling broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+            for (String[] letter : letters) {
+                capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+            }
+            final StringBuilder code = new StringBuilder();
+            for (String value : capMap.values()) {
+                code.append(value);
+            }
+            captchaForm.put("code", code.toString());
+        } else {
+            /* Use template handling */
+            super.handleCaptcha(link, captchaForm);
+        }
     }
 }

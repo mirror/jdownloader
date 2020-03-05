@@ -100,6 +100,12 @@ public class EHentaiOrg extends antiDDoSForHost {
         }
     }
 
+    private Browser prepBR(final Browser br) {
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         return requestFileInformation(downloadLink, null, false);
@@ -123,6 +129,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 loggedin = false;
             }
         }
+        prepBR(br);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
         if (account == null && new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
             return AvailableStatus.UNCHECKABLE;
@@ -249,6 +256,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             }
         }
         if (dllink != null) {
+            /* 2020-03-05: Check if this is still required */
             while (true) {
                 if (!dupe.add(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

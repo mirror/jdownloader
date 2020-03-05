@@ -161,7 +161,14 @@ public class ArchiveOrg extends PluginForDecrypt {
                     final DownloadLink fina = createDownloadlink("https://" + host_decrypted + "/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name));
                     fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                     fina.setAvailable(true);
-                    fina.setFinalFileName(name);
+                    final String filename;
+                    if (name.contains("/")) {
+                        /* Remove foldername/path from item name --> Nice filename */
+                        filename = name.substring(name.lastIndexOf("/") + 1);
+                    } else {
+                        filename = name;
+                    }
+                    fina.setFinalFileName(filename);
                     final String subfolderPathInName = new Regex(name, "(.+)/[^/]+$").getMatch(0);
                     if (subfolderPathInName != null) {
                         fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + subfolderPathInName);
