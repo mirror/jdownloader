@@ -251,13 +251,19 @@ public class EHentaiOrg extends antiDDoSForHost {
             } else {
                 return AvailableStatus.TRUE;
             }
-        }
-        if (dllink != null) {
-            /* 2020-03-05: Check if this is still required */
-            if (true) {
-                /* Wait for user-feedback */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            /* 2020-03-06: Sometimes needed for exhentai URLs but not that important. */
+            final String filesize2 = br.getRegex(":: ([^:<>\"]+)</div><div class=\"sn\"").getMatch(0);
+            if (filesize2 != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize2));
             }
+        }
+        final boolean check_filesize_via_directurl = false;
+        if (dllink != null && check_filesize_via_directurl) {
+            /*
+             * Old fallback handling --> Website has a button "reload if image fails loading" --> This is what this does --> Should never be
+             * required thus deactivated 2020-03-06.
+             */
             while (true) {
                 if (!dupe.add(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -272,7 +278,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                     } catch (final BrowserException ebr) {
                         logger.log(ebr);
                         // socket issues, lets try another mirror also.
-                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image fails loading</a>").getRow(0);
+                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image failsloading</a>").getRow(0);
                         if (failed == null || failed.length == 2) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -288,7 +294,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                     }
                     if (con.getResponseCode() == 404) {
                         // we can try another mirror
-                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
+                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image failsloading</a>").getRow(0);
                         if (failed != null && failed.length == 2) {
                             getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
                             getDllink(link, account);
@@ -415,12 +421,12 @@ public class EHentaiOrg extends antiDDoSForHost {
 
     private void limitReached(final Account account) throws PluginException {
         if (account == null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000);
         } else {
             /* 2020-03-03: This should not be required anymore --> Lead to timeouts --> No idea what it was good for */
             // br.getPage("http://exhentai.org/home.php");
             // account.saveCookies(br.getCookies(MAINPAGE), "");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new AccountUnavailableException("Downloadlimit reached", 5 * 60 * 1000);
         }
     }
 
