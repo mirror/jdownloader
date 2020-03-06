@@ -46,7 +46,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends antiDDoSForHost {
@@ -642,9 +641,9 @@ public class EHentaiOrg extends antiDDoSForHost {
     public static final boolean default_ENABLE_FILENAME_FIX      = true;
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_FILENAME_FIX, JDL.L("plugins.hoster.EHentaiOrg.EnableFileNameFix", "Plugin tries to fix file extension")).setDefaultValue(default_ENABLE_FILENAME_FIX));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_QUALITY, JDL.L("plugins.hoster.EHentaiOrg.DownloadZip", "Account only: Prefer original quality (bigger filesize, higher resolution, requires more credits)?")).setDefaultValue(default_PREFER_ORIGINAL_QUALITY));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_FILENAME, JDL.L("plugins.hoster.EHentaiOrg.PreferOrgFileName", "Prefer original file name?")).setDefaultValue(default_PREFER_ORIGINAL_FILENAME));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_FILENAME_FIX, "Plugin tries to fix file extension").setDefaultValue(default_ENABLE_FILENAME_FIX));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_QUALITY, "Account only: Prefer original quality (bigger filesize, higher resolution, reaches limit faster)?").setDefaultValue(default_PREFER_ORIGINAL_QUALITY));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_FILENAME, "Prefer original file name?").setDefaultValue(default_PREFER_ORIGINAL_FILENAME));
     }
 
     @Override

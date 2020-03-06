@@ -57,15 +57,18 @@ public class RmzCr extends antiDDoSForDecrypt {
         } else {
             logger.info("Failed to find any covers");
         }
-        final String screencapsHTML = br.getRegex("<div class=\"fullsize\">Click on the image to see full size</div>(.*?)</div>\\s+</div>").getMatch(0);
-        final String screencaps[] = HTMLParser.getHttpLinks(screencapsHTML, "");
-        if (screencaps != null) {
-            logger.info("Found thumbnails");
-            for (final String link : screencaps) {
-                decryptedLinks.add(createDownloadlink(link));
+        final boolean grabScreencaps = false;
+        if (grabScreencaps) {
+            final String screencapsHTML = br.getRegex("<div class=\"fullsize\">Click on the image to see full size</div>(.*?)</div>\\s+</div>").getMatch(0);
+            final String screencaps[] = HTMLParser.getHttpLinks(screencapsHTML, "");
+            if (screencaps != null) {
+                logger.info("Found screencaps");
+                for (final String link : screencaps) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
+            } else {
+                logger.info("Failed to find screencaps");
             }
-        } else {
-            logger.info("Failed to find thumbnails");
         }
         String linkBlock = br.getRegex("(<div id=\"(?:title_release_after_download_title|title_release_after_imdb)\">[^$]+<div id=\"title_release_after_links\">)").getMatch(0);
         if (linkBlock != null) {
