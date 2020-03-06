@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cliphunter.com" }, urls = { "https?://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cliphunter.com" }, urls = { "https?://(?:www\\.)?cliphunter\\.com/w/(\\d+)/(\\w+)" })
 public class ClipHunterComDecrypt extends PluginForDecrypt {
     public ClipHunterComDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +53,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "qchange", "h");
-        br.setAllowedResponseCodes(410);
+        br.setAllowedResponseCodes(new int[] { 410 });
         br.getPage(parameter);
         if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -61,9 +61,11 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        title = br.getRegex("<title>(.*?) \\-.*?</title>").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("<h1 style=\"font\\-size: 2em;\">(.*?) </h1>").getMatch(0);
+        final boolean use_url_title = true;
+        final String url_title = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        if (use_url_title) {
+            title = url_title;
+            title = title.replace("_", " ");
         }
         if (title == null) {
             logger.warning("Decrypter broken for link: " + parameter);

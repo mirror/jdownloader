@@ -332,6 +332,13 @@ public class UlozTo extends PluginForHost {
                     if (i == 5) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
+                    /* 2020-03-06: url_free_dialog is new */
+                    final String url_free_dialog = br.getRegex("(/download-dialog/free[^<>\"]+)").getMatch(0);
+                    if (url_free_dialog == null) {
+                        logger.info("url_free_dialog is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.getPage(url_free_dialog);
                     cbr = br.cloneBrowser();
                     cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
                     if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
@@ -344,6 +351,9 @@ public class UlozTo extends PluginForHost {
                     Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
                     if (captchaForm == null) {
                         captchaForm = br.getFormbyProperty("id", "frm-download-freeDownloadTab-freeDownloadForm");
+                    }
+                    if (captchaForm == null) {
+                        captchaForm = br.getFormbyProperty("id", "frm-freeDownloadForm-form");
                     }
                     if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -394,22 +404,15 @@ public class UlozTo extends PluginForHost {
                     br.submitForm(captchaForm);
                     // If captcha fails, throrotws exception
                     // If in automatic mode, clears saved data
-                    if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)") || br.containsHTML("\"new_captcha_data\"")) {
+                    final boolean isError2020 = br.containsHTML("formErrorContent");
+                    if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)") || br.containsHTML("\"new_captcha_data\"") || isError2020) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"Chyba při ověření uživatele")) {
-                        /* 2019-05-15: This may also happen when user is not using an account */
-                        if (account != null) {
-                            synchronized (account) {
-                                account.clearCookies("");
-                            }
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
-                        } else {
-                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
                     }
                     dllink = PluginJSonUtils.getJsonValue(br, "url");
-                    if (dllink == null) {
+                    if (StringUtils.isEmpty(dllink)) {
+                        dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
+                    }
+                    if (StringUtils.isEmpty(dllink)) {
                         break;
                     }
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
