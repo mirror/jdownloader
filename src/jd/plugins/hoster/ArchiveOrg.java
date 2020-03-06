@@ -69,33 +69,40 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         registered_only = false;
         if (link.getPluginPatternMatcher().endsWith("my_dir")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
         this.setBrowserExclusive();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(link.getPluginPatternMatcher());
-            connectionErrorhandling(br.getHttpConnection(), link);
-            if (con.isOK() && (con.getLongContentLength() > 0 || con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application") || StringUtils.containsIgnoreCase(con.getContentType(), "video"))) {
-                link.setFinalFileName(getFileNameFromHeader(con));
-                if (con.getLongContentLength() > 0) {
-                    link.setDownloadSize(con.getLongContentLength());
+        if (!isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(link.getPluginPatternMatcher());
+                connectionErrorhandling(br.getHttpConnection(), link);
+                if (con.isOK() && (con.getLongContentLength() > 0 || con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application") || StringUtils.containsIgnoreCase(con.getContentType(), "video"))) {
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                    if (con.getLongContentLength() > 0) {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
+                    return AvailableStatus.TRUE;
+                } else if (con.getResponseCode() == 200) { // txt/xml, size not available
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                    return AvailableStatus.TRUE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                return AvailableStatus.TRUE;
-            } else if (con.getResponseCode() == 200) { // txt/xml, size not available
-                link.setFinalFileName(getFileNameFromHeader(con));
-                return AvailableStatus.TRUE;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } finally {
-            if (con != null) {
-                con.disconnect();
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
+        return AvailableStatus.UNCHECKABLE;
     }
 
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link) throws PluginException, IOException {
@@ -115,15 +122,15 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, true);
         if (registered_only) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (downloadLink.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
-            doDownload(null, downloadLink, false, 1, "free_directlink");
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
+            doDownload(null, link, false, 1, "free_directlink");
         } else {
-            doDownload(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+            doDownload(null, link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
         }
     }
 
@@ -142,21 +149,33 @@ public class ArchiveOrg extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
                     br.setCookies(account.getHoster(), cookies);
-                    return;
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                        /* We trust these cookies --> Do not check them */
+                        logger.info("Trust login cookies as they're not yet that old");
+                        return;
+                    }
+                    br.getPage("https://archive.org/account/");
+                    if (this.isLoggedIN(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
                 }
+                logger.info("Performing full login");
                 br.getPage("https://" + account.getHoster() + "/account/login.php");
                 br.postPage("/account/login.php", "remember=CHECKED&referer=https%3A%2F%2F" + account.getHoster() + "%2F&action=login&submit=Log+in&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                String logged_in_sig = br.getCookie(account.getHoster(), "logged-in-sig");
-                // if (br.getCookie(account.getHoster(), "logged-in-sig") == null) {
-                if (logged_in_sig == null || logged_in_sig.equals("deleted")) {
+                if (!isLoggedIN(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -171,6 +190,10 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
+    public boolean isLoggedIN(final Browser br) {
+        return br.getCookie(br.getHost(), "logged-in-sig", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (!account.getUser().matches(".+@.+\\..+")) {
@@ -183,7 +206,7 @@ public class ArchiveOrg extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             throw e;
         }
         ai.setUnlimitedTraffic();
@@ -195,7 +218,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         login(this.br, account, false);
         if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
             doDownload(account, link, false, 1, "account_free_directlink");
