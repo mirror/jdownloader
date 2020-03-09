@@ -17,8 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/\\d+" })
 public class DanbooruDonmaiUs extends PluginForHost {
@@ -71,7 +70,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+)\\- Danbooru[\t\n\r ]*?</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+).\\s*Danbooru\\s*</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
@@ -105,13 +104,10 @@ public class DanbooruDonmaiUs extends PluginForHost {
             link.setDownloadSize(orgSize);
             return AvailableStatus.TRUE;
         }
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -121,13 +117,13 @@ public class DanbooruDonmaiUs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

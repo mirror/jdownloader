@@ -131,7 +131,7 @@ public class UlozTo extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
                 return AvailableStatus.TRUE;
             }
-            if (downloadLink.getDownloadURL().matches("https?://pornfile.cz/(podminky|tos)/[^/]+")) {
+            if (downloadLink.getDownloadURL().matches("https?://pornfile\\.cz/(podminky|tos)/[^/]+")) {
                 return AvailableStatus.FALSE;
             }
             finalDirectDownloadURL = handleDownloadUrl(downloadLink);
@@ -237,8 +237,8 @@ public class UlozTo extends PluginForHost {
         return filename;
     }
 
-    private String handleDownloadUrl(final DownloadLink downloadLink) throws Exception {
-        br.getPage(downloadLink.getDownloadURL());
+    private String handleDownloadUrl(final DownloadLink link) throws Exception {
+        br.getPage(link.getDownloadURL());
         int i = 0;
         while (br.getRedirectLocation() != null) {
             if (i == 10) {
@@ -249,13 +249,13 @@ public class UlozTo extends PluginForHost {
             if (con.isContentDisposition() && con.isOK()) {
                 con.disconnect();
                 if (con.getLongContentLength() > 0) {
-                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                    link.setVerifiedFileSize(con.getLongContentLength());
                 }
                 final String fileName = getFileNameFromDispositionHeader(con);
                 if (fileName != null) {
-                    downloadLink.setFinalFileName(fileName);
+                    link.setFinalFileName(fileName);
                 }
-                downloadLink.setAvailable(true);
+                link.setAvailable(true);
                 return con.getRequest().getUrl();
             }
             br.followConnection();
@@ -292,14 +292,14 @@ public class UlozTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        doFree(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception {
+        doFree(link, null);
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        AvailableStatus status = requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
+    public void doFree(final DownloadLink link, final Account account) throws Exception {
+        AvailableStatus status = requestFileInformation(link);
+        if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         }
         if (AvailableStatus.UNCHECKABLE.equals(status)) {
@@ -310,20 +310,24 @@ public class UlozTo extends PluginForHost {
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(form);
-            status = requestFileInformation(downloadLink);
+            status = requestFileInformation(link);
         }
         if (AvailableStatus.UNCHECKABLE.equals(status)) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         br.setFollowRedirects(true);
-        String dllink = checkDirectLink(downloadLink, "directlink_free");
+        String dllink = checkDirectLink(link, "directlink_free");
         if (dllink == null) {
             boolean captcha_failed = false;
             /* 2019-05-15: New: Free download without captcha */
             dllink = br.getRegex("(/[^\"<>]+\\?do=slowDirectDownload[^\"<>]*?)\"").getMatch(0);
             if (dllink == null) {
+                /* 2020-03-09: New */
+                dllink = br.getRegex("(/slowDownload[^\"<>]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
                 if (passwordProtected) {
-                    handlePassword(downloadLink);
+                    handlePassword(link);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 Browser cbr = null;
@@ -389,7 +393,7 @@ public class UlozTo extends PluginForHost {
                     if (file == null || !file.exists()) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String code = getCaptchaCode(file, downloadLink);
+                    final String code = getCaptchaCode(file, link);
                     if (code == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -400,7 +404,7 @@ public class UlozTo extends PluginForHost {
                     captchaForm.put("salt", salt);
                     captchaForm.put("hash", hash);
                     /* 2018-08-30: Wait some seconds or we might run into an error. */
-                    this.sleep(3000, downloadLink);
+                    this.sleep(3000, link);
                     br.submitForm(captchaForm);
                     // If captcha fails, throrotws exception
                     // If in automatic mode, clears saved data
@@ -415,7 +419,7 @@ public class UlozTo extends PluginForHost {
                     if (StringUtils.isEmpty(dllink)) {
                         break;
                     }
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
                     if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
                         captcha_failed = false;
                         break;
@@ -446,9 +450,9 @@ public class UlozTo extends PluginForHost {
                         }
                         br.clearCookies("ulozto.net");
                         br.clearCookies("uloz.to");
-                        dllink = handleDownloadUrl(downloadLink);
+                        dllink = handleDownloadUrl(link);
                         if (dllink != null) {
-                            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
                             if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
                                 captcha_failed = false;
                                 break;
@@ -480,7 +484,7 @@ public class UlozTo extends PluginForHost {
             }
         }
         if (dl == null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             try {
@@ -507,7 +511,7 @@ public class UlozTo extends PluginForHost {
             logger.warning("The finallink doesn't seem to be a file: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink_free", dl.getConnection().getURL().toString());
+        link.setProperty("directlink_free", dl.getConnection().getURL().toString());
         try {
             /* add a download slot */
             controlFree(+1);
