@@ -497,6 +497,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
             }
+            /* 2020-03-09: Resume may not always work serverside */
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 final URLConnectionAdapter con = dl.getConnection();

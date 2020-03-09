@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,10 +45,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
@@ -143,45 +144,46 @@ public class SendspaceCom extends PluginForHost {
                         url = url.replaceAll("X", "x");
                         downloadLink.setUrlDownload(url);
                         return requestFileInformation(downloadLink);
-                    }
-                    if (!br.containsHTML("the file you requested is not available")) {
-                        String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
-                        if (infos == null) {
-                            infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
-                        }
-                        if (infos == null) {
-                            infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
-                        }
-                        if (infos != null) {
-                            /* old format */
-                            downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
-                            downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
-                            return AvailableStatus.TRUE;
-                        } else {
-                            String filename = br.getRegex("<title>Download ([^<>/\"]*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
-                            if (filename == null) {
-                                filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
-                                if (filename == null) {
-                                    filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
-                                }
-                            }
-                            String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
-                            if (filename != null) {
-                                downloadLink.setName(Encoding.htmlDecode(filename).trim());
-                                if (filesize != null) {
-                                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", ".")));
-                                }
-                                return AvailableStatus.TRUE;
-                            }
-                        }
-                        if (br.containsHTML("No htmlCode read")) {
-                            // No html content??? maybe server problem
-                            // seems like a firewall block.
-                            Thread.sleep(90000);
-                            return requestFileInformation(downloadLink);
-                        }
-                        //
+                    } else if (br.containsHTML("the file you requested is not available")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (getSecurityForm() != null) {
+                        logger.info("Cannot check URL because of anti-DDoS captcha");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
+                    if (infos == null) {
+                        infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
+                    }
+                    if (infos == null) {
+                        infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
+                    }
+                    if (infos != null) {
+                        /* old format */
+                        downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
+                        downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
+                        return AvailableStatus.TRUE;
+                    } else {
+                        String filename = br.getRegex("<title>Download ([^<>/\"]*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
+                            if (filename == null) {
+                                filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
+                            }
+                        }
+                        String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
+                        if (filename != null) {
+                            downloadLink.setName(Encoding.htmlDecode(filename).trim());
+                            if (filesize != null) {
+                                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", ".")));
+                            }
+                            return AvailableStatus.TRUE;
+                        }
+                    }
+                    if (br.containsHTML("No htmlCode read")) {
+                        // No html content??? maybe server problem
+                        // seems like a firewall block.
+                        Thread.sleep(90000);
+                        return requestFileInformation(downloadLink);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -208,6 +210,18 @@ public class SendspaceCom extends PluginForHost {
                 ctrlLast.set(System.currentTimeMillis());
             }
         }
+    }
+
+    private Form getSecurityForm() {
+        if (br.containsHTML(">\\s*Please complete the form below")) {
+            final Form[] forms = br.getForms();
+            for (final Form thisform : forms) {
+                if (thisform.containsHTML("class=\"g-recaptcha\"")) {
+                    return thisform;
+                }
+            }
+        }
+        return null;
     }
 
     private void handleErrors(boolean plugindefect) throws PluginException {
@@ -261,6 +275,13 @@ public class SendspaceCom extends PluginForHost {
         if (!downloadLink.getDownloadURL().contains("/pro/dl/")) {
             // Re-use old directlinks to avoid captchas, especially good after
             // reconnects
+            final Form securityform = getSecurityForm();
+            if (securityform != null) {
+                logger.info("Handling security Form");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                securityform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(securityform);
+            }
             String linkurl = checkDirectLink(downloadLink, "savedlink");
             if (linkurl == null) {
                 getPage(this.br, downloadLink.getDownloadURL());
