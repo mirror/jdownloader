@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -83,6 +84,7 @@ public class VikiCom extends PluginForHost {
      * @throws Exception
      */
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         blocking_geoblocked = false;
         final String vid = getVID(link);
         link.setName(vid);

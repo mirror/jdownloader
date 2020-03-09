@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -29,9 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/folder/\\d+/[^/]+\\.html" })
 @SuppressWarnings("deprecation")
@@ -58,8 +58,12 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         if (br.containsHTML("E_FOLDERNOTFOUND") || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML("class=\"empty\"")) {
+            logger.info("Folder is empty");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
-        String fpName = br.getRegex("Downloading:[\r\n\t ]+</strong>[\r\n\t ]+(.*?)[\r\n\t ]+</p>").getMatch(0);
+        String fpName = br.getRegex("Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
         }
