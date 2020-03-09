@@ -80,7 +80,11 @@ public class RmzCr extends antiDDoSForDecrypt {
                     /* 2020-01-22: Skip URLs which would lead to this crawler again */
                     continue;
                 }
-                decryptedLinks.add(createDownloadlink(link));
+                /* Sometimes this may contain multiple objects newline separated. */
+                final String[] links2 = HTMLParser.getHttpLinks(link, null);
+                for (final String link2 : links2) {
+                    decryptedLinks.add(createDownloadlink(link2));
+                }
             }
         }
         if (fpName != null) {
