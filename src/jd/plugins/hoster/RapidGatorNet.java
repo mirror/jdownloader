@@ -291,13 +291,13 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, null);
     }
 
     @SuppressWarnings("deprecation")
-    private void doFree(final DownloadLink link) throws Exception {
+    private void doFree(final DownloadLink link, final Account account) throws Exception {
         // experimental code - raz
         // so called 15mins between your last download, ends up with your IP blocked for the day..
         // Trail and error until we find the sweet spot.
@@ -305,30 +305,34 @@ public class RapidGatorNet extends antiDDoSForHost {
             showFreeDialog(getHost());
         }
         final String currentIP = getIP();
-        if (hotLinkURL == null) {
-            final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
-            if (useExperimentalHandling) {
-                logger.info("New Download: currentIP = " + currentIP);
-                if (ipChanged(currentIP, link) == false) {
-                    long lastdownload_timestamp = timeBefore.get();
-                    if (lastdownload_timestamp == 0) {
-                        lastdownload_timestamp = getPluginSavedLastDownloadTimestamp();
-                    }
-                    final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload_timestamp;
-                    logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
-                    if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
+        String finalDownloadURL;
+        if (!StringUtils.isEmpty(hotLinkURL)) {
+            logger.info("Seems to be a hotlink file!");
+            finalDownloadURL = hotLinkURL;
+        } else {
+            finalDownloadURL = checkDirectLink(link, account);
+            if (StringUtils.isEmpty(finalDownloadURL)) {
+                final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
+                if (useExperimentalHandling) {
+                    logger.info("New Download: currentIP = " + currentIP);
+                    if (ipChanged(currentIP, link) == false) {
+                        long lastdownload_timestamp = timeBefore.get();
+                        if (lastdownload_timestamp == 0) {
+                            lastdownload_timestamp = getPluginSavedLastDownloadTimestamp();
+                        }
+                        final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload_timestamp;
+                        logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
+                        if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
+                        }
                     }
                 }
+                if (br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
             }
-            if (br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-        } else {
-            logger.info("Seems to be a hotlink file!");
         }
         try {
-            String finalDownloadURL = hotLinkURL;
             if (finalDownloadURL == null) {
                 // end of experiment
                 handleErrorsWebsite(this.br, link, null);
@@ -497,15 +501,39 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
             }
-            /* 2020-03-09: Resume may not always work serverside */
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
+            boolean resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+            /* E.g. when directurl was re-used successfully, download is already ready to be started! */
+            if (dl == null) {
+                if (!resume) {
+                    logger.info("Resume disabled for this download");
+                }
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, 1);
+            }
+            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() != 200) {
                 final URLConnectionAdapter con = dl.getConnection();
                 if (con.getResponseCode() == 404) {
-                    /* 2019-12-16: TODO: Re-Check if this can also mean expired session ... */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
                 } else if (con.getResponseCode() == 416) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
+                }
+                String json_errormsg = PluginJSonUtils.getJson(br, "error");
+                final String error = con.getRequest().getResponseHeader("X-Error");
+                if ("Unexpected range request".equalsIgnoreCase(error)) {
+                    /* Resume impossible */
+                    if (!resume) {
+                        /* Resume was already disabled? Then we cannot do anything about it --> Wait and retry later */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown resume related server error");
+                    }
+                    /* Reset progress and try again */
+                    logger.info("Resume impossible, disabling it for the next try");
+                    /*
+                     * Special: Save directurl although we have an error --> It should be 're-usable' because this failed attempt does not
+                     * count as download attempt serverside.
+                     */
+                    link.setProperty(getDownloadModeDirectlinkProperty(account), finalDownloadURL);
+                    /* Disable resume on next attempt */
+                    link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 br.followConnection();
                 if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
@@ -513,9 +541,19 @@ public class RapidGatorNet extends antiDDoSForHost {
                 } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", FREE_RECONNECTWAIT_OTHERS);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.info("Unknown error happened");
+                    if (StringUtils.isEmpty(json_errormsg)) {
+                        json_errormsg = "Unknown server error";
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, json_errormsg);
                 }
             }
+            /*
+             * Always allow resume again for next attempt as a "failed" attempt will still get us a usable direct-URL thus no time- or
+             * captcha attempt gets wasted!
+             */
+            link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(true));
+            link.setProperty(getDownloadModeDirectlinkProperty(account), finalDownloadURL);
             RapidGatorNet.hasAttemptedDownloadstart.set(true);
             dl.startDownload();
         } finally {
@@ -528,6 +566,66 @@ public class RapidGatorNet extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    protected static String getDownloadModeDirectlinkProperty(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return "freelink2";
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return "premlink";
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return "freelink";
+        }
+    }
+
+    private int getMaxChunks(final Account account) {
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return maxPremChunks;
+        } else {
+            /* Free & Free account */
+            return 0;
+        }
+    }
+
+    private String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        final String dllink = link.getStringProperty(directlinkproperty);
+        if (dllink != null) {
+            final boolean resume = this.isResumeable(link, account);
+            final int maxchunks = this.getMaxChunks(account);
+            final Browser br2 = this.br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            boolean valid = false;
+            try {
+                this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
+                con = dl.getConnection();
+                if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
+                    link.setProperty(directlinkproperty, Property.NULL);
+                    return null;
+                } else {
+                    valid = true;
+                    return dllink;
+                }
+            } catch (final InterruptedException e) {
+                throw e;
+            } catch (final Exception e) {
+                link.setProperty(directlinkproperty, Property.NULL);
+                logger.log(e);
+            } finally {
+                if (!valid) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                    this.dl = null;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -907,7 +1005,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
             requestFileInformation(link);
             if (hotLinkURL != null) {
-                doFree(link);
+                doFree(link, account);
             } else {
                 handlePremium_web(link, account);
             }
@@ -920,7 +1018,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 requestFileInformation(link);
             }
             if (hotLinkURL != null) {
-                doFree(link);
+                doFree(link, account);
             } else {
                 handlePremium_api(link, account);
             }
@@ -1085,7 +1183,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             logger.warning("session_id is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* 2019-12-16: Disabled API availablecheck for now as it is unreliable. */
+        /* 2019-12-16: Disabled API availablecheck for now as it is unreliable/returns wrong information! */
         if (false) {
             String fileName = link.getFinalFileName();
             if (fileName == null) {
@@ -1258,7 +1356,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown login failure");
         }
         if (Account.AccountType.FREE.equals(account.getType())) {
-            doFree(link);
+            doFree(link, account);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {

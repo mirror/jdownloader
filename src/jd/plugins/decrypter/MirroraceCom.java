@@ -38,6 +38,11 @@ public class MirroraceCom extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
