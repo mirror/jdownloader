@@ -507,7 +507,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 if (!resume) {
                     logger.info("Resume disabled for this download");
                 }
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, 1);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
             }
             if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() != 200) {
                 final URLConnectionAdapter con = dl.getConnection();
@@ -586,7 +586,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             return maxPremChunks;
         } else {
             /* Free & Free account */
-            return 0;
+            return 1;
         }
     }
 
@@ -1377,7 +1377,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 dllink = dllink.replaceFirst("^http://", "https://");
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, maxPremChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(account));
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 handleErrors_api(null, link, account, dl.getConnection());
