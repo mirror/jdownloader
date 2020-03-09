@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+|http://seedrdecrypted\\.cc/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/.+|http://seedrdecrypted\\.cc/\\d+" })
 public class SeedrCc extends PluginForHost {
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,7 +61,8 @@ public class SeedrCc extends PluginForHost {
     private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
     private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -8;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String TYPE_DIRECTLINK              = "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+";
+    private static final String TYPE_DIRECTLINK              = "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/.+";
+    private static final String TYPE_DIRECTLINK_ZIP          = "https?://[^/]+/zip/.+";
     private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/\\d+";
     private boolean             server_issues                = false;
     private String              dllink                       = null;
@@ -91,6 +92,7 @@ public class SeedrCc extends PluginForHost {
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
+                br.setFollowRedirects(true);
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
@@ -116,13 +118,17 @@ public class SeedrCc extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK_ZIP)) {
+            /* 2020-03-09: Such URLs are not resumable */
+            maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -130,9 +136,9 @@ public class SeedrCc extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

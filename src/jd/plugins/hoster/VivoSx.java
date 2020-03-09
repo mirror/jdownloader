@@ -61,7 +61,7 @@ public class VivoSx extends antiDDoSForHost {
         if (filename == null) {
             filename = dataType;
         }
-        if (StringUtils.startsWithCaseInsensitive(streamContent, filename) || StringUtils.startsWithCaseInsensitive(streamContent, dataType)) {
+        if (StringUtils.startsWithCaseInsensitive(streamContent, filename) || StringUtils.startsWithCaseInsensitive(streamContent, dataType) || filename.endsWith("&hellip;&nbsp;") || filename.endsWith("...")) {
             filename = streamContent;
         }
         final String filesize = br.getRegex("<strong>\\((\\d+(\\.\\d{2})? (KB|MB|GB))\\)</strong>").getMatch(0);
