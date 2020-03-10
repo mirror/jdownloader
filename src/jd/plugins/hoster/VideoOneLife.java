@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/(?:[a-z]+/)?pornvideo/([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/.+" })
 public class VideoOneLife extends PluginForHost {
     public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +65,16 @@ public class VideoOneLife extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/([^/]+)/?$").getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
@@ -76,7 +85,7 @@ public class VideoOneLife extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = getLinkID(link);
+        final String fid = getFID(link);
         br.getPage(link.getDownloadURL());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -87,6 +96,9 @@ public class VideoOneLife extends PluginForHost {
         }
         /* Possible http urls in html: <meta property="og:video" content="/hvideo/12345678/1.mp4" /> */
         dllink = br.getRegex("([^/]+\\.video\\-one\\.com/video/[^<>\"]+\\.m3u8)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(/[^<>\"]+\\.m3u8)").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -113,7 +125,7 @@ public class VideoOneLife extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.dllink.startsWith("http")) {
+        if (!this.dllink.startsWith("http") && !this.dllink.startsWith("/")) {
             this.dllink = "https://" + this.dllink;
         }
         br.getPage(this.dllink);
