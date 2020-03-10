@@ -108,7 +108,7 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         parameter = "https://drive.google.com/drive/folders/" + fid;
         final PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
-        ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br);
+        ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br, aa);
         String subfolder = this.getAdoptedCloudFolderStructure();
         int retry = 0;
         do {

@@ -1455,6 +1455,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *            false = return final downloadurl of selected quality. Use this in download mode.
      */
     protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        logger.info("Trying to find official video downloads");
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
         String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);

@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
@@ -33,6 +35,7 @@ import org.jdownloader.dialogs.NewPasswordDialogInterface;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -172,9 +175,44 @@ public class GoogleHelper {
         return url;
     }
 
+    private Cookies getCookiesFromPasswordString(final String password) {
+        final Cookies cookies = new Cookies();
+        try {
+            /*
+             * 2020-02-13: Experimental - accepts cookies exported via open source browser addon "EditThisCookie" --> Their json format.
+             * Their json contains a lot more information but for now we'll only work with exactly what we need.
+             */
+            LinkedHashMap<String, Object> entries;
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(password);
+            for (final Object cookieO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) cookieO;
+                final String domain = (String) entries.get("domain");
+                if (!".google.com".equals(domain)) {
+                    /* Skip e.g. docs.google.com cookies */
+                    continue;
+                }
+                final String cookiename = (String) entries.get("name");
+                final String cookievalue = (String) entries.get("value");
+                if (cookiename == null || cookievalue == null) {
+                    continue;
+                }
+                final Cookie cookie = new Cookie();
+                cookie.setKey(cookiename);
+                cookie.setValue(cookievalue);
+                cookies.add(cookie);
+            }
+            return cookies;
+        } catch (final Throwable e) {
+        }
+        return null;
+    }
+
     public boolean login(Account account) throws Exception {
         try {
-            /* 2020-02-10: Seems like Google Login is still working for some users. https://svn.jdownloader.org/issues/86318 */
+            /*
+             * 2020-02-10: Disabled boolean again! Seems like Google Login is still working for some users.
+             * https://svn.jdownloader.org/issues/86318
+             */
             final boolean pluginBroken = false;
             if (pluginBroken) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nGoogle login is broken!\r\nA bugfix in the near future is very unlikely.\r\nSee svn.jdownloader.org/issues/86318 ", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -186,7 +224,8 @@ public class GoogleHelper {
             this.br.clearCookies("google.com");
             this.br.clearCookies("youtube.com");
             this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
-            //
+            final Cookies userCookies = getCookiesFromPasswordString(account.getPass());
+            /* Check stored cookies */
             if (account.getProperty(COOKIES2) != null) {
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
@@ -207,6 +246,31 @@ public class GoogleHelper {
                         }
                     }
                 }
+            }
+            /* If stored cookies fail, try user cookies --> Also important as user could change password(= cookies) at any time */
+            if (userCookies != null) {
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* 2020-01-10: Devs only */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /*
+                 * Work with the cookies the user has provided --> In this case we cannot even login via password as we do not know the
+                 * users' password!
+                 */
+                br.setCookies("google.com", userCookies);
+                if (isCacheEnabled() && hasBeenValidatedRecently(account)) {
+                    return true;
+                }
+                /* 2020-03-10: Users' User-Agent is required (or any current Chrome version?) otherwise the cookies will not be accepted! */
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36");
+                getPageFollowRedirects(br, "https://docs.google.com/document/u/0/");
+                if (!br.containsHTML("AddSession\\?service")) {
+                    /* Invalid cookies */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                validate(account);
+                saveCookiesOnAccount(account);
+                return true;
             }
             this.br.clearCookies("google.com");
             this.br.clearCookies("youtube.com");
@@ -343,12 +407,7 @@ public class GoogleHelper {
             //
             // }
             if (validateSuccess()) {
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies cYT = this.br.getCookies("google.com");
-                for (final Cookie c : cYT.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty(COOKIES2, cookies);
+                saveCookiesOnAccount(account);
                 validate(account);
                 return true;
             } else {
@@ -359,6 +418,15 @@ public class GoogleHelper {
             account.setProperty(COOKIES2, null);
             throw e;
         }
+    }
+
+    private void saveCookiesOnAccount(final Account account) {
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies cYT = this.br.getCookies("google.com");
+        for (final Cookie c : cYT.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        account.setProperty(COOKIES2, cookies);
     }
 
     protected boolean validateSuccess() {
