@@ -85,13 +85,19 @@ public class JetloadNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         api_used = false;
         this.setBrowserExclusive();
+        /* 2020-03-10: Disabled - not required anymore */
+        final boolean allowWebsiteFallback = false;
         AvailableStatus status = AvailableStatus.UNCHECKABLE;
         if (prefer_linkcheck_via_API) {
-            status = this.requestFileInformationAPI(link);
+            status = this.requestFileInformationAPI(link, false);
         }
-        if (status == AvailableStatus.UNCHECKABLE) {
+        if (status == AvailableStatus.UNCHECKABLE && allowWebsiteFallback) {
             /* Fallback to website(or API usage was disabled) - this should never happen! */
             status = requestFileInformationWebsite(link, false);
             api_used = false;
@@ -99,7 +105,7 @@ public class JetloadNet extends PluginForHost {
         return status;
     }
 
-    public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         /*
          * 2019-05-08: It seems like we could use a random String instead of a real API_KEY too - but who knows for how long so we'll use a
          * valid one ...
@@ -136,11 +142,23 @@ public class JetloadNet extends PluginForHost {
         }
         final String encoding_status = PluginJSonUtils.getJson(br, "encoding_status");
         if (StringUtils.equalsIgnoreCase("pending", encoding_status) || StringUtils.equalsIgnoreCase("started", encoding_status)) {
-            // downloading hls stream
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still encoding!", 60 * 60 * 1000l);
+            if (isDownload) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still encoding!", 60 * 60 * 1000l);
+            } else {
+                return AvailableStatus.TRUE;
+            }
         } else {
             return AvailableStatus.TRUE;
         }
+    }
+
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, final String key) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, key) {
+            @Override
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        };
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
@@ -153,9 +171,17 @@ public class JetloadNet extends PluginForHost {
             final String fid = this.getFID(link);
             br.getPage(link.getPluginPatternMatcher());
             /* 2020-01-22: Hardcoded reCaptchaV2 key */
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lc90MkUAAAAAOrqIJqt4iXY_fkXb7j3zwgRGtUI").getToken();
+            final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, "6Lc90MkUAAAAAOrqIJqt4iXY_fkXb7j3zwgRGtUI").getToken();
             final String postData = String.format("{\"token\":\"%s\",\"stream_code\":\"%s\"}", recaptchaV2Response, fid);
             br.postPageRaw("https://" + this.getHost() + "/jet_secure", postData);
+            final String errorMsg = PluginJSonUtils.getJson(br, "err");
+            if (errorMsg != null) {
+                if (errorMsg.equalsIgnoreCase("file_not_found")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* Unknown error */
+                return AvailableStatus.UNCHECKABLE;
+            }
             return AvailableStatus.TRUE;
         } else {
             // br.getHeaders().put("X-XSRF-TOKEN", ""); /* 2019-05-08: We don't need this */
@@ -188,8 +214,9 @@ public class JetloadNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformationAPI(link, true);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private String getString(Map<String, Object> map, String key) {
@@ -296,6 +323,11 @@ public class JetloadNet extends PluginForHost {
         if (dllink.contains(".m3u8")) {
             /* HLS download */
             br.getPage(dllink);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             checkFFmpeg(link, "Download a HLS Stream");
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null && br.containsHTML("#EXT-X-ENDLIST")) {
