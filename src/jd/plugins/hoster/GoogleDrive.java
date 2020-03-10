@@ -37,6 +37,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -117,17 +118,20 @@ public class GoogleDrive extends PluginForHost {
     private boolean isDocument = false;
     private String  dllink     = null;
 
-    public Browser prepBrowser(Browser pbr) {
+    public Browser prepBrowser(Browser pbr, final Account account) {
         // used within the decrypter also, leave public
         // language determined by the accept-language
         // user-agent required to use new ones otherwise blocks with javascript notice.
         if (pbr == null) {
             pbr = new Browser();
         }
-        if (agent == null) {
-            agent = UserAgents.stringUserAgent();
+        if (account == null) {
+            /* Only modify User-Agent if user does not own an account --> Otherwise his cookies cannot be used! */
+            if (agent == null) {
+                agent = UserAgents.stringUserAgent();
+            }
+            pbr.getHeaders().put("User-Agent", agent);
         }
-        pbr.getHeaders().put("User-Agent", agent);
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         pbr.setCustomCharset("utf-8");
         pbr.setFollowRedirects(true);
@@ -147,7 +151,7 @@ public class GoogleDrive extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        prepBrowser(br);
+        prepBrowser(br, aa);
         br.getPage("https://docs.google.com/leaf?id=" + getID(link));
         if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -258,10 +262,10 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink link, final Account account) throws Exception {
         if (privatefile) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
@@ -296,20 +300,20 @@ public class GoogleDrive extends PluginForHost {
                 final UrlQuery query = Request.parseQuery(links[0]);
                 streamLink = Encoding.urlDecode(query.get("url"), false);
             }
-            br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
+            br.getPage("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
             if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
                 /*
                  * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
                  * but not necessarily!
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+                downloadTempUnavailable(account);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
                 /*
                  * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
                  * but not necessarily!
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+                downloadTempUnavailable(account);
             }
             if ((br.containsHTML("<TITLE>Not Found</TITLE>") || br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
                 if (download_might_not_be_possible) {
@@ -337,7 +341,7 @@ public class GoogleDrive extends PluginForHost {
                 dllink = streamLink;
             }
             br.setFollowRedirects(true);
-            if (downloadLink.getVerifiedFileSize() == -1) {
+            if (link.getVerifiedFileSize() == -1) {
                 // why do this here??? shouldnt this be action of the download core? -raztoki20170727
                 final Browser brc = br.cloneBrowser();
                 final GetRequest request = new GetRequest(brc.getURL(dllink));
@@ -348,11 +352,11 @@ public class GoogleDrive extends PluginForHost {
                     con = brc.openRequestConnection(request);
                     if (con.isOK()) {
                         if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
-                            downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
-                            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            link.setProperty("ServerComaptibleForByteRangeRequest", true);
                         } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
-                            downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
-                            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            link.setProperty("ServerComaptibleForByteRangeRequest", true);
                         }
                     }
                 } finally {
@@ -364,12 +368,12 @@ public class GoogleDrive extends PluginForHost {
         }
         boolean resume = true;
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) || !resume) {
+        if (link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) || !resume) {
             maxChunks = 1;
         }
         final Set<String> loopCheck = new HashSet<String>();
         while (true) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
             if (!dl.getConnection().isContentDisposition() || (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
                 if (dl.getConnection().getResponseCode() == 416) {
                     dl.getConnection().disconnect();
@@ -383,12 +387,12 @@ public class GoogleDrive extends PluginForHost {
                 }
                 if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
                     // so its not possible to download at this time.
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+                    downloadTempUnavailable(account);
                 } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                     /*
                      * 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant!
                      */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+                    downloadTempUnavailable(account);
                 } else if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
                     // dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
                     dllink = br.getRegex("href\\s*=\\s*\"((/a/[^\"<>]*?)?/uc\\?export=download[^\"<>]*?)\"\\s*>\\s*Download anyway\\s*</a>").getMatch(0); // w/
@@ -408,11 +412,11 @@ public class GoogleDrive extends PluginForHost {
             break;
         }
         try {
-            if (downloadLink.getFinalFileName() == null) {
+            if (link.getFinalFileName() == null) {
                 String fileName = getFileNameFromHeader(dl.getConnection());
                 if (fileName != null) {
                     fileName = fileName.replace("의 사본", "");
-                    downloadLink.setFinalFileName(fileName);
+                    link.setFinalFileName(fileName);
                 }
             }
             if (!this.dl.startDownload()) {
@@ -424,19 +428,32 @@ public class GoogleDrive extends PluginForHost {
                     getLogger().log(e);
                 }
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
+                    link.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
+                link.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
+        }
+    }
+
+    /**
+     * Use this for response 403 or messages like 'file can not be downloaded at this moment'. Such files will usually be downloadable via
+     * account.
+     */
+    private void downloadTempUnavailable(final Account account) throws PluginException {
+        if (account != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+        } else {
+            /* 2020-03-10: No gurantees that a download will work via account but most times it will! */
+            throw new AccountRequiredException();
         }
     }
 
@@ -445,32 +462,24 @@ public class GoogleDrive extends PluginForHost {
         return helper.login(account);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            if (!login(br, account)) {
-                throw new Exception("Login Failed");
-            }
-        } catch (final Exception e) {
-            ai.setStatus(e.getMessage());
-            account.setValid(false);
-            return ai;
+        if (!login(br, account)) {
+            throw new Exception("Login Failed");
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* free accounts cannot have captchas */
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(20);
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        doFree(link);
+        doFree(link, account);
     }
 
     @Override

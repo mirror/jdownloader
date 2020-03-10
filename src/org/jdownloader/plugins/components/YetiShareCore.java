@@ -56,6 +56,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
@@ -285,10 +286,10 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        return requestFileInformation(link, null, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         setWeakFilename(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -298,6 +299,22 @@ public class YetiShareCore extends antiDDoSForHost {
         try {
             if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher() + "~i");
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* DEBUG YetiShare Upgrade */
+                    try {
+                        checkErrorsNew(link, account);
+                    } catch (final PluginException e) {
+                        if (isDownload) {
+                            throw e;
+                        } else if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                            throw e;
+                        } else {
+                            /* E.g. some other errormessage --> But file should be online */
+                            return AvailableStatus.TRUE;
+                        }
+                    }
+                }
+                /* Offline errorhandling */
                 if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                     /*
                      * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
@@ -309,23 +326,39 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } else {
                 getPage(link.getPluginPatternMatcher());
-                if (isWaitBetweenDownloadsURL()) {
-                    return AvailableStatus.TRUE;
-                } else if (isPremiumOnlyURL()) {
-                    return AvailableStatus.TRUE;
-                }
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     /* DEBUG YetiShare Upgrade */
-                    this.checkErrors(link, account);
-                }
-                if (isOfflineWebsite(link)) {
-                    /*
-                     * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
-                     * to redirect to a error-page so we would not be able to see any filename information at this stage but the file may
-                     * not be offline!
-                     */
-                    this.checkErrors(link, account);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    try {
+                        checkErrorsNew(link, account);
+                    } catch (final PluginException e) {
+                        if (isDownload) {
+                            throw e;
+                        } else if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                            throw e;
+                        } else {
+                            /* E.g. some other errormessage --> But file should be online */
+                            return AvailableStatus.TRUE;
+                        }
+                    }
+                } else {
+                    if (isWaitBetweenDownloadsURL()) {
+                        return AvailableStatus.TRUE;
+                    } else if (isPremiumOnlyURL()) {
+                        return AvailableStatus.TRUE;
+                    }
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        /* DEBUG YetiShare Upgrade */
+                        this.checkErrors(link, account);
+                    }
+                    if (isOfflineWebsite(link)) {
+                        /*
+                         * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script
+                         * tends to redirect to a error-page so we would not be able to see any filename information at this stage but the
+                         * file may not be offline!
+                         */
+                        this.checkErrors(link, account);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
             }
             scanInfo(link, fileInfo);
@@ -360,7 +393,16 @@ public class YetiShareCore extends antiDDoSForHost {
             final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
             {
-                String name = this.br.getRegex("data\\-animation\\-delay=\"\\d+\"\\s*>\\s*(?:Information about|Informacion)\\s*([^<>\"]*?)\\s*</div>").getMatch(0);
+                String lang_str_information = PluginJSonUtils.getJson(br, "file_information_left_description");
+                if (StringUtils.isEmpty(lang_str_information)) {
+                    /* Fallback to English */
+                    lang_str_information = "Information about";
+                }
+                String name = this.br.getRegex("data\\-animation\\-delay=\"\\d+\"\\s*>\\s*" + Pattern.quote(lang_str_information) + "\\s*([^<>\"]*?)\\s*</div>").getMatch(0);
+                if (name == null) {
+                    /* Wider attempt */
+                    name = this.br.getRegex(">\\s*" + Pattern.quote(lang_str_information) + "\\s*([^<>\"]+)<").getMatch(0);
+                }
                 name = name != null ? Encoding.htmlOnlyDecode(name).trim() : null;
                 if (name != null && !fileNameCandidates.contains(name)) {
                     fileNameCandidates.add(name);
@@ -396,7 +438,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (StringUtils.isEmpty(fileInfo[1])) {
-                fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut|Rozmiar Pliku)\\s*:\\s*[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
+                fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut|Rozmiar Pliku)\\s*:\\s*</td>\\s*?<td(?:\\s*class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
             }
             try {
                 /* Language-independant attempt ... */
@@ -447,7 +489,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, null, true);
         handleDownload(downloadLink, null);
     }
 
@@ -910,8 +952,10 @@ public class YetiShareCore extends antiDDoSForHost {
             logger.info("Found errormessage in current URL");
             final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsg);
             if (errorMap == null) {
-                logger.warning("Failed to find error_key");
-                return;
+                /* Not all websites have (all) language keys present e.g. ultimbox.com */
+                logger.info("Failed to find error_key");
+                /* TODO: Update this errormessage */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsg);
             }
             final String errorkey = (String) errorMap.get("error_key");
             logger.info("Found key to errormessage: " + errorkey);
@@ -1462,7 +1506,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         login(account, false);
         br.setFollowRedirects(false);
         getPage(link.getPluginPatternMatcher());
