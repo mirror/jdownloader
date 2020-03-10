@@ -17,20 +17,21 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/(?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/((?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})|forum/.+)" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
     public EightMusesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,43 +50,67 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
         if (fpName == null) {
             fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
         }
-        String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
-        if (categories == null || categories.length == 0) {
-            categories = br.getRegex("(\"|')(/album(?:/[a-z0-9\\-_]+){2,3})\\1").getColumn(1);
-        }
-        final String[] links = br.getRegex("(/picture/[^<>\"]*?)\"").getColumn(0);
-        if ((links == null || links.length == 0) && (categories == null || categories.length == 0)) {
-            final String[] issues = br.getRegex("href=\"([^<>\"]+/Issue-\\d+)\">").getColumn(0);
-            if (issues != null && issues.length > 0) {
-                for (String issue : issues) {
-                    issue = Request.getLocation(issue, br.getRequest());
-                    final DownloadLink dl = createDownloadlink(issue);
-                    decryptedLinks.add(dl);
-                    logger.info("issue: " + issue);
-                }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        if (parameter.matches("https?://[^/]+/forum/.+")) {
+            /* Grab forum attachments */
+            final String[] attachments = br.getRegex("(/forum/attachments/[^\"]+)\"").getColumn(0);
+            if (attachments.length == 0) {
+                logger.info("This thread does not seem to have any attachments available");
                 return decryptedLinks;
             }
-            logger.info("Unsupported or offline url");
-            return decryptedLinks;
-        }
-        if (links != null && links.length > 0) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            for (final String singleLink : links) {
-                final DownloadLink dl = createDownloadlink(Request.getLocation(singleLink, br.getRequest()));
-                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+            for (final String attachment : attachments) {
+                final DownloadLink dl = this.createDownloadlink("directhttp://https://" + br.getHost() + attachment);
+                String url_name = new Regex(attachment, "/attachments/(.+)\\.\\d+/?$").getMatch(0);
+                if (url_name != null) {
+                    if (url_name.contains("-")) {
+                        /* Fix filenames so they look nicer and have an extension */
+                        url_name = url_name.substring(0, url_name.lastIndexOf("-")).replace("-", " ") + "." + url_name.substring(url_name.lastIndexOf("-") + 1);
+                    }
+                    dl.setName(url_name);
+                }
                 dl.setAvailable(true);
-                fp.add(dl);
+                dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
             }
-        }
-        if (categories != null && categories.length > 0) {
-            final String[] current = br.getURL().split("/");
-            for (final String singleLink : categories) {
-                final String[] corrected = Request.getLocation(singleLink, br.getRequest()).split("/");
-                // since you can pick up cats lower down, we can evaluate based on how many so you don't re-decrypt stuff already decrypted.
-                if (!StringUtils.endsWithCaseInsensitive(br.getURL(), singleLink) && current.length < corrected.length) {
-                    decryptedLinks.add(createDownloadlink(Request.getLocation(singleLink, br.getRequest())));
+        } else {
+            String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
+            if (categories == null || categories.length == 0) {
+                categories = br.getRegex("(\"|')(/album(?:/[a-z0-9\\-_]+){2,3})\\1").getColumn(1);
+            }
+            final String[] links = br.getRegex("(/picture/[^<>\"]*?)\"").getColumn(0);
+            if ((links == null || links.length == 0) && (categories == null || categories.length == 0)) {
+                final String[] issues = br.getRegex("href=\"([^<>\"]+/Issue-\\d+)\">").getColumn(0);
+                if (issues != null && issues.length > 0) {
+                    for (String issue : issues) {
+                        issue = Request.getLocation(issue, br.getRequest());
+                        final DownloadLink dl = createDownloadlink(issue);
+                        decryptedLinks.add(dl);
+                        logger.info("issue: " + issue);
+                    }
+                    return decryptedLinks;
+                }
+                logger.info("Unsupported or offline url");
+                return decryptedLinks;
+            }
+            if (links != null && links.length > 0) {
+                for (final String singleLink : links) {
+                    final DownloadLink dl = createDownloadlink(Request.getLocation(singleLink, br.getRequest()));
+                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                    dl.setAvailable(true);
+                    fp.add(dl);
+                    decryptedLinks.add(dl);
+                }
+            }
+            if (categories != null && categories.length > 0) {
+                final String[] current = br.getURL().split("/");
+                for (final String singleLink : categories) {
+                    final String[] corrected = Request.getLocation(singleLink, br.getRequest()).split("/");
+                    // since you can pick up cats lower down, we can evaluate based on how many so you don't re-decrypt stuff already
+                    // decrypted.
+                    if (!StringUtils.endsWithCaseInsensitive(br.getURL(), singleLink) && current.length < corrected.length) {
+                        decryptedLinks.add(createDownloadlink(Request.getLocation(singleLink, br.getRequest())));
+                    }
                 }
             }
         }
