@@ -316,12 +316,6 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
                 /* Offline errorhandling */
                 if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
-                    /*
-                     * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script tends
-                     * to redirect to a error-page so we would not be able to see any filename information at this stage but the file may
-                     * not be offline!
-                     */
-                    this.checkErrors(link, account);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
@@ -331,14 +325,16 @@ public class YetiShareCore extends antiDDoSForHost {
                     try {
                         checkErrorsNew(link, account);
                     } catch (final PluginException e) {
-                        if (isDownload) {
-                            throw e;
-                        } else if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                             throw e;
                         } else {
                             /* E.g. some other errormessage --> But file should be online */
                             return AvailableStatus.TRUE;
                         }
+                    }
+                    final String fid = this.getFUIDFromURL(link);
+                    if (!br.getURL().contains(fid)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 } else {
                     if (isWaitBetweenDownloadsURL()) {
@@ -1299,7 +1295,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(this.getMainPage() + "/account_home.html");
-                    if (br.containsHTML("/logout\\.html")) {
+                    if (isLoggedin()) {
                         logger.info("Successfully logged in via cookies");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
@@ -1401,7 +1397,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                     }
                     submitForm(loginform);
-                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
+                    if (br.containsHTML(">\\s*Your username and password are invalid<") || !isLoggedin()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -1413,6 +1409,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    protected boolean isLoggedin() {
+        return br.containsHTML("/logout\\.html\"");
     }
 
     @Override
