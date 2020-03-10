@@ -891,7 +891,7 @@ public class VKontakteRu extends PluginForDecrypt {
             addedLinks = 0;
             page++;
             if (page > 1) {
-                this.br.postPage(br.getURL(), "al=1&al_ad=0&part=1&rev=&offset=" + offset);
+                this.postPageSafe(br.getURL(), "al=1&al_ad=0&part=1&rev=&offset=" + offset);
             }
             final int linksnumBefore = decryptedLinks.size();
             websiteCrawlContent(this.CRYPTEDLINK_FUNCTIONAL, br.toString(), fp, false, false, true, false, false, this.photos_store_picture_directurls);
