@@ -62,41 +62,40 @@ public class ZbigzCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa != null) {
-            login(aa, false);
-            final boolean enable_antiddos_workaround = true;
-            if (enable_antiddos_workaround) {
-                br.getPage(link.getPluginPatternMatcher());
-            } else {
-                super.getPage(link.getPluginPatternMatcher());
-            }
-            if (br.containsHTML("Page not found")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-            return AvailableStatus.TRUE;
-        } else {
+        if (aa == null) {
             link.getLinkStatus().setStatusText("Status can only be checked with account enabled");
             return AvailableStatus.UNCHECKABLE;
         }
+        login(aa, false);
+        final boolean enable_antiddos_workaround = true;
+        if (enable_antiddos_workaround) {
+            br.getPage(link.getPluginPatternMatcher());
+        } else {
+            super.getPage(link.getPluginPatternMatcher());
+        }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
+                link.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
