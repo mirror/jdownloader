@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -30,9 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/(\\d+)" })
 public class YandeRe extends PluginForHost {
     public YandeRe(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,11 +69,16 @@ public class YandeRe extends PluginForHost {
         long filesize = 0;
         String ext = null;
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+) \\| #\\d+ \\| yande\\.re\"").getMatch(0);
+        final String tags = br.getRegex("property=\"og:title\" content=\"([^<>\"]+) \\| #\\d+ \\| yande\\.re\"").getMatch(0);
+        /* 2020-03-10: Do not set tags as filename anymore as this makes the filenames waaay too long! */
+        String filename = null;
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
             filename = url_filename;
+        }
+        if (tags != null && link.getComment() == null) {
+            link.setComment(tags);
         }
         DLLINK = (String) entries.get("file_url");
         filesize = JavaScriptEngineFactory.toLong(entries.get("file_size"), 0);
