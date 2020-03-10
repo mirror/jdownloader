@@ -17,7 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,8 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sugarsync.com" }, urls = { "https?://(www\\.)?sugarsync\\.com/pf/D[\\d\\_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sugarsync.com" }, urls = { "https?://(?:www\\.)?sugarsync\\.com/pf/(D[\\d\\_]+)" })
 public class SugarSyncCom extends PluginForHost {
     public SugarSyncCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,23 +49,36 @@ public class SugarSyncCom extends PluginForHost {
         return 10;
     }
 
-    private String DLLINK = null;
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private String dllink = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("https://www.sugarsync.com/", "lang", "en");
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = br.openGetConnection(link.getPluginPatternMatcher());
             if (con.getContentType().contains("html")) {
                 br.followConnection();
             } else {
                 /* We have a directlink */
-                DLLINK = link.getDownloadURL();
+                dllink = link.getPluginPatternMatcher();
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 return AvailableStatus.TRUE;
@@ -73,46 +89,65 @@ public class SugarSyncCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"pf-down-unshared-main-message pf-down-unshared-unavailable-file-message\"")) {
-            // || br.containsHTML("class=\"pf-error-icon\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<span class=\"displayFileName\" title=\"(.*?)\"></span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"displayFileName\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("name : \\'(.*?)\\'\\,").getMatch(0);
-        }
-        if (filename == null) {
+        // br.getPage(link.getPluginPatternMatcher());
+        final String sessionid = br.getCookie(br.getHost(), "JSESSIONID");
+        final String somevaluesid = br.getRegex("id=\"someValuesId\" value=\"([^<>\"]+)\"").getMatch(0);
+        if (StringUtils.isEmpty(sessionid)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filesize = br.getRegex("<span class=\"fileSize\">\\((.*?)\\)</span>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"pf-down-file-size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        final String fid = getFID(link);
+        final UrlQuery query = new UrlQuery();
+        query.add("callCount", "1");
+        query.add("page", "/pf/" + fid);
+        query.add("httpSessionId", sessionid);
+        query.add("scriptSessionId", "");
+        query.add("c0-scriptName", "publicLinkPage");
+        query.add("c0-methodName", "landingPagePublicLink");
+        query.add("c0-id", "0");
+        query.add("c0-param0", "boolean:false");
+        query.add("c0-param1", "boolean:false");
+        query.add("c0-param2", "string:https%3A%2F%2Fwww.sugarsync.com%2Fpf%2F" + fid);
+        query.add("c0-param3", "string:" + somevaluesid);
+        query.add("batchId", "0");
+        br.postPageRaw("https://www.sugarsync.com/dwr/call/plaincall/publicLinkPage.landingPagePublicLink.dwr", query.toString());
+        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            // || br.containsHTML("class=\"pf-error-icon\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("error_no_public\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filesize == null) {
-            filesize = br.getRegex("size : \\'(.*?)\\'\\,").getMatch(0);
+        String filename = PluginJSonUtils.getJson(br, "jsonPublicFileName");
+        String filesize = PluginJSonUtils.getJson(br, "publicFileSize");
+        if (filename != null) {
+            link.setFinalFileName(filename.trim());
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!StringUtils.isEmpty(filesize)) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (DLLINK == null) {
-            String uid = new Regex(br.getURL(), "sugarsync\\.com/pf/(D[\\d\\_]+)").getMatch(0);
-            DLLINK = "https://www.sugarsync.com/pf/" + uid + "?directDownload=true";
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (dllink == null) {
+            final String token = PluginJSonUtils.getJson(br, "token");
+            if (StringUtils.isEmpty(token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String fid = getFID(link);
+            dllink = String.format("https://www.sugarsync.com/pf/%s?_=0.%d&token=%s&customData=%s", fid, System.currentTimeMillis(), token, token);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -10);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("freelink", DLLINK);
+        link.setProperty("freelink", dllink);
         dl.startDownload();
     }
 

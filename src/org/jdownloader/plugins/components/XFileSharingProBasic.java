@@ -716,7 +716,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             dllink = getDllink(link, account, brc, brc.toString());
             // final String url_thumbnail = getVideoThumbnailURL(br.toString());
         }
-        if (findFilesize && !StringUtils.isEmpty(dllink)) {
+        if (findFilesize && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
             /* Get- and set filesize from directurl */
             final boolean dllink_is_valid = checkDirectLinkAndSetFilesize(link, dllink, true) != null;
             /* Store directurl if it is valid */
