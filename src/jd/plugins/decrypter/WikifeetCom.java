@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,17 +32,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z%0-9\\-\\_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/[^/]+" })
 public class WikifeetCom extends PluginForDecrypt {
     public WikifeetCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // public static final String type_pic = "https?://(?:\\w+\\.)?pics\\.wikifeetx?\\.com";
-    public static final String type_wikifeet = "https?://(?:\\w+\\.)?wikifeetx?\\.com/[a-zA-Z%0-9\\-\\_]+";
+    public static final String type_wikifeet = "https?://(?:\\w+\\.)?wikifeetx?\\.com/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,14 +49,14 @@ public class WikifeetCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String cfName = this.br.getRegex("messanger.cfname = \\'(.*?)\\';").getMatch(0);
+        final String cfName = this.br.getRegex("messanger\\.cfname = '(.*?)';").getMatch(0);
         if (cfName == null) {
             return null;
         }
         String title = cfName;
         title = Encoding.htmlDecode(title).trim();
         if (parameter.matches(type_wikifeet)) {
-            final String gData = this.br.getRegex("messanger\\[\\'gdata\\'\\] = ([\\s\\S]*?);").getMatch(0);
+            final String gData = this.br.getRegex("messanger\\['gdata'\\] = ([\\s\\S]*?);").getMatch(0);
             final List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
             if (data.size() == 0) {
                 return decryptedLinks;
@@ -65,7 +65,7 @@ public class WikifeetCom extends PluginForDecrypt {
                 final Map<String, Object> entryMap = (Map<String, Object>) entry;
                 if (entryMap.containsKey("pid")) {
                     final String pid = String.valueOf(entryMap.get("pid"));
-                    final String dlurl = "directhttp://http://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
+                    final String dlurl = "directhttp://https://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
                     final DownloadLink dl = this.createDownloadlink(dlurl);
                     dl.setName(cfName + "_" + pid);
                     dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
