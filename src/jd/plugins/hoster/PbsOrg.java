@@ -13,10 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,12 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://video\\.pbs\\.org/video/\\d+|https?://(?:www\\.)?pbs\\.org/.+|https?://player\\.pbs\\.org/[a-z]+/\\d+" })
 public class PbsOrg extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public PbsOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,8 +49,9 @@ public class PbsOrg extends PluginForHost {
 
     /* Thx to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/pbs.py */
     /* According to the youtube-dl plugin they have a lof of other TV stations / websites - consider adding them in the future .... */
-    private final String TYPE_VIDEO = "https?://video\\.pbs\\.org/video/\\d+.*?|https?://player\\.pbs\\.org/[a-z]+/\\d+.*?|https?://(?:www\\.)?pbs\\.org/video/\\d+.*?";
-    private final String TYPE_OTHER = "https?://(www\\.)?pbs\\.org/.+";
+    private final String TYPE_VIDEO = "https?://[^/]+/video/\\d+.*?|https?://player\\.pbs\\.org/[a-z]+/\\d+.*?";
+    private final String TYPE_OTHER = "https?://(?:www\\.)?pbs\\.org/.+";
+    boolean              geoblocked = false;
 
     /* Decrypter */
     @SuppressWarnings("deprecation")
@@ -134,6 +135,9 @@ public class PbsOrg extends PluginForHost {
             vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL().replace("directhttp://", ""));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             vid = br.getRegex("mediaid:\\s*?\\'(\\d+)\\'").getMatch(0);
             if (vid == null) {
                 /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
@@ -152,6 +156,10 @@ public class PbsOrg extends PluginForHost {
                 /* --> If they got pages with multiple videos we'll need a decrypter! */
                 vid = br.getRegex("<div[^<>]*?class=\"film__stage\"[^<>]*?id=\"video\\-(\\d+)\"[^<>]*?>").getMatch(0);
             }
+            if (vid == null) {
+                /* 2020-03-10 */
+                vid = br.getRegex("viralplayer.?/(\\d+)").getMatch(0);
+            }
             /* Whatever the user added - it doesn't seem to be a video --> Offline */
             if (vid == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -159,10 +167,26 @@ public class PbsOrg extends PluginForHost {
         }
         link.setLinkID(vid);
         br.getPage("http://player.pbs.org/viralplayer/" + vid);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        /* 2020-03-10: E.g. offline: https://www.pbs.org/video/2018-bmw-x2-2018-callaway-tahoes-3ph8t5/ */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video is currently not available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("\\'title\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
+        if (br.containsHTML(">\\s*This video is unavailable in your area")) {
+            geoblocked = true;
+        }
+        String title = null;
+        String availability = null;
+        try {
+            final String json = br.getRegex("window\\.videoBridge = (\\{.*?\\});\\s*</script>").getMatch(0);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+            title = (String) entries.get("title");
+            availability = (String) entries.get("availability");
+        } catch (final Throwable e) {
+        }
+        if (availability != null && !"available".equals(availability)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (title != null) {
             title = vid + "_" + title;
         } else {
@@ -175,15 +199,19 @@ public class PbsOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (geoblocked) {
+            /* 2020-03-10: This may also happen for content which requires the user to be logged-in. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
+        }
         this.br.setFollowRedirects(false);
         /* Might come handy in the future */
         // final String embedType = this.br.getRegex("embedType[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
         /* Find available streaming formats/protocols */
         String url_http = null;
         String url_hls_base = null;
-        final String[] urls = this.br.getRegex("\\'url\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(https?://urs\\.pbs\\.org/redirect/[^<>\"\\']+)\\'").getColumn(0);
+        final String[] urls = this.br.getRegex("(https?://urs\\.pbs\\.org/redirect/[^<>\"\\']+)").getColumn(0);
         if (urls != null) {
             for (final String url : urls) {
                 try {
@@ -197,7 +225,6 @@ public class PbsOrg extends PluginForHost {
                     } else if (url_http == null) {
                         url_http = redirect;
                     }
-
                 } catch (final Throwable e) {
                 }
             }
@@ -206,8 +233,8 @@ public class PbsOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.setFollowRedirects(true);
-        /* TODO: Make sure that the errorhandling for GEO-blocked content is working fine! */
-        if (url_hls_base != null) {
+        /* Prefer http over hls */
+        if (url_http == null && url_hls_base != null) {
             /* Prefer hls as video- and audio bitrate is higher and also the resolution. */
             br.getPage(url_hls_base);
             handleResponsecodeErrors(this.br.getHttpConnection());
@@ -216,11 +243,11 @@ public class PbsOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, this.br, url_hls);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, this.br, url_hls);
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url_http, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, url_http, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 handleResponsecodeErrors(dl.getConnection());
                 br.followConnection();
@@ -286,7 +313,6 @@ public class PbsOrg extends PluginForHost {
     // }
     // return dllink;
     // }
-
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
@@ -303,5 +329,4 @@ public class PbsOrg extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

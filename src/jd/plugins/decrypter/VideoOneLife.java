@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/(?:[a-z]+/)?pornvideo/([a-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/((?:[a-z]+/)?pornvideo/[a-z0-9]+|player/[^/]+/)" })
 public class VideoOneLife extends PornEmbedParser {
     public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
@@ -33,7 +33,7 @@ public class VideoOneLife extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        String fuid = new Regex(parameter, "/([^/]+)/?$").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (!br.getURL().contains(fuid) || br.getHttpConnection().getResponseCode() == 404) {
@@ -49,7 +49,7 @@ public class VideoOneLife extends PornEmbedParser {
             }
         }
         if (br.containsHTML("<source src=\\'[^']+m3u8\\'") || isOffline) {
-            /* --> To hosterplugin */
+            /* --> To hosterplugin - most of all '/player/' URLs will have this but also 'pornvideo/' URLs . */
             final DownloadLink dl = createDownloadlink(parameter);
             if (isOffline) {
                 dl.setAvailable(false);
