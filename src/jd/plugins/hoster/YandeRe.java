@@ -69,15 +69,21 @@ public class YandeRe extends PluginForHost {
         long filesize = 0;
         String ext = null;
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        /* Filenames can get very long with tags included! */
+        final boolean put_tags_into_filename = true;
         final String tags = br.getRegex("property=\"og:title\" content=\"([^<>\"]+) \\| #\\d+ \\| yande\\.re\"").getMatch(0);
         /* 2020-03-10: Do not set tags as filename anymore as this makes the filenames waaay too long! */
         String filename = null;
+        if (put_tags_into_filename && tags != null) {
+            filename = tags;
+        }
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
             filename = url_filename;
         }
-        if (tags != null && link.getComment() == null) {
+        /* Save tags as comment if we do not put it into the filename. */
+        if (!put_tags_into_filename && tags != null && link.getComment() == null) {
             link.setComment(tags);
         }
         DLLINK = (String) entries.get("file_url");

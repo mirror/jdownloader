@@ -73,6 +73,17 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
             }
+            /* Grab other URLs/thumbnails/pictures/preview images */
+            final String[] urls = br.getRegex("<a href=\"(https[^<>\"]+)\" target=\"_blank\"").getColumn(0);
+            for (final String url : urls) {
+                if (new Regex(url, this.getSupportedLinks()).matches()) {
+                    /* Skip URLs that would go into this crawler again */
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink(url);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+            }
         } else {
             String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
             if (categories == null || categories.length == 0) {
