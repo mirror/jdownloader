@@ -77,7 +77,6 @@ public class VideoOneLife extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "/([^/]+)/?$").getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -86,7 +85,7 @@ public class VideoOneLife extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = getFID(link);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -101,6 +100,10 @@ public class VideoOneLife extends PluginForHost {
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink == null) {
+            /* 2020-03-11: Treat possible non-video-content as offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();

@@ -147,11 +147,10 @@ public class SendspaceCom extends PluginForHost {
                     getPage(this.br, url);
                     final Form securityform = getSecurityForm();
                     if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved") && url.contains("X")) {
+                        /* 2020-03-11: TODO: Check if this is still required */
                         url = url.replaceAll("X", "x");
                         link.setUrlDownload(url);
-                        /* 2020-03-11: WTF this would lead to an infinite loop --> No idea if this step is still required */
-                        // return requestFileInformation(link);
-                        return AvailableStatus.UNCHECKABLE;
+                        return requestFileInformation(link);
                     } else if (br.containsHTML("the file you requested is not available")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (securityform != null) {
@@ -195,12 +194,11 @@ public class SendspaceCom extends PluginForHost {
                         }
                     }
                     if (br.containsHTML("No htmlCode read")) {
+                        /* 2020-03-11: TODO: Check if this is still required */
                         // No html content??? maybe server problem
                         // seems like a firewall block.
                         Thread.sleep(90000);
-                        /* 2020-03-11: WTF this would lead to an infinite loop --> No idea if this step is still required */
-                        // return requestFileInformation(link);
-                        return AvailableStatus.UNCHECKABLE;
+                        return requestFileInformation(link);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
