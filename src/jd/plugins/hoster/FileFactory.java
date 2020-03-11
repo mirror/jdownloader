@@ -29,6 +29,14 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -53,14 +61,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+(/.*)?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" })
 public class FileFactory extends PluginForHost {
@@ -227,7 +227,7 @@ public class FileFactory extends PluginForHost {
     }
 
     /** Handles errors according to: https://api.filefactory.com/#appendix-error-matrix */
-    private void checkErrorsAPI(Browser br, final DownloadLink link, final Account account, final String apiKey) throws PluginException {
+    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final String apiKey) throws PluginException {
         if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type"))) {
             final String errorcodeStr = PluginJSonUtils.getJsonValue(br, "code");
             String errormessage = getErrormsgAPI(br);
@@ -236,6 +236,12 @@ public class FileFactory extends PluginForHost {
             }
             final int errorcode = Integer.parseInt(errorcodeStr);
             switch (errorcode) {
+            case 1:
+                /*
+                 * 2020-03-11: {"type":"error","message":"File cannot be called directly","code":1} --> Undocumented errorcode --> Short
+                 * waittime
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 1 * 60 * 1000);
             case 700:
                 /* This should never happen */
                 // ERR_API_INVALID_METHOD
@@ -1462,6 +1468,24 @@ public class FileFactory extends PluginForHost {
             /* E.g. on full login we've already done this API call before! */
             getPage(br, getApiBase() + "/getMemberInfo", null, account, apiKey);
         }
+        /*
+         * 2020-03-11: Workaround for API issue {"type":"error","message":"File cannot be called directly","code":1} --> Try to let existing
+         * accounts stay active, avoid displaying premium accounts as free.
+         */
+        final AccountInfo oldAccountInfo = account.getAccountInfo();
+        final long last_checked_timestamp = account.getLongProperty("last_checked_timestamp", 0);
+        final long account_last_checked_time_ago = System.currentTimeMillis() - last_checked_timestamp;
+        try {
+            this.checkErrorsAPI(br, null, account, apiKey);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            logger.info("API error happened");
+            if (oldAccountInfo != null && account_last_checked_time_ago <= 300000l) {
+                logger.info("Returning old AccountInfo");
+                return oldAccountInfo;
+            }
+            throw e;
+        }
         final String expire = PluginJSonUtils.getJsonValue(br, "expiryMs");
         final String type = PluginJSonUtils.getJsonValue(br, "accountType");
         if ("premium".equalsIgnoreCase(type)) {
@@ -1470,7 +1494,7 @@ public class FileFactory extends PluginForHost {
             account.setMaxSimultanDownloads(20);
             ai.setStatus("Premium Account");
             if (expire != null) {
-                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire), br);
             }
         } else {
             account.setType(AccountType.FREE);
@@ -1479,6 +1503,7 @@ public class FileFactory extends PluginForHost {
             ai.setStatus("Free Account");
             ai.setUnlimitedTraffic();
         }
+        account.setProperty("last_checked_timestamp", System.currentTimeMillis());
         return ai;
     }
 

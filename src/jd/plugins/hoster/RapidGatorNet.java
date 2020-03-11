@@ -539,6 +539,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
                 } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
+                    /*
+                     * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds
+                     * between downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
+                     */
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
                 } else {
                     logger.info("Unknown error happened");
@@ -1413,6 +1417,10 @@ public class RapidGatorNet extends antiDDoSForHost {
         } else if (br.containsHTML(">\\s*You have reached your hourly downloads limit\\.")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
         } else if (br.containsHTML("You can`t download not more than 1 file at a time in free mode\\.\\s*<|>\\s*Wish to remove the restrictions\\?")) {
+            /*
+             * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds between
+             * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
+             */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", 1 * 60 * 1000l);
         }
     }
