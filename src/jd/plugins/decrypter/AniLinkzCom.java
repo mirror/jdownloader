@@ -198,6 +198,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 // seems they might not be using escape function.. any longer...
                 escapeAll = br2.toString();
             }
+            logger.info("escapeAll: " + escapeAll);
             if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|https?://www\\./media)").matches()) {
                 // escapeAll == null / not online yet... || offline results within escapeAll
                 if (br.containsHTML("This page will be updated as soon as|becomes available\\. Stay tuned for ")) {
@@ -223,6 +224,17 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                 link = "http://stagevu.com/video/" + stagevu;
             } else {
                 // error
+            }
+        } else if (inValidate(link) && escapeAll.contains("videozoo")) {
+            // src="//videozoo.me/embed.php?w=712&h=455&vid=at/nw/DateALiveS3-02.mp4"
+            link = new Regex(escapeAll, "src=\"([^\"]+\")").getMatch(0);
+            if (!inValidate(link)) {
+                Browser br3 = br.cloneBrowser();
+                br3.setFollowRedirects(true);
+                getPage(br3, link);
+                logger.info("videozoo link: " + br3.getURL());
+                link = br3.getRegex("file: \"([^\"]+)\"").getMatch(0);
+                logger.info("videozoo link goes to: " + link);
             }
         } else if (inValidate(link) && escapeAll.contains("smotri.com/")) {
             String smotri = new Regex(escapeAll, "file=(v\\d+)").getMatch(0);
@@ -281,6 +293,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
         }
         if (!inValidate(link)) {
             link = Request.getLocation(link, br2.getRequest());
+            logger.info("Adding link: " + link);
             decryptedLinks.add(createDownloadlink(link));
         }
         // logic to deal with split parts within escapeAll. Uses all existing code within parsePage (see #9373)

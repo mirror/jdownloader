@@ -75,6 +75,7 @@ public class Mv2kTo extends antiDDoSForDecrypt {
             }
             Browser br2 = br.cloneBrowser();
             int mirror = 1, part = 1, m = 0;
+            // mirror = same host (drop down below fake screen, after IMDB)
             String mirrors[] = br.getRegex("<OPTION\\s+(?:selected\\s+)?value=\"([^\"]+)\"").getColumn(0);
             if (mirrors != null && mirrors.length > 1) {
                 mirror = mirrors.length;

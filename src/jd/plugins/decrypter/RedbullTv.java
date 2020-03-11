@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -22,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -34,17 +35,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redbull.tv" }, urls = { "https?://(www\\.)?redbull.tv/(?:episodes|videos)/[A-Z0-9\\-]+/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redbull.com" }, urls = { "https?://(www\\.)?redbull\\.(?:tv|com/[a-z-]+(/tv)?)/(?:episodes|videos?)(?:/[A-Z0-9-]+)?/[a-z0-9-]+" })
 public class RedbullTv extends PluginForDecrypt {
-
     @SuppressWarnings("deprecation")
     public RedbullTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DOMAIN         = "redbull.tv";
+    private static final String DOMAIN         = "redbull.com";
     /* Settings stuff */
     private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
 
@@ -61,7 +59,7 @@ public class RedbullTv extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
         boolean httpAvailable = false;
-        final String vid = new Regex(parameter, "redbull.tv/[^/]+/([A-Z0-9\\-]+)/").getMatch(0);
+        final String vid = new Regex(parameter, "videos?/([A-Za-z0-9\\-]+)/?").getMatch(0);
         // if (parameter.matches(type_unsupported)) {
         // try {
         // decryptedLinks.add(this.createOfflinelink(parameter));
@@ -70,7 +68,7 @@ public class RedbullTv extends PluginForDecrypt {
         // }
         // return decryptedLinks;
         // }
-        br.getPage("https://api.redbull.tv/v1/videos/" + vid);
+        br.getPage("https://api.redbull.tv/v3/videos/" + vid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -122,13 +120,11 @@ public class RedbullTv extends PluginForDecrypt {
             for (Entry<String, Object> entry : entryset) {
                 final String bitrate = entry.getKey();
                 final String finallink = (String) entry.getValue();
-
                 if (formats.containsKey(bitrate) && cfg.getBooleanProperty(bitrate, false)) {
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     final String[] vidinfo = formats.get(bitrate);
                     String filename = title + "_" + getFormatString(vidinfo);
                     filename += ".mp4";
-
                     try {
                         dl.setContentUrl(parameter);
                         if (description != null) {
@@ -159,7 +155,6 @@ public class RedbullTv extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(hlsurl));
         }
-
         return decryptedLinks;
     }
 
@@ -190,5 +185,4 @@ public class RedbullTv extends PluginForDecrypt {
         }
         return formatString;
     }
-
 }
