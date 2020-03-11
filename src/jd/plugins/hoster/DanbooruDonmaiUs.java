@@ -70,7 +70,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+).\\s*Danbooru\\s*</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+). \\s*Danbooru\\s*</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
