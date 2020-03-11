@@ -33,4 +33,6 @@ public interface TurbobitConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     PreferredDomain getPreferredDomain();
+
+    void setPreferredDomain(PreferredDomain domain);
 }
