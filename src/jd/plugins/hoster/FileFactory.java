@@ -1480,7 +1480,7 @@ public class FileFactory extends PluginForHost {
         } catch (final Throwable e) {
             e.printStackTrace();
             logger.info("API error happened");
-            if (oldAccountInfo != null && account_last_checked_time_ago <= 300000l) {
+            if (oldAccountInfo != null && account_last_checked_time_ago <= 3 * 60 * 60 * 1000) {
                 logger.info("Returning old AccountInfo");
                 return oldAccountInfo;
             }
