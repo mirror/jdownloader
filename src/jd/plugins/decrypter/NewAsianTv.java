@@ -53,7 +53,7 @@ public class NewAsianTv extends PluginForDecrypt {
         String fpName = br.getRegex("<meta name=\"description\" content=[\"'](?:Watch )?([^\"]*) \\|").getMatch(0);
         String[] links = null;
         if (new Regex(parameter, "/(?:watch|files)/.+\\.html?").matches()) {
-            links = br.getRegex("<a[^>]*href=\"([^\"]+)\" episode-type=\"watch\"[^>]*>").getColumn(0);
+            // links = br.getRegex("<a[^>]*href=\"([^\"]+)\" episode-type=\"watch\"[^>]*>").getColumn(0);
             String episodeJSON = br.getRegex("episodeJson\\s*=\\s*\'([^\']+)\'\\;").getMatch(0);
             if (StringUtils.isNotEmpty(episodeJSON)) {
                 final Object[] jsonArray = JSonStorage.restoreFromString(episodeJSON, TypeRef.OBJECT_ARRAY);
@@ -93,6 +93,8 @@ public class NewAsianTv extends PluginForDecrypt {
                             }
                             decryptedLinks.add(createDownloadlink(iframeLink));
                         }
+                    } else {
+                        continue;
                     }
                 }
             }

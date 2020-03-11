@@ -39,7 +39,7 @@ public class JavCL extends PluginForDecrypt {
                 continue;
             }
             final String url = decodejav(data_link, data_id);
-            logger.info("Decrypter output: " + url);
+            logger.info("Output of decodejav(data_link, data_id): " + url);
             final String name;
             if (data_links.length > 1) {
                 name = filename + "_" + (char) ('a' + index);
