@@ -19,11 +19,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.TurbobitCore;
 import org.jdownloader.plugins.components.config.TurbobitConfig;
 import org.jdownloader.plugins.components.config.TurbobitConfig.PreferredDomain;
@@ -55,6 +60,29 @@ public class TurboBitNet extends TurbobitCore {
         default:
             return this.getHost();
         }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfo(account);
+        if (Account.AccountType.PREMIUM.equals(account.getType()) && ai != null && !ai.isExpired()) {
+            final Browser brc = br.cloneBrowser();
+            brc.getPage("/premium/info");
+            final String daily = brc.getRegex("\\(\\s*from\\s*([0-9,\\.]+\\s*[TGKM]B)\\s*/\\s*day").getMatch(0);
+            final String dailyLeft = brc.getRegex("until\\s*the\\s*end\\s*of\\s*the\\s*day\\s*:\\s*<b>\\s*([0-9,\\.]+\\s*[TGKM]B)").getMatch(0);
+            // final String monthly = brc.getRegex("\\(\\s*from\\s*([0-9,\\.]+\\s*[TGKM]B)\\s*/\\s*month").getMatch(0);
+            // final String monthlyLeft =
+            // brc.getRegex("of\\s*the\\s*monthly\\s*traffic\\s*:\\s*<b>\\s*([0-9,\\.]+\\s*[TGKM]B)").getMatch(0);
+            final String expireDate = brc.getRegex("Date\\s*end\\s*:\\s*<b>\\s*(\\d{2}.\\d{2}\\.\\d{4}\\s*\\d{2}:\\d{2})\\s*<").getMatch(0);
+            if (expireDate != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "dd.MM.yyyy' 'HH:mm", Locale.ENGLISH));
+            }
+            if (daily != null && dailyLeft != null) {
+                ai.setTrafficMax(daily);
+                ai.setTrafficLeft(dailyLeft);
+            }
+        }
+        return ai;
     }
 
     public static String[] getAnnotationNames() {
