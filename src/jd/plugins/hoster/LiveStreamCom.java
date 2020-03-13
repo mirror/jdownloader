@@ -33,6 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "https?://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" })
@@ -65,7 +69,8 @@ public class LiveStreamCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private String               progressive_url   = null;
+    private String               m3u8_url          = null;
 
     @Override
     public String getAGBLink() {
@@ -90,7 +95,8 @@ public class LiveStreamCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         String filename = null;
-        dllink = null;
+        progressive_url = null;
+        m3u8_url = null;
         final long entryId = Long.parseLong(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -123,66 +129,107 @@ public class LiveStreamCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (isJDStable()) {
-                /* http */
-                dllink = (String) entry.get("progressive_url");
-            } else {
-                /* https */
-                dllink = (String) entry.get("secure_progressive_url");
-            }
             filename = (String) entry.get("caption");
+            progressive_url = (String) entry.get("secure_progressive_url");
+            if (StringUtils.isEmpty(progressive_url) || StringUtils.contains(progressive_url, "unsupported.mp4")) {
+                progressive_url = null;
+                m3u8_url = (String) entry.get("secure_m3u8_url");
+                if (StringUtils.isEmpty(m3u8_url)) {
+                    m3u8_url = null;
+                }
+            }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (StringUtils.isAllEmpty(progressive_url, m3u8_url)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = entryId + "_" + filename;
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (progressive_url != null) {
+            progressive_url = Encoding.htmlDecode(progressive_url);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con = openConnection(br2, dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                try {
+                    con = br2.openHeadConnection(progressive_url);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, -1, e);
+                }
+                if (!con.getContentType().contains("text") && con.isOK()) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", progressive_url);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-            if (!con.getContentType().contains("html") && con.isOK()) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+        } else if (m3u8_url != null) {
+            final Browser m3u8 = br.cloneBrowser();
+            m3u8.getPage(m3u8_url);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(m3u8));
+            if (hlsbest != null) {
+                final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(hlsbest.getStreamURL(), m3u8);
+                long estimatedSize = -1;
+                for (M3U8Playlist playList : playLists) {
+                    if (hlsbest.getBandwidth() > 0) {
+                        playList.setAverageBandwidth(hlsbest.getBandwidth());
+                        estimatedSize += playList.getEstimatedSize();
+                    }
+                }
+                if (estimatedSize > 0) {
+                    downloadLink.setDownloadSize(estimatedSize);
+                }
+                return AvailableStatus.TRUE;
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (StringUtils.isNotEmpty(progressive_url)) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, progressive_url, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("text")) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+        } else if (StringUtils.isNotEmpty(m3u8_url)) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8_url);
+            final HlsContainer best = HlsContainer.findBestVideoByBandwidth(qualities);
+            if (best != null) {
+                dl = new HLSDownloader(downloadLink, br, best.getStreamURL());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -191,20 +238,6 @@ public class LiveStreamCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
