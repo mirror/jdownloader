@@ -37,14 +37,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(www\\.)?dunjav\\.com/video/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javnew)\\.(club|net|today)/.*" })
 public class JavFembed extends PluginForDecrypt {
     public JavFembed(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String title      = null;
-    private String fembedHost = null;
+    private String title = null;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -56,43 +55,31 @@ public class JavFembed extends PluginForDecrypt {
             crawledLinks.add(createOfflinelink(parameter));
             return crawledLinks;
         }
-        title = Encoding.htmlDecode(br.getRegex("<title>(.*?)( - JAPANESE ADULT VIDEOS)?</title>").getMatch(0)).trim();
+        title = Encoding.htmlDecode(br.getRegex("<title>(?:Watch Japanese Porn - )?(.*?)( \\| JAVNEW| - JAVR.club)?</title>").getMatch(0)).trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        // <iframe src="/embed/?id=771" allowfullscreen="true"
-        final String[] iframes = br.getRegex("<iframe src=\"(/embed/[^/]+?)\"").getColumn(0);
-        if ((iframes == null || iframes.length == 0 && br.containsHTML("<iframe src=\"\""))) {
-            crawledLinks.add(createOfflinelink(parameter));
-            return crawledLinks;
+        String fembed = br.getRegex("<iframe[^<>]*?src=\"([^<>]*?/v/.*?)\"").getMatch(0);
+        if (fembed == null) {
+            fembed = br.getRegex("allowfullscreen=[^<>]+?(http[^<>]+?)>").getMatch(0); // javr.club
         }
-        if ((iframes == null || iframes.length == 0)) {
+        if (fembed == null) {
             logger.warning("Decrypter broken (items regex) for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // <img class="img-thumbnail" width="600" alt="RIX023" title="RIX023"
-        // src="https://dunjav.com/img/dunjav_c11946_v84127_118rix023pl.jpg"><
-        final String poster = br.getRegex("<img class=.*?src=\"([^\"]+?)\"").getMatch(0);
-        for (final String iframe : iframes) {
-            logger.info("iframe: " + iframe);
-            br.getPage(iframe);
-            // <script>document.getElementById("embed").src=atob('aHR0cHM6Ly93d3cuZHVuYmVkLnh5ei92LzRkOWpycW1neW8x');</script>
-            // https://www.dunbed.xyz/v/4d9jrqmgyo1
-            final String atob = br.getRegex("src=atob\\('([^']+?)'\\)").getMatch(0);
-            logger.info("atob: " + atob);
-            if (atob == null) {
-                continue; // Location: https://www.fembed.com
-            }
-            String fembed = Encoding.Base64Decode(atob);
-            logger.info("fembed: " + fembed);
-            crawlFembedLink(crawledLinks, fembed);
-            fp.addLinks(crawledLinks);
-        }
+        fembed = fembed.replace("\\", "");
+        logger.info("Debug info: fembed: " + fembed);
+        crawlFembedLink(crawledLinks, fembed);
+        fp.addLinks(crawledLinks);
         return crawledLinks;
     }
 
     private void crawlFembedLink(final ArrayList<DownloadLink> crawledLinks, final String fembed) throws Exception {
         // Copied from FEmbedDecrypter, thanks to Sebbu.
-        fembedHost = Browser.getHost(fembed);
+        String fembedHost = Browser.getHost(fembed);
+        // logger.info("Debug info: fembedHost: " + fembedHost);
+        if (fembedHost.contains("fembed")) {
+            fembedHost = "www." + fembedHost;
+        }
         String file_id = new Regex(fembed, "/(?:f|v|api/sources?)/([a-zA-Z0-9_-]+)").getMatch(0);
         final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
         final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
@@ -102,8 +89,6 @@ public class JavFembed extends PluginForDecrypt {
             crawledLinks.add(link);
             return;
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
         final List<Map<String, Object>> videos;
         if (response.get("data") instanceof String) {
             videos = (List<Map<String, Object>>) JSonStorage.restoreFromString((String) response.get("data"), TypeRef.OBJECT);
@@ -124,11 +109,6 @@ public class JavFembed extends PluginForDecrypt {
             }
             link.setAvailable(true);
             crawledLinks.add(link);
-            fp.addLinks(crawledLinks);
         }
-    }
-
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 }
