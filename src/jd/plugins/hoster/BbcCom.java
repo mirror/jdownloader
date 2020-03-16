@@ -15,9 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -31,10 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[a-z][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
@@ -58,18 +59,24 @@ public class BbcCom extends PluginForHost {
         }
     }
 
-    private String rtmp_host       = null;
-    private String rtmp_app        = null;
-    private String rtmp_playpath   = null;
-    private String rtmp_authString = null;
-    private String hls_master      = null;
-    private String title           = null;
+    private String rtmp_host               = null;
+    private String rtmp_app                = null;
+    private String rtmp_playpath           = null;
+    private String rtmp_authString         = null;
+    private String hls_master              = null;
+    private String hls_best_and_or_working = null;
+    private String title                   = null;
 
     /** E.g. json instead of xml: http://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/<vpid>/format/json */
-    /** Thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/bbc.py */
+    /**
+     * Thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/bbc.py
+     *
+     * @throws Exception
+     */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String vpid = new Regex(link.getDownloadURL(), "bbcdecrypted/(.+)").getMatch(0);
@@ -97,6 +104,7 @@ public class BbcCom extends PluginForHost {
         /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
         final HashSet<String> testedM3U8 = new HashSet<String>();
+        final ArrayList<String> hlsMasters = new ArrayList<String>();
         HlsContainer bestHLSContainer = null;
         for (final String mediasingle : media) {
             final String kind = new Regex(mediasingle, "kind=\"([a-z]+)\"").getMatch(0);
@@ -151,6 +159,7 @@ public class BbcCom extends PluginForHost {
                                     if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
                                         bestHLSContainer = best;
                                         hls_master = rewrite;
+                                        hlsMasters.add(hls_master);
                                         continue;
                                     }
                                 } catch (final Exception e) {
@@ -161,10 +170,11 @@ public class BbcCom extends PluginForHost {
                                 final Browser brc = br.cloneBrowser();
                                 brc.getPage(m3u8);
                                 final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
-                                final HlsContainer best = HlsContainer.findBestVideoByBandwidth(containers);
-                                if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
-                                    bestHLSContainer = best;
+                                final HlsContainer bestCandidate = HlsContainer.findBestVideoByBandwidth(containers);
+                                if (bestCandidate != null && (bestHLSContainer == null || bestCandidate.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                                    bestHLSContainer = bestCandidate;
                                     hls_master = m3u8;
+                                    hlsMasters.add(hls_master);
                                 }
                             } catch (final Exception e) {
                                 logger.log(e);
@@ -179,13 +189,60 @@ public class BbcCom extends PluginForHost {
                 }
             }
         }
+        HlsContainer selectedHlsContainer = null;
         if (bestHLSContainer != null) {
-            hls_master = bestHLSContainer.getM3U8URL();
+            /* 2020-03-16: This is a mess */
+            /* Find working HLS URL */
+            final Browser hlsBR = br.cloneBrowser();
+            /* First try previously selected "best of the best" */
+            boolean bestFailure = true;
             try {
-                final List<M3U8Playlist> m3u8s = bestHLSContainer.getM3U8(br.cloneBrowser());
+                final List<M3U8Playlist> m3u8s = bestHLSContainer.getM3U8(hlsBR);
                 filesize_temp = M3U8Playlist.getEstimatedSize(m3u8s);
-            } catch (Exception e) {
+                hls_master = bestHLSContainer.getM3U8URL();
+                selectedHlsContainer = bestHLSContainer;
+            } catch (final Exception e) {
                 logger.log(e);
+            }
+            if (bestFailure) {
+                /* Now try all masters --> Try best first - select fallback if that does not work */
+                for (final String hls_master_tmp : hlsMasters) {
+                    hlsBR.getPage(hls_master_tmp);
+                    boolean done = false;
+                    final List<HlsContainer> tmpcContainers = HlsContainer.getHlsQualities(hlsBR);
+                    final HlsContainer bestCandidate = HlsContainer.findBestVideoByBandwidth(tmpcContainers);
+                    try {
+                        final List<M3U8Playlist> m3u8s = bestCandidate.getM3U8(hlsBR);
+                        filesize_temp = M3U8Playlist.getEstimatedSize(m3u8s);
+                        hls_master = bestCandidate.getM3U8URL();
+                        hls_best_and_or_working = bestCandidate.getDownloadurl();
+                        selectedHlsContainer = bestCandidate;
+                        break;
+                    } catch (final Exception e) {
+                        logger.log(e);
+                        for (final HlsContainer tmpContainer : tmpcContainers) {
+                            try {
+                                final List<M3U8Playlist> m3u8s = tmpContainer.getM3U8(hlsBR);
+                                filesize_temp = M3U8Playlist.getEstimatedSize(m3u8s);
+                                hls_master = tmpContainer.getM3U8URL();
+                                done = true;
+                                hls_best_and_or_working = tmpContainer.getDownloadurl();
+                                selectedHlsContainer = tmpContainer;
+                                break;
+                            } catch (final Exception ex) {
+                            }
+                        }
+                        if (done) {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (selectedHlsContainer != null) {
+                /* Set final filename here including quality information because we will definitely download this version! */
+                logger.info("Downloading forced quality: " + selectedHlsContainer.getResolution());
+                final String quality_string = String.format("hls_%s@%d", selectedHlsContainer.getResolution(), selectedHlsContainer.getFramerate(25));
+                link.setFinalFileName(title + "_" + quality_string + ".mp4");
             }
         }
         if (rtmp_playpath != null) {
@@ -208,8 +265,8 @@ public class BbcCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (hls_master == null && (this.rtmp_app == null || this.rtmp_host == null || this.rtmp_playpath == null) && this.br.getHttpConnection().getResponseCode() == 403) {
             /*
              * 2017-03-24: Example html in this case: <?xml version="1.0" encoding="UTF-8"?><mediaSelection
@@ -219,36 +276,46 @@ public class BbcCom extends PluginForHost {
         }
         final String quality_string;
         if (hls_master != null) {
-            br.getPage(hls_master);
-            final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
-            final String configuredPreferredVideoFramerate = getConfiguredVideoFramerate();
-            final List<HlsContainer> containers = HlsContainer.getHlsQualities(this.br);
-            HlsContainer hlscontainer_chosen = null;
-            if (!configuredPreferredVideoHeight.matches("\\d+")) {
-                hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
+            /* 2020-03-16: This is a mess */
+            /* HLS download and try to obey users' selection */
+            final String final_hls_url;
+            if (hls_best_and_or_working != null) {
+                logger.info("Quality selection overridden by (best) tested and working URL");
+                final_hls_url = hls_best_and_or_working;
             } else {
-                final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(configuredPreferredVideoHeight));
-                for (final HlsContainer hlscontainer_temp : containers) {
-                    final int height = hlscontainer_temp.getHeight();
-                    final String height_for_quality_selection_temp = getHeightForQualitySelection(height);
-                    final String framerate = Integer.toString(hlscontainer_temp.getFramerate(25));
-                    if (height_for_quality_selection_temp.equals(height_for_quality_selection) && framerate.equals(configuredPreferredVideoFramerate)) {
-                        logger.info("Found user selected quality");
-                        hlscontainer_chosen = hlscontainer_temp;
-                        break;
+                logger.info("Looking for user selected quality");
+                br.getPage(hls_master);
+                final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
+                final String configuredPreferredVideoFramerate = getConfiguredVideoFramerate();
+                final List<HlsContainer> containers = HlsContainer.getHlsQualities(this.br);
+                HlsContainer hlscontainer_chosen = null;
+                if (!configuredPreferredVideoHeight.matches("\\d+")) {
+                    hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
+                } else {
+                    final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(configuredPreferredVideoHeight));
+                    for (final HlsContainer hlscontainer_temp : containers) {
+                        final int height = hlscontainer_temp.getHeight();
+                        final String height_for_quality_selection_temp = getHeightForQualitySelection(height);
+                        final String framerate = Integer.toString(hlscontainer_temp.getFramerate(25));
+                        if (height_for_quality_selection_temp.equals(height_for_quality_selection) && framerate.equals(configuredPreferredVideoFramerate)) {
+                            logger.info("Found user selected quality");
+                            hlscontainer_chosen = hlscontainer_temp;
+                            break;
+                        }
+                    }
+                    if (hlscontainer_chosen == null) {
+                        logger.info("Failed to find user selected quality --> Fallback to BEST");
+                        hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
                     }
                 }
-                if (hlscontainer_chosen == null) {
-                    logger.info("Failed to find user selected quality --> Fallback to BEST");
-                    hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(containers);
-                }
+                quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
+                link.setFinalFileName(title + "_" + quality_string + ".mp4");
+                /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
+                link.setComment(hlscontainer_chosen.getDownloadurl());
+                checkFFmpeg(link, "Download a HLS Stream");
+                final_hls_url = hlscontainer_chosen.getDownloadurl();
             }
-            quality_string = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
-            downloadLink.setFinalFileName(title + "_" + quality_string + ".mp4");
-            /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
-            downloadLink.setComment(hlscontainer_chosen.getDownloadurl());
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, hlscontainer_chosen.getDownloadurl());
+            dl = new HLSDownloader(link, br, final_hls_url);
             dl.startDownload();
         } else {
             if (this.rtmp_app == null || this.rtmp_host == null || this.rtmp_playpath == null) {
@@ -256,7 +323,7 @@ public class BbcCom extends PluginForHost {
             }
             /* TODO: Complete quality_string at this place. */
             quality_string = "rtmp_";
-            downloadLink.setFinalFileName(title + "_" + quality_string + ".mp4");
+            link.setFinalFileName(title + "_" + quality_string + ".mp4");
             String rtmpurl = "rtmp://" + this.rtmp_host + "/" + this.rtmp_app;
             /* authString is needed in some cases */
             if (this.rtmp_authString != null) {
@@ -266,7 +333,7 @@ public class BbcCom extends PluginForHost {
                 rtmp_app += "?" + this.rtmp_authString;
             }
             try {
-                dl = new RTMPDownload(this, downloadLink, rtmpurl);
+                dl = new RTMPDownload(this, link, rtmpurl);
             } catch (final NoClassDefFoundError e) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
             }
@@ -276,7 +343,7 @@ public class BbcCom extends PluginForHost {
             /* 2016-05-31: tcUrl is very important for some urls e.g. http://www.bbc.co.uk/programmes/b01s5cdn */
             rtmp.setTcUrl(rtmpurl);
             rtmp.setUrl(rtmpurl);
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setPageUrl(link.getDownloadURL());
             rtmp.setPlayPath(this.rtmp_playpath);
             rtmp.setApp(this.rtmp_app);
             /* Last update: 2016-05-31 */

@@ -763,16 +763,19 @@ public class XHamsterCom extends PluginForHost {
                         }
                     } else {
                         String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
-                        String requestData = "r=[{\"name\":\"authorizedUserModelFetch\",\"requestData\":{\"$id\":\"" + createID() + "\",\"id\":null,\"trusted\":true,\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"remember\":1,\"redirectURL\":null";
+                        final String id = createID();
+                        final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"%s\"}}]";
+                        String requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), "");
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getPage("/x-api?" + requestData + "}}]");
+                        br.postPageRaw("/x-api", requestData);
                         if (br.containsHTML("showCaptcha\":true")) {
                             if (this.getDownloadLink() == null) {
-                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
+                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "https://xhamster.com", true);
                                 this.setDownloadLink(dummyLink);
                             }
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
-                            br.postPageRaw("/x-api", requestData + ",\"captcha\":\"" + recaptchaV2Response + "\"}}]");
+                            requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), recaptchaV2Response);
+                            br.postPageRaw("/x-api", requestData);
                         }
                     }
                     if (br.getCookie(currentDomain, "UID", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(currentDomain, "_id", Cookies.NOTDELETEDPATTERN) == null) {

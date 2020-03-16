@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -31,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/[a-z0-9_\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/([a-z0-9_\\-]+)/?" })
 public class DctpTv extends PluginForHost {
     public DctpTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,15 +52,25 @@ public class DctpTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("class=\\'error\\'>Der gewünschte Film ist \\(zur Zeit\\) nicht") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\});").getMatch(0);
+        String json = br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\});").getMatch(0);
+        if (json == null) {
+            /* 2020-03-16 */
+            json = br.getRegex("type=\"application/json\">(.*?)</script>").getMatch(0);
+        }
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "ivms/media_items/{0}");
+        Object mediaInfo = JavaScriptEngineFactory.walkJson(entries, "ivms/media_items/{0}");
+        if (mediaInfo == null) {
+            /* 2020-03-16 */
+            mediaInfo = JavaScriptEngineFactory.walkJson(entries, "props/pageProps/media");
+        }
+        entries = (LinkedHashMap<String, Object>) mediaInfo;
         // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
         String title = (String) entries.get("title");
         String date = (String) entries.get("airdate");
