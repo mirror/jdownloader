@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +36,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz", "superload.cz" }, urls = { "https?://(?:www\\.)?stahomat\\.(?:cz|sk)/(stahnout|download)/[a-zA-Z0-9%-]+", "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahovatelka\\.cz)/(stahnout|download)/[a-zA-Z0-9%-]+" })
 public class StahomatCzSuperloadCz extends antiDDoSForHost {
@@ -105,12 +105,13 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
-        final String fileName[] = br.getRegex("class=\"files-item file\"\\s*>\\s*<h.*?>\\s*(.*?)\\s*<span>\\s*(.*?)\\s*<").getRow(0);
+        final String withoutJS = br.toString().replaceAll("(?s)(<script>.*?</script>)", "");// removes annoying wildly placed script tags
+        final String fileName[] = new Regex(withoutJS, "class=\"files-item file\"\\s*>\\s*<h.*?>\\s*(.*?)\\s*<span>\\s*(.*?)\\s*<").getRow(0);
         if (fileName == null || fileName.length == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setName(fileName[0] + fileName[1]);
-        final String fileSize = br.getRegex("class=\"file-info-item-value file-info-item-value-high\"\\s*>\\s*([0-9\\.]+\\s*[kbmtg]+)\\s*<").getMatch(0);
+        final String fileSize = new Regex(withoutJS, "class=\"file-info-item-value file-info-item-value-high\"\\s*>\\s*([0-9\\.]+\\s*[kbmtg]+)\\s*<").getMatch(0);
         if (fileSize != null) {
             link.setDownloadSize(SizeFormatter.getSize(fileSize));
         }
