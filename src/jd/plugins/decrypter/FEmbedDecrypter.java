@@ -14,13 +14,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(?:fembed\\.com|there\\.to|gcloud\\.live|plycdn\\.xyz|hlsmp4\\.com|svpri\\.xyz|asianclub\\.tv|javcl\\.me|feurl\\.com|zidiplay\\.com|embed\\.media|javideo\\.pw|playvideo\\.best|ffem\\.club|dunbed\\.xyz|embed\\.casa|sexhd\\.co)/(?:f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(?:fembed\\.com|there\\.to|gcloud\\.live|plycdn\\.xyz|hlsmp4\\.com|svpri\\.xyz|asianclub\\.tv|javcl\\.me|feurl\\.com|zidiplay\\.com|embed\\.media|javideo\\.pw|playvideo\\.best|ffem\\.club|dunbed\\.xyz|embed\\.casa|sexhd\\.co|fileone\\.tv)/(?:f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,8 +37,10 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             name = new String(HexFormatter.hexToByteArray(name), "UTF-8");
         }
         String fembedHost = null;
+        Form dlform = null;
         if (name == null) {
             br.getPage(parameter.getCryptedUrl());
+            dlform = br.getForm(1);
             fembedHost = br.getHost();
             name = br.getRegex("<title>\\s*([^<]*?)\\s*(-\\s*Free\\s*download)?\\s*</title>").getMatch(0);
         }
@@ -45,7 +48,23 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             fembedHost = Browser.getHost(parameter.getCryptedUrl());
         }
         final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
+        br.getPage(postRequest);
+        Map<String, Object> response = null;
+        try {
+            response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        } catch (final Throwable e) {
+        }
+        if (response == null && dlform != null) {
+            /* 2020-03-16: Fallback for sites which do not have an API e.g. for fileone.tv */
+            br.setFollowRedirects(false);
+            br.submitForm(dlform);
+            final String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                return null;
+            }
+            ret.add(this.createDownloadlink("directhttp://" + dllink));
+            return ret;
+        }
         if (!Boolean.TRUE.equals(response.get("success"))) {
             final DownloadLink link = createDownloadlink(parameter.getCryptedUrl().replaceAll("https?://", "decryptedforFEmbedHosterPlugin://"));
             link.setAvailable(false);

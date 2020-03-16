@@ -739,11 +739,7 @@ public class PornHubCom extends PluginForHost {
                     }
                 }
                 if (!br.containsHTML("class=\"signOut\"|/premium/lander\">Logout<")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (isLoggedInHtmlPremium(br)) {
                     account.setType(AccountType.PREMIUM);
@@ -782,7 +778,6 @@ public class PornHubCom extends PluginForHost {
         acc.saveCookies(br.getCookies(getProtocolFree() + PORNHUB_FREE), COOKIE_ID_FREE);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -801,7 +796,6 @@ public class PornHubCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         }
-        account.setValid(true);
         logger.info("Account: " + account + " - is valid");
         return ai;
     }
