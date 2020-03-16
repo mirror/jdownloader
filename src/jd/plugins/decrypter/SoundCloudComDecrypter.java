@@ -308,17 +308,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private void decryptSet() throws Exception {
         String secret_token = null;
         if (parameter.matches("https?://[^/]+/[^/]+/sets/[^/]+/s-[A-Za-z0-9]+")) {
-            // /* 2020-03-11: Private set: Found no other way to get all items than this hmm */
+            /* Private set --> URL contains so called 'secret_token' */
             secret_token = new Regex(parameter, "/(s-.+)$").getMatch(0);
-            // br.getPage(parameter);
-            // if (br.getHttpConnection().getResponseCode() == 404) {
-            // decryptedLinks.add(this.createOfflinelink(parameter));
-            // return;
-            // }
-            // final String json = br.getRegex("catch\\(t\\)\\{\\}\\}\\)\\},(\\[\\{.*?\\})\\)\\);</script>").getMatch(0);
-            // final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>)
-            // JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
         }
         resolve(parameter);
         Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -384,8 +375,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             if (secret_token != null) {
                 queryplaylist.add("secret_token", secret_token);
             }
-            // query.add("", "");
-            // query.add("", "");
             br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id + "?" + queryplaylist.toString());
             data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             tracks = (List<Map<String, Object>>) data.get("tracks");
