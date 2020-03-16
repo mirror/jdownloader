@@ -187,8 +187,8 @@ public class DebridLinkFr extends PluginForHost {
                     } else if (br2.containsHTML(">Password or username not valid<|>Bad username or password\\.<")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        logger.warning("Problemo, submitting login form!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        logger.warning("Problem after submitting login form!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown login failure", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                 }
             } catch (PluginException e) {

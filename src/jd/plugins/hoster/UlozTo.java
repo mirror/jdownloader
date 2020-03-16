@@ -618,7 +618,8 @@ public class UlozTo extends PluginForHost {
                     if (passwordProtected) {
                         handlePassword(link);
                     }
-                    dllink = br.getURL() + "?do=directDownload";
+                    // dllink = br.getURL() + "?do=directDownload";
+                    dllink = br.getRegex("(/quickDownload/[^<>\"\\']+)\"").getMatch(0);
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);

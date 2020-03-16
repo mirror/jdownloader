@@ -263,7 +263,7 @@ public class DeepbridCom extends antiDDoSForHost {
             final String validuntil = PluginJSonUtils.getJsonValue(br, "expiration");
             ai.setStatus("Premium account");
             /* Correct expire-date - add 24 hours */
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000, br);
             ai.setUnlimitedTraffic();
         }
         this.getAPISafe(API_BASE + "?page=api&action=hosters", account, null);

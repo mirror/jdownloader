@@ -18,13 +18,17 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlorenfileCom extends XFileSharingProBasic {
@@ -101,5 +105,19 @@ public class FlorenfileCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        /* 2020-03-16: Special */
+        super.checkErrors(link, account, checkAll);
+        if (new Regex(correctedBR, ">\\s*There is not enough traffic available to download this file").matches()) {
+            /* 2020-03-16: Typically for account (premium?) users */
+            if (account != null) {
+                throw new AccountUnavailableException("Download limit reached", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            }
+        }
     }
 }
