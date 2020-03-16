@@ -140,7 +140,7 @@ public class StreamzCc extends antiDDoSForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null || true) {
+        if (dllink == null) {
             /* 2019-11-04: This is the official download. Consider adding stream download --> Maybe lower quality but no captcha */
             final String url_continue = br.getRegex("(/download[a-z0-9]+)").getMatch(0);
             if (url_continue == null) {
@@ -180,6 +180,7 @@ public class StreamzCc extends antiDDoSForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dl.getConnection().getLongContentLength() == 839075) {
+            /* 2020-03-16: Cat & mouse - they're sending an "Turn adblock off" video. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Plugin broken contact JDownloader support", 60 * 60 * 1000l);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());

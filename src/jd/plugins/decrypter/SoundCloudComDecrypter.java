@@ -388,7 +388,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 throw new DecrypterException("null");
             }
-            final long track_count = JavaScriptEngineFactory.toLong(data.get("track_count"), 0);
             setFilePackage(username, playlistname);
             /*
              * We will not get info about all tracks via this request - therefore we need to make another API call, collect the rest and
