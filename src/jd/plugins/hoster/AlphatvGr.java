@@ -20,6 +20,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/.+vtype=[a-z0-9]+\\&vid=\\d+.+" })
 public class AlphatvGr extends PluginForHost {
@@ -72,6 +73,7 @@ public class AlphatvGr extends PluginForHost {
     /** Plugin for old website layout: rev: 39318 */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         prepBR(this.br);
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");

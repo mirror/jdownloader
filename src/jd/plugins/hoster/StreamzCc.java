@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -46,6 +47,11 @@ public class StreamzCc extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return "https://streamz.cc/contact.dll";
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     private static List<String[]> getPluginDomains() {
@@ -102,10 +108,11 @@ public class StreamzCc extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File not found")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>streamZ\\.cc ([^<>\"]+)</title>").getMatch(0);
@@ -133,7 +140,7 @@ public class StreamzCc extends antiDDoSForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+        if (dllink == null || true) {
             /* 2019-11-04: This is the official download. Consider adding stream download --> Maybe lower quality but no captcha */
             final String url_continue = br.getRegex("(/download[a-z0-9]+)").getMatch(0);
             if (url_continue == null) {
@@ -141,18 +148,27 @@ public class StreamzCc extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(url_continue);
+            if (br.containsHTML(">Too many downloads? in the last few minutes")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many download in the last few minutes", 5 * 60 * 1000l);
+            }
             final Form continueForm = br.getFormbyActionRegex(".*dodownload\\.dll");
             if (continueForm == null) {
                 logger.warning("Failed to find continueForm");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            try {
+                /* 2020-03-16: Not required anymore (at least now always) */
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            } catch (final Throwable e) {
+            }
+            // this.sleep(10000, link);
             this.submitForm(continueForm);
             dllink = br.getRegex("(/getlink-[a-z0-9]+\\.dll)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            this.sleep(30000, link);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -163,6 +179,8 @@ public class StreamzCc extends antiDDoSForHost {
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (dl.getConnection().getLongContentLength() == 839075) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Plugin broken contact JDownloader support", 60 * 60 * 1000l);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();

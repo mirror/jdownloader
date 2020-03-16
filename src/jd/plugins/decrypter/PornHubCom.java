@@ -47,7 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos|/videos/(?:upload|paid))?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -148,7 +148,8 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
         }
-        if (!br.getURL().endsWith("/videos")) {
+        /* 2020-03-16: Sometimes user adds more exact url e.g. "/videos/upload" or "/videos/paid". */
+        if (!br.getURL().contains("/videos")) {
             /* 2020-01-22: Without this we will not get all items! */
             br.getPage(br.getURL() + "/videos");
         }

@@ -71,7 +71,7 @@ public class BeegCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "/(\\d+)(\\?t=\\d+-\\d+)?$").getMatch(0);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })
@@ -79,13 +79,22 @@ public class BeegCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         server_issue = false;
-        final String videoid = getFID(link);
+        final String videoid_original = getFID(link);
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (videoid_original == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String videoid = videoid_original;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        final String videoid_inside_current_url = new Regex(br.getURL(), "https?://[^/]+/(\\d+)").getMatch(0);
+        if (videoid_inside_current_url != null && !videoid_inside_current_url.equals(videoid)) {
+            /* 2020-03-16: Redirect to other videoid can happen */
+            logger.info(String.format("Continuing with videoid %s instead of %s", videoid_inside_current_url, videoid));
+            videoid = videoid_inside_current_url;
+        }
         String[] match = br.getRegex("script src=\"([^\"]+/(\\d+)\\.js)").getRow(0);
         String jsurl = null;
         String beegVersion = null;
@@ -112,7 +121,11 @@ public class BeegCom extends PluginForHost {
         String v_startStr = null;
         String v_endStr = null;
         /* 2019-09-16: Sometimes these two values are given inside our URL --> Use them! */
-        final String v_times_information = new Regex(link.getPluginPatternMatcher(), "\\?t=(.+)").getMatch(0);
+        String v_times_information = new Regex(link.getPluginPatternMatcher(), "\\?t=(.+)").getMatch(0);
+        if (v_times_information == null) {
+            /* 2020-03-16: URLs without this information may redirect to an URL containing it */
+            v_times_information = new Regex(br.getURL(), "\\?t=(.+)").getMatch(0);
+        }
         if (v_times_information != null) {
             final String[] v_times_informationList = v_times_information.split("\\-");
             if (v_times_informationList.length == 2) {
@@ -168,7 +181,7 @@ public class BeegCom extends PluginForHost {
         if (useApiV1) {
             /* Example v1video: 6471530 */
             logger.info("Failed to find extra data for desired content --> Falling back to apiv1");
-            br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=1");
+            br.getPage("/api/v6/" + beegVersion + "/video/" + videoid + "?v=2");
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -176,7 +189,7 @@ public class BeegCom extends PluginForHost {
         }
         String filename = (String) entries.get("title");
         if (StringUtils.isEmpty(filename)) {
-            filename = videoid;
+            filename = videoid_original;
         }
         final String[] qualities = { "2160", "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {
@@ -216,13 +229,13 @@ public class BeegCom extends PluginForHost {
             } else {
                 server_issue = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -105,6 +105,8 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_secret_token                       = "secret_token";
     public static final String   PROPERTY_playlist_id                        = "playlist_id";
     public static final String   PROPERTY_track_id                           = "track_id";
+    /* API bases */
+    public static final String   API_BASEv2                                  = "https://api-v2.soundcloud.com";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -233,7 +235,7 @@ public class SoundcloudCom extends PluginForHost {
             }
         }
         if (secret_token == null) {
-            br.getPage("https://api-v2.soundcloud.com/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + getClientId(br) + "&app_version=" + SoundcloudCom.getAppVersion(br));
+            br.getPage(API_BASEv2 + "/tracks?urns=soundcloud%3Atracks%3A" + songid + "&client_id=" + getClientId(br) + "&app_version=" + SoundcloudCom.getAppVersion(br));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getResponseCode() == 401) {
@@ -273,7 +275,7 @@ public class SoundcloudCom extends PluginForHost {
                         if (secret_token != null) {
                             querytracks.add("playlistSecretToken", secret_token);
                         }
-                        br.getPage("https://api-v2.soundcloud.com/tracks?" + querytracks.toString());
+                        br.getPage(API_BASEv2 + "/tracks?" + querytracks.toString());
                         dllink = getDirectlink(this, br, link);
                     } else {
                         br.getPage("https://api.soundcloud.com/i1/tracks/" + songid + "/streams?secret_token=" + secret_token + "&client_id=" + getClientId(br) + "&app_version=" + SoundcloudCom.getAppVersion(br));
@@ -674,7 +676,7 @@ public class SoundcloudCom extends PluginForHost {
                         /* TODO: Add cookie/oauth check for v2 to prevent full login attempts! */
                         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.1");
                         br.getHeaders().put("Content-Type", "application/json");
-                        br.getPage("https://api-v2.soundcloud.com/sign-in/identifier?q=" + Encoding.urlEncode(account.getUser()) + "&recaptcha_response=&client_id=" + getClientIdV2() + "&%5Bobject%20Object%5D=&app_version=" + getAppVersionV2() + "&app_locale=de");
+                        br.getPage(API_BASEv2 + "/sign-in/identifier?q=" + Encoding.urlEncode(account.getUser()) + "&recaptcha_response=&client_id=" + getClientIdV2() + "&%5Bobject%20Object%5D=&app_version=" + getAppVersionV2() + "&app_locale=de");
                         final String status = PluginJSonUtils.getJson(br, "status");
                         if (!"in_use".equalsIgnoreCase(status)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -682,7 +684,7 @@ public class SoundcloudCom extends PluginForHost {
                         final String userAgent = "\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36\"";
                         final String signature = "\"TODO\"";
                         final String deviceid = "\"TODO\"";
-                        final String requesturl = "https://api-v2.soundcloud.com/sign-in/password?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de";
+                        final String requesturl = API_BASEv2 + "/sign-in/password?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de";
                         final String postdata = "{\"client_id\":\"" + getClientIdV2() + "\",\"scope\":\"fast-connect non-expiring purchase signup upload\",\"recaptcha_pubkey\":\"6LeAxT8UAAAAAOLTfaWhndPCjGOnB54U1GEACb7N\",\"recaptcha_response\":null,\"credentials\":{\"identifier\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"},\"signature\":" + signature + ",\"device_id\":" + deviceid + ",\"user_agent\":" + userAgent + ",\"display_locale\":\"de\"}";
                         final PostRequest loginReq = br.createJSonPostRequest(requesturl, postdata);
                         br.openRequestConnection(loginReq);
@@ -764,7 +766,7 @@ public class SoundcloudCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         String acctype = null;
         try {
-            br.getPage("https://api-v2.soundcloud.com/me?client_id=CoeTA81rlM4PNaXs33YeRXZZAixneGwv&app_version=1549538778&app_locale=de");
+            br.getPage(API_BASEv2 + "/me?client_id=CoeTA81rlM4PNaXs33YeRXZZAixneGwv&app_version=1549538778&app_locale=de");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
         } catch (final Throwable e) {
