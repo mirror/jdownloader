@@ -101,9 +101,6 @@ public class AlphatvGr extends PluginForDecrypt {
                 int page = 1;
                 String[] videoItems = null;
                 do {
-                    if (this.isAbort()) {
-                        return decryptedLinks;
-                    }
                     logger.info(String.format("Crawling urls from page %d", page));
                     br.getPage("https://www.alphatv.gr/ajax/Isobar.AlphaTv.Components.Shows.Show.episodeslist?Key=" + year + "&Page=" + page + "&PageSize=" + maxItemsPerPage + "&ShowId=" + showID);
                     videoItems = br.getRegex("<div class=\"episodeItem flexClm4\">(.*?)</div>\\s*?</div>").getColumn(0);
@@ -113,7 +110,8 @@ public class AlphatvGr extends PluginForDecrypt {
                             videoID = new Regex(videoItem, "WebTvVideoId\\&quot;:(\\d+)").getMatch(0);
                         }
                         if (videoID == null) {
-                            return null;
+                            /* End */
+                            return decryptedLinks;
                         }
                         final String url = "https://www.alphatv.gr" + linkpart + "?vtype=episodes&vid=" + videoID + "&year=" + year + "&showId=" + showID;
                         final String episodeInfo = new Regex(videoItem, "<a class=\"openVideoPopUp\" onclick=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
@@ -132,8 +130,11 @@ public class AlphatvGr extends PluginForDecrypt {
                         distribute(dl);
                     }
                     page++;
-                } while (videoItems.length >= maxItemsPerPage);
+                } while (!this.isAbort() && videoItems.length >= maxItemsPerPage);
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            return null;
         }
         // /* First crawl the video the user initially added. */
         // crawlSingleVideo();

@@ -369,13 +369,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             /** Use APIv2 */
             final UrlQuery queryplaylist = new UrlQuery();
             queryplaylist.add("representation", "full");
-            queryplaylist.add("client_id", jd.plugins.hoster.SoundcloudCom.getClientId(br));
-            queryplaylist.add("app_version", jd.plugins.hoster.SoundcloudCom.getAppVersion(br));
+            queryplaylist.add("client_id", SoundcloudCom.getClientId(br));
+            queryplaylist.add("app_version", SoundcloudCom.getAppVersion(br));
             queryplaylist.add("format", "json");
             if (secret_token != null) {
                 queryplaylist.add("secret_token", secret_token);
             }
-            br.getPage("https://api-v2.soundcloud.com/playlists/" + playlist_id + "?" + queryplaylist.toString());
+            br.getPage(SoundcloudCom.API_BASEv2 + "/playlists/" + playlist_id + "?" + queryplaylist.toString());
             data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             tracks = (List<Map<String, Object>>) data.get("tracks");
             if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
@@ -388,6 +388,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 throw new DecrypterException("null");
             }
+            final long track_count = JavaScriptEngineFactory.toLong(data.get("track_count"), 0);
             setFilePackage(username, playlistname);
             /*
              * We will not get info about all tracks via this request - therefore we need to make another API call, collect the rest and
@@ -396,38 +397,48 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final ArrayList<Object> itemsFound = new ArrayList<Object>();
             String idsToGrab = "";
             boolean forceItemsToQueue = false;
+            final int max_tracks_per_request = 50;
+            int totalindex = 0;
+            int trackindex = 0;
             for (final Map<String, Object> item : tracks) {
                 final String track_id = getString(item, "id");
                 if (StringUtils.isEmpty(track_id)) {
                     throw new DecrypterException("null");
                 }
                 final Object permalink = item.get("permalink");
-                if (permalink == null || (permalink instanceof String) || forceItemsToQueue) {
-                    /* Add IDs for which we have to get the information later. */
+                if (permalink == null || forceItemsToQueue) {
+                    /* Track info not given --> Save trackID to get track object later */
                     forceItemsToQueue = true;
                     if (idsToGrab.length() > 0) {
                         idsToGrab += ",";
                     }
                     idsToGrab += track_id;
+                    trackindex++;
                 } else if (permalink != null) {
-                    /* Save full Object for later */
+                    /* Track info already given --> Save Object for later */
                     itemsFound.add(item);
                 }
-            }
-            /* Get information about our remaining tracks. */
-            final UrlQuery querytracks = new UrlQuery();
-            querytracks.add("playlistId", playlist_id);
-            querytracks.add("ids", Encoding.urlEncode(idsToGrab));
-            querytracks.add("client_id", SoundcloudCom.getClientId(br));
-            querytracks.add("app_version", SoundcloudCom.getAppVersion(br));
-            querytracks.add("format", "json");
-            if (secret_token != null) {
-                querytracks.add("playlistSecretToken", secret_token);
-            }
-            br.getPage("https://api-v2.soundcloud.com/tracks?" + querytracks.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            for (final Object tracko : ressourcelist) {
-                itemsFound.add(tracko);
+                final boolean reachedEnd = totalindex == tracks.size() - 1;
+                if (trackindex >= max_tracks_per_request || (reachedEnd && idsToGrab.length() > 0)) {
+                    /* Pagination handling */
+                    final UrlQuery querytracks = new UrlQuery();
+                    querytracks.add("playlistId", playlist_id);
+                    querytracks.add("ids", Encoding.urlEncode(idsToGrab));
+                    querytracks.add("client_id", SoundcloudCom.getClientId(br));
+                    querytracks.add("app_version", SoundcloudCom.getAppVersion(br));
+                    querytracks.add("format", "json");
+                    if (secret_token != null) {
+                        querytracks.add("playlistSecretToken", secret_token);
+                    }
+                    br.getPage(SoundcloudCom.API_BASEv2 + "/tracks?" + querytracks.toString());
+                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    for (final Object tracko : ressourcelist) {
+                        itemsFound.add(tracko);
+                    }
+                    idsToGrab = "";
+                    trackindex = 0;
+                }
+                totalindex++;
             }
             int counter = 1;
             for (final Object tracko : itemsFound) {
@@ -859,8 +870,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         } else {
             resolveurl = "https://soundcloud.com/" + url_username;
         }
-        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=10&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br));
-        if (br.containsHTML("\"404 \\- Not Found\"")) {
+        br.getPage(SoundcloudCom.API_BASEv2 + "/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=10&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.getClientId(br));
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"404 \\- Not Found\"")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
     }
