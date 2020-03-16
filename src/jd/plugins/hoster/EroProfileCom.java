@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -66,23 +68,31 @@ public class EroProfileCom extends PluginForHost {
     private static final String VIDEOLINK   = "(?i)https?://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
     private static Object       LOCK        = new Object();
     private static final String MAINPAGE    = "https://eroprofile.com";
-    public static final String  NOACCESS    = "(>You do not have the required privileges to view this page|>No access<)";
+    /*
+     * <h1 class="capMultiLine">Access denied</h1> --> This can mean multiple things:
+     * "Access denied - This video can only be viewed by the owner.",
+     * "Access denied - This video can only be viewed by friends of the owner.", "Access denied - This video can only be viewed by members."
+     */
+    public static final String  NOACCESS    = "(>You do not have the required privileges to view this page|>No access<|>\\s*Access denied)";
     private static final String PREMIUMONLY = "The video could not be processed";
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookie(this.getHost(), "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(NOACCESS)) {
-            link.getLinkStatus().setStatusText("Only available for registered users");
             return AvailableStatus.TRUE;
         }
         final String fid = this.getFID(link);
         if (link.getDownloadURL().matches(VIDEOLINK)) {
-            if (br.containsHTML("(>Video not found|>The video could not be found|<title>EroProfile</title>)")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>\\s*Video not found|>\\s*The video could not be found|<title>\\s*EroProfile</title>)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">\\s*Video processing failed")) {
+                /* <h1 class="capMultiLine">Video processing failed</h1> */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = getFilename();

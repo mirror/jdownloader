@@ -60,20 +60,23 @@ public class ZbigzCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
         final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa == null) {
             link.getLinkStatus().setStatusText("Status can only be checked with account enabled");
             return AvailableStatus.UNCHECKABLE;
         }
         login(aa, false);
-        final boolean enable_antiddos_workaround = true;
+        br.setFollowRedirects(false);
+        /* 2020-03-16: false */
+        final boolean enable_antiddos_workaround = false;
         if (enable_antiddos_workaround) {
             br.getPage(link.getPluginPatternMatcher());
         } else {
             super.getPage(link.getPluginPatternMatcher());
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page not found")) {
+        /* 2020-03-16: E.g. {"error":404,"error_msg":"Torrent not found"} */
+        final String error = PluginJSonUtils.getJson(br, "error");
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page not found") || "404".equals(error)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();
@@ -114,6 +117,7 @@ public class ZbigzCom extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 /* 2019-11-04: Always try to re-use cookies to avoid login captchas! */
                 if (cookies != null) {
+                    logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
                     final PostFormDataRequest accountInfoReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/info");
                     accountInfoReq.addFormData(new FormData("undefined", "undefined"));
@@ -121,10 +125,12 @@ public class ZbigzCom extends antiDDoSForHost {
                     super.sendRequest(accountInfoReq);
                     final String email = PluginJSonUtils.getJson(br, "email");
                     if (!StringUtils.isEmpty(email)) {
+                        logger.info("Cookie login successful");
                         return;
                     } else {
                         /* Full login required */
                         br.clearCookies(br.getHost());
+                        logger.info("Cookie login failed");
                     }
                 }
                 logger.info("Performing full login");
@@ -203,7 +209,11 @@ public class ZbigzCom extends antiDDoSForHost {
             // ai.setTrafficLeft(SizeFormatter.getSize(traffic));
         } else {
             account.setType(AccountType.FREE);
-            ai.setTrafficLeft(0);
+            /*
+             * 2020-03-16: Free accounts can also be used to download files they are simply limited by the number of files they can add per
+             * day and downloadspeed.
+             */
+            ai.setUnlimitedTraffic();
         }
         return ai;
     }
