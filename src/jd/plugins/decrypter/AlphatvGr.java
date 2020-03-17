@@ -128,6 +128,7 @@ public class AlphatvGr extends PluginForDecrypt {
                         dl.setAvailable(true);
                         /* This will go back into the decrypter. */
                         distribute(dl);
+                        decryptedLinks.add(dl);
                     }
                     page++;
                 } while (!this.isAbort() && videoItems.length >= maxItemsPerPage);

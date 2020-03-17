@@ -509,11 +509,13 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
             }
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() != 200) {
+            /* 2020-03-17: Content-Disposition should always be given */
+            if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isContentDisposition()) {
                 final URLConnectionAdapter con = dl.getConnection();
-                if (con.getResponseCode() == 404) {
+                final int responsecode = con.getResponseCode();
+                if (responsecode == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
-                } else if (con.getResponseCode() == 416) {
+                } else if (responsecode == 416) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
                 }
                 String json_errormsg = PluginJSonUtils.getJson(br, "error");

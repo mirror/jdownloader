@@ -154,8 +154,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         titlethis = description;
                     }
                     if (titlethis != null && titlethis.length() > 80) {
+                        /* Avoid too long filenames */
                         titlethis = titlethis.substring(0, 80);
                     }
+                    titlethis = sanitizeString(titlethis);
                     String vIdTemp = "";
                     String bestFMT = null;
                     String subtitle = null;
@@ -204,8 +206,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         String fileName = titlethis + "@" + selector;
                         fileName += "_" + id_playlist + "_" + id_individual_video;
                         fileName += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-                        fileName = fileName.replaceAll("\"", "");
-                        fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
                         final String ext_from_directurl = getFileNameExtensionFromString(url_directlink_video);
                         if (ext_from_directurl.length() == 4 && !StringUtils.equalsIgnoreCase(ext_from_directurl, ".f4m") && !StringUtils.equalsIgnoreCase(ext_from_directurl, ".hls")) {
                             extension = ext_from_directurl;
@@ -392,6 +392,16 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             logger.log(e);
         }
         return ret;
+    }
+
+    /* Replaces some strings for nicer filenames. */
+    private String sanitizeString(String input) {
+        if (input == null) {
+            return null;
+        }
+        String output = input.replace("\"", "'");
+        output = output.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
+        return output;
     }
 
     private boolean isEmpty(String ip) {
