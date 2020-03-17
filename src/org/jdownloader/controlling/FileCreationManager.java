@@ -20,22 +20,18 @@ import org.jdownloader.utils.JDFileUtils;
 
 public class FileCreationManager {
     public static enum DeleteOption implements LabelInterface {
-
         NO_DELETE {
-
             @Override
             public String getLabel() {
                 return _JDT.T.DeleteOption_no_delete();
             }
         },
-
         RECYCLE {
             @Override
             public String getLabel() {
                 return _JDT.T.DeleteOption_recycle();
             }
         },
-
         NULL {
             @Override
             public String getLabel() {
@@ -48,7 +44,7 @@ public class FileCreationManager {
 
     /**
      * get the only existing instance of FileCreationManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static FileCreationManager getInstance() {
@@ -75,19 +71,15 @@ public class FileCreationManager {
         if (folder.exists()) {
             return false;
         }
-
         List<File> backlog = new ArrayList<File>();
         HashSet<String> loopcheck = new HashSet<String>();
         File copy = folder;
-
         while (copy != null && !copy.exists()) {
             if (loopcheck.add(copy.getAbsolutePath())) {
                 backlog.add(copy);
             }
             copy = copy.getParentFile();
-
         }
-
         for (int i = backlog.size() - 1; i >= 0; i--) {
             if (mkdirInternal(backlog.get(i))) {
                 getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FOLDER, backlog.get(i)));
@@ -95,60 +87,62 @@ public class FileCreationManager {
                 return false;
             }
         }
-
         return true;
     }
 
     private boolean mkdirInternal(File file) {
-
         try {
             DownloadWatchDog.getInstance().validateDestination(file);
             return file.mkdir();
         } catch (PathTooLongException e) {
-
         } catch (BadDestinationException e) {
         }
         return false;
-
     }
 
+    /**
+     * undefined handling of DeleteOption.RECYCLE without trash support(eg linux),see JDFileUtils.isTrashSupported()
+     *
+     * @param file
+     * @param deleteTo
+     * @return
+     */
+    @Deprecated
     public boolean delete(File file, DeleteOption deleteTo) {
         if (deleteTo == null) {
             deleteTo = FileCreationManager.DeleteOption.NULL;
         }
         if (!file.exists()) {
-            return false;
-        }
-
-        switch (deleteTo) {
-        case NULL:
-            if (file.delete()) {
-                return true;
-            } else {
-                if (Application.getJavaVersion() >= Application.JAVA17) {
+            return true;
+        } else {
+            switch (deleteTo) {
+            case NULL:
+                if (file.delete()) {
+                    return true;
+                } else {
+                    if (Application.getJavaVersion() >= Application.JAVA17) {
+                        try {
+                            java.nio.file.Files.delete(file.toPath());
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                    }
+                    return !file.exists();
+                }
+            case RECYCLE:
+                if (JDFileUtils.isTrashSupported()) {
                     try {
-                        java.nio.file.Files.delete(file.toPath());
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        JDFileUtils.moveToTrash(file);
+                    } catch (IOException e) {
+                        logger.log(e);
                     }
                 }
                 return !file.exists();
+            case NO_DELETE:
+            default:
+                return false;
             }
-        case RECYCLE:
-
-            if (JDFileUtils.isTrashSupported()) {
-                try {
-                    JDFileUtils.moveToTrash(file);
-                    return !file.exists();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return !file.exists();
         }
-
-        return false;
-
     }
 
     public void moveFile(String oldPath, String newPath) {
@@ -163,6 +157,5 @@ public class FileCreationManager {
                 }
             }
         }
-
     }
 }

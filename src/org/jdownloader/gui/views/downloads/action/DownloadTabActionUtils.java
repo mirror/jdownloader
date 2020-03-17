@@ -89,6 +89,7 @@ public class DownloadTabActionUtils {
                             break;
                         case REMOVE_LINKS_AND_RECYCLE_FILES:
                             DownloadController.getInstance().removeChildren(si.getChildren());
+                            // TODO: different handling dialog<->no dialog
                             DownloadWatchDog.getInstance().delete(si.getChildren(), JDFileUtils.isTrashSupported() ? DeleteOption.RECYCLE : DeleteOption.NULL);
                             break;
                         }

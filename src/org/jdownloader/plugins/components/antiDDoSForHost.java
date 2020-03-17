@@ -22,19 +22,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.RequestHistory.TYPE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -54,6 +41,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.RequestHistory.TYPE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -506,6 +506,18 @@ public abstract class antiDDoSForHost extends PluginForHost {
         br.followConnection(true);
     }
 
+    protected boolean containsRecaptchaV2Class(Browser br) {
+        return br != null && containsRecaptchaV2Class(br.toString());
+    }
+
+    protected boolean containsRecaptchaV2Class(String string) {
+        return CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(string);
+    }
+
+    protected boolean containsRecaptchaV2Class(Form form) {
+        return form != null && containsRecaptchaV2Class(form.getHtmlCode());
+    }
+
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
@@ -651,7 +663,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             // set boolean value
                             a_captchaRequirement = true;
                             // recapthcha v2
-                            if (cloudflareForm.containsHTML("class=\"g-recaptcha\"")) {
+                            if (containsRecaptchaV2Class(cloudflareForm)) {
                                 final String recaptchaV2Response;
                                 final DownloadLink existingDownloadLink = getDownloadLink();
                                 try {
@@ -974,7 +986,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 if (acquireLock(lockObject)) {
                     a_captchaRequirement = true;
                     // recaptcha v2
-                    if (ifr.containsHTML("class=\"g-recaptcha\"")) {
+                    if (containsRecaptchaV2Class(ifr)) {
                         final DownloadLink existingDownloadLink = getDownloadLink();
                         final String recaptchaV2Response;
                         try {
@@ -985,7 +997,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             setDownloadLink(existingDownloadLink);
                         }
                         ifr.postPage("/_Incapsula_Resource?SWCGHOEL=v2", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-                        if (ifr.containsHTML("class=\"g-recaptcha\"")) {
+                        if (containsRecaptchaV2Class(ifr)) {
                             logger.warning("Wrong captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {

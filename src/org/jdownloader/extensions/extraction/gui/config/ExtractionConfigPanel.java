@@ -48,13 +48,11 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<FolderChooser>                              customPath;
     private Pair<Checkbox>                                   toggleUseSubpath;
     private Pair<Spinner>                                    subPathMinFiles;
-
     private Pair<? extends TextInput>                        subPath;
     private Pair<ComboBox<FileCreationManager.DeleteOption>> toggleDeleteArchives;
     private Pair<ComboBox<IfFileExistsAction>>               toggleOverwriteExisting;
     private Pair<TextArea>                                   blacklist;
     private Pair<Checkbox>                                   toggleUseOriginalFileDate;
-
     private Pair<TextArea>                                   passwordlist;
     private Pair<Checkbox>                                   toggleDeleteArchiveDownloadLinks;
     private Pair<Checkbox>                                   toggleDefaultEnabled;
@@ -78,23 +76,17 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         spinner.setFormat("# " + T.T.files2());
         // ((DefaultEditor) spinner.getEditor()).getTextField().setHorizontalAlignment(JTextField.LEFT);
         String lblConstraints = "gapleft 37,aligny center,alignx right";
-
         subPathMinFiles = this.addPair(T.T.settings_subpath_minnum3(), lblConstraints, null, spinner);
         subPathMinFiles.setConditionPair(toggleUseSubpath);
         Spinner spinner2 = new Spinner(0, Integer.MAX_VALUE);
         spinner2.setFormat("# " + T.T.folders());
-
         subPathMinFolders = this.addPair(T.T.and(), lblConstraints, null, spinner2);
         subPathMinFolders.setConditionPair(toggleUseSubpath);
-
         Spinner spinner3 = new Spinner(0, Integer.MAX_VALUE);
         spinner3.setFormat("# " + T.T.files_and_folders());
-
         subPathMinFilesOrFolders = this.addPair(T.T.and(), lblConstraints, null, spinner3);
         subPathMinFilesOrFolders.setConditionPair(toggleUseSubpath);
-
         subPath = this.addPair(T.T.settings_subpath(), null, new TextInput() {
-
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
@@ -110,7 +102,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                             setText(ArchiveFactory.PACKAGENAME);
                         } else {
                             int car = getCaretPosition();
-
                             try {
                                 getDocument().insertString(car, ArchiveFactory.PACKAGENAME, null);
                             } catch (BadLocationException e1) {
@@ -130,7 +121,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                             setText(ArchiveFactory.ARCHIVENAME);
                         } else {
                             int car = getCaretPosition();
-
                             try {
                                 getDocument().insertString(car, ArchiveFactory.ARCHIVENAME, null);
                             } catch (BadLocationException e1) {
@@ -150,7 +140,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                             setText(ArchiveFactory.SUBFOLDER);
                         } else {
                             int car = getCaretPosition();
-
                             try {
                                 getDocument().insertString(car, ArchiveFactory.SUBFOLDER, null);
                             } catch (BadLocationException e1) {
@@ -159,7 +148,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
-
                 sub.add(new AppAction() {
                     {
                         setName(T.T.hoster());
@@ -171,7 +159,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                             setText(ArchiveFactory.HOSTER);
                         } else {
                             int car = getCaretPosition();
-
                             try {
                                 getDocument().insertString(car, ArchiveFactory.HOSTER, null);
                             } catch (BadLocationException e1) {
@@ -180,7 +167,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
-
                 sub.add(new AppAction() {
                     {
                         setName(T.T.date());
@@ -192,7 +178,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                             setText("$DATE:dd.MM.yyyy$");
                         } else {
                             int car = getCaretPosition();
-
                             try {
                                 getDocument().insertString(car, "$DATE:dd.MM.yyyy$", null);
                             } catch (BadLocationException e1) {
@@ -201,7 +186,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
-
                 menu.add(sub);
                 menu.add(new JSeparator());
                 menu.add(cutAction);
@@ -211,48 +195,33 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 menu.add(selectAction);
                 return menu;
             }
-
         });
         subPath.setConditionPair(toggleUseSubpath);
-
         this.addHeader(T.T.settings_various(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
+        final FileCreationManager.DeleteOption[] deleteOptions;
         if (JDFileUtils.isTrashSupported()) {
-            toggleDeleteArchives = this.addPair(T.T.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.RECYCLE, FileCreationManager.DeleteOption.NULL) {
-                protected String valueToString(FileCreationManager.DeleteOption value) {
-                    switch (value) {
-                    case RECYCLE:
-                        return T.T.delete_to_trash();
-                    case NO_DELETE:
-                        return T.T.dont_delete();
-                    case NULL:
-                        return T.T.final_delete();
-                    }
-                    return null;
-                }
-            });
+            deleteOptions = new FileCreationManager.DeleteOption[] { FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.RECYCLE, FileCreationManager.DeleteOption.NULL };
         } else {
-            toggleDeleteArchives = this.addPair(T.T.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.NULL) {
-                protected String valueToString(FileCreationManager.DeleteOption value) {
-                    switch (value) {
-                    case RECYCLE:
-                        return T.T.delete_to_trash();
-                    case NO_DELETE:
-                        return T.T.dont_delete();
-                    case NULL:
-                        return T.T.final_delete();
-                    }
-                    return null;
-                }
-            });
+            deleteOptions = new FileCreationManager.DeleteOption[] { FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.NULL };
         }
-
+        toggleDeleteArchives = this.addPair(T.T.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(deleteOptions) {
+            protected String valueToString(FileCreationManager.DeleteOption value) {
+                switch (value) {
+                case RECYCLE:
+                    return T.T.delete_to_trash();
+                case NO_DELETE:
+                    return T.T.dont_delete();
+                case NULL:
+                    return T.T.final_delete();
+                }
+                return null;
+            }
+        });
         toggleDeleteArchiveDownloadLinks = this.addPair(T.T.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T.T.settings_if_file_exists(), null, new ComboBox<IfFileExistsAction>(IfFileExistsAction.values()));
-
         this.addHeader(T.T.settings_multi(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         toggleUseOriginalFileDate = this.addPair(T.T.settings_multi_use_original_file_date(), null, new Checkbox());
         blacklist = this.addPair(T.T.settings_blacklist_regex(), null, new TextArea());
-
         this.addHeader(T.T.settings_passwords(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
         passwordlist = addPair(T.T.settings_passwordlist(), null, new TextArea());
     }
@@ -260,7 +229,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     @Override
     public void updateContents() {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
             @Override
             protected Void run() throws RuntimeException {
                 final ExtractionConfig s = extension.getSettings();
@@ -330,12 +298,10 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     @Override
     public void save() {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final ExtractionConfig s = extension.getSettings();
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.setValue(toggleDefaultEnabled.getComponent().isSelected());
@@ -365,11 +331,9 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     }
                 };
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final String txt = new EDTHelper<String>() {
-
                             @Override
                             public String edtRun() {
                                 return passwordlist.getComponent().getText();
@@ -387,11 +351,9 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     }
                 });
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final String txt = new EDTHelper<String>() {
-
                             @Override
                             public String edtRun() {
                                 return blacklist.getComponent().getText();
@@ -408,9 +370,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 });
                 return null;
             }
-
         });
-
     }
-
 }
