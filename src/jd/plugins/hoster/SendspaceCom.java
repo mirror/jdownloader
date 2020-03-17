@@ -154,7 +154,8 @@ public class SendspaceCom extends PluginForHost {
                     } else if (br.containsHTML("the file you requested is not available")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (securityform != null) {
-                        if (!isDownload) {
+                        final boolean userOverrideCaptchaBehavior = this.getPluginConfig().getBooleanProperty("ALLOW_CAPTCHA_DURING_LINKCHECK", false);
+                        if (!isDownload && !userOverrideCaptchaBehavior) {
                             logger.info("Cannot check URL because of anti-DDoS captcha");
                             return AvailableStatus.UNCHECKABLE;
                         } else {
@@ -663,7 +664,8 @@ public class SendspaceCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.SendspaceCom.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), "ALLOW_CAPTCHA_DURING_LINKCHECK", "Allow captchas during linkcheck?").setDefaultValue(false));
     }
 
     @Override

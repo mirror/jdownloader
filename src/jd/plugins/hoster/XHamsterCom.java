@@ -762,7 +762,13 @@ public class XHamsterCom extends PluginForHost {
                             br.submitForm(login);
                         }
                     } else {
+                        boolean isInvisibleCaptcha = false;
                         String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
+                        if (StringUtils.isEmpty(siteKey)) {
+                            /* 2020-03-17 */
+                            siteKey = "recaptchaKeyV3";
+                            isInvisibleCaptcha = true;
+                        }
                         final String id = createID();
                         final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"%s\"}}]";
                         String requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), "");
@@ -773,7 +779,14 @@ public class XHamsterCom extends PluginForHost {
                                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "https://xhamster.com", true);
                                 this.setDownloadLink(dummyLink);
                             }
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                            final String recaptchaV2Response;
+                            if (isInvisibleCaptcha) {
+                                /* 2020-03-17 */
+                                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, br, siteKey).getToken();
+                            } else {
+                                /* Old */
+                                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                            }
                             requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), recaptchaV2Response);
                             br.postPageRaw("/x-api", requestData);
                         }
@@ -835,6 +848,15 @@ public class XHamsterCom extends PluginForHost {
                 br.setFollowRedirects(frd);
             }
         }
+    }
+
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2Invisible(PluginForHost plugin, Browser br, final String key) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, key) {
+            @Override
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        };
     }
 
     private String createID() {

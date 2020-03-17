@@ -483,6 +483,10 @@ public class FShareVn extends PluginForHost {
             dllink = br.getRedirectLocation();
         }
         if (dllink == null || dllink.matches(".+/file/.+\\?token=\\d+")) {
+            br.setFollowRedirects(true);
+            if (dllink != null) {
+                br.getPage(dllink);
+            }
             if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -556,7 +560,7 @@ public class FShareVn extends PluginForHost {
         return br.containsHTML("class =\"user__profile\"") && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    private void loginWebsite(Account account, boolean force) throws Exception {
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 prepBrowserWebsite(this.br);
