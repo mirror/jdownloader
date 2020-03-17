@@ -153,9 +153,18 @@ public class PornHubCom extends PluginForDecrypt {
             /* 2020-01-22: Without this we will not get all items! */
             br.getPage(br.getURL() + "/videos");
         }
+        /* 2020-03-17: Try to exclude items which do not belong to that playlist/section! */
+        final String html_snippet = br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
+        if (html_snippet != null) {
+            logger.info("Successfully crawled html_snippet");
+            br.getRequest().setHtmlCode(html_snippet);
+        } else {
+            logger.info("Failed to grab html_snippet --> Crawling in full html code");
+        }
         final Set<String> dupes = new HashSet<String>();
         final Set<String> pages = new HashSet<String>();
         do {
+            /* 2020-03-17: Keep in mind: In premium modes, users may be able to see more items here than in free! */
             final String[] viewkeys = br.getRegex("/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
             logger.info("Links found: " + viewkeys.length);
             for (final String viewkey : viewkeys) {
