@@ -40,7 +40,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     public static boolean containsRecaptchaV2Class(String string) {
         // class="g-recaptcha-response"
         // class="g-recaptcha"
-        return string != null && new Regex(string, "class\\s*=\\s*\"g-recaptcha(-response)?\"").matches();
+        return string != null && new Regex(string, "class\\s*=\\s*('|\")g-recaptcha(-response)?(\\1|\\s+)").matches();
     }
 
     public static boolean containsRecaptchaV2Class(Form form) {
@@ -100,7 +100,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             final String[] divs = getDIVs(source);
             if (divs != null) {
                 for (final String div : divs) {
-                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches()) {
                         final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null && StringUtils.equals(siteKey, getSiteKey())) {
                             final boolean isInvisible = new Regex(div, "data-size\\s*=\\s*('|\")\\s*(invisible)\\s*\\1").matches();
@@ -246,7 +246,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                 final String[] divs = getDIVs(source);
                 if (divs != null) {
                     for (final String div : divs) {
-                        if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(\\1|\\s+)").matches()) {
+                        if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches()) {
                             siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                             if (siteKey != null) {
                                 return siteKey;
@@ -260,7 +260,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                 final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
                 if (scripts != null) {
                     for (final String script : scripts) {
-                        siteKey = new Regex(script, "data-sitekey=('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                        siteKey = new Regex(script, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                         if (siteKey != null) {
                             return siteKey;
                         }
