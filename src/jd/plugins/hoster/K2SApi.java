@@ -23,14 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -55,6 +47,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -1989,16 +1989,16 @@ public abstract class K2SApi extends PluginForHost {
             final int responseCode = ibr.getHttpConnection().getResponseCode();
             // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
             if (containsCloudflareCookies(ibr)) {
-                final Form cloudflare = getCloudflareChallengeForm(ibr);
-                if (responseCode == 403 && cloudflare != null) {
+                final Form cloudflareFormt = getCloudflareChallengeForm(ibr);
+                if (responseCode == 403 && cloudflareFormt != null) {
                     a_captchaRequirement = true;
                     // recapthcha v2
-                    if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
+                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(cloudflareFormt)) {
                         antiDDosCaptcha.incrementAndGet();
                         try {
                             final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                             this.setDownloadLink(dllink);
-                            final Form cf = cloudflare;
+                            final Form cf = cloudflareFormt;
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
                                 @Override
                                 public String getSiteKey() {
@@ -2010,28 +2010,28 @@ public abstract class K2SApi extends PluginForHost {
                                     return getSecureToken(cf.getHtmlCode());
                                 }
                             }.getToken();
-                            cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            cloudflareFormt.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         } finally {
                             antiDDosCaptcha.decrementAndGet();
                         }
                     } else {
                         // recapthca v1
-                        if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        if (cloudflareFormt.hasInputFieldByName("recaptcha_response_field")) {
                             // they seem to add multiple input fields which is most likely meant to be corrected by js ?
                             // we will manually remove all those
-                            while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                                cloudflare.remove("recaptcha_response_field");
+                            while (cloudflareFormt.hasInputFieldByName("recaptcha_response_field")) {
+                                cloudflareFormt.remove("recaptcha_response_field");
                             }
-                            while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                                cloudflare.remove("recaptcha_challenge_field");
+                            while (cloudflareFormt.hasInputFieldByName("recaptcha_challenge_field")) {
+                                cloudflareFormt.remove("recaptcha_challenge_field");
                             }
                             // this one is null, needs to be ""
-                            if (cloudflare.hasInputFieldByName("message")) {
-                                cloudflare.remove("message");
-                                cloudflare.put("messsage", "\"\"");
+                            if (cloudflareFormt.hasInputFieldByName("message")) {
+                                cloudflareFormt.remove("message");
+                                cloudflareFormt.put("messsage", "\"\"");
                             }
                             // recaptcha bullshit,
-                            String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                            String apiKey = cloudflareFormt.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                             if (apiKey == null) {
                                 apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                                 if (apiKey == null) {
@@ -2047,12 +2047,12 @@ public abstract class K2SApi extends PluginForHost {
                             if (inValidate(response)) {
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                             }
-                            cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                            cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                            cloudflareFormt.put("recaptcha_challenge_field", rc.getChallenge());
+                            cloudflareFormt.put("recaptcha_response_field", Encoding.urlEncode(response));
                         }
                     }
                     final Request originalRequest = ibr.getRequest();
-                    ibr.submitForm(cloudflare);
+                    ibr.submitForm(cloudflareFormt);
                     if (getCloudflareChallengeForm(ibr) != null) {
                         logger.warning("Wrong captcha");
                         a_captchaRequirement = true;
@@ -2088,7 +2088,7 @@ public abstract class K2SApi extends PluginForHost {
                     String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
                     logger.warning(message);
                     throw new PluginException(LinkStatus.ERROR_FATAL, message);
-                } else if (responseCode == 503 && cloudflare != null) {
+                } else if (responseCode == 503 && cloudflareFormt != null) {
                     // 503 response code with javascript math section
                     final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
                     String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
@@ -2099,9 +2099,9 @@ public abstract class K2SApi extends PluginForHost {
                     ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
                     ScriptEngine engine = mgr.getEngineByName("JavaScript");
                     long answer = ((Number) engine.eval(sb.toString())).longValue();
-                    cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+                    cloudflareFormt.getInputFieldByName("jschl_answer").setValue(answer + "");
                     Thread.sleep(5500);
-                    ibr.submitForm(cloudflare);
+                    ibr.submitForm(cloudflareFormt);
                     // if it works, there should be a redirect.
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());

@@ -4,17 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.logging.LogController;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.logging.LogController;
 
 public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     public static enum TYPE {
@@ -32,6 +33,20 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         return getSecureToken(br != null ? br.toString() : null);
     }
 
+    public static boolean containsRecaptchaV2Class(Browser br) {
+        return br != null && containsRecaptchaV2Class(br.toString());
+    }
+
+    public static boolean containsRecaptchaV2Class(String string) {
+        // class="g-recaptcha-response"
+        // class="g-recaptcha"
+        return string != null && new Regex(string, "class\\s*=\\s*\"g-recaptcha(-response)?\"").matches();
+    }
+
+    public static boolean containsRecaptchaV2Class(Form form) {
+        return form != null && containsRecaptchaV2Class(form.getHtmlCode());
+    }
+
     /**
      * 2019-07-03: This is the time for which the g-recaptcha-token can be used AFTER a user has solved a challenge. You can easily check
      * the current value by opening up a website which requires a reCaptchaV2 captcha which does not auto-confirm after solving (e.g. you
@@ -39,8 +54,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
      * errormessage and the user will have to solve it again! This value is especially important for rare EDGE cases such as long
      * waiting-times + captcha. Example: User has to wait 180 seconds before he can confirm such a captcha. If he solves it directly, the
      * captcha will be invalid once the 180 seconds are over. Also see documentation in XFileSharingProBasic.java class in method
-     * 'handleCaptcha'. </br>
-     * TRY TO KEEP THIS VALUE UP-TO-DATE!!
+     * 'handleCaptcha'. </br> TRY TO KEEP THIS VALUE UP-TO-DATE!!
      */
     public int getSolutionTimeout() {
         return 1 * 60 * 1000;

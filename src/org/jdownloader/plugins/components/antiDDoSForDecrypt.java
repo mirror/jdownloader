@@ -21,18 +21,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.RequestHistory.TYPE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -51,6 +39,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.RequestHistory.TYPE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -484,6 +484,18 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         br.followConnection(true);
     }
 
+    protected boolean containsRecaptchaV2Class(Browser br) {
+        return br != null && containsRecaptchaV2Class(br.toString());
+    }
+
+    protected boolean containsRecaptchaV2Class(String string) {
+        return CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(string);
+    }
+
+    protected boolean containsRecaptchaV2Class(Form form) {
+        return form != null && containsRecaptchaV2Class(form.getHtmlCode());
+    }
+
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
@@ -622,16 +634,16 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // //]]>
                     // </script>
                 } else {
-                    final Form cloudflare = getCloudflareChallengeForm(ibr);
+                    final Form cloudflareForm = getCloudflareChallengeForm(ibr);
                     final Request originalRequest = ibr.getRequest();
-                    if (responseCode == 403 && cloudflare != null) {
+                    if (responseCode == 403 && cloudflareForm != null) {
                         // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
                         if (acquireLock(lockObject)) {
                             // set boolean value
                             a_captchaRequirement = true;
-                            // recapthcha v2
-                            if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                                final Form cf = cloudflare;
+                            // recaptcha v2
+                            if (containsRecaptchaV2Class(cloudflareForm)) {
+                                final Form cf = cloudflareForm;
                                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
                                     @Override
                                     public String getSiteKey() {
@@ -648,26 +660,26 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 if (inValidate(rayId)) {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
-                                cloudflare.put("id", Encoding.urlEncode(rayId));
-                                cloudflare.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                cloudflareForm.put("id", Encoding.urlEncode(rayId));
+                                cloudflareForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                             }
                             // recapthca v1
-                            else if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            else if (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
                                 // they seem to add multiple input fields which is most likely meant to be corrected by js ?
                                 // we will manually remove all those
-                                while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                                    cloudflare.remove("recaptcha_response_field");
+                                while (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
+                                    cloudflareForm.remove("recaptcha_response_field");
                                 }
-                                while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                                    cloudflare.remove("recaptcha_challenge_field");
+                                while (cloudflareForm.hasInputFieldByName("recaptcha_challenge_field")) {
+                                    cloudflareForm.remove("recaptcha_challenge_field");
                                 }
                                 // this one is null, needs to be ""
-                                if (cloudflare.hasInputFieldByName("message")) {
-                                    cloudflare.remove("message");
-                                    cloudflare.put("messsage", "\"\"");
+                                if (cloudflareForm.hasInputFieldByName("message")) {
+                                    cloudflareForm.remove("message");
+                                    cloudflareForm.put("messsage", "\"\"");
                                 }
                                 // recaptcha bullshit,
-                                String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                String apiKey = cloudflareForm.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                                 if (apiKey == null) {
                                     apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
                                     if (apiKey == null) {
@@ -682,13 +694,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 if (inValidate(response)) {
                                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                                 }
-                                cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                                cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                                cloudflareForm.put("recaptcha_challenge_field", rc.getChallenge());
+                                cloudflareForm.put("recaptcha_response_field", Encoding.urlEncode(response));
                             }
                             if (request != null) {
-                                ibr.openFormConnection(cloudflare);
+                                ibr.openFormConnection(cloudflareForm);
                             } else {
-                                ibr.submitForm(cloudflare);
+                                ibr.submitForm(cloudflareForm);
                             }
                             if (getCloudflareChallengeForm(ibr) != null) {
                                 logger.warning("Wrong captcha");
@@ -725,7 +737,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             // we need togo back and re-request!
                             throw new ConcurrentLockException();
                         }
-                    } else if (responseCode == 503 && cloudflare != null) {
+                    } else if (responseCode == 503 && cloudflareForm != null) {
                         // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
                         if (acquireLock(lockObject)) {
                             // 503 response code with javascript math section && with 5 second pause
@@ -770,13 +782,13 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                             final String answer = result.toString();
-                            cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+                            cloudflareForm.getInputFieldByName("jschl_answer").setValue(answer + "");
                             Thread.sleep(5500);
                             // if it works, there should be a redirect.
                             if (request != null) {
-                                ibr.openFormConnection(cloudflare);
+                                ibr.openFormConnection(cloudflareForm);
                             } else {
-                                ibr.submitForm(cloudflare);
+                                ibr.submitForm(cloudflareForm);
                             }
                             /*
                              * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets
@@ -950,10 +962,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 if (acquireLock(lockObject)) {
                     a_captchaRequirement = true;
                     // recaptcha v2
-                    if (ifr.containsHTML("class=\"g-recaptcha\"")) {
+                    if (containsRecaptchaV2Class(ifr)) {
                         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ifr).getToken();
                         ifr.postPage("/_Incapsula_Resource?SWCGHOEL=v2", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-                        if (ifr.containsHTML("class=\"g-recaptcha\"")) {
+                        if (containsRecaptchaV2Class(ifr)) {
                             logger.warning("Wrong captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {

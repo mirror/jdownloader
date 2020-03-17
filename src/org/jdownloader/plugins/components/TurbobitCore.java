@@ -503,7 +503,7 @@ public class TurbobitCore extends antiDDoSForHost {
             /* E.g. hitfile.net */
             captchaform.put("captcha_subtype", "");
         }
-        if (br.containsHTML("class=\"g-recaptcha\"")) {
+        if (containsRecaptchaV2Class(br)) {
             /* ReCaptchaV2 */
             String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -955,7 +955,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     /* Check for stupid login captcha */
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
                     loginform = findAndPrepareLoginForm(br, account);
-                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                    if (containsRecaptchaV2Class(br)) {
                         this.setDownloadLink(dummyLink);
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         loginform.put("g-recaptcha-response", recaptchaV2Response);

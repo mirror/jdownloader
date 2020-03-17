@@ -22,12 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -50,6 +44,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(www\\.)?alfafile\\.net/file/[A-Za-z0-9]+" })
 public class AlfafileNet extends PluginForHost {
@@ -202,14 +202,14 @@ public class AlfafileNet extends PluginForHost {
                 this.br.setFollowRedirects(true);
                 boolean success = false;
                 for (int i = 0; i <= 3; i++) {
-                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
                         logger.info("Detected captcha method \"reCaptchaV2\" for this host");
                         Form dlForm = br.getFormBySubmitvalue("send");
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, this.br).getToken();
                         dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         br.submitForm(dlForm);
                         logger.info("Submitted DLForm");
-                        if (br.containsHTML("class=\"g-recaptcha\"")) {
+                        if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
                             continue;
                         }
                         success = true;

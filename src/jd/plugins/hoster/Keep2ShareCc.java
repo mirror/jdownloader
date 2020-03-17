@@ -19,13 +19,6 @@ import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +36,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 /**
  *
@@ -305,7 +305,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (br.containsHTML("Free account does not allow to download more than one file at the same time")) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                     }
-                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
                         final Form recap = br.getFormbyProperty("id", "captcha-form");
                         if (recap == null) {
                             // huston we have a problem
@@ -439,7 +439,7 @@ public class Keep2ShareCc extends K2SApi {
             }
             login.put("LoginForm%5BverifyCode%5D=", Encoding.urlEncode(code));
             return true;
-        } else if (login.containsHTML("class=\"g-recaptcha\"")) {
+        } else if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(login)) {
             // recapthav2
             final DownloadLink original = this.getDownloadLink();
             if (original == null) {
