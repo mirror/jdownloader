@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -85,12 +86,16 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -141,63 +146,26 @@ public class NicoVideoJp extends PluginForHost {
             link.setName(linkid_url);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String channel = null;
-        String filename = null;
-        String date = null;
-        if (loggedin) {
-            // newest
-            String player = getHtmlJson();
-            if (player != null) {
-                // html5 json (works 2018-11-14), older json see rev: 39974
-                try {
-                    final String json = Encoding.htmlOnlyDecode(player);
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                    channel = (String) JavaScriptEngineFactory.walkJson(entries, "uploaderInfo/nickname");
-                    // originalPostedDateTime can be null
-                    date = (String) JavaScriptEngineFactory.walkJson(entries, "videoDetail/postedAt");
-                    entries = (LinkedHashMap<String, Object>) entries.get("flashvars");
-                    filename = (String) entries.get("videoTitle");
-                } catch (final Throwable e) {
-                }
-            } else {
-                // older flv crap, (works 20170811)
-                filename = br.getRegex("class=\"originalVideoTitle\">([^<>\"]+)<").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("class=\"videoTitle\">([^<>\"]+)<").getMatch(0);
-                }
-                channel = br.getRegex("data\\-click\\-target=\"userName\">([^<>\"]+)<").getMatch(0);
-            }
-        } else {
-            // (works 20170811)
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-            }
-            channel = br.getRegex("Uploader: <strong itemprop=\"name\">([^<>\"]*?)</strong>").getMatch(0);
+        String jsonapi = br.getRegex("data-api-data=\"(.*?)\" hidden>").getMatch(0);
+        jsonapi = Encoding.htmlDecode(jsonapi);
+        LinkedHashMap<String, Object> entries2 = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
+        entries2 = (LinkedHashMap<String, Object>) entries2.get("video");
+        final String title = (String) entries2.get("title");
+        String filename = title;
+        if (StringUtils.isEmpty(filename)) {
+            filename = this.getFID(link);
         }
-        if (filename == null) {
-            /* 2018-11-16: RegEx for loggedin- and loggedoff- state */
-            filename = br.getRegex("<title>([^<>\"]+) \\- Niconico Video</title>").getMatch(0);
-        }
-        filename = null;
-        if (filename == null) {
-            /* Last chance fallback */
-            filename = getLinkID(link);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
+        filename = title;
         link.setProperty("plainfilename", filename);
-        if (date == null) {
-            date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
-        }
-        if (date != null) {
-            link.setProperty("originaldate", date);
-        }
-        if (channel != null) {
-            link.setProperty("channel", channel);
-        }
+        // if (date == null) {
+        // date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
+        // }
+        // if (date != null) {
+        // link.setProperty("originaldate", date);
+        // }
+        // if (channel != null) {
+        // link.setProperty("channel", channel);
+        // }
         filename = getFormattedFilename(link);
         link.setName(filename);
         if (br.containsHTML(html_account_needed)) {
@@ -332,15 +300,10 @@ public class NicoVideoJp extends PluginForHost {
         }
     }
 
-    private String getLinkId() {
-        final String fuid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
-        return fuid;
-    }
-
     private String getDllinkFree() throws Exception {
         String dllink = null;
         // really old shit (from free), not sure if this actually works.
-        final String linkid_url = getLinkId();
+        final String linkid_url = this.getFID(this.getDownloadLink());
         try {
             br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
         } catch (BrowserException e) {
@@ -394,7 +357,7 @@ public class NicoVideoJp extends PluginForHost {
                 final String flashvars = getHtmlJson();
                 if (flashvars != null) {
                     if (br.getURL().matches(TYPE_SO)) {
-                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + getLinkId());
+                        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + this.getFID(this.getDownloadLink()));
                     } else if (br.getURL().matches(TYPE_NM) || this.getDownloadLink().getPluginPatternMatcher().matches(TYPE_SM)) {
                         /* 2018-11-14: Works */
                         final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
