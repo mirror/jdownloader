@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com" }, urls = { "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luxuretv.com", "homemoviestube.com" }, urls = { "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
     public UnknownPornScript4(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class UnknownPornScript4 extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.bondagebox.com/tos.php";
+        return "https://www.homemoviestube.com/tos.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -182,6 +182,7 @@ public class UnknownPornScript4 extends PluginForHost {
             }
             dl.startDownload();
         } else {
+            /* 2020-03-18: Probably not in use by any host of this plugin anymore! */
             /* E.g. fetishbox.com, bondagebox.com */
             final String swfvfy = br.getRegex("new SWFObject\\(\"(http[^<>\"]*?\\.swf)\"").getMatch(0);
             if (rtmpurl == null || swfvfy == null) {

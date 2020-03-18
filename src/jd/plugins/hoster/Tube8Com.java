@@ -48,7 +48,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "https?://(?:www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)(embed/)?[^/]+/[^/]+/([^/]+/)?[0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "https?://(?:www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)(embed/)?[^/]+/[^/]+/([^/]+/)?([0-9]+)" })
 public class Tube8Com extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -62,6 +62,20 @@ public class Tube8Com extends PluginForHost {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://www.tube8.com/signin.html");
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
     }
 
     @Override
@@ -83,21 +97,27 @@ public class Tube8Com extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        correctDownloadLink(downloadLink);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         dllink = null;
-        this.br.setAllowedResponseCodes(500);
+        this.br.setAllowedResponseCodes(new int[] { 500 });
         if (setEx) {
             this.setBrowserExclusive();
         }
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        final String fid = this.getFID(link);
+        if (fid == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* 2020-03-18: Do this to avoid redirectloop */
+        br.getPage(String.format("https://www.tube8.com/threesome/redirect/%s/", fid));
         if (br.containsHTML("No htmlCode read") || br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String verifyAge = br.getRegex("(<div class=\"enter-btn\">)").getMatch(0);
         if (verifyAge != null) {
-            br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
+            br.postPage(link.getDownloadURL(), "processdisclaimer=");
         }
         if (br.containsHTML("class=\"video-removed-div\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -113,32 +133,33 @@ public class Tube8Com extends PluginForHost {
             }
         }
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* Fallback */
+            filename = fid;
         }
         boolean failed = true;
         boolean preferMobile = getPluginConfig().getBooleanProperty(mobile, false);
         String videoDownloadUrls = "";
         /* streaming link */
         findStreamingLink();
-        if (dllink != null && requestVideo(downloadLink)) {
+        if (dllink != null && requestVideo(link)) {
             failed = false;
         }
         /* decrease HTTP requests */
         if (failed || preferMobile) {
-            videoDownloadUrls = standardAndMobile(downloadLink);
+            videoDownloadUrls = standardAndMobile(link);
         }
         /* normal link */
         if (failed) {
             findNormalLink(this.br.toString());
         }
-        if (failed && dllink != null && requestVideo(downloadLink)) {
+        if (failed && dllink != null && requestVideo(link)) {
             failed = false;
         }
         /* 3gp link */
         if (failed || preferMobile) {
             findMobileLink(videoDownloadUrls);
         }
-        if ((failed || preferMobile) && dllink != null && requestVideo(downloadLink)) {
+        if ((failed || preferMobile) && dllink != null && requestVideo(link)) {
             failed = false;
         }
         if (dllink == null) {
@@ -146,11 +167,11 @@ public class Tube8Com extends PluginForHost {
         }
         filename = filename.trim();
         if (dllink.contains(".3gp")) {
-            downloadLink.setFinalFileName((filename + ".3gp"));
+            link.setFinalFileName((filename + ".3gp"));
         } else if (dllink.contains(".mp4")) {
-            downloadLink.setFinalFileName((filename + ".mp4"));
+            link.setFinalFileName((filename + ".mp4"));
         } else {
-            downloadLink.setFinalFileName(filename + ".flv");
+            link.setFinalFileName(filename + ".flv");
         }
         if (failed) {
             return AvailableStatus.UNCHECKABLE;
