@@ -291,7 +291,6 @@ public class YetiShareCore extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         setWeakFilename(link);
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
         final String fallback_filename = this.getFallbackFilename(link);
