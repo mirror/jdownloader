@@ -19,16 +19,21 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BrfilesCom extends YetiShareCore {
@@ -174,14 +179,95 @@ public class BrfilesCom extends YetiShareCore {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* 2020-03-16: Special: Login first, then availablecheck */
-        login(account, false);
-        requestFileInformation(link, account, true);
-        br.setFollowRedirects(false);
-        if (supports_availablecheck_over_info_page(link)) {
-            getPage(link.getPluginPatternMatcher());
+        /* 2020-03-16: Special */
+        if (account.getType() == AccountType.FREE) {
+            /* Free account --> Login --> Availablecheck --> Download */
+            login(account, false);
+            requestFileInformation(link, account, true);
+            br.setFollowRedirects(false);
+            if (supports_availablecheck_over_info_page(link)) {
+                getPage(link.getPluginPatternMatcher());
+            }
+            handleDownload(link, account);
+        } else {
+            /* Premium - no availablecheck at all */
+            login(account, false);
+            // requestFileInformation(link, account, true);
+            br.setFollowRedirects(false);
+            br.getPage(link.getPluginPatternMatcher());
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                final String fid = this.getFUIDFromURL(link);
+                if (!redirect.contains(fid)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+                link.setProperty(directlinkproperty, redirect);
+            }
+            handleDownload(link, account);
         }
-        handleDownload(link, account);
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        if (br.getURL() == null || !br.getURL().contains("account_edit")) {
+            getPage("/account_edit/");
+        }
+        /* 2019-03-01: Bad german translation, example: freefile.me */
+        boolean isPremium = br.containsHTML(">Tipo de conta\\s*:\\s*</label>.*?<label[^>]+>Premium</label>");
+        if (!isPremium) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
+            /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) account");
+        } else {
+            /* If the premium account is expired we'll simply accept it as a free account. */
+            String expireStr = br.getRegex("Sua conta expira em (\\d{2}/\\d{2}/\\d{4})").getMatch(0);
+            if (expireStr == null) {
+                if (expireStr == null) {
+                    /* More wide RegEx to be more language independant (e.g. required for freefile.me) */
+                    expireStr = br.getRegex("(\\d{2}/\\d{2}/\\d{4})").getMatch(0);
+                }
+            }
+            if (expireStr == null) {
+                /*
+                 * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
+                 * which we fail to find the expire-date.
+                 */
+                logger.info("Failed to find expire-date");
+                return ai;
+            }
+            long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+            isPremium = expire_milliseconds > System.currentTimeMillis();
+            if (!isPremium) {
+                /* Expired premium == FREE */
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
+                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+                account.setConcurrentUsePossible(false);
+                ai.setStatus("Registered (free) user");
+            } else {
+                ai.setValidUntil(expire_milliseconds, this.br);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+                ai.setStatus("Premium account");
+            }
+        }
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    @Override
+    protected long parseExpireTimeStamp(Account account, final String expireString) {
+        if (expireString != null && expireString.matches("\\d{2}/\\d{2}/\\d{4}")) {
+            final long timestamp_daysfirst = TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy", Locale.ENGLISH);
+            return timestamp_daysfirst;
+        } else {
+            return super.parseExpireTimeStamp(account, expireString);
+        }
     }
 
     @Override

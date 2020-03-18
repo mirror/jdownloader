@@ -1482,6 +1482,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected long parseExpireTimeStamp(Account account, final String expireString) {
+        if (expireString == null) {
+            return -1;
+        }
         final String first = new Regex(expireString, "^(\\d+)/").getMatch(0);
         final String second = new Regex(expireString, "^\\d+/(\\d+)").getMatch(0);
         final int firstNumber = Integer.parseInt(first);
