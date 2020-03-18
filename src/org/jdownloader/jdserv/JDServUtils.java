@@ -2,6 +2,7 @@ package org.jdownloader.jdserv;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
@@ -12,6 +13,7 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.net.URLHelper;
 
 public class JDServUtils {
     // private static String BASE = "http://nas:81/thomas/fcgi/"
@@ -24,7 +26,7 @@ public class JDServUtils {
     public static String uploadLog(final File zip, String name, String id) throws IOException { //
         final Browser br = new Browser();
         br.setVerbose(true);
-        final String url = BASE + "upload";
+        final String url = URLHelper.parseLocation(new URL(BASE), "upload");
         br.setProxySelector(ProxyController.getInstance());
         URLConnectionAdapter con = null;
         try {
