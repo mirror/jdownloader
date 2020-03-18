@@ -331,7 +331,7 @@ public class FShareVn extends PluginForHost {
     }
 
     /** Sets required headers and required language */
-    public static void prepBrowserWebsite(final Browser br) throws IOException {
+    public static Browser prepBrowserWebsite(final Browser br) throws IOException {
         /* Sometime the page is extremely slow! */
         br.setReadTimeout(120 * 1000);
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
@@ -341,6 +341,7 @@ public class FShareVn extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.setCustomCharset("utf-8");
         br.getPage("https://www.fshare.vn/site/location?lang=vi"); // en - English version is having problems in version 3
+        return br;
     }
 
     /** Sets required headers */
@@ -472,64 +473,69 @@ public class FShareVn extends PluginForHost {
     private String getDllinkPremiumWebsite(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         loginWebsite(account, false);
-        br.getPage(link.getPluginPatternMatcher());
-        String dllink = br.getRedirectLocation();
-        final String uid = getUID(link);
-        if (dllink != null && dllink.endsWith("/file/" + uid)) {
-            br.getPage(dllink);
-            if (br.containsHTML("Your account is being used from another device")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is being used from another device", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            dllink = br.getRedirectLocation();
-        }
-        if (dllink == null || dllink.matches(".+/file/.+\\?token=\\d+")) {
-            br.setFollowRedirects(true);
-            if (dllink != null) {
-                br.getPage(dllink);
-            }
-            if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                /* Maybe user has disabled direct-download */
-                final Browser ajax = br.cloneBrowser();
-                ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                for (int i = 1; i < 3; i++) {
-                    final Form dlfast = br.getFormbyAction("/download/get");
-                    if (dlfast == null) {
-                        break;
-                    }
-                    /* Fix form */
-                    if (!dlfast.hasInputFieldByName("ajax")) {
-                        dlfast.put("ajax", "download-form");
-                    }
-                    if (!dlfast.hasInputFieldByName("undefined")) {
-                        dlfast.put("undefined", "undefined");
-                    }
-                    dlfast.remove("DownloadForm%5Bpwd%5D");
-                    dlfast.put("DownloadForm[pwd]", "");
-                    dlfast.put("fcode5", "");
-                    ajax.submitForm(dlfast);
-                    if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
-                        sleep(10 * 1001l, link);
-                        continue;
-                    }
-                    dllink = PluginJSonUtils.getJsonValue(ajax, "url");
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        String dllink = null;
+        try {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (con.isContentDisposition()) {
+                logger.info("Found direct-URL");
+                dllink = con.getURL().toString();
+            } else {
+                logger.info("Failed to find direct-URL --> Either user has disabled direct downloads in account or we have an error");
+                br.followConnection();
+                if (br.containsHTML("Your account is being used from another device")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is being used from another device", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-                if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
-                } else if (ajax.containsHTML("\"errors\":")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured", 3 * 60 * 1000l);
+                if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fshare\\.vn/(vip|dl)/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    final String msg = PluginJSonUtils.getJsonValue(ajax, "msg");
-                    if (StringUtils.containsIgnoreCase(msg, "try again")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
+                    /* Maybe user has disabled direct-download */
+                    final Browser ajax = br.cloneBrowser();
+                    ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                    ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                    for (int i = 1; i < 3; i++) {
+                        final Form dlfast = br.getFormbyAction("/download/get");
+                        if (dlfast == null) {
+                            break;
+                        }
+                        /* Fix form */
+                        if (!dlfast.hasInputFieldByName("ajax")) {
+                            dlfast.put("ajax", "download-form");
+                        }
+                        if (!dlfast.hasInputFieldByName("undefined")) {
+                            dlfast.put("undefined", "undefined");
+                        }
+                        dlfast.remove("DownloadForm%5Bpwd%5D");
+                        dlfast.put("DownloadForm[pwd]", "");
+                        dlfast.put("fcode5", "");
+                        ajax.submitForm(dlfast);
+                        if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                            sleep(10 * 1001l, link);
+                            continue;
+                        }
+                        dllink = PluginJSonUtils.getJsonValue(ajax, "url");
+                    }
+                    if (ajax.containsHTML("Too many download sessions") || ajax.containsHTML("Quá nhiều phiên tải")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many download sessions", 3 * 60 * 1000l);
+                    } else if (ajax.containsHTML("\"errors\":")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured", 3 * 60 * 1000l);
+                    }
+                    if (dllink == null) {
+                        final String msg = PluginJSonUtils.getJsonValue(ajax, "msg");
+                        if (StringUtils.containsIgnoreCase(msg, "try again")) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
+                        }
                     }
                 }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
             }
         }
         return dllink;
@@ -557,6 +563,7 @@ public class FShareVn extends PluginForHost {
     }
 
     private boolean isLoggedinWebsite() {
+        /* 2020-03-18: TODO: Check if this is still working */
         return br.containsHTML("class =\"user__profile\"") && br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN) != null;
     }
 
@@ -566,18 +573,22 @@ public class FShareVn extends PluginForHost {
                 prepBrowserWebsite(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
+                    logger.info("Logging in via cookies");
                     br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://www." + this.getHost() + "/file/manager");
+                    br.getPage("https://www." + this.getHost() + "/account/profile");
                     if (isLoggedinWebsite()) {
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
-                    br.clearCookies(br.getHost());
+                    logger.info("Cookie login failed");
+                    this.br = prepBrowserWebsite(new Browser());
                 }
-                final boolean isFollowingRedirects = br.isFollowingRedirects();
+                logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.getHeaders().put("Referer", "https://www.fshare.vn/site/login");
                 br.getPage("https://www.fshare.vn"); // 503 with /site/location?lang=en
+                br.getPage("/site/login");
                 final String csrf = br.getRegex("name=\"_csrf-app\" value=\"([^<>\"]+)\"").getMatch(0);
                 final String cookie_fshare_app_old = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
                 if (csrf == null) {
@@ -585,17 +596,70 @@ public class FShareVn extends PluginForHost {
                 } else if (cookie_fshare_app_old == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.setFollowRedirects(false);
+                Form loginform = br.getFormbyProperty("id", "form-signup");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("LoginForm%5Bemail%5D", Encoding.urlEncode(account.getUser()));
+                loginform.put("LoginForm%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
+                loginform.remove("LoginForm%5BrememberMe%5D");
+                loginform.remove("LoginForm%5BrememberMe%5D");
+                loginform.put("LoginForm%5BrememberMe%5D", "0");
                 /*
                  * 2018-02-06: Do NOT use the long session cookies as that could cause "Too many sessions"(or similar) error when trying to
                  * start downloads!
                  */
-                br.postPage("/site/login", "_csrf-app=" + csrf + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0");
-                br.followRedirect();
+                br.submitForm(loginform);
                 if (br.containsHTML("Tài khoản của quý khách hiện đang đăng nhập trên nhiều thiết")) {
                     // Tài khoản của quý khách hiện đang đăng nhập trên nhiều thiết bị và trình duyệt.Quý khách vui lòng đăng xuất trên các
                     // thiết bị hoặc trình duyệt trước đó và tiến hành đăng nhập lại.
                     throw new AccountUnavailableException("Your account is currently logged on multiple devices and browsers. Please log out on the device or browser beforehand and proceed to log in again.", 30 * 60 * 1000l);
+                }
+                loginform = br.getFormbyProperty("id", "form-signup");
+                if (loginform != null && loginform.hasInputFieldByName("LoginForm%5BverifyCode%5D")) {
+                    /* Login captcha --> Same Form as before, will still contain mail & password but we need to fill in the captcha. */
+                    logger.info("Handling login captcha");
+                    final String captchaURL = loginform.getRegex("\"(/site/captchaV3[^<>\"\\']+)\"").getMatch(0);
+                    if (captchaURL == null) {
+                        logger.warning("Failed to find captchaURL");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    /* We do not want a long session cookie (see comment regarding first form we send!) */
+                    loginform.remove("LoginForm%5BrememberMe%5D");
+                    loginform.remove("LoginForm%5BrememberMe%5D");
+                    loginform.put("LoginForm%5BrememberMe%5D", "0");
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final String code = this.getCaptchaCode(captchaURL, this.getDownloadLink());
+                        loginform.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    br.submitForm(loginform);
+                }
+                /*
+                 * 2020-03-18: 'You are logged in in many other browsers. Click on continue to dump all other sessions and confirm to use
+                 * this one.' --> Without sending this form we will not be able to login!
+                 */
+                loginform = br.getFormbyProperty("id", "form-signup");
+                if (loginform != null && br.containsHTML("class=\"img_noti_lock\"")) {
+                    /* 2020-03-18: TODO: This does not work */
+                    /* We do not want a long session cookie (see comment regarding first form we send!) */
+                    loginform.remove("LoginForm%5BrememberMe%5D");
+                    loginform.remove("LoginForm%5BrememberMe%5D");
+                    loginform.put("LoginForm%5BrememberMe%5D", "0");
+                    final String remove_id = br.getRegex("name=\"remove_id\" value=\"(\\d+)\"").getMatch(0);
+                    if (!loginform.hasInputFieldByName("remove_id") && remove_id != null) {
+                        loginform.put("remove_id", remove_id);
+                    }
+                    br.submitForm(loginform);
                 }
                 final String cookie_fshare_app_new = br.getCookie(br.getHost(), "fshare-app", Cookies.NOTDELETEDPATTERN);
                 if (cookie_fshare_app_new == null || StringUtils.equalsIgnoreCase(cookie_fshare_app_new, cookie_fshare_app_old)) {
@@ -605,7 +669,6 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not activated yet. Confirm the activation mail to use it.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
-                br.setFollowRedirects(isFollowingRedirects);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -630,9 +693,11 @@ public class FShareVn extends PluginForHost {
                 final Cookies cookies = account.loadCookies("apicookies");
                 boolean loggedIN = false;
                 if (token != null && cookies != null) {
+                    logger.info("Logging in via cookies");
                     br.setCookies(getAPIHost(), cookies);
                     if (!verifyCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
                         /* Trust young cookies if we're not forced to check them */
+                        logger.info("Trust cookies without check");
                         return token;
                     }
                     // br.setAllowedResponseCodes(new int[] { 409 });
@@ -716,7 +781,10 @@ public class FShareVn extends PluginForHost {
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         this.loginWebsite(account, true);
         final AccountInfo ai = new AccountInfo();
-        br.getPage("https://www." + this.getHost() + "/account/profile");
+        /* Only access this page if it has not been accessed before! */
+        if (br.getURL() == null || !br.getURL().contains("/account/profile")) {
+            br.getPage("https://www." + this.getHost() + "/account/profile");
+        }
         final String validUntil = br.getRegex("(?:Expire|Hạn dùng):</a>\\s*<span.*?>([^<>]*?)</span>").getMatch(0); // Version 3 (2018)
         final String accountType = br.getRegex("(?:Account type|Loại tài khoản)</a>\\s*?<span>([^<>\"]+)</span>").getMatch(0);
         if (StringUtils.equalsIgnoreCase(accountType, "VIP")) {
@@ -727,9 +795,9 @@ public class FShareVn extends PluginForHost {
                 } else {
                     validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
                 }
-                if (validuntil > 0) {
-                    validuntil += 24 * 60 * 60 * 1000l;
-                }
+                // if (validuntil > 0) {
+                // validuntil += 24 * 60 * 60 * 1000l;
+                // }
                 ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
             }
             if (ai.isExpired()) {
