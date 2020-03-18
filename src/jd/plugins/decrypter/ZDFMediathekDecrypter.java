@@ -183,11 +183,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 brc.setFollowRedirects(true);
                 brc.getPage(url);
             }
-            apitoken = brc.getRegex("(?:window\\.zdfsite\\s*=)?.*?apiToken\\s*?:\\s*?\\'([a-f0-9]+)\\'").getMatch(0);
+            apitoken = brc.getRegex("(?:window\\.zdfsite)?.*?apiToken\\s*:\\s*\\'([^\"\\']+)\\'").getMatch(0);
             if (apitoken == null) {
                 apitoken = PluginJSonUtils.getJsonNested(brc, "apiToken");
             }
-            apitoken2 = brc.getRegex("\"apiToken\"\\s*?:\\s*?\"([a-f0-9]+)\"").getMatch(0);
+            apitoken2 = brc.getRegex("\"apiToken\"\\s*:\\s*\"([^\"\\']+)\"").getMatch(0);
             api_base = brc.getRegex("apiService\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
             if (apitoken == null || apitoken2 == null || api_base == null) {
                 return null;
@@ -295,7 +295,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
-        final String apiParams[] = getApiParams(br, PARAMETER_ORIGINAL, true);
+        final String apiParams[] = getApiParams(br, PARAMETER_ORIGINAL, false);
         /* 2016-12-21: By hardcoding the apitoken we can save one http request thus have a faster crawl process :) */
         this.br.getHeaders().put("Api-Auth", "Bearer " + apiParams[0]);
         this.br.getPage(apiParams[2] + "/content/documents/" + sophoraID + ".json?profile=player");
