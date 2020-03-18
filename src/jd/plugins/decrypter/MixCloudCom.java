@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -35,7 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/(widget/iframe/\\?.+|[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/)" })
 public class MixCloudCom extends antiDDoSForDecrypt {
     public MixCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -50,10 +51,25 @@ public class MixCloudCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> tempLinks = new ArrayList<String>();
-        final String parameter = param.toString().replace("http://", "https://");
+        String parameter = param.toString().replace("http://", "https://");
         if (parameter.matches("https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag|discover)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (parameter.matches(".+/widget/iframe/.+")) {
+            /* Correct URL leading to embedded content --> Normal URL */
+            final UrlQuery query = new UrlQuery().parse(parameter);
+            String urlpart = query.get("feed");
+            if (urlpart == null) {
+                return null;
+            }
+            if (Encoding.isUrlCoded(urlpart)) {
+                urlpart = Encoding.htmlDecode(urlpart);
+            }
+            if (urlpart.startsWith("/")) {
+                parameter = "https://www." + this.getHost() + urlpart;
+            } else {
+                parameter = urlpart;
+            }
         }
         getPage(parameter);
         if (br.getRedirectLocation() != null) {
