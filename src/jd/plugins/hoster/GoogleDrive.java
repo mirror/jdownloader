@@ -306,14 +306,14 @@ public class GoogleDrive extends PluginForHost {
                  * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
                  * but not necessarily!
                  */
-                downloadTempUnavailable(account);
+                downloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
                 /*
                  * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
                  * but not necessarily!
                  */
-                downloadTempUnavailable(account);
+                downloadTempUnavailableAndOrOnlyViaAccount(account);
             }
             if ((br.containsHTML("<TITLE>Not Found</TITLE>") || br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
                 if (download_might_not_be_possible) {
@@ -374,8 +374,13 @@ public class GoogleDrive extends PluginForHost {
         final Set<String> loopCheck = new HashSet<String>();
         while (true) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+            /* 2020-03-18: Streams do not have content-disposition but often 206 partial content. */
+            // if ((!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206) ||
+            // (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
             if (!dl.getConnection().isContentDisposition() || (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
-                if (dl.getConnection().getResponseCode() == 416) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
+                } else if (dl.getConnection().getResponseCode() == 416) {
                     dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
                 }
@@ -387,12 +392,12 @@ public class GoogleDrive extends PluginForHost {
                 }
                 if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
                     // so its not possible to download at this time.
-                    downloadTempUnavailable(account);
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
                 } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                     /*
                      * 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant!
                      */
-                    downloadTempUnavailable(account);
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
                 } else if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
                     // dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
                     dllink = br.getRegex("href\\s*=\\s*\"((/a/[^\"<>]*?)?/uc\\?export=download[^\"<>]*?)\"\\s*>\\s*Download anyway\\s*</a>").getMatch(0); // w/
@@ -448,7 +453,7 @@ public class GoogleDrive extends PluginForHost {
      * Use this for response 403 or messages like 'file can not be downloaded at this moment'. Such files will usually be downloadable via
      * account.
      */
-    private void downloadTempUnavailable(final Account account) throws PluginException {
+    private void downloadTempUnavailableAndOrOnlyViaAccount(final Account account) throws PluginException {
         if (account != null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
         } else {

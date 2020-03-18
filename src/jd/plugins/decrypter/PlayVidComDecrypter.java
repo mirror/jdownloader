@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -38,10 +42,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class PlayVidComDecrypter extends PluginForDecrypt {
@@ -93,6 +93,10 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         }
         /* Decrypt start */
         filename = PluginJSonUtils.getJson(br, "name");
+        if (filename == null) {
+            /* 2020-03-18 */
+            filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]+)\" />").getMatch(0);
+        }
         if (filename == null) {
             /* Final fallback */
             filename = new Regex(parameter, "/([^/]+)$").getMatch(0);

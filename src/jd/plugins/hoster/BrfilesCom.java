@@ -48,7 +48,8 @@ public class BrfilesCom extends YetiShareCore {
      * mods: See overridden functions<br />
      * limit-info:<br />
      * captchatype-info: 2020-03-16: reCaptchaV2<br />
-     * other: <br />
+     * other: They are probably GEO-blocking everything except brazilian IPs --> All files will appear as offline then, only self uploaded
+     * files can be downloaded using your own account then! Linkcheck is disabled to prevent bad offline message! <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();

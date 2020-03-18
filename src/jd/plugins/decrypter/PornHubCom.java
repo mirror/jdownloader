@@ -47,7 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|pornstar/[^/]+(?:/gifs(/public|/video|/from_videos|/videos/(?:upload|paid))?|/videos(/upload)?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|model/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos)?|playlist/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|(pornstar|model)/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(?:/(?:upload|paid))?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|playlist/\\d+)" })
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -163,9 +163,18 @@ public class PornHubCom extends PluginForDecrypt {
         }
         final Set<String> dupes = new HashSet<String>();
         final Set<String> pages = new HashSet<String>();
+        int page = 0;
+        int maxPage = -1;
+        String ajaxPaginationURL = null;
         do {
+            boolean foundSomethingNew = false;
+            page++;
+            logger.info(String.format("Crawling page %d / %d", page, maxPage));
             /* 2020-03-17: Keep in mind: In premium modes, users may be able to see more items here than in free! */
             final String[] viewkeys = br.getRegex("/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
+            if (viewkeys.length == 0) {
+                logger.info("Stopping now because could not find ANY content on this page");
+            }
             logger.info("Links found: " + viewkeys.length);
             for (final String viewkey : viewkeys) {
                 logger.info("viewkey: " + viewkey);
@@ -173,11 +182,36 @@ public class PornHubCom extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
                     decryptedLinks.add(dl);
                     distribute(dl);
+                    foundSomethingNew = true;
                 }
             }
-            final String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
+            if (!foundSomethingNew) {
+                logger.info("Stopping because this page did not contain any NEW content");
+                break;
+            }
+            String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
+            final String nextAjax = br.getRegex("onclick=\"loadMoreDataStream\\(([^\\)]+)\\)").getMatch(0);
+            if (nextAjax != null) {
+                final String[] ajaxVars = nextAjax.replace("'", "").split(", ");
+                if (ajaxVars == null || ajaxVars.length < 3) {
+                    logger.info("Incompatible ajax data");
+                    break;
+                }
+                ajaxPaginationURL = ajaxVars[0];
+                // final String nextPageStr = ajaxVars[2];
+                final String maxPageStr = ajaxVars[1];
+                logger.info("Found max_page --> " + maxPageStr);
+                maxPage = Integer.parseInt(maxPageStr);
+            }
             if (next != null && pages.add(next)) {
+                logger.info("HTML pagination handling");
                 br.getPage(next);
+            } else if (ajaxPaginationURL != null && page < maxPage) {
+                /* E.g. max page given = 4 --> Stop AFTER counter == 3 as 3+1 == 4 */
+                logger.info("Ajax pagination handling");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                final int postPage = page + 1;
+                br.postPageRaw(ajaxPaginationURL + "&page=" + postPage, "o=best&page=" + postPage);
             } else {
                 break;
             }
