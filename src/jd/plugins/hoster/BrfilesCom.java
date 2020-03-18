@@ -215,7 +215,6 @@ public class BrfilesCom extends YetiShareCore {
         if (br.getURL() == null || !br.getURL().contains("account_edit")) {
             getPage("/account_edit/");
         }
-        /* 2019-03-01: Bad german translation, example: freefile.me */
         boolean isPremium = br.containsHTML(">Tipo de conta\\s*:\\s*</label>.*?<label[^>]+>Premium</label>");
         if (!isPremium) {
             account.setType(AccountType.FREE);
