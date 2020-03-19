@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_\\-]+\\.)?urlgalleries\\.net/porn-gallery-\\d+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_\\-]+\\.)?urlgalleries\\.net/porn-gallery-\\d+/.*|https?://go\\.urlgalleries\\.net/[a-z0-9]+" })
 public class RlGalleriesNt extends PluginForDecrypt {
     private static String agent = null;
 
@@ -55,8 +55,21 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
         br.followRedirect();
-        if (br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || br.getURL().contains("/not_found_adult.php")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || br.getURL().contains("/not_found_adult.php")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        if (parameter.matches(".+go\\.urlgalleries\\.net.+")) {
+            /* 2020-03-19: Single link */
+            if (br.containsHTML("/not_found_adult\\.php")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            final String finallink = br.getRegex("linkDestUrl\\s*=\\s*\\'(http[^<>\"\\']+)\\'").getMatch(0);
+            if (finallink == null) {
+                return null;
+            }
+            decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
         String fpName = br.getRegex("border='0' /></a></div>(?:\\s*<h\\d+[^>]*>\\s*)?(.*?)(?:\\s*</h\\d+>\\s*)?</td></tr><tr>").getMatch(0);
