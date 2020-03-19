@@ -572,7 +572,7 @@ public class FShareVn extends PluginForHost {
             try {
                 prepBrowserWebsite(this.br);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     logger.info("Logging in via cookies");
                     br.setCookies(this.getHost(), cookies);
                     br.getPage("https://www." + this.getHost() + "/account/profile");
@@ -650,7 +650,7 @@ public class FShareVn extends PluginForHost {
                  */
                 loginform = br.getFormbyProperty("id", "form-signup");
                 if (loginform != null && br.containsHTML("class=\"img_noti_lock\"")) {
-                    /* 2020-03-18: TODO: This does not work */
+                    /* 2020-03-18: TODO: This does not work but I was not able to reproduce this anymore either :( */
                     /* We do not want a long session cookie (see comment regarding first form we send!) */
                     loginform.remove("LoginForm%5BrememberMe%5D");
                     loginform.remove("LoginForm%5BrememberMe%5D");
