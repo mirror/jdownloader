@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
@@ -119,5 +120,12 @@ public class FlorenfileCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             }
         }
+    }
+
+    @Override
+    public boolean isLoggedin() {
+        /* 2020-03-19: Special: jdlog://4986715302851/ */
+        final Form loginform = this.findLoginform(br);
+        return super.isLoggedin() && loginform == null;
     }
 }

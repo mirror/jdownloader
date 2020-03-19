@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2016  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,34 +18,32 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.YetiShareCore;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class BadshareIo extends YetiShareCore {
-    public BadshareIo(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class ShareOnlineTo extends XFileSharingProBasic {
+    public ShareOnlineTo(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES YetiShare<br />
-     ****************************
+     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null<br />
-     * other: <br />
+     * captchatype-info: 2020-03-19: reCaptchaV2<br />
+     * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "badshare.io" });
+        ret.add(new String[] { "share-online.to" });
         return ret;
     }
 
@@ -59,12 +57,7 @@ public class BadshareIo extends YetiShareCore {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String[]> pluginDomains = getPluginDomains();
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
-        }
-        return ret.toArray(new String[0]);
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -81,13 +74,14 @@ public class BadshareIo extends YetiShareCore {
         }
     }
 
+    @Override
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -95,38 +89,17 @@ public class BadshareIo extends YetiShareCore {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
+        return -1;
     }
 
+    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public boolean supports_availablecheck_over_info_page(DownloadLink link) {
-        /* 2019-087-16: Special */
-        return false;
-    }
-
-    @Override
-    protected boolean enforce_old_login_method() {
-        /* 2019-08-29: Special */
-        return true;
-    }
-
-    public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
-        /* 2019-087-16: Special */
-        fileInfo[0] = br.getRegex("<h4>([^<>\"]+)<").getMatch(0);
-        fileInfo[1] = br.getRegex("<strong>File size:</strong>([^<>\"]+)</li>").getMatch(0);
-        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
-            super.scanInfo(link, fileInfo);
-        }
-        return fileInfo;
+        return -1;
     }
 }

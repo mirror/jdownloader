@@ -46,10 +46,9 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "" })
 public class TransloadMe extends PluginForHost {
-    private static final String          API_BASE                     = "http://api.transload.me/";
-    private static final String          NICE_HOST                    = "transload.me";
-    private static final String          NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String          NORESUME                     = NICE_HOSTproperty + "NORESUME";           /* Connection limits */
+    private static final String          API_BASE                     = "https://api.transload.me/";
+    private static final String          NORESUME                     = "transload_me_NORESUME";
+    /* Connection limits */
     private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int             ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
@@ -105,7 +104,7 @@ public class TransloadMe extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBrowser(br);
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             mhm.runCheck(account, link);
             dllink = generateDownloadlinkAPI(account, link);
@@ -126,7 +125,7 @@ public class TransloadMe extends PluginForHost {
             resume = false;
             link.setProperty(NORESUME, Boolean.valueOf(false));
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getResponseCode() == 416) {
@@ -143,7 +142,7 @@ public class TransloadMe extends PluginForHost {
             }
             dl.startDownload();
         } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
     }
@@ -314,11 +313,7 @@ public class TransloadMe extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "credits", 2, 10 * 60 * 1000l);
             case 5:
                 // "error": "5" is Used or password is incorrect.
-                if (System.getProperty("user.language").equals("de")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 6:
                 // "error": "6" - Invalid method request.
                 statusMessage = "Invalid API request - this should never happen!";
@@ -335,7 +330,7 @@ public class TransloadMe extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "unknown_error_state", 50, 2 * 60 * 1000l);
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info(this.getHost() + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
     }
