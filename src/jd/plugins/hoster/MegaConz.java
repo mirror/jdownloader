@@ -37,6 +37,26 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,26 +87,6 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.jdownloader.controlling.FileStateManager;
-import org.jdownloader.controlling.FileStateManager.FILESTATE;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
@@ -127,7 +127,8 @@ public class MegaConz extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (account) {
             final String sid = apiLogin(account);
-            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
+            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 },
+                    new Object[] { "pro"/* pro */, 1 });
             // https://github.com/meganz/sdk/blob/master/src/commands.cpp
             // https://github.com/meganz/sdk/blob/master/bindings/ios/MEGAAccountDetails.h
             if (uq.containsKey("utype")) {
@@ -291,7 +292,8 @@ public class MegaConz extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    response = apiRequest(null, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
+                    response = apiRequest(null, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                            new Object[] { "uh"/* emailHash */, uh });
                 }
                 if (response != null && (response.containsKey("k") && response.containsKey("privk") && response.containsKey("csid"))) {
                     try {
@@ -816,11 +818,19 @@ public class MegaConz extends PluginForHost {
                 /* mega does not like much connections! */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
                 if (dl.getConnection().getResponseCode() == 503) {
-                    dl.getConnection().disconnect();
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 5 * 60 * 1000l);
                 }
                 if (dl.getConnection().getResponseCode() == 509 || StringUtils.containsIgnoreCase(dl.getConnection().getResponseMessage(), "Bandwidth Limit Exceeded")) {
-                    dl.getConnection().disconnect();
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     final String timeLeftString = dl.getConnection().getHeaderField("X-MEGA-Time-Left");
                     final long minTimeLeft = 30 * 60 * 1000l;
                     final long timeLeft;
@@ -843,7 +853,11 @@ public class MegaConz extends PluginForHost {
                     }
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
-                    br.followConnection();
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dl.startDownload()) {
@@ -852,7 +866,9 @@ public class MegaConz extends PluginForHost {
                     }
                 }
             } catch (IOException e) {
-                checkServerBusy(dl.getConnection(), e);
+                if (dl != null) {
+                    checkServerBusy(dl.getConnection(), e);
+                }
                 throw e;
             } finally {
                 if (link.getDownloadCurrent() > 0) {
