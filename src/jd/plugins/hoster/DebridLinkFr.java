@@ -22,6 +22,10 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.config.DebridLinkFrConfig;
+import org.jdownloader.plugins.components.config.DebridLinkFrConfig.PreferredDomain;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -45,7 +49,6 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class DebridLinkFr extends PluginForHost {
     private static Map<Account, Map<String, String>> accountInfo    = new HashMap<Account, Map<String, String>>();
-    private static final String                      API_BASE       = "https://debrid-link.fr/api";
     private static final String                      PUBLIC_API_KEY = "kMREtSnp61OgLvG8";
     private long                                     ts             = 0;
     private static MultiHosterManagement             mhm            = new MultiHosterManagement("debrid-link.fr");
@@ -69,6 +72,10 @@ public class DebridLinkFr extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setCustomCharset("UTF-8");
         return prepBr;
+    }
+
+    private String getApiBase() {
+        return "https://" + getConfiguredDomain() + "/api";
     }
 
     @Override
@@ -252,7 +259,7 @@ public class DebridLinkFr extends PluginForHost {
     private void getPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
         synchronized (accountInfo) {
             if (account != null && r != null) {
-                final String getThis = API_BASE + r;
+                final String getThis = getApiBase() + r;
                 br = new Browser();
                 prepBrowser(br);
                 if (sign) {
@@ -280,7 +287,7 @@ public class DebridLinkFr extends PluginForHost {
                     br.getHeaders().put("X-DL-SIGN", getSign(account, r));
                     br.getHeaders().put("X-DL-TS", ts + "");
                 }
-                br.postPage(API_BASE + r, other);
+                br.postPage(getApiBase() + r, other);
                 if (errChk()) {
                     errHandling(account, downloadLink, false);
                 }
@@ -553,5 +560,25 @@ public class DebridLinkFr extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    protected String getConfiguredDomain() {
+        /* Returns user-set value which can be used to circumvent GEO-block. */
+        PreferredDomain cfgdomain = PluginJsonConfig.get(DebridLinkFrConfig.class).getPreferredDomain();
+        if (cfgdomain == null) {
+            cfgdomain = PreferredDomain.DEFAULT;
+        }
+        switch (cfgdomain) {
+        case DOMAIN1:
+            return "debrid-link.com";
+        case DEFAULT:
+        default:
+            return this.getHost();
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return DebridLinkFrConfig.class;
     }
 }
