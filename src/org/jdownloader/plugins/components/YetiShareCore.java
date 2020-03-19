@@ -272,10 +272,11 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed (e.g. badshare.io). </br>
+     * This is only rarely needed (e.g. in the past for badshare.io). </br>
      * default = false
      */
-    protected boolean enforce_old_login_method() {
+    @Deprecated
+    private boolean enforce_old_login_method() {
         return false;
     }
 
@@ -302,13 +303,10 @@ public class YetiShareCore extends antiDDoSForHost {
                     /* DEBUG YetiShare Upgrade */
                     try {
                         checkErrorsNew(link, account);
-                    } catch (final PluginException e) {
-                        if (isDownload) {
-                            throw e;
-                        } else if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    } catch (final Throwable e) {
+                        if (isDownload || e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                             throw e;
                         } else {
-                            /* E.g. some other errormessage --> But file should be online */
                             return AvailableStatus.TRUE;
                         }
                     }
@@ -323,11 +321,10 @@ public class YetiShareCore extends antiDDoSForHost {
                     /* DEBUG YetiShare Upgrade */
                     try {
                         checkErrorsNew(link, account);
-                    } catch (final PluginException e) {
-                        if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    } catch (final Throwable e) {
+                        if (isDownload || e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                             throw e;
                         } else {
-                            /* E.g. some other errormessage --> But file should be online */
                             return AvailableStatus.TRUE;
                         }
                     }
@@ -338,20 +335,22 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else {
                     if (isWaitBetweenDownloadsURL()) {
                         return AvailableStatus.TRUE;
-                    } else if (isPremiumOnlyURL()) {
-                        return AvailableStatus.TRUE;
                     }
                     if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                         /* DEBUG YetiShare Upgrade */
                         this.checkErrors(link, account);
                     }
                     if (isOfflineWebsite(link)) {
-                        /*
-                         * 2019-09-08: Make sure to check for other errors too as when a user e.g. has reached a downloadlimit this script
-                         * tends to redirect to a error-page so we would not be able to see any filename information at this stage but the
-                         * file may not be offline!
-                         */
-                        this.checkErrors(link, account);
+                        try {
+                            this.checkErrors(link, account);
+                        } catch (final Throwable e) {
+                            if (isDownload || e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                                throw e;
+                            } else {
+                                /* File is probably online but another error happened --> Do not throw it during availablecheck! */
+                                return AvailableStatus.TRUE;
+                            }
+                        }
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 }
@@ -970,6 +969,7 @@ public class YetiShareCore extends antiDDoSForHost {
             final long default_waittime = 15 * 60 * 1000l;
             /* Now handle errors */
             if (errorkey.equalsIgnoreCase("error_file_has_been_removed_by_admin") || errorkey.equalsIgnoreCase("error_file_has_been_removed_by_user") || errorkey.equalsIgnoreCase("error_file_has_been_removed_due_to_copyright") || errorkey.equalsIgnoreCase("error_file_has_expired")) {
+                // VERIFIED
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsg);
             }
             /* TODO: Decide whether or not we want to use original given errormessages or rather spit out all errors in English. */
@@ -1054,6 +1054,7 @@ public class YetiShareCore extends antiDDoSForHost {
             /* DEBUG YetiShare Upgrade */
             checkErrorsNew(link, account);
         }
+        final String url = getCurrentURLDecoded();
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -1098,7 +1099,7 @@ public class YetiShareCore extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
-        } else if (isPremiumOnlyURL()) {
+        } else if (url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new AccountRequiredException();
         } else if (br.getURL().contains("You+have+reached+the+maximum+permitted+downloads+in")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
@@ -1171,22 +1172,6 @@ public class YetiShareCore extends antiDDoSForHost {
             return currentURL;
         }
         return null;
-    }
-
-    /**
-     * Checks premiumonly status via current Browser-URL.
-     *
-     * @return true: Link only downloadable for premium users (sometimes also for registered users). <br />
-     *         false: Link is downloadable for all users.
-     */
-    public boolean isPremiumOnlyURL() {
-        /*
-         * 2020-02-19: E.g. Polish:
-         * https://oxycloud.com/error.html?e=Ten+plik+jest+za+du%C5%BCy+do+pobrania+dla+darmowego+u%C5%BCytkownika+.+Wykup+premium%2C+lub+
-         * zaloguj+si%C4%99+na+swoje+konto+aby+pobra%C4%87+ten+plik+%21.
-         */
-        final String url = getCurrentURLDecoded();
-        return url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /**
