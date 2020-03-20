@@ -18,13 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShareOnlineTo extends XFileSharingProBasic {
@@ -81,7 +87,7 @@ public class ShareOnlineTo extends XFileSharingProBasic {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -100,6 +106,57 @@ public class ShareOnlineTo extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 10;
+    }
+
+    @Override
+    public String getLoginURL() {
+        return getMainPage() + "/login";
+    }
+
+    @Override
+    protected String regexAPIKey(final String src) {
+        return new Regex(src, "([a-z0-9]+)<br>\\s*<a href=\"\\?op=my_account").getMatch(0);
+    }
+
+    @Override
+    protected boolean allow_api_availablecheck_in_premium_mode_if_apikey_is_available(final Account account) {
+        final boolean apikey_is_available = this.getAPIKey(account) != null;
+        /* Enable this switch to be able to use this in dev mode. Default = off as we do not use the API by default! */
+        final boolean allow_api_premium_download = true;
+        return DebugMode.TRUE_IN_IDE_ELSE_FALSE && apikey_is_available && allow_api_premium_download;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final boolean setAndAnonymizeUsername) throws Exception {
+        final Browser brc = br.cloneBrowser();
+        final AccountInfo ai = super.fetchAccountInfoAPI(brc, account, setAndAnonymizeUsername);
+        /* Original XFS API ('API Mod') does not return trafficleft but theirs is modified and more useful! */
+        /* 2019-11-27: Not sure but this must be the traffic you can buy via 'extend traffic': https://ddl.to/?op=payments */
+        final String premium_extra_trafficStr = PluginJSonUtils.getJson(brc, "premium_traffic_left");
+        final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
+        // final String trafficusedStr = PluginJSonUtils.getJson(brc, "traffic_used");
+        if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
+            long traffic_left = Long.parseLong(trafficleftStr) * 1000 * 1000;
+            if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
+                final long premium_extra_traffic = Long.parseLong(premium_extra_trafficStr) * 1000 * 1000;
+                traffic_left += premium_extra_traffic;
+                if (premium_extra_traffic > 0) {
+                    if (ai.getStatus() != null) {
+                        ai.setStatus(ai.getStatus() + " | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
+                    } else {
+                        ai.setStatus("Premium account | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
+                    }
+                }
+            }
+            ai.setTrafficLeft(traffic_left);
+        } else {
+            /*
+             * They will return "traffic_left":"0" for free accounts which is wrong. It is unlimited on their website. By setting it to
+             * unlimited here it will be re-checked via website by our XFS template!
+             */
+            ai.setUnlimitedTraffic();
+        }
+        return ai;
     }
 }
