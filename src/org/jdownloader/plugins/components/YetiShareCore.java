@@ -28,14 +28,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -59,6 +51,14 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -219,8 +219,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -271,9 +271,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed (e.g. in the past for badshare.io). </br>
-     * default = false
+     * Enforces old, non-ajax login-method. </br> This is only rarely needed (e.g. in the past for badshare.io). </br> default = false
      */
     @Deprecated
     private boolean enforce_old_login_method() {
@@ -303,10 +301,11 @@ public class YetiShareCore extends antiDDoSForHost {
                     /* DEBUG YetiShare Upgrade */
                     try {
                         checkErrorsNew(link, account);
-                    } catch (final Throwable e) {
-                        if (isDownload || e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    } catch (final PluginException e) {
+                        if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                             throw e;
                         } else {
+                            logger.log(e);
                             return AvailableStatus.TRUE;
                         }
                     }
@@ -321,10 +320,11 @@ public class YetiShareCore extends antiDDoSForHost {
                     /* DEBUG YetiShare Upgrade */
                     try {
                         checkErrorsNew(link, account);
-                    } catch (final Throwable e) {
-                        if (isDownload || e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    } catch (final PluginException e) {
+                        if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                             throw e;
                         } else {
+                            logger.log(e);
                             return AvailableStatus.TRUE;
                         }
                     }
@@ -343,10 +343,11 @@ public class YetiShareCore extends antiDDoSForHost {
                     if (isOfflineWebsite(link)) {
                         try {
                             this.checkErrors(link, account);
-                        } catch (final Throwable e) {
-                            if (isDownload || e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        } catch (final PluginException e) {
+                            if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                                 throw e;
                             } else {
+                                logger.log(e);
                                 /* File is probably online but another error happened --> Do not throw it during availablecheck! */
                                 return AvailableStatus.TRUE;
                             }
@@ -603,9 +604,10 @@ public class YetiShareCore extends antiDDoSForHost {
                             cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         } catch (final Exception e) {
                             if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
+                            } else {
+                                throw e;
                             }
-                            throw e;
                         }
                         final String code = getCaptchaCode("solvemedia", cf, link);
                         final String chid = sm.getChallenge(code);
@@ -928,8 +930,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 return null;
             }
         } catch (final Throwable e) {
-            logger.warning("Error occured");
-            e.printStackTrace();
+            logger.log(e);
             return null;
         }
     }
@@ -941,6 +942,7 @@ public class YetiShareCore extends antiDDoSForHost {
             errorMsg = query.get("e");
             errorMsg = URLDecoder.decode(errorMsg, "UTF-8");
         } catch (final Throwable e) {
+            logger.log(e);
         }
         if (!StringUtils.isEmpty(errorMsg)) {
             logger.info("Found errormessage in current URL");
@@ -982,7 +984,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw new AccountRequiredException(errorMsg);
             } else if (errorkey.equalsIgnoreCase("error_file_is_not_publicly_shared")) {
                 throw new AccountRequiredException(errorMsg);
-            } /** Limit errorhandling */
+            }/** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
@@ -1138,8 +1140,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br>
-     *         Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
      * @throws PluginException
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
