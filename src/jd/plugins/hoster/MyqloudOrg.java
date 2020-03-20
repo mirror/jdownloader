@@ -233,7 +233,13 @@ public class MyqloudOrg extends XFileSharingProBasic {
             if (download1 != null) {
                 /* 2020-03-11: Special: Captcha & waittime */
                 final long timebefore = System.currentTimeMillis();
-                handleCaptcha(link, download1);
+                /* 2020-03-20: Try catch is big workaround attempt before the weekend. */
+                try {
+                    handleCaptcha(link, download1);
+                } catch (final Throwable e) {
+                    logger.info("Captcha handling failure");
+                    e.printStackTrace();
+                }
                 this.waitTime(link, timebefore);
                 this.submitForm(brc, download1);
                 /* Workaround */
