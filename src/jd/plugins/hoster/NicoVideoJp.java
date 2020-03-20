@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,33 +51,34 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
 public class NicoVideoJp extends PluginForHost {
-    private static final String  MAINPAGE                    = "https://www.nicovideo.jp/";
-    private static final String  ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
-    private static final String  CUSTOM_DATE                 = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME             = "CUSTOM_FILENAME";
-    private static final String  TYPE_NM                     = "https?://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
-    private static final String  TYPE_SM                     = "https?://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
-    private static final String  TYPE_SO                     = "https?://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+    private static final String           MAINPAGE                    = "https://www.nicovideo.jp/";
+    private static final String           ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
+    private static final String           CUSTOM_DATE                 = "CUSTOM_DATE";
+    private static final String           CUSTOM_FILENAME             = "CUSTOM_FILENAME";
+    private static final String           TYPE_NM                     = "https?://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
+    private static final String           TYPE_SM                     = "https?://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
+    private static final String           TYPE_SO                     = "https?://(www\\.)?nicovideo\\.jp/watch/so\\d+";
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
-    private static final String  TYPE_WATCH                  = "https?://(www\\.)?nicovideo\\.jp/watch/\\d+";
-    private static final String  default_extension           = ".flv";
-    private static final String  privatevid                  = "account.nicovideo.jp";
-    private static final String  NOCHUNKS                    = "NOCHUNKS";
-    private static final String  AVOID_ECONOMY_MODE          = "AVOID_ECONOMY_MODE";
-    private static final boolean FREE_RESUME                 = true;
-    private static final int     FREE_MAXCHUNKS              = 0;
-    private static final boolean ACCOUNT_FREE_RESUME         = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS      = 0;
-    private static final int     economy_active_wait_minutes = 30;
-    private static final String  html_account_needed         = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
-    public static final long     trust_cookie_age            = 300000l;
+    private static final String           TYPE_WATCH                  = "https?://(www\\.)?nicovideo\\.jp/watch/\\d+";
+    private static final String           default_extension           = "mp4";
+    private static final String           privatevid                  = "account.nicovideo.jp";
+    private static final String           NOCHUNKS                    = "NOCHUNKS";
+    private static final String           AVOID_ECONOMY_MODE          = "AVOID_ECONOMY_MODE";
+    private static final boolean          FREE_RESUME                 = true;
+    private static final int              FREE_MAXCHUNKS              = 0;
+    private static final boolean          ACCOUNT_FREE_RESUME         = true;
+    private static final int              ACCOUNT_FREE_MAXCHUNKS      = 0;
+    private static final int              economy_active_wait_minutes = 30;
+    private static final String           html_account_needed         = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
+    public static final long              trust_cookie_age            = 300000l;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFree        = new AtomicInteger(2);
-    private static AtomicInteger totalMaxSimultanFreeAccount = new AtomicInteger(2);
+    private static AtomicInteger          totalMaxSimultanFree        = new AtomicInteger(2);
+    private static AtomicInteger          totalMaxSimultanFreeAccount = new AtomicInteger(2);
     /* don't touch the following! */
-    private static AtomicInteger maxPremium                  = new AtomicInteger(1);
-    private static AtomicInteger maxFree                     = new AtomicInteger(1);
-    private static Object        LOCK                        = new Object();
+    private static AtomicInteger          maxPremium                  = new AtomicInteger(1);
+    private static AtomicInteger          maxFree                     = new AtomicInteger(1);
+    private static Object                 LOCK                        = new Object();
+    private LinkedHashMap<String, Object> entries                     = null;
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -103,8 +105,6 @@ public class NicoVideoJp extends PluginForHost {
         super.init();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
-
-    private LinkedHashMap<String, Object> entries = null;
 
     /**
      * IMPORTANT: The site has a "normal" and "economy" mode. Normal mode = Higher video quality - mp4 streams. Economy mode = lower quality
@@ -148,9 +148,9 @@ public class NicoVideoJp extends PluginForHost {
         }
         String jsonapi = br.getRegex("data-api-data=\"(.*?)\" hidden>").getMatch(0);
         jsonapi = Encoding.htmlDecode(jsonapi);
-        LinkedHashMap<String, Object> entries2 = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
-        entries2 = (LinkedHashMap<String, Object>) entries2.get("video");
-        final String title = (String) entries2.get("title");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
+        entries = (LinkedHashMap<String, Object>) entries.get("video");
+        final String title = (String) entries.get("title");
         String filename = title;
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
@@ -215,12 +215,42 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        checkWatchableGeneral();
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // checkWatchableGeneral();
+        final LinkedHashMap<String, Object> dmcInfo = (LinkedHashMap<String, Object>) entries.get("dmcInfo");
+        final LinkedHashMap<String, Object> session_api = (LinkedHashMap<String, Object>) dmcInfo.get("session_api");
+        final String signature = (String) session_api.get("signature");
+        final String recipe_id = (String) session_api.get("recipe_id");
+        final String player_id = (String) session_api.get("player_id");
+        final String service_user_id = (String) session_api.get("service_user_id");
+        final long created_time = JavaScriptEngineFactory.toLong(entries.get("created_time"), 0);
+        final long expire_time = JavaScriptEngineFactory.toLong(entries.get("expire_time"), 0);
+        final Object tokenO = session_api.get("token");
+        final LinkedHashMap<String, Object> token = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap((String) tokenO);
+        final ArrayList<Object> videos = (ArrayList<Object>) token.get("videos");
+        final ArrayList<Object> audios = (ArrayList<Object>) token.get("audios");
+        final ArrayList<Object> protocols = (ArrayList<Object>) token.get("protocols");
+        final LinkedHashMap<String, Object> auth_types = (LinkedHashMap<String, Object>) session_api.get("auth_types");
+        final String postData = String.format(
+                "{\"session\":{\"recipe_id\":\"%s\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_1080p\",\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"yes\",\"use_ssl\":\"yes\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"{\\\"service_id\\\":\\\"nicovideo\\\",\\\"player_id\\\":\\\"%s\\\",\\\"recipe_id\\\":\\\"%s\\\",\\\"service_user_id\\\":\\\"%s\\\",\\\"protocols\\\":[{\\\"name\\\":\\\"http\\\",\\\"auth_type\\\":\\\"ht2\\\"},{\\\"name\\\":\\\"hls\\\",\\\"auth_type\\\":\\\"ht2\\\"}],\\\"videos\\\":[\\\"archive_h264_1080p\\\",\\\"archive_h264_360p\\\",\\\"archive_h264_360p_low\\\",\\\"archive_h264_480p\\\",\\\"archive_h264_720p\\\"],\\\"audios\\\":[\\\"archive_aac_128kbps\\\",\\\"archive_aac_64kbps\\\"],\\\"movies\\\":[],\\\"created_time\\\":%d,\\\"expire_time\\\":%d,\\\"content_ids\\\":[\\\"out1\\\"],\\\"heartbeat_lifetime\\\":120000,\\\"content_key_timeout\\\":600000,\\\"priority\\\":0,\\\"transfer_presets\\\":[]}\",\"signature\":\"%s\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"%s\"},\"client_info\":{\"player_id\":\"%s\"},\"priority\":0}}",
+                recipe_id, player_id, recipe_id, service_user_id, created_time, expire_time, signature, service_user_id, player_id);
+        br.getHeaders().put("Accept", "application/json");
+        br.getHeaders().put("Content-Type", "application/json");
+        br.getHeaders().put("Origin", "https://www.nicovideo.jp");
+        br.postPageRaw("https://api.dmc.nico/api/sessions?_format=json", postData);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/session");
+        // https://api.dmc.nico/api/sessions
         /* Most of the times an account is needed to watch/download videos. */
         if (br.containsHTML(html_account_needed)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, ONLYREGISTEREDUSERTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        final String dllink = getDllinkFree();
+        final String dllink = (String) entries.get("content_uri");
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int maxChunks = FREE_MAXCHUNKS;
         if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
@@ -231,7 +261,8 @@ public class NicoVideoJp extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        preDownloadHandling(link);
+        final String final_filename = getFormattedFilename(link);
+        link.setFinalFileName(final_filename);
         try {
             /* add a download slot */
             controlFree(+1);
@@ -240,26 +271,6 @@ public class NicoVideoJp extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
-    }
-
-    private void preDownloadHandling(final DownloadLink link) throws ParseException, PluginException {
-        final String contenttype = dl.getConnection().getContentType();
-        if (contenttype.equals("video/mp4")) {
-            link.setProperty("extension", ".mp4");
-        } else {
-            /* Check if the user allows lower quality .flv files. */
-            if (this.getPluginConfig().getBooleanProperty(AVOID_ECONOMY_MODE, false)) {
-                /*
-                 * 2018-11-15: According to user, this mode differs from link to link so we use ERROR_TEMPORARILY_UNAVAILABLE instead of
-                 * ERROR_HOSTER_TEMPORARILY_UNAVAILABLE from now on
-                 */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site is currently in economy mode", economy_active_wait_minutes * 60 * 1000l);
-            }
-            link.setProperty("extension", ".flv");
-        }
-        /* Now that we got the final extension of the file we can set the final filename. */
-        final String final_filename = getFormattedFilename(link);
-        link.setFinalFileName(final_filename);
     }
 
     @SuppressWarnings("deprecation")
@@ -289,7 +300,8 @@ public class NicoVideoJp extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        preDownloadHandling(link);
+        final String final_filename = getFormattedFilename(link);
+        link.setFinalFileName(final_filename);
         try {
             /* add a download slot */
             controlPremium(+1);
@@ -541,7 +553,7 @@ public class NicoVideoJp extends PluginForHost {
                 formattedFilename = formattedFilename.replace("*channelname*", "");
             }
         }
-        formattedFilename = formattedFilename.replace("*ext*", extension);
+        formattedFilename = formattedFilename.replace("*ext*", "." + extension);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*videoname*", videoName);
         return formattedFilename;
