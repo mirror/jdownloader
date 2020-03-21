@@ -47,7 +47,7 @@ public class DebridFileCom extends PluginForHost {
     private static MultiHosterManagement mhm                       = new MultiHosterManagement("debrid-file.com");
     private static final int             defaultMAXDOWNLOADS       = -1;
     private static final boolean         account_premium_resume    = true;
-    /** 2020-03-21: pgh: In my tests, it is OK for the chunkload with the value of 5 */
+    /** 2020-03-21: phg: In my tests, it is OK for the chunkload with the value of 5 */
     private static final int             account_premium_maxchunks = -5;
     /* 2020-03-19: Free accounts are unsupported, displayed with ZERO traffic */
     private static final boolean         account_FREE_resume       = true;
