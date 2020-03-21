@@ -48,7 +48,8 @@ public class DebridFileCom extends PluginForHost {
     private static final int             defaultMAXDOWNLOADS       = -1;
     /** 2020-03-19: In my tests, chunkload was not possible (premium account!) */
     private static final boolean         account_premium_resume    = true;
-    private static final int             account_premium_maxchunks = 1;
+    /** 2020-03-21: In my tests, it is OK for the chunkload with the value of 5 */
+    private static final int             account_premium_maxchunks = 5;
     /* 2020-03-19: Free accounts are unsupported, displayed with ZERO traffic */
     private static final boolean         account_FREE_resume       = true;
     private static final int             account_FREE_maxchunks    = 1;
@@ -93,7 +94,7 @@ public class DebridFileCom extends PluginForHost {
         link.setProperty(this.getHost() + "directlink", dllink);
         final boolean resume;
         final int maxchunks;
-        if (account.getType() == AccountType.FREE) {
+        if (account.getType() == AccountType.PREMIUM) {
             resume = account_premium_resume;
             maxchunks = account_premium_maxchunks;
         } else {
