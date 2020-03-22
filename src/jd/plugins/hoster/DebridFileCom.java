@@ -43,15 +43,15 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-file.com" }, urls = { "" })
 public class DebridFileCom extends PluginForHost {
-    private static final String          WEBSITE_BASE              = "https://debrid-file.com";
-    private static MultiHosterManagement mhm                       = new MultiHosterManagement("debrid-file.com");
-    private static final int             defaultMAXDOWNLOADS       = -1;
-    private static final boolean         account_premium_resume    = true;
+    private static final String          WEBSITE_BASE                 = "https://debrid-file.com";
+    private static MultiHosterManagement mhm                          = new MultiHosterManagement("debrid-file.com");
+    private static final boolean         account_PREMIUM_resume       = true;
     /** 2020-03-21: phg: In my tests, it is OK for the chunkload with the value of 5 */
-    private static final int             account_premium_maxchunks = -5;
-    /* 2020-03-19: Free accounts are unsupported, displayed with ZERO traffic */
-    private static final boolean         account_FREE_resume       = true;
-    private static final int             account_FREE_maxchunks    = 1;
+    private static final int             account_PREMIUM_maxchunks    = -5;
+    private static final int             account_PREMIUM_maxdownloads = -1;
+    private static final boolean         account_FREE_resume          = true;
+    private static final int             account_FREE_maxchunks       = 1;
+    private static final int             account_FREE_maxdownloads    = 1;
 
     @SuppressWarnings("deprecation")
     public DebridFileCom(PluginWrapper wrapper) {
@@ -94,8 +94,8 @@ public class DebridFileCom extends PluginForHost {
         final boolean resume;
         final int maxchunks;
         if (account.getType() == AccountType.PREMIUM) {
-            resume = account_premium_resume;
-            maxchunks = account_premium_maxchunks;
+            resume = account_PREMIUM_resume;
+            maxchunks = account_PREMIUM_maxchunks;
         } else {
             resume = account_FREE_resume;
             maxchunks = account_FREE_maxchunks;
@@ -170,13 +170,13 @@ public class DebridFileCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setTrafficMax("10 GB");
             ai.setStatus("Free Account");
-            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
+            account.setMaxSimultanDownloads(account_FREE_maxdownloads);
             account.setValid(true);
         } else {
             /* Premium */
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
-            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
+            account.setMaxSimultanDownloads(account_PREMIUM_maxdownloads);
             ai.setTrafficMax("300 GB");
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(premiumDaysStr) * 24 * 60 * 60 * 1000l, this.br);
         }
