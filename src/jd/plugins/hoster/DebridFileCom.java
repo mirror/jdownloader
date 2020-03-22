@@ -164,7 +164,7 @@ public class DebridFileCom extends PluginForHost {
             br.getPage(WEBSITE_BASE + "/dashboard.php?pages=service&hl=en");
         }
         final String premiumDaysStr = br.getRegex("Premium\\s*:\\s*(\\d+)\\s*<small").getMatch(0);
-        String trafficleftStr = br.getRegex("</small><b>(\\d+\\.\\d{1,2} [A-Za-z]+)</b>").getMatch(0);
+        String trafficleftStr = br.getRegex("</small><b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>").getMatch(0);
         if (premiumDaysStr == null || trafficleftStr == null) {
             /* Free or plugin failure */
             account.setType(AccountType.FREE);
@@ -177,6 +177,7 @@ public class DebridFileCom extends PluginForHost {
             ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleftStr));
+            ai.setTrafficMax("300 GB");
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(premiumDaysStr) * 24 * 60 * 60 * 1000l, this.br);
         }
         /*
