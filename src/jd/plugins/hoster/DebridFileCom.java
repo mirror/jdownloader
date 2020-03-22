@@ -165,20 +165,26 @@ public class DebridFileCom extends PluginForHost {
         }
         final String premiumDaysStr = br.getRegex("Premium\\s*:\\s*(\\d+)\\s*<small").getMatch(0);
         String trafficleftStr = br.getRegex("</small><b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>").getMatch(0);
-        if (premiumDaysStr == null || trafficleftStr == null) {
+        if (premiumDaysStr == null) {
             /* Free or plugin failure */
             account.setType(AccountType.FREE);
+            ai.setTrafficMax("10 GB");
             ai.setStatus("Free Account");
-            /* Downloads are not possible via free account */
-            ai.setTrafficLeft(0);
+            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
+            account.setValid(true);
         } else {
             /* Premium */
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleftStr));
             ai.setTrafficMax("300 GB");
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(premiumDaysStr) * 24 * 60 * 60 * 1000l, this.br);
+        }
+        if (trafficleftStr == null) {
+            /* Downloads are not possible if the traffic has not be retrieved */
+            ai.setTrafficLeft(0);
+        } else {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleftStr));
         }
         /*
          * Get list of supported hosts.
