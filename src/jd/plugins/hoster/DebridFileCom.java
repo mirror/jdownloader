@@ -256,7 +256,13 @@ public class DebridFileCom extends PluginForHost {
     }
 
     private boolean isLoggedIN() {
-        return br.getCookie(br.getHost(), "loginhash", Cookies.NOTDELETEDPATTERN) != null;
+        boolean bCookieOK = br.getCookie(br.getHost(), "loginhash", Cookies.NOTDELETEDPATTERN) != null;
+        if (bCookieOK) {
+            if (br.containsHTML("You must be logged")) {
+                bCookieOK = false;
+            }
+        }
+        return bCookieOK;
     }
 
     @Override
