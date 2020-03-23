@@ -33,6 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydaddy.cc" }, urls = { "https?://(?:www\\.)?mydaddy\\.cc/video/[a-z0-9]+" })
 public class MydaddyCc extends PluginForHost {
@@ -67,11 +68,33 @@ public class MydaddyCc extends PluginForHost {
         }
         final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)$").getMatch(0).replace("-", " ");
         /* Host itself has no filenames so if we know the title from the website which embedded the content, prefer that! */
+        final String actress_name = link.getStringProperty("actress_name", null);
         String filename = link.getStringProperty("decryptertitle", null);
         if (filename == null) {
             filename = url_filename;
         }
-        final String jssource = br.getRegex("srca[\t\n\r ]*?=[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+        if (actress_name != null && !filename.contains(actress_name)) {
+            filename = actress_name + " - " + filename;
+        }
+        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+        /* 2020-03-23 */
+        int qualityMax = -1;
+        final String[] sources = br.getRegex("<source src.*?/>").getColumn(-1);
+        for (final String source : sources) {
+            final Regex finfo = new Regex(source, "src=\"([^\"]*?(\\d+)\\.mp4)");
+            final String dllink_tmp = finfo.getMatch(0);
+            final String qualityStr = finfo.getMatch(1);
+            if (qualityStr == null || dllink_tmp == null) {
+                continue;
+            }
+            final int qualityTmp = Integer.parseInt(qualityStr);
+            if (qualityTmp > qualityMax) {
+                qualityMax = qualityTmp;
+                dllink = dllink_tmp;
+            }
+        }
+        /* Old */
+        final String jssource = br.getRegex("srca\\s*=\\s*(\\[.*?\\])").getMatch(0);
         try {
             HashMap<String, Object> entries = null;
             String quality_temp_str = null;

@@ -31,7 +31,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -237,13 +236,7 @@ public class MyqloudOrg extends XFileSharingProBasic {
                 /* 2020-03-20: Try catch is small workaround attempt before the weekend. */
                 if (containsRecaptchaV2Class(download1)) {
                     logger.info("download1 Form: Captcha required");
-                    try {
-                        handleCaptcha(link, download1);
-                    } catch (final PluginException e) {
-                        logger.info("Captcha handling failure");
-                        e.printStackTrace();
-                        throw e;
-                    }
+                    handleCaptcha(link, download1);
                 } else {
                     logger.info("download1 Form: No captcha required");
                 }
