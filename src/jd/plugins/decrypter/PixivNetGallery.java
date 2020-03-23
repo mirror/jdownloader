@@ -41,11 +41,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.PixivNet;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|(?:[a-z]{2}/)?artworks/\\d+|(?:[a-z]{2}/)?users/\\d+/(?:bookmarks/)?artworks)" })
-public class PixivNet extends PluginForDecrypt {
-    public PixivNet(PluginWrapper wrapper) {
+public class PixivNetGallery extends PluginForDecrypt {
+    public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -70,11 +71,11 @@ public class PixivNet extends PluginForDecrypt {
         String parameter = param.toString();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
-        jd.plugins.hoster.PixivNet.prepBR(br);
+        PixivNet.prepBR(br);
         boolean loggedIn = false;
         if (aa != null) {
             try {
-                jd.plugins.hoster.PixivNet.login(this, br, aa, false, false);
+                PixivNet.login(this, br, aa, false, false);
                 loggedIn = true;
             } catch (PluginException e) {
                 handleAccountException(aa, e);
@@ -86,6 +87,7 @@ public class PixivNet extends PluginForDecrypt {
         String title = null;
         String username = null;
         Boolean single = null;
+        String uploadDate = null;
         if (parameter.matches(TYPE_GALLERY) || parameter.matches(TYPE_ARTWORKS)) {
             if (parameter.matches(TYPE_ARTWORKS)) {
                 lid = new Regex(parameter, "artworks/(\\d+)").getMatch(0);
@@ -95,35 +97,36 @@ public class PixivNet extends PluginForDecrypt {
                     single = pageCount.intValue() == 1;
                 }
             } else if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
-                br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                br.getPage(PixivNet.createSingleImageUrl(lid));
                 final Integer pageCount = getPageCount(br, lid);
                 if (br.containsHTML("mode=manga&amp;illust_id=" + lid) || (pageCount != null && pageCount.intValue() > 1)) {
-                    parameter = jd.plugins.hoster.PixivNet.createGalleryUrl(lid);
+                    parameter = PixivNet.createGalleryUrl(lid);
                     br.getPage(parameter);
                     single = Boolean.FALSE;
                 } else {
                     single = Boolean.TRUE;
                 }
             } else if (parameter.matches(TYPE_GALLERY_MANGA)) {
-                br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
+                br.getPage(PixivNet.createGalleryUrl(lid));
                 final Integer pageCount = getPageCount(br, lid);
                 if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<") | (pageCount != null && pageCount.intValue() == 1)) {
-                    parameter = jd.plugins.hoster.PixivNet.createSingleImageUrl(lid);
+                    parameter = PixivNet.createSingleImageUrl(lid);
                     br.getPage(parameter);
                     single = Boolean.TRUE;
                 } else {
                     single = Boolean.FALSE;
                 }
             } else {
-                br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
+                br.getPage(PixivNet.createGalleryUrl(lid));
             }
+            uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             /* Decrypt gallery */
             final Set<String> links = new HashSet<String>();
             String json = null;
             if (Boolean.TRUE.equals(single) || (single == null && br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<"))) {
                 /* Not multiple urls --> Switch to single-url view */
                 if (single == null) {
-                    br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                    br.getPage(PixivNet.createSingleImageUrl(lid));
                 }
                 title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
                 if (title == null) {
@@ -240,7 +243,7 @@ public class PixivNet extends PluginForDecrypt {
                 if (StringUtils.isEmpty(filename)) {
                     return null;
                 }
-                final String ext = getFileNameExtensionFromString(singleLink, jd.plugins.hoster.PixivNet.default_extension);
+                final String ext = getFileNameExtensionFromString(singleLink, PixivNet.default_extension);
                 if (StringUtils.equalsIgnoreCase(ext, ".zip")) {
                     final String resolution = new Regex(singleLink, "(\\d+x\\d+)").getMatch(0);
                     if (resolution != null) {
@@ -249,9 +252,12 @@ public class PixivNet extends PluginForDecrypt {
                 }
                 filename += ext;
                 final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("galleryid", lid);
-                dl.setProperty("galleryurl", br.getURL());
+                dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
+                dl.setProperty(PixivNet.PROPERTY_GALLERYID, lid);
+                dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
+                if (!StringUtils.isEmpty(uploadDate)) {
+                    dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+                }
                 dl.setContentUrl(parameter);
                 dl.setFinalFileName(filename);
                 dl.setAvailable(true);
@@ -271,6 +277,7 @@ public class PixivNet extends PluginForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             }
+            uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             if (isOffline(br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
@@ -321,7 +328,7 @@ public class PixivNet extends PluginForDecrypt {
                         final String galleryID = (String) entries.get("illustId");
                         if (dups.add(galleryID)) {
                             itemcounter++;
-                            final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                            final DownloadLink dl = createDownloadlink(PixivNet.createSingleImageUrl(galleryID));
                             decryptedLinks.add(dl);
                             distribute(dl);
                             numberofitems_found_on_current_page++;
@@ -334,7 +341,10 @@ public class PixivNet extends PluginForDecrypt {
                         final String galleryID = entry.getKey();
                         if (dups.add(galleryID)) {
                             itemcounter++;
-                            final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createSingleImageUrl(galleryID));
+                            final DownloadLink dl = createDownloadlink(PixivNet.createSingleImageUrl(galleryID));
+                            if (!StringUtils.isEmpty(uploadDate)) {
+                                dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+                            }
                             decryptedLinks.add(dl);
                             distribute(dl);
                             numberofitems_found_on_current_page++;
@@ -347,7 +357,7 @@ public class PixivNet extends PluginForDecrypt {
                         final String galleryID = entry.getKey();
                         if (dups.add(galleryID)) {
                             itemcounter++;
-                            final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
+                            final DownloadLink dl = createDownloadlink(PixivNet.createGalleryUrl(galleryID));
                             decryptedLinks.add(dl);
                             distribute(dl);
                             numberofitems_found_on_current_page++;
