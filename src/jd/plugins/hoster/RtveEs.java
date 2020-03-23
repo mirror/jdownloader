@@ -40,8 +40,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:alacarta/(?!audios/)videos/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
 public class RtveEs extends PluginForHost {
+    /*
+     * 2020-03-23: Attention: Do not accept 'audios' URLs in host plugin anymore as they may lead to 'overview' pages with a lot of content
+     * (direct URLs) e.g.:
+     * https://www.rtve.es/alacarta/audios/documentos-rne/documentos-rne-antoine-saint-exupery-conquista-del-cielo-20-03-20/4822098/
+     */
     private static final String TYPE_NORMAL = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
     private static final String TYPE_SERIES = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
     private String              dllink      = null;

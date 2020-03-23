@@ -82,7 +82,7 @@ public class ImdbCom extends PluginForDecrypt {
                 br.getPage(parameter + "?page=" + i);
             }
             if (parameter.matches(TYPE_VIDEO)) {
-                final String[] links = br.getRegex("\"(/video/imdb/vi\\d+)").getColumn(0);
+                final String[] links = br.getRegex("\"(/(?:video/imdb|videoplayer)/vi\\d+)").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

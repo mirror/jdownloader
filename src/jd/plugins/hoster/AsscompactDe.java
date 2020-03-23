@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,12 +35,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 /*Similar websites: bca-onlive.de, asscompact.de*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(www\\.)?asscompactdecrypted\\.de/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(?:www\\.)?asscompactdecrypted\\.de/.+" })
 public class AsscompactDe extends PluginForHost {
-
     public AsscompactDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -73,10 +71,11 @@ public class AsscompactDe extends PluginForHost {
         date = date.trim();
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-
         final String date_formatted = formatDate(date);
-
-        filename = date_formatted + "_asscompact_" + filename + ".mp4";
+        filename = "asscompact_" + filename + ".mp4";
+        if (date_formatted != null) {
+            filename = date_formatted + "_" + filename;
+        }
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
@@ -95,7 +94,7 @@ public class AsscompactDe extends PluginForHost {
     }
 
     public static String getFilename(final Plugin plugin, final Browser br, final String url_source) {
-        String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
+        final String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
         String filename = br.getRegex("id=\"page\\-title\">([^<>]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -103,12 +102,9 @@ public class AsscompactDe extends PluginForHost {
         if (filename == null || date == null) {
             filename = new Regex(url_source, "asscompact\\.de/(.+)").getMatch(0);
         }
-        date = date.trim();
         filename = Encoding.htmlDecode(filename).trim();
         filename = plugin.encodeUnicode(filename);
-
         final String date_formatted = formatDate(date);
-
         filename = date_formatted + "_asscompact_" + filename + ".mp4";
         return filename;
     }
@@ -131,13 +127,11 @@ public class AsscompactDe extends PluginForHost {
         if (url_playpath == null || rtmp_fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         final String rtmp_app = "ondemand?cast_id=" + rtmp_fid;
         url_playpath = "mp4:asscompact_" + url_playpath;
         final String url_rtmp = "rtmp://adiacom.custom.solutionpark.tv/" + rtmp_app;
         dl = new RTMPDownload(this, downloadLink, url_rtmp);
         final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
         rtmp.setPlayPath(url_playpath);
         rtmp.setPageUrl(url_iframe);
         rtmp.setSwfVfy("http://www.assfocus.de/[[IMPORT]]/players.edgesuite.net/flash/plugins/osmf/advanced-streaming-plugin/v2.5/osmf1.6/AkamaiAdvancedStreamingPlugin.swf");
@@ -148,7 +142,11 @@ public class AsscompactDe extends PluginForHost {
         dl.startDownload();
     }
 
-    public static String formatDate(final String input) {
+    public static String formatDate(String input) {
+        if (input == null) {
+            return null;
+        }
+        input = input.trim();
         final long date = TimeFormatter.getMilliSeconds(input, "dd. MMMM yyyy", Locale.GERMAN);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
@@ -175,5 +173,4 @@ public class AsscompactDe extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

@@ -500,6 +500,10 @@ public class ScribdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
         }
         if (xmlbrowser.containsHTML("You do not have access to download this document|Invalid document format")) {
+            /* This will usually go along with response 403. */
+            if (account != null) {
+                logger.info("This file might not be downloadable at all");
+            }
             throw new AccountRequiredException("This file can only be downloaded by premium users");
         }
         dlinfo[0] = xmlbrowser.getRedirectLocation();

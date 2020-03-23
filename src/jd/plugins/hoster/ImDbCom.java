@@ -39,13 +39,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/(?:video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|[A-Za-z]+/[a-z]{2}\\d+/mediaviewer/rm\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((video|videoplayer)/([\\w\\-]+/)?vi\\d+|[A-Za-z]+/[a-z]{2}\\d+/mediaviewer/rm\\d+)" })
 public class ImDbCom extends PluginForHost {
     private String              dllink         = null;
     private boolean             server_issues  = false;
     private boolean             mature_content = false;
     private static final String IDREGEX        = "(vi\\d+)$";
-    private static final String TYPE_VIDEO     = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
+    private static final String TYPE_VIDEO     = "https?://(?:www\\.)?imdb\\.com/(?:video|videoplayer)/[\\w\\-]+/(vi|screenplay/)\\d+";
     private static final String TYPE_PHOTO     = "https?://(?:www\\.)?imdb\\.com/.+/mediaviewer/.+";
 
     public ImDbCom(final PluginWrapper wrapper) {
@@ -62,6 +62,20 @@ public class ImDbCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.imdb.com/help/show_article?conditions";
     }
@@ -72,13 +86,13 @@ public class ImDbCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.dllink = null;
         this.server_issues = false;
         this.mature_content = false;
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String downloadURL = downloadLink.getDownloadURL();
+        final String downloadURL = link.getDownloadURL();
         this.br.setLoadLimit(this.br.getLoadLimit() * 3);
         br.getPage(downloadURL);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -103,13 +117,13 @@ public class ImDbCom extends PluginForHost {
             Map<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
             if (newWay) {
                 /* 2017-07-18 */
-                final String id_main = new Regex(downloadLink.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
+                final String id_main = new Regex(link.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
                 entries = getJsonMap(JavaScriptEngineFactory.walkJson(entries, "mediaviewer/galleries/" + id_main));
             } else {
                 entries = getJsonMap(entries.get("mediaViewerModel"));
             }
             /* Now let's find the specific object ... */
-            final String idright = new Regex(downloadLink.getDownloadURL(), "(rm\\d+)").getMatch(0);
+            final String idright = new Regex(link.getDownloadURL(), "(rm\\d+)").getMatch(0);
             String idtemp = null;
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("allImages");
             for (final Object imageo : ressourcelist) {
@@ -122,11 +136,14 @@ public class ImDbCom extends PluginForHost {
                 }
             }
             if (filename == null) {
-                /* Fallback to url-filename */
-                filename = new Regex(downloadURL, "imdb\\.com/[^/]+/(.+)").getMatch(0).replace("/", "_");
+                /* Fallback to fid */
+                filename = this.getFID(link);
             }
-            if (filename == null || dllink == null || !dllink.startsWith("http")) {
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dllink == null || !dllink.startsWith("http")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* 2020-02-17: Not required anymore? This may cripple final downloadurls! */
             // if (dllink.contains("@@")) {
@@ -136,7 +153,7 @@ public class ImDbCom extends PluginForHost {
             // }
             // }
             filename = Encoding.htmlDecode(filename.trim());
-            final String fid = new Regex(downloadLink.getDownloadURL(), "rm(\\d+)").getMatch(0);
+            final String fid = new Regex(link.getDownloadURL(), "rm(\\d+)").getMatch(0);
             String artist = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);
             if (artist != null) {
                 filename = Encoding.htmlDecode(artist.trim()) + "_" + fid + "_" + filename;
@@ -157,11 +174,15 @@ public class ImDbCom extends PluginForHost {
                 filename = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
             }
             if (filename == null) {
+                /* Fallback to fid */
+                filename = this.getFID(link);
+            }
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) +
             // "/player?uff=3");
-            br.getPage("http://www.imdb.com/video/user/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
+            br.getPage("http://www.imdb.com/video/user/" + new Regex(link.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
             this.mature_content = this.br.containsHTML("why=maturevideo");
             if (!this.mature_content) {
                 final String json = this.br.getRegex("<script class=\"imdb\\-player\\-data\" type=\"text/imdb\\-video\\-player\\-json\">([^<>]+)<").getMatch(0);
@@ -191,7 +212,7 @@ public class ImDbCom extends PluginForHost {
             filename = filename.trim();
             ending = ".mp4";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ending);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ending);
         if (dllink != null && dllink.contains(".m3u8")) {
             /* hls */
             /* Access HLS master */
@@ -218,15 +239,15 @@ public class ImDbCom extends PluginForHost {
                 }
             }
             dllink = finalCandidate.getDownloadurl();
-            checkFFProbe(downloadLink, "Download a HLS Stream");
-            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+            checkFFProbe(link, "Download a HLS Stream");
+            final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
                 server_issues = true;
             } else {
                 final long estimatedSize = downloader.getEstimatedSize();
                 if (estimatedSize > 0) {
-                    downloadLink.setDownloadSize(estimatedSize);
+                    link.setDownloadSize(estimatedSize);
                 }
             }
         } else if (this.dllink != null) {
@@ -235,7 +256,7 @@ public class ImDbCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
                 }

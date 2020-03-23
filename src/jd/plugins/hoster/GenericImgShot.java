@@ -38,8 +38,6 @@ public class GenericImgShot extends ImgShotCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        /* imgshot.com = Official ImgShot DEMO website! */
-        ret.add(new String[] { "imgshot.com" });
         ret.add(new String[] { "imgdrive.net" });
         ret.add(new String[] { "imagedecode.com", "dimtus.com" });
         ret.add(new String[] { "damimage.com" });

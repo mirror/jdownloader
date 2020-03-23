@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,9 +24,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(www\\.)?asscompact\\.de/[\\w%\\./\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(?:www\\.)?asscompact\\.de/(?!sites/)[\\w%\\./\\-]+" })
 public class AsscompactDeDecrypter extends PluginForDecrypt {
-
     public AsscompactDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,8 +49,6 @@ public class AsscompactDeDecrypter extends PluginForDecrypt {
         main.setAvailable(true);
         main.setName(filename);
         decryptedLinks.add(main);
-
         return decryptedLinks;
     }
-
 }
