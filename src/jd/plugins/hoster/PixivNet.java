@@ -60,7 +60,7 @@ public class PixivNet extends PluginForHost {
     }
 
     public static Browser prepBR(final Browser br) {
-        br.setAllowedResponseCodes(400);
+        br.setAllowedResponseCodes(new int[] { 400 });
         return br;
     }
 
@@ -86,6 +86,11 @@ public class PixivNet extends PluginForHost {
     private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private String             dllink                       = null;
     private boolean            server_issues                = false;
+    /* DownloadLink Properties / Packagizer properties */
+    public static final String PROPERTY_MAINLINK            = "mainlink";
+    public static final String PROPERTY_GALLERYID           = "galleryid";
+    public static final String PROPERTY_GALLERYURL          = "galleryurl";
+    public static final String PROPERTY_UPLOADDATE          = "createdate";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -107,7 +112,7 @@ public class PixivNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(galleryurl);
-        if (jd.plugins.decrypter.PixivNet.isOffline(this.br)) {
+        if (jd.plugins.decrypter.PixivNetGallery.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = link.getDownloadURL();
