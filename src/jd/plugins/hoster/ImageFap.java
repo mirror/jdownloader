@@ -115,14 +115,21 @@ public class ImageFap extends PluginForHost {
         String pfilename = downloadLink.getName();
         br.getPage(downloadLink.getDownloadURL());
         if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
-            final String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
+            String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (configLink == null) {
+                /* 2020-03-23 */
+                configLink = br.getRegex("url\\s*:\\s*'(http[^<>\"\\']+)\\'").getMatch(0);
+            }
             if (configLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(configLink);
-            final String finallink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
+            String finallink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (Encoding.isHtmlEntityCoded(finallink)) {
+                finallink = Encoding.htmlDecode(finallink);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -312,17 +319,17 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
-            put("LABEL_FILENAME", "Define custom filename for pictures:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
+                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

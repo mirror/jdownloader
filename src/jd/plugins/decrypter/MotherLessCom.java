@@ -70,7 +70,7 @@ public class MotherLessCom extends PluginForDecrypt {
         };
         br.setLoadLimit(4194304);
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(503);
+        br.setAllowedResponseCodes(new int[] { 503 });
         JDUtilities.getPluginForHost(this.getHost());
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MotherLessCom.ua);
         // alters 'domain/(g/name/)uid' by removing all but uid

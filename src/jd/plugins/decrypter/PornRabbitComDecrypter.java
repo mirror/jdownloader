@@ -19,12 +19,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "https?://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/[a-z0-9\\-]+\\-\\d+\\.html|video/\\d+/)" })
 public class PornRabbitComDecrypter extends PornEmbedParser {
     public PornRabbitComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,7 +39,7 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // Link offline? Add it to the hosterplugin so the user can see it.
-        if (br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|>Sorry, this video was not found|video_removed_dmca\\.jpg\")")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|>Sorry, this video was not found|video_removed_dmca\\.jpg\")")) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
@@ -46,12 +47,20 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
         if (filename == null) {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
+        if (filename == null) {
+            /* Fallback */
+            filename = new Regex(br.getURL(), "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback 2 */
+            filename = new Regex(parameter, "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
+        }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.add(createDownloadlink(parameter.replace("pornrabbit.com/", "pornrabbitdecrypted.com/")));
+        decryptedLinks.add(createDownloadlink(parameter));
         return decryptedLinks;
     }
 
