@@ -31,6 +31,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -231,14 +232,20 @@ public class MyqloudOrg extends XFileSharingProBasic {
                 download1 = brc.getFormbyProperty("id", "generate-download-link");
             }
             if (download1 != null) {
-                /* 2020-03-11: Special: Captcha & waittime */
+                /* 2020-03-11: Special: reCaptchaV2 & waittime --> No captcha in premium mode */
                 final long timebefore = System.currentTimeMillis();
                 /* 2020-03-20: Try catch is small workaround attempt before the weekend. */
-                try {
-                    handleCaptcha(link, download1);
-                } catch (final Throwable e) {
-                    logger.info("Captcha handling failure");
-                    e.printStackTrace();
+                if (containsRecaptchaV2Class(download1)) {
+                    logger.info("download1 Form: Captcha required");
+                    try {
+                        handleCaptcha(link, download1);
+                    } catch (final PluginException e) {
+                        logger.info("Captcha handling failure");
+                        e.printStackTrace();
+                        throw e;
+                    }
+                } else {
+                    logger.info("download1 Form: No captcha required");
                 }
                 this.waitTime(link, timebefore);
                 this.submitForm(brc, download1);

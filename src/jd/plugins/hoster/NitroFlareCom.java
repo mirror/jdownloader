@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,11 +48,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
@@ -254,32 +254,32 @@ public class NitroFlareCom extends antiDDoSForHost {
         doFree(null, downloadLink);
     }
 
-    private final void doFree(final Account account, final DownloadLink downloadLink) throws Exception {
+    private final void doFree(final Account account, final DownloadLink link) throws Exception {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        if (downloadLink.getBooleanProperty("premiumRequired", false)) {
-            throwPremiumRequiredException(downloadLink, true);
+        if (link.getBooleanProperty("premiumRequired", false)) {
+            throwPremiumRequiredException(link, true);
         }
         freedl = true;
         br = new Browser();
-        dllink = checkDirectLink(downloadLink, directlinkproperty);
+        dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (br.getURL() == null) {
-                requestFileInformationWeb(downloadLink);
+                requestFileInformationWeb(link);
             }
             handleErrors(br, false);
-            randomHash(downloadLink);
-            ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
+            randomHash(link);
+            ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
             {
                 int i = 0;
                 while (true) {
                     // lets add some randomisation between submitting gotofreepage
-                    sleep((new Random().nextInt(5) + 8) * 1000l, downloadLink);
+                    sleep((new Random().nextInt(5) + 8) * 1000l, link);
                     // first post registers time value
                     postPage(br.getURL(), "goToFreePage=");
-                    randomHash(downloadLink);
-                    ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
+                    randomHash(link);
+                    ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
                     if (br.getURL().endsWith("/free")) {
                         break;
                     } else if (++i > 3) {
@@ -289,49 +289,61 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                 }
             }
-            ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
+            ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(link));
             handleErrors(ajax, false);
             final long t = System.currentTimeMillis();
-            final String waittime = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
+            final String waitStr = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
             // register wait i guess, it should return 1
             final int repeat = 5;
             for (int i = 1; i <= repeat; i++) {
                 if (br.containsHTML("plugins/cool-captcha/captcha.php")) {
-                    final String captchaCode = getCaptchaCode(br.getURL("/plugins/cool-captcha/captcha.php").toString(), downloadLink);
+                    final String captchaCode = getCaptchaCode(br.getURL("/plugins/cool-captcha/captcha.php").toString(), link);
                     if (i == 1) {
                         long wait = 60;
-                        if (waittime != null) {
+                        if (waitStr != null) {
                             // remove one second from past, to prevent returning too quickly.
                             final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
-                            wait = Long.parseLong(waittime) - passedTime;
+                            wait = Long.parseLong(waitStr) - passedTime;
                         }
                         if (wait > 0) {
-                            sleep(wait * 1000l, downloadLink);
+                            sleep(wait * 1000l, link);
                         }
                     }
                     ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
                 } else {
+                    final int firstLoop = 1;
+                    long wait = 60;
+                    if (waitStr != null) {
+                        wait = Long.parseLong(waitStr) * 1001l;
+                    }
                     final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                    final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
+                    if (i == firstLoop && wait > reCaptchaV2Timeout) {
+                        final int prePrePreDownloadWait = (int) (wait - reCaptchaV2Timeout);
+                        logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                        logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+                        this.sleep(prePrePreDownloadWait, link);
+                    }
                     final String c = rc2.getToken();
                     if (inValidate(c)) {
                         // fixes timeout issues or client refresh, we have no idea at this stage
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    if (i == 1) {
-                        long wait = 60;
-                        if (waittime != null) {
-                            // remove one second from past, to prevent returning too quickly.
-                            final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
-                            wait = Long.parseLong(waittime) - passedTime;
-                        }
+                    if (i == firstLoop) {
+                        // remove one second from past, to prevent returning too quickly.
+                        final long passedTime = (System.currentTimeMillis() - t) - 1500;
+                        wait -= passedTime;
                         if (wait > 0) {
-                            sleep(wait * 1000l, downloadLink);
+                            sleep(wait, link);
+                        } else {
+                            logger.info("Congratulation: Captcha solving took so long that we do not have to wait at all");
                         }
                     }
                     ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c));
                 }
                 if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                     if (i + 1 == repeat) {
+                        logger.info("Exhausted captcha attempts");
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     continue;
@@ -344,12 +356,12 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            handleDownloadErrors(account, downloadLink, true);
+            link.setProperty(directlinkproperty, Property.NULL);
+            handleDownloadErrors(account, link, true);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         try {
             /* add a download slot */
             controlFree(+1);
