@@ -28,6 +28,14 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,14 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -219,8 +219,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -271,7 +271,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br> This is only rarely needed (e.g. in the past for badshare.io). </br> default = false
+     * Enforces old, non-ajax login-method. </br>
+     * This is only rarely needed (e.g. in the past for badshare.io). </br>
+     * default = false
      */
     @Deprecated
     private boolean enforce_old_login_method() {
@@ -532,11 +534,11 @@ public class YetiShareCore extends antiDDoSForHost {
             /* Passwords are usually before waittime. */
             handlePassword(link);
             /* Handle up to x pre-download pages before the (eventually existing) captcha */
-            final int startValue = 1;
+            final int startValue = 0;
             /* loopLog holds information about the continue_link of each loop so afterwards we get an overview via logger */
             String loopLog = continue_link;
             for (int i = startValue; i <= 5; i++) {
-                logger.info("Handling pre-download page #" + i);
+                logger.info("Handling pre-download page #" + (i + 1));
                 timeBeforeCaptchaInput = System.currentTimeMillis();
                 if (i > startValue) {
                     loopLog += " --> " + continue_link;
@@ -549,26 +551,11 @@ public class YetiShareCore extends antiDDoSForHost {
                     waitTime(link, timeBeforeCaptchaInput);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                 } else {
-                    /* 2019-07-05: continue_form without captcha is a rare case. Example-site: freefile.me */
-                    Form continue_form = br.getFormbyActionRegex(".+pt=.+");
-                    if (continue_form == null) {
-                        continue_form = br.getFormByInputFieldKeyValue("submitted", "1");
-                    }
-                    if (continue_form == null) {
-                        continue_form = br.getFormbyKey("submitted");
-                    }
-                    if (!StringUtils.isEmpty(continue_link) && continue_form == null) {
-                        continue_form = new Form();
-                        continue_form.setMethod(MethodType.GET);
-                        continue_form.setAction(continue_link);
-                        continue_form.put("submit", "Submit");
-                        continue_form.put("submitted", "1");
-                        continue_form.put("d", "1");
-                    }
-                    if (i == startValue && continue_form == null) {
+                    final Form continueform = getContinueForm(i, continue_link);
+                    if (i == startValue && continueform == null) {
                         logger.info("No continue_form/continue_link available, plugin broken");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else if (continue_form == null) {
+                    } else if (continueform == null) {
                         logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
                         break;
                     } else {
@@ -581,10 +568,10 @@ public class YetiShareCore extends antiDDoSForHost {
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput);
-                        continue_form.put("capcode", "false");
-                        continue_form.put("g-recaptcha-response", recaptchaV2Response);
-                        continue_form.setMethod(MethodType.POST);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
+                        continueform.put("capcode", "false");
+                        continueform.put("g-recaptcha-response", recaptchaV2Response);
+                        continueform.setMethod(MethodType.POST);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                     } else if (rcID != null) {
                         /* Dead end! */
                         captcha = true;
@@ -612,16 +599,16 @@ public class YetiShareCore extends antiDDoSForHost {
                         final String code = getCaptchaCode("solvemedia", cf, link);
                         final String chid = sm.getChallenge(code);
                         waitTime(link, timeBeforeCaptchaInput);
-                        continue_form.put("adcopy_challenge", Encoding.urlEncode(chid));
-                        continue_form.put("adcopy_response", Encoding.urlEncode(code));
-                        continue_form.setMethod(MethodType.POST);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
-                    } else if (continue_form != null && continue_form.getMethod() == MethodType.POST) {
+                        continueform.put("adcopy_challenge", Encoding.urlEncode(chid));
+                        continueform.put("adcopy_response", Encoding.urlEncode(code));
+                        continueform.setMethod(MethodType.POST);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                    } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
                         loopLog += " --> Form_POST";
                         success = true;
                         waitTime(link, timeBeforeCaptchaInput);
                         /* Use URL instead of Form - it is all we need! */
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_form, resume, maxchunks);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                     } else {
                         if (continue_link == null) {
                             checkErrors(link, account);
@@ -689,7 +676,27 @@ public class YetiShareCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    protected String getContinueLink() {
+    protected Form getContinueForm(final int loop_counter, final String continue_link) throws PluginException {
+        /* 2019-07-05: continue_form without captcha is a rare case. Example-site: freefile.me */
+        Form continueform = br.getFormbyActionRegex(".+pt=.+");
+        if (continueform == null) {
+            continueform = br.getFormByInputFieldKeyValue("submitted", "1");
+        }
+        if (continueform == null) {
+            continueform = br.getFormbyKey("submitted");
+        }
+        if (!StringUtils.isEmpty(continue_link) && continueform == null) {
+            continueform = new Form();
+            continueform.setMethod(MethodType.GET);
+            continueform.setAction(continue_link);
+            continueform.put("submit", "Submit");
+            continueform.put("submitted", "1");
+            continueform.put("d", "1");
+        }
+        return continueform;
+    }
+
+    protected String getContinueLink() throws Exception {
         String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (continue_link == null) {
             continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'>").getMatch(0);
@@ -984,7 +991,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw new AccountRequiredException(errorMsg);
             } else if (errorkey.equalsIgnoreCase("error_file_is_not_publicly_shared")) {
                 throw new AccountRequiredException(errorMsg);
-            }/** Limit errorhandling */
+            } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
@@ -1140,10 +1147,11 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
-     * @throws PluginException
+     * @return true = file is offline, false = file is online </br>
+     *         Be sure to always call checkErrors before calling this!
+     * @throws Exception
      */
-    protected boolean isOfflineWebsite(final DownloadLink link) throws PluginException {
+    protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
         final boolean isDownloadable = this.getContinueLink() != null;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         /*

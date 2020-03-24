@@ -181,7 +181,7 @@ public class MotherLessCom extends PluginForHost {
     }
 
     private String getUploadTitle() {
-        return br.getRegex("id=\"view\\-upload\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+        return br.getRegex("class=\"media-meta-title\">\\s*<h1>([^<>\"]*?)(?:\\.mp4)?\\s*<").getMatch(0);
     }
 
     @SuppressWarnings("deprecation")

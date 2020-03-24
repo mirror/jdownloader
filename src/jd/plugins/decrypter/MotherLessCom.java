@@ -129,6 +129,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 }
                 return decryptedLinks;
             }
+            final String mediatype = br.getRegex("var __mediatype\\s*=\\s*'([^\"\\']+)'").getMatch(0);
             if (isVideo(br)) {
                 final DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
                 dlink.setContentUrl(parameter);
@@ -139,13 +140,13 @@ public class MotherLessCom extends PluginForDecrypt {
                 dlink.setProperty("dltype", "video");
                 dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));
                 decryptedLinks.add(dlink);
-            } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
-                gallery(decryptedLinks, parameter, progress);
-            } else {
+            } else if ("image".equalsIgnoreCase(mediatype)) {
                 final DownloadLink fina = createDownloadlink(parameter.replace("motherless.com/", "motherlesspictures.com/"));
                 fina.setContentUrl(parameter);
                 fina.setProperty("dltype", "image");
                 decryptedLinks.add(fina);
+            } else {
+                gallery(decryptedLinks, parameter, progress);
             }
         }
         return decryptedLinks;
