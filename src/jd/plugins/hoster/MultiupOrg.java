@@ -128,8 +128,8 @@ public class MultiupOrg extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
         }
-        link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
+        link.setProperty(this.getHost() + "directlink", dl.getConnection().getURL().toString());
         if (dl.getConnection().getContentType().contains("html")) {
             /* 402 - Payment required */
             if (dl.getConnection().getResponseCode() == 402) {
