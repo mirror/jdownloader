@@ -135,8 +135,7 @@ public class ScribdCom extends PluginForHost {
                 logger.info("Server returns error 400");
                 return AvailableStatus.UNCHECKABLE;
             } else if (br.getHttpConnection().getResponseCode() == 410) {
-                logger.info("Server returns error 410");
-                return AvailableStatus.UNCHECKABLE;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
