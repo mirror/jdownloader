@@ -77,10 +77,14 @@ public class MotherLessCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The member has deleted the upload<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The member has deleted the upload<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if ("video".equals(link.getStringProperty("dltype", null))) {
+        if ("video".equals(link.getStringProperty("dltype", null)) || jd.plugins.decrypter.MotherLessCom.isVideo(this.br)) {
+            if (true) {
+                /* Debug */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -288,10 +292,13 @@ public class MotherLessCom extends PluginForHost {
     private void getVideoLink() {
         dllink = br.getRegex("addVariable\\(\\'file\\', \\'(https?://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(https?://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
-            if (dllink == null) {
-                dllink = PluginJSonUtils.getJsonValue(br, "file");
-            }
+            dllink = br.getRegex("(https?://[^/]+\\.motherlessmedia\\.com/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = PluginJSonUtils.getJsonValue(br, "file");
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("__fileurl\\s*=\\s*'(https?://[^<>\"\\']+)").getMatch(0);
         }
         if (dllink != null && !dllink.contains("?start=0")) {
             // dllink += "?start=0";
