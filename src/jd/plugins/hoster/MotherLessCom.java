@@ -81,10 +81,6 @@ public class MotherLessCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if ("video".equals(link.getStringProperty("dltype", null)) || jd.plugins.decrypter.MotherLessCom.isVideo(this.br)) {
-            if (true) {
-                /* Debug */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
