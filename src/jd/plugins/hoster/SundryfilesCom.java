@@ -119,7 +119,7 @@ public class SundryfilesCom extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink() {
+    protected String getContinueLink() throws Exception {
         String continueurl = super.getContinueLink();
         if (StringUtils.isEmpty(continueurl)) {
             /* 2019-06-07: E.g. first loop */
@@ -127,5 +127,4 @@ public class SundryfilesCom extends YetiShareCore {
         }
         return continueurl;
     }
-
-    }
+}
