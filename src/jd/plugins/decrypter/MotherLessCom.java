@@ -22,6 +22,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -128,7 +129,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 }
                 return decryptedLinks;
             }
-            if (br.containsHTML("(jwplayer\\(|jwplayer_playing|jwplayer_position|" + jd.plugins.hoster.MotherLessCom.html_notOnlineYet + ")")) {
+            if (isVideo(br)) {
                 final DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
                 dlink.setContentUrl(parameter);
                 if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_notOnlineYet)) {
@@ -150,14 +151,18 @@ public class MotherLessCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public static final boolean isVideo(final Browser br) {
+        return br.containsHTML("(mediatype\\s*=\\s*'video'|" + jd.plugins.hoster.MotherLessCom.html_notOnlineYet + ")");
+    }
+
     // finds the uid within the grouping
     private String formLink(String singlelink) {
         if (singlelink.startsWith("/")) {
-            singlelink = "http://motherless.com" + singlelink;
+            singlelink = "https://" + this.getHost() + singlelink;
         }
         String ID = new Regex(singlelink, "https?://motherless\\.com/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
         if (ID != null) {
-            singlelink = "http://motherless.com/" + ID;
+            singlelink = "https://" + this.getHost() + "/" + ID;
         }
         return singlelink;
     }
@@ -166,6 +171,7 @@ public class MotherLessCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
         String relative_path = null;
+        ArrayList<String> dupes = new ArrayList<String>();
         if (parameter.matches(TYPE_FAVOURITES_ALL)) {
             final String username = new Regex(parameter, TYPE_FAVOURITES_ALL).getMatch(0);
             /* images or videos */
@@ -232,29 +238,12 @@ public class MotherLessCom extends PluginForDecrypt {
                     ret.add(this.createDownloadlink("https://" + this.getHost() + "/G" + galleryID));
                 }
             } else {
-                String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
-                if (picturelinks != null && picturelinks.length != 0) {
-                    logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
-                    for (String singlelink : picturelinks) {
-                        singlelink = formLink(singlelink);
-                        final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
-                        dl.setContentUrl(singlelink);
-                        dl.setProperty("dltype", "image");
-                        // fast add.
-                        dl.setAvailable(true);
-                        if (relative_path != null) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
-                        }
-                        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-                        ret.add(dl);
-                    }
-                }
-                String[] videolinks = br.getRegex("<[^>]+data-mediatype=\"video\"[^>]+>\\s+<a href=\"((https?://(?:www\\.)?motherless\\.com)?/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
+                String[] videolinks = br.getRegex("<a href=\"(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
                 if (videolinks != null && videolinks.length != 0) {
                     for (String singlelink : videolinks) {
-                        String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
-                        if (linkID != null) {
-                            singlelink = "https://" + this.getHost() + "/" + linkID;
+                        final String contentID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
+                        if (contentID != null) {
+                            singlelink = "https://" + this.getHost() + "/" + contentID;
                         }
                         singlelink = formLink(singlelink);
                         final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
@@ -266,6 +255,28 @@ public class MotherLessCom extends PluginForDecrypt {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
                         dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                        ret.add(dl);
+                    }
+                }
+                String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
+                if (picturelinks != null && picturelinks.length != 0) {
+                    logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
+                    for (String singlelink : picturelinks) {
+                        final String contentID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
+                        if (!dupes.add(contentID)) {
+                            /* Already added as video content --> Skip */
+                            continue;
+                        }
+                        singlelink = formLink(singlelink);
+                        final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
+                        dl.setContentUrl(singlelink);
+                        dl.setProperty("dltype", "image");
+                        // fast add.
+                        dl.setAvailable(true);
+                        if (relative_path != null) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
+                        }
+                        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
                         ret.add(dl);
                     }
                 }

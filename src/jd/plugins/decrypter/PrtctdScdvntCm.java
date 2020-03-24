@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,10 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "https?://(www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "https?://(?:www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" })
 public class PrtctdScdvntCm extends antiDDoSForDecrypt {
     private String  MAINPAGE = "http://protected.socadvnet.com/";
     private Browser xhr      = null;
@@ -64,7 +64,7 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
         final String sendCaptcha = "/ksl.php";
         final String getList = "/llinks.php";
         xhrPostPage(getList, "LinkName=" + postvar);
-        final String[] linksCount = xhr.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
+        final String[] linksCount = xhr.getRegex("(moc\\.tenvdacos\\.detcetorp//:s?ptth)").getColumn(0);
         if (linksCount == null || linksCount.length == 0) {
             return null;
         }
@@ -99,7 +99,7 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
                 logger.info("Found one offline link for link " + parameter + " linkid:" + i);
                 continue;
             }
-            String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http.*?)\"").getMatch(0);
+            String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http[^\"]+)\"").getMatch(0);
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
                 if (br.containsHTML("turbobit\\.net")) {
@@ -133,5 +133,11 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-03-24 */
+        return 1;
     }
 }
