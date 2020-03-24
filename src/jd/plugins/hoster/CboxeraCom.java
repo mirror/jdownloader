@@ -23,12 +23,14 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,15 +46,17 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cboxera.com" }, urls = { "" })
 public class CboxeraCom extends PluginForHost {
-    private static final String          API_BASE            = "https://api.cboxera.com";
+    private static final String                  API_BASE             = "https://api.cboxera.com";
     /* 2020-03-24: Static implementation as key is nowhere to be found via API request. */
-    private static final String          RECAPTCHAv2_SITEKEY = "6Ldq4FwUAAAAAJ81U4lQEvQXps384V7eCWJWxdjf";
-    private static MultiHosterManagement mhm                 = new MultiHosterManagement("cboxera.com");
-    private static final int             defaultMAXDOWNLOADS = -1;
-    private static final int             defaultMAXCHUNKS    = 0;
-    private static final boolean         defaultRESUME       = true;
-    private static final String          PROPERTY_logintoken = "token";
-    private static final String          PROPERTY_directlink = "directlink";
+    private static final String                  RECAPTCHAv2_SITEKEY  = "6Ldq4FwUAAAAAJ81U4lQEvQXps384V7eCWJWxdjf";
+    private static MultiHosterManagement         mhm                  = new MultiHosterManagement("cboxera.com");
+    private static LinkedHashMap<String, Object> individualHostLimits = new LinkedHashMap<String, Object>();
+    /* Connection limits: 2020-03-24: According to API docs "Max Connections: 15 per user/minute" --> WTF --> Set it to unlimited for now */
+    private static final int                     defaultMAXDOWNLOADS  = -1;
+    private static final int                     defaultMAXCHUNKS     = 0;
+    private static final boolean                 defaultRESUME        = true;
+    private static final String                  PROPERTY_logintoken  = "token";
+    private static final String                  PROPERTY_directlink  = "directlink";
 
     @SuppressWarnings("deprecation")
     public CboxeraCom(PluginWrapper wrapper) {
@@ -79,10 +83,25 @@ public class CboxeraCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        final long filesize = link.getView().getBytesTotal();
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
+        } else if (individualHostLimits.containsKey(link.getHost()) && filesize > 0) {
+            /* Check if we can download from this individual host --> Lowers required http requests */
+            final LinkedHashMap<String, Long> hostlimits = (LinkedHashMap<String, Long>) individualHostLimits.get(link.getHost());
+            final long bandwidth_limit = hostlimits.get("bandwidth_limit");
+            final long size_limit = hostlimits.get("size_limit");
+            if (bandwidth_limit > -1 && filesize > bandwidth_limit) {
+                // logger.info("Not enough traffic left to download files from " + this.getHost());
+                return false;
+            } else if (size_limit > -1 && filesize > size_limit) {
+                // logger.info("File is too big to be downloaded by multihost " + this.getHost());
+                return false;
+            }
+            /* Download is allowed */
+            return true;
         }
         return true;
     }
@@ -106,6 +125,7 @@ public class CboxeraCom extends PluginForHost {
             br.postPageRaw(API_BASE + "/private/generatelink", String.format("{\"link\":\"%s\"}", link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             dllink = PluginJSonUtils.getJsonValue(br, "dlink");
             if (StringUtils.isEmpty(dllink)) {
+                handleErrors(this.br, account, link);
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
         }
@@ -165,6 +185,7 @@ public class CboxeraCom extends PluginForHost {
             br.getPage(API_BASE + "/private/user/info");
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        /* 2020-03-24: E.g. free account: "subscription":{"is_vip":false,"bw_limit":"25GB","days":0} */
         entries = (LinkedHashMap<String, Object>) entries.get("subscription");
         boolean is_premium = ((Boolean) entries.get("is_vip"));
         final String trafficleft = (String) entries.get("bw_limit");
@@ -190,10 +211,11 @@ public class CboxeraCom extends PluginForHost {
         }
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final PluginFinder finder = new PluginFinder();
         for (final Object hostO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) hostO;
-            final String domain = (String) entries.get("name");
-            if (StringUtils.isEmpty(domain)) {
+            final String host = (String) entries.get("name");
+            if (StringUtils.isEmpty(host)) {
                 /* This should never happen */
                 continue;
             }
@@ -201,23 +223,30 @@ public class CboxeraCom extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) entries.get(account_type_key);
             final String supported = (String) entries.get("supported");
             if ("no".equalsIgnoreCase(supported)) {
-                logger.info("Skipping host because: unsupported: " + domain);
+                logger.info("Skipping host because: unsupported: " + host);
                 continue;
             }
+            long size_limit = -1;
+            long bandwidth_limit = -1;
             try {
                 /* Given in this format: "5 GB" */
                 final String size_limitStr = (String) entries.get("size_limit");
                 final String bandwidth_limitStr = (String) entries.get("bandwidth_limit");
-                final long size_limit = SizeFormatter.getSize(size_limitStr);
-                final long bandwidth_limit = SizeFormatter.getSize(bandwidth_limitStr);
-                if (size_limit <= 0 || bandwidth_limit <= 0) {
-                    logger.info("Skipping host because: no traffic available: " + domain);
-                    continue;
-                }
+                size_limit = SizeFormatter.getSize(size_limitStr);
+                bandwidth_limit = SizeFormatter.getSize(bandwidth_limitStr);
             } catch (final Throwable e) {
                 /* Ignore this */
             }
-            supportedhostslist.add(domain);
+            final String originalHost = finder.assignHost(host);
+            if (originalHost == null) {
+                /* This should never happen */
+                continue;
+            }
+            supportedhostslist.add(originalHost);
+            final LinkedHashMap<String, Long> limits = new LinkedHashMap<String, Long>();
+            limits.put("size_limit", size_limit);
+            limits.put("bandwidth_limit", bandwidth_limit);
+            individualHostLimits.put(originalHost, limits);
         }
         ai.setMultiHostSupport(this, supportedhostslist);
         account.setConcurrentUsePossible(true);
@@ -292,7 +321,17 @@ public class CboxeraCom extends PluginForHost {
                 /* Existing session expired. */
                 /* Usually goes along with http response 401. Temp. disable account so token can be refreshed on next account check! */
                 throw new AccountUnavailableException(errormsg, 1 * 60 * 1000l);
+            } else if (new Regex(errormsg, "You can post your link after \\d+ minutes \\d+ seconds").matches()) {
+                final String minutesStr = new Regex(errormsg, "(\\d+)\\s*minutes?").getMatch(0);
+                final String secondsStr = new Regex(errormsg, "(\\d+)\\s*seconds?").getMatch(0);
+                final long wait = Long.parseLong(minutesStr) * 60 * 1001 + Long.parseLong(secondsStr) * 1001;
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, wait);
             }
+            /*
+             * All other errors e.g.: {"error":true,"msg":"Free Users allowed maximum 500 MB filesize for uploaded.net"} --> This particular
+             * example should never happen, see function canHandle
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, 5 * 60 * 1000);
         }
     }
 
