@@ -136,7 +136,7 @@ public class SharingWtf extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink() {
+    protected String getContinueLink() throws Exception {
         /* 2020-01-18: Special */
         /* Their html contains a commented-out line of code which is what our template code would normally pick up --> Endless loop */
         String continue_link = br.getRegex("\\$\\(\\'\\.download-timer\\'\\)\\.html.+\\$\\(\\'\\.download-timer\\'\\)\\.html\\(\"[^\\)]+\\'(https://[^\\']+)").getMatch(0);

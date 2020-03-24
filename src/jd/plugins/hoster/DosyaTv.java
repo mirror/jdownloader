@@ -104,7 +104,7 @@ public class DosyaTv extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink() {
+    protected String getContinueLink() throws Exception {
         /* 2020-03-02: Special */
         String dllink = super.getContinueLink();
         if (dllink != null) {
