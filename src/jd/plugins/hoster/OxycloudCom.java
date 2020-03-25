@@ -22,7 +22,6 @@ import org.jdownloader.plugins.components.YetiShareCore;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -122,19 +121,5 @@ public class OxycloudCom extends YetiShareCore {
 
     protected String getDefaultTimePattern(Account account, final String expireString) {
         return "dd/MM/yyyy hh:mm:ss";
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = super.fetchAccountInfo(account);
-        /*
-         * 2020-02-19: Free accounts can now be used to download files which are not downloadable without account --> Template will set
-         * unlimited traffic!
-         */
-        // if (account.getType() != AccountType.PREMIUM) {
-        // /* 2019-04-15: Special: Anonymous downloads possible but FREE-ACCOUNT downloads NOT possible! */
-        // ai.setTrafficLeft(0);
-        // }
-        return ai;
     }
 }
