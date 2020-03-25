@@ -129,7 +129,7 @@ public class PornHubCom extends PluginForDecrypt {
                 logger.info("Users->Model|pornstar");
                 ret = decryptAllVideosOfAPornstar();
             } else {
-                logger.info("Users");
+                logger.info("Users / Channels");
                 ret = decryptAllVideosOfAUser();
             }
         } else {
@@ -267,7 +267,7 @@ public class PornHubCom extends PluginForDecrypt {
         } else {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
-        if (br.containsHTML(">There are no videos...<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">There are no videos...<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
         }

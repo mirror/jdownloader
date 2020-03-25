@@ -190,9 +190,6 @@ public class TwitterCom extends PluginForHost {
                 if (br.containsHTML("<div id=\"message\">")) {
                     /* E.g. <div id="message">Das Medium konnte nicht abgespielt werden. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.getHttpConnection().getResponseCode() == 403) {
-                    /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (!StringUtils.isEmpty(errorcode)) {
                     logger.info("Failure, errorcode: " + errorcode);
                     if (!StringUtils.isEmpty(errormessage)) {
@@ -208,11 +205,14 @@ public class TwitterCom extends PluginForHost {
                     } else if (errorcode.equals("353")) {
                         logger.info("Possible token failure 353, retrying");
                         guest_token = null;
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 353", 2 * 60 * 1000l);
                     } else {
                         logger.warning("Unknown error");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error " + errorcode);
                     }
+                } else if (br.getHttpConnection().getResponseCode() == 403) {
+                    /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
             // this.br.getRequest().setHtmlCode(Encoding.htmlDecode(this.br.toString()));
