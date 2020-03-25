@@ -20,8 +20,6 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -138,19 +136,5 @@ public class OxycloudCom extends YetiShareCore {
         // ai.setTrafficLeft(0);
         // }
         return ai;
-    }
-
-    @Override
-    public boolean isWaitBetweenDownloadsURL() {
-        boolean waitBetweenDownloads = super.isWaitBetweenDownloadsURL();
-        if (!waitBetweenDownloads) {
-            /* 2019-08-09: Special */
-            String url = br.getURL();
-            if (url != null && url.contains("%")) {
-                url = Encoding.htmlDecode(url);
-            }
-            waitBetweenDownloads = url != null && new Regex(url, Pattern.compile(".*?e=Musisz.czekać.\\d+.Godziny.*?", Pattern.CASE_INSENSITIVE)).matches();
-        }
-        return waitBetweenDownloads;
     }
 }

@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -109,7 +108,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareCore Version 2.0.0.6-psp<br />
+     * YetiShareCore Version 2.0.1.0-psp<br />
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
@@ -255,7 +254,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * <b> Enabling this may lead to at least one additional website-request! </b><br />
-     * TODO: 2019-02-20: Find website which supports video streaming!
+     * TODO: 2019-02-20: Find website which supports video streaming! --> 2020-03-25: vidload.net
      *
      * @return true: Implies that website supports embedding videos. <br />
      *         false: Implies that website does NOT support embedding videos. <br />
@@ -299,17 +298,14 @@ public class YetiShareCore extends antiDDoSForHost {
         try {
             if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher() + "~i");
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /* DEBUG YetiShare Upgrade */
-                    try {
-                        checkErrorsNew(link, account);
-                    } catch (final PluginException e) {
-                        if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                            throw e;
-                        } else {
-                            logger.log(e);
-                            return AvailableStatus.TRUE;
-                        }
+                try {
+                    this.checkErrors(link, account);
+                } catch (final PluginException e) {
+                    if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        throw e;
+                    } else {
+                        logger.log(e);
+                        return AvailableStatus.TRUE;
                     }
                 }
                 /* Offline errorhandling */
@@ -318,44 +314,19 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } else {
                 getPage(link.getPluginPatternMatcher());
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /* DEBUG YetiShare Upgrade */
-                    try {
-                        checkErrorsNew(link, account);
-                    } catch (final PluginException e) {
-                        if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                            throw e;
-                        } else {
-                            logger.log(e);
-                            return AvailableStatus.TRUE;
-                        }
-                    }
-                    final String fid = this.getFUIDFromURL(link);
-                    if (!br.getURL().contains(fid)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                } else {
-                    if (isWaitBetweenDownloadsURL()) {
+                try {
+                    this.checkErrors(link, account);
+                } catch (final PluginException e) {
+                    if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        throw e;
+                    } else {
+                        logger.log(e);
+                        /* File is probably online but another error happened --> Do not throw it during availablecheck! */
                         return AvailableStatus.TRUE;
                     }
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        /* DEBUG YetiShare Upgrade */
-                        this.checkErrors(link, account);
-                    }
-                    if (isOfflineWebsite(link)) {
-                        try {
-                            this.checkErrors(link, account);
-                        } catch (final PluginException e) {
-                            if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                                throw e;
-                            } else {
-                                logger.log(e);
-                                /* File is probably online but another error happened --> Do not throw it during availablecheck! */
-                                return AvailableStatus.TRUE;
-                            }
-                        }
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
+                }
+                if (isOfflineWebsite(link)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
             scanInfo(link, fileInfo);
@@ -710,10 +681,6 @@ public class YetiShareCore extends antiDDoSForHost {
         if (continue_link == null) {
             continue_link = getDllink();
         }
-        /** 2019-02-21: TODO: Find website which embeds videos / has video streaming activated! */
-        // if (continue_link == null && enable_regex_stream_url) {
-        // continue_link = getStreamUrl();
-        // }
         return continue_link;
     }
 
@@ -753,8 +720,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
-    protected String getFUIDFromURL(final DownloadLink dl) {
-        return getFUIDFromURL(dl.getPluginPatternMatcher());
+    protected String getFUIDFromURL(final DownloadLink link) {
+        return getFUIDFromURL(link.getPluginPatternMatcher());
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
@@ -772,12 +739,12 @@ public class YetiShareCore extends antiDDoSForHost {
      * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>'. Example host which
      * has URLs that contain filenames: freefile.me, letsupload.co
      */
-    public String getFilenameFromURL(final DownloadLink dl) {
+    public String getFilenameFromURL(final DownloadLink link) {
         final String result;
-        if (dl.getContentUrl() != null) {
-            result = getFilenameFromURL(dl.getContentUrl());
+        if (link.getContentUrl() != null) {
+            result = getFilenameFromURL(link.getContentUrl());
         } else {
-            result = getFilenameFromURL(dl.getPluginPatternMatcher());
+            result = getFilenameFromURL(link.getPluginPatternMatcher());
         }
         return result;
     }
@@ -934,6 +901,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
                 return errorMap;
             } else {
+                logger.info("Failed to find language key for errormessage: " + errorStr);
                 return null;
             }
         } catch (final Throwable e) {
@@ -942,7 +910,8 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    public void checkErrorsNew(final DownloadLink link, final Account account) throws PluginException {
+    /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
+    private void checkErrorsLanguageIndependant(final DownloadLink link, final Account account) throws PluginException {
         String errorMsg = null;
         try {
             final UrlQuery query = UrlQuery.parse(br.getURL());
@@ -957,13 +926,13 @@ public class YetiShareCore extends antiDDoSForHost {
             if (errorMap == null) {
                 /* Not all websites have (all) language keys present e.g. ultimbox.com */
                 logger.info("Failed to find error_key");
-                /* TODO: Update this errormessage */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsg);
             }
             final String errorkey = (String) errorMap.get("error_key");
             logger.info("Found key to errormessage: " + errorkey);
             HashMap<String, String> errorProperties = null;
             if (errorMap.containsKey("error_properties")) {
+                /* This is really only for logging purposes */
                 errorProperties = (HashMap<String, String>) errorMap.get("error_properties");
                 final Iterator<Entry<String, String>> dynVarsIterator = errorProperties.entrySet().iterator();
                 int counter = 0;
@@ -972,7 +941,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     final Entry<String, String> entry = dynVarsIterator.next();
                     final String key = entry.getKey();
                     final String value = entry.getValue();
-                    logger.info("Found ErrorProperty" + counter + counter + ": " + key + " --> " + value);
+                    logger.info("Found ErrorProperty " + counter + " | " + key + " : " + value);
                 }
             }
             final long default_waittime = 15 * 60 * 1000l;
@@ -1027,7 +996,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } else {
                 logger.warning("Unknown errorkey");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error: " + errorMsg);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + errorMsg);
             }
         }
     }
@@ -1036,7 +1005,7 @@ public class YetiShareCore extends antiDDoSForHost {
         /*
          * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we need!
          */
-        final String wait_hours = new Regex(src, "(\\d+)\\s*?hour?").getMatch(0);
+        final String wait_hours = new Regex(src, "(\\d+)\\s*?hours?").getMatch(0);
         final String wait_minutes = new Regex(src, "(\\d+)\\s*?minutes?").getMatch(0);
         final String wait_seconds = new Regex(src, "(\\d+)\\s*?(?:seconds?|segundos)").getMatch(0);
         int minutes = 0, seconds = 0, hours = 0;
@@ -1059,10 +1028,11 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* DEBUG YetiShare Upgrade */
-            checkErrorsNew(link, account);
-        }
+        checkErrorsLanguageIndependant(link, account);
+        /*
+         * Old / fallback / English / additional errorhandling - please leave this here although checkErrorsLanguageIndependant should cover
+         * most of all errors
+         */
         final String url = getCurrentURLDecoded();
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
@@ -1071,34 +1041,14 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (new Regex(br.getURL(), Pattern.compile(".*e=.*Could\\+not\\+open\\+file\\+for\\+reading.*", Pattern.CASE_INSENSITIVE)).matches()) {
             // https://debrid.pl/error.html?e=B%C5%82%C4%85d%3A+Could+not+open+file+for+reading.
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-        } else if (isWaitBetweenDownloadsURL()) {
-            /*
-             * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we
-             * need!
-             */
-            final String wait_hours = new Regex(br.getURL(), "(\\d+).hour?").getMatch(0);
-            final String wait_minutes = new Regex(br.getURL(), "(\\d+).minutes?").getMatch(0);
-            String wait_seconds = new Regex(br.getURL(), "(\\d+).seconds").getMatch(0);
-            if (wait_seconds == null) {
-                /* Spanish - e.g. required for asdfiles.com */
-                wait_seconds = new Regex(br.getURL(), "(\\d+).segundos").getMatch(0);
-            }
-            int minutes = 0, seconds = 0, hours = 0;
-            if (wait_hours != null) {
-                hours = Integer.parseInt(wait_hours);
-            }
-            if (wait_minutes != null) {
-                minutes = Integer.parseInt(wait_minutes);
-            }
-            if (wait_seconds != null) {
-                seconds = Integer.parseInt(wait_seconds);
-            }
-            final int extraWaittimeSeconds = 1;
-            int waittime = ((3600 * hours) + (60 * minutes) + seconds + extraWaittimeSeconds) * 1000;
+        } else if (url != null && new Regex(url, Pattern.compile(".*?\\?e=(You must wait |Você deve esperar).*?", Pattern.CASE_INSENSITIVE)).matches()) {
+            final long extraWaittimeMilliseconds = 1000;
+            long waittime = this.parseWaittime(url);
             if (waittime <= 0) {
                 /* Fallback */
                 logger.info("Waittime RegExes seem to be broken - using default waittime");
             }
+            waittime += extraWaittimeMilliseconds;
             logger.info("Detected reconnect waittime (milliseconds): " + waittime);
             /* Not enough wait time to reconnect -> Wait short and retry */
             if (waittime < 180000) {
@@ -1120,13 +1070,6 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
-        /*
-         * 2020-02-19: Do NOT check for offline ind checkErrors --> This check should only performed once when we accessed the main URL.
-         * Doing it in other places will result in invalid offline errors!
-         */
-        // if (isOfflineWebsite(link)) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
     }
 
     /** Handles all kinds of error-responsecodes! */
@@ -1152,6 +1095,9 @@ public class YetiShareCore extends antiDDoSForHost {
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
+        /* TODO: Consider checking for fuid in URL too in the future --> This might be a good offline indicator */
+        // final String fid = this.getFUIDFromURL(link);
+        // final boolean currentURLContainsFID = br.getURL().contains(fid);
         final boolean isDownloadable = this.getContinueLink() != null;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         /*
@@ -1168,7 +1114,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
-    private String getCurrentURLDecoded() {
+    protected String getCurrentURLDecoded() {
         if (br.getURL() != null) {
             String currentURL = br.getURL();
             if (Encoding.isUrlCoded(currentURL)) {
@@ -1181,21 +1127,6 @@ public class YetiShareCore extends antiDDoSForHost {
             return currentURL;
         }
         return null;
-    }
-
-    /**
-     * Checks 'wait between downloads' status via current Browser-URL.
-     *
-     * @return true: User has to wait before new downloads can be started. <br />
-     *         false: User can start new downloads right away.
-     */
-    public boolean isWaitBetweenDownloadsURL() {
-        /**
-         * 2019-08-09: Maybe try to change errorhandling to work via their language-strings so we could make it language-independant e.g.
-         * for this case: "error_you_must_wait_between_downloads"
-         */
-        final String url = getCurrentURLDecoded();
-        return url != null && new Regex(url, Pattern.compile(".*?\\?e=(You must wait |Você deve esperar).*?", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     /** Returns pre-download-waittime (seconds) from inside HTML. */
