@@ -49,6 +49,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -175,7 +176,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     } else {
                         /* this should not happen */
                         hostHasUnlimitedQuota = false;
-                        logger.warning("Possible plugin defect!");
+                        logger.warning("Failed to find individual quota for host: " + host);
                     }
                     quota = -1;
                 } else {
@@ -264,15 +265,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
             mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Daily limit '" + host + "'reached for this host");
         } else {
             /* Daily total downloadlimit for account is reached */
-            final String lang = System.getProperty("user.language");
             logger.info("Daily limit reached");
             /* Workaround for account overview display bug so users see at least that there is no traffic left */
             account.getAccountInfo().setTrafficLeft(0);
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
+            throw new AccountUnavailableException("Download limit reached", 5 * 60 * 1000);
         }
     }
 
