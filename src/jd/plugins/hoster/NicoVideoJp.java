@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -31,7 +32,6 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,7 +49,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(?:sm|so|nm)?(\\d+)" })
 public class NicoVideoJp extends PluginForHost {
     private static final String           MAINPAGE                    = "https://www.nicovideo.jp/";
     private static final String           ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
@@ -61,7 +61,6 @@ public class NicoVideoJp extends PluginForHost {
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
     private static final String           TYPE_WATCH                  = "https?://(www\\.)?nicovideo\\.jp/watch/\\d+";
     private static final String           default_extension           = "mp4";
-    private static final String           privatevid                  = "account.nicovideo.jp";
     private static final String           NOCHUNKS                    = "NOCHUNKS";
     private static final String           AVOID_ECONOMY_MODE          = "AVOID_ECONOMY_MODE";
     private static final boolean          FREE_RESUME                 = true;
@@ -115,7 +114,8 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String linkid_url = getLID(link);
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final String fid = getFID(link);
         link.setProperty("extension", default_extension);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
@@ -126,25 +126,26 @@ public class NicoVideoJp extends PluginForHost {
             this.login(aa, false);
             loggedin = true;
         }
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
+        String fallback_filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (fallback_filename == null) {
+            fallback_filename = fid;
+        }
         if (br.containsHTML("this video inappropriate.<")) {
-            String watch = br.getRegex("harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
+            final String watch = br.getRegex("harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
+            if (watch == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(watch);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>|>This video is for .*? only") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().contains(privatevid)) {
-            link.getLinkStatus().setStatusText("This is a private video");
-            link.setName(linkid_url);
+        } else if (isPaidContent()) {
+            link.setName(fallback_filename);
             return AvailableStatus.TRUE;
-        } else if (br.containsHTML("<h1>Unable to play video\\.</h1>") && br.containsHTML(">This video is not available in your country\\.</p>")) {
-            link.getLinkStatus().setStatusText("GEO-BLOCKED");
-            link.setName(linkid_url);
-            return AvailableStatus.FALSE;
-        } else if (br.containsHTML("<h1>The viewing period of the video you were searching for has expired\\.</h1>")) {
-            // expired
-            link.setName(linkid_url);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (isGeoBlocked()) {
+            link.setName(fallback_filename);
+            return AvailableStatus.TRUE;
         }
         String jsonapi = br.getRegex("data-api-data=\"(.*?)\" hidden>").getMatch(0);
         jsonapi = Encoding.htmlDecode(jsonapi);
@@ -172,6 +173,14 @@ public class NicoVideoJp extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isGeoBlocked() {
+        return br.containsHTML(">\\s*Sorry, this video can only be viewed in the same region where it was uploaded");
+    }
+
+    private boolean isPaidContent() {
+        return br.containsHTML(">\\s*This is a paid video");
     }
 
     private String getHtmlJson() {
@@ -215,39 +224,53 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        if (true) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         // checkWatchableGeneral();
-        final LinkedHashMap<String, Object> dmcInfo = (LinkedHashMap<String, Object>) entries.get("dmcInfo");
-        final LinkedHashMap<String, Object> session_api = (LinkedHashMap<String, Object>) dmcInfo.get("session_api");
-        final String signature = (String) session_api.get("signature");
-        final String recipe_id = (String) session_api.get("recipe_id");
-        final String player_id = (String) session_api.get("player_id");
-        final String service_user_id = (String) session_api.get("service_user_id");
-        final long created_time = JavaScriptEngineFactory.toLong(entries.get("created_time"), 0);
-        final long expire_time = JavaScriptEngineFactory.toLong(entries.get("expire_time"), 0);
-        final Object tokenO = session_api.get("token");
-        final LinkedHashMap<String, Object> token = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap((String) tokenO);
-        final ArrayList<Object> videos = (ArrayList<Object>) token.get("videos");
-        final ArrayList<Object> audios = (ArrayList<Object>) token.get("audios");
-        final ArrayList<Object> protocols = (ArrayList<Object>) token.get("protocols");
-        final LinkedHashMap<String, Object> auth_types = (LinkedHashMap<String, Object>) session_api.get("auth_types");
-        final String postData = String.format(
-                "{\"session\":{\"recipe_id\":\"%s\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_1080p\",\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"yes\",\"use_ssl\":\"yes\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"{\\\"service_id\\\":\\\"nicovideo\\\",\\\"player_id\\\":\\\"%s\\\",\\\"recipe_id\\\":\\\"%s\\\",\\\"service_user_id\\\":\\\"%s\\\",\\\"protocols\\\":[{\\\"name\\\":\\\"http\\\",\\\"auth_type\\\":\\\"ht2\\\"},{\\\"name\\\":\\\"hls\\\",\\\"auth_type\\\":\\\"ht2\\\"}],\\\"videos\\\":[\\\"archive_h264_1080p\\\",\\\"archive_h264_360p\\\",\\\"archive_h264_360p_low\\\",\\\"archive_h264_480p\\\",\\\"archive_h264_720p\\\"],\\\"audios\\\":[\\\"archive_aac_128kbps\\\",\\\"archive_aac_64kbps\\\"],\\\"movies\\\":[],\\\"created_time\\\":%d,\\\"expire_time\\\":%d,\\\"content_ids\\\":[\\\"out1\\\"],\\\"heartbeat_lifetime\\\":120000,\\\"content_key_timeout\\\":600000,\\\"priority\\\":0,\\\"transfer_presets\\\":[]}\",\"signature\":\"%s\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"%s\"},\"client_info\":{\"player_id\":\"%s\"},\"priority\":0}}",
-                recipe_id, player_id, recipe_id, service_user_id, created_time, expire_time, signature, service_user_id, player_id);
-        br.getHeaders().put("Accept", "application/json");
-        br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("Origin", "https://www.nicovideo.jp");
-        br.postPageRaw("https://api.dmc.nico/api/sessions?_format=json", postData);
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/session");
-        // https://api.dmc.nico/api/sessions
-        /* Most of the times an account is needed to watch/download videos. */
-        if (br.containsHTML(html_account_needed)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, ONLYREGISTEREDUSERTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (isPaidContent()) {
+            throw new AccountRequiredException();
+        } else if (isGeoBlocked()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         }
-        final String dllink = (String) entries.get("content_uri");
+        final Object smileO = entries.get("smileInfo");
+        String dllink = null;
+        if (smileO != null) {
+            /* 2020-03-25: Easy way to download: E.g. old content / low quality */
+            entries = (LinkedHashMap<String, Object>) smileO;
+            dllink = (String) entries.get("url");
+        } else {
+            /* TODO: Fix- and enable API handling */
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final LinkedHashMap<String, Object> dmcInfo = (LinkedHashMap<String, Object>) entries.get("dmcInfo");
+            final LinkedHashMap<String, Object> session_api = (LinkedHashMap<String, Object>) dmcInfo.get("session_api");
+            final String signature = (String) session_api.get("signature");
+            final String recipe_id = (String) session_api.get("recipe_id");
+            final String player_id = (String) session_api.get("player_id");
+            final String service_user_id = (String) session_api.get("service_user_id");
+            final long created_time = JavaScriptEngineFactory.toLong(entries.get("created_time"), 0);
+            final long expire_time = JavaScriptEngineFactory.toLong(entries.get("expire_time"), 0);
+            final Object tokenO = session_api.get("token");
+            final LinkedHashMap<String, Object> token = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap((String) tokenO);
+            final ArrayList<Object> videos = (ArrayList<Object>) token.get("videos");
+            final ArrayList<Object> audios = (ArrayList<Object>) token.get("audios");
+            final ArrayList<Object> protocols = (ArrayList<Object>) token.get("protocols");
+            final LinkedHashMap<String, Object> auth_types = (LinkedHashMap<String, Object>) session_api.get("auth_types");
+            final String postData = String.format(
+                    "{\"session\":{\"recipe_id\":\"%s\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_1080p\",\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"yes\",\"use_ssl\":\"yes\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"{\\\"service_id\\\":\\\"nicovideo\\\",\\\"player_id\\\":\\\"%s\\\",\\\"recipe_id\\\":\\\"%s\\\",\\\"service_user_id\\\":\\\"%s\\\",\\\"protocols\\\":[{\\\"name\\\":\\\"http\\\",\\\"auth_type\\\":\\\"ht2\\\"},{\\\"name\\\":\\\"hls\\\",\\\"auth_type\\\":\\\"ht2\\\"}],\\\"videos\\\":[\\\"archive_h264_1080p\\\",\\\"archive_h264_360p\\\",\\\"archive_h264_360p_low\\\",\\\"archive_h264_480p\\\",\\\"archive_h264_720p\\\"],\\\"audios\\\":[\\\"archive_aac_128kbps\\\",\\\"archive_aac_64kbps\\\"],\\\"movies\\\":[],\\\"created_time\\\":%d,\\\"expire_time\\\":%d,\\\"content_ids\\\":[\\\"out1\\\"],\\\"heartbeat_lifetime\\\":120000,\\\"content_key_timeout\\\":600000,\\\"priority\\\":0,\\\"transfer_presets\\\":[]}\",\"signature\":\"%s\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"%s\"},\"client_info\":{\"player_id\":\"%s\"},\"priority\":0}}",
+                    recipe_id, player_id, recipe_id, service_user_id, created_time, expire_time, signature, service_user_id, player_id);
+            br.getHeaders().put("Accept", "application/json");
+            br.getHeaders().put("Content-Type", "application/json");
+            br.getHeaders().put("Origin", "https://www.nicovideo.jp");
+            br.postPageRaw("https://api.dmc.nico/api/sessions?_format=json", postData);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/session");
+            // https://api.dmc.nico/api/sessions
+            /* Most of the times an account is needed to watch/download videos. */
+            if (br.containsHTML(html_account_needed)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, ONLYREGISTEREDUSERTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
+            dllink = (String) entries.get("content_uri");
+        }
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -310,48 +333,6 @@ public class NicoVideoJp extends PluginForHost {
             /* remove download slot */
             controlPremium(-1);
         }
-    }
-
-    private String getDllinkFree() throws Exception {
-        String dllink = null;
-        // really old shit (from free), not sure if this actually works.
-        final String linkid_url = this.getFID(this.getDownloadLink());
-        try {
-            br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
-        } catch (BrowserException e) {
-            logger.log(e);
-            br.getPage("http://ext.nicovideo.jp/api/getthreadkey?language_id=1&thread=" + linkid_url);
-        }
-        try {
-            br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
-        } catch (BrowserException e) {
-            logger.log(e);
-            br.getPage("http://ext.nicovideo.jp/thumb_watch/" + linkid_url + "?&w=644&h=408&nli=1");
-        }
-        final String playkey = br.getRegex("thumbPlayKey':\\s*'([^<>\"]*?)'").getMatch(0);
-        final String accessFromHash = br.getRegex("accessFromHash':\\s*'([^<>\"]*?)'").getMatch(0);
-        if (playkey == null || accessFromHash == null) {
-            /* 2018-11-15 */
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match! - Content is probably premiumonly");
-            throw new AccountRequiredException();
-        }
-        String accessPOST = "k=" + Encoding.urlEncode(playkey) + "&v=" + linkid_url + "&as3=1&accessFromDomain=&accessFromHash=" + Encoding.urlEncode(accessFromHash) + "&accessFromCount=0";
-        try {
-            br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
-        } catch (final BrowserException e) {
-            logger.log(e);
-            br.postPage("http://ext.nicovideo.jp/thumb_watch", accessPOST);
-        }
-        dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(https?://.*?)\\&").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(https?://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
-        }
-        if (dllink == null) {
-            /* 2018-11-14 */
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match! - Content is probably premiumonly");
-            throw new AccountRequiredException();
-        }
-        return dllink;
     }
 
     private String getDllinkAccount() throws Exception {
@@ -509,7 +490,7 @@ public class NicoVideoJp extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final String extension = downloadLink.getStringProperty("extension", default_extension);
-        final String videoid = this.getLID(downloadLink);
+        final String videoid = this.getFID(downloadLink);
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("nicovideo.jp");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
@@ -559,10 +540,6 @@ public class NicoVideoJp extends PluginForHost {
         return formattedFilename;
     }
 
-    private String getLID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
-    }
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -607,11 +584,12 @@ public class NicoVideoJp extends PluginForHost {
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*videoid* = ID of the video e.g. 'sm12345678'\r\n");
-        sb.append("*ext* = the extension of the file, in this case usually '.flv'");
+        sb.append(String.format("*ext* = the extension of the file, in this case usually '.%s'", default_extension));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.AVOID_ECONOMY_MODE, JDL.L("plugins.hoster.MicoVideoJp.AvoidEconomymode", "Avoid economy mode - only download higher quality .mp4 videos?\r\n<html><b>Important: The default extension of all filenames is " + default_extension + ". It will be corrected once the downloads start if either this setting is active or the nicovideo site is in normal (NOT economy) mode!\r\nIf this setting is active and nicovideo is in economy mode, JDownloader will wait " + economy_active_wait_minutes + " minutes and try again afterwards.</b></html>")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.NOCHUNKS, JDL.L("plugins.hoster.MicoVideoJp.NoChunk", "Enable Chunk Workaround")).setDefaultValue(true));
+        /* 2020-03-25: This setting is broken atm. --> Hardcoded disabled it */
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.AVOID_ECONOMY_MODE, "Avoid economy mode - only download higher quality .mp4 videos?\r\n<html><b>Important: The default extension of all filenames is " + default_extension + ". It will be corrected once the downloads start if either this setting is active or the nicovideo site is in normal (NOT economy) mode!\r\nIf this setting is active and nicovideo is in economy mode, JDownloader will wait " + economy_active_wait_minutes + " minutes and try again afterwards.</br>\r\n2020-03-25: This setting is currently broken and thus hardcoded disabled!!</b></html>").setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.NOCHUNKS, "Enable Chunk Workaround").setDefaultValue(true));
     }
 
     @Override
