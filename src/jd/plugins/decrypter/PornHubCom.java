@@ -153,42 +153,54 @@ public class PornHubCom extends PluginForDecrypt {
             /* 2020-01-22: Without this we will not get all items! */
             br.getPage(br.getURL() + "/videos");
         }
-        /* 2020-03-17: Try to exclude items which do not belong to that playlist/section! */
-        final String html_snippet = br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
-        if (html_snippet != null) {
-            logger.info("Successfully crawled html_snippet");
-            br.getRequest().setHtmlCode(html_snippet);
-        } else {
-            logger.info("Failed to grab html_snippet --> Crawling in full html code");
-        }
         final Set<String> dupes = new HashSet<String>();
         final Set<String> pages = new HashSet<String>();
         int page = 0;
         int maxPage = -1;
         String ajaxPaginationURL = null;
         do {
-            boolean foundSomethingNew = false;
+            int numberofActuallyAddedItems = 0;
             page++;
             logger.info(String.format("Crawling page %d / %d", page, maxPage));
             /* 2020-03-17: Keep in mind: In premium modes, users may be able to see more items here than in free! */
-            final String[] viewkeys = br.getRegex("/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
+            final String src;
+            /*
+             * 2020-03-26: html code contains matching stuff everywhere so let's try to either only pick what we want or at least remove
+             * some stuff we don't want.
+             */
+            final String contentWeWant = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
+            if (contentWeWant != null) {
+                logger.info("Found html snippet contentWeWant");
+                src = contentWeWant;
+            } else {
+                logger.info("Failed to find html snippet contentWeWant");
+                final String contentWeDoNotWant = br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
+                if (contentWeDoNotWant != null) {
+                    logger.info("Successfully found html snippet contentWeDoNotWant");
+                    src = br.toString().replace(contentWeDoNotWant, "");
+                } else {
+                    logger.info("Failed to grab html_snippet --> Crawling in full html code");
+                    src = br.toString();
+                }
+            }
+            final String[] viewkeys = new Regex(src, "/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
             if (viewkeys.length == 0) {
                 logger.info("Stopping now because could not find ANY content on this page");
+                break;
             }
-            logger.info("Links found: " + viewkeys.length);
             for (final String viewkey : viewkeys) {
-                logger.info("viewkey: " + viewkey);
                 if (dupes.add(viewkey)) {
                     final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
                     decryptedLinks.add(dl);
                     distribute(dl);
-                    foundSomethingNew = true;
+                    numberofActuallyAddedItems++;
                 }
             }
-            if (!foundSomethingNew) {
+            if (numberofActuallyAddedItems == 0) {
                 logger.info("Stopping because this page did not contain any NEW content");
                 break;
             }
+            logger.info(String.format("Found %d new items", numberofActuallyAddedItems));
             String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
             final String nextAjax = br.getRegex("onclick=\"loadMoreDataStream\\(([^\\)]+)\\)").getMatch(0);
             if (nextAjax != null) {
