@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UbiqfileCom extends XFileSharingProBasic {
@@ -69,6 +69,7 @@ public class UbiqfileCom extends XFileSharingProBasic {
             return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
+            /* 2020-03-26: Disabled resume & chunkload as server answers with wrong range see jdlog: 2029715302851 */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
@@ -83,7 +84,8 @@ public class UbiqfileCom extends XFileSharingProBasic {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            /* 2020-03-26: Disabled resume & chunkload as server answers with wrong range see jdlog: 2029715302851 */
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
