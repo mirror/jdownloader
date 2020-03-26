@@ -59,8 +59,8 @@ public class TwitterCom extends PluginForHost {
     }
 
     @Override
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     private static final String  TYPE_DIRECT                  = "https?://[a-z0-9]+\\.twimg\\.com/.+";
@@ -82,14 +82,19 @@ public class TwitterCom extends PluginForHost {
     private String               guest_token                  = null;
     public static String         COOKIE_KEY_LOGINED_CSRFTOKEN = "ct0";
 
-    private void setconstants(final DownloadLink dl) {
+    public static Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(new int[] { 429 });
+        return br;
+    }
+
+    private void setconstants(final DownloadLink link) {
         dllink = null;
         server_issues = false;
         account_required = false;
-        if (dl.getDownloadURL().matches(TYPE_VIDEO_EMBED)) {
-            tweetid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (link.getDownloadURL().matches(TYPE_VIDEO_EMBED)) {
+            tweetid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
-            tweetid = dl.getStringProperty("tweetid", null);
+            tweetid = link.getStringProperty("tweetid", null);
         }
     }
 
@@ -100,6 +105,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setconstants(link);
+        prepBR(this.br);
         URLConnectionAdapter con = null;
         String title = null;
         String description = null;
@@ -173,6 +179,9 @@ public class TwitterCom extends PluginForHost {
                 }
                 /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
                 br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
+                if (br.getHttpConnection().getResponseCode() == 429) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
+                }
                 try {
                     LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "track/mediaAvailability");
@@ -413,22 +422,11 @@ public class TwitterCom extends PluginForHost {
                         br.setCookies(account.getHoster(), cookies);
                         return;
                     }
-                    /* Force full login */
+                    /* Force full login (or login with user given cookies) */
                 }
-                final boolean use_cookie_workaround = account.getPass().startsWith("[");
+                final boolean use_cookie_workaround = setCookiesFromString(br, account.getPass());
                 if (use_cookie_workaround) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
-                    LinkedHashMap<String, Object> entries;
-                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(account.getPass());
-                    for (final Object cookieO : ressourcelist) {
-                        entries = (LinkedHashMap<String, Object>) cookieO;
-                        final String cookiename = (String) entries.get("name");
-                        final String cookievalue = (String) entries.get("value");
-                        if (cookiename == null || cookievalue == null) {
-                            continue;
-                        }
-                        br.setCookie(account.getHoster(), cookiename, cookievalue);
-                    }
                     jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
                     br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
                     if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
@@ -456,6 +454,28 @@ public class TwitterCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    public static boolean setCookiesFromString(final Browser br, final String str) {
+        try {
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(str);
+            LinkedHashMap<String, Object> entries;
+            for (final Object cookieO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) cookieO;
+                final String cookiename = (String) entries.get("name");
+                final String cookievalue = (String) entries.get("value");
+                final String domain = (String) entries.get("domain");
+                if (StringUtils.isEmpty(cookiename) || cookievalue == null || StringUtils.isEmpty(domain)) {
+                    continue;
+                }
+                br.setCookie(domain, cookiename, cookievalue);
+            }
+            return true;
+        } catch (final Throwable e) {
+            // logger.log(e);
+            /* Given String was not the expected json String */
+            return false;
         }
     }
 

@@ -28,6 +28,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -111,6 +112,16 @@ public class ChoMikujPl extends antiDDoSForHost {
             /* This should never happen! */
             logger.info("Failed to find fileid");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /*
+         * Workaround: Always try to login even if this is not called from handlePremium as some content is only available when user is
+         * logged in which he usually isn't during availablecheck and we do not want to have that content displayed as offline!
+         */
+        final Account accWorkaround = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            this.login(account, false);
+        } else if (accWorkaround != null) {
+            this.login(accWorkaround, false);
         }
         if (mainlink != null) {
             /* Try to find better filename - usually only needed for single links. */
@@ -377,14 +388,6 @@ public class ChoMikujPl extends antiDDoSForHost {
         final boolean redirectsSetting = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         final String fid = this.getFID(link);
-        /* Set by the decrypter if the link is password protected */
-        // String savedLink = theLink.getStringProperty("savedlink");
-        // String savedPost = theLink.getStringProperty("savedpost");
-        // if (savedLink != null && savedPost != null) {
-        // br.setFollowRedirects(true);
-        // postPage(br, savedLink, savedPost);
-        // br.setFollowRedirects(false);
-        // }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (this.getPluginConfig().getBooleanProperty(AVOIDPREMIUMMP3TRAFFICUSAGE, false) && link.getName().toLowerCase().endsWith(".mp3")) {
             /* User wants to force stream download for .mp3 files --> Does not use up any premium traffic. */
@@ -523,9 +526,8 @@ public class ChoMikujPl extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         dllink = checkDirectLink(link, account);
         if (dllink == null) {
-            login(account, false);
+            /* Login will happen inside requestFileInformation */
             requestFileInformation(link, account, true);
-            br.setFollowRedirects(false);
             getDllink_premium(link, account, br, true);
             if (cbr.containsHTML("\"BuyAdditionalTransfer")) {
                 logger.info("Disabling chomikuj.pl account: Not enough traffic available");
@@ -634,11 +636,9 @@ public class ChoMikujPl extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 boolean loggedinViaCookies = false;
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                if (setLoginCookies(this.br, account)) {
                     getPageWithCleanup(this.br, MAINPAGE);
-                    if (this.isLoggedIn()) {
+                    if (this.isLoggedIn(this.br)) {
                         logger.info("Successfully loggedin via cookies");
                         loggedinViaCookies = true;
                     } else {
@@ -648,7 +648,8 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
                 if (!loggedinViaCookies) {
                     logger.info("Performing full login");
-                    br = prepBrowser(new Browser(), account.getHoster());
+                    br.clearCookies(account.getHoster());
+                    prepBrowser(br, account.getHoster());
                     br.setCookiesExclusive(true);
                     br.setFollowRedirects(true);
                     getPageWithCleanup(this.br, MAINPAGE);
@@ -673,7 +674,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                     // Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" +
                     // Encoding.urlEncode(requestVerificationToken));
                     postRequestWithCleanup(this.br, postRequest);
-                    if (!isLoggedIn()) {
+                    if (!isLoggedIn(this.br)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     br.setCookie(br.getHost(), "cookiesAccepted", "1");
@@ -691,7 +692,17 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedIn() {
+    public static boolean setLoginCookies(final Browser brlogin, final Account account) {
+        final Cookies cookies = account.loadCookies("");
+        if (cookies != null) {
+            brlogin.setCookies(account.getHoster(), cookies);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isLoggedIn(final Browser br) {
         return br.getCookie(MAINPAGE, "RememberMe", Cookies.NOTDELETEDPATTERN) != null;
     }
 

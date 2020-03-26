@@ -25,11 +25,13 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -102,6 +104,11 @@ public class ChoMikujPl extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setLoadLimit(4194304);
         boolean accessedURL = false;
+        /********************** Login if we have cookies ************************/
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            jd.plugins.hoster.ChoMikujPl.setLoginCookies(this.br, account);
+        }
         /********************** Multiple pages handling START ************************/
         if (scanForMorePages) {
             /* No specific page only? Add all! */
@@ -358,6 +365,10 @@ public class ChoMikujPl extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String savePost = postdata;
         String saveLink = null;
+        String baseURL = br.getURL();
+        if (baseURL.endsWith("/")) {
+            baseURL = baseURL.substring(0, baseURL.lastIndexOf("/"));
+        }
         final PluginForHost chomikujpl = JDUtilities.getPluginForHost("chomikuj.pl");
         final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
         String[][] allFolders = null;
@@ -456,6 +467,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 if (content_url != null) {
                     content_url = "https://" + this.getHost() + content_url;
                     url_filename = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
+                } else {
+                    /* Let's build the contentURL ourself though it will not contain any filename then. */
+                    content_url = baseURL + "/dummy," + fid + ".dummy";
                 }
                 String filesize = new Regex(entry, "<li><span>(\\d+(,\\d+)? [A-Za-z]{1,5})</span>").getMatch(0);
                 if (filesize == null) {
@@ -471,57 +485,63 @@ public class ChoMikujPl extends PluginForDecrypt {
                     filename = new Regex(entry, "data\\-title=\"([^<>\"]*?)\"").getMatch(0);
                 }
                 ext = finfo.getMatch(1);
-                if (content_url == null || url_filename == null || filesize == null || fid == null) {
+                if (fid == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 /* Use filename from content_url if necessary */
-                if (filename == null && content_url != null) {
+                if (filename == null && url_filename != null) {
                     filename = url_filename;
                 }
-                if (filename != null) {
+                if (filename == null) {
+                    /* Final fallback */
+                    dl.setName(fid);
+                } else if (filename != null) {
                     filename = filename.replaceAll("(\\*([a-f0-9]{2}))", "%$2");
                     if (filename.contains("%")) {
                         filename = URLDecoder.decode(filename, "UTF-8");
                     }
-                }
-                filename = correctFilename(Encoding.htmlDecode(filename).trim());
-                filename = filename.replace("<span class=\"e\"> </span>", "");
-                filename = filename.replace("," + fid, "");
-                if (ext == null && url_filename.lastIndexOf(".") >= 0) {
-                    /* Probably extension is already in filename --> Find & correct it */
-                    final String tempExt = url_filename.substring(url_filename.lastIndexOf("."));
-                    if (tempExt != null) {
-                        ext = new Regex(tempExt, "(" + ENDINGS + ").*?$").getMatch(0);
-                        if (ext == null) {
-                            /*
-                             * Last try to find the correct extension - if we fail to find it here the host plugin should find it anyways!
-                             */
-                            ext = new Regex(tempExt, "(\\.[A-Za-z0-9]+)").getMatch(0);
-                        }
-                        /* We found the good extension? Okay then let's remove the previously found bad extension! */
-                        if (ext != null) {
-                            filename = filename.replace(tempExt, "");
+                    filename = correctFilename(Encoding.htmlDecode(filename).trim());
+                    filename = filename.replace("<span class=\"e\"> </span>", "");
+                    filename = filename.replace("," + fid, "");
+                    if (ext == null && url_filename.contains(".") && url_filename.lastIndexOf(".") >= 0) {
+                        /* Probably extension is already in filename --> Find & correct it */
+                        final String tempExt = url_filename.substring(url_filename.lastIndexOf("."));
+                        if (tempExt != null) {
+                            ext = new Regex(tempExt, "(" + ENDINGS + ").*?$").getMatch(0);
+                            if (ext == null) {
+                                /*
+                                 * Last try to find the correct extension - if we fail to find it here the host plugin should find it
+                                 * anyways!
+                                 */
+                                ext = new Regex(tempExt, "(\\.[A-Za-z0-9]+)").getMatch(0);
+                            }
+                            /* We found the good extension? Okay then let's remove the previously found bad extension! */
+                            if (ext != null) {
+                                filename = filename.replace(tempExt, "");
+                            }
                         }
                     }
-                }
-                if (ext != null) {
-                    ext = Encoding.htmlDecode(ext.trim());
-                    if (!filename.endsWith(ext)) {
-                        filename += ext;
+                    if (ext != null) {
+                        ext = Encoding.htmlDecode(ext.trim());
+                        if (!filename.endsWith(ext)) {
+                            filename += ext;
+                        }
                     }
+                    dl.setName(filename);
                 }
                 dl.setProperty("fileid", fid);
-                dl.setProperty("plain_filename", filename);
-                dl.setName(filename);
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                if (filesize != null) {
+                    /* Filesize should always be given */
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
                 dl.setAvailable(true);
                 if (FOLDERPASSWORD != null) {
                     dl.setDownloadPassword(FOLDERPASSWORD);
                 }
                 fp.add(dl);
                 dl.setContentUrl(content_url);
-                dl.setLinkID(fid);
+                dl.setLinkID(this.getHost() + "://" + fid);
                 distribute(dl);
                 decryptedLinks.add(dl);
             }
