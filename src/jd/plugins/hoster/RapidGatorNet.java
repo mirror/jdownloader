@@ -1259,7 +1259,19 @@ public class RapidGatorNet extends antiDDoSForHost {
             handleErrors_api(session_id, link, account, br.getHttpConnection());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } finally {
+            synchronized (INVALIDSESSIONMAP) {
+                final WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
+                if (map != null) {
+                    map.remove(account);
+                    if (map.size() == 0) {
+                        INVALIDSESSIONMAP.remove(link);
+                    }
+                }
+            }
+        }
     }
 
     /** Workaround for serverside issue that API may returns error 404 instead of the real status if current session_id is invalid. */
