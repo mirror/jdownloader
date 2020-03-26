@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.config;
 
 import java.awt.event.ActionListener;
@@ -26,13 +25,13 @@ import javax.swing.JComponent;
 
 import jd.controlling.ListController;
 
-public class ConfigEntry implements Serializable {
+import org.appwork.utils.StringUtils;
 
+public class ConfigEntry implements Serializable {
     public static enum PropertyType {
         NONE,
         NORMAL,
         NEEDS_RESTART;
-
         public static PropertyType getMax(final PropertyType... changes) {
             final java.util.List<PropertyType> sorter = new ArrayList<PropertyType>();
             for (final PropertyType type : changes) {
@@ -40,18 +39,15 @@ public class ConfigEntry implements Serializable {
             }
             Collections.sort(sorter);
             final PropertyType ret = sorter.get(sorter.size() - 1);
-
             return ret;
         }
 
         public PropertyType getMax(final PropertyType propertyType) {
             return getMax(propertyType, this);
         }
-
     }
 
     private static final long                 serialVersionUID = 7422046260361380162L;
-
     /**
      * Generelle Variablen
      */
@@ -64,44 +60,37 @@ public class ConfigEntry implements Serializable {
     private String                            propertyName     = null;
     private PropertyType                      propertyType     = PropertyType.NORMAL;
     private GuiConfigListener                 guiListener;
-
     /**
      * Variablen fuer den Vergleich mit einem anderen ConfigEntry.
      */
     private ConfigEntry                       conditionEntry;
     private Boolean                           compareValue;
     private final java.util.List<ConfigEntry> listener         = new ArrayList<ConfigEntry>();
-
     /**
      * Variablen fuer einen Button-Eintrag.
      */
     private String                            description;
     private ActionListener                    actionListener;
     private ImageIcon                         imageIcon;
-
     /**
      * Variablen fuer einen ListController-Eintrag.
      */
     private transient ListController          controller;
-
     /**
      * Variablen fuer einen ComboBox- oder RadioField-Eintrag.
      */
     private Object[]                          list;
-
     /**
      * Variablen fuer einen Spinner-Eintrag.
      */
     private int                               start;
     private int                               end;
     private int                               step             = 1;
-
     /**
      * Variablen fuer einen Komponenten-Eintrag.
      */
     private JComponent                        component;
     private String                            constraints;
-
     private boolean                           notifyChanges    = false;
 
     public boolean isNotifyChanges() {
@@ -284,12 +273,20 @@ public class ConfigEntry implements Serializable {
     }
 
     public Object getDefaultValue() {
-        if (defaultValue == null) {
-            if (ConfigContainer.TYPE_CHECKBOX == getType()) {
+        switch (getType()) {
+        case ConfigContainer.TYPE_CHECKBOX:
+            if (defaultValue == null) {
+                return false;
+            } else if (defaultValue instanceof String) {
+                return StringUtils.equalsIgnoreCase("true", (String) defaultValue);
+            } else if (defaultValue instanceof Boolean) {
+                return defaultValue;
+            } else {
                 return false;
             }
+        default:
+            return defaultValue;
         }
-        return defaultValue;
     }
 
     public String getDescription() {
@@ -368,7 +365,6 @@ public class ConfigEntry implements Serializable {
             return true;
         }
         if (source == null) {
-
             //
             source = conditionEntry;
             if (conditionEntry.getPropertyInstance().hasProperty(conditionEntry.getPropertyName())) {
@@ -376,7 +372,6 @@ public class ConfigEntry implements Serializable {
             } else {
                 newData = conditionEntry.getDefaultValue();
             }
-
         }
         return (source == conditionEntry) ? compareValue.equals(newData) : true;
     }
@@ -449,5 +444,4 @@ public class ConfigEntry implements Serializable {
             }
         }
     }
-
 }

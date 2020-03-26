@@ -26,19 +26,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -63,6 +55,15 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
@@ -75,7 +76,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final String            PREMIUMONLYTEXT                            = "This file can be downloaded by premium only</div>";
     private final String                   EXPERIMENTALHANDLING                       = "EXPERIMENTALHANDLING";
     private final String                   EXPERIMENTAL_ENFORCE_SSL                   = "EXPERIMENTAL_ENFORCE_SSL";
-    private final String                   DISABLE_API_PREMIUM                        = "DISABLE_API_PREMIUM_2019_12_15";
+    private final String                   DISABLE_API_PREMIUM                        = "DISABLE_API_PREMIUM_23_03_2020";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
@@ -204,6 +205,18 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private String hotLinkURL = null;
+
+    @Override
+    public void clean() {
+        try {
+            super.clean();
+        } finally {
+            synchronized (INVALIDSESSIONMAP) {
+                // remove weak references
+                INVALIDSESSIONMAP.size();
+            }
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -1074,7 +1087,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             /* Invalid logindata */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (con.getResponseCode() == 404) {
-            handle404API(account);
+            handle404API(link, account);
         } else if (con.getResponseCode() == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 423) {
@@ -1145,11 +1158,11 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                 // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                 // {"response":null,"status":401,"details":"Error. Session not exist"}
-                handleInvalidSession(null);
+                handleInvalidSession(link, account, null);
             } else if (status == 404) {
-                handle404API(account);
+                handle404API(link, account);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
-                handleInvalidSession(null);
+                handleInvalidSession(link, account, null);
             } else if (errorMessage.contains("\"Error: Error e-mail or password")) {
                 /* Usually comes with response_status 401 --> Not exactly sure what it means but probably some kind of account issue. */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1250,7 +1263,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     /** Workaround for serverside issue that API may returns error 404 instead of the real status if current session_id is invalid. */
-    private void handle404API(final Account account) throws Exception {
+    private void handle404API(final DownloadLink link, final Account account) throws Exception {
         logger.info("Error 404 happened --> Trying to find out whether session is invalid or file is offline");
         if (API_TRUST_404_FILE_OFFLINE) {
             /* File offline */
@@ -1273,7 +1286,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 } else {
                     /* Get new session_id on next accountcheck */
                     logger.info("Session is invalid");
-                    handleInvalidSession(null);
+                    handleInvalidSession(link, account, null);
                 }
             } else {
                 /*
@@ -1284,21 +1297,31 @@ public class RapidGatorNet extends antiDDoSForHost {
                     try {
                         requestFileInformation(this.getDownloadLink());
                         logger.info("File is online --> Probably expired session");
+                    } catch (final InterruptedException e) {
+                        throw e;
                     } catch (final Throwable e) {
                         if (e instanceof PluginException) {
                             final PluginException ep = (PluginException) e;
-                            if (ep.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                                logger.info("File is offline");
+                            switch (ep.getLinkStatus()) {
+                            case LinkStatus.ERROR_FILE_NOT_FOUND:
+                            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                            case LinkStatus.ERROR_PLUGIN_DEFECT:
                                 throw ep;
+                            default:
+                                /* Ignore other errors */
+                                logger.log(e);
+                                break;
                             }
-                            /* Ignore other errors */
+                        } else {
+                            logger.log(e);
                         }
                     }
                 } else {
                     logger.info("Error 404 happened outside download handling which is unusual --> Probably expired session");
                 }
                 /* Probably expired session */
-                handleInvalidSession("404");
+                handleInvalidSession(link, account, "404");
             }
         }
     }
@@ -1307,6 +1330,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         synchronized (account) {
             final String session_id = account.getStringProperty("session_id", null);
             if (session_id == null) {
+                logger.severe("no session available?!");
                 /* This should never happen */
                 return false;
             }
@@ -1325,14 +1349,41 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
+    private static WeakHashMap<DownloadLink, WeakHashMap<Account, String>> INVALIDSESSIONMAP = new WeakHashMap<DownloadLink, WeakHashMap<Account, String>>();
+
     /** Call this on expired session_id! */
-    private void handleInvalidSession(final String error_hint) throws AccountUnavailableException {
-        /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
-        final long waittime = 1 * 60 * 1000l;
-        if (error_hint != null) {
-            throw new AccountUnavailableException(String.format("[%s]Session expired - waiting before opening new session", error_hint), waittime);
+    private void handleInvalidSession(final DownloadLink link, final Account account, final String error_hint) throws PluginException {
+        final String session_id;
+        if (account != null) {
+            synchronized (account) {
+                session_id = account.getStringProperty("session_id", null);
+            }
         } else {
-            throw new AccountUnavailableException("Session expired - waiting before opening new session", waittime);
+            session_id = null;
+        }
+        synchronized (INVALIDSESSIONMAP) {
+            if (link != null && account != null) {
+                WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
+                if (map == null) {
+                    map = new WeakHashMap<Account, String>();
+                    map.put(account, session_id);
+                    INVALIDSESSIONMAP.put(link, map);
+                    // throw AccountUnavailableException
+                } else if (!map.containsKey(account) || !StringUtils.equals(map.get(account), session_id)) {
+                    map.put(account, session_id);
+                    // throw AccountUnavailableException
+                } else {
+                    map.remove(account);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File seems to be temporarily not available, please try again later", 30 * 60 * 1000l);
+                }
+            }
+            /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
+            final long waittime = 1 * 60 * 1000l;
+            if (error_hint != null) {
+                throw new AccountUnavailableException(String.format("[%s]Session expired - waiting before opening new session", error_hint), waittime);
+            } else {
+                throw new AccountUnavailableException("Session expired - waiting before opening new session", waittime);
+            }
         }
     }
 
@@ -1412,8 +1463,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
         }
         if (br.containsHTML("File is temporarily unavailable, please try again later\\. Maintenance in data center\\.")) {
-            /* 2019-12-12: Lowered waittime! This happens frequently these days! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later", 15 * 60 * 1000l);
         } else if (br.containsHTML("File is temporarily not available, please try again later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
         } else if (br.containsHTML(">\\s*You have reached your hourly downloads limit\\.")) {

@@ -124,15 +124,15 @@ public class PluginsAPIImpl implements PluginsAPI {
     public boolean set(final String interfaceName, final String displayName, String key, final Object newValue) throws BadParameterException, InvalidValueException {
         if (StringUtils.isEmpty(interfaceName)) {
             throw new BadParameterException("interfaceName is empty");
-        }
-        if (StringUtils.isEmpty(displayName)) {
+        } else if (StringUtils.isEmpty(displayName)) {
             throw new BadParameterException("displayName is empty");
-        }
-        try {
-            final PluginConfigAdapter adapter = new PluginConfigAdapter(interfaceName, displayName);
-            return adapter.setValue(key, newValue);
-        } catch (ClassNotFoundException e) {
-            throw new BadParameterException("interface:" + interfaceName + "|displayName:" + displayName);
+        } else {
+            try {
+                final PluginConfigAdapter adapter = new PluginConfigAdapter(interfaceName, displayName);
+                return adapter.setValue(key, newValue);
+            } catch (ClassNotFoundException e) {
+                throw new BadParameterException(e, "set:interface:" + interfaceName + "|displayName:" + displayName + "|key:" + key + "|newValue:" + newValue);
+            }
         }
     }
 
@@ -157,12 +157,13 @@ public class PluginsAPIImpl implements PluginsAPI {
             throw new BadParameterException("displayName is empty");
         } else if (StringUtils.isEmpty(key)) {
             throw new BadParameterException("key is empty");
-        }
-        try {
-            final PluginConfigAdapter adapter = new PluginConfigAdapter(interfaceName, displayName);
-            return adapter.resetValue(key);
-        } catch (ClassNotFoundException e1) {
-            throw new BadParameterException("interface:" + interfaceName + "|displayName:" + displayName);
+        } else {
+            try {
+                final PluginConfigAdapter adapter = new PluginConfigAdapter(interfaceName, displayName);
+                return adapter.resetValue(key);
+            } catch (ClassNotFoundException e) {
+                throw new BadParameterException(e, "reset:interface:" + interfaceName + "|displayName:" + displayName + "|key:" + key);
+            }
         }
     }
 
@@ -172,7 +173,7 @@ public class PluginsAPIImpl implements PluginsAPI {
             final PluginConfigAdapter wrapper = new PluginConfigAdapter(interfaceName, displayName);
             return wrapper.getValue(key);
         } catch (ClassNotFoundException e) {
-            throw new BadParameterException("no matching config entry");
+            throw new BadParameterException(e, "get:interface:" + interfaceName + "|displayName:" + displayName + "|key:" + key);
         }
     }
 
