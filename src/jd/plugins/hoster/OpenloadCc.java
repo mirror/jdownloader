@@ -43,13 +43,13 @@ public class OpenloadCc extends UnknownHostingScriptCore {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
