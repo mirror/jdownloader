@@ -120,7 +120,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.4.3.3<br />
+     * DEV NOTES XfileSharingProBasic Version 4.4.3.4<br />
      * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
@@ -2474,12 +2474,20 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (isPasswordProtectedHTM() && correctedBR.contains("Wrong password")) {
+            if (new Regex(correctedBR, ">\\s*Wrong password").matches()) {
                 final String userEnteredPassword = link.getDownloadPassword();
-                /* handle password has failed in the past, additional try catching / resetting values */
-                logger.warning("Wrong password, the entered password \"" + userEnteredPassword + "\" is wrong, retrying...");
-                link.setDownloadPassword(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                if (StringUtils.isEmpty(userEnteredPassword)) {
+                    /*
+                     * 2020-03-26: Extremely rare case: Either plugin failure or serverside failure e.g. URL is password protected but
+                     * website does never ask for the password e.g. 2020-03-26: ddl.to
+                     */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong password' but never prompted for one");
+                } else {
+                    /* handle password has failed in the past, additional try catching / resetting values */
+                    logger.warning("Wrong password, the entered password \"" + userEnteredPassword + "\" is wrong, retrying...");
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
             }
             if (correctedBR.contains("Wrong captcha")) {
                 logger.warning("Wrong captcha or wrong password!");
