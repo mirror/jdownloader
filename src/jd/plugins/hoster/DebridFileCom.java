@@ -255,7 +255,10 @@ public class DebridFileCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
+    private boolean isLoggedIN() throws PluginException {
+        if (br.containsHTML("403")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
+        }
         boolean bCookieOK = br.getCookie(br.getHost(), "loginhash", Cookies.NOTDELETEDPATTERN) != null;
         if (bCookieOK) {
             if (br.containsHTML("You must be logged")) {
