@@ -26,6 +26,26 @@ import java.util.Map.Entry;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,27 +70,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
     public AllDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -94,16 +94,16 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
-    private static MultiHosterManagement mhm                              = new MultiHosterManagement("alldebrid.com");
-    private static String                api_base                         = "https://api.alldebrid.com/v4";
+    private static MultiHosterManagement mhm                               = new MultiHosterManagement("alldebrid.com");
+    private static String                api_base                          = "https://api.alldebrid.com/v4";
     // this is used by provider which calculates unique token to agent/client.
-    private static final String          agent                            = "agent=JDownloader";
-    private static final String          agent_raw                        = "JDownloader";
-    private static final String          PROPERTY_APIKEY_EXPIRE_TIMESTAMP = "TOKEN_EXPIRE_TIMESTAMP";
+    private static final String          agent                             = "agent=JDownloader";
+    private static final String          agent_raw                         = "JDownloader";
+    private static final String          PROPERTY_APIKEY_CREATED_TIMESTAMP = "APIKEY_CREATED_TIMESTAMP";
     /* New APIv4 apikey --> Replaces old token */
-    private static final String          PROPERTY_apikey                  = "apiv4_apikey";
+    private static final String          PROPERTY_apikey                   = "apiv4_apikey";
     /* Property of old Deprecated APIv3. Only required to migrate users' accounts which were logged-in V3 to V4. */
-    private static final String          PROPERTY_old_token               = "token";
+    private static final String          PROPERTY_old_token                = "token";
 
     public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
         synchronized (account) {
@@ -126,7 +126,7 @@ public class AllDebridCom extends antiDDoSForHost {
                         logger.warning("Migration failed");
                     }
                 } else if (old_token != null) {
-                    /* TODO: Remove this if we delete the old token on migration. */
+                    /* TODO: Remove this once we delete the old token on migration. */
                     logger.info("This account has been upgraded from APIv3 to APIv4 in the past");
                 }
                 if (apikey != null) {
@@ -147,17 +147,9 @@ public class AllDebridCom extends antiDDoSForHost {
                 /* Full login */
                 logger.info("Performing full login");
                 if (apikey == null && old_token != null) {
-                    /*
-                     * TODO: Maybe remove this as it should not be required. In theory it could be useful to have this once we remove the
-                     * migration part.
-                     */
                     /* Only display this message to users with pre-existing but invalid login-token/apikey */
                     showMigrationToNewAPIInformation();
                 }
-                /*
-                 * 2019-05-31: TODO: This way, a user could add one account XX times as username/password are not required. Find an
-                 * identifier so we can prohibit this. Username/E-Mail combination should do the trick.
-                 */
                 getPage(api_base + "/pin/get?" + agent);
                 final String user_url = PluginJSonUtils.getJson(br, "user_url");
                 final String check_url = PluginJSonUtils.getJson(br, "check_url");
@@ -188,13 +180,10 @@ public class AllDebridCom extends antiDDoSForHost {
                     dialog.interrupt();
                 }
                 if (StringUtils.isEmpty(apikey)) {
-                    throw new AccountInvalidException("User failed to authorize PIN. Do not close the pairing dialog until you have confirmed the numbers via browser!");
+                    throw new AccountInvalidException("User failed to authorize PIN/Code. Do not close the pairing dialog until you have confirmed the PIN/Code via browser!");
                 }
-                final String expires_in_secondsStr = PluginJSonUtils.getJson(br, "expires_in");
-                if (expires_in_secondsStr != null && expires_in_secondsStr.matches("\\d+")) {
-                    /* 2019-05-31: TODO: Check how long this apikey really lasts --> It should last forever */
-                    account.setProperty(PROPERTY_APIKEY_EXPIRE_TIMESTAMP, System.currentTimeMillis() + (Long.parseLong(expires_in_secondsStr) - 30) * 1000);
-                }
+                /* Save this property - it might be useful in the future. */
+                account.setProperty(PROPERTY_APIKEY_CREATED_TIMESTAMP, System.currentTimeMillis());
                 loginAccount(account, accountInfo, apikey);
                 this.setAuthHeader(br, apikey);
                 return apikey;
@@ -218,6 +207,8 @@ public class AllDebridCom extends antiDDoSForHost {
                 final String shortuserName = userName.substring(0, userName.length() / 2) + "****";
                 account.setUser(shortuserName);
             }
+            /* Do not store any old website login credentials! */
+            account.setPass(null);
             final boolean isPremium = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isPremium"));
             final boolean isTrial = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isTrial"));
             if (!isPremium) {
@@ -277,6 +268,8 @@ public class AllDebridCom extends antiDDoSForHost {
                 if (StringUtils.isEmpty(host_without_tld)) {
                     host_without_tld = hostO.getKey();
                 }
+                /* 2020-03-27: Maybe try to add support for this kind of limitation. */
+                // final int maxDlsPerHost = (int) JavaScriptEngineFactory.toLong(entry.get("limitSimuDl"), -1);
                 final String type = (String) entry.get("type");
                 if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
                     logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
@@ -327,17 +320,15 @@ public class AllDebridCom extends antiDDoSForHost {
                         title = "Alldebrid.com - Login";
                         message += "Hallo liebe(r) alldebrid NutzerIn\r\n";
                         message += "Um deinen Alldebrid Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Gehe sicher, dass du im Browser in deinem Alldebrid Account eingeloggt bist.\r\n";
-                        message += "2. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + pin_url + "'\t\r\n";
-                        message += "3. Bestätige die PIN im Browser.\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + pin_url + "'\t\r\n";
+                        message += "2. Bestätige die PIN/Code im Browser.\r\n";
                         message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
                     } else {
                         title = "Alldebrid.com - Login";
                         message += "Hello dear alldebrid user\r\n";
                         message += "In order to use this service in JDownloader, you need to follow these steps:\r\n";
-                        message += "1. Make sure that you're logged in your Alldebrid account with your default browser.\r\n";
-                        message += "2. Open this URL in your browser if it is not opened automatically:\r\n\t'" + pin_url + "'\t\r\n";
-                        message += "3. Confirm the PIN you see in the browser window.\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + pin_url + "'\t\r\n";
+                        message += "3. Confirm the PIN/Code you see in the browser window.\r\n";
                         message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
@@ -357,7 +348,7 @@ public class AllDebridCom extends antiDDoSForHost {
         return thread;
     }
 
-    /* 2020-03-25: New: Remove this dialog in 6-8 weeks */
+    /* 2020-03-25: TODO: Remove this dialog 2020-06 */
     private Thread showMigrationToNewAPIInformation() throws InterruptedException {
         final boolean displayAPIMigrationMessage = true;
         final String key_api_migration_information = "api_migration_2020_03_25";
@@ -592,40 +583,6 @@ public class AllDebridCom extends antiDDoSForHost {
                 } else {
                     logger.info("Delayed handling success");
                 }
-                /* TODO: Remove this old handling as it has been replaced by cacheDLChecker. */
-                // Form dlform = new Form();
-                // dlform.setMethod(MethodType.GET);
-                // dlform.setAction(api_base + "/link/delayed");
-                // dlform.put("id", delayID);
-                // dlform.put("agent", agent_raw);
-                // final int maxWaitSeconds = 300;
-                // /* 2020-03-27: API docs say checking every 5 seconds is recommended */
-                // final int waitSecondsPerLoop = 5;
-                // int waitSecondsLeft = maxWaitSeconds;
-                // /* 1 = still processing, 2 = Download link available, 3 = Error */
-                // int delayedStatus = 1;
-                // do {
-                // logger.info(String.format("Waiting for file to get loaded onto server - seconds left %d / %d", waitSecondsLeft,
-                // maxWaitSeconds));
-                // this.sleep(waitSecondsPerLoop * 1000l, link);
-                // this.submitForm(dlform);
-                // try {
-                // /* We have to use the parser here because json contains two 'status' objects ;) */
-                // LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>)
-                // JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                // entries = (LinkedHashMap<String, Object>) entries.get("data");
-                // delayedStatus = (int) JavaScriptEngineFactory.toLong(entries.get("status"), 3);
-                // } catch (final Throwable e) {
-                // logger.info("Error parsing json response");
-                // delayedStatus = 3;
-                // }
-                // waitSecondsLeft -= waitSecondsPerLoop;
-                // } while (waitSecondsLeft > 0 && delayedStatus == 1);
-                // if (delayedStatus != 2) {
-                // logger.info("Serverside download failed or is still running");
-                // handleErrors(account, link);
-                // mhm.handleErrorGeneric(account, link, "serverside_download_failure", 50, 5 * 60 * 1000l);
-                // }
             }
             try {
                 /* We need the parser as some URLs may have streams available with multiple qualities and multiple downloadurls */
@@ -964,8 +921,8 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     /*
-     * 2020-03-27: TODO: Check if we can maybe drop support for directurl ans let our directhttp plugin handle those. They have a lot of
-     * other domains for their direct urls which means it is hard to keep track of them ...
+     * 2020-03-27: TODO: Remove handling for such links - not required anymore --> Can be handled by directhttp plugin so we do not have to
+     * maintain their list of domains. The list of domains of them can btw. be found here: http://alldebrid.com/help/en/faq/download-issue
      */
     private boolean isDirectLink(final DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
