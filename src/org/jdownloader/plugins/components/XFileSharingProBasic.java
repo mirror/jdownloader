@@ -118,9 +118,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static final String  PROPERTY_pw_required         = "password_requested_by_website";
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.4.3.4<br />
+     * DEV NOTES XfileSharingProBasic Version 4.4.3.5<br />
      * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
@@ -1401,10 +1402,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
-                if (isPasswordProtectedHTM()) {
-                    logger.info("The downloadlink seems to be password protected.");
-                    handlePassword(dlForm, link);
-                }
+                handlePassword(dlForm, link);
                 handleCaptcha(link, dlForm);
                 /* 2019-02-08: MD5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (link.getMD5Hash() == null) {
@@ -2450,20 +2448,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return fallback_filename;
     }
 
-    public void handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
-        String passCode = thelink.getDownloadPassword();
-        if (passCode == null) {
-            passCode = Plugin.getUserInput("Password?", thelink);
-            if (StringUtils.isEmpty(passCode)) {
-                logger.info("User has entered blank password, exiting handlePassword");
-                thelink.setDownloadPassword(null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Pre-Download Password not provided");
+    protected void handlePassword(final Form pwform, final DownloadLink link) throws PluginException {
+        if (isPasswordProtectedHTM()) {
+            logger.info("URL is password protected");
+            link.setProperty(PROPERTY_pw_required, true);
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+                if (StringUtils.isEmpty(passCode)) {
+                    logger.info("User has entered blank password, exiting handlePassword");
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Pre-Download Password not provided");
+                }
             }
+            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+            pwform.put("password", Encoding.urlEncode(passCode));
+            link.setDownloadPassword(passCode);
+        } else {
+            link.setProperty(PROPERTY_pw_required, false);
         }
-        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        pwform.put("password", Encoding.urlEncode(passCode));
-        thelink.setDownloadPassword(passCode);
-        return;
     }
 
     /**
@@ -2475,14 +2478,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, ">\\s*Wrong password").matches()) {
-                final String userEnteredPassword = link.getDownloadPassword();
-                if (StringUtils.isEmpty(userEnteredPassword)) {
+                final boolean websiteDidAskForPassword = link.getBooleanProperty(PROPERTY_pw_required, false);
+                if (!websiteDidAskForPassword) {
                     /*
                      * 2020-03-26: Extremely rare case: Either plugin failure or serverside failure e.g. URL is password protected but
-                     * website does never ask for the password e.g. 2020-03-26: ddl.to
+                     * website does never ask for the password e.g. 2020-03-26: ddl.to. We cannot use link.getDownloadPassword() to check
+                     * this because users can enter download passwords at any time no matter whether they're required/used or not.
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong password' but never prompted for one");
                 } else {
+                    final String userEnteredPassword = link.getDownloadPassword();
                     /* handle password has failed in the past, additional try catching / resetting values */
                     logger.warning("Wrong password, the entered password \"" + userEnteredPassword + "\" is wrong, retrying...");
                     link.setDownloadPassword(null);
@@ -3493,9 +3498,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             logger.warning("Failed to find Form download2");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        if (isPasswordProtectedHTM()) {
-                            handlePassword(dlForm, link);
-                        }
+                        handlePassword(dlForm, link);
                         final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
                         if (formCon.isOK() && !formCon.getContentType().contains("html") && formCon.isContentDisposition()) {
                             /* Very rare case - e.g. tiny-files.com */
