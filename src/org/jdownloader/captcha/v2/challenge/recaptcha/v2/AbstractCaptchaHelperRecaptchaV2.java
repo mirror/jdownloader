@@ -66,7 +66,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     protected Map<String, Object> getV3Action(final String source) {
         if (source != null) {
-            final String actionJson = new Regex(source, "grecaptcha\\.execute\\([^{]*,\\s*(\\{.*?\\}\\s*)").getMatch(0);
+            final String actionJson = new Regex(source, "grecaptcha\\.execute\\s*\\([^{]*,\\s*(\\{.*?\\}\\s*)").getMatch(0);
             final String action = new Regex(actionJson, "action(?:\"|')?\\s*:\\s*(?:\"|')(.*?)(\"|')").getMatch(0);
             if (action != null) {
                 final Map<String, Object> ret = new HashMap<String, Object>();
@@ -222,7 +222,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         return getSiteKey(br != null ? br.toString() : null);
     }
 
-    private final static String apiKeyRegex = "[\\w-]+";
+    private final static String apiKeyRegex = "[\\w-_]{6,}";
 
     protected String[] getDIVs(String source) {
         return new Regex(source, "<\\s*(div|button)(?:[^>]*>.*?</\\1>|[^>]*\\s*/\\s*>)").getColumn(-1);
@@ -290,6 +290,13 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                 // without, grecaptcha.render(parameters), eg RecaptchaV3
                 jsSource = new Regex(source, "recaptcha\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
                 siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
+                if (siteKey != null) {
+                    return siteKey;
+                }
+            }
+            {
+                // RecaptchaV3, grecaptcha.execute(apiKey)
+                siteKey = new Regex(source, "grecaptcha\\.execute\\s*\\(\\s*('|\")(" + apiKeyRegex + ")\\1").getMatch(1);
                 if (siteKey != null) {
                     return siteKey;
                 }
