@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,9 +39,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://ma\\.fakehub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://fakehubdecrypted.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://(?:new\\.|site-)?ma\\.fakehub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://fakehubdecrypted.+" })
 public class FakehubCom extends PluginForHost {
     public FakehubCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -158,7 +163,7 @@ public class FakehubCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
-                final Cookies cookies = account.loadCookies("");
+                Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /*
                      * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
@@ -166,46 +171,58 @@ public class FakehubCom extends PluginForHost {
                      */
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
-                    if (br.containsHTML(html_loggedin)) {
+                    if (br.getCookie(getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN) == null) {
+                        cookies = null;
+                        logger.info("Cookie login failed --> Performing full login");
+                        br = prepBR(new Browser());
+                    } else {
                         logger.info("Cookie login successful");
-                        return;
                     }
-                    logger.info("Cookie login failed --> Performing full login");
-                    br = prepBR(new Browser());
                 }
-                br.setCookie(getHost(), "bonusPageViews", "1");
-                br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + "www." + account.getHoster());
-                br.followRedirect();
-                br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
-                br.followRedirect();
-                String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api")) {
+                if (cookies == null) {
+                    br.setCookie(getHost(), "bonusPageViews", "1");
+                    br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + "www." + account.getHoster());
+                    br.followRedirect();
+                    br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
+                    br.followRedirect();
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("username", account.getUser());
+                    map.put("password", account.getPass());
+                    map.put("failureUrl", "https://site-ma.fakehub.com/access/failure");
+                    map.put("successUrl", "https://site-ma.fakehub.com/access/success");
                     final DownloadLink dlinkbefore = getDownloadLink();
                     try {
                         if (dlinkbefore == null) {
                             setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                         }
-                        final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                        postdata += "&g-recaptcha-response=" + captcha.getToken();
+                        final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfLy1kUAAAAAFLuvihgBMMfvS230E2CVDFPlae6");
+                        map.put("googleReCaptchaResponse", captcha.getToken());
                     } finally {
                         if (dlinkbefore != null) {
                             setDownloadLink(dlinkbefore);
                         }
                     }
-                }
-                postdata += "&rememberme=on";
-                final PostRequest postRequest = br.createPostRequest(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
-                br.getPage(postRequest);
-                final Form continueform = br.getFormbyKey("response");
-                if (continueform != null) {
-                    /* Redirect from probiller.com to main website --> Login complete */
-                    br.submitForm(continueform);
-                }
-                if (br.getCookie(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster(), "loginremember") == null || !br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    final PostRequest postRequest = br.createPostRequest("https://site-api.project1service.com/v1/authenticate/redirect", JSonStorage.toString(map));
+                    postRequest.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
+                    br.getPage(postRequest);
+                    map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final String authenticationUrl = (String) map.get("authenticationUrl");
+                    if (authenticationUrl != null) {
+                        br.getPage(authenticationUrl);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Form continueform = br.getFormbyKey("response");
+                    if (continueform != null) {
+                        /* Redirect from probiller.com to main website --> Login complete */
+                        br.submitForm(continueform);
+                    }
+                    if (br.getCookie(getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN) == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -222,15 +239,6 @@ public class FakehubCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
-        try {
-            /* 2018-03-09: Expiredate might not always be available */
-            br.getPage("/member/profile/");
-            final String days_remaining = br.getRegex("class=\"membership\\-details\\-data\">\\s*?(\\d+) days\\s*?</span>").getMatch(0);
-            if (days_remaining != null) {
-                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_remaining) * 24 * 60 * 60 * 1000, br);
-            }
-        } catch (final Throwable e) {
-        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
