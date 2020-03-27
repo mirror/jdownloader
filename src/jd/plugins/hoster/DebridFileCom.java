@@ -241,7 +241,7 @@ public class DebridFileCom extends PluginForHost {
                 }
                 if (loginform.getAction() == null || !loginform.getAction().startsWith("http") || !loginform.getAction().startsWith("/")) {
                     /* 2020-03-19: Action = javascript --> "javascript:gonder();" --> We need to correct this */
-                    loginform.setAction("/veri.php");
+                    loginform.setAction("/verif.php");
                 }
                 br.submitForm(loginform);
                 if (!isLoggedIN()) {
