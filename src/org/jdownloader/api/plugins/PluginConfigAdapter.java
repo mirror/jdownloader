@@ -305,29 +305,33 @@ public class PluginConfigAdapter {
     }
 
     private String getEnumDefault(ConfigEntry entry) {
-        Object index = entry.getDefaultValue();
-        if (index == null || !(index instanceof Number)) {
-            index = 0;
-        }
         final Object[] values = entry.getList();
-        if (values != null && values.length > ((Number) index).intValue()) {
-            return String.valueOf(values[((Number) index).intValue()]);
-        } else {
-            return null;
+        if (values != null && values.length > 0) {
+            final Object defaultValue = entry.getDefaultValue();
+            if (defaultValue instanceof String && Arrays.asList(values).contains(defaultValue)) {
+                return (String) defaultValue;
+            } else if (defaultValue instanceof Number && values.length > ((Number) defaultValue).intValue()) {
+                return String.valueOf(values[((Number) defaultValue).intValue()]);
+            } else {
+                return String.valueOf(values[0]);
+            }
         }
+        return null;
     }
 
     private String getEnumValue(ConfigEntry entry) {
-        final Object index = entry.getPropertyInstance().getProperty(entry.getPropertyName());
-        if (index == null || !(index instanceof Number)) {
-            return getEnumDefault(entry);
-        }
         final Object[] values = entry.getList();
-        if (values != null && values.length > ((Number) index).intValue()) {
-            return String.valueOf(values[((Number) index).intValue()]);
-        } else {
-            return null;
+        if (values != null && values.length > 0) {
+            final Object value = entry.getPropertyInstance().getProperty(entry.getPropertyName());
+            if (value instanceof String && Arrays.asList(values).contains(value)) {
+                return (String) value;
+            } else if (value instanceof Number && values.length > ((Number) value).intValue()) {
+                return String.valueOf(values[((Number) value).intValue()]);
+            } else {
+                return getEnumDefault(entry);
+            }
         }
+        return null;
     }
 
     private Object getConfigEntryValue(ConfigEntry entry) {
@@ -338,8 +342,6 @@ public class PluginConfigAdapter {
                 switch (type) {
                 case BOOLEAN:
                     return entry.getPropertyInstance().getBooleanProperty(key);
-                case INT:
-                    return entry.getPropertyInstance().getIntegerProperty(key, -1);
                 case LONG:
                     return entry.getPropertyInstance().getLongProperty(key, -1l);
                 case STRING:
@@ -363,7 +365,6 @@ public class PluginConfigAdapter {
             case ENUM:
                 return getEnumDefault(entry);
             case BOOLEAN:
-            case INT:
             case LONG:
             case STRING:
             default:

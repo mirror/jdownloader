@@ -106,11 +106,16 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             }
         }
         final String withoutJS = br.toString().replaceAll("(?s)(<script>.*?</script>)", "");// removes annoying wildly placed script tags
-        final String fileName[] = new Regex(withoutJS, "class=\"files-item file\"\\s*>\\s*<h.*?>\\s*(.*?)\\s*<span>\\s*(.*?)\\s*<").getRow(0);
-        if (fileName == null || fileName.length == 0) {
+        final String fileNameInfo = new Regex(withoutJS, "class=\"files-item file\"\\s*>\\s*<h.*?>\\s*(.*?)\\s*</h").getMatch(0);
+        if (fileNameInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setName(fileName[0] + fileName[1]);
+        final String fileName[] = new Regex(fileNameInfo, "^(.*?)\\s*<span>\\s*(.+?)\\s*</span").getRow(0);
+        if (fileName != null) {
+            link.setName(fileName[0] + fileName[1]);
+        } else {
+            link.setName(fileNameInfo);
+        }
         final String fileSize = new Regex(withoutJS, "class=\"file-info-item-value file-info-item-value-high\"\\s*>\\s*([0-9\\.]+\\s*[kbmtg]+)\\s*<").getMatch(0);
         if (fileSize != null) {
             link.setDownloadSize(SizeFormatter.getSize(fileSize));

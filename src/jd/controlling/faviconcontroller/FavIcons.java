@@ -42,6 +42,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -56,7 +57,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
-import org.seamless.util.io.IO;
 
 public class FavIcons {
     private static final ThreadPoolExecutor                                      THREAD_POOL;
@@ -365,10 +365,6 @@ public class FavIcons {
                 }
                 return image;
             } catch (Throwable e) {
-                // java.lang.NullPointerException or java.lang.reflect.InvocationTargetException(jdk12)
-                // at sun.awt.FontConfiguration.getVersion(FontConfiguration.java:1264)
-                // at sun.awt.FontConfiguration.readFontConfigFile(FontConfiguration.java:219)
-                // at sun.awt.FontConfiguration.init(FontConfiguration.java:107)
                 if (ImageProvider.isBuggyFontEnvironment(e)) {
                     return IconIO.toBufferedImage(new AbstractIcon(IconKey.ICON_ERROR, 16));
                 } else {
@@ -455,7 +451,7 @@ public class FavIcons {
                 favBr.getHeaders().put("Accept-Encoding", null);
                 con = favBr.openGetConnection(url);
                 /* we use bufferedinputstream to reuse it later if needed */
-                bytes = IO.readBytes(con.getInputStream());
+                bytes = IO.readStream(-1, con.getInputStream());
                 if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                     try {
                         List<BufferedImage> ret = null;
