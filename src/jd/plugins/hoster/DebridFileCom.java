@@ -168,11 +168,12 @@ public class DebridFileCom extends PluginForHost {
         String trafficleftStr = br.getRegex("</small><b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>").getMatch(0);
         if (premiumDaysStr == null) {
             /* Free or plugin failure */
-            account.setType(AccountType.FREE);
-            ai.setTrafficMax("10 GB");
-            ai.setStatus("Free Account");
-            account.setMaxSimultanDownloads(account_FREE_maxdownloads);
-            account.setValid(true);
+            /*
+             * account.setType(AccountType.FREE); ai.setTrafficMax("10 GB"); ai.setStatus("Free Account");
+             * account.setMaxSimultanDownloads(account_FREE_maxdownloads); account.setValid(true);
+             */
+            // 2020.03.27 : phg : Free Accounts are not allowed for this plugin
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Plugin for premium accounts only");
         } else {
             /* Premium */
             account.setType(AccountType.PREMIUM);
@@ -261,6 +262,9 @@ public class DebridFileCom extends PluginForHost {
             /*
              * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
              * AccountUnavailableException("Error 403 'blocked by debrid-file'", 10 * 60 * 1000);
+             *
+             * 2020-03-27 : phg : This a temporary fix as we are not supposed to have a 403 error and we must fix the 403. I let the
+             * previous code as it is not a temporary account error but a fatal plugin error
              */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
         }
