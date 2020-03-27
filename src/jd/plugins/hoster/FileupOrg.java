@@ -128,42 +128,4 @@ public class FileupOrg extends XFileSharingProBasic {
         }
         return ttt;
     }
-    // @Override
-    // protected void handleRecaptchaV2(final DownloadLink link, final Form captchaForm) throws Exception {
-    // /* 2020-03-27: Special */
-    // final String reCaptchav2key = br.getRegex("grecaptcha\\.execute\\(\\'([^<>\"\\']+)'").getMatch(0);
-    // if (reCaptchav2key == null) {
-    // /* Fallback to template handling */
-    // super.handleRecaptchaV2(link, captchaForm);
-    // return;
-    // }
-    // logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
-    // final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchav2key);
-    // if (!this.preDownloadWaittimeSkippable()) {
-    // final String waitStr = regexWaittime();
-    // if (waitStr != null && waitStr.matches("\\d+")) {
-    // final int preDownloadWaittime = Integer.parseInt(waitStr) * 1001;
-    // final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
-    // if (preDownloadWaittime > reCaptchaV2Timeout) {
-    // /*
-    // * Admins may sometimes setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180 seconds
-    // * of pre-download-waittime --> User solves captcha immediately --> Captcha-solution times out after 120 seconds -->
-    // * User has to re-enter it (and it would fail in JD)! If admins set it up in a way that users can solve the captcha via
-    // * the waittime counts down, this failure may even happen via browser (example: xubster.com)! See workaround below!
-    // */
-    // /*
-    // * This is basically a workaround which avoids running into reCaptchaV2 timeout: Make sure that we wait less than 120
-    // * seconds after the user has solved the captcha. If the waittime is higher than 120 seconds, we'll wait two times:
-    // * Before AND after the captcha!
-    // */
-    // final int prePrePreDownloadWait = preDownloadWaittime - reCaptchaV2Timeout;
-    // logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
-    // logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
-    // this.sleep(prePrePreDownloadWait, link);
-    // }
-    // }
-    // }
-    // final String recaptchaV2Response = rc2.getToken();
-    // captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-    // }
 }
