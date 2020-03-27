@@ -457,7 +457,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             account.setUser(censored_email);
         }
         if (!isAPIOnlyMode()) {
-            /* Do not store any old website login credentials */
+            /* Do not store any old website login credentials! */
             account.setPass(null);
         }
         if ("true".equalsIgnoreCase(is_premium)) {

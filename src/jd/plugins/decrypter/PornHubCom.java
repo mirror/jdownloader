@@ -565,8 +565,9 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                     final boolean grab;
                     if (bestonly) {
-                        grab = !bestselectiononly || cfg.getBooleanProperty(quality, true);
+                        grab = true;
                     } else {
+                        /* Either only user selected items or best of user selected --> bestselectiononly == true */
                         grab = cfg.getBooleanProperty(quality, true);
                     }
                     if (grab) {
@@ -614,9 +615,9 @@ public class PornHubCom extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (bestonly) {
+            if (bestonly || bestselectiononly) {
                 DownloadLink best = null;
-                for (DownloadLink found : decryptedLinks) {
+                for (final DownloadLink found : decryptedLinks) {
                     if (best == null) {
                         best = found;
                     } else {
