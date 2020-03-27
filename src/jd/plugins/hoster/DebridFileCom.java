@@ -43,6 +43,7 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-file.com" }, urls = { "" })
 public class DebridFileCom extends PluginForHost {
+    /* This is a "updated" version of website tout-debrid.ch */
     private static final String          WEBSITE_BASE                 = "https://debrid-file.com";
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("debrid-file.com");
     private static final boolean         account_PREMIUM_resume       = true;
@@ -257,6 +258,10 @@ public class DebridFileCom extends PluginForHost {
 
     private boolean isLoggedIN() throws PluginException {
         if (br.containsHTML("403")) {
+            /*
+             * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
+             * AccountUnavailableException("Error 403 'blocked by debrid-file'", 10 * 60 * 1000);
+             */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
         }
         boolean bCookieOK = br.getCookie(br.getHost(), "loginhash", Cookies.NOTDELETEDPATTERN) != null;
