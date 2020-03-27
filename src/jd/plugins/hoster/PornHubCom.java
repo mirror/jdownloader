@@ -67,7 +67,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com", "pornhubpremium.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:photo|(embed)?gif)/\\d+|https://pornhubdecrypted/.+", "" })
 public class PornHubCom extends PluginForHost {
@@ -1038,9 +1037,9 @@ public class PornHubCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_ONLY, JDL.L("plugins.hoster.PornHubCom.BestOnly", "Always only grab the best resolution available?")).setDefaultValue(false);
+        final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_ONLY, "Always only grab the best resolution available?").setDefaultValue(false);
         getConfig().addEntry(best);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_SELECTION_ONLY, JDL.L("plugins.hoster.PornHubCom.BestSelectionOnly", "Only grab selected resolution for best?")).setDefaultValue(false).setEnabledCondidtion(best, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_SELECTION_ONLY, "Only grab best of selected resolutions below?").setDefaultValue(false).setEnabledCondidtion(best, false));
         final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
         while (it.hasNext()) {
             /*
@@ -1076,7 +1075,7 @@ public class PornHubCom extends PluginForHost {
             if (usertext.endsWith(" ")) {
                 usertext = usertext.substring(0, usertext.lastIndexOf(" "));
             }
-            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.PornHubCom.ALLOW_" + internalname, usertext)).setDefaultValue(true).setEnabledCondidtion(best, false);
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, usertext).setDefaultValue(true).setEnabledCondidtion(best, false);
             getConfig().addEntry(vidcfg);
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
