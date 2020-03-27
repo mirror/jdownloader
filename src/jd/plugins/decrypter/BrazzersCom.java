@@ -19,6 +19,11 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BrazzersConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -26,6 +31,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,21 +41,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.BrazzersConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/(?:scene/view/\\d+/[a-z0-9\\-]+/?|series/\\d+/[a-z0-9\\-]+/episode/\\d+/?|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+(?:/[a-z0-9\\-]+)?/?|embed/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://[^/]*?ma\\.brazzers\\.com/(?:scene/(?:view/)?\\d+/[a-z0-9\\-]+/?|series/\\d+/[a-z0-9\\-]+/episode/\\d+/?|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+(?:/[a-z0-9\\-]+)?/?|embed/\\d+)" })
 public class BrazzersCom extends PluginForDecrypt {
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static final String  type_video_free    = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+/?(?:[a-z0-9\\-]+/?)?";
-    private static final String type_video_premium = "https?://ma\\.brazzers\\.com/scene/view/\\d+/[a-z0-9\\-]+/?";
+    private static final String type_video_premium = ".+ma\\.brazzers\\.com/scene/(?:view/)?\\d+/[a-z0-9\\-]+/?";
     private static final String type_video_embed   = "https?://(?:www\\.)?brazzers\\.com/embed/\\d+";
-    private static final String type_pics          = "https?://ma\\.brazzers\\.com/scene/hqpics/\\d+/?";
+    private static final String type_pics          = ".+ma\\.brazzers\\.com/scene/hqpics/\\d+/?";
     private static final String brazzers_decrypted = "http://brazzersdecrypted.com/scenes/view/id/%s/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -59,7 +60,7 @@ public class BrazzersCom extends PluginForDecrypt {
         final String parameter = param.toString();
         final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(plg.getHost());
-        final String fid = new Regex(parameter, "(?:view|hqpics|id|embed|episode)/(\\d+)/?").getMatch(0);
+        final String fid = new Regex(parameter, "(?:/scene(?:/view)?|hqpics|id|embed|episode)/(\\d+)/?").getMatch(0);
         final boolean grabBEST = cfg.isGrabBESTEnabled();
         final boolean grab1080p = cfg.isGrabHTTPMp4_1080pEnabled();
         final boolean grab720p = cfg.isGrabHTTPMp4_720pHDEnabled();
@@ -97,7 +98,7 @@ public class BrazzersCom extends PluginForDecrypt {
             }
             this.br.getPage(parameter);
         } else {
-            if (aa == null) {
+            if (aa == null || aa.getType() != AccountType.PREMIUM) {
                 /* Only MOCH download and / or trailer download --> Add link for hostplugin */
                 final DownloadLink dl = this.createDownloadlink(String.format(brazzers_decrypted, fid));
                 decryptedLinks.add(dl);
@@ -206,7 +207,7 @@ public class BrazzersCom extends PluginForDecrypt {
     }
 
     public static String getVideoUrlPremium(final String fid) {
-        return String.format("https://ma.brazzers.com/scene/view/%s/", fid);
+        return String.format("https://site-ma.brazzers.com/scene/%s/", fid);
     }
 
     public static String getPicUrl(final String fid) {

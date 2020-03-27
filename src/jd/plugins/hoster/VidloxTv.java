@@ -43,8 +43,14 @@ public class VidloxTv extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidlox.tv", "vidlox.me" });
+        ret.add(new String[] { "vidlox.me", "vidlox.tv" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2020-03-27: vidlox.tv --> vidlox.me */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {

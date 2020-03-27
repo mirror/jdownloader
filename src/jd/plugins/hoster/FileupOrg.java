@@ -18,15 +18,18 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileupOrg extends XFileSharingProBasic {
@@ -127,5 +130,44 @@ public class FileupOrg extends XFileSharingProBasic {
             ttt = new Regex(correctedBR, "<span id=\"countdown\">[^<>]*?<span class=\"label label\\-danger seconds\">(\\d+)</span>").getMatch(0);
         }
         return ttt;
+    }
+
+    @Override
+    protected void handleRecaptchaV2(final DownloadLink link, final Form captchaForm) throws Exception {
+        /* 2020-03-27: Special */
+        final String reCaptchav2key = br.getRegex("grecaptcha\\.execute\\(\\'([^<>\"\\']+)'").getMatch(0);
+        if (reCaptchav2key == null) {
+            /* Fallback to template handling */
+            super.handleRecaptchaV2(link, captchaForm);
+            return;
+        }
+        logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
+        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchav2key);
+        if (!this.preDownloadWaittimeSkippable()) {
+            final String waitStr = regexWaittime();
+            if (waitStr != null && waitStr.matches("\\d+")) {
+                final int preDownloadWaittime = Integer.parseInt(waitStr) * 1001;
+                final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
+                if (preDownloadWaittime > reCaptchaV2Timeout) {
+                    /*
+                     * Admins may sometimes setup waittimes that are higher than the reCaptchaV2 timeout so lets say they set up 180 seconds
+                     * of pre-download-waittime --> User solves captcha immediately --> Captcha-solution times out after 120 seconds -->
+                     * User has to re-enter it (and it would fail in JD)! If admins set it up in a way that users can solve the captcha via
+                     * the waittime counts down, this failure may even happen via browser (example: xubster.com)! See workaround below!
+                     */
+                    /*
+                     * This is basically a workaround which avoids running into reCaptchaV2 timeout: Make sure that we wait less than 120
+                     * seconds after the user has solved the captcha. If the waittime is higher than 120 seconds, we'll wait two times:
+                     * Before AND after the captcha!
+                     */
+                    final int prePrePreDownloadWait = preDownloadWaittime - reCaptchaV2Timeout;
+                    logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                    logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+                    this.sleep(prePrePreDownloadWait, link);
+                }
+            }
+        }
+        final String recaptchaV2Response = rc2.getToken();
+        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
     }
 }

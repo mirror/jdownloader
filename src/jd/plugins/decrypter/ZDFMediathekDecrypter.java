@@ -346,9 +346,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             title = tv_show + " - " + title;
         }
         String base_title = title;
-        if (tv_show != null) {
-            base_title = base_title + " - " + base_title;
-        }
         final String date_formatted = new Regex(editorialDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         internal_videoid = new Regex(player_url_template, "/([^/]+)$").getMatch(0);
         if (date_formatted == null || internal_videoid == null) {
