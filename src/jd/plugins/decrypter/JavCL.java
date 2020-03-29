@@ -59,7 +59,7 @@ public class JavCL extends PluginForDecrypt {
     }
 
     private String decodejav(String data_link, String data_id) {
-        String key = Base64.encode(data_id + "decodejav");
+        String key = Base64.encode(data_id + "decode11234jav");
         key = new StringBuilder(key).reverse().toString();
         byte[] link = Base64.decode(data_link);
         StringBuilder sb = new StringBuilder();
