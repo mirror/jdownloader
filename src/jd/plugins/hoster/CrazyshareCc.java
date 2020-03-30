@@ -37,7 +37,7 @@ public class CrazyshareCc extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2020-03-30: Untested as downloads did not work at all <br />
      * captchatype-info: 2020-03-30: reCaptchaV2<br />
      * other: <br />
      */
