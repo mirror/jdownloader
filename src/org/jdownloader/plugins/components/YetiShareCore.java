@@ -1039,7 +1039,6 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
         } else if (new Regex(br.getURL(), Pattern.compile(".*e=.*Could\\+not\\+open\\+file\\+for\\+reading.*", Pattern.CASE_INSENSITIVE)).matches()) {
-            // https://debrid.pl/error.html?e=B%C5%82%C4%85d%3A+Could+not+open+file+for+reading.
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         } else if (url != null && new Regex(url, Pattern.compile(".*?\\?e=(You must wait |Você deve esperar).*?", Pattern.CASE_INSENSITIVE)).matches()) {
             final long extraWaittimeMilliseconds = 1000;
