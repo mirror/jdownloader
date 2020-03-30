@@ -16,9 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,7 +24,7 @@ import jd.plugins.*;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animestelecine.top" }, urls = { "https?://(?:www\\.)?animestelecine\\.top/link/[^/]+/?" })
 public class AnimesTelecine extends PluginForDecrypt {
-    static final int API_URL_REQUEST_SLEEP_SECONDS = 7;
+    static final int API_URL_REQUEST_SLEEP_MILLISECONDS = 7000;
 
     public AnimesTelecine(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,16 +34,10 @@ public class AnimesTelecine extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        String html = br.toString();
 
         String linkId = parseLinkId();
-
-        if (linkId.isEmpty()) {
-            return decryptedLinks;
-        }
-
-        String episodeName = parseEpisodeName(html);
-        String finalLink = requestDownloadLink(linkId);
+        String episodeName = parseEpisodeName();
+        String finalLink = requestDownloadLink(linkId, param);
         decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(finalLink)));
 
         if (!episodeName.isEmpty()) {
@@ -54,41 +45,38 @@ public class AnimesTelecine extends PluginForDecrypt {
             fp.setName(Encoding.htmlDecode(episodeName));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
-    private String parseLinkId() {
+    private String parseLinkId() throws PluginException {
         String [][] matches = br.getRegex("<meta id=\"link-id\" value=\"(.*?)\">").getMatches();
         if (matches.length == 0){
-            logger.warning("API lnk ID not found");
-            return "";
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "API lnk ID not found");
         }
         return matches[0][0];
     }
 
-    private String parseEpisodeName(String html) {
+    private String parseEpisodeName() {
         String [][] matches = br.getRegex("<h2 class=\"media-heading\">(.*?)</h2>").getMatches();
         if (matches.length == 0){
-            logger.warning("API lnk ID not found");
+            logger.warning("Episode name not found");
             return "";
         }
         return matches[0][0];
     }
 
-    private String requestDownloadLink(String linkId) throws Exception {
-        String apiUrl = br.getBaseURL().replace("link/", "api/link/" + linkId);
-        TimeUnit.SECONDS.sleep(API_URL_REQUEST_SLEEP_SECONDS);
+    private String requestDownloadLink(String linkId, CryptedLink param) throws Exception {
+        sleep(API_URL_REQUEST_SLEEP_MILLISECONDS, param);
+
+        String apiUrl = "/api/link/" + linkId;
         br.getPage(apiUrl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.warning("API URL link not working: " + apiUrl);
-            return "";
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "API URL link not working: " + br.getHost() + apiUrl);
         }
 
         String [][] matches = br.getRegex("\"link\":\"(.*?)\"}").getMatches();
         if (matches.length == 0) {
-            logger.warning("Unable to parse API response");
-            return "";
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to parse API response");
         }
         return matches[0][0];
     }
