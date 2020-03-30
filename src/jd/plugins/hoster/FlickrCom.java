@@ -21,8 +21,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,6 +47,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,12 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+(/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -134,17 +137,22 @@ public class FlickrCom extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty("offline", false)) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        correctDownloadLink(downloadLink);
-        final String photoURL = getPhotoURL(downloadLink);
+        correctDownloadLink(link);
+        final String photoURL = getPhotoURL(link);
         id = new Regex(photoURL, "(\\d+)$").getMatch(0);
         user = new Regex(photoURL, "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
         /* Needed for custom filenames! */
-        if (downloadLink.getStringProperty("username", null) == null) {
-            downloadLink.setProperty("username", user);
+        if (link.getStringProperty("username", null) == null) {
+            link.setProperty("username", user);
         }
         br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -159,12 +167,12 @@ public class FlickrCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().contains("login.yahoo.com/config")) {
-            downloadLink.getLinkStatus().setStatusText("Only downloadable via account");
+            link.getLinkStatus().setStatusText("Only downloadable via account");
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = getFilename(downloadLink);
+        String filename = getFilename(link);
         if (filename == null) {
-            downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
+            link.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
             logger.warning("Filename not found, plugin must be broken...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -198,7 +206,7 @@ public class FlickrCom extends PluginForHost {
             }
             filename += videoExt;
             /* Needed for custom filenames! */
-            downloadLink.setProperty("ext", videoExt);
+            link.setProperty("ext", videoExt);
         } else {
             br.getPage(photoURL + "/in/photostream");
             dllink = getFinalLink();
@@ -213,55 +221,48 @@ public class FlickrCom extends PluginForHost {
                 filename = filename + ext;
             }
             /* Needed for custom filenames! */
-            downloadLink.setProperty("photo_id", id);
+            link.setProperty("photo_id", id);
         }
         /* Needed for custom filenames! */
         final String uploadedDate = PluginJSonUtils.getJsonValue(br, "datePosted");
         if (uploadedDate != null) {
-            downloadLink.setProperty("dateadded", Long.parseLong(uploadedDate) * 1000);
+            link.setProperty("dateadded", Long.parseLong(uploadedDate) * 1000);
         }
         /* Save it for the getFormattedFilename function. */
-        downloadLink.setProperty("decryptedfilename", filename);
-        /* TODO: Remove this backwards compatibility in March 2015 */
-        downloadLink.setProperty("custom_filenames_allowed", true);
-        filename = getFormattedFilename(downloadLink);
-        downloadLink.setFinalFileName(filename);
+        link.setProperty("decryptedfilename", filename);
+        filename = getFormattedFilename(link);
+        link.setFinalFileName(filename);
         this.br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            // con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
+        if (dllink != null && !isDownload) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                // con = br.openGetConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
         if (br.getURL().contains("login.yahoo.com/config")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new AccountRequiredException();
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
             /* Same as check below */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -277,14 +278,14 @@ public class FlickrCom extends PluginForHost {
              */
             boolean isTempUnavailable = false;
             try {
-                isTempUnavailable = "e60b98765d26e34bfbb797c1a5f378f2".equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
+                isTempUnavailable = "e60b98765d26e34bfbb797c1a5f378f2".equalsIgnoreCase(JDHash.getMD5(new File(link.getFileOutput())));
             } catch (final Throwable e) {
             }
             if (isTempUnavailable) {
                 /* Reset progress */
-                downloadLink.setDownloadCurrent(0);
+                link.setDownloadCurrent(0);
                 /* Size unknown */
-                downloadLink.setDownloadSize(0);
+                link.setDownloadSize(0);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
         }
@@ -305,9 +306,9 @@ public class FlickrCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -386,25 +387,31 @@ public class FlickrCom extends PluginForHost {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private String getFinalLink() throws Exception {
         String finallink = null;
-        final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
+        final String[] sizes = { "6k", "5k", "4k", "3k", "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
         // picSource = br.getRegex("modelExport: (\\{\"photo\\-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
-        picSource = br.getRegex("main\":(\\{\"photo-models\".*?),[\t\n\r ]+auth: auth,").getMatch(0);
+        picSource = br.getRegex("main\":(\\{\"photo-models\".*?),\\s+auth: auth,").getMatch(0);
         if (picSource != null) {
             /* json handling */
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(picSource);
             final ArrayList<Object> photo_models = (ArrayList) entries.get("photo-models");
             final LinkedHashMap<String, Object> photo_data = (LinkedHashMap<String, Object>) photo_models.get(0);
             final LinkedHashMap<String, Object> photo_sizes = (LinkedHashMap<String, Object>) photo_data.get("sizes");
-            for (final String size : sizes) {
-                final LinkedHashMap<String, Object> single_size_map = (LinkedHashMap<String, Object>) photo_sizes.get(size);
-                if (single_size_map != null) {
-                    finallink = (String) single_size_map.get("url");
-                    if (finallink != null) {
-                        if (!finallink.startsWith("http")) {
-                            finallink = "https:" + finallink;
-                        }
-                        break;
+            final Iterator<Entry<String, Object>> iterator = photo_sizes.entrySet().iterator();
+            long maxWidth = -1;
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                entries = (LinkedHashMap<String, Object>) entry.getValue();
+                final String url = (String) entries.get("url");
+                final String qualityName = entry.getKey();
+                final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+                if (width > maxWidth && !StringUtils.isEmpty(url)) {
+                    logger.info("Current best quality = " + qualityName + " with width of: " + width);
+                    maxWidth = width;
+                    if (url.startsWith("http")) {
+                        finallink = url;
+                    } else {
+                        finallink = "https:" + url;
                     }
                 }
             }

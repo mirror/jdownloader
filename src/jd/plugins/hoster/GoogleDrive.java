@@ -455,7 +455,7 @@ public class GoogleDrive extends PluginForHost {
      */
     private void downloadTempUnavailableAndOrOnlyViaAccount(final Account account) throws PluginException {
         if (account != null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible atm. - wait and retry later or import the file into your account and dl it from there", 60 * 60 * 1000);
         } else {
             /* 2020-03-10: No gurantees that a download will work via account but most times it will! */
             throw new AccountRequiredException();
