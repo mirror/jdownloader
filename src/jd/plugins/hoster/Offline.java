@@ -102,7 +102,6 @@ public class Offline extends PluginForHost {
     }
 
     /**
-     * fullbuild help comment
      *
      * @param wrapper
      */
