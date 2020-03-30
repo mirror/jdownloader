@@ -23,6 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,9 +44,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
@@ -292,7 +292,6 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 fina.setProperty("ext", extension);
                 fina.setLinkID("flickrcom_" + username + "_" + photo_id + (setID != null ? setID : ""));
-                fina.setProperty("custom_filenames_allowed", true);
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
                 fina.setAvailable(true);
