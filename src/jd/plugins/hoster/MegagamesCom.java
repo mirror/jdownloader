@@ -165,9 +165,10 @@ public class MegagamesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         String server_filename = Plugin.getFileNameFromHeader(dl.getConnection());
-        /* 2020-03-23: TODO: Check if this is required and check if lowercase is okay. */
-        if (server_filename != null && server_filename.endsWith(".zipd")) {
-            server_filename = server_filename.replace(".zipd", ".zip");
+        final String badExtension = new Regex(server_filename, "(\\.zipd)$").getMatch(0);
+        if (badExtension != null) {
+            server_filename = server_filename.replace(badExtension, ".zip");
+            link.setFinalFileName(server_filename);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
