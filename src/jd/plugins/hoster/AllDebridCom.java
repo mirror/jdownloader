@@ -32,6 +32,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -236,7 +237,12 @@ public class AllDebridCom extends antiDDoSForHost {
                     account.setType(AccountType.FREE);
                     ai.setStatus("Premium Account (Free trial, reverts to free once traffic is used up)");
                     /* 2020-03-27: Hardcoded */
-                    ai.setTrafficLeft("25GB");
+                    final long maxTraffic = SizeFormatter.getSize("25GB");
+                    final long remainingTraffic = Long.parseLong(PluginJSonUtils.getJson(br, "remainingTrialQuota")) * 1000 * 1000;
+                    ai.setTrafficLeft(remainingTraffic);
+                    if (remainingTraffic <= remainingTraffic) {
+                        ai.setTrafficMax(maxTraffic);
+                    }
                 } else {
                     /* "Real" premium account. */
                     account.setType(AccountType.PREMIUM);
