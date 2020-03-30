@@ -250,6 +250,9 @@ public class OkRu extends PluginForHost {
         if (br.containsHTML(">Video has not been found</div") || br.containsHTML(">Video hasn't been found</div")) {
             return true;
         }
+        if (offlineBecauseOfDMCA(br)) {
+            return true;
+        }
         // offline due to copyright claim
         if (br.containsHTML("<div class=\"empty\"")) {
             final String vid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
@@ -258,11 +261,15 @@ public class OkRu extends PluginForHost {
             br2.setFollowRedirects(true);
             br2.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
             br2.getPage(br.createGetRequest("/video/" + vid));
-            if (br2.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found")) {
+            if (offlineBecauseOfDMCA(br2)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static boolean offlineBecauseOfDMCA(final Browser brcheck) {
+        return brcheck.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found");
     }
 
     @Override

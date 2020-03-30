@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -130,6 +131,9 @@ public class UpToBoxCom extends XFileSharingProBasic {
     @Override
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2020-03-27: Special */
+        if (new Regex(correctedBR, ">\\s*You must be premium to download this file").matches()) {
+            throw new AccountRequiredException();
+        }
         final String preciseWaittime = new Regex(correctedBR, "or you can wait ([^<>\"]+)<").getMatch(0);
         if (preciseWaittime != null) {
             /* Reconnect waittime with given (exact) waittime usually either up to the minute or up to the second. */
