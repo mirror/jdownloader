@@ -49,6 +49,7 @@ public class GenericRedirectors extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(false);
         try {
             getPage(parameter);
         } catch (final SocketTimeoutException e) {
