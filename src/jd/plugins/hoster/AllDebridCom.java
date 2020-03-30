@@ -514,20 +514,9 @@ public class AllDebridCom extends antiDDoSForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        showMessage(link, "Task 1: Check URL validity!");
-        requestFileInformation(link);
-        handleDL(null, link, link.getDownloadURL());
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        showMessage(link, "Task 1: Check URL validity!");
-        requestFileInformation(link);
-        handleDL(account, link, link.getDownloadURL());
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private void setAuthHeader(final Browser br, final String auth) {
@@ -832,17 +821,13 @@ public class AllDebridCom extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            if (!isDirectLink(link)) {
-                if (br.containsHTML("range not ok")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-                /* unknown error */
-                logger.severe("Error: Unknown Error");
-                // disable hoster for 5min
-                mhm.putError(account, link, 5 * 60 * 1000l, "Final downloadurl does not lead to a file");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 5 * 60 * 1000);
+            if (br.containsHTML("range not ok")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
+            /* unknown error */
+            logger.severe("Error: Unknown Error");
+            // disable hoster for 5min
+            mhm.putError(account, link, 5 * 60 * 1000l, "Final downloadurl does not lead to a file");
         }
         dl.startDownload();
     }
@@ -877,58 +862,18 @@ public class AllDebridCom extends antiDDoSForHost {
         return prepBr;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink dl) throws Exception {
-        prepBrowser(br, dl.getDownloadURL());
-        URLConnectionAdapter con = null;
-        try {
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
-            if (con.isOK() && (con.isContentDisposition() || !con.getContentType().contains("html"))) {
-                if (dl.getFinalFileName() == null) {
-                    dl.setFinalFileName(getFileNameFromHeader(con));
-                }
-                if (con.getLongContentLength() > 0) {
-                    dl.setVerifiedFileSize(con.getLongContentLength());
-                }
-                dl.setAvailable(true);
-                return AvailableStatus.TRUE;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } catch (PluginException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
-        } finally {
-            try {
-                /* make sure we close connection */
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        if (isDirectLink(link)) {
-            // generated links do not require an account to download
-            return true;
-        } else if (account == null) {
+        if (account == null) {
             return false;
-        }
-        return true;
-    }
-
-    /*
-     * 2020-03-27: TODO: Remove handling for such links - not required anymore --> Can be handled by directhttp plugin so we do not have to
-     * maintain their list of domains. The list of domains of them can btw. be found here: http://alldebrid.com/help/en/faq/download-issue
-     */
-    private boolean isDirectLink(final DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
+        } else {
             return true;
         }
-        return false;
     }
 
     @Override
