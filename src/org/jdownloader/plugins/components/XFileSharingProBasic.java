@@ -119,9 +119,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static final String  PROPERTY_pw_required         = "password_requested_by_website";
+    private static final String  PROPERTY_captcha_required    = "captcha_requested_by_website";
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.4.3.5<br />
+     * DEV NOTES XfileSharingProBasic Version 4.4.3.6<br />
      * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
@@ -1667,8 +1668,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().remove("X-Requested-With");
-        } else if (containsRecaptchaV2Class(correctedBR) || StringUtils.containsIgnoreCase(correctedBR, "google.com/recaptcha")) {
+            link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+        } else if (containsRecaptchaV2Class(correctedBR)) {
+            /*
+             * 2020-03-30: TODO: Maybe update containsRecaptchaV2Class to also accept the following as reCaptchaV2 trait:
+             * "name='g-recaptcha-response'" (without "")
+             */
             handleRecaptchaV2(link, captchaForm);
+            link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
         } else {
             if (StringUtils.containsIgnoreCase(correctedBR, ";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -1688,6 +1695,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 captchaForm.put("code", code.toString());
                 logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             } else if (StringUtils.containsIgnoreCase(correctedBR, "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
                 final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), "");
@@ -1716,6 +1724,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 String code = getCaptchaCode("xfilesharingprobasic", captchaurl, link);
                 captchaForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                 logger.info("Detected captcha method \"reCaptchaV1\" for this host");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
@@ -1735,6 +1744,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 final String chid = sm.getChallenge(code);
                 captchaForm.put("adcopy_challenge", chid);
                 captchaForm.put("adcopy_response", "manual_challenge");
+                link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                 logger.info("Detected captcha method \"keycaptcha\"");
                 String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
@@ -1745,6 +1755,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
                 captchaForm.put("capcode", result);
+                link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+            } else {
+                link.setProperty(PROPERTY_captcha_required, Boolean.FALSE);
             }
             /* Captcha END */
         }
@@ -2495,8 +2508,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
             if (correctedBR.contains("Wrong captcha")) {
-                logger.warning("Wrong captcha or wrong password!");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                logger.warning("Wrong captcha (or wrong password as well)!");
+                final boolean websiteDidAskForCaptcha = link.getBooleanProperty(PROPERTY_captcha_required, false);
+                if (websiteDidAskForCaptcha) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong captcha' but never prompted for one");
+                }
             }
             if (new Regex(correctedBR, ">\\s*Skipped countdown\\s*<").matches()) {
                 /* 2019-08-28: e.g. "<br><b class="err">Skipped countdown</b><br>" */
