@@ -114,9 +114,8 @@ public class YetiShareCore extends antiDDoSForHost {
      * captchatype: null, solvemedia, reCaptchaV2<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/admin/api_documentation.php#account-info Examples for websites which have the API enabled (but not
-     * necessarily unlocked for all users, usually only special-uploaders): userscdn.com[down 2019-10-04]. Insufficient rights will mostly
-     * result in response: "response": "Your account level does not have access to the file upload API. Please contact site support for more
-     * information."
+     * necessarily unlocked for all users, usually only special-uploaders): birdload.com, crazyshare.cc, easylinkz.net, freefile.me <br />
+     * 2020-03-30: I failed to make ANY successful API tests. 100% of all websites which support this API are running a broken version!
      */
     @Override
     public String getAGBLink() {
