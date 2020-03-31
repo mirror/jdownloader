@@ -157,6 +157,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         /* 2020-03-19: apitoken2 not required anymore?! */
         String apitoken2;
         String api_base;
+        String profile;
         if (url == null) {
             return null;
         } else if (returnHardcodedData) {
@@ -166,14 +167,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 apitoken = "22918a9c7a733c027addbcc7d065d4349d375825";
                 apitoken2 = "13e717ac1ff5c811c72844cebd11fc59ecb8bc03";
                 api_base = "https://api.3sat.de";
+                /* 2020-03-31 */
+                profile = "player2";
             } else {
                 /* zdf.de / heute.de and so on */
                 /* 2020-03-19 */
                 apitoken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJOVDdrVWFTanNzNTZkaTZ5UjViQk9nbkpqZWw5QXQ1UGszX2JGcVRTMzFJIn0.eyJqdGkiOiJmYzlhZTA1Yi0wYmJhLTQ1YjMtOTU5Mi04YTIzMTAyNTg1Y2YiLCJleHAiOjE1ODUwNjc3MTYsIm5iZiI6MCwiaWF0IjoxNTg0NDYyOTE2LCJpc3MiOiJodHRwczovL3Nzby1yaC1zc28uYXBwcy5vcGVuc2hpZnQuemRmLmRlL2F1dGgvcmVhbG1zLzNzY2FsZSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJhY2RmZTZkYy03NGZhLTRlODAtOTNjNC1iZjNlZDNiYzFkMTQiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiIxMjhkNzI2ZSIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjUyNzlhNGRjLTc0ODItNGJkZS1iOTlhLWIzZTNjZTdiMDNmNCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SG9zdCI6IjE3Mi4yMy43NS4yNDQiLCJjbGllbnRJZCI6IjEyOGQ3MjZlIiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LTEyOGQ3MjZlIiwiY2xpZW50QWRkcmVzcyI6IjE3Mi4yMy43NS4yNDQiLCJlbWFpbCI6InNlcnZpY2UtYWNjb3VudC0xMjhkNzI2ZUBwbGFjZWhvbGRlci5vcmcifQ.j2ssjrzdAhyOr54D18oYvhb-0LR0tViQZyIwIa9KN40h6pG1E32Dmiu2Rf_6lGNLl4uRO0I-CRIKti9HyIZSNHuH_3Gia5PqHLzWaVhapePMC_weuqdY5qJ5UkZQhD_zO5CFhxruRv7-Bhw3QEG5l8RSuN0Chh9YfD2MKZkpgHdMBO52m4rDSTKsxDuYGBIQlk_gaf3mUQiBdHoxZGTyf4yL9evy8rQUiCa4NgDsBBKaTDbc9cOwsMDlYsWLuqaStWIdJj9PYXjtjBlmCPhJgqO-c_DlFyjGCi2u0-BxMZP15iDGquAPa58LJywHWj-xajcmkN6Q9yDvo_P0zlIjzg";
                 apitoken2 = null;
                 api_base = "https://api.zdf.de";
+                /* 2020-03-31 */
+                profile = "player-3";
             }
-            return new String[] { apitoken, apitoken2, api_base };
+            return new String[] { apitoken, apitoken2, api_base, profile };
         } else {
             final Browser brc;
             if (br == null) {
@@ -186,10 +191,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             apitoken = brc.getRegex("\"apiToken\"\\s*:\\s*\"([^\"\\']+)\"").getMatch(0);
             apitoken2 = null;
             api_base = brc.getRegex("apiService\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
-            if (apitoken == null || api_base == null) {
+            profile = brc.getRegex("\\.json\\?profile=([^\"]+)\"").getMatch(0);
+            if (apitoken == null || api_base == null || profile == null) {
                 return null;
             }
-            return new String[] { apitoken, apitoken2, api_base };
+            return new String[] { apitoken, apitoken2, api_base, profile };
         }
     }
 
@@ -295,7 +301,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final String apiParams[] = getApiParams(br, PARAMETER_ORIGINAL, false);
         /* 2016-12-21: By hardcoding the apitoken we can save one http request thus have a faster crawl process :) */
         this.br.getHeaders().put("Api-Auth", "Bearer " + apiParams[0]);
-        this.br.getPage(apiParams[2] + "/content/documents/" + sophoraID + ".json?profile=player-3");
+        this.br.getPage(apiParams[2] + "/content/documents/" + sophoraID + ".json?profile=" + apiParams[3]);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
