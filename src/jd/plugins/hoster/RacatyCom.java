@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RacatyCom extends XFileSharingProBasic {
@@ -106,9 +107,24 @@ public class RacatyCom extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
+        fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) free download at Racaty\\.com</title>").getMatch(0);
         fileInfo[1] = new Regex(correctedBR, "b>Size:</b> (\\d+(?:\\.\\d+)? .*?)\\s+").getMatch(0);
+        if (fileInfo[1] == null) {
+            /* 2020-03-31 */
+            fileInfo[1] = new Regex(correctedBR, ">Size\\s*:([^<>\"]+) / Uploaded:").getMatch(0);
+        }
         super.scanInfo(fileInfo);
         return fileInfo;
+    }
+
+    @Override
+    public String regexFilenameAbuse(final Browser br) {
+        /* 2020-03-31: Special */
+        String filename = br.getRegex("<title>([^<>\"]+) free download at Racaty\\.com</title>").getMatch(0);
+        if (filename == null) {
+            filename = super.regexFilenameAbuse(br);
+        }
+        return filename;
     }
 
     @Override
