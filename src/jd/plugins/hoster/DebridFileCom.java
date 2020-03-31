@@ -258,20 +258,22 @@ public class DebridFileCom extends PluginForHost {
     }
 
     private boolean isLoggedIN() throws PluginException {
-        if (br.containsHTML("403")) {
-            /*
-             * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
-             * AccountUnavailableException("Error 403 'blocked by debrid-file'", 10 * 60 * 1000);
-             *
-             * 2020-03-27 : phg : This a temporary fix as we are not supposed to have a 403 error and we must fix the 403. I let the
-             * previous code as it is not a temporary account error but a fatal plugin error
-             */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
-        }
         boolean bCookieOK = br.getCookie(br.getHost(), "loginhash", Cookies.NOTDELETEDPATTERN) != null;
         if (bCookieOK) {
             if (br.containsHTML("You must be logged")) {
                 bCookieOK = false;
+            }
+        }
+        if (!bCookieOK) {
+            if (br.containsHTML("403")) {
+                /*
+                 * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
+                 * AccountUnavailableException("Error 403 'blocked by debrid-file'", 10 * 60 * 1000);
+                 *
+                 * 2020-03-27 : phg : This a temporary fix as we are not supposed to have a 403 error and we must fix the 403. I let the
+                 * previous code as it is not a temporary account error but a fatal plugin error
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
             }
         }
         return bCookieOK;
