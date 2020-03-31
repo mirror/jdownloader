@@ -1672,7 +1672,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else if (containsRecaptchaV2Class(correctedBR)) {
             /*
              * 2020-03-30: TODO: Maybe update containsRecaptchaV2Class to also accept the following as reCaptchaV2 trait:
-             * "name='g-recaptcha-response'" (without "")
+             * "name='g-recaptcha-response'" (without "") see FileupOrg.class.
              */
             handleRecaptchaV2(link, captchaForm);
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);

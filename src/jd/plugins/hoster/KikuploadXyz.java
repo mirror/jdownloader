@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -67,6 +68,30 @@ public class KikuploadXyz extends YetiShareCore {
             ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        /* 2020-03-31: Special: Host with subdomain */
+        /* link cleanup, but respect users protocol choosing or forced protocol */
+        final String host = this.getHost();
+        final String host_with_subdomain = Browser.getHost(link.getPluginPatternMatcher(), true);
+        final String target_host;
+        if (host_with_subdomain.equalsIgnoreCase(host)) {
+            target_host = host;
+        } else {
+            /* Host with subdomain --> Use this */
+            target_host = host_with_subdomain;
+        }
+        final String fid = getFUIDFromURL(link);
+        final String protocol;
+        if (supports_https()) {
+            protocol = "https";
+        } else {
+            protocol = "http";
+        }
+        link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, target_host, fid));
+        link.setLinkID(this.getHost() + "://" + fid);
     }
 
     @Override

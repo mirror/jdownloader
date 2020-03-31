@@ -128,4 +128,10 @@ public class FileupOrg extends XFileSharingProBasic {
         }
         return ttt;
     }
+
+    @Override
+    protected boolean containsRecaptchaV2Class(String string) {
+        /* 2020-03-31: Special */
+        return super.containsRecaptchaV2Class(string) || string.contains("name='g-recaptcha-response'");
+    }
 }

@@ -25,6 +25,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MegaupNet extends YetiShareCore {
@@ -115,5 +117,14 @@ public class MegaupNet extends YetiShareCore {
     public boolean requires_WWW() {
         /* 2019-09-24: Special & required */
         return false;
+    }
+
+    @Override
+    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+        /* 2020-03-31: Special: Added support for 'maintenance' errormessage */
+        super.checkErrors(link, account);
+        if (br.containsHTML("class=\"maintenanceContent\"|>\\s*We are currently down for maintenance")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website is under maintenance", 30 * 60 * 1000l);
+        }
     }
 }
