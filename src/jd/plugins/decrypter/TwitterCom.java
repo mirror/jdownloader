@@ -431,7 +431,7 @@ public class TwitterCom extends PornEmbedParser {
         int index = 0;
         fp = FilePackage.getInstance();
         fp.setName(username);
-        final int items_per_page = 20;
+        final int expected_items_per_page = 20;
         int numberof_items_on_current_page = 0;
         String nextCursor = null;
         final UrlQuery query = new UrlQuery();
@@ -471,7 +471,7 @@ public class TwitterCom extends PornEmbedParser {
             max_count = "??";
         }
         query.append("userId", user_id, false);
-        query.append("count", items_per_page + "", false);
+        query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
         /* TODO: 2020-02-05: Check for rate-limit and add waittime- and retry for this case! */
         int crawled_tweet_count = 0;
@@ -501,15 +501,28 @@ public class TwitterCom extends PornEmbedParser {
                 numberof_items_on_current_page++;
                 crawled_tweet_count++;
             }
-            logger.info(String.format("Numberof tweets on current page: %d of expected max %d", numberof_items_on_current_page, items_per_page));
+            logger.info(String.format("Numberof tweets on current page: %d of expected max %d", numberof_items_on_current_page, expected_items_per_page));
             logger.info(String.format("Numberof total tweets crawled: %d of expected total %s", crawled_tweet_count, max_count));
+            if (numberof_items_on_current_page == 0) {
+                logger.info("Found 0 tweets on current page --> Stopping");
+                break;
+            } else if (numberof_items_on_current_page < expected_items_per_page) {
+                logger.info(String.format("Warning: Page contains less than %d objects --> Reached the end?", expected_items_per_page));
+            }
             /* Done - now try to find string required to access next page */
             try {
                 LinkedHashMap<String, Object> pagination_info_entries = (LinkedHashMap<String, Object>) pagination_info.get(pagination_info.size() - 1);
                 final String entryId = (String) pagination_info_entries.get("entryId");
                 if (entryId.contains("cursor-bottom")) {
                     logger.info("Found correct cursor object --> Trying to get cursor String");
-                    nextCursor = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
+                    final String nextCursorTmp = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
+                    logger.info("nextCursor = " + nextCursor);
+                    if (nextCursor != null && nextCursor.equals(nextCursorTmp)) {
+                        /* Extra fallback - this should never be required */
+                        logger.info("New nextCursor is the same as last nextCursor --> Reached the end?!");
+                        break;
+                    }
+                    nextCursor = nextCursorTmp;
                 } else {
                     logger.info("Found wrong cursor object --> Plugin needs update");
                 }
@@ -519,7 +532,7 @@ public class TwitterCom extends PornEmbedParser {
             }
             index++;
             this.sleep(3000l, param);
-        } while (!StringUtils.isEmpty(nextCursor) && !this.isAbort() && numberof_items_on_current_page >= items_per_page);
+        } while (!StringUtils.isEmpty(nextCursor) && !this.isAbort());
         logger.info(String.format("Done after %d pages", index));
     }
 
