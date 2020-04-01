@@ -85,7 +85,12 @@ public class PornHubCom extends PluginForDecrypt {
             parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
         }
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h2>Upgrade now<")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Offline because 404");
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML("<h2>Upgrade now<")) {
+            logger.info("Offline because premiumonly");
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }

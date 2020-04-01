@@ -395,7 +395,15 @@ public class PornHubCom extends PluginForHost {
         final Map<String, Map<String, String>> qualities = new LinkedHashMap<String, Map<String, String>>();
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
-            flashVars = br.getRegex("(var\\s*flashvars_\\d+.*?)(loadScriptUniqueId|</script)").getMatch(0);
+            flashVars = br.getRegex("(var\\s*flashvars_\\d+.+quality_1440p;)").getMatch(0);
+            if (flashVars == null) {
+                /* Wider */
+                flashVars = br.getRegex("(var\\s*flashvars_\\d+.+\\['url'\\]\\s*=\\s*quality_\\d+p;)").getMatch(0);
+            }
+            if (flashVars == null) {
+                /* Wide open - risky */
+                flashVars = br.getRegex("(var\\s*flashvars_\\d+.*)(loadScriptUniqueId|</script)").getMatch(0);
+            }
             final String flashVarsID = new Regex(flashVars, "flashvars_(\\d+)").getMatch(0);
             if (flashVarsID != null) {
                 try {
