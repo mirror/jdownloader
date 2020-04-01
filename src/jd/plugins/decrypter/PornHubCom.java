@@ -548,7 +548,7 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Debug info: html_premium_only: " + parameter);
             throw new AccountRequiredException();
         }
-        final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this, br);
+        final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);
         logger.info("Debug info: foundLinks_all: " + qualities);
         if (qualities != null) {
             if (qualities.isEmpty()) {
