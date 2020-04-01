@@ -24,7 +24,7 @@ import jd.plugins.*;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animestelecine.top" }, urls = { "https?://(?:www\\.)?animestelecine\\.top/link/[^/]+/?" })
 public class AnimesTelecine extends PluginForDecrypt {
-    static final int API_URL_REQUEST_SLEEP_MILLISECONDS = 7000;
+    final int API_URL_REQUEST_SLEEP_MILLISECONDS = 7000;
 
     public AnimesTelecine(PluginWrapper wrapper) {
         super(wrapper);
@@ -34,12 +34,10 @@ public class AnimesTelecine extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-
         String linkId = parseLinkId();
         String episodeName = parseEpisodeName();
         String finalLink = requestDownloadLink(linkId, param);
         decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(finalLink)));
-
         if (!episodeName.isEmpty()) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(episodeName));
@@ -49,16 +47,16 @@ public class AnimesTelecine extends PluginForDecrypt {
     }
 
     private String parseLinkId() throws PluginException {
-        String [][] matches = br.getRegex("<meta id=\"link-id\" value=\"(.*?)\">").getMatches();
-        if (matches.length == 0){
+        final String[][] matches = br.getRegex("<meta id=\"link-id\" value=\"(.*?)\">").getMatches();
+        if (matches.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "API lnk ID not found");
         }
         return matches[0][0];
     }
 
     private String parseEpisodeName() {
-        String [][] matches = br.getRegex("<h2 class=\"media-heading\">(.*?)</h2>").getMatches();
-        if (matches.length == 0){
+        final String[][] matches = br.getRegex("<h2 class=\"media-heading\">(.*?)</h2>").getMatches();
+        if (matches.length == 0) {
             logger.warning("Episode name not found");
             return "";
         }
@@ -67,14 +65,11 @@ public class AnimesTelecine extends PluginForDecrypt {
 
     private String requestDownloadLink(String linkId, CryptedLink param) throws Exception {
         sleep(API_URL_REQUEST_SLEEP_MILLISECONDS, param);
-
-        String apiUrl = "/api/link/" + linkId;
-        br.getPage(apiUrl);
+        br.getPage("/api/link/" + linkId);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "API URL link not working: " + br.getHost() + apiUrl);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        String [][] matches = br.getRegex("\"link\":\"(.*?)\"}").getMatches();
+        final String[][] matches = br.getRegex("\"link\":\"(.*?)\"}").getMatches();
         if (matches.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to parse API response");
         }

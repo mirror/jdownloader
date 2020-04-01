@@ -1,3 +1,5 @@
+package jd.plugins.decrypter;
+
 //jDownloader - Downloadmanager
 //Copyright (C) 2020  JD-Team support@jdownloader.org
 //
@@ -13,8 +15,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <https?://www.gnu.org/licenses/>.
-package jd.plugins.decrypter;
-
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,30 +38,25 @@ public class Animestc extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         String html = br.toString();
-
         ArrayList<String> episodesContentFullHdList = parseEpisodeContents(html, "1080p");
         ArrayList<String> episodesContentHdList = parseEpisodeContents(html, "720p");
-
         if (episodesContentFullHdList.isEmpty() && episodesContentHdList.isEmpty()) {
             logger.warning("Unable to parse episodes container");
             return decryptedLinks;
         }
-
         for (int i = 0; i < episodesContentFullHdList.size(); ++i) {
             ArrayList<String> episodeLinkList = parseEpisodeLinks(episodesContentFullHdList.get(i));
-
-            if (episodeLinkList.isEmpty()){
+            if (episodeLinkList.isEmpty()) {
                 episodeLinkList = parseEpisodeLinks(episodesContentHdList.get(i));
             }
             for (String episodeLink : episodeLinkList) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(episodeLink)));
             }
         }
-
         return decryptedLinks;
     }
 
-    ArrayList<String> parseEpisodeLinks(String episodeContent){
+    ArrayList<String> parseEpisodeLinks(String episodeContent) {
         Pattern pattern = Pattern.compile("href=\"(.*)\"");
         return getListOfMatches(pattern, episodeContent);
     }
@@ -71,9 +66,9 @@ public class Animestc extends PluginForDecrypt {
         return getListOfMatches(pattern, html);
     }
 
-    ArrayList<String> getListOfMatches(Pattern pattern, String text){
+    ArrayList<String> getListOfMatches(Pattern pattern, String text) {
         Matcher m = pattern.matcher(text);
-        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> list = new ArrayList<String>();
         while (m.find()) {
             for (int i = 0; i < m.groupCount(); i++) {
                 list.add(m.group(i + 1));

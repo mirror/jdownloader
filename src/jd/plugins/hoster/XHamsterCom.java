@@ -26,15 +26,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,7 +52,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.(?:xhamster\\.(?:com|xxx|desi|one)|xhamster1\\.desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|(?:xhamster\\.(?:com|xxx|desi|one)|xhamster1\\.desi)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.(?:xhamster\\.(?:com|xxx|desi|one)|xhamster(1|2)\\.desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|(?:xhamster\\.(?:com|xxx|desi|one)|xhamster(1|2)\\.desi)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)" })
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -151,10 +151,10 @@ public class XHamsterCom extends PluginForHost {
         } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
         } else if (link.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
-            fid = new Regex(link.getPluginPatternMatcher(), "xhamster\\.(?:com|xxx|desi|one)/[^/]+/(\\d+)").getMatch(0);
+            fid = new Regex(link.getPluginPatternMatcher(), "xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/[^/]+/(\\d+)").getMatch(0);
             if (fid == null) {
                 /* 2018-07-19: New */
-                fid = new Regex(link.getPluginPatternMatcher(), "xhamster\\.(?:com|xxx|desi|one)/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
+                fid = new Regex(link.getPluginPatternMatcher(), "xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
             }
         } else {
             fid = new Regex(link.getPluginPatternMatcher(), "(?:movies|videos)/(\\d+)/?").getMatch(0);
@@ -172,7 +172,7 @@ public class XHamsterCom extends PluginForHost {
     private String getLinkpart(final DownloadLink dl) {
         String linkpart = null;
         if (dl.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
-            linkpart = new Regex(dl.getPluginPatternMatcher(), "xhamster\\.(?:com|xxx|desi)/[^/]+/(.+)").getMatch(0);
+            linkpart = new Regex(dl.getPluginPatternMatcher(), "xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/[^/]+/(.+)").getMatch(0);
         } else if (!dl.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             linkpart = new Regex(dl.getPluginPatternMatcher(), "videos/([\\w\\-]+\\-\\d+)").getMatch(0);
         }
@@ -252,7 +252,7 @@ public class XHamsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 // embeded correction --> Usually not needed
-                if (link.getPluginPatternMatcher().matches(".*?\\.(com|xxx|desi)/xembed.php.*")) {
+                if (link.getPluginPatternMatcher().matches(".*?\\.(com|xxx|desi|one)/xembed.php.*")) {
                     String realpage = br.getRegex("main_url=(https?[^\\&]+)").getMatch(0);
                     if (realpage != null) {
                         link.setUrlDownload(Encoding.htmlDecode(realpage));
@@ -338,7 +338,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getSiteTitle() {
-        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(\\.com|\\.xxx|\\.desi)?</title>").getMatch(0);
+        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(\\.com|\\.xxx|\\.desi|\\.one)?</title>").getMatch(0);
         return title;
     }
 
@@ -938,7 +938,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     protected void prepBr() {
-        for (String host : new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi" }) {
+        for (String host : new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi", "xhamster.one", "xhamster1.desi", "xhamster2.desi" }) {
             br.setCookie(host, "lang", "en");
             br.setCookie(host, "playerVer", "old");
         }
