@@ -234,7 +234,6 @@ public class AllDebridCom extends antiDDoSForHost {
                      * 2020-03-27: Premium "test" accounts which last 7 days and have a total of 25GB as quota. Once that limit is reached,
                      * they can only download from "Free" hosts (only a hand full of hosts).
                      */
-                    account.setType(AccountType.FREE);
                     ai.setStatus("Premium Account (Free trial, reverts to free once traffic is used up)");
                     /* 2020-03-27: Hardcoded */
                     final long maxTraffic = SizeFormatter.getSize("25GB");
@@ -245,9 +244,9 @@ public class AllDebridCom extends antiDDoSForHost {
                     }
                 } else {
                     /* "Real" premium account. */
-                    account.setType(AccountType.PREMIUM);
                     ai.setStatus("Premium Account");
                 }
+                account.setType(AccountType.PREMIUM);
             }
         }
     }
@@ -274,8 +273,10 @@ public class AllDebridCom extends antiDDoSForHost {
                 if (StringUtils.isEmpty(host_without_tld)) {
                     host_without_tld = hostO.getKey();
                 }
-                /* 2020-03-27: Maybe try to add support for this kind of limitation. */
-                // final int maxDlsPerHost = (int) JavaScriptEngineFactory.toLong(entry.get("limitSimuDl"), -1);
+                /*
+                 * 2020-04-01: This check will most likely never be required as free accounts officially cannot be used via API at all and
+                 * JD also does not accept them but we're doing this check nevertheless.
+                 */
                 final String type = (String) entry.get("type");
                 if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
                     logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
