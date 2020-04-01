@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,9 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" })
 public class GfyCatCom extends PluginForHost {
@@ -55,7 +55,11 @@ public class GfyCatCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getHeaders().put("User-Agent", "JDownloader");
+        br.setAllowedResponseCodes(new int[] { 500 });
         br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)\\s*</script").getMatch(0);
         if (StringUtils.isEmpty(json) || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -63,8 +67,9 @@ public class GfyCatCom extends PluginForHost {
         final String username = PluginJSonUtils.getJsonValue(json, "userName");
         final String filename = PluginJSonUtils.getJsonValue(json, "gfyName");
         final String filesize = PluginJSonUtils.getJsonValue(json, "webmSize");
-        if (username == null || filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(filename) || StringUtils.isEmpty(filesize)) {
+            /* Most likely content is not downloadable e.g. gyfcat.com/upload */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setFinalFileName(username + " - " + filename + ".webm");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
