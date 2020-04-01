@@ -122,7 +122,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static final String  PROPERTY_captcha_required    = "captcha_requested_by_website";
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 4.4.3.6<br />
+     * DEV NOTES XfileSharingProBasic Version 4.4.3.7<br />
      * mods: See overridden functions<br />
      * See official changelogs for upcoming XFS changes: https://sibsoft.net/xfilesharing/changelog.html |
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
@@ -476,7 +476,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
         if (fuid != null) {
             /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.]+/embed-[a-z0-9]{12}")) {
+            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
                 link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
             }
             link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
@@ -1956,7 +1956,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             // }
             if (dllink == null) {
                 /* Finally try without hardcoded domains */
-                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.]+") + ")(\"|\\')(\\s+|\\s*>|\\s*\\)|\\s*;)").getMatch(0);
+                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()) + ")(\"|\\')").getMatch(0);
+                /* 2020-04-01: TODO: Maybe add this part to the end: (\\s+|\\s*>|\\s*\\)|\\s*;) */
             }
             // if (dllink == null) {
             // /* Try short version */
@@ -2175,7 +2176,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (url == null) {
             return false;
         } else {
-            return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), "[A-Za-z0-9\\-\\.']+"), Pattern.CASE_INSENSITIVE)).matches();
+            return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
         }
     }
 
@@ -2183,8 +2184,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (url == null) {
             return false;
         } else {
-            return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExImage(), "[A-Za-z0-9\\-\\.']+"), Pattern.CASE_INSENSITIVE)).matches();
+            return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExImage(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
         }
+    }
+
+    private String getDllinkHostPattern() {
+        return "[A-Za-z0-9\\-\\.]*";
     }
 
     /** Returns pre-download-waittime (seconds) from inside HTML. */
@@ -2206,7 +2211,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public String getGenericDownloadlinkRegExFile() {
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
+        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
     }
 
     /*
@@ -3206,6 +3211,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     public boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
+            final boolean followRedirects = br.isFollowingRedirects();
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
@@ -3305,6 +3311,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     account.clearCookies("");
                 }
                 throw e;
+            } finally {
+                br.setFollowRedirects(followRedirects);
             }
         }
     }
@@ -3400,6 +3408,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected final void loginAPI(final Browser br, final Account account) throws Exception {
         synchronized (account) {
+            final boolean followRedirects = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
                 if (this.getAPIKey(account) == null) {
@@ -3424,6 +3433,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } catch (final PluginException e) {
                 throw e;
+            } finally {
+                br.setFollowRedirects(followRedirects);
             }
         }
     }
@@ -3492,6 +3503,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                          */
                         requestFileInformationWebsite(link, account, true);
                     }
+                    br.setFollowRedirects(false);
                     final boolean verifiedLogin = loginWebsite(account, false);
                     getPage(link.getPluginPatternMatcher());
                     if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
