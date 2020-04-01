@@ -4,7 +4,6 @@
 	<classpathentry kind="src" path="src-closed"/>
 	<classpathentry kind="src" path="translations"/>
 	<classpathentry kind="src" path="themes"/>
-	<classpathentry excluding="org/jdownloader/nativeswing/OptionsAndPlaylistExample.java|org/jdownloader/nativeswing/SimpleVLCPlayerExample.java" kind="src" path="tests"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
@@ -69,7 +68,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/antlr-runtime.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaPlain.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/svgSalamander.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/image4j.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/Filters.jar" sourcepath="ressourcen/code-ressourcen/Filter_src.zip"/>
@@ -78,6 +76,6 @@
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-databind.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-annotations.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/zip4j.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jsoup.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

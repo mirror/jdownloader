@@ -17,8 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends XFileSharingProBasic {
@@ -126,6 +127,11 @@ public class UpToBoxCom extends XFileSharingProBasic {
             return dllink;
         }
         return super.getDllink(link, account, br, src);
+    }
+
+    @Override
+    public boolean isDllinkFile(final String url) {
+        return super.isDllinkFile(url) || new Regex(url, Pattern.compile("^https?://www\\d+\\.[\\w\\-]+\\.[a-z0-9:]+/dl/[A-Za-z0-9_\\-]+/[^<>\"\\'/]+$", Pattern.CASE_INSENSITIVE)).matches();
     }
 
     @Override

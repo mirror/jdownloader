@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,7 +34,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?(?:xhamster\\.(?:com|xxx|desi|one)|xhamster1\\.desi)/photos/(gallery/[0-9A-Za-z_\\-/]+(\\.html)?|view/[0-9A-Za-z_\\-/]+(\\.html)?)" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?(?:xhamster\\.(?:com|xxx|desi|one)|xhamster(1|2)\\.desi)/photos/(gallery/[0-9A-Za-z_\\-/]+(\\.html)?|view/[0-9A-Za-z_\\-/]+(\\.html)?)" })
 public class XHamsterGallery extends PluginForDecrypt {
     public XHamsterGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +47,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
         /* Force english language */
-        final String replace_string = new Regex(parameter, "(https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.(?:com|xxx|desi)/)").getMatch(0);
+        final String replace_string = new Regex(parameter, "(https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/)").getMatch(0);
         parameter = parameter.replace(replace_string, "https://xhamster.com/");
         br.addAllowedResponseCodes(410);
         br.addAllowedResponseCodes(423);
@@ -93,7 +93,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final String total_numberof_picsStr = br.getRegex("page-title__count\">(\\d+)<").getMatch(0);
         logger.info("total_numberof_pics: " + total_numberof_picsStr);
         final int total_numberof_picsInt = total_numberof_picsStr != null ? Integer.parseInt(total_numberof_picsStr) : -1;
-        String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster(\\.com|\\.xxx|\\.desi)?\\s*</title>").getMatch(0);
+        String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster(\\.com|\\.xxx|\\.desi|\\.one)?\\s*</title>").getMatch(0);
         if (fpname == null) {
             fpname = br.getRegex("<title>(.*?)\\s*>\\s*").getMatch(0);
         }

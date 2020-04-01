@@ -401,7 +401,7 @@ public class Multi extends IExtraction {
     public boolean isAvailable(ExtractionExtension extractionExtension) {
         final boolean ret = hasLibrarySupport(extractionExtension);
         if (!ret) {
-            logger.info("Unsupported SevenZipJBinding|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Unsupported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
         } else {
             logger.info("Supported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
         }
