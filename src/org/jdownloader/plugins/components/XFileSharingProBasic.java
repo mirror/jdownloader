@@ -30,19 +30,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -67,6 +54,19 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.RTMPDownload;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class XFileSharingProBasic extends antiDDoSForHost {
     public XFileSharingProBasic(PluginWrapper wrapper) {
@@ -377,12 +377,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere!
-     * <br />
+     * This is designed to find the filesize during availablecheck for videohosts - videohosts usually don't display the filesize anywhere! <br />
      * CAUTION: Only set this to true if a filehost: <br />
      * 1. Allows users to embed videos via '/embed-<fuid>.html'. <br />
-     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl.
-     * <br />
+     * 2. Does not display a filesize anywhere inside html code or other calls where we do not have to do an http request on a directurl. <br />
      * 3. Allows a lot of simultaneous connections. <br />
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
@@ -410,13 +408,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
      * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
-     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br>
-     * Sadly, it seems like their linkcheck function only works on the files in the users' own account:
+     * This enabled = website relies on API - the complete XFS website can be used via API (very rare case!)</br> Sadly, it seems like their
+     * linkcheck function only works on the files in the users' own account:
      * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
      * 2019-08-20: Some XFS websites are supported via another API via play.google.com/store/apps/details?id=com.zeuscloudmanager --> This
-     * has nothing todo with the official XFS API! </br>
-     * Example: xvideosharing.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
+     * has nothing todo with the official XFS API! </br> Example: xvideosharing.com, uploadocean.com[2019-07-11: uploadocean API is broken] <br />
      * default: false
      */
     protected boolean supports_api_only_mode(final Account account) {
@@ -441,11 +438,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * If enabled, API will be used to import (public) files into users' account and download them from there. </br>
-     * This may sometimes be the only way to download via API because until now (2019-10-31) the XFS API can only be used to download files
-     * which the user itself uploaded (= files which are in his account). </br>
-     * Warning! The imported files may be PUBLIC as well by default! </br>
-     * So far this exists for development purposes ONLY!!
+     * If enabled, API will be used to import (public) files into users' account and download them from there. </br> This may sometimes be
+     * the only way to download via API because until now (2019-10-31) the XFS API can only be used to download files which the user itself
+     * uploaded (= files which are in his account). </br> Warning! The imported files may be PUBLIC as well by default! </br> So far this
+     * exists for development purposes ONLY!!
      */
     protected boolean requires_api_getdllink_clone_workaround(final Account account) {
         /* Enable this switch to be able to use this in dev mode. Default = off as we do not use this workaround by default! */
@@ -455,8 +451,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * 2019-08-20: Some websites' login will fail on the first attempt even with correct logindata. On the 2nd attempt a captcha will be
-     * required and then the login should work. </br>
-     * default = false
+     * required and then the login should work. </br> default = false
      */
     protected boolean allows_multiple_login_attempts_in_one_go() {
         return false;
@@ -885,10 +880,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Used by getFilesizeViaAvailablecheckAlt <br />
      * <b>Use this only if:</b> <br />
      * - You have verified that the filehost has a mass-linkchecker and it is working fine with this code. <br />
-     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br>
-     * - If used for single URLs inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
-     * - If the normal way via website is blocked somehow e.g. 'site-verification' captcha </br>
-     * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
+     * - The contentURLs contain a filename as a fallback e.g. https://host.tld/<fuid>/someFilename.png.html </br> - If used for single URLs
+     * inside 'normal linkcheck' (e.g. inside requestFileInformation), call with setWeakFilename = false <br/>
+     * - If the normal way via website is blocked somehow e.g. 'site-verification' captcha </br> <b>- If used to check multiple URLs
+     * (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
     public boolean massLinkcheckerWebsite(final DownloadLink[] urls, final boolean setWeakFilename) {
         if (urls == null || urls.length == 0) {
@@ -1059,11 +1054,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * <b> ONLY CALL THIS VIA getFilesizeViaAvailablecheckAlt until more XFS websites have full API support! </b>
      */
     public boolean massLinkcheckerAPI(final DownloadLink[] urls, final Account account, final boolean setWeakFilename) {
-        if (urls == null || urls.length == 0) {
+        if (urls == null || urls.length == 0 || account == null) {
             return false;
         }
         boolean linkcheckerHasFailed = false;
         try {
+            final String apiKey = this.getAPIKey(account);
+            if (apiKey == null) {
+                return false;
+            }
             final Browser br = new Browser();
             this.prepBrowser(br, getMainPage());
             br.setCookiesExclusive(true);
@@ -1087,7 +1086,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     sb.append(fuid);
                     sb.append("%2C");
                 }
-                getPage(br, getAPIBase() + "/file/info?key=" + this.getAPIKey(account) + "&file_code=" + sb.toString());
+                getPage(br, getAPIBase() + "/file/info?key=" + apiKey + "&file_code=" + sb.toString());
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("result");
                 for (final DownloadLink link : links) {
@@ -1150,6 +1149,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         } catch (final Exception e) {
+            logger.log(e);
             return false;
         } finally {
             if (linkcheckerHasFailed) {
@@ -1210,14 +1210,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * Get filesize via massLinkchecker/alternative availablecheck.<br />
-     * Wrapper for requestFileInformationWebsiteMassLinkcheckerSingle which contains a bit of extra log output </br>
-     * Often used as fallback if o.g. officially only logged-in users can see filesize or filesize is not given in html code for whatever
-     * reason.<br />
+     * Wrapper for requestFileInformationWebsiteMassLinkcheckerSingle which contains a bit of extra log output </br> Often used as fallback
+     * if o.g. officially only logged-in users can see filesize or filesize is not given in html code for whatever reason.<br />
      * Often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
-     * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports
-     * it)!<br />
-     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br>
-     * In case there is no filesize given, offline status will still be recognized! <br/>
+     * Important: Only call this if <b><u>supports_availablecheck_alt</u></b> is <b>true</b> (meaning omly try this if website supports it)!<br />
+     * Some older XFS versions AND videohosts have versions of this linkchecker which only return online/offline and NO FILESIZE!</br> In
+     * case there is no filesize given, offline status will still be recognized! <br/>
      *
      * @return isOnline
      * @throws IOException
@@ -1312,8 +1310,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } else {
                             logger.info("Successfully found link via embed");
                         }
+                    } catch (final InterruptedException e) {
+                        throw e;
                     } catch (final Throwable e) {
-                        e.printStackTrace();
+                        logger.log(e);
                         logger.info("Failed to get link via embed");
                     }
                 }
@@ -1330,7 +1330,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } else {
                             logger.info("Successfully found link via vidembed");
                         }
+                    } catch (final InterruptedException e) {
+                        throw e;
                     } catch (final Throwable e) {
+                        logger.log(e);
                         logger.info("Failed to get link via vidembed");
                     }
                 }
@@ -1393,6 +1396,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 checkErrors(link, account, false);
             } catch (final Exception e) {
+                logger.log(e);
                 exceptionBeforeDownload2Submit = e;
                 logger.info("Found Exception before download2 Form submit");
             }
@@ -1456,12 +1460,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Checks if official video download is possible and returns final downloadurl if possible. </br>
-     * This should by default NOT throw any Exceptions!
+     * Checks if official video download is possible and returns final downloadurl if possible. </br> This should by default NOT throw any
+     * Exceptions!
      *
      * @param returnFilesize
-     *            true = Only return filesize of selected quality. Use this in availablecheck. </br>
-     *            false = return final downloadurl of selected quality. Use this in download mode.
+     *            true = Only return filesize of selected quality. Use this in availablecheck. </br> false = return final downloadurl of
+     *            selected quality. Use this in download mode.
      */
     protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
         if (returnFilesize) {
@@ -1578,8 +1582,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(dllink)) {
                 logger.info("Failed to find final downloadurl");
             }
+        } catch (final InterruptedException e) {
+            throw e;
         } catch (final Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
             logger.warning("Official video download failed: Exception occured");
             /*
              * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for us.
@@ -1597,8 +1603,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /*
          * 2019-06-06: Most widespread case with an important design-flaw (see below)!
          */
-        logger.info("Detected captcha method \"RecaptchaV2\" type 'normal' for this host");
         final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+        logger.info("Detected captcha method \"RecaptchaV2\" normal-type '" + rc2.getType() + "' for this host");
         if (!this.preDownloadWaittimeSkippable()) {
             final String waitStr = regexWaittime();
             if (waitStr != null && waitStr.matches("\\d+")) {
@@ -1632,8 +1638,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Captcha START */
         if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
             /* 2019-06-06: Rare case */
-            logger.info("Detected captcha method \"RecaptchaV2\" type 'special' for this host");
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+            logger.info("Detected captcha method \"RecaptchaV2\" special-type '" + rc2.getType() + "' for this host");
+            final String recaptchaV2Response = rc2.getToken();
             /*
              * 2017-12-07: New - solve- and check reCaptchaV2 here via ajax call, then wait- and submit the main downloadform. This might as
              * well be a workaround by the XFS developers to avoid expiring reCaptchaV2 challenges. Example: filefox.cc
@@ -1734,11 +1741,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 File cf = null;
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final InterruptedException e) {
+                    throw e;
                 } catch (final Exception e) {
                     if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
+                    } else {
+                        throw e;
                     }
-                    throw e;
                 }
                 final String code = getCaptchaCode("solvemedia", cf, link);
                 final String chid = sm.getChallenge(code);
@@ -1943,8 +1953,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Function to find the final downloadlink. </br>
-     * This will also find video directurls of embedded videos if the player is 'currently visible'.
+     * Function to find the final downloadlink. </br> This will also find video directurls of embedded videos if the player is 'currently
+     * visible'.
      */
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = br.getRedirectLocation();
@@ -1992,7 +2002,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             String lastDllink = null;
             boolean allResultsAreTheSame = true;
-            final String[] possibleDllinks = new Regex(src, String.format(getGenericDownloadlinkRegExImage(), "[A-Za-z0-9\\-\\.']+")).getColumn(-1);
+            final String[] possibleDllinks = new Regex(src, String.format(getGenericDownloadlinkRegExImage(), getDllinkHostPattern())).getColumn(-1);
             for (final String possibleDllink : possibleDllinks) {
                 if (possibleDllinks.length > 1 && lastDllink != null && !possibleDllink.equalsIgnoreCase(lastDllink)) {
                     allResultsAreTheSame = false;
@@ -2080,7 +2090,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 break;
                             }
                         } catch (final Throwable e) {
-                            e.printStackTrace();
+                            logger.log(e);
                             logger.info("Failed to find quality via key '" + possibleQualityObjectName + "' for current downloadurl candidate: " + dllink_temp);
                             if (!onlyOneQualityAvailable) {
                                 continue;
@@ -2099,6 +2109,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     logger.info("BEST handling for multiple video source succeeded - best quality is: " + quality_best);
                 }
             } catch (final Throwable e) {
+                logger.log(e);
                 logger.info("BEST handling for multiple video source failed");
             }
         }
@@ -2156,6 +2167,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             decoded = p;
         } catch (Exception e) {
+            logger.log(e);
         }
         String dllink = null;
         if (decoded != null) {
@@ -2173,19 +2185,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public boolean isDllinkFile(final String url) {
-        if (url == null) {
-            return false;
-        } else {
-            return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
-        }
+        // TODO: update to support list of pattern, see getGenericDownloadlinkRegExFile
+        return url != null && new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
     }
 
     public boolean isDllinkImage(final String url) {
-        if (url == null) {
-            return false;
-        } else {
-            return new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExImage(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
-        }
+        // TODO: update to support list of pattern, see getGenericDownloadlinkRegExImage
+        return url != null && new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExImage(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
     }
 
     private String getDllinkHostPattern() {
@@ -2211,15 +2217,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public String getGenericDownloadlinkRegExFile() {
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d{1,4})?/(?:files|d|cgi\\-bin/dl\\.cgi)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
+        // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
+        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
     }
 
-    /*
-     * Alternative / old:
-     * https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?::\\d{1,4})?/[a-z0-9]{50,}/[^<>\"/]*?
-     */
     public String getGenericDownloadlinkRegExImage() {
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-\\.]+\\.)?%s)(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
+        // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
+        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     }
 
     /**
@@ -2728,13 +2732,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * XFS owners will usually not add html traps into the html of accounts we can use the original unmodified html here.
                  */
                 apikey = this.findAPIKey(br.toString());
+            } catch (InterruptedException e) {
+                throw e;
             } catch (final Throwable e) {
                 /*
                  * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot rely
                  * on it working so we need that website fallback!
                  */
                 logger.info("Failed to find apikey (with Exception) --> Continuing via website");
-                e.printStackTrace();
+                logger.log(e);
             }
             if (apikey != null) {
                 /*
@@ -2743,13 +2749,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 logger.info("Found apikey --> Trying to get accountinfo via API");
                 /* Save apikey for possible future usage */
-                account.setProperty("apikey", apikey);
-                try {
-                    ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
-                    api_success = ai != null;
-                } catch (final Throwable e) {
-                    e.printStackTrace();
-                    logger.warning("Failed to find accountinfo via API even though apikey is given; probably serverside API failure --> Falling back to website handling");
+                synchronized (account) {
+                    account.setProperty("apikey", apikey);
+                    try {
+                        ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
+                        api_success = ai != null;
+                    } catch (final InterruptedException e) {
+                        throw e;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                        logger.warning("Failed to find accountinfo via API even though apikey is given; probably serverside API failure --> Falling back to website handling");
+                    }
                 }
             }
         }
@@ -3432,6 +3442,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty("apikey");
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(followRedirects);
@@ -3441,12 +3454,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected final String getAPIKey(final Account account) {
         /* First check if the apikey was found via website handling and set as a property on our Account object */
-        String apikey = account.getStringProperty("apikey", null);
-        /* Second, maybe the user has logged in via API. */
-        if (StringUtils.isEmpty(apikey) && isAPIKey(account.getUser())) {
-            apikey = account.getUser();
+        synchronized (account) {
+            String apikey = account.getStringProperty("apikey", null);
+            /* Second, maybe the user has logged in via API. */
+            if (StringUtils.isEmpty(apikey) && isAPIKey(account.getUser())) {
+                apikey = account.getUser();
+            }
+            return apikey;
         }
-        return apikey;
     }
 
     protected final boolean isAPIKey(final String str) {
@@ -3551,10 +3566,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
         String dllink = null;
         /**
-         * Only execute this if you know that the currently used host supports this! </br>
-         * Only execute this if an apikey is given! </br>
-         * Only execude this if you know that a particular host has enabled this API call! </br>
-         * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
+         * Only execute this if you know that the currently used host supports this! </br> Only execute this if an apikey is given! </br>
+         * Only execude this if you know that a particular host has enabled this API call! </br> Important: For some hosts, this API call
+         * will only be available for premium accounts, no for free accounts!
          */
         if (this.supports_api_only_mode(account) || this.allow_api_download_if_apikey_is_available(account)) {
             /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
@@ -3894,17 +3908,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports embedding videos. <br />
-     * Example: uqload.com</br>
-     * Do not override!
+     * Example: uqload.com</br> Do not override!
      */
     protected final boolean internal_isVideohosterEmbed() {
         return isVideohosterEmbed() || isVideohosterEmbedHTML();
     }
 
     /**
-     * Decides whether to enforce a filename with a '.mp4' ending or not. </br>
-     * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
-     * Do not override - at least try to avoid having to!!
+     * Decides whether to enforce a filename with a '.mp4' ending or not. </br> Names are either enforced if the configuration of the script
+     * implies this or if it detects that embedding videos is possible. </br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_isVideohoster_enforce_video_filename() {
         return internal_isVideohosterEmbed() || isVideohoster_enforce_video_filename();
@@ -3921,8 +3933,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * This can 'automatically' detect whether a host supports availablecheck via 'abuse' URL. <br />
-     * Example: uploadboy.com</br>
-     * Do not override - at least try to avoid having to!!
+     * Example: uploadboy.com</br> Do not override - at least try to avoid having to!!
      */
     protected final boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
