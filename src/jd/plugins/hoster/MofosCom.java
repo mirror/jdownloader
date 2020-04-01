@@ -319,11 +319,6 @@ public class MofosCom extends PluginForHost {
     }
 
     @Override
-    public String getDescription() {
-        return "Lade Video- und Audioinhalte aus der ZDFMediathek herunter";
-    }
-
-    @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return MofosConfigInterface.class;
     }
