@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import jd.plugins.*;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -29,15 +30,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.net", "file4go.com", "sizedrive.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net|biz)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/(?:.*)/(.*)" })
 public class File4GoCom extends antiDDoSForHost {
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,20 +44,13 @@ public class File4GoCom extends antiDDoSForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://www.file4go.com";
-    private static Object       LOCK     = new Object();
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        link.setLinkID(getHost() + "://" + id);
-        link.setUrlDownload(MAINPAGE + "/d/" + id);
-    }
+    private static final String MAINPAGE = "http://www.file4go.net";
+    private static Object LOCK = new Object();
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "sizedrive.com".equals(host) || "file4go.com".equals(host) || "file4go.net".equals(host) || "file4go.biz".equals(host)) {
-            return "file4go.com";
+        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host)) {
+            return "file4go.net";
         }
         return super.rewriteHost(host);
     }
@@ -108,41 +96,21 @@ public class File4GoCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String id = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        String dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
-            final Form getDownload = br.getFormByInputFieldKeyValue("id", id);
-            int wait = 0;
-            final String waittime = br.getRegex("var time = (\\d+)").getMatch(0);
-            if (waittime == null && getDownload == null) {
+        String directLink = checkDirectLink(downloadLink, "directlink");
+        if (directLink == null) {
+            final Form form = br.getFormByRegex("<input type=\"hidden\" name=\"id\" value=\"(.*?)\">");
+            if (form == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
-                if (wait > 180) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-                }
-                this.sleep(wait * 1001l, downloadLink);
-            }
-            submitForm(getDownload);
-            dllink = getDllink();
-            if (dllink == null) {
+            br.submitForm(form);
+            submitForm(form);
+            directLink = getDllink();
+            if (directLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        // Waittime can be skipped
-        // int wait = 60;
-        // final String waittime =
-        // br.getRegex(">contador\\((\\d+)\\);").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
-        /*
-         * Skip these: br.getHeaders().put("X-Requested-With", "XMLHttpRequest"); br.postPage("http://www.file4go.com/recebe_id.php",
-         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)); String dllink =
-         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
-         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
-         */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -151,7 +119,7 @@ public class File4GoCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        downloadLink.setProperty("directlink", directLink);
         dl.startDownload();
     }
 
@@ -294,7 +262,7 @@ public class File4GoCom extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.(?:file4go\\.com|sizedrive\\.com)(?::\\d+)?/(?:[^<>\"]+/dll/[^\"]+|beta(?:free)?/[^\"]+))\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("class=\"novobotao download\" style=\"display:none;\"  href=\"(.*?)\">").getMatch(0);
         }
         return dllink;
     }
