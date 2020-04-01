@@ -316,7 +316,7 @@ public class PornHubCom extends PluginForHost {
         try {
             con = brCheck.openHeadConnection(dlUrl);
             if (con.getResponseCode() != 200) {
-                final Map<String, Map<String, String>> qualities = getVideoLinksFree(this, br);
+                final Map<String, Map<String, String>> qualities = getVideoLinks(this, br);
                 if (qualities == null || qualities.size() == 0) {
                     if (br.containsHTML(REMOVED_VIDEO)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -390,7 +390,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked" })
-    public static Map<String, Map<String, String>> getVideoLinksFree(Plugin plugin, final Browser br) throws Exception {
+    public static Map<String, Map<String, String>> getVideoLinks(Plugin plugin, final Browser br) throws Exception {
         boolean success = false;
         final Map<String, Map<String, String>> qualities = new LinkedHashMap<String, Map<String, String>>();
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
