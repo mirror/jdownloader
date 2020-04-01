@@ -115,6 +115,16 @@ public class StreamzCc extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("The link in your browser URL is only valid for")) {
+            Object redirectLink = link.getProperty("redirect_link");
+            if (redirectLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
+            }
+            br.setFollowRedirects(false);
+            br.getPage(redirectLink.toString());
+            link.setPluginPatternMatcher(br.getRedirectLocation());
+            return requestFileInformation(link);
+        }
         String filename = br.getRegex("<title>streamZ\\.cc ([^<>\"]+)</title>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("<h5>([^<>\"]+)</h5>").getMatch(0);
