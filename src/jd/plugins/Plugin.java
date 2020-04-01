@@ -25,7 +25,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -94,17 +93,16 @@ import org.jdownloader.translate._JDT;
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
-    public static final String                                    HTTP_LINKS_HOST     = "http links";
-    public static final String                                    DIRECT_HTTP_HOST    = "DirectHTTP";
-    public static final String                                    FTP_HOST            = "ftp";
+    public static final String                 HTTP_LINKS_HOST     = "http links";
+    public static final String                 DIRECT_HTTP_HOST    = "DirectHTTP";
+    public static final String                 FTP_HOST            = "ftp";
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
     /* after 0.95xx */
-    protected LogInterface                                        logger              = LogController.TRASH;
-    protected final CopyOnWriteArrayList<File>                    cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
-    private static final HashMap<String, HashMap<String, Object>> CACHE               = new HashMap<String, HashMap<String, Object>>();
-    private CrawledLink                                           currentLink         = null;
+    protected LogInterface                     logger              = LogController.TRASH;
+    protected final CopyOnWriteArrayList<File> cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
+    private CrawledLink                        currentLink         = null;
 
     public void setLogger(LogInterface logger) {
         if (logger == null) {
