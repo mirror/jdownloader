@@ -565,7 +565,15 @@ public class EHentaiOrg extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        try {
+            login(this.br, account, true);
+        } catch (final PluginException e) {
+            logger.info("PluginException happened --> Checking for ERROR_CAPTCHA to set lower account unavailable waittime than default");
+            if (e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
+                throw new AccountUnavailableException("Cloudflare captcha not answered", 5 * 60 * 1000);
+            }
+            throw e;
+        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
