@@ -16,18 +16,23 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -35,9 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://(?:new\\.|site-)?ma\\.fakehub\\.com/(?:(watch|scene)/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?|model/\\d+(?:/[a-z0-9\\-_]+/?)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://site-ma\\.fakehub\\.com/(?:trailer|scene)/(\\d+)(/[a-z0-9\\-]+)?|https?://(www\\.)?fakehub\\.com/scene/(\\d+)(/[a-z0-9\\-]+)?" })
 public class FakehubCom extends PluginForDecrypt {
     public FakehubCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,77 +55,21 @@ public class FakehubCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String fid = new Regex(parameter, "/(\\d+)/").getMatch(0);
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        // Login if possible
+        // final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        /* Login if possible */
         getUserLogin(false);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+        final String videoID = new Regex(parameter, "(?:trailer|scene)/(\\d+)").getMatch(0);
+        if (videoID == null) {
+            return null;
         }
-        if (parameter.matches(TYPE_VIDEO)) {
-            final String type = new Regex(parameter, TYPE_VIDEO).getMatch(0);
-            final String id = new Regex(parameter, TYPE_VIDEO).getMatch(1);
-            final GetRequest get = br.createGetRequest("https://site-api.project1service.com/v2/releases/" + id);
-            get.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
-            br.getPage(get);
-            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
-            final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
-            final String[] dlinfo = htmldownload.split("</li>");
-            for (final String video : dlinfo) {
-                final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
-                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
-                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
-                final String quality_url = dlurl != null ? new Regex(dlurl, "/\\d+/([^/]+)/?$").getMatch(0) : null;
-                if (dlurl == null || quality == null || quality_url == null) {
-                    continue;
-                }
-                if (!cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
-                    /* Skip unwanted content */
-                    continue;
-                }
-                final String ext = ".mp4";
-                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
-                if (filesize != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    dl.setAvailable(true);
-                }
-                dl.setName("_" + quality + ext);
-                dl.setProperty("fid", fid);
-                dl.setProperty("quality", quality);
-                decryptedLinks.add(dl);
-            }
-        } else if (parameter.matches(TYPE_MEMBER)) {
-            /* Grab all videos of a model/member */
-            final String[] videourls = this.br.getRegex("/video/full[^<>\"]+").getColumn(-1);
-            for (final String videourl : videourls) {
-                decryptedLinks.add(this.createDownloadlink(getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + videourl));
-            }
-        } else if (parameter.matches(TYPE_PHOTO)) {
-            final String pictures[] = getPictureArray(this.br);
-            for (String finallink : pictures) {
-                final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
-                finallink = finallink.replaceAll("https?://", "http://fakehubdecrypted");
-                final DownloadLink dl = this.createDownloadlink(finallink);
-                dl.setFinalFileName(number_formatted + ".jpg");
-                dl.setAvailable(true);
-                dl.setProperty("fid", fid);
-                dl.setProperty("picnumber_formatted", number_formatted);
-                decryptedLinks.add(dl);
-            }
-        } else {
-            /* WTF - this should never happen! */
-            logger.warning("Unsupported linktype");
-            return decryptedLinks;
+        final LinkedHashMap<String, DownloadLink> qualities = crawlVideoAPI(videoID);
+        final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
+        while (iteratorQualities.hasNext()) {
+            decryptedLinks.add(iteratorQualities.next().getValue());
         }
         return decryptedLinks;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
@@ -139,6 +86,69 @@ public class FakehubCom extends PluginForDecrypt {
             }
         }
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    }
+
+    private LinkedHashMap<String, DownloadLink> crawlVideoAPI(final String videoID) throws Exception {
+        final LinkedHashMap<String, DownloadLink> foundQualities = new LinkedHashMap<String, DownloadLink>();
+        br.getPage("https://site-api.project1service.com/v2/releases/" + videoID);
+        /* TODO: Check offline errorhandling */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("result");
+        String title = (String) entries.get("title");
+        String description = (String) entries.get("description");
+        if (StringUtils.isEmpty(title)) {
+            /* Fallback */
+            title = videoID;
+        } else if (title.equalsIgnoreCase("trailer")) {
+            title = videoID + "_trailer";
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
+        final String format_filename = "%s_%s.mp4";
+        entries = (LinkedHashMap<String, Object>) entries.get("videos");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "full/files");
+        LinkedHashMap<String, Object> videoInfo = null;
+        final Iterator<Entry<String, Object>> qualities = entries.entrySet().iterator();
+        while (qualities.hasNext()) {
+            final Entry<String, Object> entry = qualities.next();
+            videoInfo = (LinkedHashMap<String, Object>) entry.getValue();
+            String format = (String) videoInfo.get("format");
+            final long filesize = JavaScriptEngineFactory.toLong(videoInfo.get("sizeBytes"), 0);
+            videoInfo = (LinkedHashMap<String, Object>) videoInfo.get("urls");
+            String downloadurl = (String) videoInfo.get("download");
+            if (StringUtils.isEmpty(downloadurl)) {
+                /* Fallback to stream-URL */
+                downloadurl = (String) videoInfo.get("view");
+            }
+            if (StringUtils.isEmpty(downloadurl)) {
+                continue;
+            } else if (StringUtils.isEmpty(format) || !format.matches("\\d+p")) {
+                /* Skip invalid entries and hls and dash streams */
+                continue;
+            }
+            /* E.g. '1080p' --> '1080' */
+            format = format.replace("p", "");
+            final DownloadLink dl = this.createDownloadlink("directhttp://" + downloadurl);
+            dl.setFinalFileName(String.format(format_filename, title, format));
+            dl.setProperty("fid", videoID);
+            dl.setProperty("quality", format);
+            if (filesize > 0) {
+                dl.setDownloadSize(filesize);
+            }
+            dl.setAvailable(true);
+            dl._setFilePackage(fp);
+            // if (!loggedin) {
+            // dl.setProperty("free_downloadable", true);
+            // }
+            foundQualities.put(format, dl);
+        }
+        return foundQualities;
     }
 
     public static String[] getPictureArray(final Browser br) {
