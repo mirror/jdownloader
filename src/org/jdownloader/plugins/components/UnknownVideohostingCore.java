@@ -96,7 +96,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     public String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]{12}(?=$)|\\p{XDigit}++(?=\\.html$))").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:(?:embed/)?[a-z0-9]{12}|embed-\\p{XDigit}++\\.html)";
+        return "/(?:embed/)?[a-z0-9]{12}";
     }
 
     public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
@@ -155,9 +155,6 @@ public class UnknownVideohostingCore extends PluginForHost {
         }
         if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("<title>Watch ([^<>\"]+) \\- Vidup</title>").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("<title>(.*?)(?i: EMBED)?</title>").getMatch(0);
         }
         if (StringUtils.isEmpty(filename)) {
             /* Last chance fallback */
@@ -222,12 +219,6 @@ public class UnknownVideohostingCore extends PluginForHost {
             }
             br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
             br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
-                String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
-                br.getPage(url);
-                return br.getRedirectLocation();
-            }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
