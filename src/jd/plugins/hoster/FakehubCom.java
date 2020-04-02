@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -72,7 +73,8 @@ public class FakehubCom extends PluginForHost {
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.FakehubCom.DOMAIN_BASE);
+        br.setAllowedResponseCodes(new int[] { 400 });
+        return br;
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -161,101 +163,146 @@ public class FakehubCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    private static final String PROPERTY_authorization                     = "authorization";
+    private static final String PROPERTY_jwt                               = "jwt";
+    private static final String PROPERTY_timestamp_website_cookies_updated = "timestamp_website_cookies_updated";
+
+    public void login(Browser br, final Account account, final boolean checkCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                String jwt = null;
+                if (cookies != null && setAPIHeader(br, account)) {
                     /*
-                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
-                     * when the user logs in via browser.
+                     * Try to avoid login captcha at all cost!
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    setAPIHeader(br);
+                    if (!checkCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
                     br.getPage("https://site-api.project1service.com/v1/self");
                     if (br.getHttpConnection().getResponseCode() == 200) {
                         logger.info("Cookie login successful");
+                        final long timestamp_headers_updated = account.getLongProperty(PROPERTY_timestamp_website_cookies_updated, 0);
+                        /* Update website cookies sometimes although we really use the Website-API for most of all requests. */
+                        if (System.currentTimeMillis() - timestamp_headers_updated >= 5 * 60 * 1000l) {
+                            logger.info("Updating website cookies and JWT value");
+                            /* Access mainpage without authorization headers but with cookies */
+                            final Browser brc = prepBR(new Browser());
+                            brc.setCookies(account.getHoster(), cookies);
+                            brc.getPage("https://site-ma." + account.getHoster());
+                            /* TODO: This is very unsafe without using json parser! */
+                            jwt = PluginJSonUtils.getJson(brc, "jwt");
+                            if (jwt == null) {
+                                logger.warning("Failed to find jwt");
+                            } else {
+                                account.setProperty(PROPERTY_jwt, jwt);
+                                br.setCookie("site-ma." + account.getHoster(), "instance_token", jwt);
+                                account.setProperty(PROPERTY_timestamp_website_cookies_updated, System.currentTimeMillis());
+                            }
+                        }
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
+                        cookies = null;
+                        /* Important: Especially old Authorization headers can cause trouble! */
+                        br = prepBR(new Browser());
                     }
-                    // br.getPage("https://site-ma." + account.getHoster() + "/login");
-                    // if (StringUtils.containsIgnoreCase(br.getURL(), "/access/login")) {
-                    // logger.info("Cookie login failed --> Performing full login");
-                    // br = prepBR(new Browser());
-                    // account.clearCookies("");
-                    // } else {
-                    // /* Set API header in case we're performing API requests later */
-                    // setAPIHeader(br);
-                    // account.saveCookies(br.getCookies(account.getHoster()), "");
-                    // logger.info("Cookie login successful");
-                    // return;
-                    // }
                 }
-                if (cookies == null) {
-                    br.setCookie(getHost(), "bonusPageViews", "1");
-                    br.setFollowRedirects(true);
-                    br.getPage("https://site-ma." + account.getHoster() + "/login");
-                    final String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
-                    final String ip = PluginJSonUtils.getJson(br, "ip");
-                    if (!setAPIHeader(br)) {
-                        logger.warning("Failed to set API headers");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else if (StringUtils.isEmpty(api_base)) {
-                        logger.warning("Failed to find api_base");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.getHeaders().put("Content-Type", "application/json");
-                    br.getHeaders().put("referer", "https://site-ma." + account.getHoster() + "/login");
-                    br.getHeaders().put("sec-fetch-dest", "empty");
-                    br.getHeaders().put("sec-fetch-mode", "cors");
-                    br.getHeaders().put("sec-fetch-site", "cross-site");
-                    if (!StringUtils.isEmpty(ip)) {
-                        br.getHeaders().put("x-forwarded-for", ip);
-                    }
-                    final String recaptchaSiteKey = PluginJSonUtils.getJson(br, "recaptchaSiteKey");
-                    Map<String, Object> map = new HashMap<String, Object>();
-                    map.put("username", account.getUser());
-                    map.put("password", account.getPass());
-                    map.put("failureUrl", "https://site-ma." + this.getHost() + "/access/failure");
-                    map.put("successUrl", "https://site-ma." + this.getHost() + "/access/success");
-                    final DownloadLink dlinkbefore = getDownloadLink();
-                    if (!StringUtils.isEmpty(recaptchaSiteKey)) {
-                        try {
-                            if (dlinkbefore == null) {
-                                setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://ma-site." + account.getHoster(), true));
-                            }
-                            final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, recaptchaSiteKey);
-                            map.put("googleReCaptchaResponse", captcha.getToken());
-                        } finally {
-                            if (dlinkbefore != null) {
-                                setDownloadLink(dlinkbefore);
-                            }
+                logger.info("Performing full login");
+                br.setFollowRedirects(true);
+                br.getPage("https://site-ma." + account.getHoster() + "/login");
+                final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
+                Map<String, Object> entries = new HashMap<String, Object>();
+                entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                jwt = PluginJSonUtils.getJson(br, "jwt");
+                entries = (LinkedHashMap<String, Object>) entries.get("domain");
+                /* E.g. site-ma.fakehub.com */
+                final String hostname = (String) entries.get("hostname");
+                final String recaptchaSiteKey = (String) entries.get("siteKey");
+                // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+                final String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
+                final String ip = PluginJSonUtils.getJson(br, "ip");
+                final String cookie_instance_token = br.getCookie(br.getHost(), "instance_token", Cookies.NOTDELETEDPATTERN);
+                if (StringUtils.isEmpty(jwt) || StringUtils.isEmpty(hostname) || StringUtils.isEmpty(api_base) || StringUtils.isEmpty(ip)) {
+                    logger.warning("Failed to find api base data");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (cookie_instance_token == null) {
+                    logger.warning("Failed to find Instance token");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.setCookie(hostname, "instance_token", jwt);
+                br.getHeaders().put("Content-Type", "application/json");
+                br.getHeaders().put("Referer", "https://" + hostname + "/login");
+                br.getHeaders().put("sec-fetch-dest", "empty");
+                br.getHeaders().put("sec-fetch-mode", "cors");
+                br.getHeaders().put("sec-fetch-site", "cross-site");
+                br.getHeaders().put("Origin", "https://" + hostname);
+                br.getHeaders().put("Instance", cookie_instance_token);
+                if (!StringUtils.isEmpty(ip)) {
+                    br.getHeaders().put("x-forwarded-for", ip);
+                }
+                /* Prepare POST-data */
+                final String successUrl = "https://" + hostname + "/access/success";
+                final String failureUrl = "https://" + hostname + "/access/failure";
+                entries.put("username", account.getUser());
+                entries.put("password", account.getPass());
+                entries.put("failureUrl", successUrl);
+                entries.put("successUrl", failureUrl);
+                final DownloadLink dlinkbefore = getDownloadLink();
+                String recaptchaV2Response = null;
+                if (!StringUtils.isEmpty(recaptchaSiteKey)) {
+                    try {
+                        if (dlinkbefore == null) {
+                            setDownloadLink(new DownloadLink(this, "Account", hostname, "https://" + hostname, true));
+                        }
+                        final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, recaptchaSiteKey);
+                        recaptchaV2Response = captcha.getToken();
+                        entries.put("googleReCaptchaResponse", recaptchaV2Response);
+                    } finally {
+                        if (dlinkbefore != null) {
+                            setDownloadLink(dlinkbefore);
                         }
                     }
-                    br.setAllowedResponseCodes(new int[] { 400 });
-                    final PostRequest postRequest = br.createPostRequest(api_base + "/v1/authenticate/redirect", JSonStorage.toString(map));
-                    // postRequest.getHeaders().put("Instance", br.getCookie(getHost(), "instance_token"));
-                    br.getPage(postRequest);
-                    map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final String authenticationUrl = (String) map.get("authenticationUrl");
-                    if (StringUtils.isEmpty(authenticationUrl)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    /* Now continue without API */
-                    br.getPage(authenticationUrl);
-                    final Form continueform = br.getFormbyKey("response");
-                    if (continueform != null) {
-                        /* Redirect from probiller.com to main website --> Login complete */
-                        br.submitForm(continueform);
-                    }
-                    if (!isLoggedIN()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
                 }
+                // final String postData = "{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() +
+                // "\",\"googleReCaptchaResponse\":\"" + recaptchaV2Response + "\",\"successUrl\":\"" + successUrl +
+                // "\",\"failureUrl\":\"" + failureUrl + "\"}";
+                /* 2019-09-12: This action can be found in their html inside json: dataApiUrl */
+                // br.postPageRaw(api_base + "/v1/authenticate/redirect", postData);
+                final PostRequest postRequest = br.createPostRequest(api_base + "/v1/authenticate/redirect", JSonStorage.serializeToJson(entries));
+                br.getPage(postRequest);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String authenticationUrl = (String) entries.get("authenticationUrl");
+                if (StringUtils.isEmpty(authenticationUrl)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                String access_token_ma = br.getCookie(br.getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN);
+                /* Now continue without API */
+                br.getPage(authenticationUrl);
+                final Form continueform = br.getFormbyKey("response");
+                if (continueform != null) {
+                    /*
+                     * Redirect from API to main website --> Grants us authorization cookie which can then again be used to authorize API
+                     * requests
+                     */
+                    logger.info("Found continueform");
+                    br.submitForm(continueform);
+                } else {
+                    logger.warning("Failed to find continueform");
+                }
+                access_token_ma = br.getCookie(br.getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN);
+                if (!isLoggedIN() || access_token_ma == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.getHeaders().put("Authorization", access_token_ma);
+                account.setProperty(PROPERTY_authorization, access_token_ma);
+                account.setProperty(PROPERTY_jwt, jwt);
+                account.setProperty(PROPERTY_timestamp_website_cookies_updated, System.currentTimeMillis());
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -270,21 +317,19 @@ public class FakehubCom extends PluginForHost {
         return br.getCookie(getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    private boolean setAPIHeader(final Browser br) {
-        final String instance_token = br.getCookie(br.getHost(), "instance_token");
-        final String access_token_ma = br.getCookie(br.getHost(), "access_token_ma");
-        boolean foundCookie = false;
-        if (instance_token != null) {
-            br.getHeaders().put("Instance", instance_token);
-            foundCookie = true;
+    private boolean setAPIHeader(final Browser br, final Account account) {
+        if (account == null) {
+            return false;
         }
-        if (access_token_ma != null) {
-            br.getHeaders().put("Authorization", access_token_ma);
-            foundCookie = true;
+        final String jwt = account.getStringProperty(PROPERTY_jwt);
+        final String authorization = account.getStringProperty(PROPERTY_authorization);
+        if (jwt == null || authorization == null) {
+            /* This should never happen */
+            return false;
         }
-        /* TODO */
-        br.getHeaders().put("Origin", "https://site-ma.fakehub.com");
-        return foundCookie;
+        br.getHeaders().put("Instance", jwt);
+        br.getHeaders().put("Authorization", authorization);
+        return true;
     }
 
     @Override
@@ -293,22 +338,22 @@ public class FakehubCom extends PluginForHost {
             try {
                 login(this.br, account, true);
                 final AccountInfo ai = new AccountInfo();
-                setAPIHeader(br);
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
                     br.getPage("https://site-api.project1service.com/v1/self");
-                }
-                if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Boolean isExpired = (Boolean) map.get("isExpired");
                 final Boolean isTrial = (Boolean) map.get("isTrial");
+                final Boolean isCanceled = (Boolean) map.get("isCanceled");
                 if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
-                    /* 2020-04-01: Free accounts cannot be used for anything! */
-                    ai.setTrafficLeft(0);
+                    /* 2020-04-02: Free accounts can only be used to download trailers */
+                    // ai.setTrafficLeft(0);
                     ai.setStatus("Free Account");
+                } else if (isTrial) {
+                    ai.setStatus("Free Account (Trial)");
                 } else {
+                    /* Premium accounts must not have any expire-date! */
                     final String expiryDate = (String) map.get("expiryDate");
                     if (expiryDate != null) {
                         final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
@@ -317,7 +362,11 @@ public class FakehubCom extends PluginForHost {
                         }
                     }
                     account.setType(AccountType.PREMIUM);
-                    ai.setStatus("Premium Account");
+                    if (isCanceled) {
+                        ai.setStatus("Premium Account (running)");
+                    } else {
+                        ai.setStatus("Premium Account (cancelled)");
+                    }
                 }
                 account.setConcurrentUsePossible(true);
                 ai.setUnlimitedTraffic();

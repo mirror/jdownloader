@@ -60,7 +60,7 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             for (final String attachment : attachments) {
-                final DownloadLink dl = this.createDownloadlink("directhttp://https://" + br.getHost() + attachment);
+                final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + attachment);
                 String url_name = new Regex(attachment, "/attachments/(.+)\\.\\d+/?$").getMatch(0);
                 if (url_name != null) {
                     if (url_name.contains("-")) {
