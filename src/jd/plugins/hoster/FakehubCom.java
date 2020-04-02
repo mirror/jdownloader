@@ -363,9 +363,9 @@ public class FakehubCom extends PluginForHost {
                     }
                     account.setType(AccountType.PREMIUM);
                     if (isCanceled) {
-                        ai.setStatus("Premium Account (running)");
-                    } else {
                         ai.setStatus("Premium Account (cancelled)");
+                    } else {
+                        ai.setStatus("Premium Account (running)");
                     }
                 }
                 account.setConcurrentUsePossible(true);

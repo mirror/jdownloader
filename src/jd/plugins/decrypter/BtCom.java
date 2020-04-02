@@ -22,6 +22,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -34,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bt.com" }, urls = { "https?://(?:www\\.)?btcloud\\.bt\\.com/web/app/share/invite/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bt.com" }, urls = { "https?://(?:www\\.)?btcloud\\.bt\\.com/web/app/share/invite/([A-Za-z0-9]+)|https://cloud\\.bt\\.comdecrypted/\\?.+" })
 public class BtCom extends PluginForDecrypt {
     public BtCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,21 +44,30 @@ public class BtCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        String apikey;
+        String main_uri;
+        String cookie_NWBCS;
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("errorCode")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (parameter.matches(".+web/app/share/invite/.+")) {
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("errorCode")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            apikey = PluginJSonUtils.getJson(br, "nab.api.cs.key");
+            main_uri = PluginJSonUtils.getJson(PluginJSonUtils.unescape(br.toString()), "location");
+            cookie_NWBCS = br.getCookie(br.getURL(), "NWBCS", Cookies.NOTDELETEDPATTERN);
+            if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(main_uri) || StringUtils.isEmpty(cookie_NWBCS)) {
+                return null;
+            }
+        } else {
+            final UrlQuery query = new UrlQuery().parse(parameter);
+            apikey = query.get("apikey");
+            main_uri = query.get("uri");
+            cookie_NWBCS = query.get("cookie_NWBCS");
         }
-        final String folderTitle = PluginJSonUtils.getJson(br, "name");
-        final String apikey = PluginJSonUtils.getJson(br, "nab.api.cs.key");
-        final String share = PluginJSonUtils.getJson(PluginJSonUtils.unescape(br.toString()), "location");
-        final String cookie_NWBCS = br.getCookie(br.getURL(), "NWBCS", Cookies.NOTDELETEDPATTERN);
-        if (StringUtils.isEmpty(apikey) || StringUtils.isEmpty(share) || StringUtils.isEmpty(cookie_NWBCS)) {
-            return null;
-        }
-        br.getHeaders().put("Accept", "application/vnd.newbay.dv-1.10+json");
         br.getHeaders().put("Authorization", String.format("NWB token=\"%s\"; authVersion=\"1.0\"", cookie_NWBCS));
+        br.getHeaders().put("Accept", "application/vnd.newbay.dv-1.10+json");
         br.getHeaders().put("Authorization-Domain", "sncr.shared.token");
         br.getHeaders().put("Sec-Fetch-Dest", "empty");
         br.getHeaders().put("Sec-Fetch-Mode", "cors");
@@ -67,7 +77,7 @@ public class BtCom extends PluginForDecrypt {
         br.getHeaders().put("X-F1-Client-Authorization", "Basic " + apikey);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-Response-Encoding", "html");
-        br.setAllowedResponseCodes(new int[] { 406 });
+        // br.setAllowedResponseCodes(new int[] { 406 });
         /* Extra/First auth request seems not to be required */
         // br.postPage("https://btcloud.bt.com/share/api/auth/refresh", "shareToken=" + NWBCS);
         // final String shareToken = PluginJSonUtils.getJson(br, "shareToken");
@@ -75,79 +85,68 @@ public class BtCom extends PluginForDecrypt {
         // return null;
         // }
         // br.getHeaders().put("Authorization", String.format("NWB token=\"%s\"; authVersion=\"1.0\"", NWBCS));
-        br.getPage("https://btcloud.bt.com/dv/api/folder/list?uri=" + Encoding.urlEncode(share) + "&start=1&count=60&_=" + System.currentTimeMillis());
+        br.getPage("https://btcloud.bt.com/dv/api/folder/list?uri=" + Encoding.urlEncode(main_uri) + "&start=1&count=60&_=" + System.currentTimeMillis());
         /* 2nd offline check */
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> folderInfo;
         entries = (Map<String, Object>) entries.get("nodeCollection");
-        Map<String, Object> folderInfo = null;
-        final ArrayList<String> apiQuerries = new ArrayList<String>();
-        apiQuerries.add("dummy");
-        /* TODO: Add proper subfolder support */
-        final ArrayList<Object> folders = (ArrayList<Object>) entries.get("folder");
-        for (final Object folderO : folders) {
-            folderInfo = (Map<String, Object>) folderO;
-            final String uri = (String) JavaScriptEngineFactory.walkJson(folderInfo, "uri/$");
-            // final String link = (String) JavaScriptEngineFactory.walkJson(folderInfo, "link/$");
-            if (StringUtils.isEmpty(uri)) {
-                /* Skip invalid items */
-                continue;
-            }
-            apiQuerries.add(uri);
-        }
-        int folderIndex = 0;
-        for (final String query : apiQuerries) {
-            if (folderIndex > 0) {
-                br.getPage("https://btcloud.bt.com/dv/api/folder/list?uri=" + Encoding.urlEncode(query) + "&sort=type+desc%2CversionCreated+desc&start=1&count=60&_=1585841297796");
-                final Object map_or_array = JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                entries = (Map<String, Object>) entries.get("nodeCollection");
-                if (entries == null) {
-                    continue;
-                }
-            }
-            final ArrayList<Object> files;
-            final Object filesO = entries.get("file");
-            if (filesO instanceof ArrayList) {
-                files = (ArrayList<Object>) entries.get("file");
-            } else {
-                /* Single file in folder */
-                files = new ArrayList<Object>();
-                files.add(filesO);
-            }
-            for (final Object fileO : files) {
-                entries = (Map<String, Object>) fileO;
-                final String uri = (String) JavaScriptEngineFactory.walkJson(entries, "uri/$");
-                final String contentToken = (String) JavaScriptEngineFactory.walkJson(entries, "contentToken/$");
-                final String filename = (String) JavaScriptEngineFactory.walkJson(entries, "name/$");
-                final String parentPath = (String) JavaScriptEngineFactory.walkJson(entries, "parentPath/$");
-                final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "size/$"), 0);
-                if (StringUtils.isEmpty(uri) || StringUtils.isEmpty(filename)) {
+        final Object foldersO = entries.get("folder");
+        if (foldersO != null) {
+            final ArrayList<Object> folders = (ArrayList<Object>) foldersO;
+            for (final Object folderO : folders) {
+                folderInfo = (Map<String, Object>) folderO;
+                final String uri = (String) JavaScriptEngineFactory.walkJson(folderInfo, "uri/$");
+                // final String link = (String) JavaScriptEngineFactory.walkJson(folderInfo, "link/$");
+                if (StringUtils.isEmpty(uri)) {
                     /* Skip invalid items */
                     continue;
                 }
-                String uri_encoded = URLEncode.encodeURIComponent(uri);
-                // uri_encoded = uri_encoded.replace("dv-file-share://", "dv-file-share%3A%2F%2F");
-                final String dllink = String.format("https://common.btpc.prod.cloud.synchronoss.net/dv/api/file/sharedContent?uri=%s&X-Client-Platform=WEB&X-Client-Identifier=WhiteLabelWebApp&NWB=A%s&cachebuster=%d&browser=true", uri_encoded, contentToken, System.currentTimeMillis());
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
-                dl.setFinalFileName(filename);
-                if (filesize > 0) {
-                    dl.setDownloadSize(filesize);
-                }
-                dl.setAvailable(true);
-                if (!StringUtils.isEmpty(parentPath)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, parentPath);
-                }
-                decryptedLinks.add(dl);
-                distribute(dl);
+                final UrlQuery query = new UrlQuery();
+                query.append("apikey", apikey, false);
+                query.append("uri", uri, false);
+                query.append("cookie_NWBCS", cookie_NWBCS, false);
+                /* Goes back into decrypter */
+                decryptedLinks.add(this.createDownloadlink("https://cloud.bt.comdecrypted/?" + query.toString()));
             }
-            if (this.isAbort()) {
-                break;
+        }
+        final ArrayList<Object> files;
+        final Object filesO = entries.get("file");
+        if (filesO instanceof ArrayList) {
+            files = (ArrayList<Object>) entries.get("file");
+        } else {
+            /* Single file in folder */
+            files = new ArrayList<Object>();
+            files.add(filesO);
+        }
+        for (final Object fileO : files) {
+            entries = (Map<String, Object>) fileO;
+            final String uri = (String) JavaScriptEngineFactory.walkJson(entries, "uri/$");
+            final String contentToken = (String) JavaScriptEngineFactory.walkJson(entries, "contentToken/$");
+            final String filename = (String) JavaScriptEngineFactory.walkJson(entries, "name/$");
+            final String parentPath = (String) JavaScriptEngineFactory.walkJson(entries, "parentPath/$");
+            final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "size/$"), 0);
+            if (StringUtils.isEmpty(uri) || StringUtils.isEmpty(filename)) {
+                /* Skip invalid items */
+                continue;
             }
-            folderIndex++;
+            String uri_encoded = URLEncode.encodeURIComponent(uri);
+            // uri_encoded = uri_encoded.replace("dv-file-share://", "dv-file-share%3A%2F%2F");
+            final String dllink = String.format("https://common.btpc.prod.cloud.synchronoss.net/dv/api/file/sharedContent?uri=%s&X-Client-Platform=WEB&X-Client-Identifier=WhiteLabelWebApp&NWB=A%s&cachebuster=%d&browser=true", uri_encoded, contentToken, System.currentTimeMillis());
+            final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
+            dl.setFinalFileName(filename);
+            if (filesize > 0) {
+                dl.setDownloadSize(filesize);
+            }
+            dl.setAvailable(true);
+            if (!StringUtils.isEmpty(parentPath)) {
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, parentPath);
+            }
+            dl.setLinkID(this.getHost() + "://" + uri);
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
