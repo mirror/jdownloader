@@ -18,15 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.UnknownVideohostingCore;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.UnknownVideohostingCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VevIo extends UnknownVideohostingCore {
@@ -37,8 +38,17 @@ public class VevIo extends UnknownVideohostingCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vev.io", "thevideo.me", "thevideo.cc", "vev.red", "thevideos.ga" });
+        ret.add(new String[] { "vev.io", "thevideo.me", "thevideo.cc", "vev.red" });
+        ret.add(new String[] { "thevideos.ga" });// standalone domain/site
         return ret;
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        // do not correct links from thevideos.ga
+        if (!StringUtils.equalsIgnoreCase("thevideos.ga", getHost())) {
+            super.correctDownloadLink(link);
+        }
     }
 
     public static String[] getAnnotationNames() {
