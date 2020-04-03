@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +31,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamzCc extends antiDDoSForHost {
@@ -73,7 +73,7 @@ public class StreamzCc extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9==]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -112,18 +112,26 @@ public class StreamzCc extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
+        // final String shareLink = br.getRegex("Please share this link to your friends:\\s*(https?://streamz.cc/[a-z0-9==]+)").getMatch(0);
+        // if (StringUtils.isNotEmpty(shareLink)) {
+        // link.setPluginPatternMatcher(shareLink);
+        // }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {
-            Object redirectLink = link.getProperty("redirect_link");
-            if (redirectLink == null) {
+            final String redirectLink = link.getStringProperty("redirect_link", null);
+            if (StringUtils.isEmpty(redirectLink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
             }
             br.setFollowRedirects(false);
-            br.getPage(redirectLink.toString());
-            link.setPluginPatternMatcher(br.getRedirectLocation());
-            return requestFileInformation(link);
+            br.getPage(redirectLink);
+            if (br.getRedirectLocation() != null) {
+                link.setPluginPatternMatcher(br.getRedirectLocation());
+                return requestFileInformation(link);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         String filename = br.getRegex("<title>streamZ\\.cc ([^<>\"]+)</title>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
