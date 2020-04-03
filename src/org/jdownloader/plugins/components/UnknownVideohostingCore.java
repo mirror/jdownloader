@@ -96,7 +96,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     public String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]{12}$|\\p{XDigit}++\\.html$)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]{12}$|\\p{XDigit}++(?=\\.html$))").getMatch(0);
     }
 
     @Override
