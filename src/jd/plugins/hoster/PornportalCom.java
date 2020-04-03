@@ -15,8 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -42,14 +44,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://(?:new\\.|site-)?ma\\.fakehub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://fakehubdecrypted.+" })
-public class FakehubCom extends PluginForHost {
-    public FakehubCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class PornportalCom extends PluginForHost {
+    public PornportalCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://join.fakehub.com/signup/signup.php");
         setConfigElements();
@@ -60,6 +63,80 @@ public class FakehubCom extends PluginForHost {
         return "http://www.supportmg.com/terms-of-service";
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "babes.com" });
+        ret.add(new String[] { "brazzers.com" });
+        ret.add(new String[] { "digitalplayground.com" });
+        ret.add(new String[] { "erito.com" });
+        ret.add(new String[] { "fakehub.com" });
+        ret.add(new String[] { "mofos.com" });
+        ret.add(new String[] { "realitykings.com" });
+        ret.add(new String[] { "sexyhub.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/dummy_not_yet_required");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /*
+     * Debug function: Can be used to quickly find the currently used pornportal version of all supported websites and compare against
+     * previously set expected version value.
+     */
+    public static void checkUsedVersions(final Plugin plg) {
+        final String target_version = "4.35.2";
+        plg.getLogger().info("Target version: " + target_version);
+        final Browser br = new Browser();
+        final String[] supportedSites = getAnnotationNames();
+        for (final String host : supportedSites) {
+            try {
+                br.getPage(getPornportalMainURL(host));
+                final String usedVersion = PluginJSonUtils.getJson(br, "appVersion");
+                plg.getLogger().info("***********************************");
+                plg.getLogger().info("Site: " + host);
+                if (StringUtils.isEmpty(usedVersion)) {
+                    plg.getLogger().info("Used version: Unknown");
+                } else {
+                    plg.getLogger().info("Used version: " + usedVersion);
+                    if (usedVersion.equals(target_version)) {
+                        plg.getLogger().info("Expected version: OK");
+                    } else {
+                        plg.getLogger().info("Expected version: NOK");
+                    }
+                }
+            } catch (final Throwable e) {
+                plg.getLogger().info("!BROWSER ERROR!");
+            }
+        }
+        plg.getLogger().info("***********************************");
+    }
+
+    public static String getPornportalMainURL(final String host) {
+        if (host == null) {
+            return null;
+        }
+        return "https://site-ma." + host;
+    }
+
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -67,8 +144,6 @@ public class FakehubCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private final String         type_premium_pic             = ".+\\.jpg.*?";
-    public static final String   html_loggedin                = "/member/profile/";
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -77,10 +152,9 @@ public class FakehubCom extends PluginForHost {
         return br;
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://fakehubdecrypted", "http://"));
-    }
-
+    // public void correctDownloadLink(final DownloadLink link) {
+    // link.setUrlDownload(link.getDownloadURL().replaceAll("http://fakehubdecrypted", "http://"));
+    // }
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -95,49 +169,12 @@ public class FakehubCom extends PluginForHost {
         }
         this.login(this.br, aa, false);
         dllink = link.getDownloadURL();
-        final String fid = link.getStringProperty("fid", null);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            } else {
-                if (link.getDownloadURL().matches(type_premium_pic)) {
-                    /* Refresh directurl */
-                    final String number_formatted = link.getStringProperty("picnumber_formatted", null);
-                    if (fid == null || number_formatted == null) {
-                        /* User added url without decrypter --> Impossible to refresh this directurl! */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    this.br.getPage(jd.plugins.decrypter.FakehubCom.getPicUrl(fid));
-                    if (jd.plugins.decrypter.FakehubCom.isOffline(this.br)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final String pictures[] = jd.plugins.decrypter.FakehubCom.getPictureArray(this.br);
-                    for (final String finallink : pictures) {
-                        if (finallink.contains(number_formatted + ".jpg")) {
-                            dllink = finallink;
-                            break;
-                        }
-                    }
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    /* ... new URL should work! */
-                    con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        /* Set new url */
-                        link.setUrlDownload(dllink);
-                        /* If user copies url he should always get a valid one too :) */
-                        link.setContentUrl(dllink);
-                        link.setDownloadSize(con.getLongContentLength());
-                    } else {
-                        server_issues = true;
-                    }
-                } else {
-                    server_issues = true;
-                }
             }
         } finally {
             try {
@@ -166,15 +203,20 @@ public class FakehubCom extends PluginForHost {
     private static final String PROPERTY_authorization                     = "authorization";
     private static final String PROPERTY_jwt                               = "jwt";
     private static final String PROPERTY_timestamp_website_cookies_updated = "timestamp_website_cookies_updated";
+    public static final String  PROPERTY_cookiename_authCookie             = "auth_cookie";
+    public static final String  PROPERTY_cookiename_instanceCookie         = "instanceCookie";
+    public static final String  PROPERTY_plugin_jwt                        = "jwt";
+    public static final String  PROPERTY_plugin_jwt_create_timestamp       = "jwt_create_timestamp";
 
     public void login(Browser br, final Account account, final boolean checkCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
+                // checkUsedVersions(this);
                 prepBR(br);
                 Cookies cookies = account.loadCookies("");
                 String jwt = null;
-                if (cookies != null && setAPIHeader(br, account)) {
+                if (cookies != null && setStoredAPIAuthHeaderAccount(br, account)) {
                     /*
                      * Try to avoid login captcha at all cost!
                      */
@@ -193,14 +235,14 @@ public class FakehubCom extends PluginForHost {
                             /* Access mainpage without authorization headers but with cookies */
                             final Browser brc = prepBR(new Browser());
                             brc.setCookies(account.getHoster(), cookies);
-                            brc.getPage("https://site-ma." + account.getHoster());
+                            brc.getPage(getPornportalMainURL(account.getHoster()));
                             /* TODO: This is very unsafe without using json parser! */
                             jwt = PluginJSonUtils.getJson(brc, "jwt");
                             if (jwt == null) {
-                                logger.warning("Failed to find jwt");
+                                logger.warning("Failed to find jwt --> Re-using old value");
                             } else {
                                 account.setProperty(PROPERTY_jwt, jwt);
-                                br.setCookie("site-ma." + account.getHoster(), "instance_token", jwt);
+                                br.setCookie(getPornportalMainURL(account.getHoster()), account.getStringProperty(PROPERTY_cookiename_instanceCookie, getDefaultCookieNameInstance()), jwt);
                                 account.setProperty(PROPERTY_timestamp_website_cookies_updated, System.currentTimeMillis());
                             }
                         }
@@ -215,46 +257,37 @@ public class FakehubCom extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
-                br.getPage("https://site-ma." + account.getHoster() + "/login");
-                final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
-                Map<String, Object> entries = new HashMap<String, Object>();
-                entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                br.getPage(getPornportalMainURL(account.getHoster()) + "/login");
+                Map<String, Object> entries = getWebsiteJson(br);
+                final String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
+                String cookie_name_login = PluginJSonUtils.getJson(br, "authCookie");
+                if (cookie_name_login == null) {
+                    cookie_name_login = getDefaultCookieNameLogin();
+                }
+                if (StringUtils.isEmpty(api_base)) {
+                    logger.warning("Failed to find api_base");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!prepareBrAPI(this, br, account, entries)) {
+                    logger.warning("Failed to prepare API headers");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 jwt = PluginJSonUtils.getJson(br, "jwt");
                 entries = (LinkedHashMap<String, Object>) entries.get("domain");
                 /* E.g. site-ma.fakehub.com */
                 final String hostname = (String) entries.get("hostname");
                 final String recaptchaSiteKey = (String) entries.get("siteKey");
-                // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-                final String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
-                final String ip = PluginJSonUtils.getJson(br, "ip");
-                final String cookie_instance_token = br.getCookie(br.getHost(), "instance_token", Cookies.NOTDELETEDPATTERN);
-                if (StringUtils.isEmpty(jwt) || StringUtils.isEmpty(hostname) || StringUtils.isEmpty(api_base) || StringUtils.isEmpty(ip)) {
-                    logger.warning("Failed to find api base data");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (cookie_instance_token == null) {
-                    logger.warning("Failed to find Instance token");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setCookie(hostname, "instance_token", jwt);
-                br.getHeaders().put("Content-Type", "application/json");
-                br.getHeaders().put("Referer", "https://" + hostname + "/login");
-                br.getHeaders().put("sec-fetch-dest", "empty");
-                br.getHeaders().put("sec-fetch-mode", "cors");
-                br.getHeaders().put("sec-fetch-site", "cross-site");
-                br.getHeaders().put("Origin", "https://" + hostname);
-                br.getHeaders().put("Instance", cookie_instance_token);
-                if (!StringUtils.isEmpty(ip)) {
-                    br.getHeaders().put("x-forwarded-for", ip);
-                }
                 /* Prepare POST-data */
+                Map<String, Object> logindata = new HashMap<String, Object>();
                 final String successUrl = "https://" + hostname + "/access/success";
                 final String failureUrl = "https://" + hostname + "/access/failure";
-                entries.put("username", account.getUser());
-                entries.put("password", account.getPass());
-                entries.put("failureUrl", successUrl);
-                entries.put("successUrl", failureUrl);
+                logindata.put("username", account.getUser());
+                logindata.put("password", account.getPass());
+                logindata.put("failureUrl", successUrl);
+                logindata.put("successUrl", failureUrl);
                 final DownloadLink dlinkbefore = getDownloadLink();
                 String recaptchaV2Response = null;
+                /* 2020-04-03: So far, all pornportal websites required a captcha on login. */
                 if (!StringUtils.isEmpty(recaptchaSiteKey)) {
                     try {
                         if (dlinkbefore == null) {
@@ -262,7 +295,7 @@ public class FakehubCom extends PluginForHost {
                         }
                         final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, recaptchaSiteKey);
                         recaptchaV2Response = captcha.getToken();
-                        entries.put("googleReCaptchaResponse", recaptchaV2Response);
+                        logindata.put("googleReCaptchaResponse", recaptchaV2Response);
                     } finally {
                         if (dlinkbefore != null) {
                             setDownloadLink(dlinkbefore);
@@ -274,14 +307,13 @@ public class FakehubCom extends PluginForHost {
                 // "\",\"failureUrl\":\"" + failureUrl + "\"}";
                 /* 2019-09-12: This action can be found in their html inside json: dataApiUrl */
                 // br.postPageRaw(api_base + "/v1/authenticate/redirect", postData);
-                final PostRequest postRequest = br.createPostRequest(api_base + "/v1/authenticate/redirect", JSonStorage.serializeToJson(entries));
+                final PostRequest postRequest = br.createPostRequest(api_base + "/v1/authenticate/redirect", JSonStorage.serializeToJson(logindata));
                 br.getPage(postRequest);
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final String authenticationUrl = (String) entries.get("authenticationUrl");
                 if (StringUtils.isEmpty(authenticationUrl)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                String access_token_ma = br.getCookie(br.getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN);
                 /* Now continue without API */
                 br.getPage(authenticationUrl);
                 final Form continueform = br.getFormbyKey("response");
@@ -295,15 +327,16 @@ public class FakehubCom extends PluginForHost {
                 } else {
                     logger.warning("Failed to find continueform");
                 }
-                access_token_ma = br.getCookie(br.getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN);
-                if (!isLoggedIN() || access_token_ma == null) {
+                final String access_token_ma = br.getCookie(br.getHost(), cookie_name_login, Cookies.NOTDELETEDPATTERN);
+                if (!isLoggedIN(cookie_name_login) || access_token_ma == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getHeaders().put("Authorization", access_token_ma);
                 account.setProperty(PROPERTY_authorization, access_token_ma);
                 account.setProperty(PROPERTY_jwt, jwt);
                 account.setProperty(PROPERTY_timestamp_website_cookies_updated, System.currentTimeMillis());
                 account.saveCookies(br.getCookies(account.getHoster()), "");
+                /* Sets PROPERTY_authorization as Authorization header */
+                setStoredAPIAuthHeaderAccount(br, account);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -313,11 +346,89 @@ public class FakehubCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
-        return br.getCookie(getHost(), "access_token_ma", Cookies.NOTDELETEDPATTERN) != null;
+    public static boolean prepareBrAPI(final Plugin plg, final Browser br, final Account acc) throws PluginException {
+        final Map<String, Object> entries = getWebsiteJson(br);
+        return prepareBrAPI(plg, br, acc, entries);
     }
 
-    private boolean setAPIHeader(final Browser br, final Account account) {
+    /** Sets required API headers based on data given in json. */
+    public static boolean prepareBrAPI(final Plugin plg, final Browser br, final Account acc, Map<String, Object> entries) throws PluginException {
+        final String plugin_host = plg.getHost();
+        final String hostname;
+        String ip = null;
+        if (entries != null) {
+            entries = (LinkedHashMap<String, Object>) entries.get("domain");
+            /* E.g. site-ma.fakehub.com */
+            hostname = (String) entries.get("hostname");
+            ip = PluginJSonUtils.getJson(br, "ip");
+        } else {
+            hostname = getPornportalMainURL(plugin_host);
+        }
+        boolean isNewJWT = false;
+        String jwt = null;
+        if (acc == null) {
+            /* Try to re-use old token */
+            jwt = setAndGetStoredAPIAuthHeaderPlugin(br, plg);
+        }
+        if (jwt == null) {
+            if (entries == null) {
+                /* E.g. attempt to restore old tokens without having json/html with new data available. */
+                return false;
+            }
+            jwt = PluginJSonUtils.getJson(br, "jwt");
+            isNewJWT = true;
+        }
+        String cookie_name_instance = PluginJSonUtils.getJson(br, "instanceCookie");
+        if (cookie_name_instance == null) {
+            cookie_name_instance = getDefaultCookieNameInstance();
+        } else if (acc != null) {
+            acc.setProperty(PROPERTY_cookiename_instanceCookie, cookie_name_instance);
+        }
+        if (StringUtils.isEmpty(jwt) || StringUtils.isEmpty(hostname)) {
+            plg.getLogger().warning("Failed to find api base data");
+            return false;
+        }
+        br.setCookie(hostname, cookie_name_instance, jwt);
+        br.getHeaders().put("Content-Type", "application/json");
+        br.getHeaders().put("Referer", "https://" + hostname + "/login");
+        br.getHeaders().put("sec-fetch-dest", "empty");
+        br.getHeaders().put("sec-fetch-mode", "cors");
+        br.getHeaders().put("sec-fetch-site", "cross-site");
+        br.getHeaders().put("Origin", "https://" + hostname);
+        br.getHeaders().put("Instance", jwt);
+        if (!StringUtils.isEmpty(ip)) {
+            br.getHeaders().put("x-forwarded-for", ip);
+        }
+        if (acc == null && isNewJWT) {
+            plg.getPluginConfig().setProperty(PROPERTY_plugin_jwt, jwt);
+            plg.getPluginConfig().setProperty(PROPERTY_plugin_jwt_create_timestamp, System.currentTimeMillis());
+        }
+        return true;
+    }
+
+    public static Map<String, Object> getWebsiteJson(final Browser br) {
+        final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
+        return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+    }
+
+    private boolean isLoggedIN(String login_cookie_name) {
+        if (login_cookie_name == null) {
+            login_cookie_name = getDefaultCookieNameLogin();
+        }
+        return br.getCookie(getHost(), login_cookie_name, Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    private static final String getDefaultCookieNameLogin() {
+        /* 2020-04-03 */
+        return "access_token_ma";
+    }
+
+    public static final String getDefaultCookieNameInstance() {
+        /* 2020-04-03 */
+        return "instance_token";
+    }
+
+    private boolean setStoredAPIAuthHeaderAccount(final Browser br, final Account account) {
         if (account == null) {
             return false;
         }
@@ -330,6 +441,24 @@ public class FakehubCom extends PluginForHost {
         br.getHeaders().put("Instance", jwt);
         br.getHeaders().put("Authorization", authorization);
         return true;
+    }
+
+    public static String setAndGetStoredAPIAuthHeaderPlugin(final Browser br, final Plugin plg) {
+        if (plg == null) {
+            return null;
+        }
+        final String jwt = plg.getPluginConfig().getStringProperty(PROPERTY_plugin_jwt);
+        final long timestamp_jwt_created = plg.getPluginConfig().getLongProperty(PROPERTY_plugin_jwt_create_timestamp, 0);
+        final long jwt_age = System.currentTimeMillis() - timestamp_jwt_created;
+        final long max_jwt_age_minutes = 5;
+        if (jwt == null) {
+            return null;
+        } else if (jwt_age > max_jwt_age_minutes * 60 * 1000) {
+            plg.getLogger().info("jwt is older than " + max_jwt_age_minutes + " minutes --> New jwt required");
+            return null;
+        }
+        br.getHeaders().put("Instance", jwt);
+        return jwt;
     }
 
     @Override
@@ -348,7 +477,6 @@ public class FakehubCom extends PluginForHost {
                 if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
                     /* 2020-04-02: Free accounts can only be used to download trailers */
-                    // ai.setTrafficLeft(0);
                     ai.setStatus("Free Account");
                 } else if (isTrial) {
                     ai.setStatus("Free Account (Trial)");
@@ -363,9 +491,9 @@ public class FakehubCom extends PluginForHost {
                     }
                     account.setType(AccountType.PREMIUM);
                     if (isCanceled) {
-                        ai.setStatus("Premium Account (cancelled)");
+                        ai.setStatus("Premium Account (subscription cancelled)");
                     } else {
-                        ai.setStatus("Premium Account (running)");
+                        ai.setStatus("Premium Account (subscription running)");
                     }
                 }
                 account.setConcurrentUsePossible(true);

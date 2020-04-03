@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,10 +37,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https?://ma\\.wicked\\.com/(?:watch/\\d+(?:/[a-z0-9\\-_]+/?)?|galleries/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:www\\.)?wicked\\.com/tour/movie/\\d+(?:/[a-z0-9\\-_]+/?)?" })
 public class WickedCom extends PluginForDecrypt {
@@ -88,11 +87,11 @@ public class WickedCom extends PluginForDecrypt {
             }
             LinkedHashMap<String, Object> entries;
             if (is_logged_in) {
-                final String json = jd.plugins.decrypter.BrazzersCom.getVideoJson(this.br);
+                final String json = getVideoJson(this.br);
                 if (json == null) {
                     return null;
                 }
-                entries = getVideoMapHttpStream(json);
+                entries = getVideoMapHttpStreams(json);
             } else {
                 /* We're not logged in but maybe the user has an account to download later. */
                 entries = getDummyQualityMap(fid);
@@ -137,6 +136,10 @@ public class WickedCom extends PluginForDecrypt {
         fp.setName(title);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public static String getVideoJson(final Browser br) {
+        return br.getRegex("\\.addVideoInfo\\((.*?)\\)").getMatch(0);
     }
 
     private LinkedHashMap<String, Object> getDummyQualityMap(final String fid) {
@@ -185,18 +188,31 @@ public class WickedCom extends PluginForDecrypt {
         return true;
     }
 
-    public static LinkedHashMap<String, Object> getVideoMapHttpStream(final String json_source) {
+    public static LinkedHashMap<String, Object> getVideoMapHttpStreams(final String json) {
         LinkedHashMap<String, Object> entries = null;
         try {
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (LinkedHashMap<String, Object>) entries.get("stream_info");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
         } catch (final Throwable e) {
         }
-        return jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(entries);
+        return getVideoMapHttpStreams(entries);
+    }
+
+    public static LinkedHashMap<String, Object> getVideoMapHttpStreams(LinkedHashMap<String, Object> entries) {
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "stream_info/http/paths");
+        } catch (final Throwable e) {
+        }
+        return entries;
     }
 
     public static String[] getPictureArray(final Browser br) {
-        return jd.plugins.decrypter.BabesComDecrypter.getPictureArray(br);
+        String picsource = br.getRegex("data\\-galleryui\\-images=\\'\\[(.*?)\\]").getMatch(0);
+        if (picsource != null) {
+            picsource = picsource.replace("\\", "");
+            picsource = picsource.replace("\"", "");
+        }
+        final String[] picarray = picsource.split(",");
+        return picarray;
     }
 
     public static String getVideoUrlFree(final String fid) {
@@ -218,10 +234,5 @@ public class WickedCom extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.PornPortal;
     }
 }

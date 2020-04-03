@@ -118,7 +118,7 @@ public class SiteType {
          */
         PimpRoll_HostedTube,
         /**
-         * <a href="http://www.brazzers.com/">brazzers.com</a> porn script/template used for a lot of porn paysites.<br />
+         * <a href="http://www.digitalplayground.com/">digitalplayground.com</a> porn script/template used for a lot of porn paysites.<br />
          * Example#2: <a href="http://babes.com/">babes.com</a><br />
          * They often modify it heavily which is why we usually have a separate plugin for each website.<br />
          */

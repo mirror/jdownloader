@@ -13,11 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,14 +40,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "http://wickeddecrypted.+" })
 public class WickedCom extends PluginForHost {
-
     public WickedCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://join.wicked.com/signup/signup.php");
@@ -64,17 +61,26 @@ public class WickedCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private final String         type_pic                     = ".+\\.jpg.*?";
-
     public static final String   html_loggedin                = "class=\"account\\-info\"";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
     private boolean              logged_in                    = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "ma.wicked.com");
+        return pornportalPrepBR(br, "ma.wicked.com");
+    }
+
+    public static Browser pornportalPrepBR(final Browser br, final String host) {
+        br.setFollowRedirects(true);
+        pornportalPrepCookies(br, host);
+        return br;
+    }
+
+    public static Browser pornportalPrepCookies(final Browser br, final String host) {
+        /* Skips redirect to stupid advertising page after login. */
+        br.setCookie(host, "skipPostLogin", "1");
+        return br;
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -329,16 +335,10 @@ public class WickedCom extends PluginForHost {
     }
 
     @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.PornPortal;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
