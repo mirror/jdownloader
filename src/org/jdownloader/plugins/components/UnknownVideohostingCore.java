@@ -22,11 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +33,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class UnknownVideohostingCore extends PluginForHost {
     public UnknownVideohostingCore(PluginWrapper wrapper) {
@@ -96,7 +96,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     public String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]{12})$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]{12}$|\\p{XDigit}++\\.html$)").getMatch(0);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:embed/)?[a-z0-9]{12}";
+        return "/(?:(?:embed/)?[a-z0-9]{12}|embed-\\p{XDigit}++\\.html)";
     }
 
     public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
@@ -155,10 +155,13 @@ public class UnknownVideohostingCore extends PluginForHost {
         }
         if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("<title>Watch ([^<>\"]+) \\- Vidup</title>").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            /* Last chance fallback */
-            filename = this.getFID(link);
+            if (StringUtils.isEmpty(filename)) {
+                filename = br.getRegex("<title>(.*?)(?i: EMBED)?</title>").getMatch(0);
+                if (StringUtils.isEmpty(filename)) {
+                    /* Last chance fallback */
+                    filename = this.getFID(link);
+                }
+            }
         }
         String ext;
         if (!StringUtils.isEmpty(dllink)) {
@@ -220,7 +223,13 @@ public class UnknownVideohostingCore extends PluginForHost {
             br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
             br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
+                final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
+                br.getPage(url);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return br.getRedirectLocation();
             }
             /* 2nd offlinecheck */
             final String errormessage = PluginJSonUtils.getJson(br, "message");

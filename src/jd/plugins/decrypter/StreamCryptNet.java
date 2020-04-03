@@ -13,17 +13,19 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
+
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-import java.util.ArrayList;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamcrypt.net" }, urls = { "https?://[\\w.]*?streamcrypt\\.net/(?:hoster\\.[\\w.]+?\\.php\\?id=|[^/]+/)\\p{Alnum}++(?:-\\d+x\\d+\\.html)?" })
 public class StreamCryptNet extends antiDDoSForDecrypt {
@@ -33,12 +35,16 @@ public class StreamCryptNet extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(param.toString());
-        DownloadLink downloadLink = createDownloadlink(br.getRedirectLocation());
-        downloadLink.setProperty("redirect_link", param.toString());
-        decryptedLinks.add(downloadLink);
-        distribute(downloadLink);
-        return decryptedLinks;
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
+        getPage(param.getCryptedUrl());
+        if (br.getRedirectLocation() == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final DownloadLink downloadLink = createDownloadlink(br.getRedirectLocation());
+            downloadLink.setProperty("redirect_link", param.getCryptedUrl());
+            decryptedLinks.add(downloadLink);
+            return decryptedLinks;
+        }
     }
 }
