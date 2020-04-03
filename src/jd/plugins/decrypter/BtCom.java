@@ -135,7 +135,7 @@ public class BtCom extends PluginForDecrypt {
             }
             String uri_encoded = URLEncode.encodeURIComponent(uri);
             // uri_encoded = uri_encoded.replace("dv-file-share://", "dv-file-share%3A%2F%2F");
-            final String dllink = String.format("https://common.btpc.prod.cloud.synchronoss.net/dv/api/file/sharedContent?uri=%s&X-Client-Platform=WEB&X-Client-Identifier=WhiteLabelWebApp&NWB=A%s&cachebuster=%d&browser=true", uri_encoded, contentToken, System.currentTimeMillis());
+            final String dllink = String.format("https://common.btpc.prod.cloud.synchronoss.net/dv/api/file/sharedContent?uri=%s&X-Client-Platform=WEB&X-Client-Identifier=WhiteLabelWebApp&NWB=%s&cachebuster=%d&browser=true", uri_encoded, cookie_NWBCS, System.currentTimeMillis());
             final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
             dl.setFinalFileName(filename);
             if (filesize > 0) {
