@@ -17,10 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -43,11 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|(pornstar|model)/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(?:/(?:upload|paid))?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|playlist/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
@@ -58,6 +59,34 @@ public class PornHubCom extends PluginForDecrypt {
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String                parameter      = null;
     private static final String   DOMAIN         = "pornhub.com";
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pornhub.com", "pornhub.org", "pornhubpremium.com", "pornhubpremium.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.|[a-z]{2}\\.)?" + buildHostsPatternPart(domains) + "/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|(pornstar|model)/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(?:/(?:upload|paid))?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|playlist/\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -569,6 +598,7 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                     final boolean grab;
                     if (bestonly) {
+                        /* Best only = Grab all available qualities here and then pick the best later. */
                         grab = true;
                     } else {
                         /* Either only user selected items or best of user selected --> bestselectiononly == true */
