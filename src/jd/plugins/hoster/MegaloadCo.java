@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -70,7 +71,7 @@ public class MegaloadCo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher().replace("http://", "https://"));
         /* 2019-07-03: Not sure but such content is not downloadable but filename- and filesize are given! */
         final boolean contentAbused = br.containsHTML("This Content Blocked");
         if (br.getHttpConnection().getResponseCode() == 404 || (!br.getURL().contains("/d/") && !br.getURL().contains("/download/"))) {
@@ -119,6 +120,7 @@ public class MegaloadCo extends PluginForHost {
              */
             dllink = br.getRegex("\"(https?://[^/]+/download\\.php\\?token=[a-f0-9]+[^\"]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
+                logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -162,7 +164,7 @@ public class MegaloadCo extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final Account account) {
         /* No captchas at all */
         return false;
     }

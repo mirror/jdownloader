@@ -194,11 +194,7 @@ public class WuShareCom extends PluginForHost {
                     }
                 }
                 if (!br.containsHTML(">Account type:</span><span class=\"info\">Premium</span>")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new AccountUnavailableException("Unsupported account type (?)", 5 * 60 * 1000);
                 }
                 account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
