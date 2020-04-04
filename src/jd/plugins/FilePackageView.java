@@ -211,25 +211,20 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-                    final boolean readL = fp.getModifyLock().readLock();
-                    try {
-                        for (final DownloadLink link : fp.getChildren()) {
-                            tmp.newInfos.add(link.getDomainInfo());
-                            addLinkToTemp(tmp, link);
-                        }
-                    } finally {
-                        fp.getModifyLock().readUnlock(readL);
-                    }
-                    if (updatedItems == null) {
-                        tmp.items = 0;
-                    } else {
-                        tmp.items = updatedItems.size();
-                    }
-                    writeTempToFields(tmp);
-                    updatesDone = lupdatesRequired;
-                    final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-                    Collections.sort(lst, DOMAININFOCOMPARATOR);
-                    infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+            if (updatedItems == null) {
+                tmp.items = 0;
+            } else {
+                tmp.items = updatedItems.size();
+                for (final DownloadLink link : updatedItems) {
+                    tmp.newInfos.add(link.getDomainInfo());
+                    addLinkToTemp(tmp, link);
+                }
+            }
+            writeTempToFields(tmp);
+            updatesDone = lupdatesRequired;
+            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
+            Collections.sort(lst, DOMAININFOCOMPARATOR);
+            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
         return this;
     }
