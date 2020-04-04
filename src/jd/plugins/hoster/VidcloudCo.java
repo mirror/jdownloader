@@ -90,11 +90,17 @@ public class VidcloudCo extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (StringUtils.isEmpty(filename)) {
+        String fallbackFilename = link.getStringProperty("fallback_filename");
+        boolean fallbackFilenameEmpty = StringUtils.isEmpty(fallbackFilename);
+        if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
             filename = br.getRegex("title\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            filename = fid;
+            if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
+                if (!fallbackFilenameEmpty) {
+                    filename = fallbackFilename;
+                } else {
+                    filename = fid;
+                }
+            }
         }
         dllink = PluginJSonUtils.getJson(br.toString().replaceAll("\\\\", "").replaceAll("\\\\", ""), "file");
         if (filename == null) {

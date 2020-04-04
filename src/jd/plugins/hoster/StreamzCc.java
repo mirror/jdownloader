@@ -120,7 +120,7 @@ public class StreamzCc extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {
-            final String redirectLink = link.getStringProperty("redirect_link", null);
+            final String redirectLink = link.getStringProperty("redirect_link");
             if (StringUtils.isEmpty(redirectLink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
             }
@@ -133,16 +133,20 @@ public class StreamzCc extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        String fallbackFilename = link.getStringProperty("fallback_filename");
+        boolean fallbackFilenameEmpty = StringUtils.isEmpty(fallbackFilename);
         String filename = br.getRegex("<title>streamZ\\.cc ([^<>\"]+)</title>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
+        if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
             filename = br.getRegex("<h5>([^<>\"]+)</h5>").getMatch(0);
         }
-        if (filename != null) {
+        if (StringUtils.isNotEmpty(filename) && (!new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() || fallbackFilenameEmpty)) {
             filename = Encoding.htmlDecode(filename).trim();
             if (!filename.endsWith(".mp4")) {
                 filename += ".mp4";
             }
             link.setFinalFileName(filename);
+        } else if (!fallbackFilenameEmpty) {
+            link.setName(fallbackFilename);
         } else {
             /* Fallback */
             link.setName(this.getFID(link) + ".mp4");

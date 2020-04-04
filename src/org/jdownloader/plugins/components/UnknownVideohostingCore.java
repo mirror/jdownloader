@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -153,13 +154,19 @@ public class UnknownVideohostingCore extends PluginForHost {
             filename = (String) entries.get("title");
         } catch (final Throwable e) {
         }
-        if (StringUtils.isEmpty(filename)) {
+        String fallbackFilename = link.getStringProperty("fallback_filename");
+        boolean fallbackFilenameEmpty = StringUtils.isEmpty(fallbackFilename);
+        if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
             filename = br.getRegex("<title>Watch ([^<>\"]+) \\- Vidup</title>").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
+            if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
                 filename = br.getRegex("<title>(.*?)(?i: EMBED)?</title>").getMatch(0);
-                if (StringUtils.isEmpty(filename)) {
-                    /* Last chance fallback */
-                    filename = this.getFID(link);
+                if (StringUtils.isEmpty(filename) || (new Regex(filename, "^(?:[a-z0-9]+|file title unknown)$").matches() && !fallbackFilenameEmpty)) {
+                    if (!fallbackFilenameEmpty) {
+                        filename = fallbackFilename;
+                    } else {
+                        /* Last chance fallback */
+                        filename = this.getFID(link);
+                    }
                 }
             }
         }
@@ -172,6 +179,7 @@ public class UnknownVideohostingCore extends PluginForHost {
         } else {
             ext = default_extension;
         }
+        filename = Encoding.htmlDecode(filename).trim();
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
