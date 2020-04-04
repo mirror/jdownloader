@@ -33,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
+import static java.lang.String.format;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www[0-9]*\\.)?kino[xyzs]\\.(?:ai|af|am|click|cloud|club|digital|direct|express|fun|fyi|gratis|gs|gy|io|lol|me|mobi|ms|nu|pe|party|pub|sg|sh|si|space|sx|to|tube|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
     public KinoxTo(PluginWrapper wrapper) {
@@ -81,17 +83,17 @@ public class KinoxTo extends antiDDoSForDecrypt {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     getPage(br2, "/aGET/MirrorByEpisode/?Addr=" + addr_id + "&SeriesID=" + series_id + "&Season=" + season_number + "&Episode=" + episode);
                     /* Crawl Episode --> Find mirrors */
-                    decryptMirrors(decryptedLinks, br2, season_number, episode);
+                    decryptMirrors(decryptedLinks, br2, fpName, season_number, episode);
                 }
             }
         } else {
             /* Crawl all Mirrors of a movie */
-            decryptMirrors(decryptedLinks, br2, null, null);
+            decryptMirrors(decryptedLinks, br2, fpName, null, null);
         }
         return decryptedLinks;
     }
 
-    private void decryptMirrors(List<DownloadLink> decryptedLinks, Browser br2, final String season_number, final String episode) throws Exception {
+    private void decryptMirrors(List<DownloadLink> decryptedLinks, Browser br2, String fpName, final String season_number, final String episode) throws Exception {
         final String[] mirrors = br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0);
         if (mirrors == null || mirrors.length == 0) {
             getLogger().info("No mirrors found.");
@@ -100,13 +102,12 @@ public class KinoxTo extends antiDDoSForDecrypt {
         }
         final DecimalFormat df = new DecimalFormat("00");
         final FilePackage fp = FilePackage.getInstance();
-        String fpname = addr_id;
         if (season_number != null && episode != null) {
             final int season_int = Integer.parseInt(season_number);
             final String season_formatted = "S" + df.format(season_int);
-            fpname += " " + season_formatted;
+            fpName += " " + season_formatted;
         }
-        fp.setName(fpname);
+        fp.setName(fpName);
         for (final String mirror : mirrors) {
             /* Crawl Mirrors --> Find directlinks */
             if (this.isAbort()) {
@@ -142,6 +143,11 @@ public class KinoxTo extends antiDDoSForDecrypt {
             }
             finallink = new Regex(finallink, "(?:href|src)\\s*=\\s*('|\"|)(.*?)\\1").getMatch(1);
             final DownloadLink dl = createDownloadlink(Request.getLocation(finallink, br.getRequest()));
+            if (season_number != null && episode != null) {
+                dl.setProperty("fallback_filename", format("%sE%02d.mp4", fpName, Integer.parseInt(episode)));
+            } else {
+                dl.setProperty("fallback_filename", fpName + ".mp4");
+            }
             fp.add(dl);
             decryptedLinks.add(dl);
             distribute(dl);
