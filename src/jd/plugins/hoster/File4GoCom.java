@@ -32,7 +32,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/(?:.*)/(.*)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/(?:.*)/([a-zA-Z0-9_]+==)" })
 public class File4GoCom extends antiDDoSForHost {
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -262,7 +262,7 @@ public class File4GoCom extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.(?:file4go\\.com|sizedrive\\.com)(?::\\d+)?/(?:[^<>\"]+/dll/[^\"]+|beta(?:free)?/[^\"]+))\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("class=\"novobotao download\" style=\"display:none;\"  href=\"(.*?)\">").getMatch(0);
+            dllink = br.getRegex("class=\"novobotao download\" (:?.*?) href=\"(.*?)\">").getMatch(0);
         }
         return dllink;
     }
