@@ -134,6 +134,20 @@ public class UnknownVideohostingCore extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("<title> EMBED</title>")) {
+            final String redirectLink = link.getStringProperty("redirect_link");
+            if (StringUtils.isEmpty(redirectLink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
+            }
+            br.setFollowRedirects(false);
+            br.getPage(redirectLink);
+            if (br.getRedirectLocation() != null) {
+                link.setPluginPatternMatcher(br.getRedirectLocation());
+                return requestFileInformation(link);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         /* 2019-05-08: TODO: Unsure about that */
         boolean requiresCaptcha = true;
         String filename = null;
@@ -233,6 +247,7 @@ public class UnknownVideohostingCore extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
                 final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
+                br.setFollowRedirects(false);
                 br.getPage(url);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -320,8 +335,7 @@ public class UnknownVideohostingCore extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        /* 2019-08-05: getDllink will also find out about offline status so we do not necessarily have to do this here (twice). */
-        // requestFileInformation(link, true);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             dllink = this.getDllink(link, true);
         }
