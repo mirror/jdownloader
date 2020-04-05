@@ -41,11 +41,11 @@ import jd.plugins.PluginException;
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net)/\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|zone-warez.com/link)(-|/)\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "zt-protect.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co", "dl-protect.net" };
+        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "zt-protect.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co", "dl-protect.net", "zone-warez.com" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {
@@ -175,7 +175,6 @@ public class DlPrteCom extends antiDDoSForDecrypt {
                 continu = br.getFormbyAction("/telecharger/" + strEncodedPart + "}");
                 if (continu != null) {
                     submitForm(continu);
-                    String strDebug = br.toString();
                     go = br.getRegex("class=\"showURL\">(.*?)</p></a>").getMatch(0);
                     if (go != null) {
                         final DownloadLink dl = createDownloadlink(go);
