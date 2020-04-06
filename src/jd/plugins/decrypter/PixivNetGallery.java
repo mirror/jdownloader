@@ -44,12 +44,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|users/\\d+/(?:artworks|illustrations|bookmarks/artworks))" })
 public class PixivNetGallery extends PluginForDecrypt {
     public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /* TODO: Update these */
     private static final String TYPE_GALLERY        = ".+/member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+";
     private static final String TYPE_ARTWORKS       = ".+/artworks/\\d+";
     private static final String TYPE_GALLERY_MEDIUM = ".+/member_illust\\.php\\?mode=medium\\&illust_id=\\d+";

@@ -107,7 +107,7 @@ public class PluralsightCom extends PluginForHost {
                         isPremium = true;
                         account.setType(AccountType.PREMIUM);
                         ai.setStatus("Premium Account:" + subscription.get("name"));
-                        ai.setValidUntil(validUntil);
+                        ai.setValidUntil(validUntil, br);
                         break;
                     }
                 }
@@ -138,6 +138,7 @@ public class PluralsightCom extends PluginForHost {
                         account.saveCookies(br.getCookies(plugin.getHost()), "");
                         return;
                     }
+                    /* Full login required */
                 }
                 // Login
                 // Captcha And Login

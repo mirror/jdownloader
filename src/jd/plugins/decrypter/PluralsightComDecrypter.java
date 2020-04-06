@@ -3,6 +3,15 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -19,15 +28,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PluralsightCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+" })
 public class PluralsightComDecrypter extends PluginForDecrypt {
@@ -83,7 +83,7 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                 if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
                     final Browser brc = br.cloneBrowser();
                     for (final DownloadLink clip : clips) {
-                        if (clip.getKnownDownloadSize() < 0 && !isAbort()) {
+                        if (clip.getKnownDownloadSize() < 0) {
                             final String streamURL = PluralsightCom.getStreamURL(br, this, clip, null);
                             if (streamURL != null) {
                                 final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));
@@ -102,6 +102,9 @@ public class PluralsightComDecrypter extends PluginForDecrypt {
                             } else {
                                 clip.setAvailableStatus(AvailableStatus.UNCHECKED);
                             }
+                        }
+                        if (this.isAbort()) {
+                            break;
                         }
                     }
                 }
