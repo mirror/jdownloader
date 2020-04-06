@@ -44,7 +44,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+|member(_illust)?\\.php\\?id=\\d+|(?:[a-z]{2}/)?artworks/\\d+|(?:[a-z]{2}/)?users/\\d+/(?:bookmarks/)?artworks)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/.+" })
 public class PixivNetGallery extends PluginForDecrypt {
     public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,7 +81,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 handleAccountException(aa, e);
             }
         }
-        String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
+        String userid = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String fpName = null;
         String title = null;
@@ -90,34 +90,34 @@ public class PixivNetGallery extends PluginForDecrypt {
         String uploadDate = null;
         if (parameter.matches(TYPE_GALLERY) || parameter.matches(TYPE_ARTWORKS)) {
             if (parameter.matches(TYPE_ARTWORKS)) {
-                lid = new Regex(parameter, "artworks/(\\d+)").getMatch(0);
+                userid = new Regex(parameter, "artworks/(\\d+)").getMatch(0);
                 br.getPage(parameter);
-                final Integer pageCount = getPageCount(br, lid);
+                final Integer pageCount = getPageCount(br, userid);
                 if (pageCount != null) {
                     single = pageCount.intValue() == 1;
                 }
             } else if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
-                br.getPage(PixivNet.createSingleImageUrl(lid));
-                final Integer pageCount = getPageCount(br, lid);
-                if (br.containsHTML("mode=manga&amp;illust_id=" + lid) || (pageCount != null && pageCount.intValue() > 1)) {
-                    parameter = PixivNet.createGalleryUrl(lid);
+                br.getPage(PixivNet.createSingleImageUrl(userid));
+                final Integer pageCount = getPageCount(br, userid);
+                if (br.containsHTML("mode=manga&amp;illust_id=" + userid) || (pageCount != null && pageCount.intValue() > 1)) {
+                    parameter = PixivNet.createGalleryUrl(userid);
                     br.getPage(parameter);
                     single = Boolean.FALSE;
                 } else {
                     single = Boolean.TRUE;
                 }
             } else if (parameter.matches(TYPE_GALLERY_MANGA)) {
-                br.getPage(PixivNet.createGalleryUrl(lid));
-                final Integer pageCount = getPageCount(br, lid);
+                br.getPage(PixivNet.createGalleryUrl(userid));
+                final Integer pageCount = getPageCount(br, userid);
                 if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<") | (pageCount != null && pageCount.intValue() == 1)) {
-                    parameter = PixivNet.createSingleImageUrl(lid);
+                    parameter = PixivNet.createSingleImageUrl(userid);
                     br.getPage(parameter);
                     single = Boolean.TRUE;
                 } else {
                     single = Boolean.FALSE;
                 }
             } else {
-                br.getPage(PixivNet.createGalleryUrl(lid));
+                br.getPage(PixivNet.createGalleryUrl(userid));
             }
             uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             /* Decrypt gallery */
@@ -126,7 +126,7 @@ public class PixivNetGallery extends PluginForDecrypt {
             if (Boolean.TRUE.equals(single) || (single == null && br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<"))) {
                 /* Not multiple urls --> Switch to single-url view */
                 if (single == null) {
-                    br.getPage(PixivNet.createSingleImageUrl(lid));
+                    br.getPage(PixivNet.createSingleImageUrl(userid));
                 }
                 title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
                 if (title == null) {
@@ -138,14 +138,14 @@ public class PixivNetGallery extends PluginForDecrypt {
                     found = add(links, br, "data-title=\"registerImage\"><img src=\"(https?[^<>\"']+)\"");
                     if (!found) {
                         // regular(new layout)
-                        found = add(links, br, "\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"regular\"\\s*:\\s*\"(https?[^<>\"']+)\"");
+                        found = add(links, br, "\"illustId\"\\s*:\\s*\"" + userid + "\".*?\"regular\"\\s*:\\s*\"(https?[^<>\"']+)\"");
                     }
                 }
                 if (links.isEmpty()) {
                     found = add(links, br, "data-src=\"(https?[^<>\"]+)\"[^>]+class=\"original-image\"");
                     if (!found) {
                         // original(new layout)
-                        found = add(links, br, "\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
+                        found = add(links, br, "\"illustId\"\\s*:\\s*\"" + userid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
                     }
                 }
                 if (links.isEmpty()) {
@@ -154,16 +154,16 @@ public class PixivNetGallery extends PluginForDecrypt {
                 if (links.isEmpty()) {
                     add(links, br, "pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"");
                 }
-                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + userid + "[^{]*\\})").getMatch(0);
                 if (json != null && json.matches(".*\"illustType\"\\s*:\\s*2.*")) {
                     final Browser brc = br.cloneBrowser();
-                    brc.getPage("https://www.pixiv.net/ajax/illust/" + lid + "/ugoira_meta");
+                    brc.getPage("https://www.pixiv.net/ajax/illust/" + userid + "/ugoira_meta");
                     add(links, brc, "(https?.*?)\"");
                 }
                 if (links.isEmpty() && isOffline(br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
-                } else if (links.isEmpty() && isAdultImageLoginRequired(lid) && !loggedIn) {
+                } else if (links.isEmpty() && isAdultImageLoginRequired(userid) && !loggedIn) {
                     logger.info("Adult content: Account required");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM);
                 } else if (links.isEmpty()) {
@@ -178,7 +178,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                     logger.info("Account required to crawl this particular content");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM);
-                } else if (isAdultImageLoginRequired(lid) && !loggedIn) {
+                } else if (isAdultImageLoginRequired(userid) && !loggedIn) {
                     logger.info("Adult content: Account required");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM);
                 }
@@ -190,11 +190,11 @@ public class PixivNetGallery extends PluginForDecrypt {
                 boolean found = add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
                 if (!found) {
                     // original(new layout)
-                    found = add(links, br, "\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
+                    found = add(links, br, "\"illustId\"\\s*:\\s*\"" + userid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
                     if (!found) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        final Integer pageCount = getPageCount(br, lid);
+                        final Integer pageCount = getPageCount(br, userid);
                         if (pageCount != null && links.size() != pageCount.intValue()) {
                             final String template = links.iterator().next();
                             for (int page = 0; page < pageCount.intValue(); page++) {
@@ -203,7 +203,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         }
                     }
                 }
-                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "[^{]*\\})").getMatch(0);
+                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + userid + "[^{]*\\})").getMatch(0);
             }
             final String tags = br.getRegex("<title>([^<>\"]+)\\s*/[^<>]*?</title>").getMatch(0);
             if (json != null) {
@@ -218,7 +218,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 title = Encoding.htmlDecode(title).trim();
             } else {
                 /* Fallback */
-                title = lid;
+                title = userid;
             }
             if (title != null) {
                 fpName = title;
@@ -235,7 +235,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 String filename;
                 final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
                 if (picNumberStr != null) {
-                    filename = this.generateFilename(lid, title, username, tags, picNumberStr, null);
+                    filename = this.generateFilename(userid, title, username, tags, picNumberStr, null);
                 } else {
                     /* Fallback - just use the given filename (minus extension)! */
                     filename = filename_url.substring(0, filename_url.lastIndexOf("."));
@@ -253,7 +253,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 filename += ext;
                 final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
                 dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
-                dl.setProperty(PixivNet.PROPERTY_GALLERYID, lid);
+                dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
                 dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
                 if (!StringUtils.isEmpty(uploadDate)) {
                     dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
@@ -265,11 +265,12 @@ public class PixivNetGallery extends PluginForDecrypt {
             }
         } else {
             /* Decrypt user */
-            if (lid == null) {
+            if (userid == null) {
                 /* 2020-01-27 */
-                lid = new Regex(parameter, "users/(\\d+)").getMatch(0);
+                userid = new Regex(parameter, "users/(\\d+)").getMatch(0);
             }
-            if (lid == null) {
+            if (userid == null) {
+                logger.warning("Failed to find userid");
                 return null;
             }
             br.getPage(parameter);
@@ -295,10 +296,11 @@ public class PixivNetGallery extends PluginForDecrypt {
             String url = null;
             boolean isBookmarks = false;
             if (parameter.contains("/bookmarks")) {
-                url = String.format("https://www.%s/ajax/user/%s/illusts/bookmarks", br.getHost(), lid);
+                url = String.format("https://www.%s/ajax/user/%s/illusts/bookmarks", br.getHost(), userid);
                 isBookmarks = true;
             } else {
-                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), lid);
+                /* 2020-04-06: E.g. "/illustrations" */
+                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), userid);
                 /* All items on one page! */
                 maxitemsperpage = -1;
             }
@@ -369,10 +371,10 @@ public class PixivNetGallery extends PluginForDecrypt {
             } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && maxitemsperpage != -1 && !this.isAbort());
         }
         if (fpName == null) {
-            fpName = lid;
+            fpName = userid;
         } else {
             fpName = Encoding.htmlOnlyDecode(fpName);
-            fpName = lid + "_" + fpName;
+            fpName = userid + "_" + fpName;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));

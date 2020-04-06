@@ -84,9 +84,9 @@ public class WuShareCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -101,7 +101,7 @@ public class WuShareCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
-            final String code = getCaptchaCode("https://wushare.com/captcha?id=" + System.currentTimeMillis(), downloadLink);
+            final String code = getCaptchaCode("https://wushare.com/captcha?id=" + System.currentTimeMillis(), link);
             br.postPage(br.getURL(), "action=get_download_link&captcha_response_field=" + code);
             if (br.containsHTML("\"error_captcha\"")) {
                 try {
@@ -123,7 +123,7 @@ public class WuShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.toString().equals("free members do not allows parallel downloads!")) {
@@ -131,23 +131,23 @@ public class WuShareCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
                 con.disconnect();
             } catch (Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             }
         }
@@ -178,7 +178,7 @@ public class WuShareCom extends PluginForHost {
                 boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://wushare.com/");
+                    br.getPage("https://wushare.com/account");
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
                         loggedIN = true;

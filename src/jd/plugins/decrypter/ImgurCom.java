@@ -156,7 +156,7 @@ public class ImgurCom extends PluginForDecrypt {
                                 return decryptedLinks;
                             }
                         }
-                        /* We knopw that we definitly have an album --> Crawl it */
+                        /* We know that we definitly have an album --> Crawl it */
                         br.getPage("https://api.imgur.com/3/album/" + lid);
                         if (br.getHttpConnection().getResponseCode() == 404) {
                             /*
