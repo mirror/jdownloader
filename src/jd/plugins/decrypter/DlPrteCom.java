@@ -20,9 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +32,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -165,17 +165,16 @@ public class DlPrteCom extends antiDDoSForDecrypt {
                     return decryptedLinks;
                 }
             } else {
-                java.net.URL brURL = br._getURL();
-                String strEncodedPart = brURL.getFile();
+                String strEncodedPart = br._getURL().getFile();
                 strEncodedPart = strEncodedPart.replace("/voirlien/", "");
-                if (strEncodedPart.contains("?")) {
-                    int iPosition = strEncodedPart.indexOf("?");
+                final int iPosition = strEncodedPart.indexOf("?");
+                if (iPosition > 0) {
                     strEncodedPart = strEncodedPart.substring(0, iPosition);
                 }
                 continu = br.getFormbyAction("/telecharger/" + strEncodedPart + "}");
                 if (continu != null) {
                     submitForm(continu);
-                    go = br.getRegex("class=\"showURL\">(.*?)</p></a>").getMatch(0);
+                    go = br.getRegex("class\\s*=\\s*\"showURL\"\\s*>\\s*(.*?)\\s*</p>\\s*</a>").getMatch(0);
                     if (go != null) {
                         final DownloadLink dl = createDownloadlink(go);
                         decryptedLinks.add(dl);

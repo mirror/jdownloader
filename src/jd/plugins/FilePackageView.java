@@ -198,11 +198,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private final static AbstractIcon           EXTRACTICONSTART     = new AbstractIcon(IconKey.ICON_EXTRACT_RUN, 16);
     private final static AbstractIcon           FALSEICON            = new AbstractIcon(IconKey.ICON_FALSE, 16);
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                         @Override
+                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                             return o1.getTld().compareTo(o2.getTld());
+                                                                         }
+                                                                     };
 
     @Override
     public FilePackageView setItems(List<DownloadLink> updatedItems) {
@@ -211,7 +211,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-            if (updatedItems == null) {
+            if (updatedItems == null || updatedItems.size() == 0) {
                 tmp.items = 0;
             } else {
                 tmp.items = updatedItems.size();
