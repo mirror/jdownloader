@@ -167,6 +167,11 @@ public class SimplyPremiumCom extends PluginForHost {
                 logger.info(NICE_HOST + ": dllinknull");
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
+            String hash = getXML("hash");
+            if (hash != null && hash.matches("md5:[a-f0-9]{32}")) {
+                hash = hash.substring(hash.lastIndexOf(":") + 1);
+                link.setMD5Hash(hash);
+            }
         }
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
