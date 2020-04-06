@@ -144,7 +144,7 @@ public class GeT24Org extends PluginForHost {
         }
         // TODO: resume support
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, directurl, false, 1);
-        link.setProperty(this.getHost() + "directurl", directurl);
+        link.setProperty(directurlproperty, directurl);
         // TODO: validate status code
         dl.startDownload();
         // link_hash
