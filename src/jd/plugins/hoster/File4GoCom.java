@@ -18,21 +18,25 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
-import jd.plugins.*;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/(?:.*)/([a-zA-Z0-9_]+==)" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/(?:.*)/([a-zA-Z0-9_=]+)" })
 public class File4GoCom extends antiDDoSForHost {
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +49,7 @@ public class File4GoCom extends antiDDoSForHost {
     }
 
     private static final String MAINPAGE = "http://www.file4go.net";
-    private static Object LOCK = new Object();
+    private static Object       LOCK     = new Object();
 
     @Override
     public String rewriteHost(String host) {
@@ -109,7 +113,6 @@ public class File4GoCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
@@ -262,7 +265,7 @@ public class File4GoCom extends antiDDoSForHost {
     private String getDllink() {
         String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.(?:file4go\\.com|sizedrive\\.com)(?::\\d+)?/(?:[^<>\"]+/dll/[^\"]+|beta(?:free)?/[^\"]+))\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("class=\"novobotao download\" (:?.*?) href=\"(.*?)\">").getMatch(0);
+            dllink = br.getRegex("class\\s*=\\s*\"novobotao download\"\\s*(:?.*?)\\s*href\\s*=\\s*\"(.*?)\">").getMatch(0);
         }
         return dllink;
     }

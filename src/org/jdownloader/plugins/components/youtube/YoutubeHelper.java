@@ -3139,7 +3139,10 @@ public class YoutubeHelper {
             }
         }
         {
-            final String ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});ytplayer\\.load").getMatch(0);
+            String ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});\\s*ytplayer\\.load").getMatch(0);
+            if (ytplayerConfig == null) {
+                ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});\\s*\\(\\s*function\\s*playerBootstrap").getMatch(0);
+            }
             if (ytplayerConfig != null) {
                 this.ytPlayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
             }
