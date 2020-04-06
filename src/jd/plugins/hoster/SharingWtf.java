@@ -15,10 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
@@ -162,6 +164,19 @@ public class SharingWtf extends YetiShareCore {
         /* 2020-02-17: Special */
         if (br.containsHTML("you need to be a registered user to download any files")) {
             throw new AccountRequiredException();
+        }
+        String errorMsg = null;
+        try {
+            final UrlQuery query = UrlQuery.parse(br.getURL());
+            errorMsg = query.get("e");
+            errorMsg = URLDecoder.decode(errorMsg, "UTF-8");
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        if (errorMsg != null) {
+            if (errorMsg.matches("You must be a registered member account to download files more than.+")) {
+                throw new AccountRequiredException(errorMsg);
+            }
         }
         super.checkErrors(link, account);
     }

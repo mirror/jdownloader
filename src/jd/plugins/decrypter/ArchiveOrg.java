@@ -146,7 +146,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                     final boolean isOldVersion = item.contains("old_version");
                     final boolean isOriginal = item.contains("source=\"original\"");
                     final boolean isMetadata = item.contains("<format>Metadata</format>");
-                    final String name = new Regex(item, "name=\"([^\"]+)").getMatch(0);
+                    String name = new Regex(item, "name=\"([^\"]+)").getMatch(0);
                     final String filesizeStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
                     final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
                     if (name == null) {
@@ -157,6 +157,10 @@ public class ArchiveOrg extends PluginForDecrypt {
                     } else if (preferOriginal && !isOriginal) {
                         /* Skip non-original content if user only wants original content. */
                         continue;
+                    }
+                    if (Encoding.isHtmlEntityCoded(name)) {
+                        /* Will sometimes contain "&amp;" */
+                        name = Encoding.htmlDecode(name);
                     }
                     final DownloadLink fina = createDownloadlink("https://" + host_decrypted + "/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name));
                     fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
