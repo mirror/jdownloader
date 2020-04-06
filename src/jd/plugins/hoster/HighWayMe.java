@@ -363,6 +363,11 @@ public class HighWayMe extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
                 dllink = PluginJSonUtils.getJsonValue(br, "download");
+                String hash = PluginJSonUtils.getJsonValue(br, "hash");
+                if (hash != null && hash.matches("md5:[a-f0-9]{32}")) {
+                    hash = hash.substring(hash.lastIndexOf(":") + 1);
+                    link.setMD5Hash(hash);
+                }
                 if (dllink == null) {
                     logger.warning("Final downloadlink is null");
                     mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknull", 50, 5 * 60 * 1000l);
