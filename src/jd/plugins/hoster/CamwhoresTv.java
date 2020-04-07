@@ -294,7 +294,7 @@ public class CamwhoresTv extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     public static String getTitle(final Browser br, final String url_source) {

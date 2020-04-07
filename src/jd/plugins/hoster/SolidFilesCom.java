@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,8 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+" })
 public class SolidFilesCom extends PluginForHost {
@@ -60,7 +60,7 @@ public class SolidFilesCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private final boolean        ACCOUNT_FREE_RESUME          = true;
     private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int            ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -335,7 +335,7 @@ public class SolidFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     private void setConfigElements() {

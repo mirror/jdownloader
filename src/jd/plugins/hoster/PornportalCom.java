@@ -155,6 +155,10 @@ public class PornportalCom extends PluginForHost {
     // public void correctDownloadLink(final DownloadLink link) {
     // link.setUrlDownload(link.getDownloadURL().replaceAll("http://fakehubdecrypted", "http://"));
     // }
+    /**
+     * TODO: 2020-04-07: Their direct-URLs time out after some hours (only trailer download URLs are permanently valid) --> Add handling in
+     * this host plugin to refresh expired directURLs
+     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
