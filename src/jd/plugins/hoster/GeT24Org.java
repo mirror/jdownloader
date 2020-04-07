@@ -58,6 +58,9 @@ public class GeT24Org extends PluginForHost {
         final AccountInfo acc_info = new AccountInfo();
         this.br = newBrowser();
         String response = br.postPage("https://get24.org/api/login", "email=" + Encoding.urlEncode(account.getUser()) + "&passwd_sha256=" + JDHash.getSHA256(account.getPass()));
+        if (!Boolean.parseBoolean(PluginJSonUtils.getJson(response, "ok")) && PluginJSonUtils.getJson(response, "reason").equals("invalid credentials")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login or password");
+        }
         Long date_expire = TimeFormatter.getMilliSeconds(PluginJSonUtils.getJson(response, "date_expire"), "yyyy-MM-dd", Locale.ENGLISH);
         acc_info.setValidUntil(date_expire);
         long transfer_left = (long) (Float.parseFloat(PluginJSonUtils.getJson(response, "transfer_left")) * 1024 * 1024 * 1024);
