@@ -24,6 +24,7 @@ import java.util.Set;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -310,10 +311,16 @@ public class PixivNetGallery extends PluginForDecrypt {
                 final HashSet<String> dups = new HashSet<String>();
                 final Browser brc = br.cloneBrowser();
                 brc.setLoadLimit(5 * 1024 * 1024);
+                final UrlQuery query = new UrlQuery();
                 if (page == 0 && !isBookmarks) {
-                    brc.getPage(url);
+                    query.append("lang", "en", false);
+                    brc.getPage(url + "?" + query.toString());
                 } else {
-                    brc.getPage(url + String.format("?tag=&offset=%d&limit=%d&rest=show", offset, maxitemsperpage));
+                    query.append("tag", "", false);
+                    query.append("offset", offset + "", false);
+                    query.append("limit", maxitemsperpage + "", false);
+                    query.append("rest", "show", false);
+                    brc.getPage(url + "?" + query.toString());
                 }
                 final java.util.Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
                 if (map == null) {
