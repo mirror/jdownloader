@@ -20,9 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +32,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -144,7 +144,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         if (parameter.contains("zone-warez")) {
             getPage(parameter);
-            parameter = br._getURL().toString();
+            parameter = br.getURL();
         }
         getPage(parameter);
         /* Error handling */
