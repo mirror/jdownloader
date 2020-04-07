@@ -683,6 +683,15 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
+    protected String getHttpPath() {
+        if (plugin != null) {
+            return "captcha/" + getCaptchaNameSpace() + "/" + getSiteDomain();
+        } else {
+            return super.getHttpPath();
+        }
+    }
+
+    @Override
     protected String getCaptchaNameSpace() {
         if (getV3Action() != null) {
             return "recaptchav3";

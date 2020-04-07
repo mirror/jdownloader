@@ -3,11 +3,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -24,6 +19,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 41665 $", interfaceVersion = 3, names = { "get24.org" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class GeT24Org extends PluginForHost {
@@ -58,8 +58,8 @@ public class GeT24Org extends PluginForHost {
         final AccountInfo acc_info = new AccountInfo();
         this.br = newBrowser();
         String response = br.postPage("https://get24.org/api/login", "email=" + Encoding.urlEncode(account.getUser()) + "&passwd_sha256=" + JDHash.getSHA256(account.getPass()));
-        if (!Boolean.parseBoolean(PluginJSonUtils.getJson(response, "ok")) && PluginJSonUtils.getJson(response, "reason").equals("invalid credentials")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login or password");
+        if (!Boolean.parseBoolean(PluginJSonUtils.getJson(response, "ok")) && StringUtils.equalsIgnoreCase(PluginJSonUtils.getJson(response, "reason"), "invalid credentials")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong login or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         Long date_expire = TimeFormatter.getMilliSeconds(PluginJSonUtils.getJson(response, "date_expire"), "yyyy-MM-dd", Locale.ENGLISH);
         acc_info.setValidUntil(date_expire);
@@ -127,15 +127,15 @@ public class GeT24Org extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "host disabled", 5 * 60 * 1000l);
                 } else if (reason.equals("temporary error")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "temporary error", 5 * 60 * 1000l); // we can try
-                                                                                                                            // another links
-                                                                                                                            // or
-                                                                                                                            // hosts
-                                                                                                                            // probably
+                    // another links
+                    // or
+                    // hosts
+                    // probably
                 } else if (reason.equals("unknown error")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "unknown error", 5 * 60 * 1000l); // we can try
-                                                                                                                          // another
-                                                                                                                          // hosts or maybe
-                                                                                                                          // even links
+                    // another
+                    // hosts or maybe
+                    // even links
                 } else {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "unknown error");
                 }
