@@ -65,11 +65,12 @@ public class PixivNet extends PluginForHost {
     }
 
     public static String createGalleryUrl(final String galleryid) {
+        /* 2020-04-07: Either update- or remove this */
         return String.format("https://www.pixiv.net/member_illust.php?mode=manga&illust_id=%s", galleryid);
     }
 
     public static String createSingleImageUrl(final String galleryid) {
-        return String.format("https://www.pixiv.net/member_illust.php?mode=medium&illust_id=%s", galleryid);
+        return String.format("https://www.pixiv.net/en/artworks/%s", galleryid);
     }
 
     /* Extension which will be used if no correct extension is found */
