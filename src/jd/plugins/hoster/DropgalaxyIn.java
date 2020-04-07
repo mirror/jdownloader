@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -29,6 +26,12 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DropgalaxyIn extends XFileSharingProBasic {
@@ -76,6 +79,16 @@ public class DropgalaxyIn extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return true;
         }
+    }
+
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+            @Override
+            protected String getSiteUrl() {
+                // temp workaround by jiaz
+                return br._getURL().getProtocol() + "://" + br._getURL().getHost();
+            }
+        };
     }
 
     @Override
