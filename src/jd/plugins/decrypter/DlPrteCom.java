@@ -20,6 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -128,7 +128,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         String go = new Regex(parameter, "go\\.php\\?url=(aHR.+)").getMatch(0);
         if (go != null) {
             final DownloadLink dl = createDownloadlink(go);
@@ -142,6 +142,10 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
+        if (parameter.contains("zone-warez")) {
+            getPage(parameter);
+            parameter = br._getURL().toString();
+        }
         getPage(parameter);
         /* Error handling */
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
