@@ -258,7 +258,7 @@ public class CutuploadCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

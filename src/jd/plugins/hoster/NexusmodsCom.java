@@ -71,7 +71,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -707,7 +707,7 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

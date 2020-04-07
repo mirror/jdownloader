@@ -62,8 +62,8 @@ public class PorntrexCom extends PluginForHost {
     private final boolean         FREE_RESUME                  = true;
     private final int             FREE_MAXCHUNKS               = 0;
     private final int             FREE_MAXDOWNLOADS            = 20;
-    private final boolean         ACCOUNT_FREE_RESUME          = true;
-    private final int             ACCOUNT_FREE_MAXCHUNKS       = 0;
+    // private final boolean ACCOUNT_FREE_RESUME = true;
+    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
     private final int             ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private final boolean         ACCOUNT_PREMIUM_RESUME       = true;
     private final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
@@ -74,7 +74,7 @@ public class PorntrexCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.Porntrex.com/support/";
+        return "https://www.porntrex.com/support/";
     }
 
     @SuppressWarnings("deprecation")
@@ -266,7 +266,7 @@ public class PorntrexCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

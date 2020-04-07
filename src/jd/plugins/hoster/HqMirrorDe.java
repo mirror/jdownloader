@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,8 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hq-mirror.de" }, urls = { "https?://(?:www\\.)?hq\\-mirror\\.de/tvprogram/show/(\\d+)#collapse\\-link\\-copy\\-(\\d+)" })
 public class HqMirrorDe extends PluginForHost {
@@ -221,7 +221,7 @@ public class HqMirrorDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
