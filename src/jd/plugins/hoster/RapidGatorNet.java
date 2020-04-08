@@ -99,6 +99,8 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static AtomicLong              timeBefore                                 = new AtomicLong(0);
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP            = "rapidgatornet_lastdownload_timestamp";
     private static final String            PROPERTY_sessionid                         = "session_id";
+    private static final String            PROPERTY_timestamp_session_create_api      = "session_create";
+    private static final String            PROPERTY_timestamp_session_create_website  = "session_create_website";
     private final String                   LASTIP                                     = "LASTIP";
     private final String                   HOTLINK                                    = "HOTLINK";
     private static AtomicReference<String> lastIP                                     = new AtomicReference<String>();
@@ -857,7 +859,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     accessMainpage(br);
                     if (isLoggedINWebsite()) {
                         logger.info("Successfully validated last session");
-                        if (sessionReUseAllowed(account, "session_create_website", WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
+                        if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_website, WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
                             setAccountTypeWebsite(account, br);
                             account.saveCookies(br.getCookies(getHost()), "");
                             return true;
@@ -908,7 +910,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
                 setAccountTypeWebsite(account, br);
                 account.saveCookies(br.getCookies(getHost()), "");
-                account.setProperty("session_create_website", System.currentTimeMillis());
+                account.setProperty(PROPERTY_timestamp_session_create_website, System.currentTimeMillis());
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -971,13 +973,13 @@ public class RapidGatorNet extends antiDDoSForHost {
             // accessMainpage(br);
             String session_id = account.getStringProperty(PROPERTY_sessionid);
             if (session_id != null) {
-                logger.info("session_create = " + account.getLongProperty("session_create", 0));
+                logger.info("session_create = " + account.getLongProperty(PROPERTY_timestamp_session_create_api, 0));
                 /* First try to re-use last token */
                 getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
                 try {
                     handleErrors_api(null, null, account, br.getHttpConnection());
                     logger.info("Successfully validated last session");
-                    if (sessionReUseAllowed(account, "session_create", API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
+                    if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_api, API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
                         account.setProperty("session_last_checked", System.currentTimeMillis());
                         return session_id;
                     }
@@ -1005,7 +1007,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             /* Store session_id */
             account.setProperty(PROPERTY_sessionid, session_id);
-            account.setProperty("session_create", System.currentTimeMillis());
+            account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
             return session_id;
         }
     }
