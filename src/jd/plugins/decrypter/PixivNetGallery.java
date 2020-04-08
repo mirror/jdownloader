@@ -25,6 +25,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -86,11 +87,10 @@ public class PixivNetGallery extends PluginForDecrypt {
         String userid = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String fpName = null;
-        String title = null;
-        String username = null;
         Boolean single = null;
         String uploadDate = null;
         if (parameter.matches(TYPE_GALLERY) || parameter.matches(TYPE_ARTWORKS)) {
+            /* 2020-04-28: TODO: Check this with a lot of URLs */
             if (parameter.matches(TYPE_ARTWORKS)) {
                 userid = new Regex(parameter, "artworks/(\\d+)").getMatch(0);
                 br.getPage(parameter);
@@ -123,121 +123,33 @@ public class PixivNetGallery extends PluginForDecrypt {
             }
             uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             /* Decrypt gallery */
-            final Set<String> links = new HashSet<String>();
-            String json = null;
-            if (Boolean.TRUE.equals(single) || (single == null && br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<"))) {
-                /* Not multiple urls --> Switch to single-url view */
-                if (single == null) {
-                    br.getPage(PixivNet.createSingleImageUrl(userid));
+            String json = br.getRegex("id=\"meta-preload-data\" content='(\\{.*?\\})'").getMatch(0);
+            /* New attempt 2020-04-08 */
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> illust = (Map<String, Object>) entries.get("illust");
+            for (Map.Entry<String, Object> entry : illust.entrySet()) {
+                final Map<String, Object> illustInfo = (Map<String, Object>) entry.getValue();
+                final String illustId = (String) illustInfo.get("illustId");
+                String illustTitle = (String) illustInfo.get("illustTitle");
+                final String singleLink = (String) JavaScriptEngineFactory.walkJson(illustInfo, "urls/regular");
+                String tags = null;
+                if (StringUtils.isEmpty(illustId)) {
+                    /* Skip invalid items */
+                    continue;
                 }
-                title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
-                if (title == null) {
-                    title = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (StringUtils.isEmpty(illustTitle)) {
+                    /* Fallback */
+                    illustTitle = illustId;
                 }
-                boolean found = add(links, br, "data-illust-id=\"\\d+\"><img src=\"(https?[^<>\"']+)\"");
-                if (!found) {
-                    // old layout
-                    found = add(links, br, "data-title=\"registerImage\"><img src=\"(https?[^<>\"']+)\"");
-                    if (!found) {
-                        // regular(new layout)
-                        found = add(links, br, "\"illustId\"\\s*:\\s*\"" + userid + "\".*?\"regular\"\\s*:\\s*\"(https?[^<>\"']+)\"");
-                    }
-                }
-                if (links.isEmpty()) {
-                    found = add(links, br, "data-src=\"(https?[^<>\"]+)\"[^>]+class=\"original-image\"");
-                    if (!found) {
-                        // original(new layout)
-                        found = add(links, br, "\"illustId\"\\s*:\\s*\"" + userid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
-                    }
-                }
-                if (links.isEmpty()) {
-                    add(links, br, "pixiv\\.context\\.ugokuIllustFullscreenData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"");
-                }
-                if (links.isEmpty()) {
-                    add(links, br, "pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"");
-                }
-                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + userid + "[^{]*\\})").getMatch(0);
-                if (json != null && json.matches(".*\"illustType\"\\s*:\\s*2.*")) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage("https://www.pixiv.net/ajax/illust/" + userid + "/ugoira_meta");
-                    add(links, brc, "(https?.*?)\"");
-                }
-                if (links.isEmpty() && isOffline(br)) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
-                } else if (links.isEmpty() && isAdultImageLoginRequired(userid) && !loggedIn) {
-                    logger.info("Adult content: Account required");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM);
-                } else if (links.isEmpty()) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                /* Multiple urls */
-                /* Check for offline */
-                if (isOffline(br)) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
-                } else if (isAccountOrRightsRequired(br) && !loggedIn) {
-                    logger.info("Account required to crawl this particular content");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM);
-                } else if (isAdultImageLoginRequired(userid) && !loggedIn) {
-                    logger.info("Adult content: Account required");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM);
-                }
-                title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
-                if (title == null) {
-                    title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                }
-                // old layout
-                boolean found = add(links, br, "pixiv\\.context\\.images\\[\\d+\\]\\s*=\\s*\"(https?[^\"]+)\"");
-                if (!found) {
-                    // original(new layout)
-                    found = add(links, br, "\"illustId\"\\s*:\\s*\"" + userid + "\".*?\"original\"\\s*:\\s*\"(https?[^<>\"']+)\"");
-                    if (!found) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        final Integer pageCount = getPageCount(br, userid);
-                        if (pageCount != null && links.size() != pageCount.intValue()) {
-                            final String template = links.iterator().next();
-                            for (int page = 0; page < pageCount.intValue(); page++) {
-                                links.add(template.replaceAll("(_p0\\.)", "_p" + page + "."));
-                            }
-                        }
-                    }
-                }
-                json = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + userid + "[^{]*\\})").getMatch(0);
-            }
-            final String tags = br.getRegex("<title>([^<>\"]+)\\s*/[^<>]*?</title>").getMatch(0);
-            if (json != null) {
-                username = PluginJSonUtils.getJson(json, "userName");
-                final String illustTitle = PluginJSonUtils.getJson(json, "illustTitle");
-                if (!StringUtils.isEmpty(illustTitle)) {
-                    /* Prefer this over title grabbed from html */
-                    title = illustTitle;
-                }
-            }
-            if (title != null) {
-                title = Encoding.htmlDecode(title).trim();
-            } else {
-                /* Fallback */
-                title = userid;
-            }
-            if (title != null) {
-                fpName = title;
-                if (!fpName.startsWith("「")) {
-                    fpName = "「" + fpName;
-                }
-                if (!fpName.endsWith("」")) {
-                    fpName += "」";
-                }
-            }
-            for (String singleLink : links) {
-                singleLink = singleLink.replaceAll("\\\\", "");
+                /* TODO: Check this */
+                userid = illustId;
+                final String userName = (String) illustInfo.get("userName");
+                final String illustUploadDate = (String) illustInfo.get("uploadDate");
                 final String filename_url = new Regex(singleLink, "/([^/]+\\.[a-z]+)$").getMatch(0);
                 String filename;
                 final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
                 if (picNumberStr != null) {
-                    filename = this.generateFilename(userid, title, username, tags, picNumberStr, null);
+                    filename = this.generateFilename(userid, illustTitle, userName, tags, picNumberStr, null);
                 } else {
                     /* Fallback - just use the given filename (minus extension)! */
                     filename = filename_url.substring(0, filename_url.lastIndexOf("."));
@@ -257,14 +169,15 @@ public class PixivNetGallery extends PluginForDecrypt {
                 dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
                 dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
                 dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
-                if (!StringUtils.isEmpty(uploadDate)) {
-                    dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+                if (!StringUtils.isEmpty(illustUploadDate)) {
+                    dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, illustUploadDate);
                 }
                 dl.setContentUrl(parameter);
                 dl.setFinalFileName(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
+            return decryptedLinks;
         } else {
             /* Decrypt user */
             if (userid == null) {
@@ -322,11 +235,11 @@ public class PixivNetGallery extends PluginForDecrypt {
                     query.append("rest", "show", false);
                     brc.getPage(url + "?" + query.toString());
                 }
-                final java.util.Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
                 if (map == null) {
                     break;
                 }
-                final java.util.Map<String, Object> body = (Map<String, Object>) map.get("body");
+                final Map<String, Object> body = (Map<String, Object>) map.get("body");
                 if (body == null) {
                     break;
                 }
@@ -334,7 +247,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                     /* E.g. bookmarks */
                     final ArrayList<Object> works = (ArrayList<Object>) body.get("works");
                     for (final Object workO : works) {
-                        final java.util.Map<String, Object> entries = (Map<String, Object>) workO;
+                        final Map<String, Object> entries = (Map<String, Object>) workO;
                         final String galleryID = (String) entries.get("illustId");
                         if (dups.add(galleryID)) {
                             itemcounter++;
@@ -345,7 +258,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         }
                     }
                 }
-                final java.util.Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
+                final Map<String, Object> illusts = (Map<String, Object>) body.get("illusts");
                 if (illusts != null) {
                     for (Map.Entry<String, Object> entry : illusts.entrySet()) {
                         final String galleryID = entry.getKey();
@@ -361,7 +274,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         }
                     }
                 }
-                final java.util.Map<String, Object> manga = (Map<String, Object>) body.get("manga");
+                final Map<String, Object> manga = (Map<String, Object>) body.get("manga");
                 if (manga != null) {
                     for (Map.Entry<String, Object> entry : manga.entrySet()) {
                         final String galleryID = entry.getKey();
@@ -391,13 +304,18 @@ public class PixivNetGallery extends PluginForDecrypt {
     }
 
     /** Returns filename without extension */
-    private String generateFilename(final String galleryID, final String title, final String username, final String tags, final String picNumberStr, final String extension) {
+    private String generateFilename(final String galleryID, String title, final String username, String tags, final String picNumberStr, final String extension) {
         if (galleryID == null || picNumberStr == null) {
             return null;
         }
+        if (tags != null) {
+            tags = tags.trim();
+        }
+        if (title != null) {
+            title = title.trim();
+        }
         String thistitle;
-        if (tags == null) {
-            /* Should never happen */
+        if (tags == null || (title != null && tags.equalsIgnoreCase(title))) {
             thistitle = "";
         } else {
             thistitle = tags;
