@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,10 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DropgalaxyIn extends XFileSharingProBasic {
@@ -155,5 +155,18 @@ public class DropgalaxyIn extends XFileSharingProBasic {
             filename = br.getRegex("<label>Filename\\s*:\\s*<b>([^<>\"]+)</b>").getMatch(0);
         }
         return filename;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        if (this.findFormDownload2Free() != null) {
+            /*
+             * 2020-04-08: Special: Their html will often contain direct-URLs to e.g. view pdf files in a gdrive viewer but these URLs will
+             * not work and lead to server error 500 thus if the captcha-Form (download2 Form) exists we know we cannot yet look for any
+             * downloadlinks!
+             */
+            return null;
+        }
+        return super.getDllink(link, account, br, src);
     }
 }
