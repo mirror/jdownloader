@@ -28,6 +28,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -68,13 +69,25 @@ public class PornportalCom extends PluginForHost {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "babes.com" });
+        ret.add(new String[] { "bellesafilms.com" });
+        ret.add(new String[] { "biempire.com" });
         ret.add(new String[] { "brazzers.com" });
         ret.add(new String[] { "digitalplayground.com" });
         ret.add(new String[] { "erito.com", "eritos.com" });
         ret.add(new String[] { "fakehub.com" });
-        ret.add(new String[] { "mofos.com" });
+        ret.add(new String[] { "hentaipros.com" });
+        ret.add(new String[] { "milehighmedia.com", "sweetheartvideo.com", "realityjunkies.com" });
+        ret.add(new String[] { "metrohd.com", "familyhookups.com", "kinkyspa.com" });
+        ret.add(new String[] { "mofos.com", "publicpickups.com", "iknowthatgirl.com" });
+        ret.add(new String[] { "propertysex.com" });
         ret.add(new String[] { "realitykings.com" });
         ret.add(new String[] { "sexyhub.com" });
+        ret.add(new String[] { "squirted.com" });
+        ret.add(new String[] { "transangels.com" });
+        ret.add(new String[] { "transsensual.com" });
+        ret.add(new String[] { "trueamateurs.com" });
+        ret.add(new String[] { "twistys.com" });
+        ret.add(new String[] { "whynotbi.com" });
         return ret;
     }
 
@@ -144,10 +157,48 @@ public class PornportalCom extends PluginForHost {
         plg.getLogger().info("***********************************");
     }
 
+    /* Tries to find new websites based on current account! This only works if you are logged in an account! */
+    public static void findNewPossiblySupportedSites(final Plugin plg, final Browser br) {
+        try {
+            final String sid = br.getCookie("ppp.contentdef.com", "ppp_session");
+            if (sid == null) {
+                plg.getLogger().warning("Failed to find sid");
+                return;
+            }
+            br.getPage("https://ppp.contentdef.com/thirdparty?sid=" + sid + "&_=" + System.currentTimeMillis());
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final ArrayList<Object> domaininfos = (ArrayList<Object>) entries.get("notificationNetworks");
+            final PluginFinder finder = new PluginFinder();
+            for (final Object domaininfo : domaininfos) {
+                entries = (Map<String, Object>) domaininfo;
+                final String name = (String) entries.get("name");
+                final String domain = (String) entries.get("domain");
+                if (StringUtils.isEmpty(name) || StringUtils.isEmpty(domain)) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final String plugin_host = finder.assignHost(domain);
+                if (plugin_host == null) {
+                    plg.getLogger().info("Found new host: " + plugin_host);
+                }
+            }
+        } catch (final Throwable e) {
+            plg.getLogger().log(e);
+            plg.getLogger().info("Failure due to Exception");
+        }
+    }
+
     public static String getPornportalMainURL(final String host) {
         if (host == null) {
             return null;
         }
+        /*
+         * TODO: Move away from static method to e.g. support sites like: https://bbw-channel.pornportal.com/,
+         * https://ebony-channel.pornportal.com/, https://latina-channel.pornportal.com/, https://cosplay-channel.pornportal.com/login,
+         * https://stepfamily-channel.pornportal.com, https://3dxstar-channel.pornportal.com, https://realitygang-channel.pornportal.com,
+         * https://lesbian-channel.pornportal.com, https://anal-channel.pornportal.com, https://milf-channel.pornportal.com,
+         * http://www.dontbreakme.com, https://teen-channel.pornportal.com/login
+         */
         return "https://site-ma." + host;
     }
 

@@ -53,13 +53,25 @@ public class PornportalComCrawler extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "babes.com" });
+        ret.add(new String[] { "bellesafilms.com" });
+        ret.add(new String[] { "biempire.com" });
         ret.add(new String[] { "brazzers.com" });
         ret.add(new String[] { "digitalplayground.com" });
         ret.add(new String[] { "erito.com", "eritos.com" });
         ret.add(new String[] { "fakehub.com" });
-        ret.add(new String[] { "mofos.com" });
+        ret.add(new String[] { "hentaipros.com" });
+        ret.add(new String[] { "milehighmedia.com", "sweetheartvideo.com", "realityjunkies.com" });
+        ret.add(new String[] { "metrohd.com", "familyhookups.com", "kinkyspa.com" });
+        ret.add(new String[] { "mofos.com", "publicpickups.com", "iknowthatgirl.com" });
+        ret.add(new String[] { "propertysex.com" });
         ret.add(new String[] { "realitykings.com" });
         ret.add(new String[] { "sexyhub.com" });
+        ret.add(new String[] { "squirted.com" });
+        ret.add(new String[] { "transangels.com" });
+        ret.add(new String[] { "transsensual.com" });
+        ret.add(new String[] { "trueamateurs.com" });
+        ret.add(new String[] { "twistys.com" });
+        ret.add(new String[] { "whynotbi.com" });
         return ret;
     }
 
