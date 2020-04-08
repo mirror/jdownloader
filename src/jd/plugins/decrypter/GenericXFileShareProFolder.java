@@ -50,7 +50,7 @@ import jd.utils.JDUtilities;
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "streamratio.com", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "ishareupload.com", "mixshared.com", "longfiles.com", "novafile.com", "orangefiles.me", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
             /** file-up.org domains */
-            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com" };
+            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info" };
     /* This list contains all hosts which need special Patterns (see below) - most XFS hosts will have the same folder patterns! */
     private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com" };
 
