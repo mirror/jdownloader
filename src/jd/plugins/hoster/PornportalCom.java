@@ -17,9 +17,11 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -30,16 +32,15 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -69,7 +70,7 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "babes.com" });
         ret.add(new String[] { "brazzers.com" });
         ret.add(new String[] { "digitalplayground.com" });
-        ret.add(new String[] { "erito.com" });
+        ret.add(new String[] { "erito.com", "eritos.com" });
         ret.add(new String[] { "fakehub.com" });
         ret.add(new String[] { "mofos.com" });
         ret.add(new String[] { "realitykings.com" });
@@ -93,10 +94,23 @@ public class PornportalCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/dummy_not_yet_required");
+            ret.add("https://decrypted" + buildHostsPatternPart(domains) + "/\\d+/\\d+");
         }
         return ret.toArray(new String[0]);
     }
+    // @Override
+    // public void correctDownloadLink(final DownloadLink link) {
+    // final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+    // if (fuid != null) {
+    // /* link cleanup, prefer https if possible */
+    // if (link.getPluginPatternMatcher() != null &&
+    // link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
+    // link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
+    // }
+    // link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
+    // link.setLinkID(getHost() + "://" + fuid);
+    // }
+    // }
 
     /*
      * Debug function: Can be used to quickly find the currently used pornportal version of all supported websites and compare against
@@ -146,39 +160,87 @@ public class PornportalCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private String               dllink                       = null;
     private boolean              server_issues                = false;
+    public static final String   PROPERTY_directurl           = "directurl";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 400 });
         return br;
     }
 
-    // public void correctDownloadLink(final DownloadLink link) {
-    // link.setUrlDownload(link.getDownloadURL().replaceAll("http://fakehubdecrypted", "http://"));
-    // }
-    /**
-     * TODO: 2020-04-07: Their direct-URLs time out after some hours (only trailer download URLs are permanently valid) --> Add handling in
-     * this host plugin to refresh expired directURLs
-     */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
-            return AvailableStatus.UNCHECKABLE;
+        dllink = link.getStringProperty(PROPERTY_directurl);
+        if (dllink == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.login(this.br, aa, false);
-        dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
+        String newDirecturl = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (con.getResponseCode() == 472) {
+                /* Directurl needs to be refreshed */
+                logger.info("Directurl needs to be refreshed");
+                if (account == null) {
+                    /* We need an account! */
+                    return AvailableStatus.UNCHECKABLE;
+                } else if (!isDownload) {
+                    /* Only refresh directurls in download mode - account will only be available in download mode anyways! */
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                logger.info("Trying to refresh directurl");
+                final String videoID = link.getStringProperty("videoid");
+                final String quality = link.getStringProperty("quality");
+                if (videoID == null || quality == null) {
+                    /* This should never happen */
+                    logger.info("DownloadLink property videoid or quality missing");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* We should already be loggedIN at this stage! */
+                this.login(this.br, account, false);
+                final LinkedHashMap<String, DownloadLink> qualities = jd.plugins.decrypter.PornportalComCrawler.crawlContentAPI(this, this.br, videoID, true);
+                final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
+                while (iteratorQualities.hasNext()) {
+                    final DownloadLink video = iteratorQualities.next().getValue();
+                    final String videoIDTmp = video.getStringProperty("videoid");
+                    final String qualityTmp = video.getStringProperty("quality");
+                    if (videoID.equals(videoIDTmp) && quality.equals(qualityTmp)) {
+                        newDirecturl = video.getStringProperty(PROPERTY_directurl);
+                        break;
+                    }
+                }
+                if (newDirecturl == null) {
+                    logger.warning("Failed to find fresh directurl --> Content offline?");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl --> Content offline?");
+                }
+                logger.info("Successfully found new directurl");
+                con = br.openHeadConnection(newDirecturl);
+            }
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (con.isContentDisposition()) {
                 link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                /*
+                 * 2020-04-08: Final filename is supposed to be set in crawler. Their internal filenames are always the same e.g.
+                 * "scene_320p.mp4".
+                 */
+                // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                if (newDirecturl != null) {
+                    /* Only set new directurl if it is working. Keep old one until then! */
+                    logger.info("Successfully checked new directurl and set property");
+                    link.setProperty(PROPERTY_directurl, newDirecturl);
+                    this.dllink = newDirecturl;
+                }
+            } else {
+                this.server_issues = true;
             }
         } finally {
             try {
@@ -190,13 +252,13 @@ public class PornportalCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, null, true);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        throw new AccountRequiredException();
     }
 
     @Override
@@ -260,6 +322,7 @@ public class PornportalCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
+                br = prepBR(br);
                 br.setFollowRedirects(true);
                 br.getPage(getPornportalMainURL(account.getHoster()) + "/login");
                 Map<String, Object> entries = getWebsiteJson(br);
@@ -514,7 +577,7 @@ public class PornportalCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -524,9 +587,8 @@ public class PornportalCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        link.setProperty("premium_directlink", dllink);
         dl.startDownload();
     }
 
