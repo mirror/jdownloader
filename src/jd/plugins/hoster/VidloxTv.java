@@ -21,10 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidloxTv extends XFileSharingProBasic {
@@ -122,8 +126,35 @@ public class VidloxTv extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean isVideohosterEmbed() {
+        /* 2020-04-08: Special */
+        return true;
+    }
+
+    @Override
     protected boolean supports_availablecheck_filesize_via_embedded_video() {
         /* 2019-08-17: Special and experimental. Disable this if it slows down the linkcheck too much! */
         return true;
+    }
+
+    @Override
+    protected void getPage(final Browser ibr, final String page) throws Exception {
+        /* 2020-04-08: Special */
+        if (ibr == null || page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        sendRequest(ibr, ibr.createGetRequest(page));
+        /* 2020-04-08: Cheap protection on top of their Cloudflare: Server: WorldShield PROXY software by VPZ */
+        final String antiddosCookie = br.getRegex("document\\.cookie\\s*=\\s*\"VPZ=([a-f0-9]+)").getMatch(0);
+        if (antiddosCookie != null) {
+            logger.info("Spotted antiddos cookie");
+            br.setCookie(br.getHost(), "VPZ", antiddosCookie);
+            super.getPage(ibr, page);
+        }
+    }
+
+    public String[] scanInfo(final String[] fileInfo) {
+        fileInfo[0] = new Regex(correctedBR, "<title>\\s*Watch([^<>\"]+)</title>").getMatch(0);
+        return super.scanInfo(fileInfo);
     }
 }

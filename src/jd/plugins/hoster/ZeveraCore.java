@@ -20,6 +20,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -39,15 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -442,7 +442,6 @@ abstract public class ZeveraCore extends UseNet {
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
-        // final ArrayList<String> cache = (ArrayList<String>) entries.get("cache");
         final HashSet<String> list = new HashSet<String>();
         /* 2019-08-05: usenet is not supported when pairing login is used because then we do not have the internal Usenet-Logindata! */
         if (supportsUsenet(account)) {
@@ -454,6 +453,13 @@ abstract public class ZeveraCore extends UseNet {
         }
         if (directdl != null) {
             list.addAll(directdl);
+        }
+        /* Debug function to find entries which are on the "cache" list but not on "directdl". */
+        final ArrayList<String> cachehosts = (ArrayList<String>) entries.get("cache");
+        for (final String cachehost : cachehosts) {
+            if (!list.contains(cachehost)) {
+                logger.info("Host which is only in cache list but not in directdl list: " + cachehost);
+            }
         }
         ai.setMultiHostSupport(this, new ArrayList<String>(list));
         return ai;
@@ -842,8 +848,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -851,9 +858,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
