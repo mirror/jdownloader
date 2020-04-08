@@ -32,6 +32,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,15 +63,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -98,6 +98,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static AtomicBoolean           hasAttemptedDownloadstart                  = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                                 = new AtomicLong(0);
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP            = "rapidgatornet_lastdownload_timestamp";
+    private static final String            PROPERTY_sessionid                         = "session_id";
     private final String                   LASTIP                                     = "LASTIP";
     private final String                   HOTLINK                                    = "HOTLINK";
     private static AtomicReference<String> lastIP                                     = new AtomicReference<String>();
@@ -766,7 +767,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.setType(null);
-                    account.setProperty("session_id", Property.NULL);
+                    account.setProperty(PROPERTY_sessionid, Property.NULL);
                 }
                 throw e;
             }
@@ -968,7 +969,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             /* Before this was called 'avoidBlock' but it is not required anymore (in API mode)! */
             // accessMainpage(br);
-            String session_id = account.getStringProperty("session_id", null);
+            String session_id = account.getStringProperty(PROPERTY_sessionid);
             if (session_id != null) {
                 logger.info("session_create = " + account.getLongProperty("session_create", 0));
                 /* First try to re-use last token */
@@ -1003,7 +1004,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             /* Store session_id */
-            account.setProperty("session_id", session_id);
+            account.setProperty(PROPERTY_sessionid, session_id);
             account.setProperty("session_create", System.currentTimeMillis());
             return session_id;
         }
@@ -1117,7 +1118,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 account.setAccountInfo(ac);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty("session_id", null));
+            final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty(PROPERTY_sessionid));
             if (errorMessage.contains("Please wait")) {
                 account.setProperty("lastPleaseWait", System.currentTimeMillis());
                 if (link == null) {
@@ -1130,7 +1131,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
                 if (sessionReset) {
                     logger.info("SessionReset:" + sessionReset);
-                    account.setProperty("session_id", Property.NULL);
+                    account.setProperty(PROPERTY_sessionid, Property.NULL);
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
@@ -1340,7 +1341,7 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     private boolean validateSessionAPI(final Account account) throws Exception {
         synchronized (account) {
-            final String session_id = account.getStringProperty("session_id", null);
+            final String session_id = account.getStringProperty(PROPERTY_sessionid, null);
             if (session_id == null) {
                 logger.severe("no session available?!");
                 /* This should never happen */
@@ -1365,10 +1366,14 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     /** Call this on expired session_id! */
     private void handleInvalidSession(final DownloadLink link, final Account account, final String error_hint) throws PluginException {
+        /*
+         * TODO: Consider deleting current session_id to enforce creation of a new session_id.b Keep in mind that frequently creating new
+         * session_ids is bad!
+         */
         final String session_id;
         if (account != null) {
             synchronized (account) {
-                session_id = account.getStringProperty("session_id", null);
+                session_id = account.getStringProperty(PROPERTY_sessionid);
             }
         } else {
             session_id = null;
@@ -1385,6 +1390,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     map.put(account, session_id);
                     // throw AccountUnavailableException
                 } else {
+                    /* We've retried with new session but same error --> Problem is not the session but the file */
                     map.remove(account);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File seems to be temporarily not available, please try again later", 30 * 60 * 1000l);
                 }
