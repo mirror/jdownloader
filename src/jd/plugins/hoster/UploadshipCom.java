@@ -40,7 +40,7 @@ public class UploadshipCom extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info: 2019-07-31: Premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-07-31: solvemedia<br />
+     * captchatype-info: 2020-04-08: reCaptchaV2<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
@@ -133,7 +133,7 @@ public class UploadshipCom extends YetiShareCore {
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = br.getRegex("How To Free Download\\s*:\\s*<b>([^<>\"]+)<").getMatch(0);
         }
-        fileInfo[1] = br.getRegex("/" + this.getFUIDFromURL(this.getDownloadLink()) + "</font> \\- \\[ ([^<>\"\\]]+) \\][^<]+</small>").getMatch(0);
+        fileInfo[1] = br.getRegex("\\[\\s*(\\d+)\\s*bytes\\s*\\]").getMatch(0);
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
             /* Use default handling as fallback */
             super.scanInfo(link, fileInfo);

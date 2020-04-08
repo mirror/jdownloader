@@ -184,7 +184,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
             if (!StringUtils.isEmpty(description)) {
                 fp.setComment(description);
             }
-            final String format_filename = "%s_%s.mp4";
+            final String format_filename = "%s_%s_%s.mp4";
             LinkedHashMap<String, Object> files = null;
             try {
                 entries = (LinkedHashMap<String, Object>) entries.get("videos");
@@ -210,7 +210,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 videoInfo = (LinkedHashMap<String, Object>) videoInfo.get("urls");
                 String downloadurl = (String) videoInfo.get("download");
                 if (StringUtils.isEmpty(downloadurl)) {
-                    /* Fallback to stream-URL */
+                    /* Fallback to stream-URL (most times, an official downloadurl is available!) */
                     downloadurl = (String) videoInfo.get("view");
                 }
                 if (StringUtils.isEmpty(downloadurl)) {
@@ -237,7 +237,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
                 final DownloadLink dl = new DownloadLink(plugin_to_use, "pornportal", host, patternMatcher, true);
                 dl.setContentUrl(contentURL);
-                dl.setFinalFileName(String.format(format_filename, title, format));
+                dl.setFinalFileName(String.format(format_filename, videoID, title, format));
                 dl.setProperty("videoid", videoID);
                 dl.setProperty("quality", format);
                 dl.setProperty("directurl", downloadurl);

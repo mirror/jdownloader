@@ -339,7 +339,6 @@ public class PornportalCom extends PluginForHost {
                     logger.warning("Failed to prepare API headers");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                jwt = PluginJSonUtils.getJson(br, "jwt");
                 entries = (LinkedHashMap<String, Object>) entries.get("domain");
                 /* E.g. site-ma.fakehub.com */
                 final String hostname = (String) entries.get("hostname");
@@ -394,14 +393,16 @@ public class PornportalCom extends PluginForHost {
                 } else {
                     logger.warning("Failed to find continueform");
                 }
-                final String access_token_ma = br.getCookie(br.getHost(), cookie_name_login, Cookies.NOTDELETEDPATTERN);
-                if (!isLoggedIN(cookie_name_login) || access_token_ma == null) {
+                final String login_cookie = getLoginCookie(this.br, cookie_name_login);
+                jwt = PluginJSonUtils.getJson(br, "jwt");
+                if (login_cookie == null || StringUtils.isEmpty(jwt)) {
+                    logger.info("Login failure after API login");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.setProperty(PROPERTY_authorization, access_token_ma);
+                account.setProperty(PROPERTY_authorization, login_cookie);
                 account.setProperty(PROPERTY_jwt, jwt);
                 account.setProperty(PROPERTY_timestamp_website_cookies_updated, System.currentTimeMillis());
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 /* Sets PROPERTY_authorization as Authorization header */
                 setStoredAPIAuthHeaderAccount(br, account);
             } catch (final PluginException e) {
@@ -411,6 +412,17 @@ public class PornportalCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIN(String login_cookie_name) {
+        return getLoginCookie(this.br, login_cookie_name) != null;
+    }
+
+    private String getLoginCookie(final Browser br, String login_cookie_name) {
+        if (login_cookie_name == null) {
+            login_cookie_name = getDefaultCookieNameLogin();
+        }
+        return br.getCookie(br.getHost(), login_cookie_name, Cookies.NOTDELETEDPATTERN);
     }
 
     public static boolean prepareBrAPI(final Plugin plg, final Browser br, final Account acc) throws PluginException {
@@ -476,13 +488,6 @@ public class PornportalCom extends PluginForHost {
     public static Map<String, Object> getWebsiteJson(final Browser br) {
         final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-    }
-
-    private boolean isLoggedIN(String login_cookie_name) {
-        if (login_cookie_name == null) {
-            login_cookie_name = getDefaultCookieNameLogin();
-        }
-        return br.getCookie(getHost(), login_cookie_name, Cookies.NOTDELETEDPATTERN) != null;
     }
 
     private static final String getDefaultCookieNameLogin() {
