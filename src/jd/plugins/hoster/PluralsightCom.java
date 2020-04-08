@@ -13,18 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -50,6 +38,20 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.PluralsightComDecrypter;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -57,7 +59,7 @@ import jd.plugins.PluginForHost;
  *
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://app\\.pluralsight\\.com\\/player\\??.+" })
-public class PluralsightCom extends PluginForHost {
+public class PluralsightCom extends antiDDoSForHost {
     private static WeakHashMap<Account, List<Long>> map100PerHour   = new WeakHashMap<Account, List<Long>>();
     private static WeakHashMap<Account, List<Long>> map200Per4Hours = new WeakHashMap<Account, List<Long>>();
 
@@ -268,7 +270,7 @@ public class PluralsightCom extends PluginForHost {
         }
     }
 
-    public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link, QUALITY quality) throws PluginException, IOException, InterruptedException {
+    public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link, QUALITY quality) throws Exception {
         UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
         final String author = urlParams.get("author");
         if (StringUtils.isEmpty(author)) {
@@ -306,31 +308,44 @@ public class PluralsightCom extends PluginForHost {
 
     private static Object WAITLOCK = new Object();
 
-    public static Request getRequest(Browser br, Plugin plugin, Request request) throws InterruptedException, IOException {
+    public static Request getRequest(Browser br, Plugin plugin, Request request) throws Exception {
         return getRequest(br, plugin, request, 45 * 1000);
     }
 
     private static AtomicBoolean thresholdInitialized = new AtomicBoolean(false);
 
-    public static Request getRequest(Browser br, Plugin plugin, Request request, long waitMax) throws InterruptedException, IOException {
+    public static Request getRequest(Browser br, Plugin plugin, Request request, long waitMax) throws Exception {
         if (thresholdInitialized.compareAndSet(false, true)) {
             final Random random = new Random();
             final int min = random.nextInt((1000 - 500) + 1) + 500;
             Browser.setRequestIntervalLimitGlobal(plugin.getHost(), random.nextInt((4000 - min) + 1) + min);
         }
         synchronized (WAITLOCK) {
-            br.getPage(request);
+            getRequest(plugin, br, request);
             while (waitMax > 0) {
                 if (request.getHttpConnection().getResponseCode() == 429 || (StringUtils.containsIgnoreCase(request.getHttpConnection().getContentType(), "json") && new Regex(request.getHtmlCode(), "\"status\"\\s*:\\s*429").matches())) {
                     Thread.sleep(15000);
                     waitMax -= 15000;
-                    br.getPage(request);
+                    getRequest(plugin, br, request);
                 } else {
                     break;
                 }
             }
         }
         return request;
+    }
+
+    public static void getRequest(Plugin plugin, Browser br, Request request) throws Exception {
+        if (plugin instanceof PluralsightCom) {
+            ((PluralsightCom) plugin).sendRequest(br, request);
+        } else if (plugin instanceof PluralsightComDecrypter) {
+            ((PluralsightComDecrypter) plugin).sendRequest(br, request);
+        }
+    }
+
+    @Override
+    public void sendRequest(Browser ibr, Request request) throws Exception {
+        super.sendRequest(ibr, request);
     }
 
     private String streamURL = null;
