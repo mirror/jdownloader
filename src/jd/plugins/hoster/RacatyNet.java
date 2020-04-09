@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -29,8 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RacatyCom extends XFileSharingProBasic {
-    public RacatyCom(final PluginWrapper wrapper) {
+public class RacatyNet extends XFileSharingProBasic {
+    public RacatyNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -58,8 +59,13 @@ public class RacatyCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "racaty.com" });
+        ret.add(new String[] { "racaty.net", "racaty.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     @Override
@@ -107,7 +113,10 @@ public class RacatyCom extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
-        fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) free download at Racaty\\.com</title>").getMatch(0);
+        fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) free download at Racaty\\.[A-Za-z0-9]+</title>").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<h5>Identity</h5><p>([^<>\"]+)</p>").getMatch(0);
+        }
         fileInfo[1] = new Regex(correctedBR, "b>Size:</b> (\\d+(?:\\.\\d+)? .*?)\\s+").getMatch(0);
         if (fileInfo[1] == null) {
             /* 2020-03-31 */
