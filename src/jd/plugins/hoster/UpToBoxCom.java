@@ -31,6 +31,10 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -68,7 +72,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptobox.com", "uptostream" });
+        ret.add(new String[] { "uptobox.com", "uptostream_todo" });
         return ret;
     }
 
@@ -133,7 +137,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         return requestFileInformationWebsite(link);
     }
 
-    /** TODO: Add functionality. 2020-04-08: A public filecheck API does not yet exist but it is being worked on. */
+    /** TODO: Add functionality. https://docs.uptobox.com/#files */
     private AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
@@ -576,6 +580,21 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
+    protected String getConfiguredQuality() {
+        /* Returns user-set value which can be used to circumvent government based GEO-block. */
+        PreferredQuality cfgquality = PluginJsonConfig.get(UpToBoxComConfig.class).getPreferredQuality();
+        if (cfgquality == null) {
+            cfgquality = PreferredQuality.DEFAULT;
+        }
+        switch (cfgquality) {
+        case QUALITY1:
+            return "x";
+        case DEFAULT:
+        default:
+            return this.getHost();
+        }
+    }
+
     private void invalidApikey() throws PluginException {
         /* TODO: Add errortext and french translation */
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -670,6 +689,11 @@ public class UpToBoxCom extends antiDDoSForHost {
         public Account getAccount() {
             return new Account(null, getPassword());
         }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return UpToBoxComConfig.class;
     }
 
     @Override
