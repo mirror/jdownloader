@@ -23,8 +23,11 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WorldBytezCom extends XFileSharingProBasic {
@@ -85,6 +88,23 @@ public class WorldBytezCom extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
+        }
+    }
+
+    @Override
+    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /*
+         * 2020-04-09: Special: Premiumonly files do not show any error. Instead, the download2 Form is just missing and there is no Form at
+         * all in their HTML.
+         */
+        try {
+            super.doFree(link, account);
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && this.findFormDownload2Free() == null) {
+                throw new AccountRequiredException();
+            } else {
+                throw e;
+            }
         }
     }
 
