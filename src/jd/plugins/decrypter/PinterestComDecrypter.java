@@ -400,13 +400,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * has an account or not.
          */
         final LinkedHashMap<String, Object> boardPageResource;
-        final LinkedHashMap<String, Object> userResource;
+        // final LinkedHashMap<String, Object> userResource;
         if (loggedIN) {
             boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/BoardPageResource/{0}/data");
-            userResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/UserResource/{0}/data");
+            // userResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root,
+            // "resources/data/UserResource/{0}/data");
         } else {
-            boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/BoardPageResource/{0}/data");
-            userResource = (LinkedHashMap<String, Object>) boardPageResource.get("owner");
+            boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resourceResponses/{0}/response/data");
+            // userResource = (LinkedHashMap<String, Object>) boardPageResource.get("owner");
         }
         board_id = (String) boardPageResource.get("id");
         if (StringUtils.isEmpty(board_id)) {
@@ -711,7 +712,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         if (json_source_from_html == null) {
             /* 2018-12-11: For loggedin- and loggedoff */
-            json_source_from_html = br.getRegex("id=\\'initial\\-state\\'>(\\{.*?\\})</script>").getMatch(0);
+            json_source_from_html = br.getRegex("id=.initial-state.[^>]*?>(\\{.*?\\})</script>").getMatch(0);
         }
         return json_source_from_html;
     }

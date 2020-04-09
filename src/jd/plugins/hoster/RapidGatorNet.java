@@ -199,7 +199,11 @@ public class RapidGatorNet extends antiDDoSForHost {
             prepBr.getHeaders().put("Pragma", null);
             prepBr.setCookie("https://rapidgator.net/", "lang", "en");
             prepBr.setCustomCharset("UTF-8");
-            prepBr.setReadTimeout(1 * 60 * 1000);
+            /*
+             * 2020-04-09: According to user he has timeout issues which do not happen in browser thus let's test a higher readtimeout:
+             * https://board.jdownloader.org/showthread.php?t=83764
+             */
+            prepBr.setReadTimeout(2 * 60 * 1000);
             prepBr.setConnectTimeout(1 * 60 * 1000);
             // for the api
             prepBr.addAllowedResponseCodes(401, 402, 501, 423);

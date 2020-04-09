@@ -119,6 +119,12 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    private Browser prepBRWebsite(final Browser br) {
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -134,6 +140,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        prepBRWebsite(this.br);
         /* TODO: Check differences between uptobox and uptostream --> Probably prefer usage of uptobox as main domain */
         getPage(link.getPluginPatternMatcher());
         /* 2020-04-07: Website returns proper 404 error for offline which is enough for us to check */
