@@ -310,7 +310,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         }
         synchronized (this) {
             if (view == null) {
-                final CrawledPackageView lfpInfo = new CrawledPackageView();
+                final CrawledPackageView lfpInfo = new CrawledPackageView(this);
                 view = lfpInfo;
             }
         }

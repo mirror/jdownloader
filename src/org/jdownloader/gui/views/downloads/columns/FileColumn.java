@@ -13,7 +13,6 @@ import javax.swing.JSeparator;
 import javax.swing.border.Border;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcrawler.ArchiveCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -303,9 +302,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        if (false && value instanceof ArchiveCrawledPackage) {
-            return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconArchiveOpen : iconArchive);
-        } else if (value instanceof AbstractPackageNode) {
+        if (value instanceof AbstractPackageNode) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
         } else if (value instanceof DownloadLink) {
             return (((DownloadLink) value).getLinkInfo().getIcon());

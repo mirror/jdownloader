@@ -2,16 +2,15 @@ package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackageView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -29,11 +28,11 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     protected volatile long                fileSize                       = -1;
-    private volatile DomainInfo[]          domainInfos                    = new DomainInfo[0];
+    private volatile DomainInfo[]          domains                        = new DomainInfo[0];
     protected volatile boolean             enabled                        = false;
     private volatile int                   offline                        = 0;
     private volatile int                   online                         = 0;
-    private volatile int                   items                          = 0;
+    private volatile int                   count                          = 0;
     private final AtomicLong               updatesRequired                = new AtomicLong(0);
     private volatile long                  updatesDone                    = -1;
     private volatile String                commonSourceUrl;
@@ -42,39 +41,36 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private final CrawledPackage           pkg;
     protected static final boolean         FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
 
-    public CrawledPackageView() {
-        this(null);
-    }
-
-    public CrawledPackageView(CrawledPackage pkg) {
+    public CrawledPackageView(final CrawledPackage pkg) {
         this.pkg = pkg;
     }
 
     @Override
     public CrawledPackageView aggregate() {
-        if (pkg != null) {
-            final boolean readL = pkg.getModifyLock().readLock();
-            try {
-                return setItems(pkg.getChildren());
-            } finally {
-                pkg.getModifyLock().readUnlock(readL);
-            }
-        } else {
-            synchronized (this) {
-                final Temp tmp = new Temp();
-                /* this is called for repaint, so only update values that could have changed for existing items */
-                final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
-                int size = 0;
-                if (tableModelDataPackage != null) {
-                    for (final AbstractNode item : tableModelDataPackage.getVisibleChildren()) {
-                        size++;
-                        addtoTmp(tmp, (CrawledLink) item);
-                    }
+        final long lupdatesRequired = updatesRequired.get();
+        synchronized (this) {
+            final Temp tmp = new Temp();
+            /* this is called for repaint, so only update values that could have changed for existing items */
+            final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
+            if (tableModelDataPackage != null) {
+                for (final AbstractNode child : tableModelDataPackage.getVisibleChildren()) {
+                    addLinkToTemp(tmp, (CrawledLink) child);
                 }
-                writeTmpToFields(tmp);
-                updateAvailability(size, tmp.newOffline, tmp.newOnline);
-                availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
+            } else {
+                final boolean readL = pkg.getModifyLock().readLock();
+                try {
+                    for (final CrawledLink link : pkg.getChildren()) {
+                        addLinkToTemp(tmp, link);
+                    }
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL);
+                }
             }
+            writeTempToFields(tmp);
+            updatesDone = lupdatesRequired;
+            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
+            Collections.sort(lst, FilePackageView.DOMAININFOCOMPARATOR);
+            domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
         }
         return this;
     }
@@ -82,6 +78,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private class Temp {
         final HashMap<String, LinkInfo> linkInfos         = new HashMap<String, LinkInfo>();
         final HashSet<DomainInfo>       domains           = new HashSet<DomainInfo>();
+        int                             count             = 0;
         int                             newOnline         = 0;
         boolean                         newEnabled        = false;
         int                             newOffline        = 0;
@@ -90,39 +87,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         long                            lupdatesRequired  = updatesRequired.get();
     }
 
-    @Override
-    public CrawledPackageView setItems(List<CrawledLink> items) {
-        synchronized (this) {
-            final Temp tmp = new Temp();
-            /* this is called for tablechanged, so update everything for given items */
-            if (items != null) {
-                for (CrawledLink item : items) {
-                    // domain
-                    tmp.domains.add(item.getDomainInfo());
-                    addtoTmp(tmp, item);
-                }
-            }
-            writeTmpToFields(tmp);
-            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
-            Collections.sort(lst, new Comparator<DomainInfo>() {
-                @Override
-                public int compare(DomainInfo o1, DomainInfo o2) {
-                    return o1.getTld().compareTo(o2.getTld());
-                }
-            });
-            domainInfos = lst.toArray(new DomainInfo[] {});
-            if (items == null) {
-                this.items = 0;
-            } else {
-                this.items = items.size();
-            }
-            updateAvailability(this.items, tmp.newOffline, tmp.newOnline);
-            availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, this.items);
-        }
-        return this;
-    }
-
-    protected void writeTmpToFields(Temp tmp) {
+    protected void writeTempToFields(Temp tmp) {
         this.commonSourceUrl = tmp.sameSource;
         if (!tmp.sameSourceFullUrl) {
             commonSourceUrl += "[...]";
@@ -140,10 +105,14 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         enabled = tmp.newEnabled;
         offline = tmp.newOffline;
         online = tmp.newOnline;
+        count = tmp.count;
         updatesDone = tmp.lupdatesRequired;
+        availability = updateAvailability(tmp);
+        this.availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.count);
     }
 
-    protected void addtoTmp(Temp tmp, CrawledLink link) {
+    protected void addLinkToTemp(Temp tmp, CrawledLink link) {
+        tmp.count++;
         final DownloadLink dlLink = link.getDownloadLink();
         final String sourceUrl = dlLink.getView().getDisplayUrl();
         if (sourceUrl != null) {
@@ -178,21 +147,19 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         }
     }
 
-    private final void updateAvailability(int size, int offline, int online) {
-        if (online == size) {
-            availability = ChildrenAvailablility.ONLINE;
-            return;
+    public final ChildrenAvailablility updateAvailability(Temp tmp) {
+        final int count = tmp.count;
+        final int online = tmp.newOnline;
+        final int offline = tmp.newOffline;
+        if (online > 0 && online == count) {
+            return ChildrenAvailablility.ONLINE;
+        } else if (offline > 0 && offline == count) {
+            return ChildrenAvailablility.OFFLINE;
+        } else if ((offline == 0 && online == 0) || (online == 0 && offline > 0)) {
+            return ChildrenAvailablility.UNKNOWN;
+        } else {
+            return ChildrenAvailablility.MIXED;
         }
-        if (offline == size) {
-            availability = ChildrenAvailablility.OFFLINE;
-            return;
-        }
-        if ((offline == 0 && online == 0) || (online == 0 && offline > 0)) {
-            availability = ChildrenAvailablility.UNKNOWN;
-            return;
-        }
-        availability = ChildrenAvailablility.MIXED;
-        return;
     }
 
     public String getCommonSourceUrl() {
@@ -200,7 +167,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     public DomainInfo[] getDomainInfos() {
-        return domainInfos;
+        return domains;
     }
 
     public boolean isEnabled() {
@@ -238,12 +205,13 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     public String getMessage(Object requestor) {
         if (requestor instanceof AvailabilityColumn) {
             return availabilityColumnString;
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
     public int size() {
-        return items;
+        return count;
     }
 }
