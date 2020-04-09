@@ -30,6 +30,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -53,7 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UpToBoxCom extends antiDDoSForHost_COMPILE_ERROR_FOR_BUILD_BLOCK {
+public class UpToBoxCom extends antiDDoSForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://uptobox.com/payments");

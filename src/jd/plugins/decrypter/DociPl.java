@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,10 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "https?://(?:www\\.)?doci\\.pl/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "https?://(?:www\\.)?doci\\.pl/[^\\?\\&]+" })
 public class DociPl extends PluginForDecrypt {
     public DociPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,8 +72,9 @@ public class DociPl extends PluginForDecrypt {
             if (folders != null && folders.length > 0) {
                 return decryptedLinks;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Failed to find any downloadable content");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         for (final String singleLink[] : files) {
             if (isAbort()) {
