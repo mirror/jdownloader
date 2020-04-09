@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downloadandroidrom.com" }, urls = { "http://(www\\.)?downloadandroidrom\\.com/file/[^<>\"/]+/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downloadandroidrom.com" }, urls = { "https?://(?:www\\.)?downloadandroidrom\\.com/file/.*\\.[A-Za-z0-9]{3,5}$" })
 public class DownloadAndroidRomCom extends PluginForHost {
-
     public DownloadAndroidRomCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,7 +48,10 @@ public class DownloadAndroidRomCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The file you are looking for doesn\\'t exist")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you are looking for doesn\\'t exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("id=\"real_link\"")) {
+            logger.info("This is not a downloadlink / might contain multiple items and thus is unsupported by this plugin --> Offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* User added wrong link */
@@ -62,12 +63,13 @@ public class DownloadAndroidRomCom extends PluginForHost {
             filename = br.getRegex("\">([^<>\"]*?)</a><span style=\"font-size:0.9em;\">").getMatch(0);
         }
         String filesize = br.getRegex("File (?:s|S)ize:[\t\n\r ]*?</b>([^<>\"]*?)<").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        final String md5 = br.getRegex("<b>MD5 Checksum:</b> ([a-z0-9]{32})</p>").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String md5 = br.getRegex("<b>MD5[^<>]*?</b>\\s*([a-z0-9]{32})\\s*</p>").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
@@ -77,7 +79,7 @@ public class DownloadAndroidRomCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Regex dllinkregex = br.getRegex("\"(http://[A-Za-z0-9]+\\.)(downloadandroidrom\\.com/download/[^<>\"]*?)\"");
+        final Regex dllinkregex = br.getRegex("\"(http://[A-Za-z0-9]+\\.)([^/]+/download/[^<>\"]*?)\"");
         final String wwwpart = dllinkregex.getMatch(0);
         String dllink = dllinkregex.getMatch(1);
         if (dllink == null) {
@@ -101,12 +103,10 @@ public class DownloadAndroidRomCom extends PluginForHost {
         } else {
             dllink = wwwpart + dllink;
         }
-
         int maxchunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxchunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -149,5 +149,4 @@ public class DownloadAndroidRomCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

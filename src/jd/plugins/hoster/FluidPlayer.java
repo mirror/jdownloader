@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net", "hotclips24.com", "pornclipsxxx.com", "al4a.com" }, urls = { "https?://(?:www\\.)?free-sex-video\\.net/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?hotclips24\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?pornclipsxxx\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?al4a\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornclipsxxx.com", "al4a.com" }, urls = { "https?://(?:www\\.)?pornclipsxxx\\.com/video/[a-z0-9\\-]+\\d+\\.html", "https?://(?:www\\.)?al4a\\.com/video/[a-z0-9\\-]+\\d+\\.html" })
 public class FluidPlayer extends PluginForHost {
     public FluidPlayer(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,15 +49,7 @@ public class FluidPlayer extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://hotclips24.com/tos";
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        // link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("free-sex-video.net/", "hotclips24.com/"));
-        // Not the same: (https://svn.jdownloader.org/issues/85655)
-        // https://free-sex-video.net/video/-51455.html
-        // https://hotclips24.com/video/-51455.html
+        return "http://pornclipsxxx.com/tos";
     }
 
     @SuppressWarnings("deprecation")
@@ -74,9 +66,6 @@ public class FluidPlayer extends PluginForHost {
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]*\\-\\d+)\\.html").getMatch(0).replace("-", " ");
         String filename = br.getRegex("title: '([^<>\"']*?)',").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>]*?)(at (Free Sex Video|HotClips24))?</title>").getMatch(0);
-        }
-        if (filename == null) {
             filename = url_filename;
         }
         dllink = br.getRegex("'(?:file|video)'\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
@@ -91,9 +80,6 @@ public class FluidPlayer extends PluginForHost {
                         if (dllink == null) {
                             /* Mobile format */
                             dllink = br.getRegex("var mobFile = '(http[^<>\"']*?)';").getMatch(0);
-                            if (dllink == null) {
-                                dllink = br.getRegex("(https?://media\\d+\\.free\\-sex\\-video\\.net/media/videos/[^<>\"]*?\\.mp4)").getMatch(0);
-                            }
                         }
                     }
                 }

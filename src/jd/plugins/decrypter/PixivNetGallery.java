@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.appwork.storage.JSonStorage;
@@ -121,61 +122,55 @@ public class PixivNetGallery extends PluginForDecrypt {
             } else {
                 br.getPage(PixivNet.createGalleryUrl(userid));
             }
+            if (userid == null) {
+                return null;
+            }
             uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             /* Decrypt gallery */
             String json = br.getRegex("id=\"meta-preload-data\" content='(\\{.*?\\})'").getMatch(0);
             /* New attempt 2020-04-08 */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             final Map<String, Object> illust = (Map<String, Object>) entries.get("illust");
-            for (Map.Entry<String, Object> entry : illust.entrySet()) {
+            String userName = null;
+            String illustUploadDate = null;
+            String illustId = null;
+            String illustTitle = null;
+            String tags = null;
+            final Set<Entry<String, Object>> illustSet = illust.entrySet();
+            for (Map.Entry<String, Object> entry : illustSet) {
                 final Map<String, Object> illustInfo = (Map<String, Object>) entry.getValue();
-                final String illustId = (String) illustInfo.get("illustId");
-                String illustTitle = (String) illustInfo.get("illustTitle");
+                illustId = (String) illustInfo.get("illustId");
+                illustTitle = (String) illustInfo.get("illustTitle");
                 final String singleLink = (String) JavaScriptEngineFactory.walkJson(illustInfo, "urls/regular");
-                String tags = null;
                 if (StringUtils.isEmpty(illustId)) {
                     /* Skip invalid items */
                     continue;
                 }
-                if (StringUtils.isEmpty(illustTitle)) {
-                    /* Fallback */
-                    illustTitle = illustId;
-                }
-                /* TODO: Check this */
-                userid = illustId;
-                final String userName = (String) illustInfo.get("userName");
-                final String illustUploadDate = (String) illustInfo.get("uploadDate");
-                final String filename_url = new Regex(singleLink, "/([^/]+\\.[a-z]+)$").getMatch(0);
-                String filename;
-                final String picNumberStr = new Regex(singleLink, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
-                if (picNumberStr != null) {
-                    filename = this.generateFilename(userid, illustTitle, userName, tags, picNumberStr, null);
-                } else {
-                    /* Fallback - just use the given filename (minus extension)! */
-                    filename = filename_url.substring(0, filename_url.lastIndexOf("."));
-                }
-                if (StringUtils.isEmpty(filename)) {
-                    return null;
-                }
-                final String ext = getFileNameExtensionFromString(singleLink, PixivNet.default_extension);
-                if (StringUtils.equalsIgnoreCase(ext, ".zip")) {
-                    final String resolution = new Regex(singleLink, "(\\d+x\\d+)").getMatch(0);
-                    if (resolution != null) {
-                        filename += "_" + resolution;
+                decryptedLinks.add(generateDownloadLink(parameter, illustId, illustTitle, illustUploadDate, userName, tags, singleLink));
+            }
+            if (illustSet.size() == 1) {
+                /* == click on "Load more" */
+                br.getPage(String.format("https://www.%s/ajax/illust/%s/pages?lang=en", this.getHost(), userid));
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final ArrayList<Object> additionalpics = (ArrayList<Object>) entries.get("body");
+                int counter = 0;
+                for (final Object picO : additionalpics) {
+                    counter++;
+                    if (counter == 1) {
+                        /* Skip first object as we already crawled that! */
+                        continue;
                     }
+                    entries = (Map<String, Object>) picO;
+                    final String directurl = (String) JavaScriptEngineFactory.walkJson(entries, "urls/regular");
+                    if (StringUtils.isEmpty(directurl)) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    decryptedLinks.add(generateDownloadLink(parameter, illustId, illustTitle, illustUploadDate, userName, tags, directurl));
                 }
-                filename += ext;
-                final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
-                dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
-                dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
-                dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
-                if (!StringUtils.isEmpty(illustUploadDate)) {
-                    dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, illustUploadDate);
-                }
-                dl.setContentUrl(parameter);
-                dl.setFinalFileName(filename);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(illustTitle);
+                fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
         } else {
@@ -301,6 +296,43 @@ public class PixivNetGallery extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private DownloadLink generateDownloadLink(final String parameter, final String contentID, String title, final String uploadDate, final String username, String tags, final String directurl) {
+        if (title == null) {
+            title = contentID;
+        }
+        final String filename_url = new Regex(directurl, "/([^/]+\\.[a-z]+)$").getMatch(0);
+        String filename;
+        final String picNumberStr = new Regex(directurl, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
+        if (picNumberStr != null) {
+            filename = this.generateFilename(contentID, title, username, tags, picNumberStr, null);
+        } else {
+            /* Fallback - just use the given filename (minus extension)! */
+            filename = filename_url.substring(0, filename_url.lastIndexOf("."));
+        }
+        if (StringUtils.isEmpty(filename)) {
+            return null;
+        }
+        final String ext = getFileNameExtensionFromString(directurl, PixivNet.default_extension);
+        if (StringUtils.equalsIgnoreCase(ext, ".zip")) {
+            final String resolution = new Regex(directurl, "(\\d+x\\d+)").getMatch(0);
+            if (resolution != null) {
+                filename += "_" + resolution;
+            }
+        }
+        filename += ext;
+        final DownloadLink dl = createDownloadlink(directurl.replaceAll("https?://", "decryptedpixivnet://"));
+        dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
+        // dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
+        dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
+        if (!StringUtils.isEmpty(uploadDate)) {
+            dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+        }
+        dl.setContentUrl(parameter);
+        dl.setFinalFileName(filename);
+        dl.setAvailable(true);
+        return dl;
     }
 
     /** Returns filename without extension */
