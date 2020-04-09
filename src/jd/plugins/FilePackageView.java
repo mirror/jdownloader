@@ -1,6 +1,7 @@
 package jd.plugins;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -150,9 +151,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
-            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
-            Collections.sort(lst, DOMAININFOCOMPARATOR);
-            domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
+            if (domains.length != tmp.domains.size() || !tmp.domains.containsAll(Arrays.asList(domains))) {
+                final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
+                Collections.sort(lst, DOMAININFOCOMPARATOR);
+                domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
+            }
         }
         return this;
     }
@@ -204,11 +207,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private final static AbstractIcon          EXTRACTICONSTART     = new AbstractIcon(IconKey.ICON_EXTRACT_RUN, 16);
     private final static AbstractIcon          FALSEICON            = new AbstractIcon(IconKey.ICON_FALSE, 16);
     public final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
-                                                                        @Override
-                                                                        public int compare(DomainInfo o1, DomainInfo o2) {
-                                                                            return o1.getTld().compareTo(o2.getTld());
-                                                                        }
-                                                                    };
+        @Override
+        public int compare(DomainInfo o1, DomainInfo o2) {
+            return o1.getTld().compareTo(o2.getTld());
+        }
+    };
 
     protected void writeTempToFields(final Temp tmp) {
         long size = -1;

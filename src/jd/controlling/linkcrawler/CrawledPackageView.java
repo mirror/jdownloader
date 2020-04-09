@@ -1,6 +1,7 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,9 +69,11 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             }
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
-            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
-            Collections.sort(lst, FilePackageView.DOMAININFOCOMPARATOR);
-            domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
+            if (domains.length != tmp.domains.size() || !tmp.domains.containsAll(Arrays.asList(domains))) {
+                final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
+                Collections.sort(lst, FilePackageView.DOMAININFOCOMPARATOR);
+                domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
+            }
         }
         return this;
     }
