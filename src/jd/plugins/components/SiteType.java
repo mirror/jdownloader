@@ -129,10 +129,12 @@ public class SiteType {
          */
         Qooy_Mirrors,
         /**
-         * Script used by some chinese file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what to call this script.
+         * Script used by some chinese file-hosting sites. <a href="http:/www.77file.com/">77file.com</a>. Not sure what to call this
+         * script.
          *
          * 'Copyright © 2016 百丽资源中心 版权所有 Powered By XDDrive Private V 1.4' http://vip.belle.la/ ?? xddrive private? couldnt find much on
-         * google
+         * google <br />
+         * Current best example plugin: SeventySevenFileCom
          */
         Unknown_ChineseFileHosting,
         /**
