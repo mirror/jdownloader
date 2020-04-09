@@ -13,6 +13,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -39,19 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PluralsightComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -284,17 +284,40 @@ public class PluralsightCom extends antiDDoSForHost {
         if (StringUtils.isEmpty(clip)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String clipID = link.getStringProperty("clipID");
+        if (StringUtils.isEmpty(clipID)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (quality == null) {
             quality = link.getBooleanProperty("supportsWideScreenVideoFormats", false) ? QUALITY.HIGH_WIDESCREEN : QUALITY.HIGH;
         }
         final Map<String, Object> params = new HashMap<String, Object>();
-        params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
-        params.put("variables", "{}");
-        final PostRequest request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
-        request.setContentType("application/json;charset=UTF-8");
-        request.getHeaders().put("Origin", "https://app.pluralsight.com");
-        final Map<String, Object> response = JSonStorage.restoreFromString(getRequest(br, plugin, request).getHtmlCode(), TypeRef.HASHMAP);
-        final List<Map<String, Object>> urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
+        final boolean useAPIv3 = true;
+        final PostRequest request;
+        final List<Map<String, Object>> urls;
+        if (useAPIv3) {
+            params.put("clipId", clipID);
+            params.put("mediaType", "mp4");
+            params.put("quality", "1280x720");
+            params.put("online", true);
+            params.put("boundedContext", "course");
+            params.put("versionId", "");
+            request = br.createPostRequest("https://app.pluralsight.com/video/clips/v3/viewclip", JSonStorage.toString(params));
+            request.setContentType("application/json;charset=UTF-8");
+            request.getHeaders().put("Origin", "https://app.pluralsight.com");
+            getRequest(br, plugin, request);
+            final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            urls = (List<Map<String, Object>>) response.get("urls");
+        } else {
+            params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
+            params.put("variables", "{}");
+            request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
+            request.setContentType("application/json;charset=UTF-8");
+            request.getHeaders().put("Origin", "https://app.pluralsight.com");
+            getRequest(br, plugin, request);
+            final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
+        }
         if (urls != null) {
             for (final Map<String, Object> url : urls) {
                 final String streamURL = (String) url.get("url");
@@ -449,6 +472,10 @@ public class PluralsightCom extends antiDDoSForHost {
                     final String duration = clip.get("duration").toString();
                     link.setProperty("duration", duration);
                     final String clipId = (String) clip.get("clipId");
+                    if (StringUtils.isEmpty(clipId)) {
+                        /* Skip invalid items */
+                        continue;
+                    }
                     link.setProperty("clipID", clipId);
                     link.setLinkID(plugin.getHost() + "://" + clipId);
                     final String title = (String) clip.get("title");

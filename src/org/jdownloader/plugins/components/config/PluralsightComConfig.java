@@ -36,7 +36,7 @@ public interface PluralsightComConfig extends PluginConfigInterface {
     void setDownloadSubtitles(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     public boolean isFastLinkCheckEnabled();
 
     public void setFastLinkCheckEnabled(boolean b);
