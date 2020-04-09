@@ -355,37 +355,31 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
             }
             final CrawledPackage pkg = (CrawledPackage) pv;
-            final CrawledPackageView fpv = new CrawledPackageView();
-            final boolean readL = pkg.getModifyLock().readLock();
-            try {
-                fpv.setItems(pkg.getChildren());
-                line = line.replace(PATTERN_TYPE, "Package");
-                line = line.replace(PATTERN_COMMENT, nulltoString(pkg.getComment()));
-                line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(pkg)));
-                final long fileSize = fpv.getFileSize();
-                line = line.replace(PATTERN_FILESIZE, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
-                line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
-                line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
-                line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
-                line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
-                final String name = pkg.getName();
-                line = line.replace(PATTERN_NAME, nulltoString(name));
-                line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
-                line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
-                line = line.replace(PATTERN_EXTENSION, nulltoString(null));
-                for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
-                    line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(null));
-                }
-                line = line.replace(PATTERN_HASH, nulltoString(null));
-                line = line.replace(PATTERN_URL, nulltoString(null));
-                line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
-                line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
-                line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
-                line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
-                line = line.replace(PATTERN_HOST, nulltoString(null));
-            } finally {
-                pkg.getModifyLock().readUnlock(readL);
+            final CrawledPackageView fpv = new CrawledPackageView(pkg).aggregate();
+            line = line.replace(PATTERN_TYPE, "Package");
+            line = line.replace(PATTERN_COMMENT, nulltoString(pkg.getComment()));
+            line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(pkg)));
+            final long fileSize = fpv.getFileSize();
+            line = line.replace(PATTERN_FILESIZE, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
+            line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
+            line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
+            line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
+            line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            final String name = pkg.getName();
+            line = line.replace(PATTERN_NAME, nulltoString(name));
+            line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
+            line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
+            line = line.replace(PATTERN_EXTENSION, nulltoString(null));
+            for (final HashInfo.TYPE hashType : HashInfo.TYPE.values()) {
+                line = line.replace("{" + hashType.name().replace("-", "").toLowerCase(Locale.ENGLISH) + "}", nulltoString(null));
             }
+            line = line.replace(PATTERN_HASH, nulltoString(null));
+            line = line.replace(PATTERN_URL, nulltoString(null));
+            line = line.replace(PATTERN_URL_CONTAINER, nulltoString(null));
+            line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
+            line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
+            line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
+            line = line.replace(PATTERN_HOST, nulltoString(null));
         }
         if (StringUtils.isNotEmpty(line)) {
             if (sb.length() > 0) {
