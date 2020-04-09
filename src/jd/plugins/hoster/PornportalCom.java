@@ -25,8 +25,10 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
@@ -37,6 +39,8 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -202,6 +206,10 @@ public class PornportalCom extends PluginForHost {
         return "https://site-ma." + host;
     }
 
+    public static String getAPIBase() {
+        return "https://site-api.project1service.com/v1";
+    }
+
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -342,7 +350,7 @@ public class PornportalCom extends PluginForHost {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    br.getPage("https://site-api.project1service.com/v1/self");
+                    br.getPage(getAPIBase() + "/self");
                     if (br.getHttpConnection().getResponseCode() == 200) {
                         logger.info("Cookie login successful");
                         final long timestamp_headers_updated = account.getLongProperty(PROPERTY_timestamp_website_cookies_updated, 0);
@@ -376,7 +384,7 @@ public class PornportalCom extends PluginForHost {
                 br = prepBR(br);
                 br.setFollowRedirects(true);
                 br.getPage(getPornportalMainURL(account.getHoster()) + "/login");
-                Map<String, Object> entries = getWebsiteJson(br);
+                Map<String, Object> entries = getJsonJuanEawInstance(br);
                 final String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
                 String cookie_name_login = PluginJSonUtils.getJson(br, "authCookie");
                 if (cookie_name_login == null) {
@@ -477,7 +485,7 @@ public class PornportalCom extends PluginForHost {
     }
 
     public static boolean prepareBrAPI(final Plugin plg, final Browser br, final Account acc) throws PluginException {
-        final Map<String, Object> entries = getWebsiteJson(br);
+        final Map<String, Object> entries = getJsonJuanEawInstance(br);
         return prepareBrAPI(plg, br, acc, entries);
     }
 
@@ -536,8 +544,13 @@ public class PornportalCom extends PluginForHost {
         return true;
     }
 
-    public static Map<String, Object> getWebsiteJson(final Browser br) {
+    public static Map<String, Object> getJsonJuanEawInstance(final Browser br) {
         final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
+        return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+    }
+
+    public static Map<String, Object> getJsonJuanInitialState(final Browser br) {
+        final String json = br.getRegex("window\\.__JUAN\\.initialState = (\\{.*?);\\s*\\}\\)\\(\\);").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
     }
 
@@ -591,7 +604,7 @@ public class PornportalCom extends PluginForHost {
                 login(this.br, account, true);
                 final AccountInfo ai = new AccountInfo();
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
-                    br.getPage("https://site-api.project1service.com/v1/self");
+                    br.getPage(getAPIBase() + "/self");
                 }
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Boolean isExpired = (Boolean) map.get("isExpired");
@@ -621,6 +634,86 @@ public class PornportalCom extends PluginForHost {
                 }
                 account.setConcurrentUsePossible(true);
                 ai.setUnlimitedTraffic();
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* Now check which other websites we can now use as well and add them via multihoster handling. */
+                    try {
+                        br.getPage("https://site-ma." + this.getHost() + "/");
+                        Map<String, Object> initialState = getJsonJuanInitialState(br);
+                        initialState = (Map<String, Object>) initialState.get("client");
+                        final String userAgent = (String) initialState.get("userAgent");
+                        final String domain = (String) initialState.get("domain");
+                        final String ip = (String) initialState.get("ip");
+                        final String baseUrl = (String) initialState.get("baseUrl");
+                        if (StringUtils.isEmpty(userAgent) || StringUtils.isEmpty(domain) || StringUtils.isEmpty(ip) || StringUtils.isEmpty(baseUrl)) {
+                            /* Failure */
+                        }
+                        final Map<String, Object> portalmap = new HashMap<String, Object>();
+                        portalmap.put("accountUrlPath", "/account");
+                        portalmap.put("baseUri", "/");
+                        portalmap.put("baseUrl", baseUrl);
+                        portalmap.put("domain", domain);
+                        portalmap.put("homeUrlPath", "/");
+                        portalmap.put("logoutUrlPath", "/logout");
+                        portalmap.put("postLoginUrlPath", "/postlogin");
+                        portalmap.put("resetPpMember", true);
+                        portalmap.put("userBrowserId", userAgent);
+                        portalmap.put("userIp", ip);
+                        // final PostRequest postRequest = br.createPostRequest(getAPIBase() + "/pornportal",
+                        // JSonStorage.serializeToJson(portalmap));
+                        // br.getPage(postRequest);
+                        br.postPageRaw(getAPIBase() + "/pornportal", JSonStorage.serializeToJson(portalmap));
+                        final String data = PluginJSonUtils.getJson(br, "data");
+                        br.getPage("https://ppp.contentdef.com/postlogin?data=" + Encoding.urlEncode(data));
+                        /*
+                         * We can authorize ourselves to these other portals through these URLs. Sadly we do not get the full domains before
+                         * accessing these URLs but this would take a lot of time which is why we will try to find the full domains here
+                         * without accessing these URLs.
+                         */
+                        final String[] autologinURLs = br.getRegex("(/autologin/[a-z0-9]+\\?sid=[^\"]+)\"").getColumn(0);
+                        final String sid = new UrlQuery().parse("https://" + this.getHost() + autologinURLs[0]).get("sid");
+                        br.getPage(String.format("https://ppp.contentdef.com/notification/list?page=1&type=1&network=1&archived=0&ajaxCounter=1&sid=%s&data=%s&_=%d", sid, Encoding.urlEncode(data), System.currentTimeMillis()));
+                        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        final ArrayList<Object> notificationNetworks = (ArrayList<Object>) entries.get("notificationNetworks");
+                        final ArrayList<String> supportedHosts = new ArrayList<String>();
+                        for (final String autologinURL : autologinURLs) {
+                            final String domainShortcode = new Regex(autologinURL, "autologin/([a-z0-9]+)").getMatch(0);
+                            if (domainShortcode == null) {
+                                logger.warning("WTF failed to find domainShortcode for autologinURL: " + autologinURL);
+                                continue;
+                            }
+                            /* Find full domain for shortcode */
+                            String domainFull = null;
+                            for (final Object notificationNetworkO : notificationNetworks) {
+                                Map<String, Object> notificationNetwork = (Map<String, Object>) notificationNetworkO;
+                                final String domainShortcodeTmp = (String) notificationNetwork.get("short_name");
+                                final String site_url = (String) notificationNetwork.get("site_url");
+                                if (StringUtils.isEmpty(domainShortcodeTmp) || StringUtils.isEmpty(site_url)) {
+                                    /* Skip invalid items */
+                                    continue;
+                                }
+                                if (domainShortcodeTmp.equals(domainShortcode)) {
+                                    domainFull = site_url;
+                                    break;
+                                }
+                            }
+                            if (domainFull == null) {
+                                logger.warning("Failed to find domainFull for domainShortcode: " + domainShortcode);
+                            } else {
+                                domainFull = Browser.getHost(domainFull, false);
+                                supportedHosts.add(domainFull);
+                            }
+                        }
+                        /* TODO: Only add hosts which are also pornportal hosts (== supported through this plugin!) */
+                        /*
+                         * TODO: Each individual website needs separate cookies/headers which all need to be saved on our current account to
+                         * be used in the crawler ...
+                         */
+                        ai.setMultiHostSupport(this, supportedHosts);
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        logger.warning("Internal Multihoster handling failed");
+                    }
+                }
                 return ai;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
