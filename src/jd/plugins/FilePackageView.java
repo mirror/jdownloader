@@ -57,7 +57,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private volatile long                  updatesDone                    = -1;
     private volatile String                availabilityColumnString       = null;
     private volatile ChildrenAvailablility availability                   = ChildrenAvailablility.UNKNOWN;
-    private volatile int                   items                          = 0;
+    private volatile List<DownloadLink>    items                          = null;
     protected static final long            GUIUPDATETIMEOUT               = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
     protected static final boolean         FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
 
@@ -127,28 +127,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     @Override
     public FilePackageView aggregate() {
-        final long lupdatesRequired = updatesRequired.get();
-        lastUpdateTimestamp = System.currentTimeMillis();
-        synchronized (this) {
-            /* this is called for tablechanged, so update everything for given items */
-            final Temp tmp = new Temp();
-            final boolean readL = fp.getModifyLock().readLock();
-            try {
-                tmp.items = fp.getChildren().size();
-                for (final DownloadLink link : fp.getChildren()) {
-                    tmp.newInfos.add(link.getDomainInfo());
-                    addLinkToTemp(tmp, link);
-                }
-            } finally {
-                fp.getModifyLock().readUnlock(readL);
-            }
-            writeTempToFields(tmp);
-            updatesDone = lupdatesRequired;
-            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-            Collections.sort(lst, DOMAININFOCOMPARATOR);
-            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+        final boolean readL = fp.getModifyLock().readLock();
+        try {
+            return setItems((items == null) ? fp.getChildren() : items);
+        } finally {
+            fp.getModifyLock().readUnlock(readL);
         }
-        return this;
     }
 
     private class Temp {
@@ -158,7 +142,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         private int                          newOffline          = 0;
         private int                          newOnline           = 0;
         private int                          newEnabledCount     = 0;
-        private int                          items               = 0;
+        private List<DownloadLink>           items               = null;
         private HashMap<String, LinkInfo>    linkInfos           = new HashMap<String, LinkInfo>();
         private HashSet<DomainInfo>          newInfos            = new HashSet<DomainInfo>();
         private boolean                      allFinished         = true;
@@ -211,10 +195,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-            if (updatedItems == null || updatedItems.size() == 0) {
-                tmp.items = 0;
-            } else {
-                tmp.items = updatedItems.size();
+            tmp.items = updatedItems;
+            if (updatedItems != null) {
                 for (final DownloadLink link : updatedItems) {
                     tmp.newInfos.add(link.getDomainInfo());
                     addLinkToTemp(tmp, link);
@@ -307,7 +289,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         this.offline = tmp.newOffline;
         this.online = tmp.newOnline;
         updateAvailability(tmp);
-        this.availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.items);
+        this.availabilityColumnString = _GUI.T.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.items.size());
     }
 
     public String getCommonSourceUrl() {
@@ -750,11 +732,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private final void updateAvailability(Temp tmp) {
-        if (online == tmp.items) {
+        if (online == tmp.items.size()) {
             availability = ChildrenAvailablility.ONLINE;
             return;
         }
-        if (offline == tmp.items) {
+        if (offline == tmp.items.size()) {
             availability = ChildrenAvailablility.OFFLINE;
             return;
         }
@@ -789,6 +771,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     @Override
     public int size() {
-        return items;
+        return items.size();
     }
 }
