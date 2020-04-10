@@ -271,12 +271,14 @@ public class UpToBoxCom extends antiDDoSForHost {
                         file_name = (String) entries.get("file_name");
                         final long file_size = JavaScriptEngineFactory.toLong(entries.get("file_size"), 0);
                         /* This key is not always given e.g. not for password protected content. */
+                        boolean available_on_uptostream = false;
                         if (entries.containsKey("available_uts")) {
-                            final boolean available_uts = ((Boolean) entries.get("available_uts")).booleanValue();
-                            dl.setProperty(PROPERTY_available_on_uptostream, available_uts);
+                            available_on_uptostream = ((Boolean) entries.get("available_uts")).booleanValue();
+                            dl.setProperty(PROPERTY_available_on_uptostream, available_on_uptostream);
                         }
+                        /* TODO: Get- and set property "need_premium" */
                         if (file_size > 0) {
-                            dl.setDownloadSize(file_size);
+                            dl.setVerifiedFileSize(file_size);
                         }
                         dl.setAvailable(true);
                     }
@@ -352,6 +354,11 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         }
+        /*
+         * TODO: Remember to set verifies filesize here in case user selected a transcoded quality and does NOT want to download the
+         * original/source file!
+         */
+        /* TODO: Add function to obey users' quality selection. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -485,6 +492,11 @@ public class UpToBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
         }
+        /*
+         * TODO: Remember to set verifies filesize here in case user selected a transcoded quality and does NOT want to download the
+         * original/source file!
+         */
+        /* TODO: Add function to obey users' quality selection. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
