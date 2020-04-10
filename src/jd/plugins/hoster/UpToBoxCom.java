@@ -18,10 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
@@ -35,6 +38,7 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -72,7 +76,8 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptobox.com", "uptostream_todo" });
+        ret.add(new String[] { "uptobox.com" });
+        // ret.add(new String[] { "uptobox.com", "uptostream.com" });
         return ret;
     }
 
@@ -88,28 +93,34 @@ public class UpToBoxCom extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:iframe/)?([a-z0-9]{12})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?");
         }
         return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
-    private final boolean      FREE_RESUME                          = true;
-    private final int          FREE_MAXCHUNKS                       = 1;
-    private final int          FREE_MAXDOWNLOADS                    = 1;
-    private final boolean      ACCOUNT_FREE_RESUME                  = true;
-    private final int          ACCOUNT_FREE_MAXCHUNKS               = 1;
-    private final int          ACCOUNT_FREE_MAXDOWNLOADS            = 1;
-    private final boolean      ACCOUNT_PREMIUM_RESUME               = true;
-    private final int          ACCOUNT_PREMIUM_MAXCHUNKS            = 0;
-    private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS         = 20;
-    public static final String API_BASE                             = "https://uptobox.com/api";
+    private final boolean        FREE_RESUME                                      = true;
+    private final int            FREE_MAXCHUNKS                                   = 1;
+    private final int            FREE_MAXDOWNLOADS                                = 1;
+    private final boolean        ACCOUNT_FREE_RESUME                              = true;
+    private final int            ACCOUNT_FREE_MAXCHUNKS                           = 1;
+    private final int            ACCOUNT_FREE_MAXDOWNLOADS                        = 1;
+    private final boolean        ACCOUNT_PREMIUM_RESUME                           = true;
+    private final int            ACCOUNT_PREMIUM_MAXCHUNKS                        = 0;
+    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS                     = 20;
+    public static final String   API_BASE                                         = "https://uptobox.com/api";
     /* If pre-download-waittime is > this, reconnect exception will be thrown! */
-    private static final int   WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT = 240;
+    private static final int     WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT             = 240;
+    private static final String  PROPERTY_timestamp_lastcheck                     = "timestamp_lastcheck";
+    /* If a file-ID is also available on uptostream, we might be able to select between different video qualities. */
+    private static final String  PROPERTY_available_on_uptostream                 = "available_on_uptostream";
+    private static final boolean use_api_availablecheck_for_single_availablecheck = true;
+    private static final int     api_responsecode_password_required_or_wrong      = 17;
+    private static final int     api_responsecode_file_offline                    = 28;
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
+        final String linkid = getFUID(link);
         if (linkid != null) {
             return this.getHost() + "://" + linkid;
         } else {
@@ -117,55 +128,176 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    private String getFUID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private Browser prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setFollowRedirects(true);
-        return br;
+    /*
+     * Sometimes URLs can contain a filename - especially useful to have that for offline content and as a fallback. Returns file-id in case
+     * a name is not present in the URL.
+     */
+    private String getWeakFilenameFromURL(final DownloadLink link) {
+        String weakFilename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        if (weakFilename == null) {
+            weakFilename = this.getFUID(link);
+        }
+        return weakFilename;
     }
 
-    private Browser prepBRWebsite(final Browser br) {
-        br.setFollowRedirects(true);
-        return br;
+    @Override
+    public Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            br.getHeaders().put("User-Agent", "JDownloader");
+            br.setFollowRedirects(true);
+        }
+        return prepBr;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformationWebsite(link);
+        if (use_api_availablecheck_for_single_availablecheck) {
+            return requestFileInformationAPI(link);
+        } else {
+            return requestFileInformationWebsite(link);
+        }
     }
 
-    /** TODO: Add functionality. https://docs.uptobox.com/#files */
+    /** https://docs.uptobox.com/#files */
     private AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+        massLinkcheckerAPI(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        prepBRWebsite(this.br);
-        /* TODO: Check differences between uptobox and uptostream --> Probably prefer usage of uptobox as main domain */
+        prepBrowser(this.br, this.getHost());
         getPage(link.getPluginPatternMatcher());
         /* 2020-04-07: Website returns proper 404 error for offline which is enough for us to check */
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("class='file-title'>([^<>\"]+) \\((\\d+[^\\)]+)\\)\\s*<");
-        String filename = finfo.getMatch(0);
+        final String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
-        if (filename == null) {
+        if (!StringUtils.isEmpty(filename)) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        } else {
             /* Fallback */
-            filename = this.getFID(link);
+            link.setName(getWeakFilenameFromURL(link));
         }
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        return massLinkcheckerAPI(urls);
+    }
+
+    private boolean massLinkcheckerAPI(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            final Browser checkbr = new Browser();
+            prepBrowser(checkbr, this.getHost());
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                for (int i = 0; i < links.size(); i++) {
+                    sb.append(this.getFUID(links.get(i)));
+                    if (i < links.size() - 1) {
+                        /*
+                         * Only append comma as long as we've not reached the end.
+                         */
+                        sb.append("%2C");
+                    }
+                }
+                this.getPage(checkbr, API_BASE + "/link/info?fileCodes=" + sb.toString());
+                Map<String, Object> entries = JSonStorage.restoreFromString(checkbr.toString(), TypeRef.HASHMAP);
+                ArrayList<Object> linkcheckResults = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
+                /* Number of results should be == number of file-ids we wanted to check! */
+                if (linkcheckResults.size() != index) {
+                    /* Fail-safe: This should never happen */
+                    logger.warning("Result size mismatch");
+                    return false;
+                }
+                int index2 = 0;
+                for (final DownloadLink dl : links) {
+                    /* We expect the results to be delivered in the same order we requested them! */
+                    entries = (Map<String, Object>) linkcheckResults.get(index2);
+                    final String fuid = this.getFUID(dl);
+                    final String fuid_of_json_response = (String) entries.get("file_code");
+                    if (!fuid.equals(fuid_of_json_response)) {
+                        /* Fail-safe: This should never happen */
+                        logger.warning("fuid mismatch");
+                        return false;
+                    }
+                    boolean isOffline = false;
+                    final Object errorO = entries.get("error");
+                    if (errorO != null) {
+                        Map<String, Object> errormap = (Map<String, Object>) errorO;
+                        final long errorCode = JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
+                        if (errorCode == api_responsecode_file_offline) {
+                            isOffline = true;
+                        } else {
+                            /* E.g. "error":{"code":17,"message":"Password required"} */
+                        }
+                    }
+                    String file_name = null;
+                    if (isOffline) {
+                        dl.setAvailable(false);
+                    } else {
+                        file_name = (String) entries.get("file_name");
+                        final long file_size = JavaScriptEngineFactory.toLong(entries.get("file_size"), 0);
+                        /* This key is not always given e.g. not for password protected content. */
+                        if (entries.containsKey("available_uts")) {
+                            final boolean available_uts = ((Boolean) entries.get("available_uts")).booleanValue();
+                            dl.setProperty(PROPERTY_available_on_uptostream, available_uts);
+                        }
+                        if (file_size > 0) {
+                            dl.setDownloadSize(file_size);
+                        }
+                        dl.setAvailable(true);
+                    }
+                    if (!StringUtils.isEmpty(file_name)) {
+                        /* Filename should always be available! */
+                        dl.setFinalFileName(file_name);
+                    } else {
+                        /* Set fallback name */
+                        dl.setName(getWeakFilenameFromURL(dl));
+                    }
+                    index2++;
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            logger.warning("Unexpected (json) response?");
+            return false;
+        }
+        return true;
     }
 
     /** Website handling */
@@ -175,6 +307,8 @@ public class UpToBoxCom extends antiDDoSForHost {
         String dllink = this.checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             /* Always check for errors here as download1 Form can be present e.g. along with a (reconnect-waittime) error. */
+            this.requestFileInformationAPI(link);
+            /* Now access website - check availablestatus again here! */
             requestFileInformationWebsite(link);
             checkErrorsWebsite(link, null);
             dllink = this.getDllinkWebsite();
@@ -305,7 +439,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (dllink == null) {
             final UrlQuery query = new UrlQuery();
             query.append("token", account.getPass(), true);
-            query.append("file_code", this.getFID(link), false);
+            query.append("file_code", this.getFUID(link), false);
             query.append("password", link.getDownloadPassword(), true);
             int maxtries = 1;
             int tries = 0;
@@ -318,7 +452,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
                 this.getPage(API_BASE + "/link?" + query.toString());
                 tries++;
-                passwordFailure = getErrorcode() == 17;
+                passwordFailure = getErrorcode() == api_responsecode_password_required_or_wrong;
             } while (passwordFailure && tries <= maxtries);
             if (passwordFailure) {
                 logger.info("User entered INCORRECT password");
@@ -341,7 +475,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 this.sleep(wait * 1001, link);
                 final UrlQuery queryDL = new UrlQuery();
                 queryDL.append("token", account.getPass(), true);
-                queryDL.append("file_code", this.getFID(link), true);
+                queryDL.append("file_code", this.getFUID(link), true);
                 queryDL.append("waitingToken", waitingToken, true);
                 this.getPage(API_BASE + "/link?" + queryDL.toString());
             }
@@ -389,14 +523,12 @@ public class UpToBoxCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String PROPERTY_timestamp_lastcheck = "timestamp_lastcheck";
-
     private void loginAPI(final Account account, boolean verifySession) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                prepBR(br);
+                prepBrowser(this.br, this.getHost());
                 final Cookies cookies = account.loadCookies("");
                 final String apikey;
                 /*
@@ -564,14 +696,20 @@ public class UpToBoxCom extends antiDDoSForHost {
         case 13:
             /* "Invalid token" --> Permanently disable account */
             invalidApikey();
-        case 17:
+        case api_responsecode_password_required_or_wrong:
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-        case 28:
+        case api_responsecode_file_offline:
             /* E.g. {"statusCode":28,"message":"File not found","data":"xxxxxxxxxxxx"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 29:
+            /* "You have reached the streaming limit for today" */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, 1 * 60 * 60 * 1000l);
+        case 30:
+            /* "Folder not found" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         default:
-            /* E.g. 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 19 */
+            /* E.g. 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 19, 31 */
             /*
              * * Error 8 reads itself as if it was a "trafficlimit reached" error but it has nothingt todo with downloading, it is only for
              * their "voucher reedem API call".
