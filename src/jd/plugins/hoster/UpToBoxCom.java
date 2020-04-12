@@ -114,9 +114,21 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final String  PROPERTY_timestamp_lastcheck                     = "timestamp_lastcheck";
     /* If a file-ID is also available on uptostream, we might be able to select between different video qualities. */
     private static final String  PROPERTY_available_on_uptostream                 = "available_on_uptostream";
+    /* 2020-04-12: All files >=5GB are premiumonly but instead of hardcoding this, their filecheck-API returns the property. */
+    private static final String  PROPERTY_needs_premium                           = "needs_premium";
+    private static final String  PROPERTY_is_password_protected                   = "password_protected";
+    private static final String  PROPERTY_last_downloaded_quality                 = "last_downloaded_quality";
     private static final boolean use_api_availablecheck_for_single_availablecheck = true;
     private static final int     api_responsecode_password_required_or_wrong      = 17;
     private static final int     api_responsecode_file_offline                    = 28;
+
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        final boolean requires_premium = link.getBooleanProperty(PROPERTY_needs_premium, false);
+        if (requires_premium && (account == null || account.getType() != AccountType.PREMIUM)) {
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -195,6 +207,11 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        if (br.getRegex(">\\s*You must be premium to download this file").matches()) {
+            link.setProperty(PROPERTY_needs_premium, true);
+        } else {
+            link.setProperty(PROPERTY_needs_premium, false);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -260,9 +277,14 @@ public class UpToBoxCom extends antiDDoSForHost {
                         final long errorCode = JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
                         if (errorCode == api_responsecode_file_offline) {
                             isOffline = true;
-                        } else {
+                        } else if (errorCode == api_responsecode_password_required_or_wrong) {
                             /* E.g. "error":{"code":17,"message":"Password required"} */
+                            dl.setProperty(PROPERTY_is_password_protected, true);
+                        } else {
+                            /* Undefined case */
                         }
+                    } else {
+                        dl.setProperty(PROPERTY_is_password_protected, false);
                     }
                     String file_name = null;
                     if (isOffline) {
@@ -276,7 +298,10 @@ public class UpToBoxCom extends antiDDoSForHost {
                             available_on_uptostream = ((Boolean) entries.get("available_uts")).booleanValue();
                             dl.setProperty(PROPERTY_available_on_uptostream, available_on_uptostream);
                         }
-                        /* TODO: Get- and set property "need_premium" */
+                        try {
+                            dl.setProperty(PROPERTY_needs_premium, ((Boolean) entries.get("need_premium")).booleanValue());
+                        } catch (final Throwable e) {
+                        }
                         if (file_size > 0) {
                             dl.setVerifiedFileSize(file_size);
                         }
@@ -334,8 +359,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                     download1.put("file-password", Encoding.urlEncode(passCode));
                 }
-                /* TODO */
-                // this.waitTime(this.getDownloadLink(), System.currentTimeMillis());
                 final int waittime = getPreDownloadWaittimeWebsite();
                 if (waittime > 0) {
                     logger.info("Found pre-download-waittime: " + waittime);
@@ -354,11 +377,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         }
-        /*
-         * TODO: Remember to set verifies filesize here in case user selected a transcoded quality and does NOT want to download the
-         * original/source file!
-         */
-        /* TODO: Add function to obey users' quality selection. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -374,10 +392,11 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     protected void checkErrorsWebsite(final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
-        /* 2020-03-27: Special */
-        if (br.getRegex(">\\s*You must be premium to download this file").matches()) {
+        final boolean requires_premium = link.getBooleanProperty(PROPERTY_needs_premium, false);
+        if (requires_premium) {
             throw new AccountRequiredException();
-        } else if (br.containsHTML(">\\s*Wrong password")) {
+        }
+        if (br.containsHTML(">\\s*Wrong password")) {
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
         }
@@ -437,31 +456,78 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private void handleDownloadAPI(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownloadAPI(final DownloadLink link, final Account account, boolean resumable, final int maxchunks, String directlinkproperty) throws Exception, PluginException {
         if (account == null) {
             /* This function should never be called without account */
             throw new AccountRequiredException();
         }
-        String dllink = checkDirectLink(link, directlinkproperty);
+        final UrlQuery queryBasic = new UrlQuery();
+        queryBasic.append("token", account.getPass(), true);
+        queryBasic.append("file_code", this.getFUID(link), false);
+        final boolean streamDownloadAvailable = link.getBooleanProperty(PROPERTY_available_on_uptostream, false);
+        String dllink = null;
+        final String preferredQuality = getConfiguredQuality();
+        final String preferredQualityLastTime = link.getStringProperty(PROPERTY_last_downloaded_quality, null);
+        boolean isDownloadingStream = false;
+        /* TODO: Check free account stream download. Check password protected streams. */
+        if (preferredQuality != null && streamDownloadAvailable) {
+            logger.info("Download preferred quality: " + preferredQuality);
+            /* Different streaming URLs = different property to store them on! */
+            final String directlinkpropertyTmp = directlinkproperty + preferredQuality;
+            dllink = checkDirectLink(link, directlinkpropertyTmp);
+            if (dllink != null) {
+                logger.info("Successfully re-used last streaming-URL");
+                directlinkproperty = directlinkpropertyTmp;
+                isDownloadingStream = true;
+            } else {
+                logger.info("Trying to generate new streaming URL in preferred quality");
+                this.getPage(API_BASE + "/streaming?" + queryBasic.toString());
+                try {
+                    /*
+                     * Streams can also contain multiple video streams with e.g. different languages --> We will ignore this rare case and
+                     * always download the first stream of the user preferred quality we get.
+                     */
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/streamLinks/" + preferredQuality + "/{0}");
+                    if (!StringUtils.isEmpty(dllink)) {
+                        logger.info("Successfully found user preferred quality " + preferredQuality);
+                        directlinkproperty = directlinkpropertyTmp;
+                        isDownloadingStream = true;
+                    } else {
+                        logger.info("Failed to find user preferred streaming quality --> Fallback to original download");
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.warning("Stream download failed");
+                }
+            }
+        }
         if (dllink == null) {
-            final UrlQuery query = new UrlQuery();
-            query.append("token", account.getPass(), true);
-            query.append("file_code", this.getFUID(link), false);
-            query.append("password", link.getDownloadPassword(), true);
+            logger.info("Download original");
+            dllink = checkDirectLink(link, directlinkproperty);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            final UrlQuery queryDownload = queryBasic;
+            queryDownload.append("password", link.getDownloadPassword(), true);
             int maxtries = 1;
             int tries = 0;
             String passCode = link.getDownloadPassword();
-            boolean passwordFailure = false;
+            /*
+             * 2020-04-12: Do not preset this because if e.g. the owner of a password protected file wants to download it he will not have
+             * to enter the password!
+             */
+            boolean passwordRequiredOrEnteredWrong = false;
+            // boolean passwordRequiredOrEnteredWrong = link.getBooleanProperty(PROPERTY_is_password_protected, false);
             do {
-                if (tries > 0 || passwordFailure) {
+                if (tries > 0 || passwordRequiredOrEnteredWrong) {
                     passCode = Plugin.getUserInput("Enter download password", link);
-                    query.append("password", passCode, true);
+                    queryDownload.append("password", passCode, true);
                 }
-                this.getPage(API_BASE + "/link?" + query.toString());
+                this.getPage(API_BASE + "/link?" + queryDownload.toString());
                 tries++;
-                passwordFailure = getErrorcode() == api_responsecode_password_required_or_wrong;
-            } while (passwordFailure && tries <= maxtries);
-            if (passwordFailure) {
+                passwordRequiredOrEnteredWrong = getErrorcode() == api_responsecode_password_required_or_wrong;
+            } while (passwordRequiredOrEnteredWrong && tries <= maxtries);
+            if (passwordRequiredOrEnteredWrong) {
                 logger.info("User entered INCORRECT password");
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
@@ -493,10 +559,24 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         /*
-         * TODO: Remember to set verifies filesize here in case user selected a transcoded quality and does NOT want to download the
-         * original/source file!
+         * TODO: Reset progress instead of disabling resume otherwise user would get the "this download is not resumable" warning which is
+         * not true in this case.
          */
-        /* TODO: Add function to obey users' quality selection. */
+        final boolean isDifferentQualityThanLastTime = !StringUtils.equals(preferredQualityLastTime, preferredQuality);
+        if (isDifferentQualityThanLastTime) {
+            /* Disable resume for this time otherwise we may end up with a broken file. */
+            resumable = false;
+        }
+        if (isDownloadingStream) {
+            /*
+             * Important: During availablecheck, verified filesize of original file is set. If we're now downloading a transcoded stream
+             * instead we will get another filesize now!
+             */
+            link.setVerifiedFileSize(-1);
+            link.setProperty(PROPERTY_last_downloaded_quality, preferredQuality);
+        } else {
+            link.setProperty(PROPERTY_last_downloaded_quality, null);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -640,6 +720,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformationAPI(link);
         loginAPI(account, false);
         if (account.getType() == AccountType.FREE) {
             handleDownloadAPI(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
@@ -738,15 +819,23 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
         switch (cfgquality) {
         case QUALITY1:
-            return "x";
+            return "360";
+        case QUALITY2:
+            return "480";
+        case QUALITY3:
+            return "720";
+        case QUALITY4:
+            return "1080";
+        case QUALITY5:
+            return "2160";
         case DEFAULT:
+            return null;
         default:
-            return this.getHost();
+            return null;
         }
     }
 
     private void invalidApikey() throws PluginException {
-        /* TODO: Add errortext and french translation */
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToken invalide. / Vous pouvez trouver votre token ici : uptobox.com/my_account.\r\nSi vous utilisez JDownloader à distance, entrez le token dans les champs de nom d'utilisateur de de mot de passe.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
@@ -851,6 +940,6 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
