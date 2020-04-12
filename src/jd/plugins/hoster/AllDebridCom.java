@@ -812,7 +812,8 @@ public class AllDebridCom extends antiDDoSForHost {
                 logger.info("New final downloadurl: " + genlink);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, 0);
+        /* 2020-04-12: Chunks limited to 16 RE: admin */
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, -16);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             try {

@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -21,13 +22,13 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
         QUALITY1 {
             @Override
             public String getLabel() {
-                return "240p";
+                return "360p";
             }
         },
         QUALITY2 {
             @Override
             public String getLabel() {
-                return "360p";
+                return "480p";
             }
         },
         QUALITY3 {
@@ -45,13 +46,14 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
         QUALITY5 {
             @Override
             public String getLabel() {
-                return "4k";
+                return "2160p (4k)";
             }
         };
     }
 
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
+    @DescriptionForConfigEntry("Only works in (free/premium-)account mode! If your preferred quality is not found, original/best will be downloaded instead. Only works for content also available on uptostream!")
     PreferredQuality getPreferredQuality();
 
     void setPreferredQuality(PreferredQuality domain);
