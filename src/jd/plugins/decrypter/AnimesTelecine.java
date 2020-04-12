@@ -34,6 +34,7 @@ public class AnimesTelecine extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        br.followRedirect();
         String linkId = parseLinkId();
         String episodeName = parseEpisodeName();
         String finalLink = requestDownloadLink(linkId, param);

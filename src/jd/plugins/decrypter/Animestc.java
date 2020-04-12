@@ -15,19 +15,23 @@ package jd.plugins.decrypter;
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <https?://www.gnu.org/licenses/>.
+
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.*;
+import jd.plugins.components.PluginJSonUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animestc.com" }, urls = { "https?://(?:www\\.)?animestc\\.com/animes/[^/]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {"animestc.net"}, urls = {"https?://(?:www\\.)?animestc\\.net/animes/(.*)"})
 public class Animestc extends PluginForDecrypt {
     public Animestc(PluginWrapper wrapper) {
         super(wrapper);
@@ -35,45 +39,59 @@ public class Animestc extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        String html = br.toString();
-        ArrayList<String> episodesContentFullHdList = parseEpisodeContents(html, "1080p");
-        ArrayList<String> episodesContentHdList = parseEpisodeContents(html, "720p");
-        if (episodesContentFullHdList.isEmpty() && episodesContentHdList.isEmpty()) {
-            logger.warning("Unable to parse episodes container");
-            return decryptedLinks;
-        }
-        for (int i = 0; i < episodesContentFullHdList.size(); ++i) {
-            ArrayList<String> episodeLinkList = parseEpisodeLinks(episodesContentFullHdList.get(i));
-            if (episodeLinkList.isEmpty()) {
-                episodeLinkList = parseEpisodeLinks(episodesContentHdList.get(i));
-            }
-            for (String episodeLink : episodeLinkList) {
-                decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(episodeLink)));
-            }
+        final String url = param.getCryptedUrl();
+        String seriesName = parseSerieName(url);
+        String seriesId = requestSerieId(seriesName);
+        ArrayList<String> episodesLinks = requestEpisodeLinks(seriesId);
+        for (String episodeLink : episodesLinks) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(episodeLink)));
         }
         return decryptedLinks;
     }
 
-    ArrayList<String> parseEpisodeLinks(String episodeContent) {
-        Pattern pattern = Pattern.compile("href=\"(.*)\"");
-        return getListOfMatches(pattern, episodeContent);
+    String parseSerieName(String url) throws PluginException {
+        Pattern pattern = Pattern.compile("animes/(.*)");
+        Matcher matcher = pattern.matcher(url);
+        if (!matcher.find() || matcher.group(1).isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to get serie name");
+        }
+        return matcher.group(1);
     }
 
-    ArrayList<String> parseEpisodeContents(String html, String quality) {
-        Pattern pattern = Pattern.compile("<div class=\"links_" + quality + "\">(.*?)<div class=\"clearfix\">", Pattern.DOTALL);
-        return getListOfMatches(pattern, html);
+    String requestSerieId(String serieName) throws Exception {
+        br.getPage("https://api2.animestc.com/series?slug=" + serieName);
+        String serieId = PluginJSonUtils.getJson(br, "id");
+        if (serieId.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to get serie id");
+        }
+        return serieId;
     }
 
-    ArrayList<String> getListOfMatches(Pattern pattern, String text) {
-        Matcher m = pattern.matcher(text);
-        ArrayList<String> list = new ArrayList<String>();
-        while (m.find()) {
-            for (int i = 0; i < m.groupCount(); i++) {
-                list.add(m.group(i + 1));
+    ArrayList<String> requestEpisodeLinks(String serieId) throws Exception {
+        br.getPage("/episodes?order=id&direction=desc&page=1&seriesId=" + serieId + "&specialOrder=true");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        ArrayList<String> episodes = new ArrayList<String>();
+        ArrayList<LinkedHashMap<String, Object>> episodesResponse = (ArrayList<LinkedHashMap<String, Object>>) entries.get("data");
+        for (LinkedHashMap<String, Object> episodeResponse : episodesResponse) {
+            LinkedHashMap<String, Object> linksResponse = (LinkedHashMap<String, Object>) episodeResponse.get("links");
+            linksResponse.remove("online");
+            Set<String> keys = linksResponse.keySet();
+            ArrayList<String> keysArrayList = new ArrayList<String>(keys);
+            Collections.reverse(keysArrayList);
+            boolean qualityWithLinks = false;
+            for (String quality: keysArrayList) {
+                ArrayList<LinkedHashMap<String, Object>> links = (ArrayList<LinkedHashMap<String, Object>>) linksResponse.get(quality);
+                for (LinkedHashMap<String, Object> link : links) {
+                    Integer linkId = (Integer) episodeResponse.get("id");
+                    String finalUrl = "https://www.animestelecine.top/link/" + Base64.encode(linkId + "/high/" + link.get("index"));
+                    episodes.add(finalUrl);
+                    qualityWithLinks = true;
+                }
+                if (qualityWithLinks){
+                    break;
+                }
             }
         }
-        return list;
+        return episodes;
     }
 }
