@@ -475,22 +475,6 @@ public class FileBoomMe extends K2SApi {
         super.resetLink(link);
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-            return true;
-        }
-        return false;
-    }
-
     @Override
     protected String getReCaptchaV2WebsiteKey() {
         return "6LcYcN0SAAAAABtMlxKj7X0hRxOY8_2U86kI1vbb";

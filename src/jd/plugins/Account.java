@@ -24,12 +24,6 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -40,6 +34,12 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
     private static final String VALID_UNTIL                    = "VALID_UNTIL";
@@ -740,12 +740,6 @@ public class Account extends Property {
                     }
                 } else if ("free".equalsIgnoreCase(key)) {
                     if (Boolean.TRUE.equals(value)) {
-                        setType(AccountType.FREE);
-                    } else {
-                        setType(AccountType.PREMIUM);
-                    }
-                } else if ("session_type".equalsIgnoreCase(key)) {
-                    if (!"premium".equals(value)) {
                         setType(AccountType.FREE);
                     } else {
                         setType(AccountType.PREMIUM);

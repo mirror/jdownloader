@@ -404,13 +404,7 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-            return true;
-        }
+        /* Only login captcha sometimes */
         return false;
     }
 }

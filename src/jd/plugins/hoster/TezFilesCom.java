@@ -412,20 +412,4 @@ public class TezFilesCom extends K2SApi {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* free accounts also have captchas */
-            return false;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-            return false;
-        }
-        return false;
-    }
 }
