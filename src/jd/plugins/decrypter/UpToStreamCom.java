@@ -16,27 +16,35 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.UpToBoxCom;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?|https?://(?:www\\.)?uptobox\\.com/\\?op=user_public\\&hash=[a-f0-9]{16}\\&folder=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com", "uptobox.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?", "https?://(?:www\\.)?uptobox\\.com/\\?op=user_public\\&hash=[a-f0-9]{16}\\&folder=\\d+" })
 public class UpToStreamCom extends antiDDoSForDecrypt {
     public UpToStreamCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +56,6 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter;
         /* Load sister-host plugin */
-        JDUtilities.getPluginForHost(DOMAIN);
         final ArrayList<String> dupecheck = new ArrayList<String>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("user_public")) {
@@ -99,69 +106,89 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                 }
             } while (pageCurrent < pageMax && !this.isAbort());
         } else {
-            final String main_id = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
-            final UpToBoxComConfig cfg = PluginJsonConfig.get(UpToBoxComConfig.class);
             parameter = param.toString();
-            final String url_uptobox = parameter.replace("uptostream.com", "uptobox.com");
-            final String decryptedhost = "http://" + this.getHost() + "decrypted";
-            final boolean crawler_not_yet_done = true;
-            if (crawler_not_yet_done) {
-                decryptedLinks.add(this.createDownloadlink(url_uptobox));
-                return decryptedLinks;
-            }
-            final boolean fastcheck = true;
-            br.setFollowRedirects(true);
-            getPage(parameter);
-            String fpName = br.getRegex("id=\"titleVid\">([^<>\"]*?)<").getMatch(0);
-            if (fpName == null) {
-                /* Fallback */
-                fpName = main_id;
-            }
-            fpName = Encoding.htmlDecode(fpName).trim();
-            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("404 \\(File not found\\)")) {
-                /* Simply add the main host url, maybe it is still online on there. */
-                decryptedLinks.add(this.createDownloadlink(url_uptobox));
-                return decryptedLinks;
-            }
-            String[] videosinfo = br.getRegex("\\'(http://[^/]*?uptostream\\.com/[^/]+/\\d+/\\d+)\\'").getColumn(0);
-            HashMap<String, DownloadLink> foundLinks_all = new HashMap<String, DownloadLink>();
-            /* parse flash url */
-            ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-            for (final String videourl : videosinfo) {
-                final String quality = new Regex(videourl, "(\\d+)/\\d+$").getMatch(0);
-                if (quality == null) {
-                    return null;
+            final String host_uptobox = "uptobox.com";
+            final String fuid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+            final UpToBoxComConfig cfg = PluginJsonConfig.get(UpToBoxComConfig.class);
+            final DownloadLink uptoboxURL = this.createDownloadlink(parameter.replace("uptostream.com", host_uptobox));
+            uptoboxURL.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            UpToBoxCom.prepBrowserStatic(br);
+            final PluginForHost plg = JDUtilities.getPluginForHost(host_uptobox);
+            final Account account = AccountController.getInstance().getValidAccount(plg.getHost());
+            final boolean grabSubtitle = cfg.isGrabSubtitle();
+            /* 2020-04-13: API access (= premium account) required to get subtitles */
+            if (grabSubtitle && account != null && account.getType() == AccountType.PREMIUM) {
+                logger.info("Trying to crawl subtitles");
+                /* We need to linkcheck the main URL to get the filename */
+                boolean isOnline = false;
+                boolean isAvailableUnUptostream = false;
+                try {
+                    plg.setBrowser(this.br);
+                    ((jd.plugins.hoster.UpToBoxCom) plg).requestFileInformation(uptoboxURL);
+                    isOnline = uptoboxURL.isAvailabilityStatusChecked() && uptoboxURL.isAvailable();
+                    isAvailableUnUptostream = uptoboxURL.getBooleanProperty(UpToBoxCom.PROPERTY_available_on_uptostream, false);
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("Availablecheck in crawler failed");
                 }
-                final DownloadLink dl = this.createDownloadlink(decryptedhost + "/" + main_id + "_" + quality);
-                dl.setFinalFileName(fpName + "_" + quality + "p.mp4");
-                dl.setProperty("directlink", videourl);
-                dl.setProperty("mainlink", parameter);
-                if (fastcheck) {
-                    dl.setAvailable(true);
+                if (!isOnline || !isAvailableUnUptostream) {
+                    logger.info("Not looking for subtitles as main URL is offline or content is not available on uptostream");
+                } else {
+                    logger.info("Main URL is online --> Looking for subtitles");
+                    String fpName = uptoboxURL.getFinalFileName();
+                    if (fpName == null) {
+                        /* Fallback - should not be required */
+                        fpName = fuid;
+                    }
+                    if (fpName.contains(".")) {
+                        /* Remove extension */
+                        fpName = fpName.substring(0, fpName.lastIndexOf("."));
+                    }
+                    try {
+                        final String token = account.getPass();
+                        this.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + token + "&file_code=" + fuid);
+                        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        final ArrayList<Object> subtitles = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
+                        if (subtitles == null || subtitles.size() == 0) {
+                            logger.info("Failed to find any subtitles");
+                        } else {
+                            logger.info(String.format("Found %d subtitles", subtitles.size()));
+                            for (final Object subtitleO : subtitles) {
+                                entries = (Map<String, Object>) subtitleO;
+                                final String url = (String) entries.get("src");
+                                final String language = (String) entries.get("srcLang");
+                                if (StringUtils.isEmpty(url) || StringUtils.isEmpty(language)) {
+                                    /* Skip invalid items */
+                                    continue;
+                                }
+                                final DownloadLink dlSubtitle = this.createDownloadlink("directhttp://" + url);
+                                dlSubtitle.setAvailable(true);
+                                String extension = Plugin.getFileNameExtensionFromURL(url);
+                                if (extension == null) {
+                                    /* Fallback */
+                                    extension = ".vtt";
+                                }
+                                String filename = fpName;
+                                if (subtitles.size() > 1) {
+                                    /* Only add language info to filename if we got more than 1 subtitle available. */
+                                    filename += "_" + language;
+                                }
+                                filename += extension;
+                                dlSubtitle.setFinalFileName(filename);
+                                decryptedLinks.add(dlSubtitle);
+                            }
+                            /* FilePackage is only required if we have multiple objects */
+                            final FilePackage fp = FilePackage.getInstance();
+                            fp.setName(fpName);
+                            fp.addLinks(decryptedLinks);
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        logger.info("Subtitle handling failed");
+                    }
                 }
-                dl.setContentUrl(parameter);
-                foundLinks_all.put(quality, dl);
             }
-            final String url_subtitle = "TODO";
-            if (url_subtitle != null && cfg.isGrabSubtitle()) {
-                final DownloadLink dl = this.createDownloadlink(decryptedhost + "/" + main_id + "_0000");
-                dl.setFinalFileName(fpName + "_subtitle.srt");
-                dl.setProperty("directlink", url_subtitle);
-                dl.setProperty("mainlink", parameter);
-                if (fastcheck) {
-                    dl.setAvailable(true);
-                }
-                dl.setContentUrl(parameter);
-                decryptedLinks.add(dl);
-            }
-            // if (cfg.getBooleanProperty(jd.plugins.hoster.UpToStreamCom.PROPERTY_ORIGINAL, true)) {
-            // final DownloadLink dl = this.createDownloadlink(url_uptobox);
-            // decryptedLinks.add(dl);
-            // }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            fp.addLinks(newRet);
-            decryptedLinks.addAll(newRet);
+            decryptedLinks.add(uptoboxURL);
         }
         return decryptedLinks;
     }
