@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,6 +34,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -40,8 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
@@ -408,6 +409,7 @@ public class FreshfilePl extends PluginForHost {
             }
             ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded, true, true));
             ai.setStatus("Registered (free) user");
+            account.setType(AccountType.FREE);
         } else {
             if (dailyTraffic.equals("no_limit")) {
                 ai.setStatus("Premium user");
@@ -416,6 +418,7 @@ public class FreshfilePl extends PluginForHost {
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficRemainded, true, true));
                 ai.setTrafficMax(SizeFormatter.getSize(dailyTraffic));
             }
+            account.setType(AccountType.PREMIUM);
         }
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         Date date;
@@ -464,23 +467,8 @@ public class FreshfilePl extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-            return true;
-        }
         return false;
     }
 }

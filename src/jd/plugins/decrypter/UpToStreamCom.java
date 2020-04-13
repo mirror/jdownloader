@@ -70,7 +70,7 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
             do {
                 pageCurrent++;
                 /* 2018-10-18: default = "limit=10" */
-                getPage("https://uptobox.com/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
+                getPage(UpToBoxCom.API_BASE + "/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
                 if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
@@ -121,6 +121,9 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                 logger.info("Trying to crawl subtitles");
                 /* We need to linkcheck the main URL to get the filename */
                 boolean isOnline = false;
+                /*
+                 * 2020-04-13: This will most likely be true as we only accept uptostream URLs in this plugin but we double check anyways.
+                 */
                 boolean isAvailableUnUptostream = false;
                 try {
                     plg.setBrowser(this.br);
@@ -201,7 +204,7 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
     }
 
     /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final Account acc) {
         return false;
     }
 }
