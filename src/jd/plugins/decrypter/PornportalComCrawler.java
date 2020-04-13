@@ -108,6 +108,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         /* Login if possible */
+        /* TODO: Find correct plugin for "internal multihoster handling" to be able to login as a premium users into external portals. */
         final boolean isLoggedIN = getUserLogin();
         if (!isLoggedIN) {
             /* Anonymous API auth */
@@ -143,7 +144,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, false);
+                ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, this.getHost(), false);
                 return true;
             } catch (final PluginException e) {
                 handleAccountException(aa, e);
