@@ -113,7 +113,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final int     WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT             = 240;
     private static final String  PROPERTY_timestamp_lastcheck                     = "timestamp_lastcheck";
     /* If a file-ID is also available on uptostream, we might be able to select between different video qualities. */
-    private static final String  PROPERTY_available_on_uptostream                 = "available_on_uptostream";
+    public static final String   PROPERTY_available_on_uptostream                 = "available_on_uptostream";
     /* 2020-04-12: All files >=5GB are premiumonly but instead of hardcoding this, their filecheck-API returns the property. */
     private static final String  PROPERTY_needs_premium                           = "needs_premium";
     private static final String  PROPERTY_is_password_protected                   = "password_protected";
@@ -160,10 +160,15 @@ public class UpToBoxCom extends antiDDoSForHost {
     public Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
-            br.getHeaders().put("User-Agent", "JDownloader");
-            br.setFollowRedirects(true);
+            prepBrowserStatic(br);
         }
         return prepBr;
+    }
+
+    public static Browser prepBrowserStatic(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -182,7 +187,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             return AvailableStatus.UNCHECKED;
         }
         if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.FALSE;
         }
         return AvailableStatus.TRUE;
     }
@@ -469,8 +474,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         final String preferredQuality = getConfiguredQuality();
         final String preferredQualityLastTime = link.getStringProperty(PROPERTY_last_downloaded_quality, null);
         boolean isDownloadingStream = false;
-        /* TODO: Check free account stream download. Check password protected streams. */
-        if (preferredQuality != null && streamDownloadAvailable) {
+        if (preferredQuality != null && streamDownloadAvailable && account.getType() == AccountType.PREMIUM) {
             logger.info("Download preferred quality: " + preferredQuality);
             /* Different streaming URLs = different property to store them on! */
             final String directlinkpropertyTmp = directlinkproperty + preferredQuality;

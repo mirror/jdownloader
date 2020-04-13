@@ -53,13 +53,13 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
-    @DescriptionForConfigEntry("Only works in (free/premium-)account mode! If your preferred quality is not found, original/best will be downloaded instead. Only works for content also available on uptostream!")
+    @DescriptionForConfigEntry("If your preferred quality is not found, original/best will be downloaded instead. Only works for content also available on uptostream! Only works if you own a premium account!")
     PreferredQuality getPreferredQuality();
 
     void setPreferredQuality(PreferredQuality domain);
 
-    @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry("If enabled, JD will try to crawl a subtitle file for all uptostream URLs.")
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If enabled, JD will try to crawl a subtitle file for all uptostream URLs. Only works if you own a premium account!")
     @Order(50)
     boolean isGrabSubtitle();
 
