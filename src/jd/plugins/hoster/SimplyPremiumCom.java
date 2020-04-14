@@ -34,6 +34,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -185,7 +186,7 @@ public class SimplyPremiumCom extends PluginForHost {
             mhm.handleErrorGeneric(account, link, "hostererror", 10, 5 * 60 * 1000l);
         } else if (br.containsHTML("<error>maxconnection</error>")) {
             logger.info(NICE_HOST + ": Too many simultan connections");
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            throw new AccountUnavailableException("Wait before starting new downloads", 5 * 60 * 1000l);
         } else if (br.containsHTML("<error>notvalid</error>")) {
             logger.info(NICE_HOST + ": Account invalid -> Disabling it");
             final String lang = System.getProperty("user.language");

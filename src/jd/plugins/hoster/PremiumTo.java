@@ -41,6 +41,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,7 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
@@ -74,7 +74,6 @@ public class PremiumTo extends UseNet {
      * down.
      */
     private static final boolean           debug_supports_storage_download = true;
-    private static MultiHosterManagement   mhm                             = new MultiHosterManagement("premium.to");
     private static final ArrayList<String> supported_hosts_storage         = new ArrayList<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
@@ -469,7 +468,6 @@ public class PremiumTo extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            mhm.runCheck(account, link);
             synchronized (supported_hosts_storage) {
                 if (supported_hosts_storage.isEmpty()) {
                     logger.info("Storage-host list is empty: Performing full login to refresh it");
@@ -553,37 +551,17 @@ public class PremiumTo extends UseNet {
             if (dl.getConnection().getResponseCode() == 404) {
                 /* File offline */
                 dl.getConnection().disconnect();
-                mhm.handleErrorGeneric(account, link, "server_error_404", 50, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000);
             }
             if (!dl.getConnection().isContentDisposition()) {
                 if (dl.getConnection().getResponseCode() == 420) {
                     dl.close();
-                    mhm.handleErrorGeneric(account, link, "server_error_420", 50, 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 420", 3 * 60 * 1000);
                 }
                 br.followConnection();
                 this.handleErrorsAPI(account, false);
                 logger.severe("PremiumTo Error");
-                /* 2019-10-24: TODO: Consider removing this old errorhandling code. All errors should be returned via json by now. */
-                if (br.containsHTML("File not found")) {
-                    // we can not trust multi-hoster file not found returns, they could be wrong!
-                    // jiaz new handling to dump to next download candidate.
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                } else if (br.toString().matches("File hosting service not supported")) {
-                    mhm.putError(account, link, 10 * 60 * 1000l, "hoster_unsupported");
-                } else if (br.containsHTML("Not enough traffic")) {
-                    /*
-                     * With our special traffic it's a bit complicated. When you still have a little Special Traffic but you have enough
-                     * standard traffic which can be used for other filehosts, it will show you "Not enough traffic" for the filehost
-                     * Uploaded.net for example.
-                     */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic to download from this host");
-                } else if (br.containsHTML("No premium account available")) {
-                    mhm.putError(account, link, 3 * 60 * 1000l, "No premium account available");
-                }
-                /*
-                 * after x retries we disable this host and retry with normal plugin
-                 */
-                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 3 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 3 * 60 * 1000);
             }
             /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
             final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
@@ -650,6 +628,9 @@ public class PremiumTo extends UseNet {
             responsecode = Integer.parseInt(responsecodeStr);
         }
         String errormessage = PluginJSonUtils.getJson(br, "message");
+        if (StringUtils.isEmpty(errormessage)) {
+            errormessage = "Unknown error";
+        }
         // if (this.getDownloadLink() != null) {
         // responsecode = 405;
         // errormessage = "Test";
@@ -663,35 +644,33 @@ public class PremiumTo extends UseNet {
             break;
         case 400:
             /* Invalid parameter - this should never happen! */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "API response 400");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API response 400: " + errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         case 401:
             /* Invalid apikey --> Invalid logindata */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         case 402:
             /*
              * Unsupported filehost - rare case but will happen if admin e.g. forgets to remove currently non-working hosts from array of
-             * supported hosts
+             * supported hosts. Do not throw a permanent error here as cached content could always be available!
              */
-            mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Filehost is not supported");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
         case 403:
-            /* Not enough traffic left */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Not enough traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            /* Not enough traffic left --> Temp. disable account */
+            throw new AccountUnavailableException("Not enough traffic left", 5 * 60 * 1000l);
         case 404:
             if (trust_error_404_as_file_not_found) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 /* 2019-10-30: We cannot trust this API errormessage */
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "Untrusted error 404", 50, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404", 3 * 60 * 1000);
             }
         default:
             /* {"code":405,"message":"Too many files"} */
             /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
-            if (errormessage == null) {
-                errormessage = "Unknown error";
-            }
             errormessage = "Err " + responsecode + ": " + errormessage;
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
         }
+        /* TODO: Check if these ones still exist */
         if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
             /* Now handle special Storage errors / statuscodes */
             if ("Invalid API Key".equalsIgnoreCase(br.toString())) {

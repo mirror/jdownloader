@@ -401,7 +401,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     if (isLoginSessionExpired(message)) {
                         if (hasValidatedCookies) {
                             // we already logged in seconds earlier... continuously re-logging in is pointless.
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Logged in multiple times in sucession, and session automatically expired. Please report to LinkSnappy.");
+                            throw new AccountUnavailableException("Logged in multiple times in sucession, and session automatically expired. Please report to LinkSnappy.", 10 * 60 * 1000);
                         }
                         this.loginAPI(account, true);
                         hasValidatedCookies = true;

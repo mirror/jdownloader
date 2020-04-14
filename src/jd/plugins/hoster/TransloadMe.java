@@ -322,7 +322,8 @@ public class TransloadMe extends PluginForHost {
                 // "error": "7" - You asked for too many links, wait a few minutes, or refill your account. (This occurs when the user has
                 // generated a lot of links, though lacking means for downloading, you need to wait a few minutes before clearing balance)
                 // so no more links for the account?
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                statusMessage = "You asked for too many links, wait a few minutes, or refill your account";
+                throw new AccountUnavailableException(statusMessage, 5 * 60 * 1000l);
             case 8:
                 // disabled api, switch to webmode
                 throw new AccountUnavailableException("API is disabled", 60 * 60 * 1000l);
