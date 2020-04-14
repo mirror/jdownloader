@@ -52,6 +52,15 @@ public class MirroraceCom extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        {
+            /* 2020-04-14: New */
+            final Form preReCaptchaForm = br.getFormbyProperty("id", "protection");
+            if (preReCaptchaForm != null) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                preReCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                this.submitForm(preReCaptchaForm);
+            }
+        }
         final String fpName = br.getRegex("<title>\\s*(?:Download)?\\s*([^<]*?)\\s*(?:-\\s*MirrorAce)?\\s*</title>").getMatch(0);
         // since mirrorace is single file response > many mirrors, results in package of compression parts all have there own package...
         // which then results in extraction tasks failing...
@@ -65,9 +74,6 @@ public class MirroraceCom extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
-            if (this.isAbort()) {
-                return decryptedLinks;
-            }
             final Browser br = this.br.cloneBrowser();
             getPage(br, singleLink);
             {
@@ -101,6 +107,9 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                 fp.add(dl);
             }
             distribute(dl);
+            if (this.isAbort()) {
+                return decryptedLinks;
+            }
         }
         return decryptedLinks;
     }
