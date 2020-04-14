@@ -80,11 +80,12 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "erito.com", "eritos.com" });
         ret.add(new String[] { "fakehub.com" });
         ret.add(new String[] { "hentaipros.com" });
+        ret.add(new String[] { "lilhumpers.com" });
         ret.add(new String[] { "milehighmedia.com", "sweetheartvideo.com", "realityjunkies.com" });
         ret.add(new String[] { "metrohd.com", "familyhookups.com", "kinkyspa.com" });
         ret.add(new String[] { "mofos.com", "publicpickups.com", "iknowthatgirl.com", "dontbreakme.com" });
         ret.add(new String[] { "propertysex.com" });
-        ret.add(new String[] { "realitykings.com", "gfleaks.com" });
+        ret.add(new String[] { "realitykings.com", "gfleaks.com", "inthevip.com", "mikesapartment.com", "8thstreetlatinas.com", "bignaturals.com", "cumfiesta.com", "happytugs.com", "milfhunter.com", "momsbangteens.com", "momslickteens.com", "moneytalks.com", "roundandbrown.com", "sneakysex.com", "teenslovehugecocks.com", "welivetogether.com" });
         ret.add(new String[] { "sexyhub.com" });
         ret.add(new String[] { "squirted.com" });
         ret.add(new String[] { "transangels.com" });
@@ -326,6 +327,11 @@ public class PornportalCom extends PluginForHost {
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    // @Override
+    // public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+    // logger.info("Downloading in multihoster mode");
+    // this.handlePremium(link, account);
+    // }
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         throw new AccountRequiredException();
     }
