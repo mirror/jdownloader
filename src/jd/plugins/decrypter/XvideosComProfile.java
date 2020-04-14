@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:xvideos|xvideos2)\\.(?:com|es)/(?:profiles|(?:pornstar-|amateur-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xvideos.com" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:xvideos|xvideos2)\\.(?:com|es)/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?" })
 public class XvideosComProfile extends PluginForDecrypt {
     public XvideosComProfile(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,9 +73,6 @@ public class XvideosComProfile extends PluginForDecrypt {
         int decryptedLinksNum;
         final boolean fast_linkcheck = getPluginConfig().getBooleanProperty("ENABLE_FAST_LINKCHECK", true);
         do {
-            if (this.isAbort()) {
-                return;
-            }
             logger.info(String.format("Decrypting page %d", pageNum));
             decryptedLinksNum = 0;
             br.getPage("/" + type + "/" + username + "/videos/best/" + pageNum);
@@ -133,7 +130,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 }
             }
             pageNum++;
-        } while (decryptedLinksNum >= 36);
+        } while (!this.isAbort() && decryptedLinksNum >= 36);
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

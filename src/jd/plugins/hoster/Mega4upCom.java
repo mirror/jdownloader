@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -101,5 +102,19 @@ public class Mega4upCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public Form findFormDownload1Free() throws Exception {
+        /* 2020-04-14: Special: Possible start of a cat & mouse game */
+        final Form download1 = super.findFormDownload1Free();
+        if (download1 != null) {
+            download1.remove("method_premium");
+            download1.remove("mega_premium");
+            if (download1.hasInputFieldByName("method_free")) {
+                download1.remove("method_free");
+            }
+        }
+        return download1;
     }
 }

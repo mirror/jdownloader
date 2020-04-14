@@ -717,10 +717,8 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
         accountStatus += String.format(" [%s points]", points);
         final String mail = PluginJSonUtils.getJson(br, "email");
-        if (mail != null && mail.length() > 2) {
-            /* don't store the complete mail as a security purpose */
-            final String shortmail = mail.substring(0, mail.length() / 2) + "****";
-            account.setUser(shortmail);
+        if (mail != null) {
+            account.setUser(mail);
         }
         ai.setStatus(accountStatus);
         ai.setUnlimitedTraffic();
