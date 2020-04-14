@@ -639,24 +639,28 @@ public class UpToBoxCom extends antiDDoSForHost {
                  */
                 if (cookies != null) {
                     /* TODO: Remove this after 2020-07-01 */
-                    logger.info("Trying to convert cookie --> apikey");
-                    this.br.setCookies(this.getHost(), cookies);
-                    getPage(API_BASE + "/token/get");
-                    final String msg = PluginJSonUtils.getJson(br, "message");
-                    apikey = PluginJSonUtils.getJson(br, "data");
-                    if (!"success".equalsIgnoreCase(msg) || StringUtils.isEmpty(apikey)) {
-                        /* E.g. {"statusCode":1,"message":"An error occured","data":"user not found"} */
-                        logger.warning("Failed to convert cookies to apikey --> Account invalid");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    try {
+                        logger.info("Trying to convert cookie --> apikey");
+                        this.br.setCookies(this.getHost(), cookies);
+                        getPage(API_BASE + "/token/get");
+                        final String msg = PluginJSonUtils.getJson(br, "message");
+                        apikey = PluginJSonUtils.getJson(br, "data");
+                        if (!"success".equalsIgnoreCase(msg) || StringUtils.isEmpty(apikey)) {
+                            /* E.g. {"statusCode":1,"message":"An error occured","data":"user not found"} */
+                            logger.warning("Failed to convert cookies to apikey --> Account invalid");
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                        logger.info("Successfully converted cookies to apikey");
+                        account.setUser(null);
+                        account.setPass(apikey);
+                        /* Delete old session from current browser instance (not necessary) */
+                        br.clearCookies(br.getHost());
+                        /* Enforce verifying the session this time */
+                        verifySession = true;
+                    } finally {
+                        /* We have only one attempt. If that fails, user should manually enter his token. */
+                        account.clearCookies("");
                     }
-                    logger.info("Successfully converted cookies to apikey");
-                    account.setUser(null);
-                    account.setPass(apikey);
-                    /* Delete old cookies as we do not need them anymore */
-                    account.clearCookies("");
-                    br.clearCookies(br.getHost());
-                    /* Enforce verifying the session this time */
-                    verifySession = true;
                 } else {
                     apikey = account.getPass();
                 }
