@@ -47,6 +47,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -325,9 +326,6 @@ public class PornHubCom extends PluginForDecrypt {
         String base_url = null;
         boolean ret = false;
         do {
-            if (this.isAbort()) {
-                return true;
-            }
             boolean htmlSource = true;
             if (page > 1) {
                 // jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
@@ -386,7 +384,7 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Links found in page " + page + ": " + viewkeys.length);
             links_found_in_this_page = viewkeys.length;
             page++;
-        } while (links_found_in_this_page >= max_entries_per_page);
+        } while (!this.isAbort() && links_found_in_this_page >= max_entries_per_page);
         return ret;
     }
 
@@ -577,6 +575,7 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Debug info: html_premium_only: " + parameter);
             throw new AccountRequiredException();
         }
+        final String uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
         final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);
         logger.info("Debug info: foundLinks_all: " + qualities);
         if (qualities != null) {
@@ -631,6 +630,9 @@ public class PornHubCom extends PluginForDecrypt {
                             dl.setFinalFileName(html_filename);
                         }
                         dl.setProperty("decryptedfilename", html_filename);
+                        if (!StringUtils.isEmpty(uploadDate)) {
+                            dl.setProperty("date", uploadDate);
+                        }
                         dl.setContentUrl(parameter);
                         if (fastlinkcheck) {
                             dl.setAvailable(true);

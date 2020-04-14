@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -77,6 +78,22 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
             }
             videoids.add(videoid + "@Pluzz");
         } else if (parameter.matches(".+france\\.tv/.+")) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(parameter);
+                if (con.isContentDisposition() || !con.getContentType().contains("html")) {
+                    final DownloadLink directurl = this.createDownloadlink("directhttp://" + parameter);
+                    decryptedLinks.add(directurl);
+                    return decryptedLinks;
+                } else {
+                    br.followConnection();
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -90,7 +107,9 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
                 }
             }
             if (videoid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("Plugin broken or no downloadable content");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
             /* 2017-05-10: The 'catalogue' parameter is not required anymore or not required for these URLs --> nullify that. */
             videoids.add(videoid + "@null");
