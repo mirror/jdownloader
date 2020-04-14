@@ -216,22 +216,11 @@ public class PremiumTo extends UseNet {
                 } catch (final Throwable e) {
                 }
                 br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
-                try {
-                    this.handleErrorsAPI(account, false);
-                    /* 2020-02-13: Save new API logindata - remove property handling in a few weeks! */
-                    account.setUser(userid);
-                    account.setPass(apikey);
-                    account.setProperty("new_credentials_active", true);
-                    return true;
-                } catch (final Exception e) {
-                    /* E.g. API logindata has changed */
-                    if (username_and_pw_is_userid_and_apikey) {
-                        /* Probably wrong logindata. */
-                        loginFailure();
-                    }
-                    logger.log(e);
-                    logger.info("Login via apikey failed, trying via username + password");
-                }
+                this.handleErrorsAPI(account, false);
+                /* 2020-02-13: Save new API logindata - remove property handling in a few weeks! */
+                account.setUser(userid);
+                account.setPass(apikey);
+                account.setProperty("new_credentials_active", true);
                 /* Save API logindata */
                 account.setProperty(PROPERTY_APIKEY, apikey);
                 account.setProperty(PROPERTY_USERID, userid);
@@ -245,14 +234,6 @@ public class PremiumTo extends UseNet {
                 }
                 throw e;
             }
-        }
-    }
-
-    private void loginFailure() throws PluginException {
-        if (System.getProperty("user.language").equals("de")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername/Passwort!\r\nHast due die extra für JDownloader generierten Zugangsdaten eingegeben?\r\nBitte verwende die extra für JDownloader zur Verfügung gestellten API Zugangsdaten.\r\nDiese findest du hier:\r\npremium.to Webseite --> Account Tab\r\n--> 'JDownloader username / API userid' UND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username/password!\r\nDid you enter the logindata which was especially generated for JDownloader?\r\nBe sure to use the special JDownloader logindata provided under:\r\npremium.to website --> Account tab\r\n--> 'JDownloader username / API userid' AND 'JDownloader password / API key'", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -669,6 +650,10 @@ public class PremiumTo extends UseNet {
             responsecode = Integer.parseInt(responsecodeStr);
         }
         String errormessage = PluginJSonUtils.getJson(br, "message");
+        if (this.getDownloadLink() != null) {
+            responsecode = 405;
+            errormessage = "Test";
+        }
         switch (responsecode) {
         case 0:
             /* No error */
@@ -696,7 +681,7 @@ public class PremiumTo extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 /* 2019-10-30: We cannot trust this API errormessage */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404", 5 * 60 * 1000);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "Untrusted error 404", 50, 5 * 60 * 1000l);
             }
         default:
             /* {"code":405,"message":"Too many files"} */
@@ -704,8 +689,8 @@ public class PremiumTo extends UseNet {
             if (errormessage == null) {
                 errormessage = "Unknown error";
             }
-            errormessage = "Err" + responsecode + ": " + errormessage;
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errormessage, 5 * 60 * 1000);
+            errormessage = "Err " + responsecode + ": " + errormessage;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
         }
         if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
             /* Now handle special Storage errors / statuscodes */
