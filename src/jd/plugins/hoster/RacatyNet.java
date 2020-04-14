@@ -128,8 +128,13 @@ public class RacatyNet extends XFileSharingProBasic {
 
     @Override
     public String regexFilenameAbuse(final Browser br) {
-        /* 2020-03-31: Special */
-        String filename = br.getRegex("<title>([^<>\"]+) free download at Racaty\\.com</title>").getMatch(0);
+        /* 2020-04-14 */
+        String filename = br.getRegex("<title>([^<>\"]+) free download at Racaty\\.[a-z0-9]+</title>").getMatch(0);
+        filename = null;
+        if (filename == null) {
+            /* 2020-04-14 */
+            filename = br.getRegex("Filename</label>\\s*<input type=\"text\" value=\"([^<>\"]+)\"").getMatch(0);
+        }
         if (filename == null) {
             filename = super.regexFilenameAbuse(br);
         }

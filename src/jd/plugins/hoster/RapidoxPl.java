@@ -46,7 +46,6 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "" })
 public class RapidoxPl extends PluginForHost {
-    private final String                                   DOMAIN                       = "http://rapidox.pl/";
     private final String                                   NICE_HOST                    = "rapidox.pl";
     private final String                                   NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private final String                                   NORESUME                     = NICE_HOSTproperty + "NORESUME";
@@ -60,7 +59,6 @@ public class RapidoxPl extends PluginForHost {
     private int                                            wait_between_reload          = 3;
     private final String                                   default_UA                   = "JDownloader";
     private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
-    private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                      = null;
@@ -266,23 +264,17 @@ public class RapidoxPl extends PluginForHost {
         br.getPage("/panel/twoje-informacje");
         String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
         String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+(-?[0-9 ]+ MB)").getMatch(0);
-        if (traffic_max == null || traffic_available == null) {
-            final String userLanguage = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(userLanguage)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("pl".equalsIgnoreCase(userLanguage)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         /* Fix e.g. 500 000 MB (500 GB) --> 500000MB */
-        traffic_max = traffic_max.replace(" ", "");
-        traffic_available = traffic_available.replace(" ", "");
+        if (traffic_max != null) {
+            traffic_max = traffic_max.replace(" ", "");
+        }
+        if (traffic_available != null) {
+            traffic_available = traffic_available.replace(" ", "");
+        }
         /*
          * Free users = They have no package --> Accept them but set zero traffic left. Of couse traffic left <= 0 --> Also free account.
          */
-        if (traffic_max.equals("0MB") || traffic_available.indexOf("-") == 0) {
+        if (traffic_max == null || traffic_max.equals("0MB") || traffic_available == null || traffic_available.indexOf("-") == 0) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
@@ -298,7 +290,7 @@ public class RapidoxPl extends PluginForHost {
         }
         account.setValid(true);
         /* Only add hosts which are listed as 'on' (working) */
-        this.getAPISafe("http://rapidox.pl/panel/status_hostingow");
+        this.getAPISafe("/panel/status_hostingow");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String hosttable = br.getRegex("</tr></thead><tr>(.*?)</tr></table>").getMatch(0);
         final String[] hostDomainsInfo = hosttable.split("<td width=\"50px\"");
@@ -328,31 +320,32 @@ public class RapidoxPl extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 this.br = newBrowser();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
+                    logger.info("Login cookies available");
                     this.br.setCookies(this.getHost(), cookies);
                     if (force) {
                         /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
-                        br.getPage("http://rapidox.pl/panel/index");
-                        if (br.containsHTML(">Wyloguj się<")) {
+                        br.getPage("https://" + this.getHost() + "/panel/index");
+                        if (isLoggedIN()) {
                             return;
                         }
                         /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                        if (br.getCookies(DOMAIN) != null) {
-                            br.clearCookies(DOMAIN);
+                        if (br.getCookies(br.getHost()) != null) {
+                            br.clearCookies(br.getHost());
                         }
                     } else {
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
+                this.getAPISafe("https://" + this.getHost() + "/zaloguj_sie");
                 String postData = "login83=" + Encoding.urlEncode(currAcc.getUser()) + "&password83=" + Encoding.urlEncode(currAcc.getPass());
-                this.getAPISafe("http://rapidox.pl/zaloguj_sie");
                 /*
                  * Captcha is shown on too many failed login attempts. Shoud usually not happen inside JD - especially as it is bound to the
                  * current session (cookies) + User-Agent.This small function should try to prevent login captchas in case one appears.
@@ -365,8 +358,8 @@ public class RapidoxPl extends PluginForHost {
                     /* we first have to load the plugin, before we can reference it */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-                    if (br.getCookies(DOMAIN) != null) {
-                        br.clearCookies(DOMAIN);
+                    if (br.getCookies(br.getHost()) != null) {
+                        br.clearCookies(br.getHost());
                     }
                     this.getAPISafe("/zaloguj_sie");
                     captcha_prevention_counter++;
@@ -383,20 +376,13 @@ public class RapidoxPl extends PluginForHost {
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidox.pl", DOMAIN, true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidox.pl", br.getHost(), true);
                     final String c = getCaptchaCode("recaptcha", cf, dummyLink);
                     postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&redirect=";
                 }
                 this.postAPISafe("/panel/login", postData);
-                final String userLanguage = System.getProperty("user.language");
-                if (br.containsHTML(">Wystąpił błąd\\! Nieprawidłowy login lub hasło\\.")) {
-                    if ("de".equalsIgnoreCase(userLanguage)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(userLanguage)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* User-Agent might have been changed through the login process --> Make sure we're using the standard UA now. */
                 agent.set(default_UA);
@@ -406,6 +392,10 @@ public class RapidoxPl extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIN() {
+        return br.containsHTML("panel/wyloguj\"");
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
