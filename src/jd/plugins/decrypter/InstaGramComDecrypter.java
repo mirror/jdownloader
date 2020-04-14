@@ -273,13 +273,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             int decryptedLinksLastSize = 0;
             int decryptedLinksCurrentSize = 0;
             do {
-                if (this.isAbort()) {
-                    logger.info("User aborted decryption");
-                    return decryptedLinks;
-                } else if (only_grab_x_items && decryptedLinks.size() >= maX_items) {
-                    logger.info("Number of items selected in plugin setting has been crawled --> Done");
-                    break;
-                }
                 if (page > 0) {
                     final Browser br = this.br.cloneBrowser();
                     /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
@@ -329,9 +322,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         crawlAlbum(result);
                     }
                 }
+                if (only_grab_x_items && decryptedLinks.size() >= maX_items) {
+                    logger.info("Number of items selected in plugin setting has been crawled --> Done");
+                    break;
+                }
                 decryptedLinksCurrentSize = decryptedLinks.size();
                 page++;
-            } while (nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
+            } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
             if (decryptedLinks.size() == 0) {
                 System.out.println("WTF");
             }

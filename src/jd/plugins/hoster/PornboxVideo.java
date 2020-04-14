@@ -109,7 +109,9 @@ public class PornboxVideo extends antiDDoSForHost {
             /* Fallback */
             link.setName(this.getFID(link) + default_extension);
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        /* 2020-04-14: URL can only be used once thus we rather not check for filesize here. This will also often lead to timeouts! */
+        final boolean checkFilesize = false;
+        if (!StringUtils.isEmpty(dllink) && checkFilesize) {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));

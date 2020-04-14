@@ -30,12 +30,12 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,55 +44,65 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PobierzBiz extends PluginForHost {
     /* Tags: pobierz.biz, rapidtraffic.pl */
-    private String                                         MAINPAGE           = "http://pobierz.biz/";
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static Object                                  LOCK               = new Object();
-
     public PobierzBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE + "konto");
+        this.enablePremium("http://pobierz.biz/konto");
     }
+
+    private static MultiHosterManagement mhm = new MultiHosterManagement("pobierz.biz");
 
     @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    private void login(Account account) throws PluginException, IOException {
-        synchronized (LOCK) {
+    private void login(final Account account) throws PluginException, IOException {
+        synchronized (account) {
             try {
                 br.setCustomCharset("utf-8");
                 br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("http://" + this.getHost() + "/konto");
+                    if (this.isLoggedIN()) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 br.setAcceptLanguage("pl-PL,pl;q=0.9,en;q=0.8");
-                br.postPage(MAINPAGE + "index.php", "v=konto%7Cmain&c=aut&f=loginUzt&friendlyredir=1&usr_login=" + Encoding.urlEncode(account.getUser()) + "&usr_pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://" + this.getHost() + "/index.php", "v=konto%7Cmain&c=aut&f=loginUzt&friendlyredir=1&usr_login=" + Encoding.urlEncode(account.getUser()) + "&usr_pass=" + Encoding.urlEncode(account.getPass()));
                 String redirectPage = br.getRedirectLocation();
                 if (redirectPage != null) {
                     br.getPage(redirectPage);
                 } else {
-                    if (br.containsHTML("Podano nieprawidłową parę login - hasło lub konto nie zostało aktywowane")) {
+                    if (!isLoggedIN()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("INVALID_LOGIN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE + "/konto");
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIN() {
+        return br.containsHTML("/wyloguj");
     }
 
     @Override
@@ -106,33 +116,31 @@ public class PobierzBiz extends PluginForHost {
         } catch (PluginException e) {
             ai.setStatus(getPhrase("LOGIN_FAILED_NOT_PREMIUM"));
             UserIO.getInstance().requestMessageDialog(0, getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_FAILED"));
-            account.setValid(false);
             return ai;
         }
-        if (!br.getURL().contains("konto")) {
-            br.getPage(MAINPAGE + "mojekonto");
+        if (br.getURL() == null || !br.getURL().contains("konto")) {
+            br.getPage("http://" + this.getHost() + "/konto");
         }
         final String hosterNames = " " + br.getRegex("Tutaj wklej linki do plików z <strong>(.*)</strong>, które chcesz ściągnąć").getMatch(0) + ",";
         final String[] hostDomains = new Regex(hosterNames, " ([^,<>\"]*?),").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
-        account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
-        String transferLeft = br.getRegex("Pozostały transfer: <b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
+        String transferLeft = br.getRegex("Pozostały transfer\\s*:\\s*<b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
         long trafficLeftLong = ((transferLeft == null) ? 0 : SizeFormatter.getSize(transferLeft));
-        if (br.containsHTML("Konto ważne do: <b>nieaktywne</b>")) {
+        if (trafficLeftLong <= 0 || br.containsHTML("Konto ważne do\\s*:\\s*<b>nieaktywne</b>")) {
             ai.setExpired(true);
-            ai.setProperty("free", true);
-            ai.setTrafficLeft(trafficLeftLong);
+            account.setType(AccountType.FREE);
+            ai.setTrafficLeft(0);
             ai.setStatus(getPhrase("PREMIUM_EXPIRED"));
             return ai;
         } else {
-            validUntil = br.getRegex("Konto ważne do: <b>(\\d{4}\\-\\d{2}\\-\\d{2})</b>").getMatch(0);
-            if (validUntil == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            ai.setProperty("free", false);
+            validUntil = br.getRegex("Konto ważne do\\s*:\\s*<b>(\\d{4}\\-\\d{2}\\-\\d{2})</b>").getMatch(0);
+            account.setType(AccountType.PREMIUM);
             ai.setUnlimitedTraffic();
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", Locale.ENGLISH));
+            /* Ignore missing expiredate but it should always be there! */
+            if (validUntil != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", Locale.ENGLISH));
+            }
             ai.setProperty("Available traffic", trafficLeftLong);
             ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(trafficLeftLong) + ")");
         }
@@ -141,7 +149,7 @@ public class PobierzBiz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE + "regulamin.html";
+        return "http://" + this.getHost() + "regulamin.html";
     }
 
     @Override
@@ -160,21 +168,6 @@ public class PobierzBiz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("HOST_UNAVAILABLE") + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         boolean resume = true;
         showMessage(link, "Phase 1/4: Login");
         login(account);
@@ -191,22 +184,22 @@ public class PobierzBiz extends PluginForHost {
             String url = Encoding.urlEncode(link.getDownloadURL());
             String postData = "v=usr%2Csprawdzone%7Cusr%2Clinki&c=pob&f=sprawdzLinki&usr=" + userId + "&progress_type=check&linki=" + url;
             showMessage(link, "Phase 2/4: Checking Link");
-            br.postPage(MAINPAGE + "index.php", postData);
+            br.postPage("/index.php", postData);
             sleep(2 * 1000l, link);
             if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (!br.containsHTML("<td class='file_ok' id='linkstatus_1'>OK</td>")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("INVALID_LINK"));
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "invalidlink", 50, 5 * 60 * 1000l);
             }
             postData = "v=usr%2Cpliki%7Cusr%2Clinki&c=pob&f=zapiszRozpoczete&usr=" + userId + "&progress_type=verified&link_ok%5B1%5D=" + url;
-            br.postPage(MAINPAGE + "index.php", postData);
+            br.postPage("/index.php", postData);
             String fileId = "";
             sleep(2 * 1000l, link);
             for (int i = 1; i <= 3; i++) {
                 if (!br.containsHTML(">Gotowy</td>")) {
                     sleep(3 * 1000l, link);
-                    br.getPage(MAINPAGE + "index.php");
+                    br.getPage("/index.php");
                 } else {
                     fileId = br.getRegex("<td class='file_status' id='fstatus_(\\d+)_0'>Gotowy</td>").getMatch(0);
                     if (fileId != null) {
@@ -219,23 +212,11 @@ public class PobierzBiz extends PluginForHost {
             }
             postData = "v=usr%2Cpliki&c=fil&f=usunUsera&perm=wygeneruj+linki&fil%5B" + fileId + "%5D=on";
             showMessage(link, "Phase 3/4: Generating Link");
-            br.postPage(MAINPAGE + "index.php", postData);
+            br.postPage("/index.php", postData);
             sleep(2 * 1000l, link);
             generatedLink = br.getRegex("<h2>Wygenerowane linki bezpośrednie</h2><textarea rows='1' style='width: 650px; height: 40px'>(.*)</textarea>").getMatch(0);
             if (generatedLink == null) {
-                logger.severe("Pobierz.biz (Error): " + generatedLink);
-                if (link.getLinkStatus().getRetryCount() >= 2) {
-                    try {
-                        // disable hoster for 30min
-                        tempUnavailableHoster(account, link, 30 * 60 * 1000l);
-                    } catch (Exception e) {
-                    }
-                    /* reset retrycounter */
-                    link.getLinkStatus().setRetryCount(0);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RETRY") + msg, 20 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknull", 50, 5 * 60 * 1000l);
             }
             link.setProperty("generatedLinkPobierzBiz", generatedLink);
         }
@@ -245,36 +226,18 @@ public class PobierzBiz extends PluginForHost {
         // error
         {
             br.followConnection();
-            // not tested!
-            if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
-                // previously generated link expired,
-                // clear the property and restart the download
-                // and generate new link
-                sleep(10 * 1000l, link, "Previously generated Link expired!");
-                logger.info("Pobierz.biz: previously generated link expired - removing it and restarting download process.");
-                link.setProperty("generatedLinkPobierzBiz", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 50, 5 * 60 * 1000l);
             // not tested! - test if the error occurs
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
                 account.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            if (br.getBaseURL().contains("serviceunavailable")) {
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
-            if (br.getBaseURL().contains("connecterror")) {
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
-            if (br.getBaseURL().contains("notfound")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
         }
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
-            tempUnavailableHoster(account, link, 20 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror2", 50, 5 * 60 * 1000l);
         }
         showMessage(link, "Phase 4/4: Begin download");
         dl.startDownload();
@@ -322,22 +285,6 @@ public class PobierzBiz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     @Override
