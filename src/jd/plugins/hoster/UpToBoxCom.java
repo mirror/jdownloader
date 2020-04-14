@@ -122,12 +122,18 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final int     api_responsecode_password_required_or_wrong      = 17;
     private static final int     api_responsecode_file_offline                    = 28;
 
+    @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         final boolean requires_premium = link.getBooleanProperty(PROPERTY_needs_premium, false);
         if (requires_premium && (account == null || account.getType() != AccountType.PREMIUM)) {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
     }
 
     @Override
@@ -238,8 +244,8 @@ public class UpToBoxCom extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 50) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) {
                         break;
                     }
                     links.add(urls[index]);
@@ -841,9 +847,9 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private void invalidApikey() throws PluginException {
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToken invalide. / Vous pouvez trouver votre token ici : uptobox.com/my_account.\r\nSi vous utilisez JDownloader à distance, entrez le token dans les champs de nom d'utilisateur de de mot de passe.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToken invalide. / Vous pouvez trouver votre token ici : uptobox.com/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid token/apikey!\r\nYou can find your token here: uptobox.com/my_account\r\nIf you are running JDownloader headless, just put your token into the username and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid token/apikey!\r\nYou can find your token here: uptobox.com/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
