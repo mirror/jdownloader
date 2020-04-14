@@ -651,7 +651,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                         logger.info("Successfully converted cookies to apikey");
-                        account.setUser(null);
                         account.setPass(apikey);
                         /* Delete old session from current browser instance (not necessary) */
                         br.clearCookies(br.getHost());
@@ -720,9 +719,9 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         accountStatus += String.format(" [%s points]", points);
-        final String mail = PluginJSonUtils.getJson(br, "email");
-        if (mail != null) {
-            account.setUser(mail);
+        final String user = PluginJSonUtils.getJson(br, "login");
+        if (!StringUtils.isEmpty(user)) {
+            account.setUser(user);
         }
         ai.setStatus(accountStatus);
         ai.setUnlimitedTraffic();
