@@ -525,8 +525,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @return true: Link is password protected <br />
      *         false: Link is not password protected
      */
-    public boolean isPasswordProtectedHTM() {
-        return new Regex(correctedBR, "<br><b>Passwor(d|t):</b> <input").matches();
+    public boolean isPasswordProtectedHTML(Form pwForm) {
+        return new Regex(correctedBR, "<br>\\s*<b>\\s*Passwor(d|t)\\s*:\\s*</b>\\s*(<input|</div)").matches();
     }
 
     /**
@@ -2476,7 +2476,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected void handlePassword(final Form pwform, final DownloadLink link) throws PluginException {
-        if (isPasswordProtectedHTM()) {
+        if (isPasswordProtectedHTML(pwform)) {
+            if (pwform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             logger.info("URL is password protected");
             link.setProperty(PROPERTY_pw_required, true);
             String passCode = link.getDownloadPassword();
