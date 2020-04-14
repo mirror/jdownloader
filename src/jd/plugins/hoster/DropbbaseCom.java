@@ -123,6 +123,7 @@ public class DropbbaseCom extends PluginForHost {
              * TODO: 2019-06-06: Find out what this external site is really used for - this might be be useful for the implementation of
              * other services as well!
              */
+            /* 2020-04-14: This is possibly only a fraut website and does not work at all anymore. RE: psp */
             final String continue_url = br.getRegex("var dataUrl\\s*?=\\s*?\\'(http[^<>\"\\']+)").getMatch(0);
             if (continue_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -33,6 +32,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -345,14 +345,14 @@ public class RapidoxPl extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 this.getAPISafe("https://" + this.getHost() + "/zaloguj_sie");
-                String postData = "login83=" + Encoding.urlEncode(currAcc.getUser()) + "&password83=" + Encoding.urlEncode(currAcc.getPass());
+                Form loginform = null;
                 /*
                  * Captcha is shown on too many failed login attempts. Shoud usually not happen inside JD - especially as it is bound to the
                  * current session (cookies) + User-Agent.This small function should try to prevent login captchas in case one appears.
                  */
                 int captcha_prevention_counter_max = 3;
                 int captcha_prevention_counter = 0;
-                while (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") && captcha_prevention_counter <= captcha_prevention_counter_max) {
+                while (br.containsHTML("class=\"g-recaptcha\"") && captcha_prevention_counter <= captcha_prevention_counter_max) {
                     Thread.sleep(3000l);
                     logger.info("Trying to prevent captcha by changing User-Agent " + captcha_prevention_counter + " / " + captcha_prevention_counter_max);
                     /* we first have to load the plugin, before we can reference it */
@@ -364,23 +364,34 @@ public class RapidoxPl extends PluginForHost {
                     this.getAPISafe("/zaloguj_sie");
                     captcha_prevention_counter++;
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                loginform = br.getFormbyActionRegex(".+/login");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("login83", Encoding.urlEncode(currAcc.getUser()));
+                loginform.put("password83", Encoding.urlEncode(currAcc.getPass()));
+                if (br.containsHTML("class=\"g-recaptcha\"")) {
                     logger.info("Failed to prevent captcha - asking user!");
                     /* Handle stupid login captcha */
-                    final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) {
-                        logger.warning("Expected login captcha is not there!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        loginform.put("redirect", "");
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
                     }
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.setId(rcID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidox.pl", br.getHost(), true);
-                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&redirect=";
                 }
-                this.postAPISafe("/panel/login", postData);
+                br.submitForm(loginform);
+                updatestatuscode();
+                handleAPIErrors(this.br);
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }

@@ -77,17 +77,26 @@ public class DdlTo extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ddl.to" });
+        ret.add(new String[] { "ddl.to", "api.ddl.to" });
         return ret;
     }
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        final String downloadURL = link.getPluginPatternMatcher();
+        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        if (fuid != null) {
+            /* link cleanup, prefer https if possible */
+            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
+                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
+            }
+            link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
+            link.setLinkID(getHost() + "://" + fuid);
+        }
+        /* Keep that legacy setting */
         if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
-            link.setPluginPatternMatcher(downloadURL.replaceFirst("^https://", "http://"));
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^https://", "http://"));
         } else {
-            link.setPluginPatternMatcher(downloadURL.replaceFirst("^http://", "https://"));
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^http://", "https://"));
         }
     }
 
@@ -290,6 +299,33 @@ public class DdlTo extends XFileSharingProBasic {
         }
         /* Now execute template handling */
         super.checkErrors(link, account, checkAll);
+    }
+
+    /* 2020-04-14: Workaround for Cloudflare hcaptcha issues: https://board.jdownloader.org/showthread.php?t=83712 */
+    @Override
+    protected String getMainPage() {
+        final String host = "api.ddl.to";
+        // final String browser_host = this.br != null ? br.getHost() : null;
+        // final String[] hosts = this.siteSupportedNames();
+        // if (browser_host != null) {
+        // host = browser_host;
+        // } else {
+        // /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
+        // host = hosts[0];
+        // }
+        String mainpage;
+        final String protocol;
+        if (this.supports_https()) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
+        }
+        mainpage = protocol;
+        if (requires_WWW()) {
+            mainpage += "www.";
+        }
+        mainpage += host;
+        return mainpage;
     }
 
     private void setConfigElements() {
