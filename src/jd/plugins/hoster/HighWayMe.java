@@ -417,7 +417,7 @@ public class HighWayMe extends UseNet {
         return dllink;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();
@@ -457,7 +457,6 @@ public class HighWayMe extends UseNet {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
-        account.setValid(true);
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, limits and account limits */
         account.setProperty("account_maxchunks", this.correctChunks(account_maxchunks));

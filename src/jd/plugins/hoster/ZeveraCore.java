@@ -697,8 +697,9 @@ abstract public class ZeveraCore extends UseNet {
                 setAuthHeader(br, account);
                 callAPI(br, account, "/api/account/info");
                 if (!isLoggedIn(br)) {
-                    /* Double-check */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    account.setProperty("successfully_loggedin_once", true);
                 }
             } finally {
                 /*
@@ -711,7 +712,10 @@ abstract public class ZeveraCore extends UseNet {
         } else {
             callAPI(br, account, "/api/account/info");
             if (!isLoggedIn(br)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* E.g. {"status":"error","message":"customer_id and pin parameter missing or not logged in "} */
+                loginInvalid(account);
+            } else {
+                account.setProperty("successfully_loggedin_once", true);
             }
         }
         final String customer_id = PluginJSonUtils.getJson(br, "customer_id");
@@ -719,6 +723,16 @@ abstract public class ZeveraCore extends UseNet {
             /* don't store the complete customer id as a security purpose */
             final String shortcustomer_id = customer_id.substring(0, customer_id.length() / 2) + "****";
             account.setUser(shortcustomer_id);
+        }
+    }
+
+    /* 2020-04-1: Temp. workaround for possible API issue */
+    private void loginInvalid(final Account account) throws PluginException {
+        final boolean successfully_loggedin_once = account.getBooleanProperty("successfully_loggedin_once", false);
+        if (successfully_loggedin_once) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Maybe API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
