@@ -982,8 +982,20 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         // I doubt that old recaptchav1 is still in use
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        // shouldn't happen???
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        final String errorCode = ifr.getRegex("<h\\d+>\\s*Error\\s*code\\s*(\\d+)\\s*</h\\d+>").getMatch(0);
+                        if (errorCode != null) {
+                            final int error = Integer.parseInt(errorCode);
+                            switch (error) {
+                            case 16:
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "This request was blocked by the security rules");
+                            default:
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "ErrorCode:" + error);
+                            }
+                        } else if (ifr.containsHTML("<p>\\s*This request was blocked by the security rules\\s*</p>")) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "This request was blocked by the security rules");
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
