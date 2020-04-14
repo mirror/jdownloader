@@ -75,7 +75,8 @@ public class DownloadGg extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    /* 2020-04-14: Trying to download more will get users' IPs banned: https://board.jdownloader.org/showthread.php?t=83734 */
+    private static final int     FREE_MAXDOWNLOADS = 1;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
