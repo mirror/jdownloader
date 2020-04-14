@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -30,9 +29,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //IMPORTANT: The name of the plugin is CORRECT!
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2host.com" }, urls = { "https?://(www\\.)?f2h(\\.nana\\d+)?\\.co\\.il/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2host.com" }, urls = { "https?://(?:www\\.)?(f2h(\\.nana\\d+)?\\.co\\.il|f2h\\.io)/\\d+" })
 public class File2HostCom extends PluginForHost {
-
     public File2HostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -66,12 +64,13 @@ public class File2HostCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("itemprop=\"contentSize\" content=\"([^<>\"]+)\"").getMatch(0);
         }
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            /* Server sometimes sends encoded crap - use html-filename as final filename! */
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         }
-        /* Server sometimes sends encoded crap - use html-filename as final filename! */
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -111,5 +110,4 @@ public class File2HostCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

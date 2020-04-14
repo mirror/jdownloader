@@ -27,21 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -70,6 +55,21 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/(?:.*?documentId=\\d+[^/]*?|.*?player/[a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html",
         "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -82,7 +82,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private final HashMap<String, DownloadLink> foundQualitiesMap_http_urls_via_HLS_master = new HashMap<String, DownloadLink>();
     ArrayList<DownloadLink>                     decryptedLinks                             = new ArrayList<DownloadLink>();
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private final List<String>                  all_known_qualities                        = Arrays.asList("http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
+    private final List<String>                  all_known_qualities                        = Arrays.asList("http_6666000_1080", "hls_6666000_1080", "http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
     private final Map<String, Long>             heigth_to_bitrate                          = new HashMap<String, Long>();
     {
         heigth_to_bitrate.put("180", 189000l);
@@ -93,16 +93,17 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("540", 1989000l);
         heigth_to_bitrate.put("576", 1728000l);
         heigth_to_bitrate.put("720", 3773000l);
+        heigth_to_bitrate.put("1080", 6666000l);
     }
-    private String                              subtitleLink                               = null;
-    private String                              parameter                                  = null;
-    private String                              title                                      = null;
-    private String                              show                                       = null;
-    private String                              provider                                   = null;
-    private long                                date_timestamp                             = -1;
-    private boolean                             grabHLS                                    = false;
-    private String                              contentID                                  = null;
-    private ArdConfigInterface                  cfg                                        = null;
+    private String             subtitleLink   = null;
+    private String             parameter      = null;
+    private String             title          = null;
+    private String             show           = null;
+    private String             provider       = null;
+    private long               date_timestamp = -1;
+    private boolean            grabHLS        = false;
+    private String             contentID      = null;
+    private ArdConfigInterface cfg            = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -178,6 +179,7 @@ public class Ardmediathek extends PluginForDecrypt {
         final boolean addHLS540 = cfg.isGrabHLS540pVideoEnabled();
         final boolean addHLS576 = cfg.isGrabHLS576pVideoEnabled();
         final boolean addHLS720 = cfg.isGrabHLS720pVideoEnabled();
+        final boolean addHLS1080 = cfg.isGrabHTTP1080pVideoEnabled();
         grabHLS = addHLS180 || addHLS270lower || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS576 || addHLS720;
         if (addHLS180) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("180") + "_180");
@@ -226,6 +228,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (cfg.isGrabHTTP720pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("720") + "_720");
+        }
+        if (cfg.isGrabHTTP1080pVideoEnabled()) {
+            selectedQualities.add("http_" + heigth_to_bitrate.get("1080") + "_1080");
         }
         if (addAudio) {
             selectedQualities.add("http_0_0");
@@ -1345,6 +1350,9 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (bandwidth > 2800000 && bandwidth <= 4500000) {
             /* 720 */
             bandwidthselect = 3773000;
+        } else if (bandwidth > 4500000 && bandwidth <= 10000000) {
+            /* 1080 */
+            bandwidthselect = 6666000;
         } else {
             /* Probably unknown quality */
             bandwidthselect = bandwidth;

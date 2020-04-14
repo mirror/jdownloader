@@ -220,6 +220,7 @@ public class PixivNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    /* 2020-04-14: TODO: Add cookie login captcha refresh handling: jdlog://6656815302851/ */
                     br.setCookies(account.getHoster(), cookies);
                     if (!check) {
                         return;
@@ -242,7 +243,7 @@ public class PixivNet extends PluginForHost {
                 // if (postkey == null) {
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 // }
-                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("Accept", "application/json");
                 final String recaptchaResponse;
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
@@ -268,6 +269,7 @@ public class PixivNet extends PluginForHost {
                 loginform.put("pixiv_id", account.getUser());
                 loginform.put("password", account.getPass());
                 loginform.put("recaptcha_v3_token", recaptchaResponse);
+                loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
                 br.submitForm(loginform);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
                 if (!isLoggedIN(br) || "true".equals(error)) {

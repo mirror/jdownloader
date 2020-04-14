@@ -52,7 +52,6 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         return domains;
     }
 
-    /* 2019-07-23: Check url-structure and folder-structure of firedrop.com */
     public static String[] getAnnotationUrls() {
         /*
          * 2019-06-12: Special: The owner of this host mograded from another script to XFS which is why we accept other URLs than only
@@ -132,10 +131,6 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             urls = new Regex(tableHTML, "<tr>.*?</tr>").getColumn(-1);
         } else {
             urls = br.getRegex("href=\"(https?://[^<>/]+/[A-Za-z0-9]+(?:/[^<>/]+)?)\" target=\"_blank\"").getColumn(0);
-            // if (urls == null || urls.length == 0) {
-            // /* 2019-07-28: Wider RegEx e.g. for firedrop.com */
-            // urls = br.getRegex("href=\"(https?://[^/]+/[A-Za-z0-9]+[^\"]*?)\"").getColumn(0);
-            // }
         }
         if (urls == null || urls.length == 0) {
             logger.warning("Failed to find any content");

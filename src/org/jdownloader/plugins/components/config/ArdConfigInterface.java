@@ -137,6 +137,12 @@ public interface ArdConfigInterface extends PluginConfigInterface {
 
     void setGrabHLS720pVideoEnabled(boolean b);
 
+    @DefaultBooleanValue(false)
+    @Order(81)
+    boolean isGrabHLS1080pVideoEnabled();
+
+    void setGrabHLS1080pVideoEnabled(boolean b);
+
     @DefaultBooleanValue(true)
     @Order(90)
     boolean isGrabHTTP180pVideoEnabled();
@@ -190,4 +196,10 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     boolean isGrabHTTP720pVideoEnabled();
 
     void setGrabHTTP720pVideoEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @Order(151)
+    boolean isGrabHTTP1080pVideoEnabled();
+
+    void setGrabHTTP1080pVideoEnabled(boolean b);
 }
