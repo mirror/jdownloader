@@ -119,7 +119,7 @@ public class DatPiffCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink link) throws Exception, PluginException {
         // Untested
         // final String timeToRelease =
         // br.getRegex("\\'dateTarget\\': (\\d+),").getMatch(0);
@@ -127,12 +127,12 @@ public class DatPiffCom extends PluginForHost {
         // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
         // "Not yet released", Long.parseLong(timeToRelease) -
         // System.currentTimeMillis());
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             if (br.containsHTML(CURRENTLYUNAVAILABLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
             }
-            if (!downloadLink.getDownloadURL().contains(".php?id=")) {
+            if (!link.getDownloadURL().contains(".php?id=")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable");
             }
             String downloadButton = br.getRegex("(?-s)iframe src=\"(https?://.*?embed/.*?/\\?downloadbutton=\\d+)").getMatch(0);
@@ -162,7 +162,7 @@ public class DatPiffCom extends PluginForHost {
                 for (int i = 1; i <= 3; i++) {
                     String id = br.getRegex("name=\"id\" value=\"([^<>\"]*?)\"").getMatch(0);
                     if (id == null) {
-                        id = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
+                        id = new Regex(link.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
                     }
                     if (id == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -180,7 +180,7 @@ public class DatPiffCom extends PluginForHost {
                             }
                             throw e;
                         }
-                        final String code = getCaptchaCode("solvemedia", cf, downloadLink);
+                        final String code = getCaptchaCode("solvemedia", cf, link);
                         final String chid = sm.getChallenge(code);
                         postData += "&cmd=downloadsolve&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid);
                     }
@@ -203,15 +203,15 @@ public class DatPiffCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Server doesn't send the correct filename directly, filename fix also
         // doesn't work so we have to do it this way
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        downloadLink.setProperty("directlink", dllink);
+        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
@@ -326,7 +326,7 @@ public class DatPiffCom extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        /* Only login captcha sometimes */
-        return false;
+        /* Captchas may happen in all modes */
+        return true;
     }
 }
