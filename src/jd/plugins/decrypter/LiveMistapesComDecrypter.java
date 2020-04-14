@@ -17,12 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,8 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(\\w+\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" })
 public class LiveMistapesComDecrypter extends PluginForDecrypt {
@@ -68,16 +69,16 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         } else {
             getUserLogin();
             br.setFollowRedirects(true);
-            try {
-                br.getPage(parameter);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
-                    logger.info("Failed to decrypt link because of server error 503: " + parameter);
-                    return decryptedLinks;
-                }
-                logger.warning("Decrypter broken for link: " + parameter);
+            br.getPage(parameter);
+        }
+        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+            final Form captchaform = br.getForm(0);
+            if (captchaform == null) {
+                logger.warning("Failed to find captchaform");
                 return null;
             }
+            captchaform.put("g-recaptcha-response", Encoding.urlEncode(new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken()));
+            br.submitForm(captchaform);
         }
         if (br.getURL().contains("error/login.html")) {
             logger.info("Login needed to decrypt link: " + parameter);
