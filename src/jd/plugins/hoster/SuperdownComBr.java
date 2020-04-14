@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -222,10 +221,7 @@ public class SuperdownComBr extends antiDDoSForHost {
         }
         if (br.containsHTML("não é um servidor suportado pelo")) {
             // host has been picked up due to generic supported host adding (matches)
-            final ArrayList supportedHosts = (ArrayList) Arrays.asList(account.getProperty("multiHostSupport", new String[] {}));
-            supportedHosts.remove(link.getHost());
-            account.getAccountInfo().setMultiHostSupport(this, supportedHosts);
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not supported at this provider", 6 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporarily unavailable", 5 * 60 * 1000l);
         }
         if (br.containsHTML("Seu gerador premium está zerado, por favor, compre um de nossos planos")) {
             // Your premium generator is zeroed, please purchase one of our plans

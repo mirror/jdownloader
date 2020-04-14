@@ -27,6 +27,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -580,7 +581,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 mhm.putError(account, link, 10 * 60 * 1000l, "This filehost is only available in premium mode");
             } else if (br.containsHTML(">\\s*You can only generate this link during Happy Hours")) {
                 /* 2019-08-15: Can happen in free account mode - no idea when this "Happy Hour" is. Tested with uptobox.com URLs. */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can only generate this link during Happy Hours", 5 * 60 * 1000l);
+                throw new AccountUnavailableException("You can only generate this link during Happy Hours", 5 * 60 * 1000l);
             } else if (website_errormessage != null) {
                 /* Unknown failure but let's display errormessage from website to user. */
                 // mhm.handleErrorGeneric(account, link, website_errormessage, 50, 2 * 60 * 1000l);

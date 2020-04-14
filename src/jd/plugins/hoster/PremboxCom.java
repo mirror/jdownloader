@@ -38,6 +38,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -557,7 +558,7 @@ public class PremboxCom extends PluginForHost {
                     tempUnavailableHoster(5 * 60 * 1000l);
                 }
             case 5:
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent downloads with this account", 1 * 60 * 1000l);
+                throw new AccountUnavailableException("Too many concurrent downloads with this account", 1 * 60 * 1000l);
             case 6:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account at the moment", 3 * 60 * 1000l);
             case 7:

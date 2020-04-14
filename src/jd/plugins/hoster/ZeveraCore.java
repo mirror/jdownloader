@@ -927,7 +927,6 @@ abstract public class ZeveraCore extends UseNet {
                         message += " AND via Settings->Plugins->Premiumize.me";
                     }
                     mhm.putError(account, link, 5 * 60 * 1000l, message);
-                    // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
                 } else {
                     /* Premium account - probably no traffic left */
                     message = "Traffic empty or fair use limit reached?";
