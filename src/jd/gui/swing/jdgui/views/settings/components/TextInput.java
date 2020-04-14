@@ -15,11 +15,10 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     /**
      *
      */
-    private static final long                 serialVersionUID = 1L;
-    private StateUpdateEventSender<TextInput> eventSender;
-    private AtomicBoolean                     settings         = new AtomicBoolean(false);
-    private StringKeyHandler                  keyhandler;
-
+    private static final long                         serialVersionUID = 1L;
+    protected final StateUpdateEventSender<TextInput> eventSender;
+    protected final AtomicBoolean                     settings         = new AtomicBoolean(false);
+    protected final StringKeyHandler                  keyHandler;
     {
         eventSender = new StateUpdateEventSender<TextInput>();
         this.getDocument().addDocumentListener(new DocumentListener() {
@@ -43,11 +42,6 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
         });
     }
 
-    public TextInput(String nick) {
-        super();
-        setText(nick);
-    }
-
     @Override
     public void setText(String t) {
         if (!settings.compareAndSet(false, true)) {
@@ -61,7 +55,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     }
 
     public TextInput() {
-        super();
+        this(null);
     }
 
     @Override
@@ -71,9 +65,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
             return;
         }
         try {
-            if (keyhandler != null) {
-                keyhandler.setValue(getText());
-            }
+            setKeyHandlerValue(getText());
         } finally {
             settings.set(false);
         }
@@ -81,13 +73,31 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
 
     public TextInput(StringKeyHandler keyhandler) {
         super();
-        this.keyhandler = keyhandler;
-        setText(keyhandler.getValue());
-        keyhandler.getEventSender().addListener(this, true);
+        this.keyHandler = keyhandler;
+        if (keyhandler != null) {
+            setText(keyhandler.getValue());
+            keyhandler.getEventSender().addListener(this, true);
+        }
+    }
+
+    protected void setKeyHandlerValue(String text) {
+        final StringKeyHandler keyHandler = getKeyhandler();
+        if (keyHandler != null) {
+            keyHandler.setValue(getText());
+        }
+    }
+
+    protected String getKeyHandlerValue() {
+        final StringKeyHandler keyHandler = getKeyhandler();
+        if (keyHandler == null) {
+            return null;
+        } else {
+            return keyHandler.getValue();
+        }
     }
 
     public StringKeyHandler getKeyhandler() {
-        return keyhandler;
+        return keyHandler;
     }
 
     public String getConstraints() {
@@ -109,7 +119,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     @Override
     public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
         if (!settings.get()) {
-            setText(keyhandler.getValue());
+            setText(getKeyHandlerValue());
         }
     }
 }

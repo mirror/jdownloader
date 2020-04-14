@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -31,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -164,9 +164,9 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPasswordProtectedHTM() {
+    public boolean isPasswordProtectedHTML(final Form pwForm) {
         /* 2020-02-17: Special */
-        boolean pwprotected = super.isPasswordProtectedHTM();
+        boolean pwprotected = super.isPasswordProtectedHTML(pwForm);
         if (!pwprotected) {
             pwprotected = new Regex(correctedBR, "><b>Password</b>").matches();
         }

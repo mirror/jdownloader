@@ -103,7 +103,12 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
             }
         });
         deviceName = new TextInput(CFG_MYJD.DEVICE_NAME);
-        email = new TextInput(CFG_MYJD.EMAIL);
+        email = new TextInput(CFG_MYJD.EMAIL) {
+            @Override
+            protected void setKeyHandlerValue(String text) {
+                super.setKeyHandlerValue(text != null ? text.trim() : null);
+            }
+        };
         passWord = new PasswordInput(CFG_MYJD.PASSWORD);
         GenericConfigEventListener<String> loginsChangeListener = new GenericConfigEventListener<String>() {
             @Override

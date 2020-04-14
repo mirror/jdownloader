@@ -742,6 +742,9 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         if (acquireLock(lockObject)) {
                             // 503 response code with javascript math section && with 5 second pause
                             final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                            if (line1 == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                             String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
                             if (line2 == null) {
                                 // new 14.03.2019
