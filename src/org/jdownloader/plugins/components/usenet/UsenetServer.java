@@ -44,15 +44,14 @@ public class UsenetServer implements Storable {
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
-        }
-        if (obj == this) {
+        } else if (obj == this) {
             return true;
-        }
-        if (obj instanceof UsenetServer) {
+        } else if (obj instanceof UsenetServer) {
             final UsenetServer other = (UsenetServer) obj;
             return isSSL() == other.isSSL() && getPort() == other.getPort() && StringUtils.equalsIgnoreCase(getHost(), other.getHost());
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
