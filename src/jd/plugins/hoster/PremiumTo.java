@@ -650,10 +650,10 @@ public class PremiumTo extends UseNet {
             responsecode = Integer.parseInt(responsecodeStr);
         }
         String errormessage = PluginJSonUtils.getJson(br, "message");
-        if (this.getDownloadLink() != null) {
-            responsecode = 405;
-            errormessage = "Test";
-        }
+        // if (this.getDownloadLink() != null) {
+        // responsecode = 405;
+        // errormessage = "Test";
+        // }
         switch (responsecode) {
         case 0:
             /* No error */
