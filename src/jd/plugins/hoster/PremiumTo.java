@@ -209,27 +209,13 @@ public class PremiumTo extends UseNet {
                     /* Trust existing data without check */
                     return false;
                 }
-                boolean username_and_pw_is_userid_and_apikey = false;
-                try {
-                    username_and_pw_is_userid_and_apikey = account.getUser().equals(userid) && account.getPass().equals(apikey);
-                } catch (final Throwable e) {
-                }
                 br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
                 this.handleErrorsAPI(account, false);
-                /* 2020-02-13: Save new API logindata - remove property handling in a few weeks! */
-                account.setUser(userid);
-                account.setPass(apikey);
-                account.setProperty("new_credentials_active", true);
-                /* Save API logindata */
-                account.setProperty(PROPERTY_APIKEY, apikey);
-                account.setProperty(PROPERTY_USERID, userid);
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     /* 2019-10-23: There are no cookies given via API anymore */
                     // account.clearCookies("");
-                    account.removeProperty(PROPERTY_APIKEY);
-                    account.removeProperty(PROPERTY_USERID);
                 }
                 throw e;
             }
@@ -389,25 +375,12 @@ public class PremiumTo extends UseNet {
         return ac;
     }
 
-    private final String PROPERTY_APIKEY = "apikey";
-    private final String PROPERTY_USERID = "userid";
-
     private String getUserID(final Account account) {
-        final String userid_via_property = account.getStringProperty(PROPERTY_USERID, null);
-        if (account.getBooleanProperty("new_credentials_active", false) || userid_via_property == null) {
-            return account.getUser();
-        } else {
-            return userid_via_property;
-        }
+        return account.getUser();
     }
 
     private String getAPIKey(final Account account) {
-        final String apikey_property = account.getStringProperty(PROPERTY_APIKEY, null);
-        if (account.getBooleanProperty("new_credentials_active", false) || apikey_property == null) {
-            return account.getPass();
-        } else {
-            return apikey_property;
-        }
+        return account.getPass();
     }
 
     @Override
@@ -631,10 +604,6 @@ public class PremiumTo extends UseNet {
         if (StringUtils.isEmpty(errormessage)) {
             errormessage = "Unknown error";
         }
-        // if (this.getDownloadLink() != null) {
-        // responsecode = 405;
-        // errormessage = "Test";
-        // }
         switch (responsecode) {
         case 0:
             /* No error */
@@ -674,7 +643,7 @@ public class PremiumTo extends UseNet {
         if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
             /* Now handle special Storage errors / statuscodes */
             if ("Invalid API Key".equalsIgnoreCase(br.toString())) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid Storage apikey", 5 * 60 * 1000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid Storage apikey", 3 * 60 * 1000);
             }
             final String status = getStorageAPIStatus();
             if (StringUtils.isEmpty(status)) {
@@ -682,7 +651,7 @@ public class PremiumTo extends UseNet {
                 return;
             }
             if (status.equalsIgnoreCase("In queue")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download pending", 5 * 60 * 1000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download pending", 3 * 60 * 1000);
             }
         }
     }
