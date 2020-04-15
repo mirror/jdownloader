@@ -1,7 +1,5 @@
 package org.jdownloader.api;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FilterInputStream;
@@ -10,19 +8,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.Socket;
-import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -31,14 +26,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.security.auth.x500.X500Principal;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
@@ -49,23 +44,41 @@ import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HeadRequest;
 import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.tls.Certificate;
-import org.bouncycastle.crypto.tls.DefaultTlsServer;
-import org.bouncycastle.crypto.tls.DefaultTlsSignerCredentials;
-import org.bouncycastle.crypto.tls.ExtensionType;
-import org.bouncycastle.crypto.tls.HashAlgorithm;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.SignatureAlgorithm;
-import org.bouncycastle.crypto.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.crypto.tls.TlsServerProtocol;
-import org.bouncycastle.crypto.tls.TlsSignerCredentials;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.IDNUtil;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.DefaultTlsServer;
+import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.NameType;
+import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsCredentialedDecryptor;
+import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsServerProtocol;
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedDecryptor;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.util.Strings;
 import org.jdownloader.logging.LogController;
 
 public class DeprecatedAPIServer extends HttpServer {
@@ -80,50 +93,46 @@ public class DeprecatedAPIServer extends HttpServer {
             return asymKeyParam;
         }
 
-        protected final Certificate getCert() {
-            return cert;
-        }
-
         protected final String[] getSubjects() {
             return subjects;
         }
 
         private final AsymmetricKeyParameter asymKeyParam;
-        private final byte[]                 x509;
-        private final Certificate            cert;
+        private final List<byte[]>           x509 = new ArrayList<byte[]>();
         private final String[]               subjects;
 
         protected APICert() {
             this.asymKeyParam = null;
-            this.cert = null;
             this.subjects = null;
-            this.x509 = null;
             this.keyPair = null;
+        }
+
+        protected final List<byte[]> getX509() {
+            return x509;
         }
 
         protected APICert(final KeyPair keyPair, final X509Certificate x509, final String[] subjects) throws CertificateEncodingException, IOException {
             this.keyPair = keyPair;
             this.asymKeyParam = PrivateKeyFactory.createKey(keyPair.getPrivate().getEncoded());
-            this.x509 = x509.getEncoded();
-            this.cert = new Certificate(new org.bouncycastle.asn1.x509.Certificate[] { org.bouncycastle.asn1.x509.Certificate.getInstance(this.x509) });
+            this.x509.add(x509.getEncoded());
             this.subjects = subjects.clone();
         }
 
         protected CertStorable toCertStorable() throws CertificateEncodingException, IOException {
-            if (keyPair != null) {
+            if (keyPair != null && x509.size() == 1) {
                 final CertStorable ret = new CertStorable();
-                ret.setCert(HexFormatter.byteArrayToHex(x509));
+                ret.setCert(HexFormatter.byteArrayToHex(x509.get(0)));
                 ret.setPrivateKey(HexFormatter.byteArrayToHex(keyPair.getPrivate().getEncoded()));
                 ret.setPublicKey(HexFormatter.byteArrayToHex(keyPair.getPublic().getEncoded()));
                 ret.setSubjects(subjects);
                 return ret;
+            } else {
+                return null;
             }
-            return null;
         }
 
-        protected APICert(final CertStorable certStorable) throws CertificateEncodingException, IOException, InvalidKeySpecException, NoSuchAlgorithmException {
-            this.x509 = HexFormatter.hexToByteArray(certStorable.getCert());
-            this.cert = new Certificate(new org.bouncycastle.asn1.x509.Certificate[] { org.bouncycastle.asn1.x509.Certificate.getInstance(x509) });
+        protected APICert(final CertStorable certStorable) throws Exception {
+            this.x509.add(HexFormatter.hexToByteArray(certStorable.getCert()));
             final PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(HexFormatter.hexToByteArray(certStorable.getPublicKey())));
             final PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(HexFormatter.hexToByteArray(certStorable.getPrivateKey())));
             this.keyPair = new KeyPair(publicKey, privateKey);
@@ -195,16 +204,16 @@ public class DeprecatedAPIServer extends HttpServer {
     private static final File                     APICERTSFILE       = Application.getTempResource("myjd.certs");
     private static final AtomicBoolean            APICERTSFILELOADED = new AtomicBoolean(false);
 
-    protected static final APICert getAPICert(final String serverName) throws NoSuchAlgorithmException, CertificateEncodingException, InvalidKeyException, IllegalStateException, SignatureException, IOException {
-        final String name;
+    protected static final APICert getAPICert(final String serverName) throws Exception {
+        final String cn;
         if (serverName != null) {
             if (serverName.matches("(?i)^\\d+-\\d+-\\d+-\\d+.mydns.jdownloader.org$") || serverName.matches("(?i)^[a-fA-F0-9]{8}.mydns.jdownloader.org$") || serverName.matches("(?i)^[a-fA-F0-9]{32}.mydns.jdownloader.org$")) {
-                name = "*.mydns.jdownloader.org";
+                cn = "*.mydns.jdownloader.org";
             } else {
-                name = serverName;
+                cn = serverName;
             }
         } else {
-            name = "localhost";
+            cn = "localhost";
         }
         synchronized (APICERTS) {
             if (APICERTSFILELOADED.compareAndSet(false, true)) {
@@ -235,33 +244,26 @@ public class DeprecatedAPIServer extends HttpServer {
                     }
                 }
             }
-            APICert apiCert = APICERTS.get(name);
+            APICert apiCert = APICERTS.get(cn);
             if (apiCert == null) {
-                final long currentTimeMillis = System.currentTimeMillis();
                 final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-                keyPairGenerator.initialize(2048, new SecureRandom());
+                keyPairGenerator.initialize(2048);
                 final KeyPair keyPair = keyPairGenerator.genKeyPair();
-                final X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
-                certGen.setSerialNumber(BigInteger.valueOf(currentTimeMillis));
-                final X500Principal dnName = new X500Principal("CN=Self signed certificate for local JDownloader@" + System.getProperty("user.name", "User"));
-                certGen.setIssuerDN(dnName);
-                certGen.setSubjectDN(dnName); // note: same as issuer
-                certGen.setNotBefore(new Date(currentTimeMillis - (2 * 24 * 60 * 60 * 1000l)));
-                certGen.setNotAfter(new Date(currentTimeMillis + (50 * 365 * 24 * 60 * 60 * 1000l)));
-                certGen.setPublicKey(keyPair.getPublic());
-                certGen.setSignatureAlgorithm("SHA1withRSA");
-                final ASN1EncodableVector alternativeNames = new ASN1EncodableVector();
-                final String[] subjects;
-                if (name.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
-                    alternativeNames.add(new GeneralName(GeneralName.iPAddress, name));
-                    subjects = new String[] { name };
-                } else {
-                    alternativeNames.add(new GeneralName(GeneralName.dNSName, name));
-                    subjects = new String[] { name };
+                final X509Certificate cert = createSelfSignedCertificate(keyPair, cn);
+                final X509CertificateHolder holder = new X509CertificateHolder(cert.getEncoded());
+                final GeneralNames subjectAltNames = GeneralNames.fromExtensions(holder.getExtensions(), Extension.subjectAlternativeName);
+                final List<String> subjects = new ArrayList<String>();
+                for (final GeneralName subjectAltName : subjectAltNames.getNames()) {
+                    switch (subjectAltName.getTagNo()) {
+                    case GeneralName.dNSName:
+                        subjects.add(subjectAltName.getName().toString());
+                        break;
+                    case GeneralName.iPAddress:
+                        subjects.add(InetAddress.getByAddress(DEROctetString.getInstance(subjectAltName.getName()).getOctets()).getHostAddress());
+                        break;
+                    }
                 }
-                certGen.addExtension(X509Extensions.SubjectAlternativeName, false, new DERSequence(alternativeNames));
-                final X509Certificate cert = certGen.generate(keyPair.getPrivate());
-                apiCert = new APICert(keyPair, cert, subjects);
+                apiCert = new APICert(keyPair, cert, subjects.toArray(new String[0]));
                 for (final String subject : subjects) {
                     if (!APICERTS.containsKey(subject)) {
                         APICERTS.put(subject, apiCert);
@@ -285,6 +287,35 @@ public class DeprecatedAPIServer extends HttpServer {
             }
             return apiCert;
         }
+    }
+
+    protected static X509Certificate createSelfSignedCertificate(final KeyPair keyPair, final String cn) throws Exception {
+        final long now = System.currentTimeMillis();
+        final Date notBefore = new Date(now - (24 * 60 * 60 * 1000l));
+        final Date notAfter = new Date(now + (50 * 365 * 24 * 60 * 60 * 1000l));
+        final ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSA").build(keyPair.getPrivate());
+        final X500Name x500Name = new X500Name("CN=Self signed certificate for local JDownloader@" + System.getProperty("user.name", "User"));
+        final JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+        final X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(x500Name, BigInteger.valueOf(now), notBefore, notAfter, x500Name, keyPair.getPublic());
+        certificateBuilder.addExtension(Extension.subjectKeyIdentifier, false, extUtils.createSubjectKeyIdentifier(keyPair.getPublic()));
+        certificateBuilder.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(keyPair.getPublic()));
+        certificateBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        certificateBuilder.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.nonRepudiation | KeyUsage.keyEncipherment));
+        final List<GeneralName> alternativeNames = new ArrayList<GeneralName>();
+        if (StringUtils.equalsIgnoreCase("localhost", cn)) {
+            alternativeNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
+            alternativeNames.add(new GeneralName(GeneralName.dNSName, cn));
+        } else if (cn.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+            alternativeNames.add(new GeneralName(GeneralName.iPAddress, cn));
+            alternativeNames.add(new GeneralName(GeneralName.dNSName, "localhost"));
+        } else {
+            alternativeNames.add(new GeneralName(GeneralName.dNSName, cn));
+            alternativeNames.add(new GeneralName(GeneralName.iPAddress, "127.0.0.1"));
+            alternativeNames.add(new GeneralName(GeneralName.dNSName, "localhost"));
+        }
+        final GeneralNames subjectAltNames = new GeneralNames(alternativeNames.toArray(new GeneralName[0]));
+        certificateBuilder.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
+        return new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider()).getCertificate(certificateBuilder.build(contentSigner));
     }
 
     public static interface AutoSSLHttpConnectionFactory {
@@ -320,7 +351,7 @@ public class DeprecatedAPIServer extends HttpServer {
                 httpOS = clientSocket.getOutputStream();
             } else {
                 // https
-                final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream(), new SecureRandom()) {
+                final TlsServerProtocol tlsServerProtocol = new TlsServerProtocol(clientSocketIS, clientSocket.getOutputStream()) {
                     InputStream modifiedTlsInputStream = null;
 
                     @Override
@@ -351,7 +382,7 @@ public class DeprecatedAPIServer extends HttpServer {
                         return modifiedTlsInputStream;
                     }
                 };
-                tlsServerProtocol.accept(new DefaultTlsServer() {
+                tlsServerProtocol.accept(new DefaultTlsServer(new BcTlsCrypto(new SecureRandom())) {
                     private Certificate            cert     = null;
                     private AsymmetricKeyParameter keyParam = null;
 
@@ -361,24 +392,21 @@ public class DeprecatedAPIServer extends HttpServer {
 
                     // rfc3546
                     protected String getServerName(Hashtable arg0) throws IOException {
-                        final Object serverNameBytes = arg0.get(ExtensionType.server_name);
-                        if (serverNameBytes != null && serverNameBytes instanceof byte[]) {
-                            final DataInputStream is = new DataInputStream(new ByteArrayInputStream((byte[]) serverNameBytes));
-                            final int snl = is.readShort();
-                            if (snl > 0) {
-                                final byte type = is.readByte(); // name type
-                                if (type == 0) {
-                                    // hostname
-                                    final int length = is.readShort(); // name size
-                                    if (length > 0) {
-                                        final byte[] nameBytes = new byte[length];
-                                        is.readFully(nameBytes, 0, length); // name bytes, UTF-8
-                                        return new String(nameBytes, "UTF-8");
-                                    }
+                        final Vector<ServerName> serverNames = TlsExtensionsUtils.getServerNameExtensionClient(arg0);
+                        if (serverNames != null) {
+                            for (final ServerName serverName : serverNames) {
+                                if (serverName.getNameType() == NameType.host_name) {
+                                    final String name = IDNUtil.toASCII(Strings.fromUTF8ByteArray(serverName.getNameData()), IDNUtil.USE_STD3_ASCII_RULES);
+                                    return name;
                                 }
                             }
                         }
                         return null;
+                    }
+
+                    @Override
+                    protected boolean allowEncryptThenMAC() {
+                        return false;
                     }
 
                     @Override
@@ -389,24 +417,29 @@ public class DeprecatedAPIServer extends HttpServer {
                         }
                         super.processClientExtensions(arg0);
                         try {
-                            APICert apiCert = getAPICert(serverName);
-                            cert = apiCert.getCert();
+                            final APICert apiCert = getAPICert(serverName);
+                            final List<TlsCertificate> certificates = new ArrayList<TlsCertificate>();
+                            for (final byte[] certificiate : apiCert.getX509()) {
+                                certificates.add(context.getCrypto().createCertificate(certificiate));
+                            }
+                            cert = new Certificate(certificates.toArray(new TlsCertificate[0]));
                             keyParam = apiCert.getAsymKeyParam();
-                        } catch (Throwable e) {
+                        } catch (Exception e) {
                             LogController.CL(DeprecatedAPIServer.class).log(e);
                             throw new IOException(e);
                         }
                     }
 
-                    protected TlsSignerCredentials getRSASignerCredentials() throws IOException {
-                        final SignatureAndHashAlgorithm signatureAndHashAlgorithm = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
-                        // SignatureAndHashAlgorithm needed for TLS1.2
-                        return new DefaultTlsSignerCredentials(context, cert, keyParam, signatureAndHashAlgorithm);
+                    @Override
+                    protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException {
+                        return new BcDefaultTlsCredentialedDecryptor((BcTlsCrypto) getCrypto(), cert, keyParam);
                     }
 
-                    protected org.bouncycastle.crypto.tls.ProtocolVersion getMaximumVersion() {
-                        // signal TLS1.2 support
-                        return ProtocolVersion.TLSv12;
+                    @Override
+                    protected TlsCredentialedSigner getRSASignerCredentials() throws IOException {
+                        final SignatureAndHashAlgorithm signatureAndHashAlgorithm = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+                        // SignatureAndHashAlgorithm needed for TLS1.2
+                        return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), (BcTlsCrypto) getCrypto(), keyParam, cert, signatureAndHashAlgorithm);
                     };
                 });
                 httpIS = tlsServerProtocol.getInputStream();

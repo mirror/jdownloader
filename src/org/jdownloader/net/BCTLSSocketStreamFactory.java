@@ -9,13 +9,13 @@
  */
 package org.jdownloader.net;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
+import java.security.Provider;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -23,27 +23,36 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Vector;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
-import org.bouncycastle.crypto.tls.CertificateRequest;
-import org.bouncycastle.crypto.tls.CipherSuite;
-import org.bouncycastle.crypto.tls.DefaultTlsClient;
-import org.bouncycastle.crypto.tls.ExtensionType;
-import org.bouncycastle.crypto.tls.ProtocolVersion;
-import org.bouncycastle.crypto.tls.TlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsClientProtocol;
-import org.bouncycastle.crypto.tls.TlsCredentials;
-import org.bouncycastle.crypto.tls.TlsExtensionsUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.provider.IDNUtil;
+import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.NameType;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.ServerName;
+import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsServerCertificate;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.util.Strings;
 
 /**
  * @author daniel
  *
  */
 public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
+    protected final static Provider                 BC               = new BouncyCastleProvider();
     // raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
     // openssl.org/docs/man1.0.1/apps/ciphers.html
     // TODO: sort strength
@@ -182,47 +191,37 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         private final boolean sniEnabled;
 
         private BCTLSSocketStreamTlsClient(final String hostName, final boolean sniEnabled, final SSLSocketStreamOptions options) {
+            super(new BcTlsCrypto(new SecureRandom()));
+            // super(new JcaTlsCryptoProvider().setProvider(BC).create(new SecureRandom()));
             this.hostName = hostName;
             this.enabledCipherSuites = modifyCipherSuites(CIPHERSUITES, options);
             this.sniEnabled = sniEnabled;
         }
 
         @Override
-        public int[] getCipherSuites() {
-            return enabledCipherSuites;
+        protected int[] getSupportedCipherSuites() {
+            return TlsUtils.getSupportedCipherSuites(getCrypto(), enabledCipherSuites);
         }
 
-        @SuppressWarnings("rawtypes")
+        @Override
+        protected Vector<ServerName> getSNIServerNames() {
+            if (sniEnabled && StringUtils.isNotEmpty(hostName) && !hostName.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
+                final ServerName serverName = new ServerName(NameType.host_name, Strings.toByteArray(IDNUtil.toASCII(hostName, IDNUtil.USE_STD3_ASCII_RULES)));
+                final Vector<ServerName> sni = new Vector<ServerName>();
+                sni.add(serverName);
+                return sni;
+            } else {
+                return null;
+            }
+        }
+
         @Override
         public Hashtable getClientExtensions() throws IOException {
-            Hashtable clientExtensions = super.getClientExtensions();
-            if (clientExtensions == null) {
-                clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
+            final Hashtable clientExtensions = super.getClientExtensions();
+            if (clientExtensions != null) {
+                // only possible with TLS1.3/block ciphers, see TlsClientProtocol.processServerHelloMessage
+                clientExtensions.remove(TlsExtensionsUtils.EXT_encrypt_then_mac);
             }
-            // rfc3546
-            if (sniEnabled && StringUtils.isNotEmpty(hostName) && !hostName.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
-                final ByteArrayOutputStream extBaos = new ByteArrayOutputStream();
-                final DataOutputStream extOS = new DataOutputStream(extBaos);
-                final byte[] hostnameBytes = this.hostName.getBytes("UTF-8");
-                final int snl = hostnameBytes.length;
-                // OpenSSL breaks if an extension with length "0" sent, they expect
-                // at least an entry with length "0"
-                extOS.writeShort(snl == 0 ? 0 : snl + 3); // entry size
-                if (snl > 0) {
-                    extOS.writeByte(0); // name type = hostname
-                    extOS.writeShort(snl); // name size
-                    if (snl > 0) {
-                        extOS.write(hostnameBytes);
-                    }
-                }
-                extOS.close();
-                clientExtensions.put(ExtensionType.server_name, extBaos.toByteArray());
-            }
-            // can be used to customize
-            // clientECPointFormats = new short[] { ECPointFormat.uncompressed };
-            // namedCurves = new int[] { NamedCurve.secp256r1, NamedCurve.secp384r1 };
-            // TlsECCUtils.addSupportedEllipticCurvesExtension(clientExtensions, namedCurves);
-            // TlsECCUtils.addSupportedPointFormatsExtension(clientExtensions, clientECPointFormats);
             return clientExtensions;
         }
 
@@ -249,18 +248,36 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         @Override
         public TlsAuthentication getAuthentication() throws IOException {
             final TlsAuthentication auth = new TlsAuthentication() {
-                public void notifyServerCertificate(org.bouncycastle.crypto.tls.Certificate serverCertificate) throws IOException {
-                }
-
                 public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) throws IOException {
                     return null;
+                }
+
+                @Override
+                public void notifyServerCertificate(TlsServerCertificate arg0) throws IOException {
                 }
             };
             return auth;
         }
 
+        protected int             selectedCipherSuite = -1;
+        protected ProtocolVersion protocolVersion     = null;
+
         private int getSelectedCipherSuite() {
             return selectedCipherSuite;
+        }
+
+        @Override
+        public void notifySelectedCipherSuite(int selectedCipherSuite) {
+            this.selectedCipherSuite = selectedCipherSuite;
+        }
+
+        @Override
+        public void notifyServerVersion(ProtocolVersion protocolVersion) throws IOException {
+            this.protocolVersion = protocolVersion;
+        }
+
+        public ProtocolVersion getClientVersion() {
+            return protocolVersion;
         }
     }
 
@@ -284,8 +301,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
     @Override
     public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String hostName, final int port, final boolean autoclose, final SSLSocketStreamOptions options) throws IOException {
         final boolean sniEnabled = !StringUtils.isEmpty(hostName) && (options == null || options.isSNIEnabled());
-        java.security.SecureRandom secureRandom = new java.security.SecureRandom();
-        final TlsClientProtocol protocol = new TlsClientProtocol(socketStream.getInputStream(), socketStream.getOutputStream(), secureRandom);
+        final TlsClientProtocol protocol = new TlsClientProtocol(socketStream.getInputStream(), socketStream.getOutputStream());
         final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName, sniEnabled, options);
         protocol.connect(client);
         final Integer selectedCipherSuite = client.getSelectedCipherSuite();
@@ -326,7 +342,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
             @Override
             public String getCipherSuite() {
-                return "BC|Protocol:" + clientVersion + "|CipherSuite:" + selectedCipherSuiteName;
+                return BC.getInfo() + "|" + client.getCrypto() + "|Protocol:" + clientVersion + "|CipherSuite:" + selectedCipherSuiteName;
             }
         };
     }
