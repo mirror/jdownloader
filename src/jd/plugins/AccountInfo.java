@@ -27,10 +27,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -40,6 +36,10 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property implements AccountTrafficView {
     private static final long serialVersionUID       = 1825140346023286206L;
@@ -70,6 +70,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
         return account_createTime;
     }
 
+    /**
+     * True = Allow downloads without traffic --> You can set a trafficleft value and it will get displayed to the user but ignored for
+     * downloading.
+     */
     public void setSpecialTraffic(final boolean b) {
         specialTraffic = b;
     }
