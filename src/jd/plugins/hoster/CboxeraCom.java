@@ -263,8 +263,8 @@ public class CboxeraCom extends PluginForHost {
              * a captcha!
              */
             if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !forceAuthCheck) {
-                /* We trust these cookies --> Do not check them */
-                logger.info("Trust login cookies as they're not yet that old");
+                /* We trust our token --> Do not check them */
+                logger.info("Trust login token as it is not that old");
                 return;
             }
             br.getPage(API_BASE + "/private/user/info");
@@ -279,6 +279,7 @@ public class CboxeraCom extends PluginForHost {
             }
         }
         /* Drop previous headers & cookies */
+        logger.info("Performing full login");
         br = this.prepBR(new Browser());
         final DownloadLink dlinkbefore = this.getDownloadLink();
         String recaptchaV2Response = null;
@@ -303,7 +304,8 @@ public class CboxeraCom extends PluginForHost {
         token = PluginJSonUtils.getJson(br, "token");
         if (StringUtils.isEmpty(token)) {
             handleErrors(br, account, null);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /* This should never happen - do not permanently disable accounts for unexpected login errors! */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown login failure", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         account.setProperty(PROPERTY_logintoken, token);
         /* We don't really need the cookies but the timestamp ;) */

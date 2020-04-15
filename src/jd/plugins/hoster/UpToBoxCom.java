@@ -663,9 +663,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                 } else {
                     apikey = account.getPass();
                 }
-                if (!isApikey(apikey)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid token/apikey format", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
                 if (!verifySession) {
                     /* Force verify session/apikey everx X minutes */
                     verifySession = System.currentTimeMillis() - account.getLongProperty(PROPERTY_timestamp_lastcheck, 0) > 15 * 60 * 1000;
@@ -677,6 +674,11 @@ public class UpToBoxCom extends antiDDoSForHost {
                 logger.info("Performing full login");
                 this.getPage(API_BASE + "/user/me?token=" + apikey);
                 this.checkErrorsAPI(this.getDownloadLink(), account);
+                final String token = PluginJSonUtils.getJson(br, "token");
+                if (token == null || !token.equals(account.getPass())) {
+                    logger.warning("Failed to find token in json or token in json != account.getPass()");
+                    this.invalidLogin();
+                }
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
             } catch (final PluginException e) {
                 throw e;
@@ -785,7 +787,7 @@ public class UpToBoxCom extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000);
         case 2:
-            invalidApikey();
+            invalidLogin();
         case 5:
             throw new AccountRequiredException(errorMsg);
         case 7:
@@ -799,7 +801,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         case 13:
             /* "Invalid token" --> Permanently disable account */
-            invalidApikey();
+            invalidLogin();
         case api_responsecode_password_required_or_wrong:
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
@@ -846,19 +848,11 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private void invalidApikey() throws PluginException {
+    private void invalidLogin() throws PluginException {
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToken invalide. / Vous pouvez trouver votre token ici : uptobox.com/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid token/apikey!\r\nYou can find your token here: uptobox.com/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
-
-    private boolean isApikey(final String str) {
-        if (str != null && str.matches("[a-z0-9]+")) {
-            return true;
-        } else {
-            return false;
         }
     }
 

@@ -131,6 +131,18 @@ public class PixivNetGallery extends PluginForDecrypt {
                 final Map<String, Object> illustInfo = (Map<String, Object>) entry.getValue();
                 illustId = (String) illustInfo.get("illustId");
                 illustTitle = (String) illustInfo.get("illustTitle");
+                /*
+                 * Users want to have a maximum of information in filenames:
+                 * https://board.jdownloader.org/showpost.php?p=462062&postcount=41
+                 */
+                final String alt = (String) illustInfo.get("alt");
+                if (!StringUtils.isEmpty(alt) && !StringUtils.isEmpty("illustTitle")) {
+                    if (alt.contains(illustTitle)) {
+                        illustTitle = alt;
+                    } else {
+                        illustTitle = alt + " " + illustTitle;
+                    }
+                }
                 final String singleLink = (String) JavaScriptEngineFactory.walkJson(illustInfo, "urls/regular");
                 if (StringUtils.isEmpty(illustId)) {
                     /* Skip invalid items */

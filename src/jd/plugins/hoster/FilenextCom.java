@@ -53,7 +53,12 @@ public class FilenextCom extends XFileSharingProBasic {
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
+        final String[] extraNames = { "filenext" };
+        final String[] officiallySupportedNames = buildSupportedNames(getPluginDomains());
+        String[] finalSupportedNames = new String[officiallySupportedNames.length + extraNames.length];
+        System.arraycopy(officiallySupportedNames, 0, finalSupportedNames, 0, officiallySupportedNames.length);
+        System.arraycopy(extraNames, 0, finalSupportedNames, officiallySupportedNames.length, extraNames.length);
+        return finalSupportedNames;
     }
 
     public static String[] getAnnotationUrls() {
