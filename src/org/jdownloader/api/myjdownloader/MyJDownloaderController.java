@@ -36,8 +36,8 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     private final NullsafeAtomicReference<MyJDownloaderConnectThread> thread = new NullsafeAtomicReference<MyJDownloaderConnectThread>(null);
-    private LogSource                                                 logger;
-    private MyJDownloaderEventSender                                  eventSender;
+    private final LogSource                                           logger;
+    private final MyJDownloaderEventSender                            eventSender;
 
     public MyJDownloaderEventSender getEventSender() {
         return eventSender;
@@ -126,7 +126,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                             if (new Regex(email, "..*?@.*?\\..+").matches()) {
                                 password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
                                 if (validateLogins(email, password)) {
-                                    CFG_MYJD.EMAIL.setValue(email);
+                                    CFG_MYJD.EMAIL.setValue(email.trim());
                                     CFG_MYJD.PASSWORD.setValue(password);
                                     break;
                                 }
@@ -228,7 +228,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         switch (error) {
         case ACCOUNT_UNCONFIRMED:
             stop();
-            if (Application.isHeadless()) {
+            if (isAlwaysConnectEnabled()) {
                 synchronized (AbstractConsole.LOCK) {
                     final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
                     cd.start();
@@ -246,7 +246,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             break;
         case OUTDATED:
             stop();
-            if (Application.isHeadless()) {
+            if (isAlwaysConnectEnabled()) {
                 synchronized (AbstractConsole.LOCK) {
                     final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
                     cd.start();
@@ -265,7 +265,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         case EMAIL_INVALID:
         case BAD_LOGINS:
             stop();
-            if (Application.isHeadless()) {
+            if (isAlwaysConnectEnabled()) {
                 synchronized (AbstractConsole.LOCK) {
                     final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
                     cd.start();
@@ -276,9 +276,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                                 cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
                                 final String email = cd.ask("Please Enter your MyJDownloader Email:");
                                 if (new Regex(email, "..*?@.*?\\..+").matches()) {
-                                    final String password = cd.askHidden("Please Enter your MyJDownloader Password:");
+                                    final String password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
                                     if (validateLogins(email, password)) {
-                                        CFG_MYJD.EMAIL.setValue(email);
+                                        CFG_MYJD.EMAIL.setValue(email.trim());
                                         CFG_MYJD.PASSWORD.setValue(password);
                                         new Thread() {
                                             public void run() {
