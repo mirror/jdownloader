@@ -687,6 +687,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             appliedTableDataModifier = null;
         }
         final PackageControllerTableModelData<PackageType, ChildrenType> newData = new PackageControllerTableModelData<PackageType, ChildrenType>(Math.max(data.size(), packages.size()));
+        final List<PackageControllerTableModelDataPackage> modelDataPackages = new ArrayList<PackageControllerTableModelDataPackage>(0);
         final List<ChildrenType> visibleChildren = new ArrayList<ChildrenType>(0);
         final List<ChildrenType> filteredChildren = new ArrayList<ChildrenType>(0);
         for (final PackageType node : packages) {
@@ -790,7 +791,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         };
                     };
                 }
-                newData.add(modelDataPackage);
+                modelDataPackages.add(modelDataPackage);
             } else {
                 /* only add package node if it contains children */
                 final int packageNodeIndex = newData.addPackageNode(node);
@@ -932,7 +933,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         };
                     }
                 }
-                newData.add(modelDataPackage);
+                modelDataPackages.add(modelDataPackage);
             }
         }
         final List<PackageControllerTableModelCustomizer> tableDataCustomizer = new ArrayList<PackageControllerTableModelCustomizer>();
@@ -947,6 +948,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         newData.setPackageFilters(tableFiltersCompiled.getPackageFilters());
         newData.setChildrenFilters(tableFiltersCompiled.getChildrenFilters());
         newData.setTableModelCustomizer(tableDataCustomizer);
+        for (PackageControllerTableModelDataPackage modelDataPackage : modelDataPackages) {
+            newData.add(modelDataPackage);
+        }
         return newData;
      }
 

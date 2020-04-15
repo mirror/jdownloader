@@ -116,11 +116,14 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     protected void addLinkToTemp(Temp tmp, CrawledLink link) {
         tmp.count++;
+        tmp.domains.add(link.getDomainInfo());
         final DownloadLink dlLink = link.getDownloadLink();
-        final String sourceUrl = dlLink.getView().getDisplayUrl();
-        if (sourceUrl != null) {
-            tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
-            tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
+        if (dlLink != null) {
+            final String sourceUrl = dlLink.getView().getDisplayUrl();
+            if (sourceUrl != null) {
+                tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
+                tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
+            }
         }
         // enabled
         if (link.isEnabled()) {
