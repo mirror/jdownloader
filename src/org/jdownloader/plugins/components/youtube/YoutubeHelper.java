@@ -1891,7 +1891,7 @@ public class YoutubeHelper {
 
     private YoutubeStreamData convert(Map<String, Object> entry, final String src) {
         if (entry != null) {
-            if (entry.containsKey("drm_families")) {
+            if (entry.containsKey("drm_families") || entry.containsKey("drmFamilies")) {
                 logger.info("DRM?:" + JSonStorage.toString(entry));
                 return null;
             }
