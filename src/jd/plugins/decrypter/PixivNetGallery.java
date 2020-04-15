@@ -372,29 +372,14 @@ public class PixivNetGallery extends PluginForDecrypt {
             thistitle = "";
         } else {
             thistitle = tags;
-            if (!thistitle.startsWith("「")) {
-                thistitle = "「" + thistitle;
-            }
-            thistitle += tags;
         }
         if (title != null) {
-            if (thistitle.isEmpty()) {
-                thistitle = "「";
-            } else {
-                if (!thistitle.startsWith("「")) {
-                    thistitle = "「" + thistitle;
-                }
-                thistitle += " _ ";
-            }
             thistitle += title;
         }
         if (username != null) {
             thistitle += " - " + username;
         }
-        if (!thistitle.endsWith("」")) {
-            thistitle += "」";
-        }
-        return galleryID + "_p" + picNumberStr + thistitle;
+        return galleryID + "_p" + picNumberStr + " " + thistitle;
     }
 
     private boolean add(Set<String> set, Browser br, final String pattern) {
