@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -27,11 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gokuai.com" }, urls = { "https?://(www\\.)?gokuai\\.com/f/[A-Za-z0-9]+|gokuais?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}/[a-z0-9]{40}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gokuai.com" }, urls = { "https?://(www\\.)?gokuai\\.com/f/[A-Za-z0-9]+|gokuais?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}/[a-z0-9]{40}" })
 public class GoKuaiCom extends PluginForHost {
-
     public GoKuaiCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,7 +42,6 @@ public class GoKuaiCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("gokuai://", "http://"));
         link.setUrlDownload(link.getDownloadURL().replace("gokuais://", "https://"));
-
     }
 
     @Override
@@ -52,7 +49,12 @@ public class GoKuaiCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"error_wrp error_404\"") || br.getURL().contains("gokuai.com/error/expired") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"error_wrp error_404\"") || br.getURL().contains("gokuai.com/error/expired") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("app/404/")) {
+            /* 2020-04-15 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h2><i class=\"icon\\_[a-z0-9]+\"></i><span>(.*?)</span></h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("filename:\"(.*?)\"").getMatch(0);
@@ -61,9 +63,13 @@ public class GoKuaiCom extends PluginForHost {
             }
         }
         String filesize = br.getRegex("<span class=\"filesize\">文件大小：<strong>(.*?)</strong></span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<span class=\"filesize\">(.*?)</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<span class=\"filesize\">(.*?)</span>").getMatch(0);
+        }
         if (filename == null || filesize == null) {
-            if (br.containsHTML("class=\"banner banner")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("class=\"banner banner")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /** Server sends bad filenames */
@@ -75,10 +81,16 @@ public class GoKuaiCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">发布人关闭了直接下载功能, 请先保存到网盘再下载<") || !br.containsHTML("download_now")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!");
+        if (br.containsHTML(">发布人关闭了直接下载功能, 请先保存到网盘再下载<") || !br.containsHTML("download_now")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!");
+        }
         String dllink = br.getRegex("class=\"download_now\" href=\"(https?://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/d\\d+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/d\\d+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -99,5 +111,4 @@ public class GoKuaiCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

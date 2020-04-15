@@ -76,6 +76,9 @@ public class NewgroundsCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(downloadLink.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            errorRateLimited();
+        }
         final boolean addID2Filename = getPluginConfig().getBooleanProperty("Filename_id", true);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This entry was")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -226,6 +229,10 @@ public class NewgroundsCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void errorRateLimited() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 120 * 1000l);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -252,7 +259,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 logger.log(ignore);
             }
             /* 2017-11-16: E.g. happens for audio files */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 120 * 1000l);
+            errorRateLimited();
         }
         if (dl.getConnection().getContentType().contains("html")) {
             try {
