@@ -77,7 +77,7 @@ public class HdPussyXxx extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div class=\"title\\-box\">([^<>\"]*?)<b>").getMatch(0);
+        String filename = br.getRegex("<div class=\"title\\-box\">([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| HD Pussy XXX</title>").getMatch(0);
         }
