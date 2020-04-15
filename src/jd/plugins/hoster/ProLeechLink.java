@@ -415,7 +415,7 @@ public class ProLeechLink extends antiDDoSForHost {
                      */
                     if (br.getURL() == null || !br.getURL().contains("/mydownloads")) {
                         /* Only access this URL if it has not been accessed before! */
-                        br.getPage("https://" + this.getHost() + "/mydownloads");
+                        getPage("https://" + this.getHost() + "/mydownloads");
                     }
                     final String[] cloudDownloadRows = getDownloadHistoryRows();
                     final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();

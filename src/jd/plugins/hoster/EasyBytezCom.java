@@ -184,4 +184,15 @@ public class EasyBytezCom extends XFileSharingProBasic {
         /* 2019-08-06: Special */
         return false;
     }
+
+    @Override
+    public String getLoginURL() {
+        /* 2020-04-15: Special */
+        final boolean forcelogin2 = true;
+        if (br.containsHTML("/login2\\.html") || forcelogin2) {
+            return getMainPage() + "/login2.html";
+        } else {
+            return getMainPage() + "/?op=login";
+        }
+    }
 }
