@@ -173,6 +173,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     public static Browser prepBrowserStatic(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("Accept", "application/json");
         br.setFollowRedirects(true);
         return br;
     }
@@ -555,10 +556,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                 if (wait > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
                     throw new AccountUnavailableException("Download limit reached", wait * 1001l);
                 }
-                this.sleep(wait * 1001, link);
-                final UrlQuery queryDL = new UrlQuery();
-                queryDL.append("token", account.getPass(), true);
-                queryDL.append("file_code", this.getFUID(link), true);
+                /* 2020-04-16: Add 2 extra wait seconds otherwise download may fail */
+                this.sleep((wait + 2) * 1001, link);
+                final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
                 this.getPage(API_BASE + "/link?" + queryDL.toString());
             }

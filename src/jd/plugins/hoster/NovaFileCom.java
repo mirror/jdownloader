@@ -325,9 +325,6 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         return lastdownload;
     }
 
-    // private long getAccountSavedLastDownloadTimestamp(final Account acc) {
-    // return acc.getLongProperty("", 0);
-    // }
     private boolean ipChanged(final DownloadLink link) throws Exception {
         String currIP = null;
         if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {

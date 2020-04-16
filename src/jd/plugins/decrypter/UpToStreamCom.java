@@ -22,6 +22,7 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig;
@@ -45,7 +46,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.UpToBoxCom;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com", "uptobox.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?", "https?://(?:www\\.)?uptobox\\.com/\\?op=user_public\\&hash=[a-f0-9]{16}\\&folder=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com", "uptobox.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?", "https?://(?:www\\.)?uptobox\\.com/(\\?op=user_public\\&|user_public\\?)hash=[a-f0-9]{16}\\&folder=\\d+" })
 public class UpToStreamCom extends antiDDoSForDecrypt {
     public UpToStreamCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,16 +61,22 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
         final ArrayList<String> dupecheck = new ArrayList<String>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("user_public")) {
+            /* Using API: https://docs.uptobox.com/#retrieve-files-in-public-folder */
             parameter = param.toString();
-            final Regex urlInfo = new Regex(parameter, "hash=([a-f0-9]{16})\\&folder=(\\d+)");
-            final String hash = urlInfo.getMatch(0);
-            final String folderID = urlInfo.getMatch(1);
-            br.getHeaders().put("Accept", "application/json, text/plain, */*");
+            final UrlQuery query = new UrlQuery().parse(parameter);
+            final String hash = query.get("hash");
+            final String folderID = query.get("folder");
+            if (hash == null || folderID == null) {
+                /* This should never happen */
+                return null;
+            }
+            UpToBoxCom.prepBrowserStatic(br);
             int pageMax = 1;
             int pageCurrent = 0;
             int offset = 0;
             do {
                 pageCurrent++;
+                logger.info("Crawling page " + pageCurrent + " of " + pageMax);
                 /* 2018-10-18: default = "limit=10" */
                 getPage(UpToBoxCom.API_BASE + "/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
@@ -83,7 +90,10 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     /* Set maxPage on first request */
                     pageMax = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 0);
                 }
-                logger.info("Processing loop " + pageCurrent + " of " + pageMax);
+                /*
+                 * 2020-04-16: Folders can only contain files. They can contain subfolders and files in the users' account but not in public
+                 * URLs.
+                 */
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
                 for (final Object fileO : ressourcelist) {
                     entries = (LinkedHashMap<String, Object>) fileO;
@@ -105,7 +115,7 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     dupecheck.add(linkid);
                     offset++;
                 }
-            } while (pageCurrent < pageMax && !this.isAbort());
+            } while (!this.isAbort() && pageCurrent < pageMax);
         } else {
             parameter = param.toString();
             final String host_uptobox = "uptobox.com";
