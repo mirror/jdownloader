@@ -95,12 +95,12 @@ public class HundredTwentySixDiskCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage("/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* 2020-04-16: I was not able to find a single downloadable file, 404 also happens in browser */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+        }
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.126(?:disk|xy)\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                /* 2019-04-05: I was not able to find a single downloadable file, 404 also happens in browser */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), false, 1);
