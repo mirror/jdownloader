@@ -28,6 +28,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileAl extends XFileSharingProBasic {
@@ -135,6 +137,16 @@ public class FileAl extends XFileSharingProBasic {
                 specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.setFollowRedirects(true);
                 super.submitForm(specialCaptchaForm);
+                final boolean siteVerificationFailure = br.toString().equalsIgnoreCase("Verification failed");
+                if (siteVerificationFailure) {
+                    logger.info("Site verification failed");
+                    /*
+                     * 2020-04-16: Log: 16.04.20 18.51.47 <--> 16.04.20 19.24.47 jdlog://8437815302851/
+                     */
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                } else {
+                    logger.info("Site verification successful");
+                }
                 br.setFollowRedirects(redirectSetting);
             }
         }
