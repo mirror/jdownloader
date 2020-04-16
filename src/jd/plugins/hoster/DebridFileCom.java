@@ -123,7 +123,7 @@ public class DebridFileCom extends PluginForHost {
         if (dllink == null) {
             this.loginWebsite(account);
             br.postPage("/getlink2.php", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + link.getDownloadPassword());
-            dllink = br.getRegex("target='_blank' href='(http[^<>\"\\']+)'>").getMatch(0);
+            dllink = br.getRegex("href='(http[^<>\"\\']+)'>").getMatch(0);
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
