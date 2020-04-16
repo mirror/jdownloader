@@ -695,7 +695,6 @@ public class AllDebridCom extends antiDDoSForHost {
                     }
                 } catch (final Throwable e) {
                     logger.info("Error parsing json response");
-                    delayedStatus = 3;
                     break;
                 }
                 waitSecondsLeft -= waitSecondsPerLoop;

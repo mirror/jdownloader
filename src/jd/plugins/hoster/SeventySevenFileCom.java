@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "77file.com" }, urls = { "https?://(?:www\\.)?77file\\.com/(?:file|down)/([^/]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "77file.com" }, urls = { "https?://(?:www\\.)?77file\\.com/(?:file|down)/(.*?)\\.html" })
 public class SeventySevenFileCom extends PluginForHost {
     public SeventySevenFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +57,7 @@ public class SeventySevenFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         /* Empty / Missing filesize --> File offline */
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<span id=\"file_size\"></span>")) {

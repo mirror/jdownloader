@@ -575,7 +575,12 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Debug info: html_premium_only: " + parameter);
             throw new AccountRequiredException();
         }
-        final String uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
+        String uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
+        /* Try to get date only, without time */
+        final String better_date = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        if (better_date != null) {
+            uploadDate = better_date;
+        }
         final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);
         logger.info("Debug info: foundLinks_all: " + qualities);
         if (qualities != null) {

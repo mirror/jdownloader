@@ -672,13 +672,14 @@ public class UpToBoxCom extends antiDDoSForHost {
                     return;
                 }
                 logger.info("Performing full login");
-                this.getPage(API_BASE + "/user/me?token=" + apikey);
+                this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
                 this.checkErrorsAPI(this.getDownloadLink(), account);
-                final String token = PluginJSonUtils.getJson(br, "token");
-                if (token == null || !token.equals(account.getPass())) {
-                    logger.warning("Failed to find token in json or token in json != account.getPass()");
-                    this.invalidLogin();
-                }
+                /* 2020-04-16: Additional check is not required */
+                // final String token = PluginJSonUtils.getJson(br, "token");
+                // if (token == null || !token.equals(account.getPass())) {
+                // logger.warning("Failed to find token in json or token in json != account.getPass()");
+                // this.invalidLogin();
+                // }
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
             } catch (final PluginException e) {
                 throw e;
@@ -695,7 +696,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             throw e;
         }
         if (br.getURL() == null || !br.getURL().contains("/user/me")) {
-            this.getPage(API_BASE + "/user/me?token=" + account.getPass());
+            this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(account.getPass()));
             checkErrorsAPI(this.getDownloadLink(), account);
             /* Session verified */
             account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
@@ -824,6 +825,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
+    /** @return null = original (no stream download) */
     protected String getConfiguredQuality() {
         /* Returns user-set value which can be used to circumvent government based GEO-block. */
         PreferredQuality cfgquality = PluginJsonConfig.get(UpToBoxComConfig.class).getPreferredQuality();
