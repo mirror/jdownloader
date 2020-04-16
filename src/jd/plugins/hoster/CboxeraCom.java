@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -183,6 +186,7 @@ public class CboxeraCom extends PluginForHost {
         loginAPI(account, true);
         if (br.getURL() == null || !br.getURL().contains("/private/user/info")) {
             br.getPage(API_BASE + "/private/user/info");
+            handleErrors(br, account, null);
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         /* 2020-03-24: E.g. free account: "subscription":{"is_vip":false,"bw_limit":"25GB","days":0} */
@@ -223,7 +227,7 @@ public class CboxeraCom extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) entries.get(account_type_key);
             final String supported = (String) entries.get("supported");
             if ("no".equalsIgnoreCase(supported)) {
-                logger.info("Skipping host because: unsupported: " + host);
+                logger.info("Skipping host because: unsupported (according to API json): " + host);
                 continue;
             }
             long size_limit = -1;
@@ -338,7 +342,13 @@ public class CboxeraCom extends PluginForHost {
     }
 
     private String getErrormessage(final Browser br) {
-        return PluginJSonUtils.getJson(br, "msg");
+        String errormsg = null;
+        try {
+        } catch (final Throwable e) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            errormsg = (String) entries.get("msg");
+        }
+        return errormsg;
     }
 
     @Override

@@ -171,7 +171,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                     decryptedLinks.add(generateDownloadLink(parameter, illustId, illustTitle, illustUploadDate, userName, tags, directurl));
                 }
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(illustTitle);
+                fp.setName(illustId + " " + illustTitle);
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;

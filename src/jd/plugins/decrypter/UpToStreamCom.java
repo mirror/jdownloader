@@ -31,6 +31,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -149,7 +150,7 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     }
                     try {
                         final String token = account.getPass();
-                        this.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + token + "&file_code=" + fuid);
+                        this.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
                         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         final ArrayList<Object> subtitles = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
                         if (subtitles == null || subtitles.size() == 0) {

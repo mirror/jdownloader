@@ -226,7 +226,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
              */
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
                 /*
-                 * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
+                 * If the user starts a download in free or free-acount mode the waittime is on his IP. This also affects free accounts if
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
                  * download using the same free accounts after performing a reconnect!
                  */
@@ -325,6 +325,9 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         return lastdownload;
     }
 
+    // private long getAccountSavedLastDownloadTimestamp(final Account acc) {
+    // return acc.getLongProperty("", 0);
+    // }
     private boolean ipChanged(final DownloadLink link) throws Exception {
         String currIP = null;
         if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
