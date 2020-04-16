@@ -426,16 +426,24 @@ public class PornportalCom extends PluginForHost {
                     String autologinURL = this.getStringPropertyAccount(account, target_domain, PROPERTY_url_external_login, null);
                     if (autologinURL == null) {
                         logger.warning("Property autologinURL is null");
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "External portal login failed");
+                        loginFailure(isExternalPortalLogin);
                     }
                     if (autologinURL.startsWith("/")) {
                         autologinURL = "https://ppp.contentdef.com/" + autologinURL;
                     }
-                    // br.getPage(autologinURL);
-                    /* TODO: Continue to work on this */
-                    if (true) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    br.getPage(autologinURL);
+                    final String redirectURL = br.getRegex("window\\.top\\.location\\s*=\\s*\\'(https?://[^<>\"\\']+)").getMatch(0);
+                    if (redirectURL == null) {
+                        logger.warning("Failed to find external login redirectURL");
+                        loginFailure(isExternalPortalLogin);
                     }
+                    br.getPage(redirectURL);
+                    /* Now we should finally land on '/postlogin' --> This would mean SUCCESS! */
+                    if (!br.getURL().contains("/postlogin")) {
+                        logger.warning("External login failed - expected location /postlogin but got: " + br.getURL());
+                        loginFailure(isExternalPortalLogin);
+                    }
+                    /* Further checks will decide whether we're loggedIN or not */
                 } else {
                     if (StringUtils.isEmpty(api_base)) {
                         logger.warning("Failed to find api_base");
@@ -500,7 +508,7 @@ public class PornportalCom extends PluginForHost {
                 jwt = PluginJSonUtils.getJson(brlogin, "jwt");
                 if (login_cookie == null || StringUtils.isEmpty(jwt)) {
                     logger.info("Login failure after API login");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    loginFailure(isExternalPortalLogin);
                 }
                 setPropertyAccount(account, target_domain, PROPERTY_authorization, login_cookie);
                 setPropertyAccount(account, target_domain, PROPERTY_jwt, jwt);
@@ -514,6 +522,18 @@ public class PornportalCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    private void loginFailure(final boolean isExternalLogin) throws PluginException {
+        if (isExternalLogin) {
+            /*
+             * Never throw exceptions which affect accounts in here as we do not e.g. want to (temp.) disable a erito.com account just
+             * because external login for fakehub.com fails here!
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "External portal login failed");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -730,8 +750,8 @@ public class PornportalCom extends PluginForHost {
                         brContentdef.getPage(String.format("https://ppp.contentdef.com/notification/list?page=1&type=1&network=1&archived=0&ajaxCounter=1&sid=%s&data=%s&_=%d", sid, Encoding.urlEncode(data), System.currentTimeMillis()));
                         Map<String, Object> entries = JSonStorage.restoreFromString(brContentdef.toString(), TypeRef.HASHMAP);
                         final ArrayList<Object> notificationNetworks = (ArrayList<Object>) entries.get("notificationNetworks");
-                        final ArrayList<String> supportedHosts = new ArrayList<String>();
-                        final ArrayList<String> allPluginSupportedDomains = getAllSupportedPluginDomainsFlat();
+                        ArrayList<String> supportedHostsTmp = new ArrayList<String>();
+                        final ArrayList<String> allowedSupportedHosts = getAllSupportedPluginDomainsFlat();
                         for (final String autologinURL : autologinURLs) {
                             String domainWithoutTLD = null;
                             final String domainShortcode = new Regex(autologinURL, "autologin/([a-z0-9]+)").getMatch(0);
@@ -763,37 +783,38 @@ public class PornportalCom extends PluginForHost {
                                     break;
                                 }
                             }
-                            if (domainFull == null) {
-                                /* TODO: Find a way to avoid this from happening - try to avoid using e.g. static map at the same time! */
-                                logger.warning("Failed to find domainFull for domainShortcode: " + domainShortcode);
-                                logger.info("Possible domain without TLD: " + domainWithoutTLD);
+                            final String domain_to_add;
+                            if (domainFull != null) {
+                                domain_to_add = Browser.getHost(domainFull, false);
                             } else {
-                                domainFull = Browser.getHost(domainFull, false);
-                                if (domainFull.equalsIgnoreCase(this.getHost())) {
-                                    /*
-                                     * Do not add main plugins host e.g. main account is erito.com --> Do not add erito.com to array of
-                                     * supported hosts
-                                     */
-                                    logger.info("Not adding host because: Host == current plugin host: " + this.getHost());
-                                    continue;
-                                } else if (!allPluginSupportedDomains.contains(domainFull)) {
-                                    logger.info(String.format("Not adding host because: Host %s is not supported by this plugin", domainFull));
-                                    continue;
-                                }
-                                this.setPropertyAccount(account, domainFull, PROPERTY_url_external_login, autologinURL);
-                                supportedHosts.add(domainFull);
+                                domain_to_add = domainWithoutTLD;
                             }
+                            if (domain_to_add == null) {
+                                logger.warning("Failed to find any usable domain for domainShortcode: " + domainShortcode);
+                                continue;
+                            }
+                            supportedHostsTmp.add(domain_to_add);
+                            /* TODO: Find a way to set this property on the correct domain ... */
+                            // this.setPropertyAccount(account, domainFull, PROPERTY_url_external_login, autologinURL);
                         }
-                        /*
-                         * TODO: First set all domains including domains without TLD if existant --> Then filter out all that are pornportal
-                         * ones
-                         */
                         /*
                          * TODO: Add special handling for 1-2 "important" ones that are NOT pornportal supported e.g. pornhubpremium --> Add
                          * dummy account with valid cookies --> Refresh cookies of this account on every accountcheck of main pornportal
                          * account --> Also be sure to remove these dummy accounts again if they are not supported anymore!
                          */
-                        ai.setMultiHostSupport(this, supportedHosts);
+                        ai.setMultiHostSupport(this, supportedHostsTmp);
+                        ArrayList<String> supportedHostsFinal = new ArrayList<String>();
+                        final List<String> supportedHostsTmpReal = ai.getMultiHostSupport();
+                        for (final String supportedHostTmp : supportedHostsTmpReal) {
+                            if (!allowedSupportedHosts.contains(supportedHostTmp)) {
+                                logger.info("Removing the following host as it is not an allowed/PornPortal host: " + supportedHostTmp);
+                                continue;
+                            }
+                            supportedHostsFinal.add(supportedHostTmp);
+                        }
+                        /* First remove current host - we do not want that in our list of supported hosts! */
+                        supportedHostsFinal.remove(this.getHost());
+                        ai.setMultiHostSupport(this, supportedHostsFinal);
                     } catch (final Throwable e) {
                         logger.log(e);
                         logger.warning("Internal Multihoster handling failed");
