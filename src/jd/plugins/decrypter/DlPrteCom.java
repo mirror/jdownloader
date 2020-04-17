@@ -20,6 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,15 +36,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|zone-warez.com/link)(-|/)\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|zone-warez\\.(?:com|org)/link)(-|/)\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
