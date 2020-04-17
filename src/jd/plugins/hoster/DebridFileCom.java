@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-file.com" }, urls = { "" })
 public class DebridFileCom extends PluginForHost {
@@ -230,7 +230,7 @@ public class DebridFileCom extends PluginForHost {
                         if (dlinkbefore != null) {
                             dl_dummy = dlinkbefore;
                         } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster() + "/dashboard.php", true);
                             this.setDownloadLink(dl_dummy);
                         }
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
