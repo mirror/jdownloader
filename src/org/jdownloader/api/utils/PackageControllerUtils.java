@@ -232,18 +232,21 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     public void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException {
+        newPkgName = StringUtils.nullify(newPkgName);
+        downloadPath = StringUtils.nullify(downloadPath);
         if (StringUtils.isEmpty(newPkgName)) {
             throw new BadParameterException("empty package name");
-        }
-        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
-        if (selection.getChildren().size() > 0) {
-            final PackageType pt = getPackageInstanceByChildrenType(selection.getChildren().get(0));
-            setPackageName(pt, newPkgName);
-            if (!StringUtils.isEmpty(downloadPath)) {
-                setDirectory(pt, downloadPath);
-            }
-            if (pt != null) {
-                packageController.moveOrAddAt(pt, selection.getChildren(), 0, -1);
+        } else {
+            final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+            if (selection.getChildren().size() > 0) {
+                final PackageType pt = getPackageInstanceByChildrenType(selection.getChildren().get(0));
+                setPackageName(pt, newPkgName);
+                if (!StringUtils.isEmpty(downloadPath) && !StringUtils.equalsIgnoreCase(downloadPath, "<DEFAULT PATH>")) {
+                    setDirectory(pt, downloadPath);
+                }
+                if (pt != null) {
+                    packageController.moveOrAddAt(pt, selection.getChildren(), 0, -1);
+                }
             }
         }
     }

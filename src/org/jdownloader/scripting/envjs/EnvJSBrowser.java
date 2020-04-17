@@ -765,11 +765,12 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public String getDocument() {
-        Object result = evalTrusted("var f=function(){return document.innerHTML;}; f();");
+        final Object result = evalTrusted("var f=function(){return document.innerHTML;}; f();");
         if (result != null) {
-            return result + "";
+            return result.toString();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public Browser getBrowser() {
