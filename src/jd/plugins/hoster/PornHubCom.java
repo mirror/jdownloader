@@ -73,34 +73,35 @@ public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
-    private static final int                      FREE_MAXDOWNLOADS         = 5;
-    private static final boolean                  ACCOUNT_FREE_RESUME       = true;
-    private static final int                      ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 5;
-    public static final long                      trust_cookie_age          = 5 * 60 * 1000l;
-    public static final boolean                   use_download_workarounds  = true;
-    private static final String                   type_photo                = "(?i).+/photo/\\d+";
-    private static final String                   type_gif_webm             = "(?i).+/(embed)?gif/\\d+";
-    public static final String                    html_privatevideo         = "id=\"iconLocked\"";
-    public static final String                    html_privateimage         = "profile/private-lock\\.png";
-    public static final String                    html_premium_only         = "<h2>Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
-    private String                                dlUrl                     = null;
+    private static final int                      FREE_MAXDOWNLOADS                     = 5;
+    private static final boolean                  ACCOUNT_FREE_RESUME                   = true;
+    private static final int                      ACCOUNT_FREE_MAXCHUNKS                = 0;
+    private static final int                      ACCOUNT_FREE_MAXDOWNLOADS             = 5;
+    public static final long                      trust_cookie_age                      = 5 * 60 * 1000l;
+    public static final boolean                   use_download_workarounds              = true;
+    private static final String                   type_photo                            = "(?i).+/photo/\\d+";
+    private static final String                   type_gif_webm                         = "(?i).+/(embed)?gif/\\d+";
+    public static final String                    html_privatevideo                     = "id=\"iconLocked\"";
+    public static final String                    html_privateimage                     = "profile/private-lock\\.png";
+    public static final String                    html_premium_only                     = "<h2>Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
+    private String                                dlUrl                                 = null;
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
-    public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                    put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                    put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                }
-                                                                            });
-    public static final String                    BEST_ONLY                 = "BEST_ONLY";
-    public static final String                    BEST_SELECTION_ONLY       = "BEST_SELECTION_ONLY";
-    public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
-    private final String                          REMOVED_VIDEO             = ">\\s*This video has been removed\\s*<";
+    public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
+    public static final String                    BEST_ONLY                             = "BEST_ONLY";
+    public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
+    public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
+    private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
+    public static final String                    PROPERTY_ACCOUNT_is_cookie_login_only = "is_cookie_login_only";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -691,6 +692,7 @@ public class PornHubCom extends PluginForHost {
                 prepBr(br);
                 final Cookies freeCookies = account.loadCookies(COOKIE_ID_FREE);
                 final Cookies premiumCookies = account.loadCookies(COOKIE_ID_PREMIUM);
+                final boolean is_cookie_only_login = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
                 if (!force && freeCookies != null && premiumCookies != null && (freeCookies.get("il") != null || premiumCookies.get("il") != null) && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                     br.setCookies(getProtocolFree() + PORNHUB_FREE, freeCookies);
                     br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, premiumCookies);
@@ -733,7 +735,11 @@ public class PornHubCom extends PluginForHost {
                     br.clearCookies(PORNHUB_PREMIUM);
                     plugin.getLogger().info("Cached login cookies failed:" + account.getType());
                 }
-                plugin.getLogger().info("Fresh login");
+                plugin.getLogger().info("Performing full login");
+                if (is_cookie_only_login) {
+                    plugin.getLogger().info("Cannot perform full login because this account only has cookies available");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 getPage(br, "https://www." + account.getHoster());
                 getPage(br, "https://www." + account.getHoster() + "/login");
                 if (br.containsHTML("Sorry we couldn't find what you were looking for")) {

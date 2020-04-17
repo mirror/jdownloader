@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revivelink.com" }, urls = { "https?://(www\\.)?revivelink.com/\\??[A-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revivelink.com" }, urls = { "https?://(?:www\\.)?revivelink.com/\\??([A-Z0-9]+)" })
 public class ReviveLinkCom extends PluginForDecrypt {
     public ReviveLinkCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,12 +48,12 @@ public class ReviveLinkCom extends PluginForDecrypt {
         String strName = "";
         br.setFollowRedirects(false);
         br.getPage(strParameter);
-        if (br.containsHTML("(An error has occurred|The article cannot be found|404 Not Found)") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(An error has occurred|The article cannot be found|404 Not Found)")) {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }
         if (br.containsHTML("class=\"QapTcha\"")) {
-            final String fid = new Regex(strParameter, "([A-Z0-9]+)$").getMatch(0);
+            final String fid = new Regex(strParameter, this.getSupportedLinks()).getMatch(0);
             final String pass = generatePass();
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("http://revivelink.com/qcap/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + pass);
@@ -98,5 +98,11 @@ public class ReviveLinkCom extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-04-17: Preventive block avoidance */
+        return 1;
     }
 }
