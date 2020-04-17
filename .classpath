@@ -76,6 +76,8 @@
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-databind.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-annotations.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/zip4j.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/bcpkix-jdk15on.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/bctls-jdk15on.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
