@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2059,7 +2060,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             final String[] possibleStreamURLObjectNames = new String[] { "file", "src" };
             try {
-                HashMap<String, Object> entries = null;
                 Object quality_temp_o = null;
                 long quality_temp = 0;
                 /*
@@ -2067,7 +2067,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 long quality_best = -1;
                 String dllink_temp = null;
-                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                final List<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
                 for (final Object videoo : ressourcelist) {
                     if (videoo instanceof String && onlyOneQualityAvailable) {
@@ -2078,12 +2078,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             break;
                         }
                     }
-                    entries = (HashMap<String, Object>) videoo;
-                    for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
-                        if (entries.containsKey(possibleStreamURLObjectName)) {
-                            dllink_temp = (String) entries.get(possibleStreamURLObjectName);
-                            break;
+                    final Map<String, Object> entries;
+                    if (videoo instanceof Map) {
+                        entries = (HashMap<String, Object>) videoo;
+                        for (final String possibleStreamURLObjectName : possibleStreamURLObjectNames) {
+                            if (entries.containsKey(possibleStreamURLObjectName)) {
+                                dllink_temp = (String) entries.get(possibleStreamURLObjectName);
+                                break;
+                            }
                         }
+                    } else {
+                        entries = null;
                     }
                     if (StringUtils.isEmpty(dllink_temp)) {
                         /* No downloadurl found --> Continue */

@@ -430,36 +430,22 @@ public class XHamsterCom extends PluginForHost {
         final int selected_format = cfg.getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
         final List<String> qualities = new ArrayList<String>();
         switch (selected_format) {
-        case 1:
-            qualities.add("240p");
-            break;
-        case 2:
-            qualities.add("480p");
-            break;
-        case 3:
-            qualities.add("720p");
-            break;
-        case 4:
-            qualities.add("960p");
-            break;
-        case 5:
-            qualities.add("1080p");
-            break;
-        case 6:
-            qualities.add("1440p");
-            break;
+        // fallthrough to automatically choose the next best quality
+        default:
         case 7:
             qualities.add("2160p");
-            break;
-        default:
-            qualities.add("2160p");
+        case 6:
             qualities.add("1440p");
+        case 5:
             qualities.add("1080p");
+        case 4:
             qualities.add("960p");
+        case 3:
             qualities.add("720p");
+        case 2:
             qualities.add("480p");
+        case 1:
             qualities.add("240p");
-            break;
         }
         final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
         if (newPlayer != null) {
