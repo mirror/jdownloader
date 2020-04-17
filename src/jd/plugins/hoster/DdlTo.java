@@ -74,13 +74,19 @@ public class DdlTo extends XFileSharingProBasic {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
+    /** 2020-04-17: TODO: Switch to ddownload.com once possible */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ddl.to", "api.ddl.to" });
+        // ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to" });
+        ret.add(new String[] { "ddl.to", "api.ddl.to", "ddownload.com" });
         return ret;
     }
 
+    // @Override
+    // public String rewriteHost(String host) {
+    // return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    // }
     @Override
     public void correctDownloadLink(DownloadLink link) {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
@@ -304,6 +310,7 @@ public class DdlTo extends XFileSharingProBasic {
     /* 2020-04-14: Workaround for Cloudflare hcaptcha issues: https://board.jdownloader.org/showthread.php?t=83712 */
     @Override
     protected String getMainPage() {
+        /** 2020-04-17: TODO: Remove this Override / switch to new domain ddownload.com once possible. */
         final String host = "api.ddl.to";
         // final String browser_host = this.br != null ? br.getHost() : null;
         // final String[] hosts = this.siteSupportedNames();
