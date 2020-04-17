@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +32,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -78,15 +78,15 @@ public class DdlTo extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        // ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to" });
-        ret.add(new String[] { "ddl.to", "api.ddl.to", "ddownload.com" });
+        ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to" });
         return ret;
     }
 
-    // @Override
-    // public String rewriteHost(String host) {
-    // return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    // }
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    }
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
@@ -311,7 +311,7 @@ public class DdlTo extends XFileSharingProBasic {
     @Override
     protected String getMainPage() {
         /** 2020-04-17: TODO: Remove this Override / switch to new domain ddownload.com once possible. */
-        final String host = "api.ddl.to";
+        final String host = "ddownload.com";
         // final String browser_host = this.br != null ? br.getHost() : null;
         // final String[] hosts = this.siteSupportedNames();
         // if (browser_host != null) {
