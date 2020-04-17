@@ -15,6 +15,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,14 +35,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -67,6 +60,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForHost {
@@ -338,69 +340,106 @@ public class PornHubCom extends PluginForHost {
         } else {
             link.setFinalFileName(html_filename);
         }
-        final Browser brCheck = br.cloneBrowser();
-        brCheck.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = brCheck.openHeadConnection(dlUrl);
-            if (con.getResponseCode() != 200) {
-                final Map<String, Map<String, String>> qualities = getVideoLinks(this, br);
-                if (qualities == null || qualities.size() == 0) {
-                    if (br.containsHTML(REMOVED_VIDEO)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
-                if (this.dlUrl == null) {
-                    logger.warning("Failed to get fresh directurl");
+        if (!verifyFinalURL(link, this.dlUrl)) {
+            final Map<String, Map<String, String>> qualities = getVideoLinks(this, br);
+            if (qualities == null || qualities.size() == 0) {
+                if (br.containsHTML(REMOVED_VIDEO)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                con.disconnect();
+            }
+            this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
+            if (this.dlUrl == null) {
+                logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
                 /* Last chance */
-                con = br.openHeadConnection(dlUrl);
-                if (con.getResponseCode() != 200) {
-                    con.disconnect();
+                if (!verifyFinalURL(link, this.dlUrl)) {
                     getPage(br, source_url);
                     this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
                     if (this.dlUrl == null) {
                         if (br.containsHTML(REMOVED_VIDEO)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else {
-                            logger.warning("Failed to get fresh directurl");
+                            logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
-                    con = br.openHeadConnection(dlUrl);
                 }
-                if (con.getResponseCode() != 200) {
-                    /* 2019-08-21: E.g. 502 will frequently happen here */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + con.getResponseCode());
-                }
-            }
-            if (StringUtils.equalsIgnoreCase(format, "hls")) {
-                if (!StringUtils.containsIgnoreCase(con.getContentType(), "vnd.apple.mpegurl")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } else {
-                if (StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
-                    /* Undefined case but probably that url is offline! */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    link.setDownloadSize(con.getLongContentLength());
-                }
-            }
-        } finally {
-            try {
-                if (con != null) {
-                    con.disconnect();
-                }
-            } catch (final Throwable e) {
-                logger.info("e: " + e);
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public boolean verifyFinalURL(final DownloadLink downloadLink, final String url) throws Exception {
+        final String format = downloadLink.getStringProperty("format");
+        if (StringUtils.equalsIgnoreCase("hls", format)) {
+            final Browser hlsCheck = br.cloneBrowser();
+            hlsCheck.setFollowRedirects(true);
+            hlsCheck.setAllowedResponseCodes(new int[] { -1 });
+            hlsCheck.getPage(url);
+            if (hlsCheck.getHttpConnection().getResponseCode() != 200) {
+                return false;
+            } else if (!StringUtils.containsIgnoreCase(hlsCheck.getHttpConnection().getContentType(), "vnd.apple.mpegurl")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(hlsCheck);
+                if (hlsContainers == null || hlsContainers.size() != 1) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    final List<M3U8Playlist> m3u8 = hlsContainers.get(0).getM3U8(hlsCheck);
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = hlsCheck.openHeadConnection(m3u8.get(0).getSegment(0).getUrl());
+                        if (con.getResponseCode() != 200) {
+                            return false;
+                        } else if (StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
+                            return false;
+                        } else {
+                            downloadLink.setProperty("directlink", url);
+                            return true;
+                        }
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    }
+                }
+            }
+        } else {
+            final Browser urlCheck = br.cloneBrowser();
+            urlCheck.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = urlCheck.openHeadConnection(dlUrl);
+                if (urlCheck.getHttpConnection().getResponseCode() != 200) {
+                    try {
+                        urlCheck.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    return false;
+                } else if (StringUtils.containsIgnoreCase(urlCheck.getHttpConnection().getContentType(), "text")) {
+                    try {
+                        urlCheck.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    if (con.getLongContentLength() > 0) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    }
+                    downloadLink.setProperty("directlink", url);
+                    return true;
+                }
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
     }
 
     public static String getFilenameFromURL(final String url) {
