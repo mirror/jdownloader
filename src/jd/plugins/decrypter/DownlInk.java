@@ -18,13 +18,14 @@ package jd.plugins.decrypter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -100,6 +101,11 @@ public class DownlInk extends antiDDoSForDecrypt {
                     decryptedLinks.add(createDownloadlink(link));
                 }
             }
+        } else {
+            final String dummy = envJs.getRegex("Dummy:(https?://.*?)<").getMatch(0);
+            if (!inValidate(dummy)) {
+                decryptedLinks.add(createDownloadlink(dummy));
+            }
         }
         return decryptedLinks;
     }
@@ -143,13 +149,14 @@ public class DownlInk extends antiDDoSForDecrypt {
         }
     }
 
-    private LinkedHashSet<String> dupe  = new LinkedHashSet<String>();
-    private EnvJSBrowser          envJs = null;
-    private String                brOut = null;
+    private LinkedHashSet<String> dupe        = new LinkedHashSet<String>();
+    private Set<String>           blockedURLs = new HashSet<String>();
+    private EnvJSBrowser          envJs       = null;
+    private String                brOut       = null;
 
     private void dothis(final Browser br) {
         // envjs
-        synchronized (DownloadWatchDog.getInstance()) {
+        synchronized (this) {
             envJs = new EnvJSBrowser(br) {
                 @Override
                 public String loadExternalScript(String type, String src, String url, Object window) {
@@ -169,7 +176,12 @@ public class DownlInk extends antiDDoSForDecrypt {
                         ret.setResponseText(br.getRequest().getHtmlCode());
                         return JSonStorage.serializeToJson(ret);
                     } else {
-                        return "";
+                        blockedURLs.add(url);
+                        XHRResponse ret = new XHRResponse();
+                        ret.setReponseMessage("Dummy");
+                        ret.setResponseCode(404);
+                        ret.setResponseText("Dummy:" + url);
+                        return JSonStorage.serializeToJson(ret);
                     }
                 };
 
