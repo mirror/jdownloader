@@ -78,7 +78,7 @@ public class DdlTo extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to" });
+        ret.add(new String[] { "ddl.to", "ddownload.com", "api.ddl.to" });
         return ret;
     }
 
@@ -312,6 +312,7 @@ public class DdlTo extends XFileSharingProBasic {
     protected String getMainPage() {
         /** 2020-04-17: TODO: Remove this Override / switch to new domain ddownload.com once possible. */
         final String host = "ddownload.com";
+        // api.ddownload.com alternative
         // final String browser_host = this.br != null ? br.getHost() : null;
         // final String[] hosts = this.siteSupportedNames();
         // if (browser_host != null) {
