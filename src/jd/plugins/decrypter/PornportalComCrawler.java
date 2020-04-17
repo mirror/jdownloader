@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -142,7 +143,25 @@ public class PornportalComCrawler extends PluginForDecrypt {
 
     private boolean getUserLogin() throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        Account aa = AccountController.getInstance().getValidAccount(this.getHost());
+        if (aa == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /*
+             * Try 'internal multihoster' handling e.g. user may have added account for erito.com which also grants premium access to other
+             * sites e.g. fakehub.com.
+             */
+            /* TODO: Test this */
+            logger.info("Failed to find main account --> Looking for 'multihoster account'");
+            final ArrayList<String> allowedHosts = PornportalCom.getAllSupportedPluginDomainsFlat();
+            final List<Account> multihostAccounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
+            for (final Account multihostAcc : multihostAccounts) {
+                final String multiHostHost = multihostAcc.getHoster();
+                if (allowedHosts.contains(multiHostHost)) {
+                    logger.info("Found working multihost account");
+                    aa = multihostAcc;
+                    break;
+                }
+            }
+        }
         if (aa != null) {
             try {
                 ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, this.getHost(), false);

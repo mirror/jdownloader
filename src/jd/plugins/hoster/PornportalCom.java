@@ -752,6 +752,7 @@ public class PornportalCom extends PluginForHost {
                         final ArrayList<Object> notificationNetworks = (ArrayList<Object>) entries.get("notificationNetworks");
                         ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                         final ArrayList<String> allowedSupportedHosts = getAllSupportedPluginDomainsFlat();
+                        ArrayList<String> supportedHostsFinal = new ArrayList<String>();
                         for (final String autologinURL : autologinURLs) {
                             String domainWithoutTLD = null;
                             final String domainShortcode = new Regex(autologinURL, "autologin/([a-z0-9]+)").getMatch(0);
@@ -790,29 +791,29 @@ public class PornportalCom extends PluginForHost {
                                 domain_to_add = domainWithoutTLD;
                             }
                             if (domain_to_add == null) {
-                                logger.warning("Failed to find any usable domain for domainShortcode: " + domainShortcode);
+                                logger.warning("Failed to find any usable domain for domain: " + domainShortcode);
                                 continue;
                             }
+                            supportedHostsTmp.clear();
                             supportedHostsTmp.add(domain_to_add);
-                            /* TODO: Find a way to set this property on the correct domain ... */
-                            // this.setPropertyAccount(account, domainFull, PROPERTY_url_external_login, autologinURL);
+                            ai.setMultiHostSupport(this, supportedHostsTmp);
+                            final List<String> supportedHostsTmpReal = ai.getMultiHostSupport();
+                            if (supportedHostsTmpReal == null || supportedHostsTmpReal.isEmpty()) {
+                                logger.info("Failed to find any real host for: " + domain_to_add);
+                                continue;
+                            }
+                            final String final_host = supportedHostsTmpReal.get(0);
+                            if (!allowedSupportedHosts.contains(final_host)) {
+                                logger.info("Skipping the following host as it is not an allowed/PornPortal host: " + final_host);
+                                continue;
+                            }
+                            supportedHostsFinal.add(final_host);
+                            this.setPropertyAccount(account, domainFull, PROPERTY_url_external_login, autologinURL);
                         }
                         /*
-                         * TODO: Add special handling for 1-2 "important" ones that are NOT pornportal supported e.g. pornhubpremium --> Add
-                         * dummy account with valid cookies --> Refresh cookies of this account on every accountcheck of main pornportal
-                         * account --> Also be sure to remove these dummy accounts again if they are not supported anymore!
+                         * TODO: Add special handling for pornhubpremium.
                          */
-                        ai.setMultiHostSupport(this, supportedHostsTmp);
-                        ArrayList<String> supportedHostsFinal = new ArrayList<String>();
-                        final List<String> supportedHostsTmpReal = ai.getMultiHostSupport();
-                        for (final String supportedHostTmp : supportedHostsTmpReal) {
-                            if (!allowedSupportedHosts.contains(supportedHostTmp)) {
-                                logger.info("Removing the following host as it is not an allowed/PornPortal host: " + supportedHostTmp);
-                                continue;
-                            }
-                            supportedHostsFinal.add(supportedHostTmp);
-                        }
-                        /* First remove current host - we do not want that in our list of supported hosts! */
+                        /* Remove current host - we do not want that in our list of supported hosts! */
                         supportedHostsFinal.remove(this.getHost());
                         ai.setMultiHostSupport(this, supportedHostsFinal);
                     } catch (final Throwable e) {
