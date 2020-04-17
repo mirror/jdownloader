@@ -304,7 +304,7 @@ public class DdlTo extends XFileSharingProBasic {
     /* 2020-04-14: Workaround for Cloudflare hcaptcha issues: https://board.jdownloader.org/showthread.php?t=83712 */
     @Override
     protected String getMainPage() {
-        final String host = "ddl.to";
+        final String host = "api.ddl.to";
         // final String browser_host = this.br != null ? br.getHost() : null;
         // final String[] hosts = this.siteSupportedNames();
         // if (browser_host != null) {
