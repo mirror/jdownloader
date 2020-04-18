@@ -55,7 +55,7 @@ public class RapidsPl extends PluginForHost {
     private static LinkedHashMap<String, Object> individualHostLimits = new LinkedHashMap<String, Object>();
     /* Connection limits: 2020-03-24: According to API docs "Max Connections: 15 per user/minute" --> WTF --> Set it to unlimited for now */
     private static final int                     defaultMAXDOWNLOADS  = -1;
-    private static final int                     defaultMAXCHUNKS     = 0;
+    private static final int                     defaultMAXCHUNKS     = 1;
     private static final boolean                 defaultRESUME        = false;
     private static final String                  PROPERTY_logintoken  = "token";
     private static final String                  PROPERTY_directlink  = "directlink";

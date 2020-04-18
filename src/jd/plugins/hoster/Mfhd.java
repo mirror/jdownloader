@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,14 +39,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * @author lspcity
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfhd.de" }, urls = { "http://mfhd\\.de/notsupported/blahblbha/[a-z]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfhd.de" }, urls = { "http://mfhd\\.de/notsupported/blahblbha/[a-z]+" })
 public class Mfhd extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
@@ -62,6 +61,7 @@ public class Mfhd extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
+    /** 2020-04-18: Dirk/raztoki/team: Friendly reminder: Can we delete this or does that still exist?? */
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         prepBrowser(br);
@@ -69,7 +69,6 @@ public class Mfhd extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         String user_info = br.getPage("http://mfhd.de/api.php?action=user&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         handleAccountErrors();
-
         /* parse api response in easy2handle hashmap */
         if (user_info.equals("valid")) {
             ArrayList<String> supportedHosts = this.getSupportedHosters();
@@ -82,7 +81,6 @@ public class Mfhd extends PluginForHost {
             ac.setProperty("multiHostSupport", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNormal accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-
         return ac;
     }
 
@@ -207,7 +205,6 @@ public class Mfhd extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -223,13 +220,10 @@ public class Mfhd extends PluginForHost {
                 }
             }
         }
-
         prepBrowser(br);
         showMessage(link, "Phase 1/2: Generating link");
-
         // here we can get a 503 error page, which causes an exception
         String genlink = br.getPage("http://mfhd.de/api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=info&url=" + Encoding.urlEncode(link.getDownloadURL()));
-
         /* Possible html, unhandled: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
         if (genlink == null || !genlink.matches("https?://.+")) {
             int retry = link.getIntegerProperty("retryCount", 0);
@@ -253,7 +247,6 @@ public class Mfhd extends PluginForHost {
                 link.setProperty("retryCount", Property.NULL);
                 // disable hoster for 30min
                 tempUnavailableHoster(account, link, 30 * 60 * 1000l);
-
             }
             String msg = "(" + (retry + 1) + "/" + 3 + ")";
             link.setProperty("retryCount", (retry + 1));
