@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -31,6 +32,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -41,23 +43,20 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "" })
 public class MegarapidoNet extends antiDDoSForHost {
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-    private final String                 PRIMARYURL                   = "https://" + this.getHost();
-    private final String                 NICE_HOSTproperty            = this.getHost().replaceAll("(\\.|-)", "") + "_";
-    private final String                 DIRECTLINK                   = NICE_HOSTproperty + "DIRECTLINK";
+    private final String         PRIMARYURL                   = "https://" + this.getHost();
+    private final String         NICE_HOSTproperty            = this.getHost().replaceAll("(\\.|-)", "") + "_";
+    private final String         DIRECTLINK                   = NICE_HOSTproperty + "DIRECTLINK";
     /* Connection limits */
-    private static final boolean         ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int             ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String          default_UA                   = "JDownloader";
-    private int                          statuscode                   = 0;
-    private static MultiHosterManagement mhm                          = new MultiHosterManagement("megarapido.net");
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private int                  statuscode                   = 0;
 
     public MegarapidoNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,9 +72,8 @@ public class MegarapidoNet extends antiDDoSForHost {
         br = new Browser();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", default_UA);
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
-        br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         return br;
     }
@@ -86,7 +84,7 @@ public class MegarapidoNet extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
@@ -112,18 +110,17 @@ public class MegarapidoNet extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        mhm.runCheck(account, link);
         login(account);
         String dllink = checkDirectLink(link, DIRECTLINK);
         if (dllink == null) {
-            final Form form = new Form();
-            form.setAction("/api/generator/generate");
-            form.put("link", Encoding.urlEncode(link.getPluginPatternMatcher()));
-            formAPISafe(form, link, account);
+            final Form dlform = new Form();
+            dlform.setAction("/api/generator/generate");
+            dlform.put("link", Encoding.urlEncode(link.getPluginPatternMatcher()));
+            submitForm(dlform);
             dllink = PluginJSonUtils.getJson(br, "link");
-            if (dllink == null || dllink.length() > 500) {
+            if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
                 /* Should never happen */
-                mhm.handleErrorGeneric(account, link, "dllinknull", 5);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 3 * 60 * 1000l);
             }
         }
         handleDL(account, link, dllink);
@@ -147,9 +144,8 @@ public class MegarapidoNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
                 br.followConnection();
-                updatestatuscode();
                 handleAPIErrors(account, link);
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 5);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error", 3 * 60 * 1000l);
             }
             dl.startDownload();
         } catch (final Exception e) {
@@ -158,8 +154,8 @@ public class MegarapidoNet extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -167,12 +163,12 @@ public class MegarapidoNet extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 if (con != null) {
@@ -209,20 +205,17 @@ public class MegarapidoNet extends antiDDoSForHost {
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
         }
-        // host map found here
         getPage("/api/servers/list");
-        // invalid json response
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject("{ \"hostarray\":" + br.toString() + "}");
-        final ArrayList<LinkedHashMap<String, Object>> hostDomainsInfo = (ArrayList) entries.get("hostarray");
+        final ArrayList<LinkedHashMap<String, Object>> hostDomainsInfo = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final LinkedHashMap<String, Object> entry : hostDomainsInfo) {
-            // nome=name
             final String crippledhost = ((String) entry.get("nome")).toLowerCase(Locale.ENGLISH);
             final String status = (String) entry.get("status");
             // Disponível = Available
             // Em Testes = In Tests
             // Em Manutenção = Under maintenance
             if (!"Disponível".equals(status)) {
+                logger.info("Skipping the following host because deactivated at this moment: " + crippledhost);
                 continue;
             }
             supportedHosts.add(crippledhost);
@@ -231,6 +224,15 @@ public class MegarapidoNet extends antiDDoSForHost {
             // //Ilimitado = unlimited
         }
         ai.setMultiHostSupport(this, supportedHosts);
+        /* Debug experiment */
+        final boolean isDebugUser = "2291d4a23c18cad3a2f5ba278910f3c4".equals(JDHash.getMD5(account.getUser()));
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE || isDebugUser) {
+            /*
+             * Debug test: Check account frequently to see if this extends cookie validity. Default min value is basically 5 mins so this
+             * will check it all 5 mins.
+             */
+            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 4 * 60 * 1000l);
+        }
         return ai;
     }
 
@@ -243,30 +245,49 @@ public class MegarapidoNet extends antiDDoSForHost {
                 if (cookies != null) {
                     logger.info("Trying to login via cookies");
                     br.setCookies(PRIMARYURL, cookies);
-                    br.getPage(PRIMARYURL + "/api/login/signed_in");
-                    // should have json...
-                    loggedIN = !isCookiesSessionInvalid();
+                    getPage(PRIMARYURL + "/api/login/signed_in");
+                    if (isCookiesSessionValid()) {
+                        logger.info("Cookie login successful");
+                        loggedIN = true;
+                    } else {
+                        logger.info("Cookie login failed");
+                        if (br.containsHTML("Usuário deslogado")) {
+                            /* 2020-04-18: Seems like this is the typical response when cookies are not valid anymore */
+                            logger.info("User was automatically logged-out");
+                        }
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            /* 2020-04-18: Bug-hunting */
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookies expired?!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                    }
                 }
                 if (!loggedIN) {
                     logger.info("Performing full login");
-                    getAPISafe(PRIMARYURL + "/login", null, account);
-                    final Form f = new Form();
-                    f.setAction("/api/login/sign_in");
-                    f.put("email", Encoding.urlEncode(account.getUser()));
-                    f.put("password", Encoding.urlEncode(account.getPass()));
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), this.getHost(), true);
-                    this.setDownloadLink(dummyLink);
+                    br.clearCookies(this.getHost());
+                    getPage(PRIMARYURL + "/login");
+                    final Form loginform = new Form();
+                    loginform.setAction("/api/login/sign_in");
+                    loginform.put("email", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    final DownloadLink link;
+                    if (this.getDownloadLink() != null) {
+                        link = this.getDownloadLink();
+                    } else {
+                        link = new DownloadLink(this, "Account", this.getHost(), this.getHost(), true);
+                        this.setDownloadLink(link);
+                    }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lel6CQUAAAAANRfiz7Kh8rdyzHgh4An39DbHb67").getToken();
-                    f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    formAPISafe(f, null, account);
-                    if ("Email ou senha inválidos".equals(br.toString())) {
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    submitForm(loginform);
+                    if ("Email ou senha inválidos".equalsIgnoreCase(br.toString()) || !isCookiesSessionValid()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(PRIMARYURL), "");
             } catch (final PluginException e) {
                 e.printStackTrace();
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                /* 2020-04-18: Do not clear captchas in debud mode for bug-hunting purposes. */
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
                 throw e;
@@ -274,33 +295,12 @@ public class MegarapidoNet extends antiDDoSForHost {
         }
     }
 
-    private boolean isCookiesSessionInvalid() {
-        final boolean result = br.getCookie(this.getHost(), "key") == null || "deleted".equals(br.getCookie(this.getHost(), "key")) || (br.getHttpConnection().getResponseCode() == 401 && "Usuário deslogado".equals(br.toString()));
+    private boolean isCookiesSessionValid() {
+        final boolean result = br.getCookie(this.getHost(), "key", Cookies.NOTDELETEDPATTERN) != null && (br.getHttpConnection().getResponseCode() != 401 && !"Usuário deslogado".equalsIgnoreCase(br.toString()));
         return result;
     }
 
-    private void getAPISafe(final String accesslink, final DownloadLink link, final Account account) throws Exception {
-        getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(account, link);
-    }
-
-    private void postAPISafe(final String accesslink, final String postdata, final DownloadLink link, final Account account) throws Exception {
-        postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(account, link);
-    }
-
-    private void formAPISafe(final Form form, final DownloadLink link, final Account account) throws Exception {
-        submitForm(form);
-        updatestatuscode();
-        handleAPIErrors(account, link);
-    }
-
-    /**
-     * 0 = everything ok, 1-99 = "error"-errors
-     */
-    private void updatestatuscode() {
+    private void handleAPIErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         String error = br.getRegex("class=alert-message error > ([^<>]*?)</div>").getMatch(0);
         if (error == null) {
             /* 2019-08-22: Website may respond with only an errormessage as plaintext, no json or html code at all */
@@ -308,28 +308,12 @@ public class MegarapidoNet extends antiDDoSForHost {
         }
         if (error != null) {
             if (error.contains("Desculpe-nos, no momento o servidor")) {
-                statuscode = 1;
+                /* Host currently not supported */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is currently not supported", 3 * 60 * 1000l);
             } else if (error.contains("Seu gerador premium está zerado, por favor, compre um de nossos planos")) {
-                statuscode = 2;
+                /* 2019-08-22: (Free-Account)Traffic empty (??) */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No (Free-)Account traffic available anymore", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-        } else {
-            statuscode = 0;
-        }
-    }
-
-    private void handleAPIErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        switch (statuscode) {
-        case 0:
-            /* Everything ok */
-            break;
-        case 1:
-            /* Host currently not supported --> deactivate it for some hours. */
-            mhm.putError(account, link, 3 * 60 * 1000l, "Host is currently not supported");
-        case 2:
-            /* 2019-08-22: (Free-Account)Traffic empty (??) */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "No (Free-)Account traffic available anymore", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        default:
-            break;
         }
     }
 
