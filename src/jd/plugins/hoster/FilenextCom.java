@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilenextCom extends XFileSharingProBasic {
@@ -115,7 +115,7 @@ public class FilenextCom extends XFileSharingProBasic {
          * 2020-04-20: E.g. bad html which breaks password handling in premium mode --> JD would ask for a download captcha although there
          * is none e.g. <div style="display:none;background:#ccc;"><br><b>Password:</b></div>
          */
-        regexStuff.add("<div style=\"display:none;background:#ccc;\">(.*?)</div>");
+        regexStuff.add("<div\\s*style\\s*=\\s*\"[^\"]*display:none[^\"]*\"\\s*>(.*?)</div>");
         return regexStuff;
     }
 }
