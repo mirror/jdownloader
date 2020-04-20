@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -32,7 +31,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -224,15 +222,11 @@ public class MegarapidoNet extends antiDDoSForHost {
             // //Ilimitado = unlimited
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        /* Debug experiment */
-        final boolean isDebugUser = "2291d4a23c18cad3a2f5ba278910f3c4".equals(JDHash.getMD5(account.getUser()));
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE || isDebugUser) {
-            /*
-             * Debug test: Check account frequently to see if this extends cookie validity. Default min value is basically 5 mins so this
-             * will check it all 5 mins.
-             */
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 4 * 60 * 1000l);
-        }
+        /*
+         * Less login captchas by less checks --> If user starts downloads in between and session is expired, he will be asked for a captcha
+         * anways of course.
+         */
+        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 48 * 60 * 1000l);
         return ai;
     }
 
@@ -255,13 +249,10 @@ public class MegarapidoNet extends antiDDoSForHost {
                             /* 2020-04-18: Seems like this is the typical response when cookies are not valid anymore */
                             logger.info("User was automatically logged-out");
                         }
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            /* 2020-04-18: Bug-hunting */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookies expired?!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
                     }
                 }
                 if (!loggedIN) {
+                    /* 2020-04-20: Seems like their sessions are only valid for ~2 hours no matter what you do ... */
                     logger.info("Performing full login");
                     br.clearCookies(this.getHost());
                     getPage(PRIMARYURL + "/login");
@@ -286,8 +277,7 @@ public class MegarapidoNet extends antiDDoSForHost {
                 account.saveCookies(br.getCookies(PRIMARYURL), "");
             } catch (final PluginException e) {
                 e.printStackTrace();
-                /* 2020-04-18: Do not clear captchas in debud mode for bug-hunting purposes. */
-                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
                 throw e;

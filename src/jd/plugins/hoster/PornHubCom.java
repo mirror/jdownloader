@@ -36,6 +36,15 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,15 +69,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForHost {
@@ -240,6 +240,10 @@ public class PornHubCom extends PluginForHost {
         String html_filename = null;
         String server_filename = null;
         final String quality = link.getStringProperty("quality", null);
+        /*
+         * TODO account handling: Prefer account from handlePremium to be sure not to use ANY account for downloading but the account the
+         * upper handling is using!
+         */
         if (link.getDownloadURL().matches(type_photo)) {
             /* Offline links should also have nice filenames */
             link.setName(viewKey + ".jpg");
@@ -857,6 +861,7 @@ public class PornHubCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        final boolean isCookieLoginOnly = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
         login(this, br, account, true);
         ai.setUnlimitedTraffic();
         if (isLoggedInHtmlPremium(br)) {
@@ -873,7 +878,12 @@ public class PornHubCom extends PluginForHost {
             ai.setStatus("Free Account");
         }
         logger.info("Account: " + account + " - is valid");
-        return ai;
+        if (isCookieLoginOnly && account.getType() == AccountType.PREMIUM) {
+            /* Never modify previous AccountInfo if we're logged in via cookies only! */
+            return account.getAccountInfo();
+        } else {
+            return ai;
+        }
     }
 
     @Override
@@ -976,13 +986,14 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static void prepBr(final Browser br) {
+    public static Browser prepBr(final Browser br) {
         // br.setCookie("http://pornhub.com/", "platform", "pc");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
         br.setLoadLimit(br.getDefaultLoadLimit() * 4);
+        return br;
     }
 
     public static String createPornhubImageLink(final String viewkey, final Account acc) {

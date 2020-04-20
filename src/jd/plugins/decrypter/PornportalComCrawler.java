@@ -151,11 +151,11 @@ public class PornportalComCrawler extends PluginForDecrypt {
              */
             /* TODO: Test this */
             logger.info("Failed to find main account --> Looking for 'multihoster account'");
-            final ArrayList<String> allowedHosts = PornportalCom.getAllSupportedPluginDomainsFlat();
+            final ArrayList<String> allowedPornportalHosts = PornportalCom.getAllSupportedPluginDomainsFlat();
             final List<Account> multihostAccounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
             for (final Account multihostAcc : multihostAccounts) {
                 final String multiHostHost = multihostAcc.getHoster();
-                if (allowedHosts.contains(multiHostHost)) {
+                if (allowedPornportalHosts.contains(multiHostHost)) {
                     logger.info("Found working multihost account");
                     aa = multihostAcc;
                     break;

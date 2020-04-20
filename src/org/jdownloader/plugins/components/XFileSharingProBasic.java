@@ -122,6 +122,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static final String  PROPERTY_pw_required         = "password_requested_by_website";
     private static final String  PROPERTY_captcha_required    = "captcha_requested_by_website";
+    private static final String  PROPERTY_apikey              = "apikey";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.3.8<br />
@@ -497,16 +498,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return prepBr;
     }
 
-    /** Returns https?://host.tld */
+    /** Returns https?://host.tld ATTENTION: On override, make sure that current browsers' host still gets preferred over plugin host. */
     protected String getMainPage() {
         final String host;
         final String browser_host = this.br != null ? br.getHost() : null;
-        final String[] hosts = this.siteSupportedNames();
         if (browser_host != null) {
+            /* Has a browser request been done before? Use this domain as it could e.g. differ from the plugin set main domain. */
             host = browser_host;
         } else {
+            /* Return current main domain */
             /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
-            host = hosts[0];
+            host = this.getHost();
         }
         String mainpage;
         final String protocol;
@@ -2774,7 +2776,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Found apikey --> Trying to get accountinfo via API");
                 /* Save apikey for possible future usage */
                 synchronized (account) {
-                    account.setProperty("apikey", apikey);
+                    account.setProperty(PROPERTY_apikey, apikey);
                     try {
                         ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account, false);
                         api_success = ai != null;
@@ -3192,12 +3194,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * 2019-07-25: TODO: Maybe check for valid cookies on all supported domains (e.g. special case imgrock.info and some others in
          * ImgmazeCom plugin)
          */
-        final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
+        final String mainpage = getMainPage();
+        logger.info("Doing login-cookiecheck for: " + mainpage);
+        final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
         /* xfsts cookie is mostly used in xvideosharing sites (videohosters) example: vidoza.net */
-        final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "login", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
+        final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
         /* 2019-06-21: Example website which uses rare email cookie: filefox.cc (so far the only known!) */
-        final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN));
-        final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(getMainPage(), "email", Cookies.NOTDELETEDPATTERN), br.getCookie(getMainPage(), "xfsts", Cookies.NOTDELETEDPATTERN));
+        final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
+        final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
         /* buttons or sites that are only available for logged in users */
         // remove script tags
         // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
@@ -3329,8 +3333,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } else {
                             logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
                         }
+                        /*
+                         * TODO 2020-04-20: Modify text and only include the "or login captcha" part if user was actually asked to enter a
+                         * login captcha or completely remove that.
+                         */
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", ""), PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
@@ -3467,7 +3475,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.removeProperty("apikey");
+                    account.removeProperty(PROPERTY_apikey);
                 }
                 throw e;
             } finally {
@@ -3479,7 +3487,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected final String getAPIKey(final Account account) {
         /* First check if the apikey was found via website handling and set as a property on our Account object */
         synchronized (account) {
-            String apikey = account.getStringProperty("apikey", null);
+            String apikey = account.getStringProperty(PROPERTY_apikey, null);
             /* Second, maybe the user has logged in via API. */
             if (StringUtils.isEmpty(apikey) && isAPIKey(account.getUser())) {
                 apikey = account.getUser();
