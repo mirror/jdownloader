@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffetish.photos" }, urls = { "https?://(?:www\\.)?ffetish\\.photos/\\d+[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffetish.photos", "ffetish.video" }, urls = { "https?://(?:www\\.)?ffetish\\.photos/\\d+[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?ffetish\\.video/\\d+[a-z0-9\\-]+\\.html" })
 public class FfetishPhotos extends antiDDoSForDecrypt {
     public FfetishPhotos(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,7 +40,13 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String dl_id = new Regex(parameter, "photos/(\\d+)").getMatch(0);
+        final String dl_id = new Regex(parameter, "(?:photos|video)/(\\d+)").getMatch(0);
+        final String skin;
+        if ("ffetish.photos".equals(getHost())) {
+            skin = "ffphotos";
+        } else {
+            skin = "ffvideo";
+        }
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -52,7 +58,7 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
             for (int i = 0; i <= 3; i++) {
                 final String code = this.getCaptchaCode("https://" + this.getHost() + "/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
-                postPage("https://" + this.getHost() + "/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=ffphotos");
+                postPage("https://" + this.getHost() + "/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=" + skin);
                 Form form = br.getForm(0);
                 if (form != null && form.containsHTML("g-recaptcha")) {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
@@ -69,7 +75,7 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        String finallink = this.br.getRegex("(https?://ffetish\\.photos/video/[^\"\\']+)").getMatch(0);
+        String finallink = this.br.getRegex("(https?://ffetish\\.(?:photos|video)/video/[^\"\\']+)").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
