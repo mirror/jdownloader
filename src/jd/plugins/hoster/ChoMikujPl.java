@@ -41,6 +41,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -516,7 +517,10 @@ public class ChoMikujPl extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
             if (!getDllink(link, br, false) && is_premiumonly) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
+            } else if (this.dllink == null) {
+                /* 2020-04-20: Lazy handling because most files are premiumonly: Final downloadlink not found = premiumonly */
+                throw new AccountRequiredException();
             }
         }
         handleDownload(link, null, free_resume, free_maxchunks);

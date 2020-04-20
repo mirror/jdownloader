@@ -35,13 +35,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_\\-]+\\.)?urlgalleries\\.net/(porn-gallery-\\d+/.*|blog_gallery\\.php\\?id=\\d+.*)|https?://go\\.urlgalleries\\.net/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_\\-]+\\.)?urlgalleries\\.net/(porn-gallery-\\d+/.*|blog_gallery\\.php\\?id=\\d+.*|porn-picture-.+)|https?://go\\.urlgalleries\\.net/[a-z0-9]+" })
 public class RlGalleriesNt extends PluginForDecrypt {
     private static String agent = null;
 
     public RlGalleriesNt(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_SINGLE_PICTURE = "https?://[^/]+/porn-picture-.+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -56,14 +58,30 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setFollowRedirects(true);
         final String galleryID = new Regex(parameter, "(?:porn-gallery-|blog_gallery\\.php\\?id=)(\\d+)").getMatch(0);
-        if (galleryID == null) {
+        if (galleryID == null || parameter.matches(TYPE_SINGLE_PICTURE)) {
             /* 2020-03-19: Single link */
+            br.setFollowRedirects(false);
             br.getPage(parameter);
-            if (isOffline() || br.containsHTML("/not_found_adult\\.php")) {
+            int counter = 0;
+            String redirect = null;
+            do {
+                counter++;
+                redirect = br.getRedirectLocation();
+                if (redirect == null || !redirect.contains(this.getHost())) {
+                    break;
+                }
+                br.getPage(redirect);
+            } while (counter <= 5);
+            if (isOffline() || br.containsHTML("/not_found_adult\\.php") || (redirect != null && redirect.contains(this.getHost()))) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final String finallink = br.getRegex("linkDestUrl\\s*=\\s*\\'(http[^<>\"\\']+)\\'").getMatch(0);
+            final String finallink;
+            if (redirect != null) {
+                finallink = redirect;
+            } else {
+                finallink = br.getRegex("linkDestUrl\\s*=\\s*\\'(http[^<>\"\\']+)\\'").getMatch(0);
+            }
             if (finallink == null) {
                 return null;
             }

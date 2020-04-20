@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,11 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MixdropCo extends antiDDoSForHost {
@@ -183,9 +183,16 @@ public class MixdropCo extends antiDDoSForHost {
             /* 2019-12-13: Invisible reCaptcha */
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
-                final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
+                // final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
                 final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 postData += "&token=" + Encoding.urlEncode(recaptchaV2Response);
+            }
+            if (br.containsHTML("Failed captcha verification")) {
+                /*
+                 * 2020-04-20: Should never happen but happens:
+                 * {"type":"error","msg":"Failed captcha verification. Please try again. #errcode: 2"}
+                 */
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             postPage(url, postData);
             dllink = PluginJSonUtils.getJson(br, "url");
