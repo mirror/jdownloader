@@ -40,8 +40,8 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -98,7 +98,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     public AbstractNotifyWindow(AbstractBubbleSupport bubbleSupport, String caption, T comp) {
         super();
         this.bubbleSupport = bubbleSupport;
-        if (Application.getJavaVersion() >= Application.JAVA17) {
+        if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
             this.setType(java.awt.Window.Type.POPUP);
         }
         bounds = new Rectangle();
@@ -216,9 +216,13 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             return false;
         }
         try {
-            com.sun.awt.AWTUtilities.setWindowOpaque(owner, false);
-            setWindowOpaqueSupported = Boolean.TRUE;
-            return true;
+            if (JVMVersion.get() < JVMVersion.JAVA_10) {
+                com.sun.awt.AWTUtilities.setWindowOpaque(owner, false);
+                setWindowOpaqueSupported = Boolean.TRUE;
+                return true;
+            } else {
+                return false;
+            }
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -233,8 +237,8 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             return null;
         }
         try {
-            Float ret = null;
-            if (Application.getJavaVersion() >= Application.JAVA17) {
+            final Float ret;
+            if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
                 ret = owner.getOpacity();
             } else {
                 ret = com.sun.awt.AWTUtilities.getWindowOpacity(owner);
@@ -254,11 +258,11 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         if (Boolean.FALSE.equals(setWindowOpacitySupported)) {
             return;
         }
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice gd = ge.getDefaultScreenDevice();
         try {
             if (gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
-                if (Application.getJavaVersion() >= Application.JAVA17) {
+                if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
                     window.setOpacity(f);
                 } else {
                     com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
