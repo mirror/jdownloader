@@ -73,6 +73,9 @@ public class MyStreamTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJsonValue(br, "title");
+        if (filename == null) {
+            filename = br.getRegex("title\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
+        }
         final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             /* 2016-09-19: Fallback to fuid as we do not always have a title/filename available. */

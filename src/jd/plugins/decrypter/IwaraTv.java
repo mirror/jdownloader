@@ -69,16 +69,28 @@ public class IwaraTv extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        final String source_html = br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
-        if (source_html != null) {
-            externID = new Regex(source_html, "\"(https?[^<>\"]*?)\"").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID));
-                return decryptedLinks;
+        final String[] images = br.getRegex("class=\"field-item even\"><a href=\"([^<>\"]+/files/photos/imported/[^<>\"]+)\"").getColumn(0);
+        if (images.length > 0) {
+            /* 2020-04-20: New: Images */
+            for (String image : images) {
+                if (image.startsWith("//")) {
+                    image = "https:" + image;
+                }
+                final DownloadLink dl = this.createDownloadlink(image);
+                decryptedLinks.add(dl);
             }
+        } else {
+            final String source_html = br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
+            if (source_html != null) {
+                externID = new Regex(source_html, "\"(https?[^<>\"]*?)\"").getMatch(0);
+                if (externID != null) {
+                    decryptedLinks.add(createDownloadlink(externID));
+                    return decryptedLinks;
+                }
+            }
+            final DownloadLink dl = createDownloadlink(br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
+            decryptedLinks.add(dl);
         }
-        final DownloadLink dl = createDownloadlink(br.getURL().replace("iwara.tv/", "iwaradecrypted.tv/"));
-        decryptedLinks.add(dl);
         return decryptedLinks;
     }
 }

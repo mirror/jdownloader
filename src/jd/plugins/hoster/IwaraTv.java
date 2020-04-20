@@ -90,12 +90,12 @@ public class IwaraTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         serverIssue = false;
         this.setBrowserExclusive();
         prepBR(this.br);
-        final String fid = getFID(downloadLink.getDownloadURL());
+        final String fid = getFID(link.getDownloadURL());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
@@ -103,7 +103,7 @@ public class IwaraTv extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        this.br.getPage(downloadLink.getDownloadURL());
+        this.br.getPage(link.getDownloadURL());
         br.followRedirect();
         final String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
         String filename = "";
@@ -123,7 +123,7 @@ public class IwaraTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(html_privatevideo)) {
             /* Private video */
-            downloadLink.setName(filename + ".mp4");
+            link.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
         boolean useApi = false;
@@ -164,7 +164,7 @@ public class IwaraTv extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -172,8 +172,8 @@ public class IwaraTv extends PluginForHost {
         try {
             con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setProperty("directlink", dllink);
+                link.setDownloadSize(con.getLongContentLength());
+                link.setProperty("directlink", dllink);
             } else {
                 serverIssue = true;
             }
