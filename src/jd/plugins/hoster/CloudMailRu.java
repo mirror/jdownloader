@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,8 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" })
 public class CloudMailRu extends PluginForHost {
@@ -128,17 +128,17 @@ public class CloudMailRu extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, boolean resume, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final String dllink = getdllink(downloadLink, directlinkproperty);
-        if (isCompleteFolder(downloadLink)) {
+    private void doFree(final DownloadLink link, boolean resume, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String dllink = getdllink(link, directlinkproperty);
+        if (isCompleteFolder(link)) {
             resume = false;
             maxchunks = 1;
         }
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxchunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
@@ -146,7 +146,7 @@ public class CloudMailRu extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("plain_directlink", dllink);
+        link.setProperty("plain_directlink", dllink);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -156,26 +156,26 @@ public class CloudMailRu extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(CloudMailRu.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {
+                    link.setProperty(CloudMailRu.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
-                if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
-                    downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(false));
+                if (link.getBooleanProperty(NOCHUNKS, false)) {
+                    link.setProperty(NOCHUNKS, Boolean.valueOf(false));
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
                 }
-                downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                downloadLink.setChunksProgress(null);
+                link.setProperty(NOCHUNKS, Boolean.valueOf(true));
+                link.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
             }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(CloudMailRu.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {
+                link.setProperty(CloudMailRu.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
@@ -183,21 +183,21 @@ public class CloudMailRu extends PluginForHost {
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
-    private String getdllink(final DownloadLink dl, final String directlinkproperty) throws Exception {
-        final String unique_id = dl.getStringProperty("unique_id", null);
-        String dllink = checkDirectLink(dl, "plain_directlink");
+    private String getdllink(final DownloadLink link, final String directlinkproperty) throws Exception {
+        final String unique_id = link.getStringProperty("unique_id", null);
+        String dllink = checkDirectLink(link, "plain_directlink");
         if (dllink == null) {
-            if (dl.getDownloadURL().matches(TYPE_HOTLINK)) {
-                dllink = dl.getDownloadURL();
-            } else if (isCompleteFolder(dl)) {
-                final String request_id = dl.getStringProperty("plain_request_id", null);
+            if (link.getDownloadURL().matches(TYPE_HOTLINK)) {
+                dllink = link.getDownloadURL();
+            } else if (isCompleteFolder(link)) {
+                final String request_id = link.getStringProperty("plain_request_id", null);
                 if (request_id == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(dl.getName()) + "&cp866=false&api=2&build=" + BUILD);
+                br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = PluginJSonUtils.getJsonValue(br, "body");
-            } else if (dl.getBooleanProperty("noapi", false)) {
-                br.getPage(getMainlink(dl));
+            } else if (link.getBooleanProperty("noapi", false)) {
+                br.getPage(getMainlink(link));
                 final String json = br.getRegex("(\\{\\s*\"tree\":.*?)\\);").getMatch(0);
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -209,7 +209,7 @@ public class CloudMailRu extends PluginForHost {
                     final LinkedHashMap<String, Object> filemap = (LinkedHashMap<String, Object>) o;
                     final LinkedHashMap<String, Object> url = (LinkedHashMap<String, Object>) filemap.get("url");
                     final String get_url = (String) url.get("get");
-                    if (Encoding.htmlDecode(get_url).contains(dl.getName())) {
+                    if (Encoding.htmlDecode(get_url).contains(link.getName())) {
                         if (get_url.startsWith("//")) {
                             dllink = Request.getLocation(get_url, br.getRequest());
                         } else {
@@ -220,7 +220,7 @@ public class CloudMailRu extends PluginForHost {
                 }
             } else {
                 logger.info("Failed to use saved dllink, trying to generate new link");
-                final String mainlink = getMainlink(dl);
+                final String mainlink = getMainlink(link);
                 String dataserver = null;
                 String pageid = null;
                 String linkpart = new Regex(mainlink, "/public/([^/]+/[^/]+)").getMatch(0);
@@ -246,6 +246,9 @@ public class CloudMailRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid);
+                if (br.getHttpConnection().getResponseCode() != 200) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + br.getHttpConnection().getResponseCode());
+                }
                 final String token = PluginJSonUtils.getJsonValue(br, "token");
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

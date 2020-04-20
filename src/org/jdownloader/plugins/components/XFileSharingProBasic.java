@@ -1698,6 +1698,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             handleRecaptchaV2(link, captchaForm);
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+        } else if (captchaForm.containsHTML("hcaptcha\\.com/") || captchaForm.containsHTML("class=\"h-captcha\"")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'");
         } else {
             if (StringUtils.containsIgnoreCase(correctedBR, ";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");

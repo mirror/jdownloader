@@ -709,8 +709,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             final String author = PluginJSonUtils.getJsonValue(br, "md_author");
             filename = PluginJSonUtils.getJsonValue(br, "md_title");
-            if (filename == null || filename.length() > 100) {
-                /* fallback or avoid too long filenames */
+            if (filename == null) {
                 if (author != null) {
                     filename = author + "_" + oid_and_id;
                 } else {
