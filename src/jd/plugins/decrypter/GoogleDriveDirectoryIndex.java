@@ -17,8 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -31,10 +33,40 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "index.gd.workers.dev" }, urls = { "https?://index\\.gd\\.workers\\.dev/(.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    /* This is a selfhosted thing: https://github.com/donwa/goindex */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        /* Most times it's index.workers.dev */
+        ret.add(new String[] { "workers.dev" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z0-9\\-\\.]+\\.)?" + buildHostsPatternPart(domains) + "/(.+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -66,26 +98,34 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
         for (final Object fileO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) fileO;
             final String name = (String) entries.get("name");
+            final String type = (String) entries.get("mimeType");
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
-            if (StringUtils.isEmpty(name)) {
+            if (StringUtils.isEmpty(name) || StringUtils.isEmpty(type)) {
                 /* Skip invalid objects */
                 continue;
             }
             String url = parameter;
             /* Filename is alrerady in URL if we have a single URL! */
-            if (!parameter.endsWith(name)) {
-                if (!parameter.endsWith("/")) {
+            if (!url.endsWith(name)) {
+                if (!url.endsWith("/")) {
                     url += "/";
                 }
-                url += name;
+                url += URLEncode.encodeURIComponent(name);
+                url += "/";
             }
-            final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
-            dl.setAvailable(true);
-            dl.setFinalFileName(name);
-            if (filesize > 0) {
-                dl.setDownloadSize(filesize);
+            final DownloadLink dl;
+            if (type.contains("folder")) {
+                dl = this.createDownloadlink(url);
+                decryptedLinks.add(dl);
+            } else {
+                dl = this.createDownloadlink("directhttp://" + url);
+                dl.setAvailable(true);
+                dl.setFinalFileName(name);
+                if (filesize > 0) {
+                    dl.setDownloadSize(filesize);
+                }
+                decryptedLinks.add(dl);
             }
-            decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(urlname));

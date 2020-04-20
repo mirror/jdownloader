@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -123,5 +124,14 @@ public class KatfileCom extends XFileSharingProBasic {
             pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
         }
         return pattern.toString();
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        boolean isoffline = super.isOffline(link);
+        if (!isoffline) {
+            isoffline = new Regex(correctedBR, "/404-remove|>The file expired>The file was deleted by its owner").matches();
+        }
+        return isoffline;
     }
 }

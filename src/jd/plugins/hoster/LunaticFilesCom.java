@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -164,5 +165,11 @@ public class LunaticFilesCom extends XFileSharingProBasic {
             dlForm = super.findFormDownload2Free();
         }
         return dlForm;
+    }
+
+    @Override
+    protected boolean containsRecaptchaV2Class(final String string) {
+        /* 2020-04-20: Special */
+        return CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(string) || string.contains("grecaptcha.render");
     }
 }

@@ -336,6 +336,12 @@ public class DdlTo extends XFileSharingProBasic {
         return mainpage;
     }
 
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /* 2020-04-20: Not supported anymore */
+        return false;
+    }
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
