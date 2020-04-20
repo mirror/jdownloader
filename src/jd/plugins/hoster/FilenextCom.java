@@ -107,4 +107,15 @@ public class FilenextCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        final ArrayList<String> regexStuff = super.getCleanupHTMLRegexes();
+        /*
+         * 2020-04-20: E.g. bad html which breaks password handling in premium mode --> JD would ask for a download captcha although there
+         * is none e.g. <div style="display:none;background:#ccc;"><br><b>Password:</b></div>
+         */
+        regexStuff.add("<div style=\"display:none;background:#ccc;\">(.*?)</div>");
+        return regexStuff;
+    }
 }

@@ -416,7 +416,7 @@ public class PornportalCom extends PluginForHost {
                             final Browser brc = prepBR(new Browser());
                             brc.setCookies(account.getHoster(), cookies);
                             brc.getPage(getPornportalMainURL(account.getHoster()));
-                            /* TODO: This is very unsafe without using json parser! */
+                            /* Attention: This is very unsafe without using json parser! */
                             jwt = PluginJSonUtils.getJson(brc, "jwt");
                             if (jwt == null) {
                                 logger.warning("Failed to find jwt --> Re-using old value");
@@ -440,14 +440,9 @@ public class PornportalCom extends PluginForHost {
                 final Browser newBR = prepBR(new Browser());
                 brlogin.setHeaders(newBR.getHeaders());
                 brlogin.setFollowRedirects(true);
-                /* TODO: This step can be skipped when isExternalPortalLogin == true */
-                brlogin.getPage(getPornportalMainURL(target_domain) + "/login");
-                Map<String, Object> entries = getJsonJuanEawInstance(brlogin);
-                final String api_base = PluginJSonUtils.getJson(brlogin, "dataApiUrl");
-                String cookie_name_login = PluginJSonUtils.getJson(brlogin, "authCookie");
-                if (cookie_name_login == null) {
-                    cookie_name_login = getDefaultCookieNameLogin();
-                }
+                Map<String, Object> entries;
+                String api_base;
+                String cookie_name_login = null;
                 if (isExternalPortalLogin) {
                     handleExternalLoginStep(brlogin, account, target_domain);
                     /* Now we should finally land on '/postlogin' --> This would mean SUCCESS! */
@@ -455,7 +450,17 @@ public class PornportalCom extends PluginForHost {
                         logger.warning("Possible external login failure: Expected location '/postlogin' but got this instead: " + br.getURL());
                     }
                     /* Further checks will decide whether we're loggedIN or not */
+                    entries = getJsonJuanEawInstance(brlogin);
+                    api_base = PluginJSonUtils.getJson(brlogin, "dataApiUrl");
+                    cookie_name_login = PluginJSonUtils.getJson(brlogin, "authCookie");
                 } else {
+                    brlogin.getPage(getPornportalMainURL(target_domain) + "/login");
+                    entries = getJsonJuanEawInstance(brlogin);
+                    api_base = PluginJSonUtils.getJson(brlogin, "dataApiUrl");
+                    cookie_name_login = PluginJSonUtils.getJson(brlogin, "authCookie");
+                    if (cookie_name_login == null) {
+                        cookie_name_login = getDefaultCookieNameLogin();
+                    }
                     if (StringUtils.isEmpty(api_base)) {
                         logger.warning("Failed to find api_base");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -516,7 +521,13 @@ public class PornportalCom extends PluginForHost {
                     }
                 }
                 /* Now we should e.g. be here: '/postlogin' */
-                /* 2020-04-18: This cookie is valid for 24 hours. TODO: Check if validity gets extended on frequent usage */
+                if (cookie_name_login == null) {
+                    cookie_name_login = getDefaultCookieNameLogin();
+                }
+                /*
+                 * 2020-04-18: This cookie is valid for 24 hours. TODO: Check if validity gets extended on frequent usage e.g. via
+                 * PROPERTY_REFRESH_TIMEOUT
+                 */
                 final String login_cookie = getLoginCookie(brlogin, cookie_name_login);
                 jwt = PluginJSonUtils.getJson(brlogin, "jwt");
                 if (login_cookie == null || StringUtils.isEmpty(jwt)) {
@@ -529,6 +540,11 @@ public class PornportalCom extends PluginForHost {
                 account.saveCookies(brlogin.getCookies(brlogin.getHost()), target_domain);
                 /* Sets PROPERTY_authorization as Authorization header */
                 setStoredAPIAuthHeaderAccount(brlogin, account, target_domain);
+                /*
+                 * 2020-04-20: Attempt too refresh cookies/keep them active for a longer time without having to enter new captchas every 24
+                 * hours (?)
+                 */
+                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 1000l);
             } catch (final PluginException e) {
                 /* TODO: Maybe never delete these cookies */
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -727,7 +743,7 @@ public class PornportalCom extends PluginForHost {
                 final Boolean isCanceled = (Boolean) map.get("isCanceled");
                 if (Boolean.TRUE.equals(isTrial) || Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
-                    /* 2020-04-02: Free accounts can only be used to download trailers */
+                    /* Free accounts can be used to download trailers */
                     ai.setStatus("Free Account");
                 } else if (isTrial) {
                     ai.setStatus("Free Account (Trial)");
@@ -749,7 +765,7 @@ public class PornportalCom extends PluginForHost {
                 }
                 account.setConcurrentUsePossible(true);
                 ai.setUnlimitedTraffic();
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && account.getType() == AccountType.PREMIUM) {
+                if (account.getType() == AccountType.PREMIUM) {
                     /* Now check which other websites we can now use as well and add them via multihoster handling. */
                     try {
                         br.getPage("https://site-ma." + this.getHost() + "/");
@@ -845,21 +861,19 @@ public class PornportalCom extends PluginForHost {
                             }
                             final String final_domain = supportedHostsTmpReal.get(0);
                             if (!allowedHosts.contains(final_domain) && !allowedHostsSpecial.contains(final_domain)) {
-                                logger.info("Skipping the following host as it is not an allowed/PornPortal host: " + final_domain);
+                                logger.info("Skipping the following host as it is not an allowed/PornPortal host or an external/unsupported host: " + final_domain);
                                 continue;
                             }
                             supportedHostsFinal.add(final_domain);
                             this.setPropertyAccount(account, final_domain, PROPERTY_url_external_login, autologinURL);
                         }
-                        /*
-                         * TODO: Add special handling for pornhubpremium.
-                         */
                         /* Remove current host - we do not want that in our list of supported hosts! */
                         supportedHostsFinal.remove(this.getHost());
                         ai.setMultiHostSupport(this, supportedHostsFinal);
                         try {
+                            /* TODO: Review this and than unlock it for stable JD usage */
                             final String domain_pornhub = "pornhub.com";
-                            if (supportedHostsFinal.contains(domain_pornhub)) {
+                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && supportedHostsFinal.contains(domain_pornhub)) {
                                 /* Special pornhub handling --> Add dummy account if external login works */
                                 final Browser br2 = jd.plugins.hoster.PornHubCom.prepBr(new Browser());
                                 handleExternalLoginStep(br2, account, domain_pornhub);
@@ -903,12 +917,12 @@ public class PornportalCom extends PluginForHost {
                                         pornhubAI.setValidUntil(ai.getValidUntil());
                                     }
                                     pornhubAccount.setAccountInfo(pornhubAI);
-                                    /* Most important step: Save/Refresh cookies! */
-                                    jd.plugins.hoster.PornHubCom.saveCookies(br2, pornhubAccount);
                                     /*
-                                     * TODO: Get- and set pornhubpremium cookies with a new browser instance. Then refresh these cookies
-                                     * each time, the main account of this plugin is refreshed
-                                     */}
+                                     * Get- and set pornhubpremium cookies with a new browser instance. Then refresh these cookies each
+                                     * time, the main account of this plugin gets refreshed.
+                                     */
+                                    jd.plugins.hoster.PornHubCom.saveCookies(br2, pornhubAccount);
+                                }
                             }
                         } catch (final Throwable e) {
                             logger.info("Exception occured in special pornhub handling");
