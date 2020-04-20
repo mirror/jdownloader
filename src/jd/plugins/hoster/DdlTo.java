@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,11 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -311,16 +311,16 @@ public class DdlTo extends XFileSharingProBasic {
     @Override
     protected String getMainPage() {
         /** 2020-04-17: TODO: Remove this Override / switch to new domain ddownload.com once possible. */
-        final String host = "ddownload.com";
+        final String host;
         // api.ddownload.com alternative
-        // final String browser_host = this.br != null ? br.getHost() : null;
-        // final String[] hosts = this.siteSupportedNames();
-        // if (browser_host != null) {
-        // host = browser_host;
-        // } else {
-        // /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
-        // host = hosts[0];
-        // }
+        final String browser_host = this.br != null ? br.getHost() : null;
+        if (browser_host != null) {
+            host = browser_host;
+        } else {
+            /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
+            // host = this.getHost();
+            host = "ddownload.com";
+        }
         String mainpage;
         final String protocol;
         if (this.supports_https()) {
