@@ -23,14 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -55,6 +47,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -432,7 +432,11 @@ public abstract class K2SApi extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 /*
                  * 2019-11-26: Outdated downloadurls will return precise errors (only text) e.g. "This link assigned with other IP address"
                  * or
@@ -507,29 +511,34 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account);
                 final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
-                final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
                 if (inValidate(free_download_key)) {
-                    logger.warning("free_download_key is null");
-                    this.handleErrors(account, this.br);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+")) {
-                    logger.warning("Failed to find pre-download-waittime");
-                    this.handleErrors(account, this.br);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    final String url = PluginJSonUtils.getJsonValue(br, "url");
+                    if (inValidate(url)) {
+                        this.handleErrors(account, this.br);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
+                    if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+")) {
+                        this.handleErrors(account, this.br);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        /*
+                         * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer:
+                         * {"status":"success","code":200,"message"
+                         * :"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
+                         */
+                        final int wait_seconds = Integer.parseInt(wait_seconds_str) + 2;
+                        if (wait_seconds > 180) {
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
+                        }
+                        sleep(wait_seconds * 1000l, downloadLink);
+                        getURL.put("free_download_key", free_download_key);
+                        getURL.remove("captcha_challenge");
+                        getURL.remove("captcha_response");
+                        postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account);
+                    }
                 }
-                /*
-                 * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer:
-                 * {"status":"success","code":200,"message":"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
-                 */
-                final int wait_seconds = Integer.parseInt(wait_seconds_str) + 2;
-                if (wait_seconds > 180) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
-                }
-                sleep(wait_seconds * 1000l, downloadLink);
-                getURL.put("free_download_key", free_download_key);
-                getURL.remove("captcha_challenge");
-                getURL.remove("captcha_response");
-                postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account);
             } else {
                 // premium download
                 postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
@@ -537,9 +546,10 @@ public abstract class K2SApi extends PluginForHost {
             }
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (inValidate(dllink)) {
-                logger.warning("dllink is null");
                 this.handleErrors(account, this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                logger.info("dllink = " + dllink);
             }
             /*
              * E.g. free = 51200, with correct Referer = 204800 --> Normal free speed: 30-50 KB/s | Free Speed with special Referer: 150-200
@@ -549,7 +559,6 @@ public abstract class K2SApi extends PluginForHost {
             if (rate_limit != null) {
                 logger.info("Current speedlimit: " + rate_limit);
             }
-            logger.info("dllink = " + dllink);
             /*
              * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
              */
@@ -566,7 +575,11 @@ public abstract class K2SApi extends PluginForHost {
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 handleGeneralServerErrors(account, downloadLink);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -628,7 +641,11 @@ public abstract class K2SApi extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 handleGeneralServerErrors(account, downloadLink);
                 // we now want to restore!
                 br = obr;
@@ -724,7 +741,11 @@ public abstract class K2SApi extends PluginForHost {
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 handleGeneralServerErrors(account, downloadLink);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

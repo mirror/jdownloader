@@ -16,6 +16,7 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
+import java.net.NoRouteToHostException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
+import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
 import jd.http.StaticProxySelector;
 import jd.plugins.Account;
@@ -60,6 +62,7 @@ import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
@@ -292,197 +295,192 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return new Browser();
     }
 
-    private SingleDownloadReturnState download(LogSource downloadLogger) {
+    protected void invalidateLastChallengeResponse(LogSource logger, PluginForHost plugin) {
+        if (plugin != null) {
+            try {
+                plugin.invalidateLastChallengeResponse();
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
+            }
+        }
+    }
+
+    protected void validateLastChallengeResponse(LogSource logger, PluginForHost plugin) {
+        if (plugin != null) {
+            try {
+                plugin.validateLastChallengeResponse();
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
+            }
+        }
+    }
+
+    private SingleDownloadReturnState download(final LogSource downloadLogger) {
         PluginForHost handlePlugin = null;
         try {
             downloadLogger.info("DownloadCandidate: " + candidate);
-            PluginForHost defaultPlugin = null;
-            try {
-                if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
-                    final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
-                    PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
-                    // this.setContextClassLoader(defaultCL);
-                    defaultPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
-                    defaultPlugin.setBrowser(getPluginBrowser());
-                    defaultPlugin.setLogger(downloadLogger);
-                    defaultPlugin.setDownloadLink(downloadLink);
-                    defaultPlugin.init();
-                    AvailableStatus availableStatus = downloadLink.getAvailableStatus();
-                    final long lastAvailableStatusChange = downloadLink.getLastAvailableStatusChange();
-                    final long availableStatusChangeTimeout = defaultPlugin.getAvailableStatusTimeout(downloadLink, availableStatus);
-                    if (lastAvailableStatusChange + availableStatusChangeTimeout < System.currentTimeMillis()) {
-                        try {
-                            processingPlugin.set(defaultPlugin);
-                            try {
-                                availableStatus = defaultPlugin.checkLink(downloadLink);
-                                if (AvailableStatus.FALSE == availableStatus) {
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                }
-                            } catch (final Throwable e) {
-                                downloadLogger.log(e);
-                                throw e;
-                            }
-                        } catch (final BrowserException browserException) {
-                            try {
-                                if (browserException.getRequest() != null) {
-                                    browserException.getRequest().disconnect();
-                                }
-                            } catch (final Throwable ignore) {
-                            }
-                        } catch (final SkipReasonException e) {
-                            if (SkipReason.CAPTCHA.equals(e.getSkipReason())) {
-                                try {
-                                    /* captcha during linkcheck should not stop multihoster */
-                                    defaultPlugin.invalidateLastChallengeResponse();
-                                } catch (final Throwable ignore) {
-                                    downloadLogger.log(ignore);
-                                }
-                            } else {
-                                throw e;
-                            }
-                        } catch (final PluginException e) {
-                            switch (e.getLinkStatus()) {
-                            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-                            case LinkStatus.ERROR_PREMIUM:
-                                availableStatus = AvailableStatus.UNCHECKABLE;
-                                break;
-                            case LinkStatus.ERROR_FILE_NOT_FOUND:
-                                availableStatus = AvailableStatus.FALSE;
-                                throw e;
-                            case LinkStatus.ERROR_CAPTCHA:
-                                try {
-                                    /* captcha during linkcheck should not stop multihoster */
-                                    defaultPlugin.invalidateLastChallengeResponse();
-                                } catch (final Throwable ignore) {
-                                    downloadLogger.log(ignore);
-                                }
-                                break;
-                            default:
-                                availableStatus = AvailableStatus.UNCHECKABLE;
-                                throw e;
-                            }
-                        } finally {
-                            processingPlugin.set(null);
-                            downloadLink.setAvailableStatus(availableStatus);
-                            try {
-                                defaultPlugin.validateLastChallengeResponse();
-                            } catch (final Throwable ignore) {
-                                downloadLogger.log(ignore);
-                            }
-                        }
-                    }
-                }
-                final PluginClassLoaderChild handleCL = session.getPluginClassLoaderChild(candidate.getCachedAccount().getPlugin());
-                PluginClassLoader.setThreadPluginClassLoaderChild(handleCL, handleCL);
-                // this.setContextClassLoader(handleCL);
-                handlePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(handleCL);
-                handlePlugin.setBrowser(getPluginBrowser());
-                handlePlugin.setLogger(downloadLogger);
-                handlePlugin.setDownloadLink(downloadLink);
-                handlePlugin.init();
-                try {
-                    processingPlugin.set(handlePlugin);
-                    downloadLink.setLivePlugin(handlePlugin);
+            PluginForHost linkPlugin = null;
+            if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
+                final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
+                PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
+                // this.setContextClassLoader(defaultCL);
+                linkPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
+                linkPlugin.setBrowser(getPluginBrowser());
+                linkPlugin.setLogger(downloadLogger);
+                linkPlugin.setDownloadLink(downloadLink);
+                linkPlugin.init();
+                AvailableStatus availableStatus = downloadLink.getAvailableStatus();
+                final long lastAvailableStatusChange = downloadLink.getLastAvailableStatusChange();
+                final long availableStatusChangeTimeout = linkPlugin.getAvailableStatusTimeout(downloadLink, availableStatus);
+                if (lastAvailableStatusChange + availableStatusChangeTimeout < System.currentTimeMillis()) {
                     try {
-                        if (defaultPlugin != null) {
-                            defaultPlugin.preHandle(downloadLink, account, handlePlugin);
-                        }
-                        final PluginForHost finalHandlePlugin = handlePlugin;
-                        watchDog.localFileCheck(this, new ExceptionRunnable() {
-                            @Override
-                            public void run() throws Exception {
-                                final File partFile = new File(downloadLink.getFileOutput() + ".part");
-                                final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
-                                final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
-                                final DiskSpaceReservation reservation = new DiskSpaceReservation() {
-                                    @Override
-                                    public File getDestination() {
-                                        return partFile;
-                                    }
-
-                                    @Override
-                                    public long getSize() {
-                                        return remainingSize + Math.max(0, finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink));
-                                    }
-                                };
-                                final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(reservation);
-                                switch (result) {
-                                case FAILED:
-                                    throw new SkipReasonException(SkipReason.DISK_FULL);
-                                case INVALIDDESTINATION:
-                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                                }
-                            }
-                        }, null);
-                        startTimestamp = System.currentTimeMillis();
-                        handlePlugin.handle(downloadLink, account);
-                        if (defaultPlugin != null) {
-                            defaultPlugin.postHandle(downloadLink, account, handlePlugin);
-                        }
-                    } catch (final Throwable e) {
-                        downloadLogger.log(e);
-                        throw e;
-                    } finally {
+                        processingPlugin.set(linkPlugin);
                         try {
-                            if (defaultPlugin != null) {
-                                defaultPlugin.clean();
+                            availableStatus = linkPlugin.checkLink(downloadLink);
+                            if (AvailableStatus.FALSE == availableStatus) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
-                        } catch (final Throwable ignore) {
-                            downloadLogger.log(ignore);
+                        } catch (final Throwable e) {
+                            downloadLogger.log(e);
+                            throw e;
                         }
+                    } catch (final BrowserException ignore) {
+                    } catch (final SkipReasonException e) {
+                        if (SkipReason.CAPTCHA.equals(e.getSkipReason())) {
+                            invalidateLastChallengeResponse(downloadLogger, linkPlugin);
+                        } else {
+                            throw e;
+                        }
+                    } catch (final PluginException e) {
+                        switch (e.getLinkStatus()) {
+                        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                        case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                        case LinkStatus.ERROR_PREMIUM:
+                            availableStatus = AvailableStatus.UNCHECKABLE;
+                            break;
+                        case LinkStatus.ERROR_FILE_NOT_FOUND:
+                            availableStatus = AvailableStatus.FALSE;
+                            throw e;
+                        case LinkStatus.ERROR_CAPTCHA:
+                            invalidateLastChallengeResponse(downloadLogger, linkPlugin);
+                            break;
+                        default:
+                            availableStatus = AvailableStatus.UNCHECKABLE;
+                            throw e;
+                        }
+                    } finally {
+                        processingPlugin.set(null);
+                        downloadLink.setAvailableStatus(availableStatus);
+                        validateLastChallengeResponse(downloadLogger, linkPlugin);
                     }
-                } catch (DeferredRunnableException e) {
-                    if (e.getExceptionRunnable() != null) {
-                        e.getExceptionRunnable().run();
-                    } else {
-                        throw e;
-                    }
-                }
-                final SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
-                return ret;
-            } catch (final BrowserException browserException) {
-                try {
-                    if (browserException.getRequest() != null) {
-                        browserException.getRequest().disconnect();
-                    }
-                } catch (final Throwable ignore) {
-                }
-                if (isConnectionOffline(browserException)) {
-                    throw new NoInternetConnection(browserException);
-                }
-                if (browserException.getCause() != null) {
-                    throw browserException.getCause();
-                } else {
-                    throw browserException;
                 }
             }
-        } catch (Throwable e) {
-            final PluginForHost lastPlugin = finalizeProcessingPlugin();
-            if ((e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) || (e instanceof SkipReasonException && ((SkipReasonException) e).getSkipReason() == SkipReason.CAPTCHA)) {
+            final PluginClassLoaderChild handleCL = session.getPluginClassLoaderChild(candidate.getCachedAccount().getPlugin());
+            PluginClassLoader.setThreadPluginClassLoaderChild(handleCL, handleCL);
+            // this.setContextClassLoader(handleCL);
+            handlePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(handleCL);
+            handlePlugin.setBrowser(getPluginBrowser());
+            handlePlugin.setLogger(downloadLogger);
+            handlePlugin.setDownloadLink(downloadLink);
+            handlePlugin.init();
+            try {
+                processingPlugin.set(handlePlugin);
+                downloadLink.setLivePlugin(handlePlugin);
                 try {
-                    if (handlePlugin != null) {
-                        handlePlugin.invalidateLastChallengeResponse();
+                    if (linkPlugin != null) {
+                        linkPlugin.preHandle(downloadLink, account, handlePlugin);
                     }
-                } catch (final Throwable ignore) {
-                    downloadLogger.log(ignore);
+                    final PluginForHost finalHandlePlugin = handlePlugin;
+                    watchDog.localFileCheck(this, new ExceptionRunnable() {
+                        @Override
+                        public void run() throws Exception {
+                            final File partFile = new File(downloadLink.getFileOutput() + ".part");
+                            final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
+                            final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
+                            final DiskSpaceReservation reservation = new DiskSpaceReservation() {
+                                @Override
+                                public File getDestination() {
+                                    return partFile;
+                                }
+
+                                @Override
+                                public long getSize() {
+                                    return remainingSize + Math.max(0, finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink));
+                                }
+                            };
+                            final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(reservation);
+                            switch (result) {
+                            case FAILED:
+                                throw new SkipReasonException(SkipReason.DISK_FULL);
+                            case INVALIDDESTINATION:
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                            default:
+                                break;
+                            }
+                        }
+                    }, null);
+                    startTimestamp = System.currentTimeMillis();
+                    handlePlugin.handle(downloadLink, account);
+                    if (linkPlugin != null) {
+                        linkPlugin.postHandle(downloadLink, account, handlePlugin);
+                    }
+                } catch (final Throwable e) {
+                    downloadLogger.log(e);
+                    throw e;
+                } finally {
+                    try {
+                        if (linkPlugin != null) {
+                            linkPlugin.clean();
+                        }
+                    } catch (final Throwable ignore) {
+                        downloadLogger.log(ignore);
+                    }
                 }
-            } else if (e instanceof PluginException) {
-                switch (((PluginException) e).getLinkStatus()) {
+            } catch (DeferredRunnableException e) {
+                if (e.getExceptionRunnable() != null) {
+                    e.getExceptionRunnable().run();
+                } else {
+                    throw e;
+                }
+            }
+            final SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
+            return ret;
+        } catch (Throwable throwable) {
+            final PluginForHost lastPlugin = finalizeProcessingPlugin();
+            try {
+                throw throwable;
+            } catch (BrowserException browserException) {
+                if (isConnectionOffline(lastPlugin, browserException)) {
+                    throwable = new NoInternetConnection(browserException).fillInStackTrace();
+                } else if (browserException.getCause() != null) {
+                    throwable = browserException.getCause();
+                }
+            } catch (SkipReasonException skipReasonException) {
+                switch (skipReasonException.getSkipReason()) {
+                case CAPTCHA:
+                    invalidateLastChallengeResponse(downloadLogger, lastPlugin);
+                    break;
+                default:
+                    break;
+                }
+            } catch (PluginException pluginException) {
+                switch (pluginException.getLinkStatus()) {
+                case LinkStatus.ERROR_CAPTCHA:
+                    invalidateLastChallengeResponse(downloadLogger, lastPlugin);
+                    break;
                 case LinkStatus.ERROR_RETRY:
                 case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
                     // we might be offline
-                    if (isConnectionOffline(e)) {
-                        e = new NoInternetConnection(e);
+                    if (isConnectionOffline(lastPlugin, throwable)) {
+                        throwable = new NoInternetConnection(throwable).fillInStackTrace();
                     }
                     break;
+                default:
+                    break;
                 }
-            } else if (!(e instanceof NoInternetConnection) && isConnectionOffline(e)) {
-                e = new NoInternetConnection(e);
+            } catch (Throwable unchanged) {
             }
-            downloadLogger.info("Exception: ");
-            downloadLogger.log(e);
-            SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, lastPlugin);
+            SingleDownloadReturnState ret = new SingleDownloadReturnState(this, throwable, lastPlugin);
             return ret;
         } finally {
             try {
@@ -490,11 +488,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 queueItem.queueLinks.remove(downloadLink);
                 if (handlePlugin != null) {
                     if (!this.isAborting()) {
-                        try {
-                            handlePlugin.validateLastChallengeResponse();
-                        } catch (final Throwable ignore) {
-                            downloadLogger.log(ignore);
-                        }
+                        validateLastChallengeResponse(downloadLogger, handlePlugin);
                     }
                     final DownloadInterface di = handlePlugin.getDownloadInterface();
                     resumed = di != null && di.isResumedDownload();
@@ -530,17 +524,37 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return usedProxy;
     }
 
-    private boolean isConnectionOffline(Throwable e) {
-        HTTPProxy proxy = null;
-        final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
-        if (browserException != null && browserException.getRequest() != null) {
-            proxy = browserException.getRequest().getProxy();
+    private boolean isConnectionOffline(final PluginForHost plugin, Throwable e) {
+        if (Exceptions.getInstanceof(e, InterruptedException.class) != null) {
+            return false;
+        } else if (Exceptions.getInstanceof(e, NoRouteToHostException.class) != null) {
+            // NoRouteToHostException -> not possible to connect to destination -> offline?!
+            return true;
+        } else if (Exceptions.getInstanceof(e, NetworkInterfaceException.class) != null) {
+            // NetworkInterfaceException -> cannot find suitable/correct network device -> offline
+            return true;
+        } else if (Exceptions.getInstanceof(e, NoGateWayException.class) != null) {
+            // NoGateWayException -> wrong connection settings? -> offline
+            return true;
+        } else if (isAborting()) {
+            return false;
         }
-        if (proxy == null) {
-            final PluginForHost plugin = getProcessingPlugin();
-            if (plugin != null && plugin.getBrowser() != null && plugin.getBrowser().getRequest() != null) {
-                proxy = plugin.getBrowser().getRequest().getProxy();
+        final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
+        HTTPProxy proxy = null;
+        if (browserException != null) {
+            final Throwable cause = browserException.getCause();
+            if (cause == null) {
+                // no cause -> no underlying IOException in browser -> not offline
+                return false;
+            } else if (browserException.getRequest() != null) {
+                proxy = browserException.getRequest().getProxy();
             }
+        } else {
+            // no BrowserException -> not offline or developer has forgotten to forward causing BrowserException
+            return false;
+        }
+        if (proxy == null && plugin != null && plugin.getBrowser() != null && plugin.getBrowser().getRequest() != null) {
+            proxy = plugin.getBrowser().getRequest().getProxy();
         }
         if (proxy == null) {
             proxy = getUsedProxy();

@@ -141,7 +141,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private String                            host;
     private boolean                           isEnabled;
     /** Beschreibung des Downloads */
-    /* kann sich noch ändern, NICHT final */
     private String                            name;
     private PluginForHost                     defaultplugin;
     private PluginForHost                     liveplugin;
@@ -965,7 +964,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
