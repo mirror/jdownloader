@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -24,12 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -49,6 +42,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -118,7 +117,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         if (br.getHttpConnection().getResponseCode() == 502) {
-            throw br.new BrowserException(new IOException("ResponseCode:502"), br.getRequest());
+            throw br.new BrowserException("ResponseCode:502", br.getRequest(), null);
         } else if (retry > 1) {
             logger.info("Total time waited to get around rate limit: " + TimeFormatter.formatMilliSeconds(totalWaittime, 0));
         }
