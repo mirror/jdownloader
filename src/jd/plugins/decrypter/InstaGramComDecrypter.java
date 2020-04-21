@@ -117,7 +117,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         if (br.getHttpConnection().getResponseCode() == 502) {
-            throw br.new BrowserException("ResponseCode:502", br.getRequest(), null);
+            throw br.new BrowserException("ResponseCode: 502", br.getRequest(), null);
         } else if (retry > 1) {
             logger.info("Total time waited to get around rate limit: " + TimeFormatter.formatMilliSeconds(totalWaittime, 0));
         }
