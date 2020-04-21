@@ -468,13 +468,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 case LinkStatus.ERROR_CAPTCHA:
                     invalidateLastChallengeResponse(downloadLogger, lastPlugin);
                     break;
-                case LinkStatus.ERROR_RETRY:
-                case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                    // we might be offline
-                    if (isConnectionOffline(lastPlugin, throwable)) {
-                        throwable = new NoInternetConnection(throwable).fillInStackTrace();
-                    }
-                    break;
                 default:
                     break;
                 }
