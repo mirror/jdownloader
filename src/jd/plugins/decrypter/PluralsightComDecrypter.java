@@ -3,6 +3,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -19,17 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PluralsightCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.PluralsightComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/player\\?course=.+" })
 public class PluralsightComDecrypter extends antiDDoSForDecrypt {
     public PluralsightComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,11 +49,13 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String course = new Regex(parameter.getCryptedUrl(), "(\\?|&)course=(.*?)(&|$)").getMatch(0);
+        final UrlQuery query = new UrlQuery().parse(parameter.getCryptedUrl());
+        String course = query.get("course");
         if (StringUtils.isEmpty(course)) {
             course = new Regex(parameter.getCryptedUrl(), "/courses/([^/]+)").getMatch(0);
         }
         if (StringUtils.isEmpty(course)) {
+            logger.warning("Failed to find course");
             return ret;
         }
         Account account = AccountController.getInstance().getValidAccount(getHost());
@@ -74,6 +77,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
             }
             final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
+            String forced_resolution = null;
             if (clips != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 final Map<String, Object> courseMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer/course");
@@ -88,6 +92,13 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
                     final Browser brc = br.cloneBrowser();
                     for (final DownloadLink clip : clips) {
+                        /*
+                         * Set found resolution for first clip on all videos so we can save API requests. Assume that all videos of one
+                         * course are available in the same quality.
+                         */
+                        if (forced_resolution != null) {
+                            clip.setProperty(PluralsightCom.PROPERTY_forced_resolution, forced_resolution);
+                        }
                         if (clip.getKnownDownloadSize() < 0) {
                             final String streamURL = PluralsightCom.getStreamURL(br, this, clip, null);
                             if (streamURL != null) {
@@ -97,7 +108,6 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                                     if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
                                         clip.setVerifiedFileSize(con.getCompleteContentLength());
                                         clip.setAvailable(true);
-                                        distribute(clip);
                                     } else {
                                         clip.setAvailableStatus(AvailableStatus.UNCHECKED);
                                     }
@@ -107,7 +117,11 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                             } else {
                                 clip.setAvailableStatus(AvailableStatus.UNCHECKED);
                             }
+                            if (forced_resolution == null) {
+                                forced_resolution = clip.getStringProperty(PluralsightCom.PROPERTY_forced_resolution);
+                            }
                         }
+                        distribute(clip);
                         if (this.isAbort()) {
                             break;
                         }

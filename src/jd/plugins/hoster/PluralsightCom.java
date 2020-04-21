@@ -270,59 +270,92 @@ public class PluralsightCom extends antiDDoSForHost {
         }
     }
 
+    public static String PROPERTY_forced_resolution = "forced_resolution";
+
     public static String getStreamURL(Browser br, Plugin plugin, DownloadLink link, QUALITY quality) throws Exception {
-        UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
-        final String author = urlParams.get("author");
-        if (StringUtils.isEmpty(author)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* 2020-04-21: Try and error. Browser does the same lol */
+        final String[] resolutions = new String[] { "1280x720", "1024x768" };
+        List<Map<String, Object>> urls = null;
+        /* Re-use previously working resolution in case there is one. */
+        String existant_resolution = link.getStringProperty(PROPERTY_forced_resolution);
+        for (String resolution : resolutions) {
+            if (existant_resolution != null) {
+                plugin.getLogger().info("Override quality-check of " + resolution + " with " + existant_resolution);
+                resolution = existant_resolution;
+            } else {
+                plugin.getLogger().info("Checking resolution: " + resolution);
+            }
+            UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
+            final String author = urlParams.get("author");
+            final String course = urlParams.get("course");
+            final String clip = urlParams.get("clip");
+            final String clipID = link.getStringProperty("clipID");
+            /* General information should be given in URL! */
+            if (StringUtils.isEmpty(author) || StringUtils.isEmpty(course) || StringUtils.isEmpty(clip) || StringUtils.isEmpty(clip) || StringUtils.isEmpty(clipID)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (quality == null) {
+                quality = link.getBooleanProperty("supportsWideScreenVideoFormats", false) ? QUALITY.HIGH_WIDESCREEN : QUALITY.HIGH;
+            }
+            final Map<String, Object> params = new HashMap<String, Object>();
+            final boolean useAPIv3 = true;
+            final PostRequest request;
+            boolean resolutionExists = false;
+            if (useAPIv3) {
+                params.put("clipId", clipID);
+                params.put("mediaType", "mp4");
+                params.put("quality", resolution);
+                params.put("online", true);
+                params.put("boundedContext", "course");
+                params.put("versionId", "");
+                request = br.createPostRequest("https://app.pluralsight.com/video/clips/v3/viewclip", JSonStorage.toString(params));
+                request.setContentType("application/json;charset=UTF-8");
+                request.getHeaders().put("Origin", "https://app.pluralsight.com");
+                getRequest(br, plugin, request);
+                /*
+                 * 2020-04-21: E.g.
+                 * {"success":false,"error":{"message":"1280x720.mp4 encoding not found"},"meta":{"statusCode":404},"trace":[{"service":
+                 * "videoservices_clip","version":"1.0.450","latency":29,"fn":"viewClipV3"}]}
+                 */
+                if (br.containsHTML(resolution + ".mp4 encoding not found")) {
+                    resolutionExists = false;
+                } else {
+                    final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    urls = (List<Map<String, Object>>) response.get("urls");
+                    existant_resolution = resolution;
+                    plugin.getLogger().info("Found working resolution: " + resolution);
+                }
+            } else {
+                params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
+                params.put("variables", "{}");
+                request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
+                request.setContentType("application/json;charset=UTF-8");
+                request.getHeaders().put("Origin", "https://app.pluralsight.com");
+                getRequest(br, plugin, request);
+                final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
+                existant_resolution = resolution;
+                break;
+            }
+            if (!resolutionExists) {
+                plugin.getLogger().info("Resolution does not exist: " + resolution);
+                if (existant_resolution != null) {
+                    plugin.getLogger().info("Forced resolution is given, stopping anyways at: " + resolution);
+                    break;
+                }
+                continue;
+            }
+            plugin.getLogger().info("Found working resolution: " + resolution);
+            break;
         }
-        final String course = urlParams.get("course");
-        if (StringUtils.isEmpty(course)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String clip = urlParams.get("clip");
-        if (StringUtils.isEmpty(clip)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String clipID = link.getStringProperty("clipID");
-        if (StringUtils.isEmpty(clipID)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (quality == null) {
-            quality = link.getBooleanProperty("supportsWideScreenVideoFormats", false) ? QUALITY.HIGH_WIDESCREEN : QUALITY.HIGH;
-        }
-        final Map<String, Object> params = new HashMap<String, Object>();
-        final boolean useAPIv3 = true;
-        final PostRequest request;
-        final List<Map<String, Object>> urls;
-        if (useAPIv3) {
-            params.put("clipId", clipID);
-            params.put("mediaType", "mp4");
-            params.put("quality", "1280x720");
-            params.put("online", true);
-            params.put("boundedContext", "course");
-            params.put("versionId", "");
-            request = br.createPostRequest("https://app.pluralsight.com/video/clips/v3/viewclip", JSonStorage.toString(params));
-            request.setContentType("application/json;charset=UTF-8");
-            request.getHeaders().put("Origin", "https://app.pluralsight.com");
-            getRequest(br, plugin, request);
-            final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            urls = (List<Map<String, Object>>) response.get("urls");
-        } else {
-            params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
-            params.put("variables", "{}");
-            request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
-            request.setContentType("application/json;charset=UTF-8");
-            request.getHeaders().put("Origin", "https://app.pluralsight.com");
-            getRequest(br, plugin, request);
-            final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
-        }
-        if (urls != null) {
-            for (final Map<String, Object> url : urls) {
-                final String streamURL = (String) url.get("url");
-                if (StringUtils.isNotEmpty(streamURL) && !StringUtils.containsIgnoreCase(streamURL, "expiretime=")) {
-                    return streamURL;
+        if (existant_resolution != null) {
+            link.setProperty(PROPERTY_forced_resolution, existant_resolution);
+            if (urls != null) {
+                for (final Map<String, Object> url : urls) {
+                    final String streamURL = (String) url.get("url");
+                    if (StringUtils.isNotEmpty(streamURL) && !StringUtils.containsIgnoreCase(streamURL, "expiretime=")) {
+                        return streamURL;
+                    }
                 }
             }
         }
