@@ -44,16 +44,25 @@ public class HqpornerCom extends PornEmbedParser {
             return decryptedLinks;
         }
         final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String actress_name = br.getRegex("/actress/[^\"]+\"[^>]+>([^<>\"]+)</a>").getMatch(0);
+        final String[][] parsedNames = br.getRegex("/actress/[^\"]+\"[^>]+>([^<>\"]+)</a>").getMatches();
+        final StringBuilder names = new StringBuilder();
+        if (parsedNames != null) {
+            for (final String parsedName[] : parsedNames) {
+                if (names.length() > 0) {
+                    names.append(", ");
+                }
+                names.append(parsedName[0]);
+            }
+        }
         String filename = br.getRegex("<h1 class=\"main\\-h1\" style=\"line\\-height: 1em;\">\\s*?([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = url_name;
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.size() > 0 && actress_name != null) {
+        if (decryptedLinks.size() > 0 && names.length() > 0) {
             for (final DownloadLink dl : decryptedLinks) {
-                dl.setProperty("actress_name", actress_name);
+                dl.setProperty("actress_name", names.toString());
             }
         }
         return decryptedLinks;
