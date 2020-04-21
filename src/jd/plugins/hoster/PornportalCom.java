@@ -525,8 +525,7 @@ public class PornportalCom extends PluginForHost {
                     cookie_name_login = getDefaultCookieNameLogin();
                 }
                 /*
-                 * 2020-04-18: This cookie is valid for 24 hours. TODO: Check if validity gets extended on frequent usage e.g. via
-                 * PROPERTY_REFRESH_TIMEOUT
+                 * 2020-04-18: This cookie is valid for (max.) 24 hours.
                  */
                 final String login_cookie = getLoginCookie(brlogin, cookie_name_login);
                 jwt = PluginJSonUtils.getJson(brlogin, "jwt");
@@ -540,11 +539,6 @@ public class PornportalCom extends PluginForHost {
                 account.saveCookies(brlogin.getCookies(brlogin.getHost()), target_domain);
                 /* Sets PROPERTY_authorization as Authorization header */
                 setStoredAPIAuthHeaderAccount(brlogin, account, target_domain);
-                /*
-                 * 2020-04-20: Attempt too refresh cookies/keep them active for a longer time without having to enter new captchas every 24
-                 * hours (?)
-                 */
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 1000l);
             } catch (final PluginException e) {
                 /* TODO: Maybe never delete these cookies */
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

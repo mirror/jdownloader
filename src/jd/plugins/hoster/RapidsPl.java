@@ -34,6 +34,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -420,6 +421,17 @@ public class RapidsPl extends PluginForHost {
             /* Handle download errors ONLY */
             if (errorcode == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, 3 * 60 * 1000l);
+            }
+        }
+        final String errorcode_urlStr = new Regex(br.getURL(), "/error/(\\d+)").getMatch(0);
+        if (errorcode_urlStr != null) {
+            /*
+             * 2020-04-21: There are about 10 URL-errorcodes available but really all are "Download failed because of XY" so this is the
+             * only one we can/should handle.
+             */
+            if (errorcode_urlStr.equals("8")) {
+                /* Expired session */
+                throw new AccountUnavailableException("Session expired", 1 * 60 * 1000l);
             }
         }
     }

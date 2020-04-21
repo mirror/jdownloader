@@ -228,12 +228,16 @@ public class PixivNet extends PluginForHost {
                         br.getPage("https://www." + account.getHoster() + "/");
                         if (isLoggedIN(br)) {
                             /* Refresh loggedin timestamp */
+                            plugin.getLogger().info("Cookie login successful");
                             account.saveCookies(br.getCookies(account.getHoster()), "");
                             return;
                         }
+                        plugin.getLogger().info("Cookie login failed");
+                        br.clearCookies(br.getURL());
                     }
                     /* Full login required */
                 }
+                plugin.getLogger().info("Performing full login");
                 br.getPage("https://accounts." + account.getHoster() + "/login?lang=en&source=pc&view_type=page&ref=wwwtop_accounts_index");
                 final Form loginform = br.getFormbyActionRegex(".*/login");
                 if (loginform == null) {
@@ -244,6 +248,10 @@ public class PixivNet extends PluginForHost {
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 // }
                 br.getHeaders().put("Accept", "application/json");
+                br.getHeaders().put("Origin", "https://accounts." + account.getHoster());
+                br.getHeaders().put("sec-fetch-dest", "empty");
+                br.getHeaders().put("sec-fetch-mode", "cors");
+                br.getHeaders().put("sec-fetch-site", "same-origin");
                 final String recaptchaResponse;
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
