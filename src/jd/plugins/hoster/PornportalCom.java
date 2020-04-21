@@ -300,7 +300,7 @@ public class PornportalCom extends PluginForHost {
                 }
                 /* We should already be loggedIN at this stage! */
                 this.login(this.br, account, link.getHost(), false);
-                final LinkedHashMap<String, DownloadLink> qualities = jd.plugins.decrypter.PornportalComCrawler.crawlContentAPI(this, this.br, videoID, true);
+                final LinkedHashMap<String, DownloadLink> qualities = jd.plugins.decrypter.PornportalComCrawler.crawlContentAPI(this, this.br, videoID, account);
                 final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
                 while (iteratorQualities.hasNext()) {
                     final DownloadLink video = iteratorQualities.next().getValue();
@@ -400,7 +400,7 @@ public class PornportalCom extends PluginForHost {
                     /*
                      * Try to avoid login captcha at all cost!
                      */
-                    brlogin.setCookies(account.getHoster(), cookies);
+                    brlogin.setCookies(target_domain, cookies);
                     if (!checkCookies && System.currentTimeMillis() - account.getCookiesTimeStamp(target_domain) <= 5 * 60 * 1000) {
                         logger.info("Trust cookies without check");
                         return;
@@ -414,7 +414,7 @@ public class PornportalCom extends PluginForHost {
                             logger.info("Updating website cookies and JWT value");
                             /* Access mainpage without authorization headers but with cookies */
                             final Browser brc = prepBR(new Browser());
-                            brc.setCookies(account.getHoster(), cookies);
+                            brc.setCookies(target_domain, cookies);
                             brc.getPage(getPornportalMainURL(account.getHoster()));
                             /* Attention: This is very unsafe without using json parser! */
                             jwt = PluginJSonUtils.getJson(brc, "jwt");
@@ -426,7 +426,7 @@ public class PornportalCom extends PluginForHost {
                                 this.setPropertyAccount(account, target_domain, PROPERTY_timestamp_website_cookies_updated, System.currentTimeMillis());
                             }
                         }
-                        account.saveCookies(brlogin.getCookies(account.getHoster()), target_domain);
+                        account.saveCookies(brlogin.getCookies(target_domain), target_domain);
                         return;
                     } else {
                         logger.info("Cookie login failed");

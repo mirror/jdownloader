@@ -25,12 +25,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -95,6 +93,10 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             ressourcelist = new ArrayList<Object>();
             ressourcelist.add(entries);
         }
+        String subFolder = getAdoptedCloudFolderStructure();
+        if (subFolder == null) {
+            subFolder = "";
+        }
         for (final Object fileO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) fileO;
             final String name = (String) entries.get("name");
@@ -111,12 +113,15 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
                     url += "/";
                 }
                 url += URLEncode.encodeURIComponent(name);
-                url += "/";
             }
             final DownloadLink dl;
             if (type.contains("folder")) {
+                if (!url.endsWith("/")) {
+                    url += "/";
+                }
                 dl = this.createDownloadlink(url);
-                decryptedLinks.add(dl);
+                final String thisfolder = subFolder + "/" + name;
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
             } else {
                 dl = this.createDownloadlink("directhttp://" + url);
                 dl.setAvailable(true);
@@ -124,12 +129,15 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
                 if (filesize > 0) {
                     dl.setDownloadSize(filesize);
                 }
-                decryptedLinks.add(dl);
+                if (StringUtils.isNotEmpty(subFolder)) {
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                }
             }
+            decryptedLinks.add(dl);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(urlname));
-        fp.addLinks(decryptedLinks);
+        // final FilePackage fp = FilePackage.getInstance();
+        // fp.setName(Encoding.htmlDecode(urlname));
+        // fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

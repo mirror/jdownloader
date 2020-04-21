@@ -59,17 +59,6 @@ public class PixivNetGallery extends PluginForDecrypt {
     private static final String TYPE_GALLERY_MEDIUM = ".+/member_illust\\.php\\?mode=medium\\&illust_id=\\d+";
     private static final String TYPE_GALLERY_MANGA  = ".+/member_illust\\.php\\?mode=manga\\&illust_id=\\d+";
 
-    private Integer getPageCount(Browser br, final String lid) {
-        // bookmarkData only exists when link is bookmarked
-        final String userIllust = br.getRegex("(\\{[^{]*\"illustId\"\\s*:\\s*\"" + lid + "(?:[^{]*\"bookmarkData\"\\s*:\\s*\\{)?[^{]*\\})").getMatch(0);
-        final String pageCount = new Regex(userIllust, "\"pageCount\"\\s*:\\s*(\\d+)").getMatch(0);
-        if (pageCount != null) {
-            return Integer.parseInt(pageCount);
-        } else {
-            return null;
-        }
-    }
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -96,15 +85,15 @@ public class PixivNetGallery extends PluginForDecrypt {
                 br.getPage(parameter);
             } else if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
                 br.getPage(PixivNet.createSingleImageUrl(userid));
-                final Integer pageCount = getPageCount(br, userid);
-                if (br.containsHTML("mode=manga&amp;illust_id=" + userid) || (pageCount != null && pageCount.intValue() > 1)) {
+                /* TODO: Review/check this */
+                if (br.containsHTML("mode=manga&amp;illust_id=" + userid)) {
                     parameter = PixivNet.createGalleryUrl(userid);
                     br.getPage(parameter);
                 }
             } else if (parameter.matches(TYPE_GALLERY_MANGA)) {
                 br.getPage(PixivNet.createGalleryUrl(userid));
-                final Integer pageCount = getPageCount(br, userid);
-                if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<") | (pageCount != null && pageCount.intValue() == 1)) {
+                /* TODO: Review/check this */
+                if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
                     parameter = PixivNet.createSingleImageUrl(userid);
                     br.getPage(parameter);
                 }
@@ -119,7 +108,7 @@ public class PixivNetGallery extends PluginForDecrypt {
             String json = br.getRegex("id=\"meta-preload-data\" content='(\\{.*?\\})'").getMatch(0);
             /* New attempt 2020-04-08 */
             Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            final int pagecount = getPageCount(br, userid);
+            int pagecount = 1;
             final Map<String, Object> illust = (Map<String, Object>) entries.get("illust");
             String userName = null;
             String illustUploadDate = null;
@@ -127,10 +116,14 @@ public class PixivNetGallery extends PluginForDecrypt {
             String illustTitle = null;
             String tags = null;
             final Set<Entry<String, Object>> illustSet = illust.entrySet();
+            final int illustsNumb = illustSet.size();
             for (Map.Entry<String, Object> entry : illustSet) {
                 final Map<String, Object> illustInfo = (Map<String, Object>) entry.getValue();
                 illustId = (String) illustInfo.get("illustId");
                 illustTitle = (String) illustInfo.get("illustTitle");
+                if (illustsNumb == 1) {
+                    pagecount = (int) JavaScriptEngineFactory.toLong(illustInfo.get("pageCount"), 1);
+                }
                 /*
                  * Users want to have a maximum of information in filenames:
                  * https://board.jdownloader.org/showpost.php?p=462062&postcount=41

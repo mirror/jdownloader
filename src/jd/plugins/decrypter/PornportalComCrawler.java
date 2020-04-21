@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -31,6 +30,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -111,8 +111,8 @@ public class PornportalComCrawler extends PluginForDecrypt {
         final String parameter = param.toString();
         /* Login if possible */
         /* TODO: Find correct plugin for "internal multihoster handling" to be able to login as a premium users into external portals. */
-        final boolean isLoggedIN = getUserLogin();
-        if (!isLoggedIN) {
+        final Account acc = getUserLogin();
+        if (acc == null) {
             /* Anonymous API auth */
             logger.info("No account given --> Trailer download");
             if (!PornportalCom.prepareBrAPI(this, br, null)) {
@@ -129,7 +129,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
             return null;
         }
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
-        final LinkedHashMap<String, DownloadLink> qualities = crawlContentAPI(hostPlugin, this.br, contentID, isLoggedIN);
+        final LinkedHashMap<String, DownloadLink> qualities = crawlContentAPI(hostPlugin, this.br, contentID, acc);
         final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
         while (iteratorQualities.hasNext()) {
             decryptedLinks.add(iteratorQualities.next().getValue());
@@ -141,10 +141,10 @@ public class PornportalComCrawler extends PluginForDecrypt {
         return false;
     }
 
-    private boolean getUserLogin() throws Exception {
+    private Account getUserLogin() throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
         Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (aa == null) {
             /*
              * Try 'internal multihoster' handling e.g. user may have added account for erito.com which also grants premium access to other
              * sites e.g. fakehub.com.
@@ -165,15 +165,17 @@ public class PornportalComCrawler extends PluginForDecrypt {
         if (aa != null) {
             try {
                 ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, this.getHost(), false);
-                return true;
+                return aa;
             } catch (final PluginException e) {
-                handleAccountException(aa, e);
+                // handleAccountException(aa, e);
+                logger.info("Login failure --> Continue without account / trailer download");
+                return null;
             }
         }
-        return false;
+        return aa;
     }
 
-    public static LinkedHashMap<String, DownloadLink> crawlContentAPI(final PluginForHost plg, final Browser br, final String contentID, final boolean isLoggedIN) throws Exception {
+    public static LinkedHashMap<String, DownloadLink> crawlContentAPI(final PluginForHost plg, final Browser br, final String contentID, final Account account) throws Exception {
         final String host = plg.getHost();
         final LinkedHashMap<String, DownloadLink> foundQualities = new LinkedHashMap<String, DownloadLink>();
         String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
@@ -196,6 +198,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
             final ArrayList<Object> children = (ArrayList<Object>) entries.get("children");
             videoObjects.addAll(children);
         }
+        final boolean isPremium = account != null && account.getType() == AccountType.PREMIUM;
         for (final Object videoO : videoObjects) {
             entries = (LinkedHashMap<String, Object>) videoO;
             // final String type = (String) entries.get("type");
@@ -204,6 +207,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 /* Skip invalid objects */
                 continue;
             }
+            final boolean isTrailer = "trailer".equals(entries.get("type"));
             String title = (String) entries.get("title");
             String description = (String) entries.get("description");
             if (StringUtils.isEmpty(title)) {
@@ -211,6 +215,10 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 title = contentID;
             } else if (title.equalsIgnoreCase("trailer")) {
                 title = contentID + "_trailer";
+            }
+            if (isPremium && isTrailer) {
+                plg.getLogger().info("Skipping trailer because user owns premium account");
+                continue;
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
@@ -257,7 +265,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 String contentURL;
                 final String patternMatcher;
                 final PluginForHost plugin_to_use;
-                if (isLoggedIN) {
+                if (account != null) {
                     /* Download with account */
                     patternMatcher = "https://decrypted" + host + "/" + videoID + "/" + format;
                     contentURL = "https://site-ma." + host + "/scene/" + videoID;
