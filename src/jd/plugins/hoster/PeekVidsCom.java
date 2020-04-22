@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -69,6 +72,20 @@ public class PeekVidsCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     /**
      * Free account = HD (720p) versions are (sometimes) available.
      *
@@ -76,28 +93,28 @@ public class PeekVidsCom extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         synchronized (time) {
             try {
                 final long passedTime = ((System.currentTimeMillis() - time.get()) / 1000) - 1;
                 if (passedTime < 15) {
                     Thread.sleep(((15 - passedTime) + new Random().nextInt(5)) * 1000l);
                 }
-                String ext = null;
                 // final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
                 final String[] qualities = { "1080", "720", "480", "360", "240" };
                 dllink = null;
-                final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+                final String uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
                 if (uid != null) {
-                    downloadLink.setLinkID(getHost() + "://" + uid);
-                    if (!downloadLink.isNameSet()) {
-                        downloadLink.setFinalFileName(uid);
+                    link.setLinkID(getHost() + "://" + uid);
+                    if (!link.isNameSet()) {
+                        link.setFinalFileName(uid);
                     }
                 }
                 this.setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.addAllowedResponseCodes(410, 429);
-                final Request getRequest = br.createGetRequest(downloadLink.getDownloadURL());
+                final Request getRequest = br.createGetRequest(link.getDownloadURL());
                 final Account aa = AccountController.getInstance().getValidAccount(this);
                 if (aa != null) {
                     logger.info("Account available --> Logging in");
@@ -126,7 +143,7 @@ public class PeekVidsCom extends PluginForHost {
                     if (img == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String code = getCaptchaCode(img, downloadLink);
+                    final String code = getCaptchaCode(img, link);
                     captcha.put("secimginp", Encoding.urlEncode(code));
                     br.submitForm(captcha);
                 }
@@ -137,7 +154,7 @@ public class PeekVidsCom extends PluginForHost {
                         filename = Encoding.htmlDecode(filename);
                         filename = filename.trim();
                         filename = encodeUnicode(filename);
-                        downloadLink.setFinalFileName(filename + ".mp4");
+                        link.setFinalFileName(filename + ".mp4");
                     }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -151,34 +168,41 @@ public class PeekVidsCom extends PluginForHost {
                 int counter = 0;
                 for (final String quality : qualities) {
                     // dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
-                    dllink = new Regex(flashvars, "data-src" + quality + "=\"(http[^<>\"]*?)\"").getMatch(0);
+                    dllink = new Regex(flashvars, "data-(?:hls-)?src" + quality + "=\"(http[^<>\"]*?)\"").getMatch(0);
                     if (dllink != null) {
                         counter++;
+                        if (dllink.contains(".m3u8")) {
+                            /* Do not check hls URLs */
+                            break;
+                        }
                         if (checkDirectLink()) {
                             if (filesize > 0) {
-                                downloadLink.setDownloadSize(filesize);
+                                link.setDownloadSize(filesize);
                             }
                             break;
                         }
                     }
                 }
-                if ((filename == null || dllink == null) && counter == 0) {
+                if (dllink == null && counter == 0) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (filename == null) {
+                    filename = this.getFID(link);
                 }
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
                 filename = encodeUnicode(filename);
                 if (dllink == null) {
                     /* Download not possible at this moment. */
-                    downloadLink.setName(filename + ".mp4");
+                    link.setName(filename + ".mp4");
                     return AvailableStatus.TRUE;
                 }
                 dllink = Encoding.htmlDecode(dllink);
-                ext = getFileNameExtensionFromString(dllink, ".mp4");
+                final String ext = ".mp4";
                 if (!filename.endsWith(ext)) {
                     filename += ext;
                 }
-                downloadLink.setFinalFileName(filename);
+                link.setFinalFileName(filename);
                 return AvailableStatus.TRUE;
                 /* Don't check filesize here as this can lead to server errors */
             } finally {
@@ -216,22 +240,30 @@ public class PeekVidsCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, true, 0, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (dllink == null) {
             /* Very rare case! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.contains(".m3u8")) {
+            /* HLS download - new since 2020-04-22 */
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+            dl.startDownload();
+        } else {
+            /* http download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

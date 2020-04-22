@@ -75,7 +75,7 @@ public class EvilAngelCom extends antiDDoSForHost {
     private boolean             server_issues              = false;
     public static final long    trust_cookie_age           = 300000l;
     private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
-    public static final String  LOGIN_PAGE                 = "http://members.evilangel.com/en";
+    public static final String  LOGIN_PAGE                 = "https://www.evilangel.com/en/login/";
     private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     private static final String URL_EVILANGEL_FREE_TRAILER = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
     private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.evilangelnetwork\\.com/[a-z]{2}/video/([A-Za-z0-9\\-_]+)/(\\d+)";
@@ -347,8 +347,8 @@ public class EvilAngelCom extends antiDDoSForHost {
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    final boolean fillTimeFalues = true;
                     {
-                        final boolean fillTimeFalues = false;
                         if (fillTimeFalues) {
                             final Date d = new Date();
                             SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
@@ -357,13 +357,13 @@ public class EvilAngelCom extends antiDDoSForHost {
                             final String time = sd.format(d);
                             final String timedatestring = date + " " + time;
                             br.setCookie(url_main, "mDateTime", Encoding.urlEncode(timedatestring));
-                            br.setCookie(url_main, "mOffset", "1");
+                            br.setCookie(url_main, "mOffset", "2");
                             br.setCookie(url_main, "origin", "promo");
                             br.setCookie(url_main, "timestamp", Long.toString(System.currentTimeMillis()));
                         } else {
                         }
                     }
-                    login.setAction("/en/login");
+                    // login.setAction("/en/login");
                     login.put("username", Encoding.urlEncode(account.getUser()));
                     login.put("password", Encoding.urlEncode(account.getPass()));
                     if (login.containsHTML("g-recaptcha")) {
@@ -408,8 +408,10 @@ public class EvilAngelCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedIn(final String html_loggedin) {
-        return (!br.containsHTML(">Wrong username or password provided. Please try again\\\\.<") && br.containsHTML(html_loggedin)) || br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedIn(String html_loggedin) {
+        final boolean loggedIN_html = br.containsHTML(">Wrong username or password provided. Please try again\\\\.<") && (html_loggedin == null || br.containsHTML(html_loggedin));
+        final boolean loggedINCookie = br.getCookie(br.getHost(), "autologin_userid", Cookies.NOTDELETEDPATTERN) != null;
+        return loggedIN_html || loggedINCookie;
     }
 
     @Override
@@ -417,7 +419,7 @@ public class EvilAngelCom extends antiDDoSForHost {
         final AccountInfo ai = account.getAccountInfo() != null ? account.getAccountInfo() : new AccountInfo();
         try {
             /* Prevent direct login to prevent login captcha whenever possible */
-            loginEvilAngelNetwork(this.br, account, LOGIN_PAGE, HTML_LOGGEDIN);
+            loginEvilAngelNetwork(this.br, account, LOGIN_PAGE, null);
         } catch (final PluginException e) {
             throw e;
         }
