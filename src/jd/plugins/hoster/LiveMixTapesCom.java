@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -31,20 +33,21 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://((?:\\w+\\.)?livemixtapes\\.com/download(?:/mp3)?/\\d+/[a-z0-9\\-]+\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
 public class LiveMixTapesCom extends antiDDoSForHost {
-    private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
-    private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
-    private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
-    private static final String TYPE_REDIRECTLINK      = "https?://(www\\.)?livemixtap\\.es/[a-z0-9]+";
-    private static final String TYPE_DIRECTLINK        = "https?://(www\\.)?club\\.livemixtapes\\.com/play/\\d+";
+    private static final String               CAPTCHATEXT        = "/captcha/captcha\\.gif\\?";
+    private static final String               TYPE_REDIRECTLINK  = "https?://(www\\.)?livemixtap\\.es/[a-z0-9]+";
+    private static final String               TYPE_DIRECTLINK    = "https?://club\\.livemixtapes\\.com/play/\\d+";
+    private static final String               TYPE_ALBUM         = "https?://(?:www\\.)?livemixtapes\\.com/download/\\d+.*?";
+    protected static HashMap<String, Cookies> antiCaptchaCookies = new HashMap<String, Cookies>();
 
     public LiveMixTapesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,13 +56,63 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            final String type;
+            if (link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
+                type = "direct";
+            } else if (link.getPluginPatternMatcher().matches(TYPE_ALBUM)) {
+                type = "download_album";
+            } else {
+                type = "download_single";
+            }
+            return this.getHost() + "://" + fid + type;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(\\d+)(?:/[a-z0-9\\-]+\\.html)?$").getMatch(0);
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            return prepBr;
+        }
+        loadAntiCaptchaCookies(prepBr, host);
+        prepBr.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        return super.prepBrowser(prepBr, host);
+    }
+
+    protected void loadAntiCaptchaCookies(Browser prepBr, final String host) {
+        synchronized (antiCaptchaCookies) {
+            if (!antiCaptchaCookies.isEmpty()) {
+                for (final Map.Entry<String, Cookies> cookieEntry : antiCaptchaCookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    if (key != null && key.equals(host)) {
+                        try {
+                            prepBr.setCookies(key, cookieEntry.getValue(), false);
+                        } catch (final Throwable e) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
+    private boolean isAccountRequired() {
+        return br.containsHTML("class=\"download-member-only\"");
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
             URLConnectionAdapter con = null;
@@ -90,36 +143,47 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = null, filesize = null;
-            if (br.containsHTML(MUSTBELOGGEDIN)) {
-                final Regex fileInfo = br.getRegex("<td height=\"35\"><div style=\"padding\\-left: 8px\">([^<>\"]*?)</div></td>[\t\n\r ]+<td align=\"center\">([^<>\"]*?)</td>");
-                filename = fileInfo.getMatch(0);
-                filesize = fileInfo.getMatch(1);
-                if (filename == null || filesize == null) {
-                    link.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
-                    return AvailableStatus.TRUE;
-                }
-            } else {
-                final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
-                if (timeRemaining != null) {
-                    link.getLinkStatus().setStatusText("Not yet released, cannot download");
-                    link.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
-                    return AvailableStatus.TRUE;
-                }
-                final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
-                filename = fileInfo.getMatch(0);
-                filesize = fileInfo.getMatch(1);
+            final String timeRemaining = br.getRegex("TimeRemaining\\s*=\\s*(\\d+);").getMatch(0);
+            if (timeRemaining != null) {
+                /* TODO */
+                link.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
+                return AvailableStatus.TRUE;
             }
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String filename = null, filesize = null, tracknumber = null;
+            /* 2020-04-22: Seems like tracknumber is wrong for single files. Website will always display "1. "! */
+            final boolean addTrackNumberToFilename = false;
+            final Regex fileInfo = br.getRegex("<div class=\"track-num\">\\s*(\\d+)\\.\\s*<span>([^<>\"]+)</span>");
+            tracknumber = fileInfo.getMatch(0);
+            filename = fileInfo.getMatch(1);
+            filesize = br.getRegex("class=\"mt-track-size\">([^<>\"]+)</div>").getMatch(0);
+            if (filename == null) {
+                /* Fallback */
+                filename = getFID(link);
             }
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            filename = Encoding.htmlDecode(filename).trim();
+            /* Add tracknumber to name if possible */
+            if (tracknumber != null && addTrackNumberToFilename) {
+                filename = tracknumber + ". " + filename;
+            }
+            if (!filename.endsWith(".mp3") && !filename.endsWith(".zip")) {
+                if (link.getPluginPatternMatcher().matches(TYPE_ALBUM)) {
+                    filename += ".zip";
+                } else {
+                    filename += ".mp3";
+                }
+            }
+            /* Only set final filename if not e.g. set preeviously in crawler. */
+            if (link.getFinalFileName() == null) {
+                link.setFinalFileName(filename);
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
 
-    private void doFree(final DownloadLink link) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         handleUserVerify();
         br.setFollowRedirects(false);
         String dllink = null;
@@ -130,71 +194,82 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             resume = true;
             maxChunks = 0;
         } else {
-            resume = false;
+            /* 2020-04-22: Resume possible */
+            resume = true;
             maxChunks = 1;
-            if (br.containsHTML(MUSTBELOGGEDIN)) {
-                final Browser br2 = br.cloneBrowser();
-                try {
-                    getPage(br2, "https://www.livemixtapes.com/play/" + new Regex(link.getPluginPatternMatcher(), "download(/mp3)?/(\\d+)").getMatch(1));
-                    dllink = br2.getRedirectLocation();
-                } catch (final Exception e) {
+            if (isAccountRequired()) {
+                if (account != null) {
+                    /* Should never happen */
+                    throw new AccountUnavailableException("Session expired?", 2 * 60 * 1000l);
+                } else {
+                    throw new AccountRequiredException();
                 }
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
+            }
+            final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
+            if (timeRemaining != null) {
+                link.getLinkStatus().setStatusText("Not yet released, cannot download");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+            String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
+            final Form dlform = br.getFormbyProperty("id", "downloadform");
+            if (dlform == null) {
+                logger.warning("Failed to find dlform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dlform.hasInputFieldByName("timestamp")) {
+                timestamp = dlform.getInputFieldByName("timestamp").getValue();
+            }
+            if (br.containsHTML("<img src=\"[^\"]*?/captcha/captcha\\.gif\\?\\d+")) {
+                /* 2020-04-22: Browser will also check for a reCaptchaV2 (lol two captchas) but this seems to be skippable here. */
+                String captcha = br.getRegex("(/captcha/captcha\\.gif\\?\\d+)").getMatch(0);
+                String code = getCaptchaCode(captcha, link);
+                if (captcha == null || code == null || code.equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
-                if (timeRemaining != null) {
-                    link.getLinkStatus().setStatusText("Not yet released, cannot download");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                dlform.put("code", Encoding.urlEncode(code));
+                // postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&code=" + code);
+                this.submitForm(dlform);
+                if (br.containsHTML("<img src=\"[^\"]*?/captcha/captcha\\.gif\\?\\d+")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                final String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
+            } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                /* 2020-04-22: This does not exist anymore??! */
                 if (timestamp == null) {
+                    logger.warning("Failed to find timestamp");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (br.containsHTML("<img src=\"/captcha/captcha\\.gif\\?\\d+")) {
-                    String captcha = br.getRegex("(/captcha/captcha\\.gif\\?\\d+)").getMatch(0);
-                    String code = getCaptchaCode(captcha, link);
-                    if (captcha == null || code == null || code.equals("")) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&code=" + code);
-                    if (br.containsHTML("<img src=\"/captcha/captcha\\.gif\\?\\d+")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    final String challengekey = br.getRegex("ACPuzzle\\.create\\(\\'(.*?)\\'").getMatch(0);
-                    if (challengekey == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    sm.setChallengeKey(challengekey);
-                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode("solvemedia", cf, link);
-                    final String chid = sm.getChallenge(code);
-                    // Usually we have a waittime here but it can be skipped
-                    // int waittime = 40;
-                    // String wait =
-                    // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
-                    // if (wait == null) wait =
-                    // br.getRegex("wait: (\\d+)").getMatch(0);
-                    // if (wait != null) {
-                    // waittime = Integer.parseInt(wait);
-                    // if (waittime > 1000) waittime = waittime / 1000;
-                    // sleep(waittime * 1001, downloadLink);
-                    // }
-                    try {
-                        postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
-                    } catch (Exception e) {
-                    }
-                    if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                }
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
+                final String challengekey = br.getRegex("ACPuzzle\\.create\\(\\'(.*?)\\'").getMatch(0);
+                if (challengekey == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                sm.setChallengeKey(challengekey);
+                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                final String code = getCaptchaCode("solvemedia", cf, link);
+                final String chid = sm.getChallenge(code);
+                // Usually we have a waittime here but it can be skipped
+                // int waittime = 40;
+                // String wait =
+                // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
+                // if (wait == null) wait =
+                // br.getRegex("wait: (\\d+)").getMatch(0);
+                // if (wait != null) {
+                // waittime = Integer.parseInt(wait);
+                // if (waittime > 1000) waittime = waittime / 1000;
+                // sleep(waittime * 1001, downloadLink);
+                // }
+                try {
+                    postPage(br, br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
+                } catch (Exception e) {
+                }
+                if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.warning("Failed to find final downloadurl");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
@@ -202,6 +277,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
+        /* Only set final filename here if it has not been set e.g. in crawler */
         if (link.getFinalFileName() == null) {
             link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         }
@@ -212,7 +288,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account);
+            login(account);
         } catch (final PluginException e) {
             return ai;
         }
@@ -231,6 +307,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             if (dlinkbefore != null) {
                 dl_dummy = dlinkbefore;
             } else {
+                /* E.g. captcha happens during accountcheck and not regular download. */
                 dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + br.getHost(), true);
                 this.setDownloadLink(dl_dummy);
             }
@@ -271,45 +348,52 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
-        doFree(link);
+        doFree(link, null);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /* First login, then availablecheck --> Avoids captchas in availablecheck! */
+        login(account);
         requestFileInformation(link, true);
-        login(this.br, account);
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        doFree(link);
+        doFree(link, account);
     }
 
-    public void login(final Browser br, final Account account) throws Exception {
+    public void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // br.getPage(MAINPAGE);
         final Cookies cookies = account.loadCookies("");
-        boolean loggedInViaCookies = false;
         if (cookies != null) {
+            logger.info("Trying to login via cookies");
             br.setCookies(account.getHoster(), cookies);
             getPage(br, "https://www." + account.getHoster() + "/");
+            /* 2020-04-22: Captcha may even happen when cookies are still valid. Untested! ... but better check than don't check ;) */
             handleUserVerify();
-            loggedInViaCookies = isLoggedIn();
-        }
-        if (!loggedInViaCookies) {
-            getPage(br, "https://www." + account.getHoster() + "/");
-            handleUserVerify();
-            postPage(br, "/login.php", "remember=y&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (!isLoggedIn()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (isLoggedIn()) {
+                logger.info("Cookie login successful");
+                account.saveCookies(br.getCookies(br.getHost()), "");
+                return;
+            } else {
+                logger.info("Cookie login failed");
             }
+        }
+        logger.info("Performing full login");
+        getPage(br, "https://www." + account.getHoster() + "/");
+        handleUserVerify();
+        postPage(br, "/login.php", "remember=y&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (!isLoggedIn()) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.saveCookies(br.getCookies(br.getHost()), "");
     }
 
     private boolean isLoggedIn() {
-        return br.getCookie(br.getHost(), "u") != null && br.getCookie(br.getHost(), "p") != null;
+        return br.getCookie(br.getHost(), "u", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "p", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
@@ -321,15 +405,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        if (link.getPluginPatternMatcher().contains("/download/")) {
             return true;
+        } else {
+            return false;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 }
