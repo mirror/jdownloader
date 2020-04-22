@@ -571,13 +571,21 @@ public class Account extends Property {
     /** In which intervall (milliseconds) will this account get checked? Min. = 5 minutes, default = 30 minutes. */
     public long getRefreshTimeout() {
         /* default refresh timeout is 30 mins */
-        long defaultRefreshTimeOut = 30 * 60 * 1000l;
-        /* TODO: Return 5 minutes if property under 5 minutes is set. Also maybe check if e.g. timeout > time until account expires. */
-        Long timeout = this.getLongProperty(PROPERTY_REFRESH_TIMEOUT, defaultRefreshTimeOut);
+        long defaultRefreshTimeout = 30 * 60 * 1000l;
+        /* TODO: Also maybe check if e.g. timeout > time until account expires. */
+        final long minRefreshTimeout = 5 * 60 * 1000l;
+        Long timeout = this.getLongProperty(PROPERTY_REFRESH_TIMEOUT, defaultRefreshTimeout);
         if (timeout == null || timeout <= 0) {
-            timeout = defaultRefreshTimeOut;
+            timeout = defaultRefreshTimeout;
+        } else if (timeout < minRefreshTimeout) {
+            timeout = minRefreshTimeout;
         }
         return timeout;
+    }
+
+    /* Defines the check-interval of this account. */
+    public void setRefreshTimeout(long refresh_timeout) {
+        this.setProperty(PROPERTY_REFRESH_TIMEOUT, refresh_timeout);
     }
 
     public boolean refreshTimeoutReached() {
