@@ -182,7 +182,7 @@ public class PremiumTo extends UseNet {
     }
 
     private int getReadTimeout() {
-        return 90 * 1000;
+        return 180 * 1000;
     }
 
     private int getConnectTimeout() {
