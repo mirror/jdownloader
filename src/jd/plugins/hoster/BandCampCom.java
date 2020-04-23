@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,6 +32,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,8 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcampdecrypted\\.com/track/[a-z0-9\\-_]+" })
 public class BandCampCom extends PluginForHost {
@@ -177,7 +178,12 @@ public class BandCampCom extends PluginForHost {
             if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
                 downloadLink.setVerifiedFileSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /*
+                 * 2020-04-23: Chances are high that the track cannot be downloaded because user needs to purchase it first. There is no
+                 * errormessage or anything on their website.
+                 */
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new AccountRequiredException();
             }
             return AvailableStatus.TRUE;
         } finally {
