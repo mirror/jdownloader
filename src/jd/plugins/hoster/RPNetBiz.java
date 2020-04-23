@@ -19,8 +19,19 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+
+import org.appwork.storage.simplejson.JSonArray;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonNode;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,26 +48,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
-import org.appwork.storage.simplejson.JSonArray;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonNode;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" })
 public class RPNetBiz extends PluginForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            mName              = "rpnet.biz";
-    private static final String                            mProt              = "http://";
-    private static final String                            mPremium           = "https://premium.rpnet.biz/";
-    private static final String                            FAIL_STRING        = "rpnetbiz";
-    private static final int                               HDD_WAIT_THRESHOLD = 10 * 60000;                                   // 10 mins in
+    private static final String mName              = "rpnet.biz";
+    private static final String mProt              = "http://";
+    private static final String api_base           = "https://premium.rpnet.biz/";
+    private static final String FAIL_STRING        = "rpnetbiz";
+    private static final int    HDD_WAIT_THRESHOLD = 10 * 60000;                  // 10 mins in
 
     // ms
     public RPNetBiz(PluginWrapper wrapper) {
@@ -84,7 +82,7 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return mPremium + "tos.php";
+        return api_base + "tos.php";
     }
 
     public void prepBrowser() {
@@ -151,11 +149,11 @@ public class RPNetBiz extends PluginForHost {
         if (StringUtils.isEmpty(account.getUser())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "User name can not be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (StringUtils.isEmpty(account.getPass()) || !account.getPass().matches("[a-f0-9]{40}")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use API Key as password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use API Key as password!\r\nYou can find it here: premium.rpnet.biz/usercp.php?action=showAccountInfo", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         AccountInfo ai = new AccountInfo();
         prepBrowser();
-        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + URLEncoder.encode(account.getPass(), "UTF-8") + "&action=showAccountInformation");
+        br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + URLEncoder.encode(account.getPass(), "UTF-8") + "&action=showAccountInformation");
         if (br.toString().contains("Invalid authentication.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid User : API Key", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("IP Ban in effect for")) {
@@ -165,8 +163,7 @@ public class RPNetBiz extends PluginForHost {
         JSonObject accountInfo = (JSonObject) node.get("accountInfo");
         long expiryDate = Long.parseLong(accountInfo.get("premiumExpiry").toString().replaceAll("\"", ""));
         ai.setValidUntil(expiryDate * 1000);
-        // get the supported hosts
-        String hosts = br.getPage(mPremium + "hostlist.php");
+        String hosts = br.getPage(api_base + "hostlist.php");
         if (hosts != null) {
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
             ai.setMultiHostSupport(this, supportedHosts);
@@ -192,43 +189,8 @@ public class RPNetBiz extends PluginForHost {
         return true;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        // This should never happen
-        if (downloadLink.getHost().contains("rpnet")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "FATAL server error", 5 * 60 * 1000l);
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         String downloadURL = link.getDownloadURL();
         prepBrowser();
         String generatedLink = checkDirectLink(link, "cachedDllink");
@@ -239,7 +201,7 @@ public class RPNetBiz extends PluginForHost {
             // end of workaround
             showMessage(link, "Generating Link");
             /* request Download */
-            String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
+            String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
             br.getPage(apiDownloadLink);
             JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
             JSonArray links = (JSonArray) node.get("links");
@@ -310,7 +272,7 @@ public class RPNetBiz extends PluginForHost {
                             if (isAbort()) {
                                 throw new PluginException(LinkStatus.ERROR_RETRY);
                             }
-                            br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
+                            br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
                             final JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
                             final JSonObject downloadNode = (JSonObject) node2.get("download");
                             final String tmp = downloadNode.get("status").toString();
@@ -375,22 +337,11 @@ public class RPNetBiz extends PluginForHost {
                 }
             }
         } else {
-            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", 1);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 10) {
-                logger.info(this.getHost() + ": download failed -> Retrying");
-                timesFailed++;
-                link.setProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
-            } else {
-                link.setProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", Property.NULL);
-                logger.info(this.getHost() + ": Download failed for unknown reasons -> Disabling current host");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find dllink", 3 * 60 * 1000l);
         }
     }
 
-    private void handleDL(DownloadLink link, String dllink, int maxChunks) throws Exception {
+    private void handleDL(final DownloadLink link, String dllink, int maxChunks) throws Exception {
         /* we want to follow redirects in final stage */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().isContentDisposition()) {
@@ -405,7 +356,7 @@ public class RPNetBiz extends PluginForHost {
             br.followConnection();
         }
         /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
     }
 
     private void showMessage(DownloadLink link, String message) {
