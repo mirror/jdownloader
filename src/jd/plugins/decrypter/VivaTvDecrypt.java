@@ -33,6 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.VivaTv;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "nicktoons.nick.com", "teennick.com", "nickatnite.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "logotv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "nickjr.de", "nicknight.de", "tvland.com", "spike.com", "cmt.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?vh1\\.com/.+", "https?://(?:www\\.)?nickmom\\.com/.+", "https?://nicktoons\\.nick\\.com/.+", "https?://(?:www\\.)?teennick\\.com/.+", "https?://(?:www\\.)?nickatnite\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+",
@@ -65,9 +66,9 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* we first have to load the plugin, before we can reference it */
         JDUtilities.getPluginForHost("viva.tv");
-        default_ext = jd.plugins.hoster.VivaTv.default_ext;
+        default_ext = VivaTv.default_ext;
         parameter = param.toString();
-        jd.plugins.hoster.VivaTv.prepBR(this.br);
+        VivaTv.prepBR(this.br);
         if (parameter.matches(type_southpark_de_episode)) {
             decryptSouthparkDe();
         } else if (parameter.matches(type_southpark_cc_episode)) {
@@ -105,7 +106,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 final String title = (String) entries.get("title");
                 final String subtitle = (String) entries.get("subtitle");
                 final String video_token = (String) entries.get("video_token");
-                final String mgid = jd.plugins.hoster.VivaTv.getMGIDOutOfURL(url_mrss);
+                final String mgid = VivaTv.getMGIDOutOfURL(url_mrss);
                 if (url_mrss == null || title == null || video_token == null || mgid == null) {
                     throw new DecrypterException("Decrypter broken for link: " + parameter);
                 }
@@ -119,7 +120,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 if (subtitle != null) {
                     temp_filename += " - " + subtitle;
                 }
-                temp_filename += jd.plugins.hoster.VivaTv.default_ext;
+                temp_filename += VivaTv.default_ext;
                 final DownloadLink dl = mgidSingleVideoGetDownloadLink(mgid);
                 dl.setLinkID(video_token);
                 dl.setName(temp_filename);
@@ -419,7 +420,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         if (mgidIsPlaylist(mgid)) {
             /* Episode (maybe with multiple segments) */
-            final String feed_url = jd.plugins.hoster.VivaTv.mgidGetFeedurlForMgid(mgid);
+            final String feed_url = VivaTv.mgidGetFeedurlForMgid(mgid, this.getHost());
             if (feed_url == null) {
                 return;
             }
@@ -447,9 +448,9 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private boolean mgidIsSingleVideo(final String mgid) {
-        final String type = jd.plugins.hoster.VivaTv.mgidGetType(mgid);
-        final boolean isvideo = type.equals("video");
-        return isvideo;
+        final String type = VivaTv.mgidGetType(mgid);
+        final boolean isVideo = type.equals("video");
+        return isVideo;
     }
 
     private String cleanMgid(String mgid) {
@@ -513,6 +514,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(url_hosterplugin);
             dl.setProperty("decryptedfilename", title);
             dl.setProperty("mainlink", this.parameter);
+            dl.setProperty(VivaTv.PROPERTY_original_host, this.getHost());
             dl.setName(title);
             dl.setAvailable(true);
             dl.setContentUrl(this.parameter);
@@ -533,27 +535,31 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private String getXML(final String source, final String parameter) {
-        return new Regex(source, "<" + parameter + "[^<]*?>([^<>]*?)</" + parameter + ">").getMatch(0);
+        String result = new Regex(source, "<" + parameter + "[^<]*?>([^<>]*?)</" + parameter + ">").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "<" + parameter + "[^<]*?><\\!\\[CDATA\\[([^<>]*?)\\]\\]><").getMatch(0);
+        }
+        return result;
     }
 
     private String getFEEDURL(final String domain) {
-        return jd.plugins.hoster.VivaTv.feedURLs.get(domain);
+        return VivaTv.feedURLs.get(domain);
     }
 
     private String getEMBEDURL(final String domain) {
-        return jd.plugins.hoster.VivaTv.embedURLs.get(domain);
+        return VivaTv.embedURLs.get(domain);
     }
 
     private String getFEEDtitle(final String source) {
-        return jd.plugins.hoster.VivaTv.feedGetTitle(source);
+        return VivaTv.feedGetTitle(source);
     }
 
     private String doEncoding(final String data) {
-        return jd.plugins.hoster.VivaTv.doEncoding(data);
+        return VivaTv.doEncoding(data);
     }
 
     private String doFilenameEncoding(final String filename) {
-        return jd.plugins.hoster.VivaTv.doFilenameEncoding(this, filename);
+        return VivaTv.doFilenameEncoding(this, filename);
     }
 
     private String getViacomHostUrl(final String mgid) {
