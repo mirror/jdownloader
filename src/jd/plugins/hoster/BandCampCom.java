@@ -22,8 +22,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,7 +30,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,6 +38,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcampdecrypted\\.com/track/[a-z0-9\\-_]+" })
 public class BandCampCom extends PluginForHost {
@@ -84,8 +83,8 @@ public class BandCampCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dl.getConnection().getContentType().contains("text")) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -125,10 +124,17 @@ public class BandCampCom extends PluginForHost {
         if (br.containsHTML("(>Sorry, that something isn't here|>start at the beginning</a> and you'll certainly find what)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("\"file\"\\s*:.*?\"((https?:)?//.*?)\"").getMatch(0);
-        logger.info("DLLINK = " + DLLINK);
+        final String file = br.getRegex("\"file\"\\s*:\\s*(null|\".*?\"|\\{.*?\\})").getMatch(0);
+        if (file == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if ("null".equals(file)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "No free listening available!");
+        }
+        DLLINK = new Regex(file, "((https?:)?//[^\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            logger.info("DLLINK = " + DLLINK);
         }
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         if (!downloadLink.getBooleanProperty("fromdecrypter", false)) {
@@ -175,15 +181,15 @@ public class BandCampCom extends PluginForHost {
         try {
             /* Server does NOT like HEAD requests! */
             con = br2.openGetConnection(DLLINK);
-            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
+            if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
                 downloadLink.setVerifiedFileSize(con.getLongContentLength());
             } else {
+                br.followConnection(true);
                 /*
                  * 2020-04-23: Chances are high that the track cannot be downloaded because user needs to purchase it first. There is no
                  * errormessage or anything on their website.
                  */
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                throw new AccountRequiredException();
+                throw new PluginException(LinkStatus.ERROR_FATAL, "No free listening available!");
             }
             return AvailableStatus.TRUE;
         } finally {

@@ -5,7 +5,7 @@ import org.appwork.utils.StringUtils;
 
 public class TokenResponse implements Storable {
     public static final org.appwork.storage.TypeRef<TokenResponse> TYPE       = new org.appwork.storage.TypeRef<TokenResponse>(TokenResponse.class) {
-                                                                              };
+    };
     private String                                                 access_token;
     private long                                                   createTime = System.currentTimeMillis();
     private long                                                   expires_in;
@@ -13,15 +13,6 @@ public class TokenResponse implements Storable {
     private String                                                 token_type;
     private boolean                                                refresh    = false;
     private boolean                                                isVerified = false;
-    private String                                                 tokenJSon  = null;
-
-    public String _getTokenJson() {
-        return tokenJSon;
-    }
-
-    public void _setTokenJson(String json) {
-        this.tokenJSon = json;
-    }
 
     public boolean _isVerified() {
         return isVerified;

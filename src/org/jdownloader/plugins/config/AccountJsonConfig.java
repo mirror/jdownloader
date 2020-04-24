@@ -26,12 +26,12 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.LogController;
 
 public class AccountJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE     = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
-    private final static boolean                                                                   DEBUG            = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     private final static String                                                                    PREFIX_PRIMITIVE = "configInterface.primitive.";
     private final static String                                                                    PREFIX_OBJECT    = "configInterface.object.";
 
@@ -55,14 +55,10 @@ public class AccountJsonConfig {
         final WeakReference<ConfigInterface> ret = classLoaderMap.get(CACHEID);
         ConfigInterface intf = null;
         if (ret != null && (intf = ret.get()) != null) {
-            if (DEBUG) {
-                System.out.println("Reuse cached ConfigInterface " + CACHEID + "|" + plugin.getLazyP());
-            }
+            plugin.getLogger().info("Reuse cached ConfigInterface " + CACHEID + "|" + plugin.getLazyP() + "|" + classloader);
             return (T) intf;
         } else {
-            if (DEBUG) {
-                System.out.println("Create new ConfigInterface " + CACHEID + "|" + plugin.getLazyP());
-            }
+            plugin.getLogger().info("Create new ConfigInterface " + CACHEID + "|" + plugin.getLazyP() + "|" + classloader);
         }
         final Storage storage = new Storage() {
             @Override
@@ -76,6 +72,15 @@ public class AccountJsonConfig {
 
             @Override
             public void close() {
+            }
+
+            private final LogInterface getLogger() {
+                final LogInterface ret = plugin.getLogger();
+                if (ret != null) {
+                    return ret;
+                } else {
+                    return LogController.CL();
+                }
             }
 
             @Override
@@ -136,10 +141,10 @@ public class AccountJsonConfig {
                     try {
                         ret = Enum.valueOf(((Enum<?>) def).getDeclaringClass(), (String) ret);
                     } catch (final Throwable e) {
+                        getLogger().log(e);
                         if (e instanceof IllegalArgumentException) {
-                            LogController.CL().info("Could not restore the enum. There is no value for " + ret + " in " + ((Enum<?>) def).getDeclaringClass());
+                            getLogger().info("Could not restore the enum. There is no value for " + ret + " in " + ((Enum<?>) def).getDeclaringClass());
                         }
-                        LogController.CL().log(e);
                         ret = def;
                     }
                 }
@@ -258,6 +263,15 @@ public class AccountJsonConfig {
             }
         };
         final StorageHandler<T> storageHandler = new StorageHandler<T>(configInterface) {
+            private final LogInterface getLogger() {
+                final LogInterface ret = plugin.getLogger();
+                if (ret != null) {
+                    return ret;
+                } else {
+                    return LogController.CL();
+                }
+            }
+
             @Override
             protected void error(final Throwable e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
@@ -304,7 +318,7 @@ public class AccountJsonConfig {
                     final String compressedJSonString = Base64.encodeToString(bos.toByteArray(), false);
                     account.setProperty(key, compressedJSonString);
                 } catch (Exception e) {
-                    LogController.CL().log(e);
+                    getLogger().log(e);
                 }
             }
 
@@ -321,7 +335,7 @@ public class AccountJsonConfig {
                         readObject = JSonStorage.restoreFromString(jsonString, ((ListHandler<?>) keyHandler).getTypeRef(), null);
                     }
                 } catch (Exception e) {
-                    LogController.CL().log(e);
+                    getLogger().log(e);
                 }
                 return readObject;
             }
