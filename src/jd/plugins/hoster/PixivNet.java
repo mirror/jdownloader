@@ -16,12 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -43,6 +40,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
 public class PixivNet extends PluginForHost {
@@ -226,7 +228,7 @@ public class PixivNet extends PluginForHost {
                     if (!check) {
                         return;
                     } else {
-                        br.getPage("https://www." + account.getHoster() + "/");
+                        br.getPage("https://www." + account.getHoster() + "/en");
                         if (isLoggedIN(br)) {
                             /* Refresh loggedin timestamp */
                             plugin.getLogger().info("Cookie login successful");
@@ -244,16 +246,16 @@ public class PixivNet extends PluginForHost {
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // final String postkey = br.getRegex("name=\"post_key\" value=\"([a-f0-9]+)\"").getMatch(0);
-                // if (postkey == null) {
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // }
-                br.getHeaders().put("Accept", "application/json");
-                br.getHeaders().put("Origin", "https://accounts." + account.getHoster());
-                br.getHeaders().put("sec-fetch-dest", "empty");
-                br.getHeaders().put("sec-fetch-mode", "cors");
-                br.getHeaders().put("sec-fetch-site", "same-origin");
-                final String recaptchaResponse;
+                String postkey = br.getRegex("name=\"post_key\" value=\"([a-f0-9]+)\"").getMatch(0);
+                if (postkey == null) {
+                    postkey = br.getRegex("pixivAccount\\.postKey\"\\s*:\\s*\"([a-f0-9]+)\"").getMatch(0);
+                    if (postkey == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                Browser loginBrowser = br.cloneBrowser();
+                loginBrowser.getHeaders().put("Accept", "application/json");
+                loginBrowser.getHeaders().put("Origin", "https://accounts." + account.getHoster());
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
                     final DownloadLink dlinkbefore = plg.getDownloadLink();
@@ -261,32 +263,75 @@ public class PixivNet extends PluginForHost {
                         if (dlinkbefore == null) {
                             plg.setDownloadLink(new DownloadLink(plg, "Account", plg.getHost(), "http://" + account.getHoster(), true));
                         }
-                        final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br);
-                        recaptchaResponse = captcha.getToken();
+                        final CaptchaHelperHostPluginRecaptchaV2 v3Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, "6LfJ0Z0UAAAAANqP-8mvUln2z6mHJwuv5YGtC8xp") {
+                            @Override
+                            protected Map<String, Object> getV3Action() {
+                                final Map<String, Object> ret = new HashMap<String, Object>();
+                                ret.put("action", "login");
+                                return ret;
+                            }
+                        };
+                        loginform.put("recaptcha_v3_token", Encoding.urlEncode(v3Captcha.getToken()));
+                        final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, "6Lf-skYUAAAAABjeBwIS8LhyQ7v1hwYnOsW3DoNA") {
+                            @Override
+                            protected java.util.Map<String, Object> getV3Action() {
+                                return null;
+                            };
+
+                            @Override
+                            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                                return TYPE.NORMAL;
+                            }
+                        };
+                        loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
                     } finally {
                         if (dlinkbefore != null) {
                             plg.setDownloadLink(dlinkbefore);
                         }
                     }
                 } else if (plugin instanceof PluginForDecrypt) {
-                    final PluginForDecrypt plg = (PluginForDecrypt) plugin;
-                    final CaptchaHelperCrawlerPluginRecaptchaV2 captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(plg, br);
-                    recaptchaResponse = captcha.getToken();
+                    final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
+                    final CaptchaHelperCrawlerPluginRecaptchaV2 v3Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, "6LfJ0Z0UAAAAANqP-8mvUln2z6mHJwuv5YGtC8xp") {
+                        @Override
+                        protected Map<String, Object> getV3Action() {
+                            final Map<String, Object> ret = new HashMap<String, Object>();
+                            ret.put("action", "login");
+                            return ret;
+                        }
+                    };
+                    loginform.put("recaptcha_v3_token", Encoding.urlEncode(v3Captcha.getToken()));
+                    final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, "6Lf-skYUAAAAABjeBwIS8LhyQ7v1hwYnOsW3DoNA") {
+                        @Override
+                        protected java.util.Map<String, Object> getV3Action() {
+                            return null;
+                        };
+
+                        @Override
+                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                            return TYPE.NORMAL;
+                        }
+                    };
+                    loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("recaptcha_v3_token", Encoding.urlEncode(recaptchaResponse));
                 loginform.put("captcha", "");
-                loginform.put("g_recaptcha_response", "");
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
+                loginform.put("post_key", Encoding.urlEncode(postkey));
+                // loginform.put("source", "pc");
                 loginform.put("ref", "");
                 loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
                 loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
-                br.submitForm(loginform);
+                loginBrowser.submitForm(loginform);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
-                if (!isLoggedIN(br) || "true".equals(error)) {
+                if ("true".equals(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    br.getPage("https://www." + account.getHoster() + "/en");
+                    if (!isLoggedIN(br)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
@@ -307,8 +352,7 @@ public class PixivNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(this, this.br, account, true, true);
         ai.setUnlimitedTraffic();
-        /* 2020-01-29: There are different account types but they do not affect the download limits! */
-        if (br.containsHTML("premium\\s*:\\s*\\'yes\\'")) {
+        if (br.containsHTML("premium\\s*:\\s*\\'yes\\'") || br.containsHTML("\"premium\"\\s*:\\s*true")) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
         } else {
