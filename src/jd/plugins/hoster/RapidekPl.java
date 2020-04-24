@@ -102,6 +102,7 @@ public class RapidekPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad ID", 5 * 60 * 1000l);
             }
             internalid = internalid.replace("\"", "");
+            internalid = internalid.replace("-", "");
             /* 2020-04-21: Serverside, downloads do not seem to work at all (?) */
             dllink = WEBSITE_BASE + "/file?id=" + internalid;
             // if (dllink == null) {
@@ -157,6 +158,31 @@ public class RapidekPl extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account);
         final String expireDate = br.getRegex("TODO(.+)TODOFIXME").getMatch(0);
+        // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        // final Browser webbr = new Browser();
+        // webbr.getHeaders().put("Origin", "https://rapidek.pl");
+        // webbr.getHeaders().put("Sec-WebSocket-Extensions", "permessage-deflate; client_max_window_bits");
+        // webbr.getHeaders().put("Sec-WebSocket-Key", "TODO");
+        // webbr.getHeaders().put("Sec-WebSocket-Version", "13");
+        // webbr.getHeaders().put("Upgrade", "websocket");
+        // final WebSocketClient wsc = new WebSocketClient(webbr, new URL("https://rapidek.pl/userHub?id=TODO"));
+        // try {
+        // wsc.connect();
+        // ReadWebSocketFrame frame = wsc.readNextFrame();// sid
+        // frame = wsc.readNextFrame();// session
+        // frame = wsc.readNextFrame();// subscription
+        // /* TODO: Extract account data from this */
+        // if (WebSocketFrameHeader.OP_CODE.UTF8_TEXT.equals(frame.getOpCode()) && frame.isFin()) {
+        // String string = new String(frame.getPayload(), "UTF-8");
+        // // string = string.replaceFirst("^\\d+", "");
+        // } else {
+        // logger.severe("Unsupported:" + frame);
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // } finally {
+        // wsc.close();
+        // }
+        // }
         if (expireDate == null) {
             /* Free or plugin failure */
             /*
