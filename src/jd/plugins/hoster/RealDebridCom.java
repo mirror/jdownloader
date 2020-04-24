@@ -109,13 +109,12 @@ public class RealDebridCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static Object                                  LOCK               = new Object();
     private static AtomicInteger                           MAX_DOWNLOADS      = new AtomicInteger(Integer.MAX_VALUE);
     private static AtomicInteger                           RUNNING_DOWNLOADS  = new AtomicInteger(0);
     private final String                                   mName              = "real-debrid.com";
     private final String                                   mProt              = "https://";
     private Browser                                        apiBrowser;
-    private TokenResponse                                  token;
+    private TokenResponse                                  currentToken       = null;
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -130,23 +129,27 @@ public class RealDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ensureAPIBrowser();
-        login(account, false);
+        TokenResponse token = login(account, false);
         try {
-            return callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + method, query, type);
+            final T ret = callRestAPIInternal(token, "https://api.real-debrid.com/rest/1.0" + method, query, type);
+            this.currentToken = token;
+            return ret;
         } catch (APIException e) {
             switch (e.getError()) {
             case BAD_LOGIN:
             case BAD_TOKEN:
                 // refresh Token
-                login(account, true);
-                return callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + method, query, type);
+                token = login(account, true);
+                final T ret = callRestAPIInternal(token, "https://api.real-debrid.com/rest/1.0" + method, query, type);
+                this.currentToken = token;
+                return ret;
             default:
                 throw e;
             }
         }
     }
 
-    protected synchronized <T> T callRestAPIInternal(String url, UrlQuery query, TypeRef<T> type) throws Exception {
+    protected synchronized <T> T callRestAPIInternal(TokenResponse token, String url, UrlQuery query, TypeRef<T> type) throws Exception {
         if (token != null) {
             apiBrowser.getHeaders().put(AUTHORIZATION, "Bearer " + token.getAccess_token());
         }
@@ -176,12 +179,7 @@ public class RealDebridCom extends PluginForHost {
     private void ensureAPIBrowser() {
         if (apiBrowser == null) {
             apiBrowser = br.cloneBrowser();
-            final int[] responsecodes = new int[400];
-            int start = 0;
-            for (int i = 200; i < 600; i++) {
-                responsecodes[start++] = i;
-            }
-            apiBrowser.addAllowedResponseCodes(responsecodes);
+            apiBrowser.setAllowedResponseCodes(-1);
         }
     }
 
@@ -310,7 +308,11 @@ public class RealDebridCom extends PluginForHost {
                 increment = true;
                 dl.startDownload();
             } else {
-                br2.followConnection();
+                try {
+                    br2.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 this.br = br2;// required for error handling outside this method
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -386,7 +388,6 @@ public class RealDebridCom extends PluginForHost {
                 }
             }
             prepBrowser(br);
-            login(account, false);
             showMessage(link, "Task " + (startTaskIndex + 1) + ": Generating Link");
             /* request Download */
             final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
@@ -400,6 +401,7 @@ public class RealDebridCom extends PluginForHost {
             try {
                 handleDL(account, link, genLnk, linkresp);
             } catch (PluginException e1) {
+                logger.log(e1);
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable e) {
@@ -412,6 +414,17 @@ public class RealDebridCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
                 }
                 if (br.containsHTML("Your code is not or no longer valid")) {
+                    if (!currentToken._isVerified()) {
+                        synchronized (account) {
+                            final String tokenJSon = account.getStringProperty(TOKEN, null);
+                            final TokenResponse existingToken = tokenJSon != null ? JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE) : null;
+                            if (existingToken != null && StringUtils.equals(currentToken.getAccess_token(), existingToken.getAccess_token()) && StringUtils.equals(currentToken.getRefresh_token(), existingToken.getRefresh_token())) {
+                                currentToken.setRefresh(true);
+                                account.setProperty(TOKEN, JSonStorage.serializeToJson(currentToken));
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+                            }
+                        }
+                    }
                     tempUnavailableHoster(account, link, 30 * 60 * 1000l);
                 }
                 if (br.containsHTML("You can not download this file because you have exceeded your traffic on this hoster")) {
@@ -470,108 +483,113 @@ public class RealDebridCom extends PluginForHost {
     }
 
     public ClientSecret checkCredentials(CodeResponse code) throws Exception {
-        return callRestAPIInternal(API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
+        return callRestAPIInternal(null, API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
     }
 
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
-            // first try to use the stored token
-            if (!force) {
-                final String tokenJSon = account.getStringProperty(TOKEN);
-                if (StringUtils.isNotEmpty(tokenJSon)) {
-                    final TokenResponse token = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
-                    });
-                    // ensure that the token is at elast 5 minutes valid
-                    final long expireTime = token.getExpires_in() * 1000 + token.getCreateTime();
-                    final long now = System.currentTimeMillis();
-                    if ((expireTime - 5 * 60 * 1000l) > now) {
-                        this.token = token;
-                        return;
+    private TokenResponse login(Account account, boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                // first try to use the stored token
+                String tokenJSon = account.getStringProperty(TOKEN);
+                if (!force) {
+                    if (StringUtils.isNotEmpty(tokenJSon)) {
+                        final TokenResponse existingToken = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
+                        });
+                        // ensure that the token is at elast 5 minutes valid
+                        final long expireTime = existingToken.getExpires_in() * 1000 + existingToken.getCreateTime();
+                        final long now = System.currentTimeMillis();
+                        if (!existingToken.isRefresh() && (expireTime - 5 * 60 * 1000l) > now) {
+                            existingToken._setVerified(false);
+                            return existingToken;
+                        }
                     }
                 }
-            }
-            // token invalid, forcerefresh active or token expired.
-            // Try to refresh the token
-            final String tokenJSon = account.getStringProperty(TOKEN);
-            final String clientSecretJson = account.getStringProperty(CLIENT_SECRET);
-            if (StringUtils.isNotEmpty(tokenJSon) && StringUtils.isNotEmpty(clientSecretJson)) {
-                final TokenResponse token = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
-                final ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
-                final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", token.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
-                final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
-                if (newToken.validate()) {
-                    this.token = newToken;
-                    account.setProperty(TOKEN, JSonStorage.serializeToJson(newToken));
-                    return;
+                // token invalid, forcerefresh active or token expired.
+                // Try to refresh the token
+                tokenJSon = account.getStringProperty(TOKEN);
+                final String clientSecretJson = account.getStringProperty(CLIENT_SECRET);
+                if (StringUtils.isNotEmpty(tokenJSon) && StringUtils.isNotEmpty(clientSecretJson)) {
+                    final TokenResponse existingToken = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
+                    final ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
+                    final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", existingToken.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                    final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
+                    if (newToken.validate()) {
+                        tokenJSon = JSonStorage.serializeToJson(newToken);
+                        account.setProperty(TOKEN, tokenJSon);
+                        newToken._setVerified(true);
+                        return newToken;
+                    }
                 }
-            }
-            this.token = null;
-            // Could not refresh the token. login using username and password
-            br.setCookiesExclusive(true);
-            prepBrowser(br);
-            br.clearCookies(API);
-            final Browser autoSolveBr = br.cloneBrowser();
-            final CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
-            });
-            ensureAPIBrowser();
-            final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
-            final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
-            final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
-                private volatile long lastValidation = -1;
+                // Could not refresh the token. login using username and password
+                br.setCookiesExclusive(true);
+                prepBrowser(br);
+                br.clearCookies(API);
+                final Browser autoSolveBr = br.cloneBrowser();
+                final CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
+                });
+                ensureAPIBrowser();
+                final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
+                final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
+                final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
+                    private volatile long lastValidation = -1;
 
-                @Override
-                public Plugin getPlugin() {
-                    return RealDebridCom.this;
-                }
+                    @Override
+                    public Plugin getPlugin() {
+                        return RealDebridCom.this;
+                    }
 
-                @Override
-                public void poll(SolverJob<Boolean> job) {
-                    if (System.currentTimeMillis() - lastValidation >= code.getInterval() * 1000) {
-                        lastValidation = System.currentTimeMillis();
-                        try {
-                            final ClientSecret clientSecret = checkCredentials(code);
-                            if (clientSecret != null) {
-                                clientSecretResult.set(clientSecret);
-                                job.addAnswer(new AbstractResponse<Boolean>(this, ChallengeSolver.EXTERN, 100, true));
+                    @Override
+                    public void poll(SolverJob<Boolean> job) {
+                        if (System.currentTimeMillis() - lastValidation >= code.getInterval() * 1000) {
+                            lastValidation = System.currentTimeMillis();
+                            try {
+                                final ClientSecret clientSecret = checkCredentials(code);
+                                if (clientSecret != null) {
+                                    clientSecretResult.set(clientSecret);
+                                    job.addAnswer(new AbstractResponse<Boolean>(this, ChallengeSolver.EXTERN, 100, true));
+                                }
+                            } catch (Throwable e) {
+                                logger.log(e);
                             }
-                        } catch (Throwable e) {
-                            logger.log(e);
                         }
                     }
-                }
 
-                private final boolean isInvalid(Browser br) {
-                    return br.containsHTML("Your login informations are incorrect") || (Application.isHeadless() && br.containsHTML("The validity period of your password has been exceeded"));
-                }
+                    private final boolean isInvalid(Browser br) {
+                        return br.containsHTML("Your login informations are incorrect") || (Application.isHeadless() && br.containsHTML("The validity period of your password has been exceeded"));
+                    }
 
-                @Override
-                public boolean autoSolveChallenge(SolverJob<Boolean> job) {
-                    try {
-                        final String verificationUrl = getUrl();
-                        autoSolveBr.clearCookies(verificationUrl);
-                        autoSolveBr.getPage(verificationUrl);
-                        Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
-                        if (loginForm == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        if (loginForm.containsHTML("g-recaptcha")) {
-                            logger.info("Login requires Recaptcha");
-                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
-                            RealDebridCom.this.setDownloadLink(dummyLink);
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
-                            loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        }
-                        loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
-                        loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
-                        autoSolveBr.submitForm(loginForm);
+                    private final boolean isAllowed(Browser br) {
+                        return br.containsHTML("Application allowed, you can close this page");
+                    }
+
+                    private final boolean is2FARequired(Browser br) {
+                        return br.containsHTML("A temporary code has been sent to your email address and is required");
+                    }
+
+                    private final Boolean check(SolverJob<Boolean> job, Browser br) throws Exception {
                         if (isInvalid(autoSolveBr)) {
                             loginsInvalid.set(true);
                             job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                             return false;
+                        } else if (isAllowed(autoSolveBr)) {
+                            final ClientSecret clientSecret = checkCredentials(code);
+                            if (clientSecret != null) {
+                                clientSecretResult.set(clientSecret);
+                                job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
+                                return true;
+                            } else {
+                                logger.info("No ClientSecret?!");
+                            }
                         }
-                        Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
-                        if (allow == null) {
-                            loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                        return null;
+                    }
+
+                    private final boolean handleAutoSolveChallenge(SolverJob<Boolean> job) {
+                        try {
+                            final String verificationUrl = getUrl();
+                            autoSolveBr.clearCookies(verificationUrl);
+                            autoSolveBr.getPage(verificationUrl);
+                            Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
                             if (loginForm == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
@@ -585,67 +603,101 @@ public class RealDebridCom extends PluginForHost {
                             loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
                             loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
                             autoSolveBr.submitForm(loginForm);
-                            if (isInvalid(autoSolveBr)) {
-                                loginsInvalid.set(true);
-                                job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                            Boolean result = check(job, autoSolveBr);
+                            if (result != null) {
+                                return result.booleanValue();
+                            } else if (is2FARequired(autoSolveBr)) {
                                 return false;
                             }
-                            allow = autoSolveBr.getFormBySubmitvalue("Allow");
-                        }
-                        if (allow != null) {
-                            allow.setPreferredSubmit("Allow");
-                            autoSolveBr.submitForm(allow);
-                            final ClientSecret clientSecret = checkCredentials(code);
-                            if (clientSecret != null) {
-                                clientSecretResult.set(clientSecret);
-                                job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
-                                return true;
+                            Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
+                            if (allow == null) {
+                                loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                                if (loginForm == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                if (loginForm.containsHTML("g-recaptcha")) {
+                                    logger.info("Login requires Recaptcha");
+                                    final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
+                                    RealDebridCom.this.setDownloadLink(dummyLink);
+                                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
+                                    loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                }
+                                loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
+                                loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
+                                autoSolveBr.submitForm(loginForm);
+                                result = check(job, autoSolveBr);
+                                if (result != null) {
+                                    return result.booleanValue();
+                                } else if (is2FARequired(autoSolveBr)) {
+                                    return false;
+                                }
+                                allow = autoSolveBr.getFormBySubmitvalue("Allow");
                             }
+                            if (allow != null) {
+                                allow.setPreferredSubmit("Allow");
+                                autoSolveBr.submitForm(allow);
+                                final ClientSecret clientSecret = checkCredentials(code);
+                                if (clientSecret != null) {
+                                    clientSecretResult.set(clientSecret);
+                                    job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
+                                    return true;
+                                }
+                            }
+                        } catch (CaptchaException e) {
+                            logger.log(e);
+                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                        } catch (PluginException e) {
+                            logger.log(e);
+                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                        } catch (InterruptedException e) {
+                            logger.log(e);
+                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                        } catch (Throwable e) {
+                            logger.log(e);
                         }
-                    } catch (CaptchaException e) {
-                        logger.log(e);
-                        job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
-                    } catch (PluginException e) {
-                        logger.log(e);
-                        job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
-                    } catch (InterruptedException e) {
-                        logger.log(e);
-                        job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
-                    } catch (Throwable e) {
-                        logger.log(e);
+                        return false;
                     }
-                    return false;
+
+                    @Override
+                    public boolean autoSolveChallenge(SolverJob<Boolean> job) {
+                        final boolean ret = handleAutoSolveChallenge(job);
+                        logger.info("autoSolveChallenge:" + ret);
+                        return ret;
+                    }
+                };
+                challenge.setTimeout(5 * 60 * 1000);
+                try {
+                    ChallengeResponseController.getInstance().handle(challenge);
+                } catch (SkipException e) {
+                    logger.log(e);
                 }
-            };
-            challenge.setTimeout(5 * 60 * 1000);
-            try {
-                ChallengeResponseController.getInstance().handle(challenge);
-            } catch (SkipException e) {
-                logger.log(e);
-            }
-            final ClientSecret clientSecret = clientSecretResult.get();
-            if (clientSecret == null) {
-                if (loginsInvalid.get()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your login informations are incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final ClientSecret clientSecret = clientSecretResult.get();
+                if (clientSecret == null) {
+                    if (loginsInvalid.get()) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your login informations are incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "OAuth Failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
+                });
+                if (newToken.validate()) {
+                    final UserResponse user = callRestAPIInternal(newToken, "https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);
+                    if (!StringUtils.equalsIgnoreCase(account.getUser(), user.getEmail()) && !StringUtils.equalsIgnoreCase(account.getUser(), user.getUsername())) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "User Mismatch. You try to add the account " + account.getUser() + "\r\nBut in your browser you are logged in as " + user.getUsername() + "\r\nPlease make sure that there is no username mismatch!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        tokenJSon = JSonStorage.serializeToJson(newToken);
+                        account.setProperty(TOKEN, JSonStorage.serializeToJson(newToken));
+                        account.setProperty(CLIENT_SECRET, JSonStorage.serializeToJson(clientSecret));
+                        newToken._setVerified(true);
+                        return newToken;
+                    }
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "OAuth Failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown Error", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            }
-            final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
-            final TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
-            });
-            if (token.validate()) {
-                this.token = token;
-                final UserResponse user = callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);
-                if (!StringUtils.equalsIgnoreCase(account.getUser(), user.getEmail()) && !StringUtils.equalsIgnoreCase(account.getUser(), user.getUsername())) {
-                    this.token = null;
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "User Mismatch. You try to add the account " + account.getUser() + "\r\nBut in your browser you are logged in as " + user.getUsername() + "\r\nPlease make sure that there is no username mismatch!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.setProperty(TOKEN, JSonStorage.serializeToJson(token));
-                account.setProperty(CLIENT_SECRET, JSonStorage.serializeToJson(clientSecret));
-                this.token = token;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown Error", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } catch (PluginException e) {
+                throw e;
             }
         }
     }
