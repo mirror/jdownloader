@@ -16,7 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
@@ -164,7 +164,8 @@ public class RapidekPl extends PluginForHost {
              * account.setMaxSimultanDownloads(account_FREE_maxdownloads); account.setValid(true);
              */
             account.setType(AccountType.FREE);
-            ai.setTrafficLeft(0);
+            /* 2020-04-24: Set unlimited traffic on all accounts for testing */
+            // ai.setTrafficLeft(0);
         } else {
             /* Premium */
             account.setType(AccountType.PREMIUM);
@@ -177,9 +178,18 @@ public class RapidekPl extends PluginForHost {
         /*
          * 2020-04-21: TODO website is broken? https://rapidek.pl/lista-serwisow
          */
-        String[] hosts = br.getRegex("TODO(.+)TODOFIXME").getColumn(0);
-        hosts = new String[] { "uploaded.net" };
-        ai.setMultiHostSupport(this, Arrays.asList(hosts));
+        /* 2020-04-24: The most WTF way to distribute a list of supported hosts */
+        br.getPage("https://rapidekforum.pl/all.php");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String[] hosts = br.getRegex("([^;]+);").getColumn(0);
+        for (final String host : hosts) {
+            /* Do not add domain of this multihost plugin */
+            if (host.equalsIgnoreCase(this.getHost())) {
+                continue;
+            }
+            supportedHosts.add(host);
+        }
+        ai.setMultiHostSupport(this, supportedHosts);
         /* Debug test */
         // ai.setUnlimitedTraffic();
         account.setConcurrentUsePossible(true);
@@ -191,6 +201,7 @@ public class RapidekPl extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
+                String token = account.getStringProperty("token");
                 if (cookies != null) {
                     logger.info("Trying to login via cookies");
                     br.setCookies(WEBSITE_BASE, cookies);
@@ -198,6 +209,7 @@ public class RapidekPl extends PluginForHost {
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
+                        br.getHeaders().put("Authorization", "Bearer " + token);
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -224,11 +236,13 @@ public class RapidekPl extends PluginForHost {
                 }
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.postPageRaw(WEBSITE_BASE + "/account/login", String.format("{\"Username\":\"%s\",\"Password\":\"%s\",\"CaptchaResponse\":%s}", account.getUser(), account.getPass(), captchaResponse));
-                final String token = PluginJSonUtils.getJson(br, "Token");
+                token = PluginJSonUtils.getJson(br, "Token");
                 if (!isLoggedIN() || StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
+                account.setProperty("token", token);
+                br.getHeaders().put("Authorization", "Bearer " + token);
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");

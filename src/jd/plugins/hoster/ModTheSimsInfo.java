@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -23,13 +22,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,19 +38,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modthesims.info" }, urls = { "http://[a-z0-9]+\\.modthesims2\\.com/files/[^<>\"]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modthesims.info" }, urls = { "https?://[a-z0-9]+\\.modthesims2?\\.(?:com|info)/getfile\\.php\\?file=(\\d+)" })
 public class ModTheSimsInfo extends PluginForHost {
-
     public ModTheSimsInfo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
         return "http://www.modthesims.info/forumdisplay.php?f=24";
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String orighost = new Regex(link.getPluginPatternMatcher(), "https?://[a-z0-9]+\\.([^/]+)/.+").getMatch(0);
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace(orighost + "/", this.getHost() + "/"));
     }
 
     /* Connection stuff */
@@ -62,7 +65,6 @@ public class ModTheSimsInfo extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -72,18 +74,12 @@ public class ModTheSimsInfo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        DLLINK = downloadLink.getDownloadURL();
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        dllink = downloadLink.getDownloadURL();
+        dllink = Encoding.htmlDecode(dllink);
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openGetConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -102,7 +98,7 @@ public class ModTheSimsInfo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -192,7 +188,7 @@ public class ModTheSimsInfo extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
