@@ -39,6 +39,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -53,7 +54,6 @@ public class RPNetBiz extends PluginForHost {
     private static final String mName              = "rpnet.biz";
     private static final String mProt              = "http://";
     private static final String api_base           = "https://premium.rpnet.biz/";
-    private static final String FAIL_STRING        = "rpnetbiz";
     private static final int    HDD_WAIT_THRESHOLD = 10 * 60000;                  // 10 mins in
 
     // ms
@@ -102,13 +102,13 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
-        handleDL(link, link.getDownloadURL(), -6);
+        handleDL(link, link.getPluginPatternMatcher(), -6);
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink link) throws Exception, PluginException {
         // requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -6);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, -6);
         URLConnectionAdapter con = dl.getConnection();
         List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
         if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
@@ -157,17 +157,18 @@ public class RPNetBiz extends PluginForHost {
         if (br.toString().contains("Invalid authentication.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid User : API Key", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("IP Ban in effect for")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your accounr is temporarily banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is temporarily banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
         JSonObject accountInfo = (JSonObject) node.get("accountInfo");
         long expiryDate = Long.parseLong(accountInfo.get("premiumExpiry").toString().replaceAll("\"", ""));
-        ai.setValidUntil(expiryDate * 1000);
+        ai.setValidUntil(expiryDate * 1000, br);
         String hosts = br.getPage(api_base + "hostlist.php");
         if (hosts != null) {
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
             ai.setMultiHostSupport(this, supportedHosts);
         }
+        account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium Account");
         return ai;
     }
@@ -191,10 +192,11 @@ public class RPNetBiz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        String downloadURL = link.getDownloadURL();
+        final String downloadURL = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         prepBrowser();
         String generatedLink = checkDirectLink(link, "cachedDllink");
         int maxChunks = 0;
+        String filename = null;
         if (generatedLink != null) {
             logger.info("Reusing cached download link");
         } else {
@@ -270,6 +272,7 @@ public class RPNetBiz extends PluginForHost {
                         int lastProgress = -1;
                         while (System.currentTimeMillis() - lastProgressChange < HDD_WAIT_THRESHOLD) {
                             if (isAbort()) {
+                                logger.info("Process aborted by user");
                                 throw new PluginException(LinkStatus.ERROR_RETRY);
                             }
                             br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
@@ -309,6 +312,7 @@ public class RPNetBiz extends PluginForHost {
                         link.removePluginProgress(waitProgress);
                     }
                 } else {
+                    /* Direct download */
                     String tmp = ((JSonObject) linkNode).get("generated").toString();
                     final Object max_connections = ((JSonObject) linkNode).get("max_connections");
                     if (max_connections != null) {
@@ -318,26 +322,35 @@ public class RPNetBiz extends PluginForHost {
                         }
                     }
                     generatedLink = tmp.substring(1, tmp.length() - 1);
+                    filename = ((JSonObject) linkNode).get("filename").toString();
                     break;
                 }
             }
         }
         showMessage(link, "Download begins!");
-        if (StringUtils.isNotEmpty(generatedLink)) {
-            try {
-                handleDL(link, generatedLink, maxChunks);
-                return;
-            } catch (final PluginException e1) {
-                if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
-                    logger.info("rpnet.biz: ERROR_DOWNLOAD_INCOMPLETE --> Quitting loop");
-                    throw e1;
-                } else if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_FAILED) {
-                    logger.info("rpnet.biz: ERROR_DOWNLOAD_FAILED --> Quitting loop");
-                    throw e1;
-                }
+        if (StringUtils.isEmpty(generatedLink)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 3 * 60 * 1000l);
+        }
+        try {
+            /* 2020-04-24: According to admin, we can use this filename for everything except Zippyshare. */
+            if (!StringUtils.isEmpty(filename) && !link.getHost().equalsIgnoreCase("zippyshare.com")) {
+                /* 2020-04-24: E.g. sometimes "Testfile.rar" (With "" --> WTF, remove that) */
+                filename = filename.replace("\"", "");
+                logger.info("Using final filename given by API: " + filename);
+                link.setFinalFileName(filename);
+            } else {
+                logger.info("Using final filename from Content-Disposition Header");
             }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find dllink", 3 * 60 * 1000l);
+            handleDL(link, generatedLink, maxChunks);
+            return;
+        } catch (final PluginException e1) {
+            if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info("rpnet.biz: ERROR_DOWNLOAD_INCOMPLETE --> Quitting loop");
+                throw e1;
+            } else if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_FAILED) {
+                logger.info("rpnet.biz: ERROR_DOWNLOAD_FAILED --> Quitting loop");
+                throw e1;
+            }
         }
     }
 
