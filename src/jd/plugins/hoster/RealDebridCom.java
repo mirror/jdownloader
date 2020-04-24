@@ -314,6 +314,9 @@ public class RealDebridCom extends PluginForHost {
                     logger.log(e);
                 }
                 this.br = br2;// required for error handling outside this method
+                if (br.containsHTML("An error occurred while generating a premium link")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "An error occurred while generating a premium link");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } finally {

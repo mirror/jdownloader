@@ -25,6 +25,7 @@ import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -253,9 +254,6 @@ public class PixivNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                Browser loginBrowser = br.cloneBrowser();
-                loginBrowser.getHeaders().put("Accept", "application/json");
-                loginBrowser.getHeaders().put("Origin", "https://accounts." + account.getHoster());
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
                     final DownloadLink dlinkbefore = plg.getDownloadLink();
@@ -323,11 +321,17 @@ public class PixivNet extends PluginForHost {
                 loginform.put("ref", "");
                 loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
                 loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
-                loginBrowser.submitForm(loginform);
+                final Request loginRequest = br.createFormRequest(loginform);
+                loginRequest.getHeaders().put("Accept", "application/json");
+                loginRequest.getHeaders().put("Origin", "https://accounts." + account.getHoster());
+                br.getPage(loginRequest);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
                 if ("true".equals(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
+                    if (br.containsHTML("Complete the reCAPTCHA verification")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     br.getPage("https://www." + account.getHoster() + "/en");
                     if (!isLoggedIN(br)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
