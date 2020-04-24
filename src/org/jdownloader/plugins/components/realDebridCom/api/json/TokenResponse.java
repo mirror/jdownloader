@@ -7,13 +7,37 @@ public class TokenResponse implements Storable {
     public static final org.appwork.storage.TypeRef<TokenResponse> TYPE       = new org.appwork.storage.TypeRef<TokenResponse>(TokenResponse.class) {
                                                                               };
     private String                                                 access_token;
-
     private long                                                   createTime = System.currentTimeMillis();
-
     private long                                                   expires_in;
-
     private String                                                 refresh_token;
     private String                                                 token_type;
+    private boolean                                                refresh    = false;
+    private boolean                                                isVerified = false;
+    private String                                                 tokenJSon  = null;
+
+    public String _getTokenJson() {
+        return tokenJSon;
+    }
+
+    public void _setTokenJson(String json) {
+        this.tokenJSon = json;
+    }
+
+    public boolean _isVerified() {
+        return isVerified;
+    }
+
+    public void _setVerified(boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public boolean isRefresh() {
+        return refresh;
+    }
+
+    public void setRefresh(boolean refresh) {
+        this.refresh = refresh;
+    }
 
     public TokenResponse(/* Storable */) {
     }
@@ -61,5 +85,4 @@ public class TokenResponse implements Storable {
     public boolean validate() {
         return StringUtils.isNotEmpty(access_token) && StringUtils.isNotEmpty(refresh_token);
     }
-
 }

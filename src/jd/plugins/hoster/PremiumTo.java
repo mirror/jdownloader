@@ -16,21 +16,10 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -52,29 +41,42 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:t/[a-z0-9]+/\\d+|z/[a-z0-9]+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
-    private final String                   normalTraffic                   = "normalTraffic";
-    private final String                   specialTraffic                  = "specialTraffic";
-    private static final String            type_torrent                    = "https?://torrent.*?\\..+";
-    private static final String            type_torrent_file               = "https?://torrent.*?\\.[^/]+/(?:t|z)/(.+)";
-    private static final String            type_torrent_remote             = "https?://torrent.*?\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
-    private static final String            type_storage                    = "https?://storage\\..+";
+    private final String             normalTraffic                   = "normalTraffic";
+    private final String             specialTraffic                  = "specialTraffic";
+    private static final String      type_torrent                    = "https?://torrent.*?\\..+";
+    private static final String      type_torrent_file               = "https?://torrent.*?\\.[^/]+/(?:t|z)/(.+)";
+    private static final String      type_torrent_remote             = "https?://torrent.*?\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
+    private static final String      type_storage                    = "https?://storage\\..+";
     /* storage.premium.to --> Extract download URLs */
-    private static final String            type_storage_file               = "https?://storage\\.[^/]+/file/(.+)";
+    private static final String      type_storage_file               = "https?://storage\\.[^/]+/file/(.+)";
     /* storage.premium.to --> Extract remote URLs */
-    private static final String            type_storage_remote             = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
+    private static final String      type_storage_remote             = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
     /* 2019-10-23: According to admin, missing https support for API is not an issue */
-    private static final String            API_BASE                        = "http://api.premium.to/api/2";
-    private static final String            API_BASE_STORAGE                = "https://storage.premium.to/api/2";
-    private static final String            API_BASE_TORRENT                = "https://torrent.premium.to/api/2";
+    private static final String      API_BASE                        = "http://api.premium.to/api/2";
+    private static final String      API_BASE_STORAGE                = "https://storage.premium.to/api/2";
+    private static final String      API_BASE_TORRENT                = "https://torrent.premium.to/api/2";
     /*
      * 2019-11-10: Internal switch to force disable all Storage hosts - do not touch this unless e.g. admin requests this or API breaks
      * down.
      */
-    private static final boolean           debug_supports_storage_download = true;
-    private static final ArrayList<String> supported_hosts_storage         = new ArrayList<String>();
+    private static final boolean     debug_supports_storage_download = true;
+    private static final Set<String> supported_hosts_storage         = new HashSet<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -365,8 +367,13 @@ public class PremiumTo extends UseNet {
                 for (final String real_supported_host_storage : real_supported_hosts_storage) {
                     logger.info("Adding final active Storage host: " + real_supported_host_storage);
                     real_supported_hosts_regular.add(real_supported_host_storage);
+                }
+            }
+            synchronized (PremiumTo.supported_hosts_storage) {
+                PremiumTo.supported_hosts_storage.clear();
+                if (real_supported_hosts_storage != null) {
                     /* Add host to special Array of Storage hosts */
-                    PremiumTo.supported_hosts_storage.add(real_supported_host_storage);
+                    PremiumTo.supported_hosts_storage.addAll(real_supported_hosts_storage);
                 }
             }
         }
@@ -464,7 +471,10 @@ public class PremiumTo extends UseNet {
              * Multihost first and can then be downloaded by the user) while others can be used via normal download AND storage (e.g.
              * uploaded.net) - we prefer normal download and only use storage download if necessary.
              */
-            final boolean requiresStorageDownload = supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost());
+            final boolean requiresStorageDownload;
+            synchronized (supported_hosts_storage) {
+                requiresStorageDownload = supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost());
+            }
             if (requiresStorageDownload) {
                 /* Storage download */
                 logger.info("Attempting STORAGE download: " + link.getHost());

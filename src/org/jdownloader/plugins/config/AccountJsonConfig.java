@@ -11,6 +11,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import jd.plugins.Account;
+import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -30,22 +31,21 @@ import org.jdownloader.logging.LogController;
 
 public class AccountJsonConfig {
     private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE     = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
-    private final static boolean                                                                   DEBUG            = false;
+    private final static boolean                                                                   DEBUG            = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     private final static String                                                                    PREFIX_PRIMITIVE = "configInterface.primitive.";
     private final static String                                                                    PREFIX_OBJECT    = "configInterface.object.";
 
-    public synchronized static <T extends AccountConfigInterface> T get(final Account account) {
-        if (account.getHoster() == null) {
-            throw new WTFException("Hoster not Set");
+    public synchronized static <T extends AccountConfigInterface> T get(final PluginForHost plugin, final Account account) {
+        if (account == null) {
+            throw new IllegalArgumentException("account is null");
+        } else if (plugin == null) {
+            throw new IllegalArgumentException("plugin is null");
         }
-        if (account.getPlugin() == null) {
-            throw new WTFException("Plugin not Set");
-        }
-        final Class<T> configInterface = (Class<T>) account.getPlugin().getAccountConfigInterface(account);
+        final Class<T> configInterface = (Class<T>) plugin.getAccountConfigInterface(account);
         if (configInterface == null) {
-            throw new WTFException("no ConfigInterface");
+            throw new WTFException("no ConfigInterface in:" + plugin.getLazyP());
         }
-        final String CACHEID = account.getHoster() + "/" + account.getId().getID();
+        final String CACHEID = plugin.getHost() + "/" + account.getId().getID();
         final ClassLoader classloader = configInterface.getClassLoader();
         HashMap<String, WeakReference<ConfigInterface>> classLoaderMap = CONFIG_CACHE.get(classloader);
         if (classLoaderMap == null) {
@@ -56,12 +56,12 @@ public class AccountJsonConfig {
         ConfigInterface intf = null;
         if (ret != null && (intf = ret.get()) != null) {
             if (DEBUG) {
-                System.out.println("Reuse cached ConfigInterface " + CACHEID);
+                System.out.println("Reuse cached ConfigInterface " + CACHEID + "|" + plugin.getLazyP());
             }
             return (T) intf;
         } else {
             if (DEBUG) {
-                System.out.println("Create new ConfigInterface " + CACHEID);
+                System.out.println("Create new ConfigInterface " + CACHEID + "|" + plugin.getLazyP());
             }
         }
         final Storage storage = new Storage() {
@@ -330,7 +330,7 @@ public class AccountJsonConfig {
             protected void validateKeys(CryptedStorage crypted) {
             }
         };
-        intf = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
+        intf = (T) Proxy.newProxyInstance(classloader, new Class<?>[] { configInterface }, storageHandler);
         classLoaderMap.put(CACHEID, new WeakReference<ConfigInterface>(intf));
         return (T) intf;
     }
