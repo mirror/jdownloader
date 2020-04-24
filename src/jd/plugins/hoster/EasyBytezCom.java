@@ -47,7 +47,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "easyload.io", "ezbytez.com", "ebytez.com" });
+        ret.add(new String[] { "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
         return ret;
     }
 

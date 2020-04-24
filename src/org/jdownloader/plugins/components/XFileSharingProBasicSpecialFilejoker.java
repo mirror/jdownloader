@@ -74,9 +74,23 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     @Override
-    protected void getPage(String page) throws Exception {
+    protected void getPage(final String page) throws Exception {
         /* 2019-08-20: Special */
         super.getPage(page);
+        handleSecurityVerification();
+    }
+
+    @Override
+    protected void postPage(final String page, final String data) throws Exception {
+        /* 2019-08-20: Special */
+        super.postPage(page, data);
+        handleSecurityVerification();
+    }
+
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        /* 2020-04-24: Special */
+        super.submitForm(form);
         handleSecurityVerification();
     }
 
@@ -99,7 +113,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 securityVerification.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.setFollowRedirects(true);
                 try {
-                    super.submitForm(securityVerification);
+                    submitForm(securityVerification);
                 } finally {
                     br.setFollowRedirects(redirectSetting);
                 }
