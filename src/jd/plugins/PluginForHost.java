@@ -1969,13 +1969,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AccountConfigInterface getAccountJsonConfig(Account acc) {
-        if (acc.getPlugin() == null) {
-            acc.setPlugin(this);
-        }
-        if (acc.getHoster() == null) {
-            acc.setHoster(getHost());
-        }
-        return AccountJsonConfig.get(acc);
+        return AccountJsonConfig.get(this, acc);
     }
 
     @Override
@@ -2723,10 +2717,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public Class<? extends AccountConfigInterface> getAccountConfigInterface(Account account) {
-        for (Class<?> cls : getClass().getClasses()) {
-            if (AccountConfigInterface.class.isAssignableFrom(cls)) {
-                return (Class<? extends AccountConfigInterface>) cls;
+        Class<?> currentClass = getClass();
+        while (currentClass != null && PluginForHost.class.isAssignableFrom(currentClass)) {
+            for (final Class<?> cls : currentClass.getDeclaredClasses()) {
+                if (AccountConfigInterface.class.isAssignableFrom(cls)) {
+                    return (Class<? extends AccountConfigInterface>) cls;
+                }
             }
+            currentClass = currentClass.getSuperclass();
         }
         return null;
     }

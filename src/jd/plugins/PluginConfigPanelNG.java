@@ -462,7 +462,6 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                     accountMap = new HashMap<JLabel, Account>();
                     if (accounts != null) {
                         for (final Account acc : accounts) {
-                            Class<? extends AccountConfigInterface> confinf = plgh.getAccountConfigInterface(acc);
                             // addHeader(acc.getUser(), (Icon) null);
                             TextPane status;
                             JLabel accountHeader = new JLabel(_GUI.T.plugin_account_header(acc.getUser()));
@@ -509,7 +508,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                             if (acc.isMultiHost() && acc.getPlugin().getLazyP().hasFeature(FEATURE.MULTIHOST)) {
                                 initMultiHosterInfo(acc);
                             }
-                            Class<? extends AccountConfigInterface> accountConfig = plgh.getAccountConfigInterface(acc);
+                            final Class<? extends AccountConfigInterface> accountConfig = plgh.getAccountConfigInterface(acc);
                             if (accountConfig != null) {
                                 initAccountConfig(plgh, acc, accountConfig);
                             }
@@ -552,9 +551,9 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         return new SimpleDateFormat(custom).format(date);
     }
 
-    protected void initAccountConfig(PluginForHost plgh, Account acc, Class<? extends AccountConfigInterface> accountConfig) {
+    protected void initAccountConfig(PluginForHost plugin, Account acc, Class<? extends AccountConfigInterface> accountConfig) {
         Header header = addHeader(_GUI.T.account_settings_header(), new AbstractIcon(IconKey.ICON_SETTINGS, 16));
-        build(AccountJsonConfig.get(acc));
+        build(AccountJsonConfig.get(plugin, acc));
         if (getComponents()[getComponentCount() - 1] == header) {
             remove(header);
         } else {

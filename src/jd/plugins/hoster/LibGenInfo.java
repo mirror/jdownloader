@@ -30,12 +30,12 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw)/view\\.php\\?id=\\d+|https?://(?:www\\.)?(booksdescr\\.org|libgen\\.in|libgen\\.in)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|io|me|pw)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)|https?://[a-z0-9\\-]+\\.libgen\\.pw/download/book/[a-f0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.pw" }, urls = { "https?://(?:www\\.)?libgen\\.(?:net|me|pw|lc|io)/view\\.php\\?id=\\d+|https?://(?:www\\.)?(booksdescr\\.org|libgen\\.(?:net|me|pw|lc|io)|booksdl\\.org)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:www\\.)?libgen\\.(?:net|me|pw|lc|io)/covers/\\d+/[^<>\"']*?\\.(?:jpg|jpeg|png|gif)|https?://[a-z0-9\\-]+\\.libgen\\.(?:net|me|pw|lc|io)/download/book/[a-f0-9]+" })
 public class LibGenInfo extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
         // libgen.info no dns
-        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io", "booksdescr.org" };
+        return new String[] { "libgen.pw", "libgen.me", "libgen.net", "libgen.io", "libgen.lc", "booksdescr.org", "booksdl.org" };
     }
 
     public LibGenInfo(PluginWrapper wrapper) {

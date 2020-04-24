@@ -231,7 +231,7 @@ public class BrowserSolverService extends AbstractSolverService {
             try {
                 for (Account acc : AccountController.getInstance().list("recaptcha.google.com")) {
                     if (acc.isEnabled()) {
-                        GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc);
+                        GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc.getPlugin(), acc);
                         if (cfg.isUsageRecaptchaV1Enabled()) {
                             GoogleHelper helper = new GoogleHelper(rcBr);
                             helper.setCacheEnabled(true);
