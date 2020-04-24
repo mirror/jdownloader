@@ -70,7 +70,7 @@ public class HlsContainer {
                         if (logger == null) {
                             logger = LogController.CL();
                         }
-                        logger.info("Unsupported M3U8, Split Audio/Video, see  https://svn.jdownloader.org/issues/87898|" + streamInfo);
+                        logger.info("Unsupported M3U8! Split Audio/Video, see  https://svn.jdownloader.org/issues/87898|" + streamInfo);
                         continue;
                     }
                     // final String quality = new Regex(media, "(?:,|^)\\s*NAME\\s*=\\s*\"(.*?)\"").getMatch(0);
