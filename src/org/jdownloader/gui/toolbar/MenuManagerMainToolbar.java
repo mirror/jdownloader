@@ -64,7 +64,6 @@ import org.jdownloader.gui.toolbar.action.MoveToTopAction;
 import org.jdownloader.gui.toolbar.action.MoveUpAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.action.ResetToolbarAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
@@ -170,7 +169,6 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         opt.add(LatestChangesAction.class);
         opt.add(KnowledgeAction.class);
         opt.add(LogSendAction.class);
-        opt.add(RenameAction.class);
         CaptchaQuickSettingsContainer ocr;
         opt.add(ocr = new CaptchaQuickSettingsContainer());
         ocr.add(CaptchaModeChangeAction.class);
