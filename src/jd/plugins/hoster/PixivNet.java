@@ -29,6 +29,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -274,9 +275,13 @@ public class PixivNet extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("pixiv_id", account.getUser());
-                loginform.put("password", account.getPass());
-                loginform.put("recaptcha_v3_token", recaptchaResponse);
+                loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("recaptcha_v3_token", Encoding.urlEncode(recaptchaResponse));
+                loginform.put("captcha", "");
+                loginform.put("g_recaptcha_response", "");
+                loginform.put("ref", "");
+                loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
                 loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
                 br.submitForm(loginform);
                 final String error = PluginJSonUtils.getJsonValue(br, "error");
