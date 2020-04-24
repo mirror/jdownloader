@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -23,19 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -62,6 +50,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -200,15 +201,20 @@ public class VimeoCom extends PluginForHost {
                 logger.log(e);
                 final LogInterface logger = getLogger();
                 if (logger instanceof LogSource) {
-                    handleAccountException(account, (LogSource) logger, e);
+                    handleAccountException(account, logger, e);
                 } else {
                     handleAccountException(account, null, e);
                 }
             }
         }
         synchronized (lock) {
-            accessVimeoURL(this, this.br, downloadLink.getPluginPatternMatcher(), referer, getVimeoUrlType(downloadLink));
-            handlePW(downloadLink, br);
+            try {
+                accessVimeoURL(this, this.br, downloadLink.getPluginPatternMatcher(), referer, getVimeoUrlType(downloadLink));
+            } catch (PluginException e) {
+                // TODO
+                handlePW(downloadLink, br);
+                accessVimeoURL(this, this.br, downloadLink.getPluginPatternMatcher(), referer, getVimeoUrlType(downloadLink));
+            }
             /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
             String videoTitle = null;
             try {
@@ -305,22 +311,50 @@ public class VimeoCom extends PluginForHost {
     public static enum VIMEO_URL_TYPE {
         RAW,
         PLAYER,
+        CONFIG_TOKEN,
         UNLISTED,
         NORMAL
     }
 
     public static VIMEO_URL_TYPE getUrlType(final String url) {
         if (url != null) {
-            final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url);
-            if (unlistedHash != null) {
-                return VIMEO_URL_TYPE.UNLISTED;
-            } else if (url.matches("^https?://player\\.vimeo.com/.+")) {
-                return VIMEO_URL_TYPE.PLAYER;
+            final String configToken = jd.plugins.decrypter.VimeoComDecrypter.getPlayerConfigTokenFromURL(url);
+            if (configToken != null) {
+                return VIMEO_URL_TYPE.CONFIG_TOKEN;
+            } else {
+                final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url);
+                if (unlistedHash != null) {
+                    return VIMEO_URL_TYPE.UNLISTED;
+                } else if (url.matches("^https?://player\\.vimeo.com/.+")) {
+                    return VIMEO_URL_TYPE.PLAYER;
+                }
             }
         }
         return VIMEO_URL_TYPE.RAW;
     }
 
+    public static class WrongRefererException extends Exception {
+        private final String         referer;
+        private final VIMEO_URL_TYPE urlType;
+
+        public WrongRefererException(VIMEO_URL_TYPE urlType, final String referer) {
+            this.urlType = urlType;
+            this.referer = referer;
+        }
+
+        public String getReferer() {
+            return referer;
+        }
+
+        public VIMEO_URL_TYPE getUrlType() {
+            return urlType;
+        }
+    }
+
+    // Passwort normal/embedded
+    // embedded wrong referer
+    // embedded wrong referer, try watch on
+    //
     /**
      * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
      * Important: Execute password handling afterwards!!
@@ -328,10 +362,13 @@ public class VimeoCom extends PluginForHost {
     public static VIMEO_URL_TYPE accessVimeoURL(final Plugin plugin, final Browser br, final String url_source, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
+        final String configToken = jd.plugins.decrypter.VimeoComDecrypter.getPlayerConfigTokenFromURL(url_source);
         // final String reviewHash = jd.plugins.decrypter.VimeoComDecrypter.getReviewHashFromURL(url_source);
         final String referer = forced_referer != null ? forced_referer.get() : null;
         if (referer != null) {
             plugin.getLogger().info("Referer:" + referer);
+            final URL url = new URL(referer);
+            br.getHeaders().put("Origin", url.getProtocol() + "://" + url.getHost());
             br.getHeaders().put("Referer", referer);
         }
         plugin.getLogger().info("urlTypeRequested:" + urlTypeRequested);
@@ -343,6 +380,9 @@ public class VimeoCom extends PluginForHost {
              */
             ret = getUrlType(url_source);
             plugin.getLogger().info("getUrlType:" + url_source + "->" + ret);
+            br.getPage(url_source);
+        } else if (configToken != null || urlTypeRequested == VIMEO_URL_TYPE.CONFIG_TOKEN) {
+            ret = VIMEO_URL_TYPE.CONFIG_TOKEN;
             br.getPage(url_source);
         } else if (unlistedHash == null && (urlTypeRequested == VIMEO_URL_TYPE.PLAYER || (urlTypeRequested == null && referer != null))) {
             ret = VIMEO_URL_TYPE.PLAYER;
@@ -364,6 +404,11 @@ public class VimeoCom extends PluginForHost {
             } else {
                 br.getPage("https://vimeo.com/" + videoID);
             }
+        }
+        if (br.getHttpConnection().getResponseCode() == 410) {
+            // view: 7
+            // configToken expired?
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Link expired!");
         }
         if (br.getHttpConnection().getResponseCode() == 403) {
             // referer or account might be required
@@ -539,6 +584,8 @@ public class VimeoCom extends PluginForHost {
     }
 
     public static boolean isPasswordProtected(final Browser br) throws PluginException {
+        // view variable: 4 scheint private mit passwort zu sein
+        // view 2 scheint referer
         return br.containsHTML("\\d+/password");
     }
 
@@ -815,10 +862,13 @@ public class VimeoCom extends PluginForHost {
                     /* Bitrate is 'null' for vp6 codec */
                     vvc.setBitrate(((Number) o_bitrate).intValue());
                 }
-                final String quality = (String) abc.get("quality");
-                vvc.setQuality(vvc.getHeight() >= 720 ? Quality.HD : Quality.SD);
-                if (StringUtils.containsIgnoreCase(quality, "720") || StringUtils.containsIgnoreCase(quality, "1080")) {
+                final String rawQuality = (String) abc.get("quality");
+                vvc.setRawQuality(rawQuality);
+                vvc.setQuality(VimeoContainer.getQuality(vvc.getHeight()));
+                if (StringUtils.contains(rawQuality, "720") || StringUtils.contains(rawQuality, "1080")) {
                     vvc.setQuality(Quality.HD);
+                } else if (StringUtils.contains(rawQuality, "1440") || StringUtils.contains(rawQuality, "2560")) {
+                    vvc.setQuality(Quality.UHD);
                 }
                 vvc.setCodec(".mp4".equalsIgnoreCase(vvc.getExtension()) ? "h264" : "vp5");
                 final Number id = getNumber(abc, "id");
@@ -837,7 +887,6 @@ public class VimeoCom extends PluginForHost {
     private static List<VimeoContainer> handleHLS(Plugin plugin, final Browser br, final Map<String, Object> base) {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            // they can have audio and video seperated (usually for dash);
             final String defaultCDN = (String) base.get("default_cdn");
             final String m3u8 = (String) JavaScriptEngineFactory.walkJson(base, defaultCDN != null ? "cdns/" + defaultCDN + "/url" : "cdns/{0}/url");
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);

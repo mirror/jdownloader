@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
+import jd.plugins.hoster.VimeoCom.WrongRefererException;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -61,7 +63,7 @@ import org.jdownloader.plugins.components.containers.VimeoContainer;
 import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((/config\\?|\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
@@ -111,19 +113,30 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private boolean retryWithCustomReferer(VIMEO_URL_TYPE urlType, final CryptedLink param, final PluginException e, final Browser br, final AtomicReference<String> referer) throws Exception {
+    private boolean retryWithCustomReferer(VIMEO_URL_TYPE urlType, final CryptedLink param, final Exception e, final Browser br, final AtomicReference<String> referer) throws Exception {
         if (isEmbeddedForbidden(urlType, e, br) && SubConfiguration.getConfig("vimeo.com").getBooleanProperty("ASK_REF", Boolean.TRUE)) {
             final String vimeo_asked_referer = getUserInput("Referer?", "Please enter referer for this link", param);
-            if (StringUtils.isNotEmpty(vimeo_asked_referer) && !StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_asked_referer), "vimeo.com")) {
-                referer.set(vimeo_asked_referer);
-                return true;
+            if (StringUtils.isNotEmpty(vimeo_asked_referer)) {
+                try {
+                    if (!StringUtils.equalsIgnoreCase(new URL(vimeo_asked_referer).getHost(), "vimeo.com")) {
+                        referer.set(vimeo_asked_referer);
+                        return true;
+                    }
+                } catch (MalformedURLException exception) {
+                }
             }
         }
         return false;
     }
 
-    private boolean isEmbeddedForbidden(VIMEO_URL_TYPE urlType, PluginException e, Browser br) {
-        return VIMEO_URL_TYPE.PLAYER.equals(urlType) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
+    private boolean isEmbeddedForbidden(VIMEO_URL_TYPE urlType, Exception e, Browser br) {
+        if (e instanceof WrongRefererException) {
+            return true;
+        } else if (e instanceof PluginException) {
+            return VIMEO_URL_TYPE.PLAYER.equals(urlType) && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -250,9 +263,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         } else {
             /* Check if we got a forced Referer - if so, extract it, clean url, use it and set it on our DownloadLinks for later usage. */
-            final AtomicReference<String> referer = new AtomicReference<String>(null);
+            final AtomicReference<String> referer = new AtomicReference<String>();
             final String vimeo_forced_referer_url_part = new Regex(parameter, "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
-            if (vimeo_forced_referer_url_part != null) {
+            if (referer.get() == null && vimeo_forced_referer_url_part != null) {
                 parameter = parameter.replace(vimeo_forced_referer_url_part, "");
                 final String vimeo_forced_referer = getForcedRefererFromURLParam(vimeo_forced_referer_url_part);
                 if (vimeo_forced_referer != null) {
@@ -302,7 +315,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     try {
                         jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
-                    } catch (final PluginException e) {
+                    } catch (final Exception e) {
                         if (retryWithCustomReferer(urlType, param, e, br, referer)) {
                             jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
                         } else {
@@ -456,7 +469,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 try {
                     /* Fallback to find additional information */
-                    if (StringUtils.equalsIgnoreCase(embed_privacy, "anywhere") && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                    if ((embed_privacy == null || StringUtils.equalsIgnoreCase(embed_privacy, "anywhere")) && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                         /*
                          * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                          * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
@@ -619,8 +632,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return ret;
     }
 
+    public static String getPlayerConfigTokenFromURL(final String url) {
+        final String ret = new Regex(url, "https?://[^/]+/(?:(?:video|review)/)?(?:\\d+)/config\\?.*token=(.+?)($|$)").getMatch(0);
+        return ret;
+    }
+
     public static String getUnlistedHashFromURL(final String url) {
-        final String ret = new Regex(url, "https?://[^/]+/(?:(?:video|review)/)?(\\d+)/([a-f0-9]+)").getMatch(1);
+        final String ret = new Regex(url, "https?://[^/]+/(?:(?:video|review)/)?(?:\\d+)/(?!config)([a-f0-9]+)").getMatch(0);
         return ret;
     }
 
@@ -636,8 +654,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (ret == null) {
                 ret = br.getRegex("window = _extend\\(window, (\\{.*?\\})\\);").getMatch(0);
                 if (ret == null) {
-                    /* player.vimeo.com */
+                    /* 'normal' player.vimeo.com */
                     ret = br.getRegex("var config = (\\{.*?\\});").getMatch(0);
+                    if (ret == null) {
+                        /* player.vimeo.com with /config */
+                        ret = br.getRegex("^\\s*(\\{.*?\\})\\s*$").getMatch(0);
+                    }
                 }
             }
         }
@@ -727,6 +749,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         switch (vvc.getQuality()) {
         case ORIGINAL:
             return qORG;
+        case UHD:
         case HD:
             return qHD;
         case SD:
@@ -740,34 +763,29 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private boolean pRatingAllowed(final VimeoContainer quality) {
         if (pALL) {
             return true;
+        } else {
+            final int height = quality.getHeight();
+            // max down
+            if (height >= 2560 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "2560p")) {
+                return p2560;
+            } else if (height >= 1440 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "1440p")) {
+                return p1440;
+            } else if (height >= 1080 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "1080p")) {
+                return p1080;
+            } else if (height >= 720 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "720p")) {
+                return p720;
+            } else if (height >= 540 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "540p")) {
+                return p540;
+            } else if (height >= 480 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "480p")) {
+                return p480;
+            } else if (height >= 360 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "360p")) {
+                return p360;
+            } else if (height >= 240 || height >= 232 || StringUtils.equalsIgnoreCase(quality.getRawQuality(), "240p")) {
+                return p240;
+            } else {
+                return false;
+            }
         }
-        final int height = quality.getHeight();
-        // max down
-        if (height >= 2560) {
-            return p2560;
-        }
-        if (height >= 1140) {
-            return p1440;
-        }
-        if (height >= 1080) {
-            return p1080;
-        }
-        if (height >= 720) {
-            return p720;
-        }
-        if (height >= 540) {
-            return p540;
-        }
-        if (height >= 480) {
-            return p480;
-        }
-        if (height >= 360) {
-            return p360;
-        }
-        if (height >= 240) {
-            return p240;
-        }
-        return false;
     }
 
     public static boolean isPasswordProtected(final Browser br) throws PluginException {
