@@ -729,6 +729,7 @@ public class PornportalCom extends PluginForHost {
                 login(this.br, account, this.getHost(), true);
                 final AccountInfo ai = new AccountInfo();
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
+                    /* TODO: 2020-04-24: This sometimes fails after a full login --> Fix this */
                     br.getPage(getAPIBase() + "/self");
                 }
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -872,26 +873,32 @@ public class PornportalCom extends PluginForHost {
                                 final Browser br2 = jd.plugins.hoster.PornHubCom.prepBr(new Browser());
                                 handleExternalLoginStep(br2, account, domain_pornhub);
                                 final boolean isLoggedIN = jd.plugins.hoster.PornHubCom.isLoggedInHtmlPremium(br2);
+                                /* Look for special account created by this plugin --> Add account if non existant */
+                                Account pornhubAccount = null;
+                                final String targetUsername = this.getHost() + "_" + account.getUser();
+                                /* TODO: Also get disabled accounts --> Enable them then */
+                                final List<Account> pornhubAccounts = AccountController.getInstance().getValidAccounts(domain_pornhub);
+                                for (final Account pornhubAccountTmp : pornhubAccounts) {
+                                    final String usernameTmp = pornhubAccountTmp.getUser();
+                                    if (usernameTmp.equalsIgnoreCase(targetUsername)) {
+                                        logger.info("Found special cookie account: " + domain_pornhub);
+                                        pornhubAccount = pornhubAccountTmp;
+                                        break;
+                                    }
+                                }
                                 if (!isLoggedIN) {
                                     /* TODO: Remove/Update existing account in case of failure */
                                     logger.info("Pornhub external login failed");
-                                } else {
-                                    /* TODO: Maybe synchronize this */
-                                    logger.info("Pornhub external login successful");
-                                    Account pornhubAccount = null;
-                                    final String targetUsername = this.getHost() + "_" + account.getUser();
-                                    /* Look for special account created by this plugin --> Add account if non existant */
-                                    /* TODO: Also get disabled accounts --> Enable them then */
-                                    final List<Account> pornhubAccounts = AccountController.getInstance().getValidAccounts(domain_pornhub);
-                                    for (final Account pornhubAccountTmp : pornhubAccounts) {
-                                        final String usernameTmp = pornhubAccountTmp.getUser();
-                                        if (usernameTmp.equalsIgnoreCase(targetUsername)) {
-                                            logger.info("Found special cookie account: " + domain_pornhub);
-                                            pornhubAccount = pornhubAccountTmp;
-                                            break;
-                                        }
+                                    if (pornhubAccount != null) {
+                                        /* TODO: Maybe remove account instead of deactivating it */
+                                        logger.info("Mark existing pornhub account as expired");
+                                        pornhubAccount.getAccountInfo().setExpired(true);
                                     }
+                                } else {
+                                    /* TODO: Maybe synchronize account stuff */
+                                    logger.info("Pornhub external login successful");
                                     if (pornhubAccount == null) {
+                                        /* Adds account if non existant */
                                         logger.info("Failed to find special pornhub account --> Creating it");
                                         final PluginForHost pornhubPlugin = JDUtilities.getPluginForHost(domain_pornhub);
                                         pornhubAccount = new Account(targetUsername, "123456");
@@ -912,7 +919,7 @@ public class PornportalCom extends PluginForHost {
                                     }
                                     pornhubAccount.setAccountInfo(pornhubAI);
                                     /*
-                                     * Get- and set pornhubpremium cookies with a new browser instance. Then refresh these cookies each
+                                     * Get- and set pornhubpremium cookies with a new browser instance. Then update pornhub cookies each
                                      * time, the main account of this plugin gets refreshed.
                                      */
                                     jd.plugins.hoster.PornHubCom.saveCookies(br2, pornhubAccount);
