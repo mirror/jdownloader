@@ -417,7 +417,8 @@ public class RealDebridCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
                 }
                 if (br.containsHTML("Your code is not or no longer valid")) {
-                    if (!currentToken._isVerified()) {
+                    if (false && !currentToken._isVerified()) {
+                        // seems not connected to current token
                         synchronized (account) {
                             final String tokenJSon = account.getStringProperty(TOKEN, null);
                             final TokenResponse existingToken = tokenJSon != null ? JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE) : null;
