@@ -184,11 +184,11 @@ public class PremiumTo extends UseNet {
     }
 
     private int getReadTimeout() {
-        return 180 * 1000;
+        return 300 * 1000;
     }
 
     private int getConnectTimeout() {
-        return 180 * 1000;
+        return 300 * 1000;
     }
 
     private Browser prepBrowser(Browser prepBr) {
