@@ -19,18 +19,27 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,6 +58,7 @@ public class ImgUrCom extends PluginForHost {
     public ImgUrCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+        // this.enablePremium("https://imgur.com/register");
     }
 
     @Override
@@ -486,6 +496,85 @@ public class ImgUrCom extends PluginForHost {
 
     private void websiteOverloaded() throws PluginException {
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "502: 'Imgur over capacity'", 5 * 60 * 1000l);
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new ImgurAccountFactory(callback);
+    }
+
+    public static class ImgurAccountFactory extends MigPanel implements AccountBuilderInterface {
+        private static final long serialVersionUID = 1L;
+        private final String      PINHELP          = "Enter your authorization URL";
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = "                 ";
+
+        public ImgurAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Click here to generate your auth URL, then copy the URL in your browsers' address bar and enter it below:"));
+            add(new JLink("https://api.imgur.com/oauth2/authorize?client_id=NOT_DONE&response_type=token"));
+            add(new JLabel("Authorization URL (my.jdownloader.org/#access_token=...) : "));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            // final String userName = getUsername();
+            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
+            // idLabel.setForeground(Color.RED);
+            // return false;
+            // }
+            // idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
     }
 
     @Override

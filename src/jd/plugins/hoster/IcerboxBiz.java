@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -23,26 +26,24 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitrobit.net" }, urls = { "http://(www\\.)?nitrobit\\.net/(?:view|watch)/[A-Z0-9]+" })
-public class NitroBitNet extends antiDDoSForHost {
-    public NitroBitNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.biz" }, urls = { "http://(?:www\\.)?(?:nitrobit\\.net|icerbox\\.biz)/(?:view|watch)/([A-Z0-9]+)" })
+public class IcerboxBiz extends antiDDoSForHost {
+    public IcerboxBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
-        this.enablePremium("https://www.nitrobit.net/payment");
+        this.enablePremium("https://www.icerbox.biz/payment");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.nitrobit.net/tos";
+        return "http://www.icerbox.biz/tos";
     }
 
     /* Connection stuff */
@@ -57,32 +58,60 @@ public class NitroBitNet extends antiDDoSForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/watch/", "/view/"));
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "nitrobit.net".equals(host)) {
+            return "icerbox.biz";
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     /** Premium FULL browser response for case 'daily downloadlimit reached': "0הורדת קובץ זה תעבור על המכסה היומית" */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception, PluginException {
-        fuid = new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
+        fuid = getFID(link);
         link.setLinkID(fuid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(br, link.getDownloadURL());
-        if (br.containsHTML(">רוב הסיכויים שנמחק. אתה מועבר לדף הראשי<") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">רוב הסיכויים שנמחק. אתה מועבר לדף הראשי<") || this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fuid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<b>שם הקובץ: </b><span title=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("<b>גודל הקובץ: </b><span dir=\"ltr\" style=\"text-align: left;\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("הורדת קובץ\\s*\\[(.*?)\\]\\s+<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<b>שם הקובץ: </b>\\s*<span title=\"([^<>\"]+)\"").getMatch(0);
         }
-        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        final String filesize = br.getRegex("<b>גודל הקובץ: </b>\\s*<span[^>]+>([^<>\"]*?)</span>").getMatch(0);
+        if (filename != null) {
+            link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
+        } else {
+            link.setName(this.fuid);
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -115,7 +144,7 @@ public class NitroBitNet extends antiDDoSForHost {
         String dllink = checkDirectLink(downloadLink, "directlink_account_premium");
         if (dllink == null) {
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage(br, "http://www.nitrobit.net/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
+            getPage(br, "http://www." + this.getHost() + "/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
             /**
              * TODO: Find out if maybe this contains the expire date of the account and set it: <b>לקוח יקר: </b><br />
              * תוקף קוד הגישה שלך יפוג בעוד <b style="color:red">1 ימים, 18 שעות, 53 דקות.</b><br
@@ -156,7 +185,6 @@ public class NitroBitNet extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        account.setValid(true);
         ai.setStatus("Unchecked account");
         return ai;
     }
