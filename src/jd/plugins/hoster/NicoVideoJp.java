@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -30,7 +29,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -61,22 +59,13 @@ public class NicoVideoJp extends PluginForHost {
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
     private static final String           TYPE_WATCH                  = "https?://(www\\.)?nicovideo\\.jp/watch/\\d+";
     private static final String           default_extension           = "mp4";
-    private static final String           NOCHUNKS                    = "NOCHUNKS";
     private static final String           AVOID_ECONOMY_MODE          = "AVOID_ECONOMY_MODE";
-    private static final boolean          FREE_RESUME                 = true;
-    private static final int              FREE_MAXCHUNKS              = 0;
-    private static final boolean          ACCOUNT_FREE_RESUME         = true;
-    private static final int              ACCOUNT_FREE_MAXCHUNKS      = 0;
+    private static final boolean          RESUME                      = true;
+    private static final int              MAXCHUNKS                   = 0;
+    private static final int              MAXDLS                      = 1;
     private static final int              economy_active_wait_minutes = 30;
     private static final String           html_account_needed         = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
     public static final long              trust_cookie_age            = 300000l;
-    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger          totalMaxSimultanFree        = new AtomicInteger(2);
-    private static AtomicInteger          totalMaxSimultanFreeAccount = new AtomicInteger(2);
-    /* don't touch the following! */
-    private static AtomicInteger          maxPremium                  = new AtomicInteger(1);
-    private static AtomicInteger          maxFree                     = new AtomicInteger(1);
-    private static Object                 LOCK                        = new Object();
     private LinkedHashMap<String, Object> entries                     = null;
 
     public NicoVideoJp(PluginWrapper wrapper) {
@@ -111,9 +100,12 @@ public class NicoVideoJp extends PluginForHost {
      *
      * @throws Exception
      */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final String fid = getFID(link);
         link.setProperty("extension", default_extension);
@@ -121,12 +113,22 @@ public class NicoVideoJp extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         boolean loggedin = false;
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            this.login(aa, false);
+        if (account != null) {
+            this.login(account, false);
             loggedin = true;
         }
         br.getPage(link.getPluginPatternMatcher());
+        if (br.getURL().contains("account.nicovideo")) {
+            /* Account required */
+            link.setName(fid);
+            if (account != null) {
+                /* WTF, we should be logged-in! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Expired session?", 5 * 60 * 1000l);
+            } else {
+                // return AvailableStatus.TRUE;
+                throw new AccountRequiredException();
+            }
+        }
         String fallback_filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fallback_filename == null) {
             fallback_filename = fid;
@@ -211,19 +213,21 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxFree.get();
+        return MAXDLS;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPremium.get();
+        return MAXDLS;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, null);
+        handleDownload(link);
+    }
+
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         // checkWatchableGeneral();
         if (isPaidContent()) {
             throw new AccountRequiredException();
@@ -274,11 +278,7 @@ public class NicoVideoJp extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int maxChunks = FREE_MAXCHUNKS;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, FREE_RESUME, maxChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, RESUME, MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -286,53 +286,14 @@ public class NicoVideoJp extends PluginForHost {
         }
         final String final_filename = getFormattedFilename(link);
         link.setFinalFileName(final_filename);
-        try {
-            /* add a download slot */
-            controlFree(+1);
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlFree(-1);
-        }
+        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        checkWatchableGeneral();
-        /* Can happen if its not clear whether the video is private or offline */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (Encoding.htmlDecode(br.toString()).contains("closed=1&done=true")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        } else if (br.containsHTML(">This is a private video and not available")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Now downloadable: This is a private video");
-        }
-        String dllink = getDllinkAccount();
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        int maxChunks = ACCOUNT_FREE_MAXCHUNKS;
-        if (link.getBooleanProperty(NOCHUNKS, false) && getPluginConfig().getBooleanProperty(NOCHUNKS, true)) {
-            maxChunks = 1;
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String final_filename = getFormattedFilename(link);
-        link.setFinalFileName(final_filename);
-        try {
-            /* add a download slot */
-            controlPremium(+1);
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlPremium(-1);
-        }
+        requestFileInformation(link, account);
+        handleDownload(link);
     }
 
     private String getDllinkAccount() throws Exception {
@@ -424,23 +385,28 @@ public class NicoVideoJp extends PluginForHost {
      */
     private AccountInfo login(final Account account, final boolean force) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        synchronized (LOCK) {
+        synchronized (account) {
             this.setBrowserExclusive();
             final Cookies cookies = account.loadCookies("");
             if (cookies != null && !force) {
                 /* 2016-05-04: Avoid full login whenever possible! */
                 br.setCookies(this.getHost(), cookies);
+                logger.info("Attempting cookie login");
                 if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
                     /* We trust these cookies --> Do not check them */
+                    logger.info("Trust cookies without check");
                     return null;
                 }
                 br.getPage("https://www.nicovideo.jp/");
                 if (br.containsHTML("/logout\">Log out</a>")) {
                     /* Save new cookie timestamp */
+                    logger.info("Cookie login successful");
                     br.setCookies(this.getHost(), cookies);
                     return null;
                 }
+                logger.info("Cookie login failed");
             }
+            logger.info("Performing full login");
             /* Try multiple times - it sometimes just doesn't work :( */
             boolean success = false;
             for (int i = 0; i <= 2; i++) {
@@ -540,31 +506,6 @@ public class NicoVideoJp extends PluginForHost {
         return formattedFilename;
     }
 
-    /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
-     *
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
-     * @param controlFree
-     *            (+1|-1)
-     */
-    public synchronized void controlPremium(final int num) {
-        logger.info("maxPremium was = " + maxPremium.get());
-        maxPremium.set(Math.min(Math.max(1, maxPremium.addAndGet(num)), totalMaxSimultanFreeAccount.get()));
-        logger.info("maxPremium now = " + maxPremium.get());
-    }
-
-    public synchronized void controlFree(final int num) {
-        logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFree.get()));
-        logger.info("maxFree now = " + maxFree.get());
-    }
-
     @Override
     public String getDescription() {
         return "JDownloader's nicovideo.jp plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
@@ -589,7 +530,6 @@ public class NicoVideoJp extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         /* 2020-03-25: This setting is broken atm. --> Hardcoded disabled it */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.AVOID_ECONOMY_MODE, "Avoid economy mode - only download higher quality .mp4 videos?\r\n<html><b>Important: The default extension of all filenames is " + default_extension + ". It will be corrected once the downloads start if either this setting is active or the nicovideo site is in normal (NOT economy) mode!\r\nIf this setting is active and nicovideo is in economy mode, JDownloader will wait " + economy_active_wait_minutes + " minutes and try again afterwards.</br>\r\n2020-03-25: This setting is currently broken and thus hardcoded disabled!!</b></html>").setDefaultValue(false).setEnabled(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.NOCHUNKS, "Enable Chunk Workaround").setDefaultValue(true));
     }
 
     @Override
