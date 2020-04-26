@@ -6,13 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -65,7 +65,7 @@ public class HlsContainer {
             for (final String stream[] : streams) {
                 if (StringUtils.isNotEmpty(stream[1])) {
                     final String streamInfo = stream[0];
-                    if (new Regex(streamInfo, "(?:,|^)\\s*AUDIO\\s*=").matches()) {
+                    if (false && new Regex(streamInfo, "(?:,|^)\\s*AUDIO\\s*=").matches()) {
                         LogInterface logger = br.getLogger();
                         if (logger == null) {
                             logger = LogController.CL();
