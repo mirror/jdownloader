@@ -17,54 +17,25 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workers.dev" }, urls = { "https?://(?:[a-z0-9\\-\\.]+\\.)?workers\\.dev/.+" })
 public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
+
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    /* This is a selfhosted thing: https://github.com/donwa/goindex */
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        /* Most times it's index.workers.dev */
-        ret.add(new String[] { "workers.dev" });
-        return ret;
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        return buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[a-z0-9\\-\\.]+\\.)?" + buildHostsPatternPart(domains) + "/(.+)");
-        }
-        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -74,13 +45,42 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             /* Remove all parameters */
             parameter = parameter.substring(0, parameter.lastIndexOf("?"));
         }
-        final String urlname = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setAllowedResponseCodes(new int[] { 500 });
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
         br.postPageRaw(parameter, "{\"password\":\"null\"}");
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        doThis(decryptedLinks, parameter);
+        return decryptedLinks;
+    }
+
+    private void doThis(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
+        String subFolder = getAdoptedCloudFolderStructure();
+        if (subFolder == null) {
+            subFolder = "";
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        /*
+         * ok if the user imports a link just by itself should it also be placed into the correct packagename? We can determine this via url
+         * structure, else base folder with files wont be packaged together just on filename....
+         */
+        if ("".equals(subFolder)) {
+            final String[] split = parameter.split("/");
+            final String fpName = Encoding.urlDecode(split[split.length - 1], false);
+            fp.setName(fpName);
+            subFolder = fpName;
+        } else {
+            final String fpName = subFolder.substring(subFolder.lastIndexOf("/") + 1);
+            fp.setName(fpName);
+        }
+        final String baseUrl;
+        // urls can already be encoded which breaks stuff, only encode non-encoded content
+        if (!new Regex(parameter, "%[a-z0-9]{2}").matches()) {
+            baseUrl = Encoding.urlEncode_light(parameter);
+        } else {
+            baseUrl = parameter;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Object filesO = entries.get("files");
@@ -93,10 +93,6 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             ressourcelist = new ArrayList<Object>();
             ressourcelist.add(entries);
         }
-        String subFolder = getAdoptedCloudFolderStructure();
-        if (subFolder == null) {
-            subFolder = "";
-        }
         for (final Object fileO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) fileO;
             final String name = (String) entries.get("name");
@@ -106,19 +102,16 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
                 /* Skip invalid objects */
                 continue;
             }
-            String url = parameter;
-            /* Filename is alrerady in URL if we have a single URL! */
-            if (!url.endsWith(name)) {
-                if (!url.endsWith("/")) {
-                    url += "/";
-                }
-                url += URLEncode.encodeURIComponent(name);
+            String url = baseUrl;
+            if (type.endsWith(".folder")) {
+                // folder urls have to END in "/" this is how it works in browser no need for workarounds
+                url += Encoding.urlEncode_light(name) + "/";
+            } else {
+                // file
+                url += Encoding.urlEncode_light(name);
             }
             final DownloadLink dl;
-            if (type.contains("folder")) {
-                if (!url.endsWith("/")) {
-                    url += "/";
-                }
+            if (type.endsWith(".folder")) {
                 dl = this.createDownloadlink(url);
                 final String thisfolder = subFolder + "/" + name;
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
@@ -133,11 +126,8 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
                 }
             }
+            fp.add(dl);
             decryptedLinks.add(dl);
         }
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(Encoding.htmlDecode(urlname));
-        // fp.addLinks(decryptedLinks);
-        return decryptedLinks;
     }
 }
