@@ -1,12 +1,12 @@
 package org.jdownloader.extensions.chat;
 
-import jd.plugins.ExtensionConfigInterface;
-
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+
+import jd.plugins.ExtensionConfigInterface;
 
 public interface ChatConfig extends ExtensionConfigInterface {
     @DefaultStringValue("#jDownloader")
@@ -45,6 +45,12 @@ public interface ChatConfig extends ExtensionConfigInterface {
     @AboutConfig
     boolean isUserColorEnabled();
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isNickToFront();
+
+    void setNickToFront(boolean b);
+
     void setChannelLanguage(String lng);
 
     void setNick(String nick);
@@ -54,5 +60,4 @@ public interface ChatConfig extends ExtensionConfigInterface {
     void setUserColorEnabled(boolean selected);
 
     void setUserListPosition(int selectedIndex);
-
 }
