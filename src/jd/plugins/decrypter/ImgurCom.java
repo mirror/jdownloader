@@ -71,7 +71,6 @@ public class ImgurCom extends PluginForDecrypt {
     private String                  videoSource                   = null;
     private boolean                 grabVideoSource               = false;
 
-    /* IMPORTANT: Make sure that we're always using the current version of their API: https://api.imgur.com/ */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
@@ -104,7 +103,7 @@ public class ImgurCom extends PluginForDecrypt {
             } else if (parameter.matches(type_image_list_link)) {
                 jd.plugins.hoster.ImgUrCom.prepBRAPI(this.br);
                 br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
-                br.getPage("https://api.imgur.com/3/album/" + lid);
+                br.getPage(ImgUrCom.getAPIBaseWithVersion() + "/album/" + lid);
                 br.followRedirect();
                 if (br.getHttpConnection().isOK()) {
                     final HashMap<String, Object> json = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -132,7 +131,7 @@ public class ImgurCom extends PluginForDecrypt {
                     try {
                         /* Gallery (single image) */
                         if (parameter.matches(type_gallery)) {
-                            br.getPage("https://api.imgur.com/3/gallery/" + lid);
+                            br.getPage(ImgUrCom.getAPIBaseWithVersion() + "/gallery/" + lid);
                             if (br.getHttpConnection().getResponseCode() == 404) {
                                 /*
                                  * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this
@@ -157,7 +156,7 @@ public class ImgurCom extends PluginForDecrypt {
                             }
                         }
                         /* We know that we definitly have an album --> Crawl it */
-                        br.getPage("https://api.imgur.com/3/album/" + lid);
+                        br.getPage(ImgUrCom.getAPIBaseWithVersion() + "/album/" + lid);
                         if (br.getHttpConnection().getResponseCode() == 404) {
                             /*
                              * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before!
@@ -430,6 +429,7 @@ public class ImgurCom extends PluginForDecrypt {
         return br;
     }
 
+    /** TODO: Replace this with PluginJsonUtils */
     private String getJson(final String source, final String parameter) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
         if (result == null) {

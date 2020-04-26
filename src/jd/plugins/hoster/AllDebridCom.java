@@ -335,7 +335,7 @@ public class AllDebridCom extends antiDDoSForHost {
                         message += "Hello dear alldebrid user\r\n";
                         message += "In order to use this service in JDownloader, you need to follow these steps:\r\n";
                         message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + pin_url + "'\t\r\n";
-                        message += "3. Confirm the PIN/Code you see in the browser window.\r\n";
+                        message += "2. Confirm the PIN/Code you see in the browser window.\r\n";
                         message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
