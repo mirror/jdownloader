@@ -36,7 +36,7 @@ public class MegaloadTo extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-01-27: Premium untested, set FREE account downloadlimits <br />
+     * limit-info: 2020-04-27: All tested <br />
      * captchatype-info: 2020-01-27: null<br />
      * other:<br />
      */
@@ -64,13 +64,13 @@ public class MegaloadTo extends XFileSharingProBasic {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -78,13 +78,13 @@ public class MegaloadTo extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return -5;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -5;
         }
     }
 
@@ -100,7 +100,7 @@ public class MegaloadTo extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 5;
     }
 
     @Override
