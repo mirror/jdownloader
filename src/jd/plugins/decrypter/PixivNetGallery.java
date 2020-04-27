@@ -47,7 +47,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|users/\\d+/(?:artworks|illustrations|manga|bookmarks/artworks))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
 public class PixivNetGallery extends PluginForDecrypt {
     public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);

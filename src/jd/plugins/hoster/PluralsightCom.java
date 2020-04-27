@@ -569,6 +569,7 @@ public class PluralsightCom extends antiDDoSForHost {
         if (StringUtils.isEmpty(streamURL)) {
             streamURL = getStreamURL(br, this, link, null);
             if (StringUtils.isEmpty(streamURL)) {
+                handleErrors();
                 if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
                     throw new AccountRequiredException();
                 } else {
@@ -596,6 +597,18 @@ public class PluralsightCom extends antiDDoSForHost {
          * java.nio.file.Files.write(Paths.get(fullPath), subtitles.getBytes()); } }
          */
         dl.startDownload();
+    }
+
+    /** 2020-04-27: New: TODO: Add errorhandling for more error-cases */
+    private void handleErrors() throws AccountUnavailableException {
+        /*
+         * 2020-04-27: E.g.
+         * {"success":false,"error":{"message":"user not authorized"},"meta":{"status":403,"libraries":[]},"trace":[{"service":
+         * "videoservices_clip","version":"1.0.450","latency":44,"fn":"viewClipV3"}]}
+         */
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        }
     }
 
     // private String getSubtitles(PostRequest postRequest, DownloadLink link) throws IOException, PluginException {

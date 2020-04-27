@@ -21,11 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Earn4filesCom extends XFileSharingProBasic {
@@ -113,8 +116,29 @@ public class Earn4filesCom extends XFileSharingProBasic {
             if (dlForm.hasInputFieldByName("ddon")) {
                 dlForm.remove("ddon");
                 dlForm.put("ddon", (long) Math.floor((Math.random() * 1000000) + 1) + "");
+            } else if (dlForm.hasInputFieldByName("don")) {
+                /* 2020-04-27: Cat & mouse */
+                dlForm.remove("don");
+                dlForm.put("don", (long) Math.floor((Math.random() * 1000000) + 1) + "");
+            }
+            if (dlForm.hasInputFieldByName("adblock_detected")) {
+                /* 2020-04-27 */
+                dlForm.put("adblock_detected", "0");
             }
         }
         return dlForm;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        if (new Regex(correctedBR, ">\\s*Something went Wrong").matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 5 * 60 * 1000l);
+        }
+        super.checkErrors(link, account, checkAll);
     }
 }

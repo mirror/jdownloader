@@ -332,8 +332,10 @@ public class RPNetBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 3 * 60 * 1000l);
         }
         try {
-            /* 2020-04-24: According to admin, we can use this filename for everything except Zippyshare. */
-            if (!StringUtils.isEmpty(filename) && !link.getHost().equalsIgnoreCase("zippyshare.com")) {
+            /*
+             * 2020-04-27: According to admin, should use this for zippyshare ONLY.
+             */
+            if (!StringUtils.isEmpty(filename) && link.getHost().equalsIgnoreCase("zippyshare.com")) {
                 /* 2020-04-24: E.g. sometimes "Testfile.rar" (With "" --> WTF, remove that) */
                 filename = filename.replace("\"", "");
                 logger.info("Using final filename given by API: " + filename);
