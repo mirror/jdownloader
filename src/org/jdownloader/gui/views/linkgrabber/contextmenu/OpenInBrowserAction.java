@@ -57,6 +57,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         if (hasSelection(selection)) {
             if (threshold < 0) {
                 setEnabled(true);
+                return;
             } else {
                 final List<CrawledLink> links = selection.getChildren();
                 if (links.size() < threshold) {
