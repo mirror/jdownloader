@@ -13,14 +13,16 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
-public class OpenInBrowserAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
+public class OpenInBrowserAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
     private static final long   serialVersionUID = 7911375550836173693L;
     private final static String NAME             = _GUI.T.gui_table_contextmenu_browselink();
 
@@ -29,21 +31,41 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
         setName(NAME);
     }
 
+    private int threshold = 50;
+
+    public static String getTranslationMaxOpenThreshold() {
+        return _GUI.T.gui_table_contextmenu_browselink_maxurls();
+    }
+
+    @Customizer(link = "#getTranslationMaxOpenThreshold")
+    public int getMaxOpenThreshold() {
+        return threshold;
+    }
+
+    public void setMaxOpenThreshold(int threshold) {
+        this.threshold = Math.max(-1, threshold);
+    }
+
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        if (!CrossSystem.isOpenBrowserSupported()) {
+        final int threshold = getMaxOpenThreshold();
+        if (!CrossSystem.isOpenBrowserSupported() || threshold == 0) {
             setEnabled(false);
             return;
         }
         final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
         if (hasSelection(selection)) {
-            final List<DownloadLink> links = selection.getChildren();
-            if (links.size() < 50) {
-                for (final DownloadLink link : links) {
-                    if (link.getView().getDisplayUrl() != null) {
-                        setEnabled(true);
-                        return;
+            if (threshold < 0) {
+                setEnabled(true);
+            } else {
+                final List<DownloadLink> links = selection.getChildren();
+                if (links.size() < threshold) {
+                    for (final DownloadLink link : links) {
+                        if (link.getView().getDisplayUrl() != null) {
+                            setEnabled(true);
+                            return;
+                        }
                     }
                 }
             }
