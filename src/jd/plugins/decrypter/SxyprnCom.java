@@ -7,13 +7,17 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(?:www\\.)?(yourporn\\.sexy|sxyprn\\.com)/[^/]*?\\.html(\\?page=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/[^/]*?\\.html(\\?page=\\d+)?", "https?://(?:www\\.)?sxyprn\\.com/[^/]*?\\.html(\\?page=\\d+)?" })
 public class SxyprnCom extends antiDDoSForDecrypt {
     public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -23,6 +27,15 @@ public class SxyprnCom extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            try {
+                ((jd.plugins.hoster.SxyprnCom) plg).login(this.br, account, false);
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
         getPage(parameter.getCryptedUrl());
         final String[] posts = br.getRegex("(<div class='post_el_small'>.*?</span>\\s*</div>\\s*</a>\\s*</div>)").getColumn(0);
         for (final String postHTML : posts) {
