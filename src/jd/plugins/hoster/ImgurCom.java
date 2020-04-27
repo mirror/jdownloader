@@ -44,6 +44,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -58,10 +59,11 @@ import jd.utils.locale.JDL;
  * (scroll down to "Image thumbnails"
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
-public class ImgUrCom extends PluginForHost {
-    public ImgUrCom(PluginWrapper wrapper) {
+public class ImgurCom extends PluginForHost {
+    public ImgurCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+        /* TODO: Do some more testing, then unlock this for all users */
         // this.enablePremium("https://imgur.com/register");
     }
 
@@ -91,6 +93,7 @@ public class ImgUrCom extends PluginForHost {
     private static final String  SETTING_CUSTOM_PACKAGENAME      = "SETTING_CUSTOM_PACKAGENAME";
     /* API related stuff */
     public static final String   OAUTH_CLIENTID                  = "Mzc1YmE4Y2FmNjA0ZDQy";
+    public static final String   OAUTH_SECRET                    = "TODO_ADDME_BEFORE_RELEASE";
     /* Constants */
     public static final long     view_filesizelimit              = 20447232l;
     public static final int      responsecode_website_overloaded = 502;
@@ -118,10 +121,10 @@ public class ImgUrCom extends PluginForHost {
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean start_isDownload) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean start_isDownload) throws Exception {
         imgUID = getImgUID(link);
         dllink = link.getStringProperty("directlink", null);
         dl_IMPOSSIBLE_SERVER_ISSUE = false;
@@ -131,8 +134,12 @@ public class ImgUrCom extends PluginForHost {
         if (dllink == null || link.getLongProperty("decryptedfilesize", -1) == -1 || link.getStringProperty("decryptedfinalfilename", null) == null || getFiletype(link) == null) {
             prepBRAPI(this.br);
             boolean api_failed = false;
-            if (!this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
+            if (account == null && !this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
                 api_failed = true;
+            } else if (account != null) {
+                this.login(br, account, false);
+                getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
+                this.checkErrors(br, link, account);
             } else {
                 br.getHeaders().put("Authorization", getAuthorization());
                 try {
@@ -240,6 +247,7 @@ public class ImgUrCom extends PluginForHost {
             link.setProperty("directlink", dllink);
         }
         if (dllink == null) {
+            logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (type != null) {
@@ -248,6 +256,9 @@ public class ImgUrCom extends PluginForHost {
         } else {
             link.setLinkID("://" + this.getHost() + "/" + imgUID);
         }
+        if (filename_formatted == null) {
+            filename_formatted = getFormattedFilename(link);
+        }
         if (filename_formatted != null) {
             if (start_isDownload) {
                 link.setFinalFileName(filename_formatted);
@@ -255,7 +266,7 @@ public class ImgUrCom extends PluginForHost {
                 link.setName(filename_formatted);
             }
         }
-        if (!start_isDownload && (link.getVerifiedFileSize() == -1 && link.getView().getBytesTotal() == -1)) {
+        if (!start_isDownload) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
              * Keep server load down.
@@ -292,35 +303,11 @@ public class ImgUrCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, true);
-        if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
-        } else if (this.dl_IMPOSSIBLE_SERVER_ISSUE) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            /* Should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Disable chunks as servers are fast and we usually only download small files. */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            final int responsecode = dl.getConnection().getResponseCode();
-            if (responsecode == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (responsecode == responsecode_website_overloaded) {
-                websiteOverloaded();
-            } else if (responsecode == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 60 * 1000l);
-            }
-            logger.warning("Finallink leads to HTML code --> Following connection");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
-        dl.startDownload();
+        handleDownload(link, null);
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        requestFileInformation(link, true);
+        requestFileInformation(link, account, true);
         if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
         } else if (this.dl_IMPOSSIBLE_SERVER_ISSUE) {
@@ -355,8 +342,11 @@ public class ImgUrCom extends PluginForHost {
         return br.toString();
     }
 
-    private static final String PROPERTY_ACCOUNT_initial_password = "initial_password";
-    private static final String PROPERTY_ACCOUNT_access_token     = "access_token";
+    private static final String PROPERTY_ACCOUNT_initial_password          = "initial_password";
+    private static final String PROPERTY_ACCOUNT_access_token              = "access_token";
+    private static final String PROPERTY_ACCOUNT_refresh_token             = "refresh_token";
+    private static final String PROPERTY_ACCOUNT_valid_until               = "token_valid_until";
+    private static final String PROPERTY_ACCOUNT_token_first_use_timestamp = "token_first_use_timestamp";
 
     /** Checks to see if e.g. user has changed password. */
     private boolean isSamePW(final Account account) {
@@ -381,12 +371,12 @@ public class ImgUrCom extends PluginForHost {
         return false;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Browser brlogin, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                prepBRAPI(br);
+                brlogin.setFollowRedirects(true);
+                brlogin.setCookiesExclusive(true);
+                prepBRAPI(brlogin);
                 /* Correct input so it is parsable via UrlQuery. */
                 if (!account.getPass().contains("?")) {
                     account.setPass(account.getPass().replace("/#", "/?"));
@@ -412,37 +402,60 @@ public class ImgUrCom extends PluginForHost {
                 }
                 final UrlQuery query = new UrlQuery().parse(account.getPass());
                 /*
-                 * Access tokens expire! Only use the one the user has entered on first attempt e.g. user has just added this account for
-                 * the first time!
+                 * Access tokens expire (after ~30 days)! Only use the one the user has entered on first attempt e.g. user has just added
+                 * this account for the first time! Save it as a property on the account and then use that because once token gets refreshed
+                 * it will differ from the token the user initially entered!
                  */
-                String access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token);
-                if (access_token == null) {
-                    logger.info("Obtaining token from URL --> Probably first time login");
-                    access_token = query.get("access_token");
-                }
+                final String auth_access_token = query.get("access_token");
                 final String auth_refresh_token = query.get("refresh_token");
+                /* Ignore 'expires_in' and just use existing token as long as possible. This is only used for debugging. */
+                final String auth_valid_until = query.get("expires_in");
                 final String auth_username = query.get("account_username");
                 if (!StringUtils.equals(account.getUser(), auth_username)) {
                     /* Important as we will use Account.getUser() for later requests so it has to be correct! */
                     logger.info("Correcting Account username to API username");
                     account.setUser(auth_username);
                 }
-                br.getHeaders().put("Authorization", "Bearer " + access_token);
+                /*
+                 * Now set active values - prefer stored values over user-entered as they will change! User-Entered will be used only until
+                 * first time, the token expires!
+                 */
+                if (!this.isSamePW(account)) {
+                    /* Reset previous properties if e.g. user has changed password. */
+                    account.setProperty(PROPERTY_ACCOUNT_refresh_token, Property.NULL);
+                    account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
+                    account.setProperty(PROPERTY_ACCOUNT_valid_until, Property.NULL);
+                    account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, Property.NULL);
+                }
+                String active_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
+                String active_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
+                String active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
+                long token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
+                if (active_valid_until == null) {
+                    /* E.g. first login with newly user-entered logindata. */
+                    active_valid_until = auth_valid_until;
+                    token_first_use_timestamp = System.currentTimeMillis();
+                }
+                boolean loggedIN = false;
+                /* We can only */
+                brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
                 if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
                     logger.info("Trust token without check");
                     return;
                 }
                 /* Check existing access_token */
-                /* Ignore 'expires_in' and just use existing token as long as possible. */
-                // final String auth_expires_in = query.get("expires_in");
                 /* Request account information and, at the same time, check if authorization is still valid. */
-                br.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
+                brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
+                checkErrors(brlogin, null, account);
+                /* TODO: Check which error API will return on expired token. */
+                Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
+                loggedIN = entries != null && entries.containsKey("id");
                 /*
-                 * TODO: Add check to detect expired token. See if we can differentiate between EXPIRED and INVALID tokens --> Hmm or always
-                 * try refresh on failure --> If refresh fails, we can definitely deactivate account permanently!
+                 * E.g. 403 with
+                 * {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/<username>","method":"GET"},"success":
+                 * false,"status":403}
                  */
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                boolean loggedIN = true;
                 if (!loggedIN) {
                     /* Build new query containing only what we need. */
                     logger.info("Trying to generate new authorization token");
@@ -452,14 +465,35 @@ public class ImgUrCom extends PluginForHost {
                     queryLogin.add("client_id", getClientID());
                     queryLogin.add("client_secret", getClientSecret());
                     queryLogin.add("grant_type", "refresh_token");
-                    br.postPage(getAPIBase() + "/oauth2/token", queryLogin);
-                    /* TODO: Check if the refresh token also changes */
+                    brlogin.postPage(getAPIBase() + "/oauth2/token", queryLogin);
+                    active_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
+                    active_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
+                    active_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
+                    if (StringUtils.isEmpty(active_access_token) || StringUtils.isEmpty(active_refresh_token)) {
+                        /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
+                        /*
+                         * E.g.
+                         * {"data":{"error":"Invalid refresh token","request":"\/oauth2\/token","method":"POST"},"success":false,"status":
+                         * 400}
+                         */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    /* Update authorization header */
+                    brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
+                    /* Update token first use timestamp */
+                    token_first_use_timestamp = System.currentTimeMillis();
                 }
-                account.setProperty(PROPERTY_ACCOUNT_access_token, access_token);
+                account.setProperty(PROPERTY_ACCOUNT_access_token, active_access_token);
+                account.setProperty(PROPERTY_ACCOUNT_refresh_token, active_refresh_token);
+                if (active_valid_until != null && active_valid_until.matches("\\d+")) {
+                    account.setProperty(PROPERTY_ACCOUNT_valid_until, Long.parseLong(active_valid_until));
+                }
+                account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, token_first_use_timestamp);
+                account.setProperty(PROPERTY_ACCOUNT_initial_password, account.getPass());
                 /* Every account-check will use up one API request and we have limited requests --> Do not check account that frequently. */
                 account.setRefreshTimeout(5 * 60 * 1000l);
                 /* Save cookies - but only to have the cookie-timestamp */
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(brlogin.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 throw e;
             }
@@ -470,12 +504,13 @@ public class ImgUrCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(this.br, account, true);
         } catch (final PluginException e) {
             throw e;
         }
         if (br.getURL() == null || !br.getURL().contains("/account/" + account.getUser())) {
             br.getPage(getAPIBaseWithVersion() + "/account/" + account.getUser());
+            checkErrors(this.br, null, account);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("data");
@@ -488,10 +523,23 @@ public class ImgUrCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             accountStatus = "Premium user";
         }
+        // final long token_first_usage_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, 0);
+        // final long token_valid_until = account.getLongProperty(PROPERTY_ACCOUNT_valid_until, 0);
+        // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && token_first_usage_timestamp > 0 && token_valid_until > 0) {
+        // ai.setValidUntil(token_first_usage_timestamp + token_valid_until);
+        // }
+        final String api_limit_reset_timestamp = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
+        if (api_limit_reset_timestamp != null && api_limit_reset_timestamp.matches("\\d+")) {
+            ai.setValidUntil(Long.parseLong(api_limit_reset_timestamp) * 1000l);
+        }
         final String api_limit_client_total = br.getRequest().getResponseHeader("X-RateLimit-ClientLimit");
         final String api_limit_client_remaining = br.getRequest().getResponseHeader("X-RateLimit-ClientRemaining");
         final String api_limit_user_total = br.getRequest().getResponseHeader("X-RateLimit-UserLimit");
         final String api_limit_user_remaining = br.getRequest().getResponseHeader("X-RateLimit-UserRemaining");
+        /* Some errorhandling */
+        if (api_limit_user_remaining != null && Integer.parseInt(api_limit_user_remaining) <= 0) {
+            rateLimitReached(this.br, account);
+        }
         if (api_limit_client_total != null && api_limit_client_remaining != null && api_limit_user_total != null && api_limit_user_remaining != null) {
             accountStatus += String.format(" | API req left user: %s/%s | client: %s/%s", api_limit_user_remaining, api_limit_user_total, api_limit_client_remaining, api_limit_client_total);
         }
@@ -504,9 +552,41 @@ public class ImgUrCom extends PluginForHost {
         return ai;
     }
 
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            rateLimitReached(br, account);
+        }
+    }
+
+    /**
+     * E.g. {"data":{"error":"User request limit
+     * exceeded","request":"\/3\/account\/<USERNAME>","method":"GET"},"success":false,"status":429}
+     *
+     * @throws PluginException
+     */
+    private void rateLimitReached(final Browser br, final Account account) throws PluginException {
+        long reset_in = 0;
+        /* This header will usually tell us once rate limit is over (at least when an account was used) */
+        final String api_reset_in = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
+        if (api_reset_in != null && api_reset_in.matches("\\d+")) {
+            reset_in = Long.parseLong(api_reset_in);
+        }
+        final long waittime;
+        if (reset_in > System.currentTimeMillis()) {
+            waittime = reset_in - System.currentTimeMillis() + 10000l;
+        } else {
+            /* Default waittime */
+            waittime = 5 * 60 * 1000l;
+        }
+        if (account != null) {
+            throw new AccountUnavailableException("API Rate Limit reached", waittime);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Rate Limit reached", waittime);
+        }
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, true);
         handleDownload(link, account);
     }
 
@@ -696,7 +776,7 @@ public class ImgUrCom extends PluginForHost {
         final String clientsecret;
         final String clientid_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_ID, defaultAPISettingUserVisibleText);
         if (clientid_setting.equalsIgnoreCase("JDDEFAULT")) {
-            clientsecret = "TODO_HIDDEN_UNTIL_ACCOUNT_SUPPORT_IS_COMPLETE";
+            clientsecret = OAUTH_SECRET;
         } else {
             clientsecret = clientid_setting;
         }
@@ -708,20 +788,13 @@ public class ImgUrCom extends PluginForHost {
     }
 
     public static Browser prepBRWebsite(final Browser br) {
-        prepBRGeneral(br);
+        br.setAllowedResponseCodes(responsecode_website_overloaded);
+        br.setFollowRedirects(true);
         return br;
     }
 
     public static Browser prepBRAPI(final Browser br) {
-        br.setAllowedResponseCodes(new int[] { 429 });
-        prepBRGeneral(br);
-        return br;
-    }
-
-    public static Browser prepBRGeneral(final Browser br) {
-        /* 502 == website overloadeds */
-        br.setAllowedResponseCodes(responsecode_website_overloaded);
-        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 400, 429, responsecode_website_overloaded });
         return br;
     }
 
@@ -741,14 +814,14 @@ public class ImgUrCom extends PluginForHost {
                         message += "Hallo liebe(r) Imgur NutzerIn\r\n";
                         message += "Um deinen Imgur Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + autURL + "'\t\r\n";
-                        message += "2. Autorisiere JDownloader auf der Imgur Webseite.\r\nDu wirst weitergeleitet auf 'my.jdownloader.org/#access_token=...'.\r\nKopiere diesen Link aus der Adresszeile und gib ihn ins 'Passwort' Feld der imgur Loginmaske in JD ein.\r\n";
+                        message += "2. Autorisiere JDownloader auf der Imgur Webseite sofern du nicht sofort weitergeleitet wirst.\r\nDu wirst weitergeleitet auf 'my.jdownloader.org/#access_token=...'.\r\nKopiere diesen Link aus der Adresszeile und gib ihn ins 'Passwort' Feld der imgur Loginmaske in JD ein.\r\n";
                         message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
                     } else {
                         title = "Imgur.com - Login";
                         message += "Hello dear Imgur user\r\n";
                         message += "In order to use imgur with JDownloader, you need to follow these steps:\r\n";
                         message += "1. Open the following URL in your browser if it is not opened automatically:\r\n\t'" + autURL + "'\t\r\n";
-                        message += "2. Authorize JDownloader on the Imgur website.\r\nYou will be redirected to 'my.jdownloader.org/#access_token=...'.\r\nCopy this complete URL from the address bar of your browser and enter it into the password field of the imgur login mask in JD. \r\n";
+                        message += "2. Authorize JDownloader on the Imgur website in case you are not automatically redirected immediately.\r\nYou will be redirected to 'my.jdownloader.org/#access_token=...'.\r\nCopy this complete URL from the address bar of your browser and enter it into the password field of the imgur login mask in JD. \r\n";
                         message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
@@ -894,11 +967,12 @@ public class ImgUrCom extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, JDL.L("plugins.hoster.ImgUrCom.downloadMP4", "Download .mp4 files instead of .gif?")).setDefaultValue(defaultMP4));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "API settings - see imgur.com/account/settings/apps"));
-        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, "Use API (recommended!)").setDefaultValue(true);
-        getConfig().addEntry(cfg);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, "Enter your own imgur Oauth Client-ID:").setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfg, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, "Enter your own imgur Oauth Client-Secret:").setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfg, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, "Use API in anonymous mode too (recommended - API will always be used in account mode!)").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, "Enter your own imgur Oauth Client-ID:").setDefaultValue(defaultAPISettingUserVisibleText));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, "Enter your own imgur Oauth Client-Secret:").setDefaultValue(defaultAPISettingUserVisibleText));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Other settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_GRAB_SOURCE_URL_VIDEO, getPhrase("SETTING_GRAB_SOURCE_URL_VIDEO")).setDefaultValue(defaultSOURCEVIDEO));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));

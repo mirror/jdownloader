@@ -30,26 +30,28 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.ImgUrCom;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.ImgurCom;
+import jd.utils.JDUtilities;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.|m\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://(?:www\\.)?i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.|m\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/[A-Za-z0-9]{5,7}|https?://(?:www\\.)?imgur\\.com/r/[^/]+/$" })
-public class ImgurCom extends PluginForDecrypt {
-    public ImgurCom(PluginWrapper wrapper) {
+public class ImgurComGallery extends PluginForDecrypt {
+    public ImgurComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -76,9 +78,20 @@ public class ImgurCom extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
         parameter = param.toString().replace("://m.", "://").replace("https://", "http://").replaceFirst("/all$", "");
         lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-        grabVideoSource = cfg.getBooleanProperty(SETTING_GRAB_SOURCE_URL_VIDEO, ImgUrCom.defaultSOURCEVIDEO);
+        grabVideoSource = cfg.getBooleanProperty(SETTING_GRAB_SOURCE_URL_VIDEO, ImgurCom.defaultSOURCEVIDEO);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
+        boolean loggedIN = false;
+        if (account != null) {
+            try {
+                ((ImgurCom) hostPlg).login(this.br, account, false);
+                loggedIN = true;
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
         synchronized (CTRLLOCK) {
-            VIEW_FILESIZELIMIT = jd.plugins.hoster.ImgUrCom.view_filesizelimit;
+            VIEW_FILESIZELIMIT = ImgurCom.view_filesizelimit;
             String galleryTitle = null;
             String fpName = null;
             if (parameter.matches(type_image_list)) {
@@ -86,7 +99,7 @@ public class ImgurCom extends PluginForDecrypt {
                 br.followRedirect();
                 final String id = new Regex(parameter, "/r/([^/]+)/").getMatch(0);
                 int page = 1;
-                while (!isAbort()) {
+                do {
                     final String[] type_image_list_links = br.getRegex("\"image-list-link\"\\s*href\\s*=\\s*\"(/r/[^/]+/[A-Za-z0-9]{5,7})\"").getColumn(0);
                     if (type_image_list_links != null && type_image_list_links.length > 0) {
                         for (String type_image_list_link : type_image_list_links) {
@@ -98,12 +111,15 @@ public class ImgurCom extends PluginForDecrypt {
                     } else {
                         break;
                     }
-                }
+                } while (!isAbort());
                 return decryptedLinks;
             } else if (parameter.matches(type_image_list_link)) {
-                jd.plugins.hoster.ImgUrCom.prepBRAPI(this.br);
-                br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
-                br.getPage(ImgUrCom.getAPIBaseWithVersion() + "/album/" + lid);
+                if (!loggedIN) {
+                    /* Anonymous API usage */
+                    ImgurCom.prepBRAPI(this.br);
+                    br.getHeaders().put("Authorization", ImgurCom.getAuthorization());
+                }
+                br.getPage(ImgurCom.getAPIBaseWithVersion() + "/album/" + lid);
                 br.followRedirect();
                 if (br.getHttpConnection().isOK()) {
                     final HashMap<String, Object> json = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -113,25 +129,27 @@ public class ImgurCom extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                         return decryptedLinks;
                     }
-                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                } else {
+                    /* Must be offline - usually 404 */
                     final DownloadLink dl = createDownloadlink(getHostpluginurl(lid));
                     dl.setProperty("imgUID", lid);
                     decryptedLinks.add(dl);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else if (parameter.matches(type_album) || parameter.matches(type_gallery)) {
                 try {
-                    if (!cfg.getBooleanProperty(SETTING_USE_API, false)) {
-                        logger.info("User prefers not to use the API");
+                    if (loggedIN && !cfg.getBooleanProperty(SETTING_USE_API, true)) {
+                        logger.info("User prefers not to use the API --> Cannot crawl this type of URL without API");
                         throw new DecrypterException(API_FAILED);
                     }
-                    jd.plugins.hoster.ImgUrCom.prepBRAPI(this.br);
-                    br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
+                    if (!loggedIN) {
+                        /* Anonymous API usage */
+                        ImgurCom.prepBRAPI(this.br);
+                        br.getHeaders().put("Authorization", ImgurCom.getAuthorization());
+                    }
                     try {
                         /* Gallery (single image) */
                         if (parameter.matches(type_gallery)) {
-                            br.getPage(ImgUrCom.getAPIBaseWithVersion() + "/gallery/" + lid);
+                            br.getPage(ImgurCom.getAPIBaseWithVersion() + "/gallery/" + lid);
                             if (br.getHttpConnection().getResponseCode() == 404) {
                                 /*
                                  * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this
@@ -156,7 +174,7 @@ public class ImgurCom extends PluginForDecrypt {
                             }
                         }
                         /* We know that we definitly have an album --> Crawl it */
-                        br.getPage(ImgUrCom.getAPIBaseWithVersion() + "/album/" + lid);
+                        br.getPage(ImgurCom.getAPIBaseWithVersion() + "/album/" + lid);
                         if (br.getHttpConnection().getResponseCode() == 404) {
                             /*
                              * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before!
@@ -169,6 +187,9 @@ public class ImgurCom extends PluginForDecrypt {
                     } catch (final BrowserException e) {
                         if (br.getHttpConnection().getResponseCode() == 429) {
                             logger.info("API limit reached, using site");
+                            /* TODO: Set AccountError if this happens! */
+                            if (loggedIN) {
+                            }
                             throw new DecrypterException(API_FAILED);
                         }
                         logger.info("Server problems: " + parameter);
@@ -216,13 +237,13 @@ public class ImgurCom extends PluginForDecrypt {
                 if (galleryTitle != null) {
                     galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
                 }
-                fpName = jd.plugins.hoster.ImgUrCom.getFormattedPackagename(author, galleryTitle, lid);
+                fpName = ImgurCom.getFormattedPackagename(author, galleryTitle, lid);
                 fpName = encodeUnicode(fpName);
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
             } else {
-                // single images
+                /* Single images --> Host plugin */
                 final DownloadLink dl = createDownloadlink(getHostpluginurl(lid));
                 dl.setProperty("imgUID", lid);
                 decryptedLinks.add(dl);
@@ -298,7 +319,7 @@ public class ImgurCom extends PluginForDecrypt {
              * quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
              */
             if (size >= VIEW_FILESIZELIMIT) {
-                directlink = jd.plugins.hoster.ImgUrCom.getBigFileDownloadlink(dl);
+                directlink = ImgurCom.getBigFileDownloadlink(dl);
             }
             dl.setProperty("directlink", directlink);
             dl.setProperty("decryptedfilesize", size);
@@ -307,11 +328,11 @@ public class ImgurCom extends PluginForDecrypt {
             }
             dl.setProperty("directusername", author);
             dl.setProperty("orderid", itemnumber_formatted);
-            final String filename = jd.plugins.hoster.ImgUrCom.getFormattedFilename(dl);
+            final String filename = ImgurCom.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             dl.setDownloadSize(size);
             /* No need to hide directlinks */
-            dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
+            dl.setContentUrl(ImgurCom.getURLContent(imgUID));
             if (videoSource != null && grabVideoSource) {
                 decryptedLinks.add(this.createDownloadlink(videoSource));
             }
@@ -383,7 +404,7 @@ public class ImgurCom extends PluginForDecrypt {
              */
             if (filesize >= VIEW_FILESIZELIMIT) {
                 directlink = "http://imgur.com/download/" + imgUID;
-                directlink = jd.plugins.hoster.ImgUrCom.getBigFileDownloadlink(dl);
+                directlink = ImgurCom.getBigFileDownloadlink(dl);
             } else {
                 directlink = "http://i.imgur.com/" + imgUID + ext;
             }
@@ -392,10 +413,10 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setProperty("directtitle", title);
             dl.setProperty("directusername", author);
             dl.setProperty("orderid", itemnumber_formatted);
-            final String filename = jd.plugins.hoster.ImgUrCom.getFormattedFilename(dl);
+            final String filename = ImgurCom.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             /* No need to hide directlinks */
-            dl.setContentUrl(jd.plugins.hoster.ImgUrCom.getURLContent(imgUID));
+            dl.setContentUrl(ImgurCom.getURLContent(imgUID));
             if (videoSource != null && grabVideoSource) {
                 decryptedLinks.add(this.createDownloadlink(videoSource));
             }
@@ -425,7 +446,7 @@ public class ImgurCom extends PluginForDecrypt {
 
     private Browser prepBRWebsite(final Browser br) {
         br.setLoadLimit(br.getLoadLimit() * 2);
-        jd.plugins.hoster.ImgUrCom.prepBRWebsite(br);
+        ImgurCom.prepBRWebsite(br);
         return br;
     }
 
