@@ -9,6 +9,14 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -33,16 +41,7 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.UrlPacScriptSource;
 import com.btr.proxy.selector.whitelist.ProxyBypassListSelector;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
-
 public class ProxyAutoAction extends AppAction {
-
     public ProxyAutoAction() {
         super();
         setName(_GUI.T.ProxyAutoAction_actionPerformed_d_title());
@@ -57,7 +56,6 @@ public class ProxyAutoAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
@@ -99,25 +97,24 @@ public class ProxyAutoAction extends AppAction {
                             List<Proxy> proxies = selector.select(new URI("http://google.com"));
                             if (proxies != null) {
                                 for (Proxy p : proxies) {
-                                    HTTPProxy httpProxy = null;
                                     switch (p.type()) {
                                     case DIRECT:
                                         if (p.address() == null) {
                                             setProxy(new NoProxySelector());
                                         } else {
-                                            httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
+                                            final HTTPProxy httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
                                             setProxy(new SingleDirectGatewaySelector(httpProxy));
                                         }
                                         break;
                                     case HTTP:
                                         if (p.address() != null) {
-                                            httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                            final HTTPProxy httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
                                             setProxy(new SingleBasicProxySelectorImpl(httpProxy));
                                         }
                                         break;
                                     case SOCKS:
                                         if (p.address() != null) {
-                                            httpProxy = new HTTPProxy(TYPE.SOCKS5, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                            final HTTPProxy httpProxy = new HTTPProxy(HTTPProxy.convertNativeProxyType(p), SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
                                             setProxy(new SingleBasicProxySelectorImpl(httpProxy));
                                         }
                                         break;
@@ -125,7 +122,6 @@ public class ProxyAutoAction extends AppAction {
                                 }
                             }
                         }
-                        System.out.println(selector);
                     } catch (Throwable e) {
                         e.printStackTrace();
                     }
@@ -142,12 +138,10 @@ public class ProxyAutoAction extends AppAction {
                 return null;
             }
         });
-
     }
 
     protected void setProxy(final AbstractProxySelectorImpl proxy) {
         proxy.setEnabled(true);
         ProxyController.getInstance().setProxy(proxy);
     }
-
 }

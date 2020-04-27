@@ -93,6 +93,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
             return Type.HTTPS;
         case SOCKS4:
             return Type.SOCKS4;
+        case SOCKS4A:
+            return Type.SOCKS4A;
         case SOCKS5:
             return Type.SOCKS5;
         default:
@@ -110,6 +112,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
             break;
         case SOCKS4:
             proxy.setType(TYPE.SOCKS4);
+            break;
+        case SOCKS4A:
+            proxy.setType(TYPE.SOCKS4A);
             break;
         case SOCKS5:
             proxy.setType(TYPE.SOCKS5);
@@ -216,9 +221,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public String toExportString() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         boolean hasUSerInfo = false;
-        SelectedProxy proxy = getProxy();
+        final SelectedProxy proxy = getProxy();
         switch (proxy.getType()) {
         case HTTP:
             sb.append("http://");
@@ -229,6 +234,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         case SOCKS4:
             sb.append("socks4://");
             break;
+        case SOCKS4A:
+            sb.append("socks4a://");
+            break;
         case SOCKS5:
             sb.append("socks5://");
             break;
@@ -237,8 +245,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
                 sb.append("direct://");
                 sb.append(proxy.getLocal());
                 return sb.toString();
+            } else {
+                return null;
             }
-            return null;
         default:
             return null;
         }
