@@ -142,7 +142,7 @@ public class RapidoxPl extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             final String downloadURL = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-            this.postAPISafe("http://rapidox.pl/panel/pobierz-plik", "check_links=" + Encoding.urlEncode(downloadURL));
+            this.postAPISafe("https://" + this.getHost() + "/panel/pobierz-plik", "check_links=" + Encoding.urlEncode(downloadURL));
             final String requestId = br.getRegex("rapidox.pl/panel/pobierz\\-plik/(\\d+)").getMatch(0);
             if (requestId == null) {
                 handleErrorRetries("requestIdnull", 5, 2 * 60 * 1000l);
@@ -261,7 +261,9 @@ public class RapidoxPl extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        br.getPage("/panel/twoje-informacje");
+        if (br.getURL() == null || !br.getURL().contains("/panel/twoje-informacje")) {
+            br.getPage("/panel/twoje-informacje");
+        }
         String traffic_max = br.getRegex("Dopuszczalny transfer:</b>[\t\n\r ]+([0-9 ]+ MB)").getMatch(0);
         String traffic_available = br.getRegex("Do wykorzystania:[\t\n\r ]+(-?[0-9 ]+ MB)").getMatch(0);
         /* Fix e.g. 500 000 MB (500 GB) --> 500000MB */
@@ -327,12 +329,14 @@ public class RapidoxPl extends PluginForHost {
                 this.br = newBrowser();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    logger.info("Login cookies available");
+                    logger.info("Login cookies are available");
                     this.br.setCookies(this.getHost(), cookies);
                     if (force) {
                         /* Even though login is forced first check if our cookies are still valid --> If not, force login! */
+                        logger.info("Checking login cookies");
                         br.getPage("https://" + this.getHost() + "/panel/index");
                         if (isLoggedIN()) {
+                            logger.info("Successfully checked login cookies");
                             return;
                         }
                         /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
@@ -340,6 +344,7 @@ public class RapidoxPl extends PluginForHost {
                             br.clearCookies(br.getHost());
                         }
                     } else {
+                        logger.info("Trust cookies without check");
                         return;
                     }
                 }
@@ -390,6 +395,7 @@ public class RapidoxPl extends PluginForHost {
                     }
                 }
                 br.submitForm(loginform);
+                br.getPage("/panel/twoje-informacje");
                 updatestatuscode();
                 handleAPIErrors(this.br);
                 if (!isLoggedIN()) {
