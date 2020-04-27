@@ -58,6 +58,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
         if (hasSelection(selection)) {
             if (threshold < 0) {
                 setEnabled(true);
+                return;
             } else {
                 final List<DownloadLink> links = selection.getChildren();
                 if (links.size() < threshold) {
