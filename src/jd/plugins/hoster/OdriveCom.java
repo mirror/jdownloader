@@ -59,7 +59,7 @@ public class OdriveCom extends PluginForHost {
     public static Browser prepBR(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        br.setAllowedResponseCodes(new int[400]);
+        br.setAllowedResponseCodes(new int[] { 400 });
         return br;
     }
 

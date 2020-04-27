@@ -24,8 +24,11 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -165,6 +168,9 @@ public class FlickrCom extends PluginForHost {
         br.getPage(photoURL);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("div class=\"Four04Case\">") || br.containsHTML(">This member is no longer active on Flickr") || br.containsHTML("class=\"Problem\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            /* 2020-04-27 */
+            throw new AccountRequiredException();
         }
         if (br.getURL().contains("login.yahoo.com/config")) {
             link.getLinkStatus().setStatusText("Only downloadable via account");
@@ -193,8 +199,17 @@ public class FlickrCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             apibr.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
-            dllink = apibr.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
+            Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
+            for (final Object streamO : ressourcelist) {
+                entries = (Map<String, Object>) streamO;
+                dllink = (String) entries.get("_content");
+                if (!StringUtils.isEmpty(dllink)) {
+                    break;
+                }
+            }
+            // dllink = apibr.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replace("\\", "");
@@ -237,8 +252,9 @@ public class FlickrCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                // con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");

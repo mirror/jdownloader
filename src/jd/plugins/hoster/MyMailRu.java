@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MyMailRuConfig;
+import org.jdownloader.plugins.components.config.MyMailRuConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,11 +47,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|https?://my\\.mail\\.ru/[^<>\"]*?video/(?:top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)|https?://(?:videoapi\\.my|api\\.video)\\.mail\\.ru/videos/embed/[^/]+/[^/]+/[a-z0-9\\-_]+/\\d+\\.html|https?://my\\.mail\\.ru/[^/]+/[^/]+/video/embed/[a-z0-9\\-_]+/\\d+|https?://my\\.mail\\.ru/video/embed/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|https?://my\\.mail\\.ru/[^<>\"]*?video/(?:top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)|https?://(?:videoapi\\.my|api\\.video)\\.mail\\.ru/videos/embed/[^/]+/[^/]+/[a-z0-9\\-_]+/\\d+\\.html|https?://my\\.mail\\.ru/[^/]+/[^/]+/video/embed/[a-z0-9\\-_]+/\\d+|https?://my\\.mail\\.ru/video/embed/-?\\d+" })
 public class MyMailRu extends PluginForHost {
-
     public MyMailRu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -62,8 +65,7 @@ public class MyMailRu extends PluginForHost {
     private static final String TYPE_VIDEO_2               = "https?://my\\.mail\\.ru/[^<>\"]*?video/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html";
     private static final String TYPE_VIDEO_3               = "https?://(?:videoapi\\.my|api\\.video)\\.mail\\.ru/videos/embed/([^/]+/[^/]+)/([a-z0-9\\-_]+/\\d+)\\.html";
     private static final String TYPE_VIDEO_4_EMBED         = "https?://[^/]+/([^/]+/[^/]+)/video/embed/([a-z0-9\\-_]+/\\d+)$";
-    private static final String TYPE_VIDEO_5_EMBED_SPECIAL = "https?://my\\.mail\\.ru/video/embed/\\d+";
-
+    private static final String TYPE_VIDEO_5_EMBED_SPECIAL = "https?://my\\.mail\\.ru/video/embed/-?(\\d+)";
     private static final String html_private               = ">Access to video denied<";
 
     @SuppressWarnings("deprecation")
@@ -136,6 +138,7 @@ public class MyMailRu extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            link.setLinkID(this.getHost() + "://" + videoID);
             br.getPage("https://my.mail.ru/" + videourlpart + "/ajax?ajax_call=1&func_name=video.get_item&mna=&mnb=&arg_id=" + videoID + "&_=" + System.currentTimeMillis());
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             if (br.containsHTML(html_private)) {
@@ -144,7 +147,7 @@ public class MyMailRu extends PluginForHost {
                 // link.getLinkStatus().setStatusText("Private video");
                 // return AvailableStatus.TRUE;
             }
-            if (br.containsHTML("b\\-video__layer\\-error")) {
+            if (br.containsHTML("b\\-video__layer\\-error") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String signvideourl = getJson("signVideoUrl");
@@ -153,22 +156,20 @@ public class MyMailRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(signvideourl);
-            getVideoURL();
+            DLLINK = getVideoURL();
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             URLConnectionAdapter con = null;
             try {
-                if (isJDStable()) {
-                    con = br.openGetConnection(DLLINK);
-                } else {
-                    con = br.openHeadConnection(DLLINK);
-                }
-                if (!con.getContentType().contains("html")) {
+                con = br.openHeadConnection(DLLINK);
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error");
                 }
             } finally {
                 try {
@@ -222,10 +223,10 @@ public class MyMailRu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         int maxChunks = 1;
-        requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
+        requestFileInformation(link);
+        if (link.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
             if (br.containsHTML(html_private)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -242,21 +243,21 @@ public class MyMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         boolean resume = true;
-        if (downloadLink.getBooleanProperty("noresume", false)) {
+        if (link.getBooleanProperty("noresume", false)) {
             resume = false;
         }
         // More chunks possible but not needed because we're only downloading
         // pictures here
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
-                if (downloadLink.getBooleanProperty("noresume", false)) {
-                    downloadLink.setProperty("noresume", Boolean.valueOf(false));
+                if (link.getBooleanProperty("noresume", false)) {
+                    link.setProperty("noresume", Boolean.valueOf(false));
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error");
                 }
                 logger.info("Resume impossible, disabling it for the next try");
-                downloadLink.setChunksProgress(null);
-                downloadLink.setProperty("noresume", Boolean.valueOf(true));
+                link.setChunksProgress(null);
+                link.setProperty("noresume", Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Resume failed");
             }
             br.followConnection();
@@ -322,11 +323,9 @@ public class MyMailRu extends PluginForHost {
         try {
             login(br, account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             return ai;
         }
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         ai.setStatus("Registered (free) User");
         return ai;
     }
@@ -375,7 +374,6 @@ public class MyMailRu extends PluginForHost {
         final Regex urlparts = new Regex(dl.getDownloadURL(), "video=/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]+)");
         br.getPage("http://video.mail.ru/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + ".lite");
         final String srv = grabVar("srv");
-
         final String vcontentHost = grabVar("vcontentHost");
         final String key = grabVar("key");
         final String rnd = "abcde";
@@ -392,20 +390,63 @@ public class MyMailRu extends PluginForHost {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private String getVideoURL() throws Exception {
+        String bestDirecturl = null;
+        final String preferredQuality = getConfiguredQuality();
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> videoQualities = (ArrayList) entries.get("videos");
+        String directurl = null;
         for (final Object quality : videoQualities) {
             final LinkedHashMap<String, Object> quality_map = (LinkedHashMap<String, Object>) quality;
-            DLLINK = (String) quality_map.get("url");
-            if (DLLINK != null) {
+            final String currDirectURL = (String) quality_map.get("url");
+            final String qualityKey = (String) quality_map.get("key");
+            if (StringUtils.isEmpty(currDirectURL) || StringUtils.isEmpty(qualityKey)) {
+                /* Skip invalid items */
+                continue;
+            }
+            /* json Array is sorted from best --> worst */
+            if (bestDirecturl == null) {
+                bestDirecturl = currDirectURL;
+            }
+            if (preferredQuality != null && qualityKey.equalsIgnoreCase(preferredQuality)) {
+                logger.info("Found user preferred quality: " + preferredQuality);
+                directurl = currDirectURL;
                 break;
             }
         }
-        return DLLINK;
+        if (directurl == null) {
+            logger.info("Using BEST quality");
+            directurl = bestDirecturl;
+        }
+        return directurl;
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return MyMailRuConfig.class;
+    }
+
+    protected String getConfiguredQuality() {
+        /* Returns user-set value which can be used to circumvent government based GEO-block. */
+        PreferredQuality cfgquality = PluginJsonConfig.get(MyMailRuConfig.class).getPreferredQuality();
+        if (cfgquality == null) {
+            cfgquality = PreferredQuality.DEFAULT;
+        }
+        switch (cfgquality) {
+        case QUALITY1:
+            return "360p";
+        case QUALITY2:
+            return "480p";
+        case QUALITY3:
+            return "720p";
+        case QUALITY4:
+            return "1080p";
+        case QUALITY5:
+            return "2160p";
+        case DEFAULT:
+            return null;
+        default:
+            return null;
+        }
     }
 
     @Override
@@ -425,5 +466,4 @@ public class MyMailRu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
