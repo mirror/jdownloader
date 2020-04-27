@@ -55,6 +55,9 @@ public class ImgurComGallery extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /*
+     * TODO: Add API handling for this URL type 'subreddit': https://apidocs.imgur.com/?version=latest#98f68034-15a0-4044-a9ac-5ff3dc75c6b0
+     */
     private final String            type_image_list_link          = "https?://(?:www\\.|m\\.)?imgur\\.com/r/[^/]+/[A-Za-z0-9]{5,7}";
     private final String            type_image_list               = "https?://(?:www\\.|m\\.)?imgur\\.com/r/[^/]+/$";
     private final String            type_album                    = "https?://(?:www\\.|m\\.)?imgur\\.com/a/[A-Za-z0-9]{5,7}";

@@ -55,8 +55,8 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 /**
- * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
- * (scroll down to "Image thumbnails"
+ * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
+ * --> New docs 2020-04-27: https://apidocs.imgur.com/?version=latest (scroll down to "Image thumbnails").
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
 public class ImgurCom extends PluginForHost {
