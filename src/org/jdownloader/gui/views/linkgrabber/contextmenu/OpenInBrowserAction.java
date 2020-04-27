@@ -13,14 +13,16 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
-public class OpenInBrowserAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> {
+public class OpenInBrowserAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
     private static final long serialVersionUID = 7911375550836173693L;
 
     public OpenInBrowserAction() {
@@ -28,27 +30,43 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         setName(_GUI.T.gui_table_contextmenu_browselink());
     }
 
+    private int threshold = 50;
+
+    public static String getTranslationMaxOpenThreshold() {
+        return _GUI.T.gui_table_contextmenu_browselink_maxurls();
+    }
+
+    @Customizer(link = "#getTranslationMaxOpenThreshold")
+    public int getMaxOpenThreshold() {
+        return threshold;
+    }
+
+    public void setMaxOpenThreshold(int threshold) {
+        this.threshold = Math.max(-1, threshold);
+    }
+
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        if (!CrossSystem.isOpenBrowserSupported()) {
+        final int threshold = getMaxOpenThreshold();
+        if (!CrossSystem.isOpenBrowserSupported() || threshold == 0) {
             setEnabled(false);
             return;
         }
-        final SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
-        if (lselection == null) {
-            setEnabled(false);
-            return;
-        }
-        final List<CrawledLink> links = lselection.getChildren();
-        if (links.size() > 50) {
-            setEnabled(false);
-            return;
-        }
-        for (final CrawledLink cl : links) {
-            if (cl.getDownloadLink().getView().getDisplayUrl() != null) {
+        final SelectionInfo<CrawledPackage, CrawledLink> selection = getSelection();
+        if (hasSelection(selection)) {
+            if (threshold < 0) {
                 setEnabled(true);
-                return;
+            } else {
+                final List<CrawledLink> links = selection.getChildren();
+                if (links.size() < threshold) {
+                    for (final CrawledLink cl : links) {
+                        if (cl.getDownloadLink().getView().getDisplayUrl() != null) {
+                            setEnabled(true);
+                            return;
+                        }
+                    }
+                }
             }
         }
         setEnabled(false);
