@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "baixarpremium.net" }, urls = { "" })
 public class BaixarPremiumNet extends PluginForHost {
@@ -118,7 +118,9 @@ public class BaixarPremiumNet extends PluginForHost {
         for (String crippledhost : crippledHosts) {
             crippledhost = crippledhost.trim();
             crippledhost = crippledhost.toLowerCase();
-            if (crippledhost.equals("shareonline")) {
+            if (crippledhost.equals("icerbox")) {
+                supportedHosts.add("icerbox.com");
+            } else if (crippledhost.equals("shareonline")) {
                 supportedHosts.add("share-online.biz");
             } else {
                 supportedHosts.add(crippledhost);

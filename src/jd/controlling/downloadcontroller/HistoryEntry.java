@@ -142,6 +142,7 @@ public class HistoryEntry {
                 case HTTP:
                 case HTTPS:
                 case SOCKS4:
+                case SOCKS4A:
                 case SOCKS5:
                     ret.gatewayIconKey = IconKey.ICON_PROXY;
                     break;

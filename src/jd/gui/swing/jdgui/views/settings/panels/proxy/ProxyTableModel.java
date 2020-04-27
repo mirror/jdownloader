@@ -47,12 +47,10 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.FilterList;
 
 public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
-
     private static final long serialVersionUID = -5584463272737285033L;
 
     public ProxyTableModel() {
         super("proxyTable3");
-
     }
 
     @Override
@@ -78,11 +76,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
     @Override
     protected void initColumns() {
         this.addColumn(new ExtCheckColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_use(), this) {
-
             private static final long serialVersionUID = -4667150369226691276L;
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
                     private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                     private static final long serialVersionUID = 3938290423337000265L;
@@ -132,9 +128,8 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
         });
         addColumn(new OrderColumn());
-        DefaultComboBoxModel<AbstractProxySelectorImpl.Type> model = new DefaultComboBoxModel<AbstractProxySelectorImpl.Type>(new AbstractProxySelectorImpl.Type[] { AbstractProxySelectorImpl.Type.HTTP, AbstractProxySelectorImpl.Type.HTTPS, AbstractProxySelectorImpl.Type.SOCKS5, AbstractProxySelectorImpl.Type.SOCKS4 });
+        DefaultComboBoxModel<AbstractProxySelectorImpl.Type> model = new DefaultComboBoxModel<AbstractProxySelectorImpl.Type>(new AbstractProxySelectorImpl.Type[] { AbstractProxySelectorImpl.Type.HTTP, AbstractProxySelectorImpl.Type.HTTPS, AbstractProxySelectorImpl.Type.SOCKS5, AbstractProxySelectorImpl.Type.SOCKS4, AbstractProxySelectorImpl.Type.SOCKS4A });
         this.addColumn(new ExtComboColumn<AbstractProxySelectorImpl, AbstractProxySelectorImpl.Type>(_GUI.T.gui_column_proxytype(), model) {
-
             @Override
             public boolean isEditable(AbstractProxySelectorImpl obj) {
                 if (obj == null) {
@@ -180,37 +175,41 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return _GUI.T.gui_column_proxytype_http_tt();
                 case HTTPS:
                     return _GUI.T.gui_column_proxytype_https_tt();
-                case SOCKS5:
-                    return _GUI.T.gui_column_proxytype_socks5_tt();
                 case SOCKS4:
                     return _GUI.T.gui_column_proxytype_socks4_tt();
+                case SOCKS4A:
+                    return _GUI.T.gui_column_proxytype_socks4a_tt();
+                case SOCKS5:
+                    return _GUI.T.gui_column_proxytype_socks5_tt();
                 case PAC:
                     return _GUI.T.gui_column_proxytype_pac_tt();
                 default:
-                    throw new RuntimeException("Unknown Proxy Type");
+                    return "Unknown Proxy Type:" + obj.getType();
                 }
             }
 
             @Override
             protected String modelItemToString(AbstractProxySelectorImpl.Type selectedItem, AbstractProxySelectorImpl value) {
                 switch (selectedItem) {
+                case NONE:
+                    return _GUI.T.gui_column_proxytype_no_proxy();
                 case DIRECT:
                     return _GUI.T.gui_column_proxytype_direct();
                 case HTTP:
                     return _GUI.T.gui_column_proxytype_http();
                 case HTTPS:
                     return _GUI.T.gui_column_proxytype_https();
-                case NONE:
-                    return _GUI.T.gui_column_proxytype_no_proxy();
                 case SOCKS4:
                     return _GUI.T.gui_column_proxytype_socks4();
+                case SOCKS4A:
+                    return _GUI.T.gui_column_proxytype_socks4a();
                 case SOCKS5:
                     return _GUI.T.gui_column_proxytype_socks5();
                 case PAC:
                     return _GUI.T.gui_column_proxytype_pac();
+                default:
+                    return null;
                 }
-                return null;
-
             }
 
             @Override
@@ -237,12 +236,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             protected void setSelectedItem(AbstractProxySelectorImpl object, AbstractProxySelectorImpl.Type value) {
                 object.setType(value);
             }
-
         });
-
         this.addColumn(new HostColumn());
         this.addColumn(new ExtTextColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_user(), this) {
-
             private static final long serialVersionUID = -7209180150340921804L;
 
             @Override
@@ -251,8 +247,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return false;
                 } else if (value instanceof SingleDirectGatewaySelector) {
                     return false;
+                } else {
+                    return true;
                 }
-                return true;
             }
 
             @Override
@@ -272,7 +269,6 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 } else if (object.getClass() == PacProxySelectorImpl.class) {
                     ((PacProxySelectorImpl) object).setUser(value);
                 }
-
             }
 
             @Override
@@ -281,13 +277,12 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return ((SingleBasicProxySelectorImpl) object).getUser();
                 } else if (object.getClass() == PacProxySelectorImpl.class) {
                     return ((PacProxySelectorImpl) object).getUser();
+                } else {
+                    return "";
                 }
-                return "";
             }
-
         });
         this.addColumn(new ExtPasswordEditorColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_pass(), this) {
-
             private static final long serialVersionUID = -7209180150340921804L;
 
             @Override
@@ -296,8 +291,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return false;
                 } else if (value instanceof SingleDirectGatewaySelector) {
                     return false;
+                } else {
+                    return true;
                 }
-                return true;
             }
 
             @Override
@@ -330,13 +326,12 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return ((SingleBasicProxySelectorImpl) object).getPassword();
                 } else if (object.getClass() == PacProxySelectorImpl.class) {
                     return ((PacProxySelectorImpl) object).getPassword();
+                } else {
+                    return "";
                 }
-                return "";
             }
-
         });
         this.addColumn(new ExtSpinnerColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_port()) {
-
             /**
              *
              */
@@ -346,8 +341,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             protected Number getNumber(AbstractProxySelectorImpl value) {
                 if (value.getClass() == SingleBasicProxySelectorImpl.class) {
                     return ((SingleBasicProxySelectorImpl) value).getPort();
+                } else {
+                    return -1;
                 }
-                return -1;
             }
 
             public int getDefaultWidth() {
@@ -376,8 +372,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return false;
                 } else if (value instanceof PacProxySelectorImpl) {
                     return false;
+                } else {
+                    return true;
                 }
-                return true;
             }
 
             @Override
@@ -391,13 +388,12 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             public String getStringValue(AbstractProxySelectorImpl value) {
                 if (value.getClass() == SingleBasicProxySelectorImpl.class) {
                     return ((SingleBasicProxySelectorImpl) value).getPort() + "";
+                } else {
+                    return "";
                 }
-                return "";
             }
         });
-
         this.addColumn(new ExtCheckColumn<AbstractProxySelectorImpl>(_GUI.T.gui_column_nativeauth(), this) {
-
             private static final long serialVersionUID = -4667150369226691276L;
 
             @Override
@@ -441,7 +437,6 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 object.setPreferNativeImplementation(value);
             }
         });
-
         this.addColumn(new ExtComponentColumn<AbstractProxySelectorImpl>(_GUI.T.lit_filter()) {
             private JButton                   editorBtn;
             private JButton                   rendererBtn;
@@ -449,12 +444,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             protected MigPanel                editor;
             protected RendererMigPanel        renderer;
             private RenderLabel               label;
-
             {
                 editorBtn = new JButton("");
-
                 editorBtn.addActionListener(new ActionListener() {
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
@@ -473,11 +465,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 label = new RenderLabel();
                 rendererBtn = new JButton("");
                 this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
-
                     @Override
                     public void requestFocus() {
                     }
-
                 };
                 editor.add(editorBtn);
                 this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
@@ -559,9 +549,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             @Override
             public void resetRenderer() {
             }
-
         });
-
         this.addColumn(new ExtComponentColumn<AbstractProxySelectorImpl>(_GUI.T.lit_problems()) {
             private JButton                   editorBtn;
             private JButton                   rendererBtn;
@@ -569,17 +557,13 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             protected MigPanel                editor;
             protected RendererMigPanel        renderer;
             private RenderLabel               label;
-
             {
                 editorBtn = new JButton("");
-
                 editorBtn.addActionListener(new ActionListener() {
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
                             SwingUtilities.invokeLater(new Runnable() {
-
                                 public void run() {
                                     ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
                                 }
@@ -590,11 +574,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                 label = new RenderLabel();
                 rendererBtn = new JButton("");
                 this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
-
                     @Override
                     public void requestFocus() {
                     }
-
                 };
                 editor.add(editorBtn);
                 this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
@@ -675,7 +657,6 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     editorBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
                     editorBtn.setText(_GUI.T.proxytablemodel_problems(bl.size()));
                 }
-
             }
 
             private String appendDescription(String description, String proxyDetailsDialog_ban_time_global) {
@@ -712,8 +693,6 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             @Override
             public void resetRenderer() {
             }
-
         });
-
     }
 }

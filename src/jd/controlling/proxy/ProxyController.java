@@ -64,6 +64,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
@@ -109,11 +110,11 @@ import com.btr.proxy.util.Logger.LogLevel;
 //import com.btr.proxy.util.Logger.LogLevel;
 public class ProxyController implements ProxySelectorInterface {
     public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
-        @Override
-        protected URLConnection openConnection(URL u) throws IOException {
-            throw new IOException("not implemented");
-        }
-    };
+                                                                    @Override
+                                                                    protected URLConnection openConnection(URL u) throws IOException {
+                                                                        throw new IOException("not implemented");
+                                                                    }
+                                                                };
     private static final ProxyController INSTANCE               = new ProxyController();
 
     public static final ProxyController getInstance() {
@@ -125,21 +126,21 @@ public class ProxyController implements ProxySelectorInterface {
     private final InternetConnectionSettings                                config;
     private final LogSource                                                 logger;
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
-        @Override
-        public void killQueue() {
-            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+                                                                                                @Override
+                                                                                                public void killQueue() {
+                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
                                                                                                     /*
                                                                                                      * this queue can ' t be killed
                                                                                                      */
-        }
-    };
+                                                                                                }
+                                                                                            };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
-        @Override
-        public boolean suppressEvent(ConfigEvent eventType) {
-            return true;
-        }
-    };
+                                                                                                @Override
+                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
+                                                                                                    return true;
+                                                                                                }
+                                                                                            };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -270,11 +271,12 @@ public class ProxyController implements ProxySelectorInterface {
                 protected Void run() throws RuntimeException {
                     switch (proxy.getType()) {
                     case NONE:
+                    case DIRECT:
                     case HTTP:
                     case HTTPS:
                     case SOCKS4:
+                    case SOCKS4A:
                     case SOCKS5:
-                    case DIRECT:
                     case PAC:
                         if (proxy.getFilter() != null && proxy.getFilter().size() > 0) {
                             updateProxyFilterList(proxy, new PluginFinder(logger));
@@ -300,11 +302,13 @@ public class ProxyController implements ProxySelectorInterface {
                 @Override
                 protected Void run() throws RuntimeException {
                     switch (proxy.getType()) {
+                    case NONE:
+                    case DIRECT:
                     case HTTP:
                     case HTTPS:
                     case SOCKS4:
+                    case SOCKS4A:
                     case SOCKS5:
-                    case DIRECT:
                     case PAC:
                         if (proxy.getFilter() != null && proxy.getFilter().size() > 0) {
                             updateProxyFilterList(proxy, new PluginFinder(logger));
@@ -474,12 +478,13 @@ public class ProxyController implements ProxySelectorInterface {
         final ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
         for (AbstractProxySelectorImpl sel : getList()) {
             switch (sel.getType()) {
+            case NONE:
+            case DIRECT:
             case HTTP:
             case HTTPS:
             case SOCKS4:
+            case SOCKS4A:
             case SOCKS5:
-            case NONE:
-            case DIRECT:
                 ret.add(sel.toProxyData());
                 break;
             case PAC:
@@ -490,6 +495,9 @@ public class ProxyController implements ProxySelectorInterface {
                 } else {
                     ret.add(sel.toProxyData());
                 }
+                break;
+            default:
+                break;
             }
         }
         save.setCustomProxyList(ret);
@@ -553,12 +561,14 @@ public class ProxyController implements ProxySelectorInterface {
                 } else {
                     return new SingleDirectGatewaySelector(proxy);
                 }
-            case HTTPS:
             case HTTP:
-                return new SingleBasicProxySelectorImpl(proxy);
+            case HTTPS:
             case SOCKS4:
+            case SOCKS4A:
             case SOCKS5:
                 return new SingleBasicProxySelectorImpl(proxy);
+            default:
+                return null;
             }
         }
         return null;
@@ -582,19 +592,18 @@ public class ProxyController implements ProxySelectorInterface {
                         }
                     } else {
                         switch (proxyData.getProxy().getType()) {
+                        case NONE:
+                            proxy = new NoProxySelector(proxyData);
+                            break;
                         case DIRECT:
                             proxy = new SingleDirectGatewaySelector(proxyData);
                             break;
                         case HTTP:
                         case HTTPS:
-                            proxy = new SingleBasicProxySelectorImpl(proxyData);
-                            break;
                         case SOCKS4:
+                        case SOCKS4A:
                         case SOCKS5:
                             proxy = new SingleBasicProxySelectorImpl(proxyData);
-                            break;
-                        case NONE:
-                            proxy = new NoProxySelector(proxyData);
                             break;
                         default:
                             continue;
@@ -663,7 +672,6 @@ public class ProxyController implements ProxySelectorInterface {
                                     List<Proxy> sproxies = selector.select(new URI("http://google.com"));
                                     if (sproxies != null) {
                                         for (Proxy p : sproxies) {
-                                            HTTPProxy httpProxy = null;
                                             switch (p.type()) {
                                             case DIRECT:
                                                 if (p.address() == null) {
@@ -671,8 +679,8 @@ public class ProxyController implements ProxySelectorInterface {
                                                         logger.info("Add None");
                                                     }
                                                 } else {
-                                                    httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
-                                                    SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(httpProxy);
+                                                    final HTTPProxy httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
+                                                    final SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(httpProxy);
                                                     if (proxies.add(direct)) {
                                                         logger.info("Add Direct: " + direct);
                                                     }
@@ -680,7 +688,7 @@ public class ProxyController implements ProxySelectorInterface {
                                                 break;
                                             case HTTP:
                                                 if (p.address() != null) {
-                                                    httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                                    final HTTPProxy httpProxy = new HTTPProxy(TYPE.HTTP, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
                                                     final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(httpProxy);
                                                     if (proxies.add(basic)) {
                                                         logger.info("Add Basic: " + basic);
@@ -689,7 +697,7 @@ public class ProxyController implements ProxySelectorInterface {
                                                 break;
                                             case SOCKS:
                                                 if (p.address() != null) {
-                                                    httpProxy = new HTTPProxy(TYPE.SOCKS5, SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
+                                                    final HTTPProxy httpProxy = new HTTPProxy(HTTPProxy.convertNativeProxyType(p), SocketConnection.getHostName(p.address()), ((InetSocketAddress) p.address()).getPort());
                                                     final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(httpProxy);
                                                     if (proxies.add(socks)) {
                                                         logger.info("Add Socks: " + socks);
@@ -1248,23 +1256,27 @@ public class ProxyController implements ProxySelectorInterface {
                 final SelectedProxy selectedProxy = getSelectedProxy(request.getProxy());
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
                     final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
-                    final Plugin plg = getPluginFromThread();
-                    if (plg != null) {
-                        selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
+                    if (e instanceof NetworkInterfaceException) {
+                        // TODO:
                     } else {
-                        if (e instanceof ProxyEndpointConnectException) {
-                            final Socks5EndpointConnectException socks5EndpointConnectException = Exceptions.getInstanceof(e, Socks5EndpointConnectException.class);
-                            if (socks5EndpointConnectException != null) {
-                                switch (socks5EndpointConnectException.getError()) {
-                                case TTL_EXPIRED:
-                                    return false;
-                                default:
-                                    break;
-                                }
-                            }
-                            selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, request.getURL()));
+                        final Plugin plg = getPluginFromThread();
+                        if (plg != null) {
+                            selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
                         } else {
-                            selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, request.getURL()));
+                            if (e instanceof ProxyEndpointConnectException) {
+                                final Socks5EndpointConnectException socks5EndpointConnectException = Exceptions.getInstanceof(e, Socks5EndpointConnectException.class);
+                                if (socks5EndpointConnectException != null) {
+                                    switch (socks5EndpointConnectException.getError()) {
+                                    case TTL_EXPIRED:
+                                        return false;
+                                    default:
+                                        break;
+                                    }
+                                }
+                                selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, request.getURL()));
+                            } else {
+                                selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, request.getURL()));
+                            }
                         }
                     }
                 }
