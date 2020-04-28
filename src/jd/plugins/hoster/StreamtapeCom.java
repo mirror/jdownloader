@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
@@ -111,11 +112,15 @@ public class StreamtapeCom extends PluginForHost {
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
         }
+        final String filesize = br.getRegex("<p class=\"subheading\">([^<>\"]+)</p>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -129,7 +134,7 @@ public class StreamtapeCom extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             /* 2020-04-21: Not yet working */
-            dllink = br.getRegex("TODOFIXME_(.+)TODOFOXME").getMatch(0);
+            dllink = br.getRegex("(/get_video\\?id=[^<>\"']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
