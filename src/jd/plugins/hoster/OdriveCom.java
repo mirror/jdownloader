@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -72,7 +73,7 @@ public class OdriveCom extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + folderid + "&password=");
+        br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + Encoding.urlEncode(folderid) + "&password=");
         if (jd.plugins.decrypter.OdriveCom.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

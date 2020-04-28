@@ -64,7 +64,6 @@ public class ImgurComHoster extends PluginForHost {
     public ImgurComHoster(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        /* TODO: Do some more testing, then unlock this for all users */
         this.enablePremium("https://imgur.com/register");
     }
 
@@ -778,11 +777,11 @@ public class ImgurComHoster extends PluginForHost {
 
     public static final String getClientSecret() {
         final String clientsecret;
-        final String clientid_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_ID, defaultAPISettingUserVisibleText);
-        if (clientid_setting.equalsIgnoreCase("JDDEFAULT")) {
+        final String clientsecret_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_SECRET, defaultAPISettingUserVisibleText);
+        if (clientsecret_setting.equalsIgnoreCase("JDDEFAULT")) {
             clientsecret = OAUTH_SECRET;
         } else {
-            clientsecret = clientid_setting;
+            clientsecret = clientsecret_setting;
         }
         return clientsecret;
     }
