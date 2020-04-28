@@ -37,6 +37,7 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -44,6 +45,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
 
@@ -142,7 +144,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                                 return decryptedLinks;
                             }
                             boolean is_album = false;
-                            final String is_albumo = getJson(br.toString(), "is_album");
+                            final String is_albumo = PluginJSonUtils.getJson(br.toString(), "is_album");
                             if (is_albumo != null) {
                                 is_album = Boolean.parseBoolean(is_albumo);
                             }
@@ -166,8 +168,8 @@ public class ImgurComGallery extends PluginForDecrypt {
                     } catch (final BrowserException e) {
                         if (br.getHttpConnection().getResponseCode() == 429) {
                             logger.info("API limit reached, using site");
-                            /* TODO: Set AccountError if this happens! */
                             if (loggedIN) {
+                                account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, "API Rate Limit reached");
                             }
                             throw new DecrypterException(API_FAILED);
                         }
@@ -359,18 +361,18 @@ public class ImgurComGallery extends PluginForDecrypt {
         for (final String item : items) {
             itemNumber++;
             String directlink;
-            String title = getJson(item, "title");
+            String title = PluginJSonUtils.getJson(item, "title");
             final String itemnumber_formatted = String.format(Locale.US, "%0" + padLength + "d", itemNumber);
-            final String filesize_str = getJson(item, "size");
-            final String imgUID = getJson(item, "hash");
-            videoSource = getJson(item, "video_source");
-            String ext = getJson(item, "ext");
+            final String filesize_str = PluginJSonUtils.getJson(item, "size");
+            final String imgUID = PluginJSonUtils.getJson(item, "hash");
+            videoSource = PluginJSonUtils.getJson(item, "video_source");
+            String ext = PluginJSonUtils.getJson(item, "ext");
             if (imgUID == null || filesize_str == null || ext == null) {
                 logger.info("Seems like user/album has no images at all?!");
                 continue;
             }
             final long filesize = Long.parseLong(filesize_str);
-            /* Correct sometimes broken ext TODO: Wait for a response of their support - this might be a serverside issue. */
+            /* Correct sometimes broken ext */
             if (ext.contains("?")) {
                 ext = ext.substring(0, ext.lastIndexOf("?"));
             }
@@ -437,15 +439,6 @@ public class ImgurComGallery extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 2);
         ImgurComHoster.prepBRWebsite(br);
         return br;
-    }
-
-    /** TODO: Replace this with PluginJsonUtils */
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
     /**
