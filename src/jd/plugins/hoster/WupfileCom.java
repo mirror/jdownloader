@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WupfileCom extends XFileSharingProBasic {
@@ -36,8 +37,8 @@ public class WupfileCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2019-05-22: null<br />
+     * limit-info: 2020-04-28: All tested <br />
+     * captchatype-info: 2019-05-22: null (4dignum)<br />
      * other:<br />
      */
     public static String[] getAnnotationNames() {
@@ -67,10 +68,11 @@ public class WupfileCom extends XFileSharingProBasic {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -81,16 +83,43 @@ public class WupfileCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return 1;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 1;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
         }
+    }
+
+    @Override
+    protected boolean supports_lifetime_account() {
+        /* 2020-04-28: Special: Handle Premium traffic accounts without expire-date as lifetime. */
+        return true;
+    }
+
+    @Override
+    protected boolean is_lifetime_account() {
+        /* 2020-04-28: Special: Handle Premium traffic accounts without expire-date as lifetime. */
+        return new Regex(correctedBR, "Premium traffic remaining\\s*<").matches();
+    }
+
+    @Override
+    protected String regExTrafficLeft() {
+        String availabletraffic = super.regExTrafficLeft();
+        if (availabletraffic == null) {
+            /* For premium/lifetime accounts */
+            availabletraffic = new Regex(this.correctedBR, "Traffic remaining\\s*:\\s*</TD><TD><b>([^<>\"]+)</b>").getMatch(0);
+        }
+        if (availabletraffic == null) {
+            /* Foe free accounts */
+            availabletraffic = new Regex(this.correctedBR, "value=\"([^<>\"]+)\"> </b>\\s*<a class=\"profile-userbuttons\" href=\\?op=ex_traffic").getMatch(0);
+        }
+        return availabletraffic;
     }
 
     @Override

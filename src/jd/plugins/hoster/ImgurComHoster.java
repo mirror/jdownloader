@@ -25,6 +25,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -64,7 +65,7 @@ public class ImgurComHoster extends PluginForHost {
         super(wrapper);
         setConfigElements();
         /* TODO: Do some more testing, then unlock this for all users */
-        // this.enablePremium("https://imgur.com/register");
+        this.enablePremium("https://imgur.com/register");
     }
 
     @Override
@@ -72,10 +73,9 @@ public class ImgurComHoster extends PluginForHost {
         return "https://imgur.com/tos";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("imgurdecrypted.com/", "imgur.com/"));
     }
 
     private enum TYPE {
@@ -409,9 +409,9 @@ public class ImgurComHoster extends PluginForHost {
                 }
                 final UrlQuery query = new UrlQuery().parse(account.getPass());
                 /*
-                 * Access tokens expire (after ~30 days)! Only use the one the user has entered on first attempt e.g. user has just added
-                 * this account for the first time! Save it as a property on the account and then use that because once token gets refreshed
-                 * it will differ from the token the user initially entered!
+                 * Access tokens expire (after ~30 days) according to API docs. Only use the one the user has entered on first attempt e.g.
+                 * user has just added this account for the first time! Save it as a property on the account and then use that because once
+                 * token gets refreshed it will differ from the token the user initially entered!
                  */
                 final String auth_access_token = query.get("access_token");
                 final String auth_refresh_token = query.get("refresh_token");
@@ -424,27 +424,27 @@ public class ImgurComHoster extends PluginForHost {
                     account.setUser(auth_username);
                 }
                 /*
-                 * Now set active values - prefer stored values over user-entered as they will change! User-Entered will be used only until
-                 * first time, the token expires!
+                 * Now set active values - prefer stored values over user-entered as they will change! User-Entered will be used on first
+                 * login OR if user changes account password!
                  */
-                if (!this.isSamePW(account)) {
-                    /* Reset previous properties if e.g. user has changed password. */
-                    account.setProperty(PROPERTY_ACCOUNT_refresh_token, Property.NULL);
-                    account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
-                    account.setProperty(PROPERTY_ACCOUNT_valid_until, Property.NULL);
-                    account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, Property.NULL);
-                }
-                String active_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
-                String active_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
-                String active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
-                long token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
-                if (active_valid_until == null) {
-                    /* E.g. first login with newly user-entered logindata. */
+                String active_refresh_token;
+                String active_access_token;
+                String active_valid_until;
+                long token_first_use_timestamp;
+                if (this.isSamePW(account)) {
+                    /* Login with same password as before. */
+                    active_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
+                    active_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
+                    active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
+                    token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
+                } else {
+                    /* First login with new logindata */
+                    active_refresh_token = auth_refresh_token;
+                    active_access_token = auth_access_token;
                     active_valid_until = auth_valid_until;
                     token_first_use_timestamp = System.currentTimeMillis();
                 }
                 boolean loggedIN = false;
-                /* We can only */
                 brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
                 if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
                     logger.info("Trust token without check");
@@ -483,6 +483,7 @@ public class ImgurComHoster extends PluginForHost {
                          * {"data":{"error":"Invalid refresh token","request":"\/oauth2\/token","method":"POST"},"success":false,"status":
                          * 400}
                          */
+                        checkErrors(this.br, null, account);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     /* Update authorization header */
@@ -536,7 +537,7 @@ public class ImgurComHoster extends PluginForHost {
         // ai.setValidUntil(token_first_usage_timestamp + token_valid_until);
         // }
         final String api_limit_reset_timestamp = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
-        if (api_limit_reset_timestamp != null && api_limit_reset_timestamp.matches("\\d+")) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && api_limit_reset_timestamp != null && api_limit_reset_timestamp.matches("\\d+")) {
             ai.setValidUntil(Long.parseLong(api_limit_reset_timestamp) * 1000l);
         }
         final String api_limit_client_total = br.getRequest().getResponseHeader("X-RateLimit-ClientLimit");
@@ -551,10 +552,6 @@ public class ImgurComHoster extends PluginForHost {
             accountStatus += String.format(" | API req left user: %s/%s | client: %s/%s", api_limit_user_remaining, api_limit_user_total, api_limit_client_remaining, api_limit_client_total);
         }
         ai.setStatus(accountStatus);
-        /*
-         * TODO: Maybe add functionality to update account status with rate limit info more frequently e.g. after every download/api
-         * request.
-         */
         ai.setUnlimitedTraffic();
         return ai;
     }
@@ -977,8 +974,8 @@ public class ImgurComHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "API settings - see imgur.com/account/settings/apps"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, "Use API in anonymous mode too (recommended - API will always be used in account mode!)").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, "Enter your own imgur Oauth Client-ID:").setDefaultValue(defaultAPISettingUserVisibleText));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, "Enter your own imgur Oauth Client-Secret:").setDefaultValue(defaultAPISettingUserVisibleText));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add your imgur account to JDownloader!").setDefaultValue(defaultAPISettingUserVisibleText));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add your imgur account to JDownloader!").setDefaultValue(defaultAPISettingUserVisibleText));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Other settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_GRAB_SOURCE_URL_VIDEO, getPhrase("SETTING_GRAB_SOURCE_URL_VIDEO")).setDefaultValue(defaultSOURCEVIDEO));
