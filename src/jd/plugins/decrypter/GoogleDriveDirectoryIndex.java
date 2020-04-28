@@ -34,6 +34,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workers.dev" }, urls = { "https?://(?:[a-z0-9\\-\\.]+\\.)?workers\\.dev/.+" })
 public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { getHost() };
+    }
+
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,6 +62,7 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
     }
 
     private void doThis(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
+        final boolean isParameterFile = !parameter.endsWith("/");
         String subFolder = getAdoptedCloudFolderStructure();
         if (subFolder == null) {
             subFolder = "";
@@ -68,7 +74,7 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
          */
         if ("".equals(subFolder)) {
             final String[] split = parameter.split("/");
-            final String fpName = Encoding.urlDecode(split[split.length - 1], false);
+            final String fpName = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
             fp.setName(fpName);
             subFolder = fpName;
         } else {
@@ -106,8 +112,8 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             if (type.endsWith(".folder")) {
                 // folder urls have to END in "/" this is how it works in browser no need for workarounds
                 url += Encoding.urlEncode_light(name) + "/";
-            } else {
-                // file
+            } else if (!isParameterFile) {
+                // do not this if base is a file!
                 url += Encoding.urlEncode_light(name);
             }
             final DownloadLink dl;
