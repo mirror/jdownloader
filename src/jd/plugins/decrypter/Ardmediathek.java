@@ -474,6 +474,10 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* 2019-07-25: ID is no in escaped json --> Unescape that to be able to find it with the RegEx below! */
                 final String source_unescaped = PluginJSonUtils.unescape(br.toString());
                 ardDocumentID = new Regex(source_unescaped, "ardmediathek\\.de/page\\-gateway/playerconfig/(\\d+)").getMatch(0);
+                if (ardDocumentID == null) {
+                    /* 2020-04-28 e.g. page-gateway-service:8080/page-gateway/playerconfig/12345678 */
+                    ardDocumentID = new Regex(source_unescaped, "/page\\-gateway/playerconfig/(\\d+)").getMatch(0);
+                }
             }
         }
         if (host.contains("sr-online.de")) {
