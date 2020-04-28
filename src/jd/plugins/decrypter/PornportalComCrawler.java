@@ -110,7 +110,6 @@ public class PornportalComCrawler extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         /* Login if possible */
-        /* TODO: Find correct plugin for "internal multihoster handling" to be able to login as a premium users into external portals. */
         final Account acc = getUserLogin();
         if (acc == null) {
             /* Anonymous API auth */
@@ -149,7 +148,6 @@ public class PornportalComCrawler extends PluginForDecrypt {
              * Try 'internal multihoster' handling e.g. user may have added account for erito.com which also grants premium access to other
              * sites e.g. fakehub.com.
              */
-            /* TODO: Test this */
             logger.info("Failed to find main account --> Looking for 'multihoster account'");
             final ArrayList<String> allowedPornportalHosts = PornportalCom.getAllSupportedPluginDomainsFlat();
             final List<Account> multihostAccounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
