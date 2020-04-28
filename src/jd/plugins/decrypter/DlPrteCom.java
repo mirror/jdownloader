@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
  * @version raz_Template
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|zone-warez\\.(?:com|org)/link)(-|/)\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|(zone-warez|zone-telechargement|tirexo)\\.(?:.*)/link)(-|/)\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
@@ -142,7 +142,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        if (parameter.contains("zone-warez")) {
+        if (parameter.contains("zone-telechargement") || parameter.contains("zone-warez") || parameter.contains("tirexo")) {
             getPage(parameter);
             parameter = br.getURL();
         }
