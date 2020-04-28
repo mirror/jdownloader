@@ -144,7 +144,7 @@ public class IcerboxBiz extends antiDDoSForHost {
         String dllink = checkDirectLink(downloadLink, "directlink_account_premium");
         if (dllink == null) {
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage(br, "http://www." + this.getHost() + "/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
+            getPage(br, "https://www." + this.getHost() + "/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
             /**
              * TODO: Find out if maybe this contains the expire date of the account and set it: <b>לקוח יקר: </b><br />
              * תוקף קוד הגישה שלך יפוג בעוד <b style="color:red">1 ימים, 18 שעות, 53 דקות.</b><br
@@ -181,7 +181,6 @@ public class IcerboxBiz extends antiDDoSForHost {
     }
 
     /* We cannot check the premium password until downloadstart. */
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();

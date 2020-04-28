@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -47,17 +46,19 @@ public class PhotobucketCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getPluginPatternMatcher());
-            if (!con.getContentType().contains("html")) {
-                dllink = downloadLink.getPluginPatternMatcher();
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(getFileNameFromHeader(con));
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!con.getContentType().contains("html")) {
+                dllink = link.getPluginPatternMatcher();
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(getFileNameFromHeader(con));
                 return AvailableStatus.TRUE;
             } else {
                 br.followConnection();
@@ -68,9 +69,6 @@ public class PhotobucketCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         dllink = PluginJSonUtils.getJsonValue(br, "originalUrl");
         if (dllink == null) {
             dllink = PluginJSonUtils.getJsonValue(br, "fullsizeUrl");
@@ -80,20 +78,18 @@ public class PhotobucketCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         try {
-            try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
+            con = br.openHeadConnection(dllink);
+            if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
+            } else if (!con.getContentType().contains("html")) {
                 String server_filename = getFileNameFromHeader(con);
                 server_filename = server_filename.replace("~original", "");
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(server_filename);
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(server_filename);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
+            link.setProperty("directlink", dllink);
         } finally {
             try {
                 con.disconnect();

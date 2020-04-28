@@ -83,7 +83,7 @@ public class ImxTo extends PluginForHost {
         if (filename == null) {
             filename = linkid;
         }
-        final String existingExt = this.getFileNameExtensionFromString(filename);
+        final String existingExt = getFileNameExtensionFromString(filename);
         if (existingExt == null) {
             filename += ".jpg";
         }
@@ -95,9 +95,9 @@ public class ImxTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             /* Form is not always present */
             final Form continueForm = br.getFormbyKey("imgContinue");
@@ -109,7 +109,7 @@ public class ImxTo extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -119,7 +119,7 @@ public class ImxTo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
+        link.setProperty("directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
@@ -129,8 +129,8 @@ public class ImxTo extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() != 200) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }

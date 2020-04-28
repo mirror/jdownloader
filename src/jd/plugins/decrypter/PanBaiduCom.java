@@ -136,6 +136,10 @@ public class PanBaiduCom extends PluginForDecrypt {
             final ArrayList<Object> records = (ArrayList<Object>) entries.get("records");
             ArrayList<Object> filelist = (ArrayList<Object>) entries.get("records");
             if (records == null) {
+                /* E.g. {"errno":2,"request_id":123456789123456789} */
+                if (decryptedLinks.size() == 0) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                }
                 break;
             }
             for (final Object recordo : records) {

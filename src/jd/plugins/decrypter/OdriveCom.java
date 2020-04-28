@@ -19,18 +19,22 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "odrive.com" }, urls = { "https?://(?:www\\.)?odrive\\.com/s/[a-f0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "odrive.com" }, urls = { "https?://(?:www\\.)?odrive\\.com/(s/[a-f0-9\\-]+|folder/(.+))" })
 public class OdriveCom extends PluginForDecrypt {
     public OdriveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,13 +43,38 @@ public class OdriveCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String folderID = new Regex(parameter, "/s/(.+)").getMatch(0);
+        String folderID = new Regex(parameter, "/(?:s|folder)/(.+)").getMatch(0);
         jd.plugins.hoster.OdriveCom.prepBR(this.br);
         // br.getPage("https://www.odrive.com/rest/weblink/get_metadata?weblinkUri=%2F" + this.getLinkID(link));
-        br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + folderID + "&password=");
-        if (isOffline(br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        int maxtries = 2;
+        int tries = 0;
+        String passCode = "";
+        final UrlQuery query = new UrlQuery().parse(parameter);
+        if (query.get("password") != null) {
+            /* E.g. user adds folder --> Password protected --> Contains subfolders which will all require the same password. */
+            passCode = query.get("password");
+            /* Correct folderID */
+            folderID = folderID.replaceAll("(\\?|\\&)password=" + passCode, "");
+        }
+        String errorCode = null;
+        boolean passwordFailure = false;
+        do {
+            br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + Encoding.urlEncode(folderID) + "&password=" + Encoding.urlEncode(passCode));
+            errorCode = PluginJSonUtils.getJson(br, "errorCode");
+            if (isOffline(br)) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            if (errorCode != null && errorCode.equals("404")) {
+                passwordFailure = true;
+                passCode = getUserInput("Password?", param);
+            } else {
+                passwordFailure = false;
+            }
+            tries++;
+        } while (tries <= maxtries && passwordFailure);
+        if (passwordFailure) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("data");
@@ -56,31 +85,55 @@ public class OdriveCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        String subFolder = this.getAdoptedCloudFolderStructure();
+        if (subFolder == null) {
+            subFolder = "";
+        }
+        final UrlQuery querypw = new UrlQuery();
+        querypw.add("password", passCode);
         for (final Object fileO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) fileO;
-            final String filename = (String) entries.get("name");
-            final String linkUri = (String) entries.get("linkUri");
+            final String fileType = (String) entries.get("fileType");
+            final String title = (String) entries.get("name");
+            String linkUri = (String) entries.get("linkUri");
             final String directlink = (String) entries.get("downloadUrl");
             final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-            if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(linkUri)) {
+            if (StringUtils.isEmpty(title) || StringUtils.isEmpty(linkUri) || StringUtils.isEmpty(fileType)) {
                 /* Skip invalid items */
                 continue;
             }
-            final DownloadLink dl = this.createDownloadlink("http://odrivedecrypted" + linkUri);
-            dl.setFinalFileName(filename);
-            dl.setAvailable(true);
-            if (filesize > 0) {
-                dl.setDownloadSize(filesize);
+            if (fileType.equalsIgnoreCase("folder")) {
+                /* Subfolder --> Goes back into decrypter */
+                if (!StringUtils.isEmpty(passCode)) {
+                    linkUri += "?" + query.toString();
+                }
+                final DownloadLink dl = this.createDownloadlink("https://odrive.com/folder" + linkUri);
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder + "/" + title);
+                decryptedLinks.add(dl);
+            } else {
+                /* Single file */
+                final DownloadLink dl = this.createDownloadlink("http://odrivedecrypted" + linkUri);
+                dl.setFinalFileName(title);
+                dl.setAvailable(true);
+                if (filesize > 0) {
+                    dl.setDownloadSize(filesize);
+                }
+                dl.setLinkID(folderID + "_" + title);
+                if (!StringUtils.isEmpty(directlink)) {
+                    dl.setProperty("directlink", directlink);
+                    dl.setContentUrl(directlink);
+                }
+                /* Properties required to find this item later in order to find our final downloadlink */
+                dl.setProperty("folderid", folderID);
+                dl.setProperty("directfilename", title);
+                if (StringUtils.isNotEmpty(subFolder)) {
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                }
+                if (!StringUtils.isEmpty(passCode)) {
+                    dl.setDownloadPassword(passCode);
+                }
+                decryptedLinks.add(dl);
             }
-            dl.setLinkID(folderID + "_" + filename);
-            if (!StringUtils.isEmpty(directlink)) {
-                dl.setProperty("directlink", directlink);
-                dl.setContentUrl(directlink);
-            }
-            /* Properties required to find this item later in order to find our final downloadlink */
-            dl.setProperty("folderid", folderID);
-            dl.setProperty("directfilename", filename);
-            decryptedLinks.add(dl);
         }
         // String fpName = br.getRegex("").getMatch(0);
         // final String[] links = br.getRegex("").getColumn(0);
@@ -100,6 +153,12 @@ public class OdriveCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404;
+        final String errorCode = PluginJSonUtils.getJson(br, "errorCode");
+        if (errorCode != null) {
+            if (errorCode.equals("202")) {
+                return true;
+            }
+        }
+        return false;
     }
 }
