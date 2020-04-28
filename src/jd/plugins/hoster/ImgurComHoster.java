@@ -59,8 +59,8 @@ import jd.utils.locale.JDL;
  * --> New docs 2020-04-27: https://apidocs.imgur.com/?version=latest (scroll down to "Image thumbnails").
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
-public class ImgurCom extends PluginForHost {
-    public ImgurCom(PluginWrapper wrapper) {
+public class ImgurComHoster extends PluginForHost {
+    public ImgurComHoster(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         /* TODO: Do some more testing, then unlock this for all users */
@@ -115,6 +115,16 @@ public class ImgurCom extends PluginForHost {
         return getAPIBase() + "/3";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getImgUID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     /**
      * TODO: 1. Maybe add a setting to download albums as .zip (if possible via site). 2. Maybe add a setting to add numbers in front of the
      * filenames (same way imgur does it when you download .zip files of albums).
@@ -135,12 +145,15 @@ public class ImgurCom extends PluginForHost {
             prepBRAPI(this.br);
             boolean api_failed = false;
             if (account == null && !this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
+                /* Website */
                 api_failed = true;
             } else if (account != null) {
+                /* API + account */
                 this.login(br, account, false);
                 getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
                 this.checkErrors(br, link, account);
             } else {
+                /* API without account */
                 br.getHeaders().put("Authorization", getAuthorization());
                 try {
                     getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
@@ -196,7 +209,7 @@ public class ImgurCom extends PluginForHost {
                  * reached: http://imgur.com/download/ + imgUID. This code should never be reached!
                  */
                 this.br = prepBRWebsite(this.br);
-                getPage(this.br, "http://imgur.com/" + imgUID);
+                getPage(this.br, "https://" + this.getHost() + "/" + imgUID);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -249,12 +262,6 @@ public class ImgurCom extends PluginForHost {
         if (dllink == null) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (type != null) {
-            // uniqueID depends on preferred type
-            link.setLinkID("://" + this.getHost() + type + "/" + imgUID);
-        } else {
-            link.setLinkID("://" + this.getHost() + "/" + imgUID);
         }
         if (filename_formatted == null) {
             filename_formatted = getFormattedFilename(link);
@@ -672,14 +679,14 @@ public class ImgurCom extends PluginForHost {
 
     public static String getMp4Downloadlink(final DownloadLink dl) {
         final String imgUID = getImgUID(dl);
-        final String downloadlink = "https://i.imgur.com/" + imgUID + ".mp4";
-        return downloadlink;
+        final String contentURL = "https://i.imgur.com/" + imgUID + ".mp4";
+        return contentURL;
     }
 
     /** Returns a link for the user to open in browser. */
     public static final String getURLContent(final String imgUID) {
-        final String url_content = "https://imgur.com/" + imgUID;
-        return url_content;
+        final String contentURL = "https://imgur.com/" + imgUID;
+        return contentURL;
     }
 
     /** Returns downloadable imgur link. */
@@ -696,7 +703,7 @@ public class ImgurCom extends PluginForHost {
     }
 
     public static String getImgUID(final DownloadLink dl) {
-        return dl.getStringProperty("imgUID", null);
+        return new Regex(dl.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
     }
 
     public static String getFiletype(final DownloadLink dl) {
@@ -848,13 +855,13 @@ public class ImgurCom extends PluginForHost {
 
     /** Returns either the original server filename or one that is very similar to the original */
     @SuppressWarnings("deprecation")
-    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFormattedFilename(final DownloadLink link) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
-        final String ext = "." + getFiletypeForUser(downloadLink);
-        final String username = downloadLink.getStringProperty("directusername", "-");
-        final String title = downloadLink.getStringProperty("directtitle", "-");
-        final String imgid = downloadLink.getStringProperty("imgUID", null);
-        final String orderid = downloadLink.getStringProperty("orderid", "-");
+        final String ext = "." + getFiletypeForUser(link);
+        final String username = link.getStringProperty("directusername", "-");
+        final String title = link.getStringProperty("directtitle", "-");
+        final String imgid = getImgUID(link);
+        final String orderid = link.getStringProperty("orderid", "-");
         /* Date: Maybe add this in the future, if requested by a user. */
         // final long date = getLongProperty(downloadLink, "originaldate", 0l);
         // String formattedDate = null;
