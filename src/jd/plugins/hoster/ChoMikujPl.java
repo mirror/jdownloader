@@ -200,8 +200,18 @@ public class ChoMikujPl extends antiDDoSForHost {
                  * use up any traffic.
                  */
                 ai.setSpecialTraffic(true);
+            } else {
+                ai.setSpecialTraffic(false);
             }
+            final long hardcodedDailyFreeLimit = SizeFormatter.getSize("50MB");
             ai.setTrafficLeft(SizeFormatter.getSize(remainingTraffic.replace(",", ".")));
+            /*
+             * Most users will use free accounts with a daily limit of max 50 MB so let's just display that as max. traffic for all users
+             * who have less- exactly 50MB left.
+             */
+            if (ai.getTrafficLeft() <= hardcodedDailyFreeLimit) {
+                ai.setTrafficMax(hardcodedDailyFreeLimit);
+            }
             ai.setStatus("Account with traffic limitation");
         } else {
             /*
@@ -419,7 +429,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             if (cbr.containsHTML(ACCESSDENIED)) {
                 return false;
             }
-            /* Low traffic warning */
+            /* Low traffic warning(?) */
             if (cbr.containsHTML("action=\"/action/License/DownloadWarningAccept\"")) {
                 final String serializedUserSelection = cbr.getRegex("name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
                 final String serializedOrgFile = cbr.getRegex("name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -429,10 +439,15 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
                 postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             }
+            if (cbr.containsHTML("dontShowBoxInSession")) {
+                /* 2020-04-29: https://www.picflash.org/viewer.php?img=chomikuj_disable_box_download2X2RRQ.png */
+                postPageWithCleanup(br, "/action/chomikbox/DontDownloadWithBox", "__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                postPageWithCleanup(br, "/action/License/Download", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+            }
             if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
                 // this can happen also
                 // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
-                cleanupBrowser(cbr, PluginJSonUtils.unescape(br.toString()));
+                cleanupBrowser(br, PluginJSonUtils.unescape(br.toString()));
                 // so we can get output in logger for debug purposes.
                 logger.info(cbr.toString());
                 final Form f = cbr.getFormbyAction("/action/License/acceptLargeTransfer");
@@ -710,30 +725,35 @@ public class ChoMikujPl extends antiDDoSForHost {
         return br.getCookie(MAINPAGE, "RememberMe", Cookies.NOTDELETEDPATTERN) != null;
     }
 
+    /** Performs request and then puts cleaned up html into cbr browser instance. */
     private void getPageWithCleanup(final Browser br, final String url) throws Exception {
         getPage(br, url);
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, correctBR(br.toString()));
     }
 
+    /** Performs request and then puts cleaned up html into cbr browser instance. */
     private void postPageWithCleanup(final Browser br, final String url, final String postData) throws Exception {
         postPage(br, url, postData);
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, correctBR(br.toString()));
     }
 
+    /** Performs request and then puts cleaned up html into cbr browser instance. */
     private void postPageRawWithCleanup(final Browser br, final String url, final String postData) throws Exception {
         postPageRaw(br, url, postData);
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, correctBR(br.toString()));
     }
 
+    /** Performs request and then puts cleaned up html into cbr browser instance. */
     private void postRequestWithCleanup(final Browser br, Request request) throws Exception {
         sendRequest(br, request);
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, correctBR(br.toString()));
     }
 
+    /** Performs request and then puts cleaned up html into cbr browser instance. */
     private void submitFormWithCleanup(final Browser br, final Form form) throws Exception {
         submitForm(br, form);
         cbr = br.cloneBrowser();

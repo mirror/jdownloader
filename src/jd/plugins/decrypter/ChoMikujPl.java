@@ -445,6 +445,11 @@ public class ChoMikujPl extends PluginForDecrypt {
             final String __RequestVerificationToken_Lw__ = br.getCookie(parameter, "__RequestVerificationToken_Lw__");
             String[] v2list = tempBr.getRegex("<li class=\"fileItemContainer\"(.*?)href=\"javascript:;\"").getColumn(0);
             if (v2list == null || v2list.length == 0) {
+                /* 2020-04-29 */
+                v2list = tempBr.getRegex("class=\"fileinfo tab\"(.*?)class=\"filedescription\"").getColumn(0);
+            }
+            if (v2list.length == 0) {
+                /* Old fallback */
                 v2list = tempBr.getRegex("class=\"fileinfo tab\"(.*?)href=\"javascript:;\"").getColumn(0);
             }
             // if (v2list == null || v2list.length == 0) {
@@ -475,8 +480,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 if (filesize == null) {
                     filesize = new Regex(entry, "<li>[\t\n\r ]*?(\\d+(,\\d{1,2})? [A-Za-z]{1,5})[\t\n\r ]*?</li>").getMatch(0);
                 }
-                final Regex finfo = new Regex(entry, "<span class=\"bold\">(.*?)</span>(\\.[^<>\"/]*?)</a>");
-                String filename = new Regex(entry, "style=\"[^<>\"]*?\" title=\"([^<>\"]*?)\"").getMatch(0);
+                final Regex finfo = new Regex(entry, "<span class=\"bold\">(.*?)</span>(\\.[^<>\"/]*?)\\s*</a>");
+                /* Title without ext --> Will be added later */
+                String filename = new Regex(entry, "downloadContext\" href=\"[^\"]+\" title=\"([^<>\"]+)\"").getMatch(0);
                 if (filename == null) {
                     filename = finfo.getMatch(0);
                 }
@@ -489,7 +495,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                /* Use filename from content_url if necessary */
+                /* Use filename from content_url as fallback if necessary */
                 if (filename == null && url_filename != null) {
                     filename = url_filename;
                 }

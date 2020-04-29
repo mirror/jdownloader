@@ -596,9 +596,6 @@ public class PornportalCom extends PluginForHost {
         return account.getLongProperty(key + "_" + target_domain, fallback);
     }
 
-    // private boolean isLoggedIN(String login_cookie_name) {
-    // return getLoginCookie(this.br, login_cookie_name) != null;
-    // }
     private String getLoginCookie(final Browser br, String login_cookie_name) {
         if (login_cookie_name == null) {
             login_cookie_name = getDefaultCookieNameLogin();

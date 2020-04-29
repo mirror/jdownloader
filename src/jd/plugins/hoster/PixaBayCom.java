@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/en/([a-z0-9\\-]+\\-\\d+)/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:photos/)?([a-z0-9\\-]+\\-\\d+)/" })
 public class PixaBayCom extends PluginForHost {
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -85,10 +85,7 @@ public class PixaBayCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fallback_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<title>(?:Free photo: )?([^<>]*?)(?:· Free vector graphic on Pixabay)?</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
-        }
+        String filename = br.getRegex("<title>([^<>]*?)(?: - Free photo on Pixabay)?</title>").getMatch(0);
         /* Find filesize based on whether user has an account or not. */
         String filesize = null;
         if (aa != null) {
