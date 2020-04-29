@@ -26,6 +26,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
@@ -475,6 +476,24 @@ public class PremiumTo extends UseNet {
             synchronized (supported_hosts_storage) {
                 requiresStorageDownload = supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost());
             }
+            final UrlQuery query = new UrlQuery();
+            query.appendEncoded("userid", userid);
+            query.appendEncoded("apikey", apikey);
+            /* TODO: Append these additional parameters */
+            // if (link.getSha1Hash() != null) {
+            // query.appendEncoded("hash_sha1", link.getSha1Hash());
+            // }
+            // if (link.getMD5Hash() != null) {
+            // query.appendEncoded("hash_md5", link.getMD5Hash());
+            // }
+            // if (link.getSha256Hash() != null) {
+            // query.appendEncoded("hash_sha256", link.getSha256Hash());
+            // }
+            // if (link.getFinalFileName() != null) {
+            // query.appendEncoded("final_filename", link.getFinalFileName());
+            // } else if (link.getName() != null) {
+            // query.appendEncoded("filename", link.getName());
+            // }
             if (requiresStorageDownload) {
                 /* Storage download */
                 logger.info("Attempting STORAGE download: " + link.getHost());
@@ -483,28 +502,28 @@ public class PremiumTo extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download is not yet supported via API");
                 }
                 /* Check if that URL has already been downloaded to their cloud. */
-                br.getPage(API_BASE_STORAGE + "/check.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url);
+                br.getPage(API_BASE_STORAGE + "/check.php?" + query.toString() + "&url=" + url);
                 handleErrorsAPI(account, false);
                 final String status = getStorageAPIStatus();
                 /* 2019-11-11: "Canceled" = URL has been added to Storage before but was deleted e.g. by user --> Add it again */
                 if ("Not in queue".equalsIgnoreCase(status) || "Canceled".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
-                    br.getPage(API_BASE_STORAGE + "/add.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url);
+                    br.getPage(API_BASE_STORAGE + "/add.php?" + query.toString() + "&url=" + url);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 1 * 60 * 1000);
                 } else if ("completed".equalsIgnoreCase(status)) {
                     /* File has been downloaded to their servers and download should be possible now. */
-                    finalURL = API_BASE_STORAGE + "/download.php?userid=" + userid + "&apikey=" + apikey + "&url=" + url;
+                    finalURL = API_BASE_STORAGE + "/download.php?" + query.toString() + "&url=" + url;
                 } else {
                     /* WTF this should never happen */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown status");
                 }
-                /* We might need this later. */
+                /* We might need this later */
                 serverside_filename = PluginJSonUtils.getJson(br, "Filename");
             } else {
                 /* Normal (direct) download */
                 logger.info("Attempting DIRECT download: " + link.getHost());
                 login(account, false);
-                finalURL = API_BASE + "/getfile.php?link=" + url + "&userid=" + userid + "&apikey=" + apikey;
+                finalURL = API_BASE + "/getfile.php?" + query.toString() + "&link=" + url;
             }
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
