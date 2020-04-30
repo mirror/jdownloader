@@ -4,11 +4,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.text.AbstractDocument;
@@ -35,7 +32,6 @@ import org.jdownloader.dialogs.NewPasswordDialogInterface;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -43,7 +39,6 @@ import org.w3c.dom.Node;
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -54,7 +49,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
-    private static final String COOKIES2                                      = "googleComCookies";
+    // private static final String COOKIES2 = "googleComCookies";
     private static final String META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39 = "<meta\\s+http-equiv=\"refresh\"\\s+content\\s*=\\s*\"(\\d+)\\s*;\\s*url\\s*=\\s*([^\"]+)";
     private Browser             br;
     private boolean             cacheEnabled                                  = true;
@@ -175,36 +170,9 @@ public class GoogleHelper {
         return url;
     }
 
-    private Cookies getCookiesFromPasswordString(final String password) {
-        final Cookies cookies = new Cookies();
-        try {
-            /*
-             * 2020-02-13: Experimental - accepts cookies exported via open source browser addon "EditThisCookie" --> Their json format.
-             * Their json contains a lot more information but for now we'll only work with exactly what we need.
-             */
-            LinkedHashMap<String, Object> entries;
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(password);
-            for (final Object cookieO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) cookieO;
-                final String domain = (String) entries.get("domain");
-                if (!".google.com".equals(domain)) {
-                    /* Skip e.g. docs.google.com cookies */
-                    continue;
-                }
-                final String cookiename = (String) entries.get("name");
-                final String cookievalue = (String) entries.get("value");
-                if (cookiename == null || cookievalue == null) {
-                    continue;
-                }
-                final Cookie cookie = new Cookie();
-                cookie.setKey(cookiename);
-                cookie.setValue(cookievalue);
-                cookies.add(cookie);
-            }
-            return cookies;
-        } catch (final Throwable e) {
-        }
-        return null;
+    private Browser prepBR(final Browser br) {
+        br.setCookie("https://google.com", "PREF", "hl=en-GB");
+        return br;
     }
 
     public boolean login(Account account) throws Exception {
@@ -221,30 +189,22 @@ public class GoogleHelper {
             this.br.setDebug(true);
             this.br.setCookiesExclusive(true);
             // delete all cookies
-            this.br.clearCookies("google.com");
-            this.br.clearCookies("youtube.com");
-            this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
-            final Cookies userCookies = getCookiesFromPasswordString(account.getPass());
+            this.br.clearCookies(null);
+            this.br.setCookie("https://google.com", "PREF", "hl=en-GB");
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
             /* Check stored cookies */
-            if (account.getProperty(COOKIES2) != null) {
-                @SuppressWarnings("unchecked")
-                HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
-                if (cookies != null) {
-                    if (cookies.containsKey("SID") && cookies.containsKey("HSID")) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie("google.com", key, value);
-                        }
-                        if (isCacheEnabled() && hasBeenValidatedRecently(account)) {
-                            return true;
-                        }
-                        getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                        if (validateSuccess()) {
-                            validate(account);
-                            return true;
-                        }
-                    }
+            /* TODO: Check password change --> When user all of the sudden changes PW field and inputs other cookies! */
+            /* TODO: Save- and load cookies of all domains? */
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (isCacheEnabled() && hasBeenValidatedRecently(account) || !true) {
+                    return true;
+                }
+                getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
+                if (validateSuccess()) {
+                    validate(account);
+                    return true;
                 }
             }
             /* If stored cookies fail, try user cookies --> Also important as user could change password(= cookies) at any time */
@@ -257,24 +217,32 @@ public class GoogleHelper {
                  * Work with the cookies the user has provided --> In this case we cannot even login via password as we do not know the
                  * users' password!
                  */
-                br.setCookies("google.com", userCookies);
+                br.setCookies(userCookies);
+                if (StringUtils.isEmpty(userCookies.getUserAgent())) {
+                    /* Fallback - try with current Chrome UA TODO: Add user-agent setting */
+                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36");
+                }
                 if (isCacheEnabled() && hasBeenValidatedRecently(account)) {
                     return true;
                 }
-                /* 2020-03-10: Users' User-Agent is required (or any current Chrome version?) otherwise the cookies will not be accepted! */
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36");
-                getPageFollowRedirects(br, "https://docs.google.com/document/u/0/");
-                if (!br.containsHTML("AddSession\\?service")) {
-                    /* Invalid cookies */
+                /* TODO: Try to get username/mail and set it as account username in JD */
+                getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
+                /* TODO: Maybe prefer this as validation check? */
+                // getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
+                // if (!br.containsHTML("accounts\\.google\\.com/logout")) {
+                // /* Invalid cookies */
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // }
+                if (!validateSuccess()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 validate(account);
+                /* TODO: Save all cookies of all domains */
                 saveCookiesOnAccount(account);
                 return true;
             }
-            this.br.clearCookies("google.com");
-            this.br.clearCookies("youtube.com");
-            this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
+            this.br.clearCookies(null);
+            prepBR(this.br);
             this.br.setFollowRedirects(true);
             /* first call to google */
             getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
@@ -415,20 +383,19 @@ public class GoogleHelper {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            account.setProperty(COOKIES2, null);
+            account.clearCookies("");
             throw e;
         }
     }
 
     private void saveCookiesOnAccount(final Account account) {
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        final Cookies cYT = this.br.getCookies("google.com");
-        for (final Cookie c : cYT.getCookies()) {
-            cookies.put(c.getKey(), c.getValue());
-        }
-        account.setProperty(COOKIES2, cookies);
+        account.saveCookies(br.getCookies(br.getURL()), "");
     }
 
+    /**
+     * Validates login via e.g.
+     * https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg=1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA
+     */
     protected boolean validateSuccess() {
         return br.containsHTML("accounts/SetSID");
     }
