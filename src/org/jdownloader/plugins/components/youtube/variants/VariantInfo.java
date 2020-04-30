@@ -3,7 +3,6 @@ package org.jdownloader.plugins.components.youtube.variants;
 import org.jdownloader.plugins.components.youtube.StreamCollection;
 
 public class VariantInfo implements Comparable<VariantInfo> {
-
     private final AbstractVariant variant;
     final StreamCollection        audioStream;
     final StreamCollection        videoStream;
@@ -67,10 +66,8 @@ public class VariantInfo implements Comparable<VariantInfo> {
 
     // public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
     // }
-
     @Override
     public int compareTo(VariantInfo o) {
-
         return variant.compareTo(o.variant);
     }
 
@@ -89,5 +86,4 @@ public class VariantInfo implements Comparable<VariantInfo> {
         }
         return false;
     }
-
 }

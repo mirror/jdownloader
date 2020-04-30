@@ -16,6 +16,18 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
+
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.InputDialogInterface;
@@ -35,18 +47,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -181,7 +181,7 @@ public class GoogleHelper {
              * 2020-02-10: Disabled boolean again! Seems like Google Login is still working for some users.
              * https://svn.jdownloader.org/issues/86318
              */
-            final boolean pluginBroken = false;
+            final boolean pluginBroken = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
             if (pluginBroken) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nGoogle login is broken!\r\nA bugfix in the near future is very unlikely.\r\nSee svn.jdownloader.org/issues/86318 ", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -394,7 +394,8 @@ public class GoogleHelper {
 
     /**
      * Validates login via e.g.
-     * https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg=1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA
+     * https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg
+     * =1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA
      */
     protected boolean validateSuccess() {
         return br.containsHTML("accounts/SetSID");
