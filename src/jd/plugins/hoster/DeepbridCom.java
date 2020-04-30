@@ -98,8 +98,8 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account == null && downloadLink.getPluginPatternMatcher() != null && new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null && link.getPluginPatternMatcher() != null && new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).matches()) {
             /* Without account itis only possible to download URLs for files which are on the server of this multihost! */
             return true;
         } else if (account == null) {
@@ -110,12 +110,12 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         final String directlinkproperty = "directurl";
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            String ticketurl = downloadLink.getStringProperty("ticketurl", null);
+            String ticketurl = link.getStringProperty("ticketurl", null);
             if (ticketurl != null) {
                 getPage(ticketurl);
             } else {
@@ -131,7 +131,7 @@ public class DeepbridCom extends antiDDoSForHost {
                 }
                 submitForm(dlform);
                 /* Store that URL as we can use it multiple times to generate new directurls for that particular file! */
-                downloadLink.setProperty("ticketurl", br.getURL());
+                link.setProperty("ticketurl", br.getURL());
             }
             dllink = br.getRegex("(https?://[^\"\\']+/dl/[^\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
@@ -140,14 +140,14 @@ public class DeepbridCom extends antiDDoSForHost {
             if (StringUtils.isEmpty(dllink)) {
                 if (ticketurl != null) {
                     /* Trash stored ticket-URL and try again! */
-                    downloadLink.setProperty("ticketurl", Property.NULL);
+                    link.setProperty("ticketurl", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -156,7 +156,7 @@ public class DeepbridCom extends antiDDoSForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 

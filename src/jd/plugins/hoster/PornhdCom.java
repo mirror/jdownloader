@@ -49,12 +49,12 @@ public class PornhdCom extends PluginForHost {
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = getFID(link);
-        link.setLinkID(this.getHost() + "://" + fid);
-        link.setPluginPatternMatcher("https://www.pornhd.com/videos/" + fid);
-    }
-
+    /* 2020-04-30: Do not modify added URLs anymore! This may corrupt them and lead to http response 404! */
+    // public void correctDownloadLink(final DownloadLink link) {
+    // final String fid = getFID(link);
+    // link.setLinkID(this.getHost() + "://" + fid);
+    // link.setPluginPatternMatcher("https://www.pornhd.com/videos/" + fid);
+    // }
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
@@ -67,6 +67,10 @@ public class PornhdCom extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), "(?:video/embed/|videos/)(\\d+)").getMatch(0);
+    }
+
+    private String getTitleURL(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/videos/\\d+/(.+)").getMatch(0);
     }
 
     @Override
@@ -87,6 +91,10 @@ public class PornhdCom extends PluginForHost {
         if (filename == null) {
             /* Fallback1 */
             filename = new Regex(br.getURL(), "/videos/\\d+/(.+)").getMatch(0);
+            if (filename != null) {
+                /* Make our fallback name look 'nicer'. */
+                filename = filename.replace("-", " ");
+            }
         }
         if (filename == null) {
             /* Fallback2 */
@@ -95,6 +103,10 @@ public class PornhdCom extends PluginForHost {
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         for (final String quality : qualities) {
             dllink = br.getRegex("(?:\\'|\")" + quality + "(?:\\'|\")\\s*:\\s*(?:\\'|\")((https?|.?/)[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            if (dllink == null) {
+                /* 2020-04-30 */
+                dllink = br.getRegex("<source.*?src=\"(.*?)\"[^\"]*?label='" + quality + "").getMatch(0);
+            }
             if (dllink != null) {
                 break;
             }
