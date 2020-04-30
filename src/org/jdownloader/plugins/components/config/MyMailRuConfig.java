@@ -50,7 +50,7 @@ public interface MyMailRuConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("DEFAULT")
+    @DefaultEnumValue("BEST")
     @DescriptionForConfigEntry("If your preferred quality is not found, best quality will be downloaded instead.")
     PreferredQuality getPreferredQuality();
 
