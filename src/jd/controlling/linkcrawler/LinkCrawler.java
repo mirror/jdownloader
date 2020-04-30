@@ -932,8 +932,6 @@ public class LinkCrawler {
                 EVENTSENDER.fireEvent(new LinkCrawlerEvent(linkCrawler, LinkCrawlerEvent.Type.FINISHED));
                 linkCrawler.crawlerFinished();
             }
-        } else {
-            System.out.println("WTF!");
         }
     }
 
@@ -2239,9 +2237,9 @@ public class LinkCrawler {
                 }
             }
             if (StringUtils.contains(source.getURL(), "aHR0c") || StringUtils.contains(source.getURL(), "ZnRwOi")) {
-                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\/=]+(%3D){0,2})").getMatch(0);// http
+                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\]+(%3D|=){0,2})").getMatch(0);// http
                 if (base64 == null) {
-                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\/=]+(%3D){0,2})").getMatch(0);// ftp
+                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\]+(%3D|=){0,2})").getMatch(0);// ftp
                 }
                 if (base64 != null) {
                     if (base64.contains("%3D")) {
@@ -2516,6 +2514,7 @@ public class LinkCrawler {
                     // modify sourceLink because link arise from source(getMatchingLinks)
                     //
                     // keep DownloadLinks with non empty properties
+                    link.setCrawlDeep(source.isCrawlDeep());
                     link.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
                         link.setMatchingRule(source.getMatchingRule());
