@@ -17,7 +17,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.Base64;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "folderwatch" }, urls = { "\\[folderwatch:\\d+\\][0-9a-zA-Z\\+\\/=]+(%3D){0,2}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "folderwatch" }, urls = { "\\[folderwatch:\\d+\\][0-9a-zA-Z\\+\\/]+(%3D|=){0,2}" })
 public class FolderWatchURL extends PluginForDecrypt {
     public FolderWatchURL(PluginWrapper wrapper) {
         super(wrapper);
@@ -34,7 +34,7 @@ public class FolderWatchURL extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        String base64 = new Regex(parameter.getCryptedUrl(), "\\[folderwatch:\\d+\\]([0-9a-zA-Z\\+\\/=]+(%3D){0,2})").getMatch(0);
+        String base64 = new Regex(parameter.getCryptedUrl(), "\\[folderwatch:\\d+\\]([0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);
         if (base64 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
