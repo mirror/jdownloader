@@ -16,18 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,6 +40,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -147,14 +148,19 @@ public class DeepbridCom extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isContentDisposition()) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -220,22 +226,28 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
+                try {
+                    if (con.getContentType().contains("text") || con.getResponseCode() != 200 || con.getLongContentLength() == -1) {
+                        downloadLink.setProperty(property, Property.NULL);
+                        return null;
+                    } else {
+                        return dllink;
+                    }
+                } finally {
+                    con.disconnect();
                 }
-                con.disconnect();
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             }
         }
-        return dllink;
+        return null;
     }
 
     @SuppressWarnings({ "unchecked" })

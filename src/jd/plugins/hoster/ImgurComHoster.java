@@ -16,8 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,9 +50,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -511,11 +507,7 @@ public class ImgurComHoster extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(this.br, account, true);
         if (br.getURL() == null || !br.getURL().contains("/account/" + account.getUser())) {
             br.getPage(getAPIBaseWithVersion() + "/account/" + account.getUser());
             checkErrors(this.br, null, account);
@@ -766,31 +758,22 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static final String getClientID() {
-        final String clientid;
         final String clientid_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_ID, defaultAPISettingUserVisibleText);
         if (StringUtils.equalsIgnoreCase("JDDEFAULT", clientid_setting)) {
-            clientid = Encoding.Base64Decode("Mzc1YmE4Y2FmNjA0ZDQy");
+            return Encoding.Base64Decode("Mzc1YmE4Y2FmNjA0ZDQy");
         } else {
-            clientid = clientid_setting;
+            return clientid_setting;
         }
-        return clientid;
     }
 
     public static final String getClientSecret() throws PluginException {
-        final String clientsecret;
-        final String clientsecret_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_SECRET, defaultAPISettingUserVisibleText);
+        final SubConfiguration conf = SubConfiguration.getConfig("imgur.com");
+        final String clientsecret_setting = conf.getStringProperty(SETTING_CLIENT_SECRET, defaultAPISettingUserVisibleText);
         if (StringUtils.equalsIgnoreCase("JDDEFAULT", clientsecret_setting)) {
-            try {
-                clientsecret = ReflectionUtils.getField(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8"), "IMGUR", null, String.class);
-            } catch (InvocationTargetException e) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } catch (UnsupportedEncodingException e) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            return conf.getStringProperty("jdclientSecret");
         } else {
-            clientsecret = clientsecret_setting;
+            return clientsecret_setting;
         }
-        return clientsecret;
     }
 
     private String getAuthURL() {
