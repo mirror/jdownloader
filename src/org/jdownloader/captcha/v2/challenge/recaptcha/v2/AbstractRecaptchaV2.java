@@ -311,8 +311,8 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         }
     }
 
-    protected RecaptchaV2Challenge<T> createChallenge() {
-        return new RecaptchaV2Challenge<T>(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
+    protected RecaptchaV2Challenge createChallenge() {
+        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
             @Override
             public String getSiteUrl() {
                 return AbstractRecaptchaV2.this.getSiteUrl();

@@ -43,7 +43,7 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
 
-public class RecaptchaV2Challenge<T extends Plugin> extends AbstractBrowserChallenge {
+public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
     private final String                   siteKey;
@@ -219,7 +219,7 @@ public class RecaptchaV2Challenge<T extends Plugin> extends AbstractBrowserChall
         }
     }
 
-    public AbstractRecaptchaV2<T> getAbstractCaptchaHelperRecaptchaV2() {
+    public AbstractRecaptchaV2<?> getAbstractCaptchaHelperRecaptchaV2() {
         return null;
     }
 
