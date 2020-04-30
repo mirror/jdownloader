@@ -68,68 +68,67 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
             }
         }
         PluralsightCom.getClips(br, this, course);
-        if (br.getHttpConnection().getResponseCode() == 200 || !br.containsHTML("You have reached the end of the internet")) {
-            if (br.containsHTML("Not Found")) {
-                return ret;
+        if (br.getHttpConnection().getResponseCode() != 200 || br.containsHTML("You have reached the end of the internet")) {
+            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
+            return ret;
+        }
+        if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Course or Data not found");
+        }
+        final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
+        String forced_resolution = null;
+        if (clips != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            final Map<String, Object> courseMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer/course");
+            final String title = (String) courseMap.get("title");
+            if (!StringUtils.isEmpty(title)) {
+                fp.setName(PluralsightCom.correctFileName(title));
+            } else {
+                fp.setName(PluralsightCom.correctFileName(course));
             }
-            if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Course or Data not found");
-            }
-            final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final ArrayList<DownloadLink> clips = PluralsightCom.getClips(this, br, (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer"));
-            String forced_resolution = null;
-            if (clips != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                final Map<String, Object> courseMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/rpc/bootstrapPlayer/course");
-                final String title = (String) courseMap.get("title");
-                if (!StringUtils.isEmpty(title)) {
-                    fp.setName(PluralsightCom.correctFileName(title));
-                } else {
-                    fp.setName(PluralsightCom.correctFileName(course));
-                }
-                fp.addLinks(clips);
-                ret.addAll(clips);
-                if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
-                    final Browser brc = br.cloneBrowser();
-                    for (final DownloadLink clip : clips) {
-                        /*
-                         * Set found resolution for first clip on all videos so we can save API requests. Assume that all videos of one
-                         * course are available in the same quality.
-                         */
-                        if (forced_resolution != null) {
-                            clip.setProperty(PluralsightCom.PROPERTY_forced_resolution, forced_resolution);
-                        }
-                        if (clip.getKnownDownloadSize() < 0) {
-                            final String streamURL = PluralsightCom.getStreamURL(br, this, clip, null);
-                            if (streamURL != null) {
-                                final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));
-                                final URLConnectionAdapter con = checkStream.getHttpConnection();
-                                try {
-                                    if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
-                                        clip.setVerifiedFileSize(con.getCompleteContentLength());
-                                        clip.setAvailable(true);
-                                    } else {
-                                        clip.setAvailableStatus(AvailableStatus.UNCHECKED);
-                                    }
-                                } finally {
-                                    con.disconnect();
+            fp.addLinks(clips);
+            ret.addAll(clips);
+            if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
+                final Browser brc = br.cloneBrowser();
+                for (final DownloadLink clip : clips) {
+                    /*
+                     * Set found resolution for first clip on all videos so we can save API requests. Assume that all videos of one course
+                     * are available in the same quality.
+                     */
+                    if (forced_resolution != null) {
+                        clip.setProperty(PluralsightCom.PROPERTY_forced_resolution, forced_resolution);
+                    }
+                    if (clip.getKnownDownloadSize() < 0) {
+                        final String streamURL = PluralsightCom.getStreamURL(br, this, clip, null);
+                        if (streamURL != null) {
+                            final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));
+                            final URLConnectionAdapter con = checkStream.getHttpConnection();
+                            try {
+                                if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getCompleteContentLength() > 0) {
+                                    clip.setVerifiedFileSize(con.getCompleteContentLength());
+                                    clip.setAvailable(true);
+                                } else {
+                                    clip.setAvailableStatus(AvailableStatus.UNCHECKED);
                                 }
-                            } else {
-                                clip.setAvailableStatus(AvailableStatus.UNCHECKED);
+                            } finally {
+                                con.disconnect();
                             }
-                            if (forced_resolution == null) {
-                                forced_resolution = clip.getStringProperty(PluralsightCom.PROPERTY_forced_resolution);
-                            }
+                        } else {
+                            clip.setAvailableStatus(AvailableStatus.UNCHECKED);
                         }
-                        distribute(clip);
-                        if (this.isAbort()) {
-                            break;
+                        if (forced_resolution == null) {
+                            forced_resolution = clip.getStringProperty(PluralsightCom.PROPERTY_forced_resolution);
                         }
                     }
+                    distribute(clip);
+                    if (this.isAbort()) {
+                        break;
+                    }
                 }
-                // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
-                // link.setProperty("type", "srt");
             }
+            // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
+            // link.setProperty("type", "srt");
         }
         return ret;
     }
