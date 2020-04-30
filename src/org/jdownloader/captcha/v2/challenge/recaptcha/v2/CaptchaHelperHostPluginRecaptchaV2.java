@@ -30,7 +30,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
+public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractRecaptchaV2<PluginForHost> {
     public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         super(plugin, br, siteKey, secureToken, boundToDomain);
     }
@@ -70,7 +70,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             if (link != null) {
                 link.addPluginProgress(progress);
             }
-            final RecaptchaV2Challenge challenge = createChallenge();
+            final RecaptchaV2Challenge<PluginForHost> challenge = createChallenge();
             try {
                 challenge.setTimeout(plugin.getChallengeTimeout(challenge));
                 if (plugin.isAccountLoginCaptchaChallenge(link, challenge)) {

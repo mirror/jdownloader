@@ -17,14 +17,16 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clictune.com" }, urls = { "https?://(?:www\\.)?(?:mylinks\\.xyz|clictune\\.com)/([A-Za-z0-9]+)" })
 public class ClictuneCom extends antiDDoSForDecrypt {
@@ -43,8 +45,7 @@ public class ClictuneCom extends antiDDoSForDecrypt {
         }
         String finallink = this.br.getRegex("redirect/\\?url=(http[^<>\"]+)\">Click here to access the link").getMatch(0);
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         finallink = Encoding.htmlDecode(finallink);
         decryptedLinks.add(createDownloadlink(finallink));

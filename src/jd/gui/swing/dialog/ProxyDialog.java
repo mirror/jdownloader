@@ -297,18 +297,6 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             }
             break;
         case 3: // socks4
-            panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
-            panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
-            panel.add(cmbType, "spanx");
-            panel.add(lblHost);
-            panel.add(txtHost);
-            panel.add(lblPort, "hidemode 3");
-            panel.add(txtPort, "hidemode 3,gapleft 0");
-            lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_hostport());
-            if (StringUtils.isEmpty(txtPort.getText())) {
-                txtPort.setText("1080");
-            }
-            break;
         case 4: // socks4a
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
             panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));

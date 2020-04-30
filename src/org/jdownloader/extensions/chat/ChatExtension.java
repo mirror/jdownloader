@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
@@ -206,10 +207,11 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         } else {
             sb.append("<span>").append(msg).append("</span>");
         }
+        final boolean isHighlight = isHighlightAllowed() && StringUtils.equals(style, ChatExtension.STYLE_HIGHLIGHT);
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
-                if (getSettings().isNickToFront() && !JDGui.getInstance().getMainFrame().isActive() && con != null && msg.contains(con.getNick())) {
+                if (isHighlight && !JDGui.getInstance().getMainFrame().isActive()) {
                     JDGui.getInstance().getMainFrame().toFront();
                 }
                 targetpane.setText(ChatExtension.STYLE + "<ul>" + sb.toString() + "</ul>");
@@ -895,11 +897,40 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         this.loggedIn = loggedIn;
     }
 
+    protected final static WeakHashMap<Thread, Object> HIGHLIGHT_BLOCK = new WeakHashMap<Thread, Object>();
+
+    protected void disableHighlight() {
+        synchronized (HIGHLIGHT_BLOCK) {
+            HIGHLIGHT_BLOCK.put(Thread.currentThread(), this);
+        }
+    }
+
+    protected void enableHighlight() {
+        synchronized (HIGHLIGHT_BLOCK) {
+            HIGHLIGHT_BLOCK.remove(Thread.currentThread());
+        }
+    }
+
+    protected boolean isHighlightAllowed() {
+        if (getSettings().isNickToFront()) {
+            synchronized (HIGHLIGHT_BLOCK) {
+                return !HIGHLIGHT_BLOCK.containsKey(Thread.currentThread());
+            }
+        } else {
+            return false;
+        }
+    }
+
     public void setNick(final String nickname) {
         if (nickname == null) {
             return;
         }
-        this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
+        disableHighlight();
+        try {
+            this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
+        } finally {
+            enableHighlight();
+        }
         this.conn.doNick(nickname);
     }
 

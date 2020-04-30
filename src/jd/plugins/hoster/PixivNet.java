@@ -277,7 +277,7 @@ public class PixivNet extends PluginForHost {
                             };
 
                             @Override
-                            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
                                 return TYPE.NORMAL;
                             }
                         };
@@ -305,7 +305,7 @@ public class PixivNet extends PluginForHost {
                         };
 
                         @Override
-                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
                             return TYPE.NORMAL;
                         }
                     };

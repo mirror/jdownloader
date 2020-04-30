@@ -43,7 +43,7 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
 
-public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
+public class RecaptchaV2Challenge<T extends Plugin> extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
     private final String                   siteKey;
@@ -74,7 +74,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
         public String getType() {
             if (type == null) {
-                return AbstractCaptchaHelperRecaptchaV2.TYPE.NORMAL.name();
+                return AbstractRecaptchaV2.TYPE.NORMAL.name();
             } else {
                 return type;
             }
@@ -219,8 +219,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
+    public AbstractRecaptchaV2<T> getAbstractCaptchaHelperRecaptchaV2() {
+        return null;
+    }
+
     public String getType() {
-        return AbstractCaptchaHelperRecaptchaV2.TYPE.NORMAL.name();
+        return AbstractRecaptchaV2.TYPE.NORMAL.name();
     };
 
     public boolean isBoundToDomain() {

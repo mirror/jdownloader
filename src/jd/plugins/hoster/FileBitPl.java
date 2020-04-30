@@ -215,6 +215,8 @@ public class FileBitPl extends PluginForHost {
                 if ("1".equals(error)) {
                     if ("207".equals(errno)) {
                         mhm.putError(account, link, 30 * 60 * 1000l, "Not enough traffic");
+                    } else if ("213".equals(errno)) {
+                        mhm.putError(account, link, 1 * 60 * 1000l, "Daily limit reached");
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -645,6 +647,11 @@ public class FileBitPl extends PluginForHost {
                 /* Host offline -> Disable for 5 minutes */
                 statusMessage = "Host offline";
                 mhm.handleErrorGeneric(account, link, "hoster_offline", 5);
+            case 213:
+                /* one day hosting links count limit reached. */
+                /* Przekroczyłeś dzienny limit ilości pobranych plików z tego hostingu. Spróbuj z linkami z innego hostingu. */
+                statusMessage = "Daily limit reached";
+                mhm.handleErrorGeneric(account, link, "daily_limit_reached", 1);
             default:
                 /* unknown error, do not try again with this multihoster */
                 statusMessage = "Unknown API error code, please inform JDownloader Development Team";

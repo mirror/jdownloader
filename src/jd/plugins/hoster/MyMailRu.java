@@ -21,13 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MyMailRuConfig;
-import org.jdownloader.plugins.components.config.MyMailRuConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +39,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MyMailRuConfig;
+import org.jdownloader.plugins.components.config.MyMailRuConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|https?://my\\.mail\\.ru/[^<>\"]*?video/(?:top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)|https?://(?:videoapi\\.my|api\\.video)\\.mail\\.ru/videos/embed/[^/]+/[^/]+/[a-z0-9\\-_]+/\\d+\\.html|https?://my\\.mail\\.ru/[^/]+/[^/]+/video/embed/[a-z0-9\\-_]+/\\d+|https?://my\\.mail\\.ru/video/embed/-?\\d+" })
 public class MyMailRu extends PluginForHost {
@@ -427,25 +427,25 @@ public class MyMailRu extends PluginForHost {
 
     protected String getConfiguredQuality() {
         /* Returns user-set value which can be used to circumvent government based GEO-block. */
-        PreferredQuality cfgquality = PluginJsonConfig.get(MyMailRuConfig.class).getPreferredQuality();
+        final PreferredQuality cfgquality = PluginJsonConfig.get(MyMailRuConfig.class).getPreferredQuality();
         if (cfgquality == null) {
-            cfgquality = PreferredQuality.DEFAULT;
-        }
-        switch (cfgquality) {
-        case QUALITY1:
-            return "360p";
-        case QUALITY2:
-            return "480p";
-        case QUALITY3:
-            return "720p";
-        case QUALITY4:
-            return "1080p";
-        case QUALITY5:
-            return "2160p";
-        case DEFAULT:
             return null;
-        default:
-            return null;
+        } else {
+            switch (cfgquality) {
+            case Q360P:
+                return "360p";
+            case Q480P:
+                return "480p";
+            case Q720P:
+                return "720p";
+            case Q1080P:
+                return "1080p";
+            case Q2160P:
+                return "2160p";
+            case BEST:
+            default:
+                return null;
+            }
         }
     }
 

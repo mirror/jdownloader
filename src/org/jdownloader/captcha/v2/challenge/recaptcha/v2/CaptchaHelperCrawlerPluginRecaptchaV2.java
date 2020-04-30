@@ -24,7 +24,7 @@ import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForDecrypt> {
+public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractRecaptchaV2<PluginForDecrypt> {
     public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         super(plugin, br, siteKey, secureToken, boundToDomain);
     }
@@ -54,7 +54,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             // non fatal if secureToken is null.
         }
         final PluginForDecrypt plugin = getPlugin();
-        final RecaptchaV2Challenge c = createChallenge();
+        final RecaptchaV2Challenge<PluginForDecrypt> c = createChallenge();
         c.setTimeout(plugin == null ? 60000 : plugin.getChallengeTimeout(c));
         if (plugin != null) {
             plugin.invalidateLastChallengeResponse();

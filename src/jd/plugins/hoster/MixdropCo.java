@@ -224,7 +224,7 @@ public class MixdropCo extends antiDDoSForHost {
     protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
         return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()) {
             @Override
-            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
                 return TYPE.INVISIBLE;
             }
         };

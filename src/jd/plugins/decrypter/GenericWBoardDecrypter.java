@@ -46,7 +46,7 @@ public class GenericWBoardDecrypter extends antiDDoSForDecrypt {
                 final String sitekey = br.getRegex("sitekey\\s*:\\s*\"([^\"]+)\"").getMatch(0);
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey) {
                     @Override
-                    public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractCaptchaHelperRecaptchaV2.TYPE getType() {
+                    public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
                         return TYPE.INVISIBLE;
                     };
                 }.getToken();
