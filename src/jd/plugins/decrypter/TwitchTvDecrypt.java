@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -59,7 +58,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
 
     private String userApiToken = null;
 
-    private Browser ajaxGetPage(final String string) throws IOException {
+    private Browser ajaxGetPage(final String string) throws Exception {
         final Browser ajax = br.cloneBrowser();
         // https://dev.twitch.tv/docs/v5/
         // For client IDs created on or after May 31, 2019, the only available version of the Kraken API is v5. For client IDs created prior
@@ -68,7 +67,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         ajax.getHeaders().put("Referer", "https://www.twitch.tv");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Origin", "https://www.twitch.tv");
-        ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.clientID);
+        ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.getClientID(br, this));
         if (userApiToken != null) {
             ajax.getHeaders().put("Twitch-Api-Token", userApiToken);
         }
@@ -76,10 +75,11 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
         return ajax;
     }
 
-    private Browser ajaxGetPagePlayer(final String string) throws IOException {
+    private Browser ajaxGetPagePlayer(final String string) throws Exception {
         final Browser ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.clientID);
-        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
+        ajax.getHeaders().put("Client-ID", jd.plugins.hoster.TwitchTv.getClientID(br, this));
+        ajax.getHeaders().put("Accept", "application/vnd.twitchtv.v5+json");
+        ajax.getHeaders().put("Origin", "https://www.twitch.tv");
         ajax.getPage(string);
         return ajax;
     }
@@ -299,7 +299,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 }
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("[\r\n#]+", "");
-                ajax = this.ajaxGetPagePlayer("https://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
+                ajax = this.ajaxGetPagePlayer("https://api.twitch.tv/api/vods/" + vid + "/access_token?api_version=5" + (token != null ? "&oauth_token=" + token : ""));
                 ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
                 final String auth = (String) ajaxMap.get("sig");
                 // final String expire = PluginJSonUtils.getJson(ajax, "expires");
