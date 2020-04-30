@@ -25,16 +25,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -54,11 +45,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.raf.FileBytesMap;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" })
 public class TwitchTv extends PluginForHost {
@@ -578,9 +580,38 @@ public class TwitchTv extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private static Object      ctrlLock = new Object();
-    public static final String clientID = "mov1ay9d49l14f7siur0q8k9gny15aw"; // This clientID is for JDownloader only, 12.11.2019, seems
-                                                                             // like twitch is blocking all non twitch clientID
+    private static Object                  ctrlLock = new Object();
+    private static AtomicReference<String> CLIENTID = new AtomicReference<String>();
+
+    public static String getClientID(final Browser currentBrowser, Plugin plugin) throws Exception {
+        synchronized (CLIENTID) {
+            String clientID = CLIENTID.get();
+            if (!StringUtils.isEmpty(clientID)) {
+                return clientID;
+            } else {
+                if (currentBrowser != null) {
+                    clientID = currentBrowser.getRegex("\"Client-ID\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+                }
+                if (StringUtils.isEmpty(clientID)) {
+                    final Browser br;
+                    if (currentBrowser != null) {
+                        br = currentBrowser.cloneBrowser();
+                    } else {
+                        br = new Browser();
+                    }
+                    br.setFollowRedirects(true);
+                    br.getPage("https://www.twitch.tv/");
+                    clientID = br.getRegex("\"Client-ID\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+                }
+                if (StringUtils.isEmpty(clientID)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    CLIENTID.set(clientID);
+                    return clientID;
+                }
+            }
+        }
+    }
 
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
@@ -606,7 +637,7 @@ public class TwitchTv extends PluginForHost {
                 final Map<String, String> map = new HashMap<String, String>();
                 map.put("username", account.getUser());
                 map.put("password", account.getPass());
-                map.put("client_id", clientID);
+                map.put("client_id", getClientID(br, this));
                 final PostRequest request = br.createJSonPostRequest("https://passport.twitch.tv/login", JSonStorage.toString(map));
                 br.getPage(request);
                 if (request.getHttpConnection().getResponseCode() == 400) {
