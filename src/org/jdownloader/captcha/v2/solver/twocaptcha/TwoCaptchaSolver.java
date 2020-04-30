@@ -3,7 +3,6 @@ package org.jdownloader.captcha.v2.solver.twocaptcha;
 import java.io.IOException;
 
 import jd.http.Browser;
-import jd.plugins.Plugin;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -103,7 +102,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     }
 
     private void handleRecaptchaV2(CESSolverJob<String> job) throws InterruptedException {
-        final RecaptchaV2Challenge<Plugin> challenge = (RecaptchaV2Challenge<Plugin>) job.getChallenge();
+        final RecaptchaV2Challenge challenge = (RecaptchaV2Challenge) job.getChallenge();
         job.showBubble(this);
         checkInterruption();
         try {
@@ -119,7 +118,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             q.appendEncoded("method", "userrecaptcha");
             q.appendEncoded("googlekey", challenge.getSiteKey());
             q.appendEncoded("pageurl", challenge.getSiteDomain());
-            final AbstractRecaptchaV2<Plugin> recaptchaChallenge = challenge.getAbstractCaptchaHelperRecaptchaV2();
+            final AbstractRecaptchaV2<?> recaptchaChallenge = challenge.getAbstractCaptchaHelperRecaptchaV2();
             if (recaptchaChallenge != null) {
                 if (challenge.getV3Action() != null && challenge.getV3Action().containsKey("action")) {
                     q.appendEncoded("version", "v3");

@@ -70,7 +70,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractRecaptchaV2<Plug
             if (link != null) {
                 link.addPluginProgress(progress);
             }
-            final RecaptchaV2Challenge<PluginForHost> challenge = createChallenge();
+            final RecaptchaV2Challenge challenge = createChallenge();
             try {
                 challenge.setTimeout(plugin.getChallengeTimeout(challenge));
                 if (plugin.isAccountLoginCaptchaChallenge(link, challenge)) {
