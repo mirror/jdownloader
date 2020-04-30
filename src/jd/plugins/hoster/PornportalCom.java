@@ -98,6 +98,7 @@ public class PornportalCom extends PluginForHost {
         return ret;
     }
 
+    /** Returns content of getPluginDomains as single dimensional Array. */
     public static ArrayList<String> getAllSupportedPluginDomainsFlat() {
         ArrayList<String> allDomains = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
@@ -346,18 +347,14 @@ public class PornportalCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null, true);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        logger.info("Downloading in free mode (e.g. trailer download or active premium direct-downloadurls)");
+        this.handlePremium(link, null);
     }
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         logger.info("Downloading in multihoster mode");
         this.handlePremium(link, account);
-    }
-
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        throw new AccountRequiredException();
     }
 
     @Override
@@ -756,6 +753,13 @@ public class PornportalCom extends PluginForHost {
                         ai.setStatus("Premium Account (subscription running)");
                     }
                 }
+                if (account.getHoster().contains("brazzers")) {
+                    /*
+                     * 2020-03-40: Special hint because brazzers.com has an old- and a new system running. Users can only add URLs copied
+                     * from their PornPortal system!!
+                     */
+                    ai.setStatus(ai.getStatus() + " use site-ma.brazzers.com via browser");
+                }
                 account.setConcurrentUsePossible(true);
                 ai.setUnlimitedTraffic();
                 if (account.getType() == AccountType.PREMIUM) {
@@ -970,6 +974,10 @@ public class PornportalCom extends PluginForHost {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
+            if (account == null) {
+                /* E.g. free trailer download and expired downloadurls */
+                throw new AccountRequiredException();
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);

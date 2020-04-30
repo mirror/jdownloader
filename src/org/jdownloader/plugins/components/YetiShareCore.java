@@ -270,11 +270,11 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed (e.g. in the past for badshare.io). </br>
+     * This is only rarely needed e.g. filemia.com </br>
      * default = false
      */
     @Deprecated
-    private boolean enforce_old_login_method() {
+    protected boolean enforce_old_login_method() {
         return false;
     }
 
@@ -1279,6 +1279,10 @@ public class YetiShareCore extends antiDDoSForHost {
                         /* 2019-07-08: Rare case: Example: freaktab.org */
                         loginform.put("loginUsername", Encoding.urlEncode(account.getUser()));
                         loginform.put("loginPassword", Encoding.urlEncode(account.getPass()));
+                    } else if (loginform.hasInputFieldByName("email")) {
+                        /* 2020-04-30: E.g. filemia.com */
+                        loginform.put("email", Encoding.urlEncode(account.getUser()));
+                        loginform.put("password", Encoding.urlEncode(account.getPass()));
                     } else {
                         loginform.put("username", Encoding.urlEncode(account.getUser()));
                         loginform.put("password", Encoding.urlEncode(account.getPass()));
