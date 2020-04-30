@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,22 +31,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(www\\.)?pornhostdecrypted\\.com/([0-9]+/[0-9]+\\.html|[0-9]+|embed/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(?:www\\.)?pornhost\\.com/([0-9]+/([0-9]+\\.html)?|[0-9]+|embed/\\d+)" })
 public class PornHostCom extends PluginForHost {
     private String ending = null;
     private String dllink = null;
 
     public PornHostCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("pornhostdecrypted.com/", "pornhost.com/"));
-        if (link.getDownloadURL().contains(".com/embed/")) {
-            String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
-            String id = new Regex(link.getDownloadURL(), "embed/(\\d+)").getMatch(0);
-            link.setUrlDownload(protocol + "://www.pornhost.com/" + id);
-        }
     }
 
     @Override
@@ -58,11 +51,11 @@ public class PornHostCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -72,22 +65,27 @@ public class PornHostCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename.equals("")) {
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            filename = new Regex(link.getPluginPatternMatcher(), "(\\d+)(\\.html)?$").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML(">The movie needs to be converted first")) {
-            downloadLink.getLinkStatus().setStatusText("The movie needs to be converted first");
-            downloadLink.setFinalFileName(filename.trim() + ".flv");
+            link.getLinkStatus().setStatusText("The movie needs to be converted first");
+            link.setFinalFileName(filename.trim() + ".flv");
             return AvailableStatus.TRUE;
         }
-        if (!downloadLink.getDownloadURL().contains(".html")) {
+        if (!link.getPluginPatternMatcher().contains(".html")) {
             dllink = br.getRegex("\"(https?://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("file: \"(.*?)\"").getMatch(0);
             }
             if (dllink == null) {
-                dllink = br.getRegex("download this file</label>.*?<a href=\"(.*?)\"").getMatch(0);
+                /* 2020-04-30 */
+                dllink = br.getRegex("class=\"download button\" target=\"blank\" href=\"(https[^<>\"]+)").getMatch(0);
+            }
+            if (dllink == null) {
+                /* 2020-04-30 */
+                dllink = br.getRegex("<source src=\"(http[^<>\"]+)\" type=\"video/mp4\">").getMatch(0);
             }
         } else {
             dllink = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
@@ -107,12 +105,12 @@ public class PornHostCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

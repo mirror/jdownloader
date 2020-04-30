@@ -183,7 +183,7 @@ public class DeepbridCom extends antiDDoSForHost {
         }
         link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isContentDisposition()) {
             br.followConnection();
             handleKnownErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
@@ -301,6 +301,7 @@ public class DeepbridCom extends antiDDoSForHost {
                 }
             }
         } catch (final Throwable e) {
+            logger.log(e);
             logger.info("Website-workaround to find additional supported hosts failed");
         }
         account.setConcurrentUsePossible(true);
