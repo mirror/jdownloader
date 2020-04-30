@@ -148,28 +148,20 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                 if (referer != null && plugin.canHandle(referer)) {
                     rewriteHost = false;
                     url = request.getUrl();
+                } else {
+                    url = url.replaceAll("^(?i)(https?://)", request.getURL().getProtocol() + "://");
                 }
             }
-            if (url != null && (StringUtils.startsWithCaseInsensitive(url, "https://") || StringUtils.startsWithCaseInsensitive(url, "http://"))) {
-                if (br != null && br.getRequest() != null) {
-                    if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
-                        url = url.replaceAll("^(?i)(https?://)", "https://");
-                    } else {
-                        url = url.replaceAll("^(?i)(https?://)", "http://");
-                    }
-                }
-            } else if (StringUtils.equals(url, siteDomain) || StringUtils.equals(url, plugin.getHost())) {
-                if (br != null && br.getRequest() != null) {
-                    url = br._getURL().getProtocol() + "://" + url;
+            if (StringUtils.equals(url, siteDomain) || StringUtils.equals(url, plugin.getHost())) {
+                if (request != null) {
+                    url = request.getURL().getProtocol() + "://" + url;
                 } else {
                     url = "http://" + url;
                 }
-            } else {
-                url = null;
             }
         }
-        if (url == null) {
-            url = br.getURL();
+        if (url == null && request != null) {
+            url = request.getUrl();
         }
         if (url != null) {
             // remove anchor
@@ -180,7 +172,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             }
             return url;
         } else {
-            return "http://" + siteDomain;
+            if (request != null) {
+                return request.getURL().getProtocol() + "://" + siteDomain;
+            } else {
+                return "http://" + siteDomain;
+            }
         }
     }
 
