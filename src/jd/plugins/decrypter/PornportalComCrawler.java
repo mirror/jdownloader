@@ -56,6 +56,10 @@ public class PornportalComCrawler extends PluginForDecrypt {
         ret.add(new String[] { "babes.com" });
         ret.add(new String[] { "bellesafilms.com" });
         ret.add(new String[] { "biempire.com" });
+        /*
+         * 2020-04-30: Special: They have an old- and new sytem running in parallel. Old = https://ma.brazzers.com/access/login/ new
+         * (pornportal) = https://site-ma.brazzers.com/login
+         */
         ret.add(new String[] { "brazzers.com" });
         ret.add(new String[] { "digitalplayground.com" });
         ret.add(new String[] { "erito.com", "eritos.com" });
