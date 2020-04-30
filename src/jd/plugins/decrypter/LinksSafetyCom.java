@@ -19,16 +19,17 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links-safety.com" }, urls = { "https?://(?:www\\.)?links-safety\\.com/(?:links\\.php\\?links=|links/)?([a-z0-9]+)" })
-public class LinksSafetyCom extends PluginForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links-safety.com" }, urls = { "https?://(?:www\\.)?links-safety\\.com/(?:links\\.php\\?links=|links/)?(?:\\d+_)?([a-z0-9]+)" })
+public class LinksSafetyCom extends antiDDoSForDecrypt {
     public LinksSafetyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,7 +39,7 @@ public class LinksSafetyCom extends PluginForDecrypt {
         final String parameter = param.toString();
         final String linkid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage("https://" + this.getHost() + "/links.php?links=" + linkid);
+        getPage("https://" + this.getHost() + "/links.php?links=" + linkid);
         /*
          * 2020-04-16: e.g. <div class="error">Hidden Links not found, please double check your url. However, the Link may have been deleted
          * as per request from the uploader or any other issue like (copyright infringement).</div>
@@ -47,19 +48,12 @@ public class LinksSafetyCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = null;
         final String[] links = br.getRegex("href=\"(http[^<>\"\\']+)\" target=\"_blank\" rel=\"nofollow\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

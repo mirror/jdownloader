@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -17,7 +18,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
-public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
+public abstract class AbstractRecaptchaV2<T extends Plugin> {
     public static enum TYPE {
         NORMAL,
         INVISIBLE
@@ -40,10 +41,12 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     public static boolean containsRecaptchaV2Class(String string) {
         // class="g-recaptcha-response"
         // class="g-recaptcha"
+        // grecaptcha.execute RecaptchaV3 support
         return string != null && new Regex(string, "class\\s*=\\s*('|\")g-recaptcha(-response)?(\\1|\\s+)").matches();
     }
 
     public static boolean containsRecaptchaV2Class(Form form) {
+        // change naming to contains RecaptchaClass oder V2V3 Class
         return form != null && containsRecaptchaV2Class(form.getHtmlCode());
     }
 
@@ -126,6 +129,8 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     protected String getSiteUrl() {
         final String siteDomain = getSiteDomain();
         String url = null;
+        final Request request = br != null ? br.getRequest() : null;
+        boolean rewriteHost = true;
         if (plugin != null) {
             if (plugin instanceof PluginForHost) {
                 final DownloadLink downloadLink = ((PluginForHost) plugin).getDownloadLink();
@@ -138,6 +143,13 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                     url = crawledLink.getURL();
                 }
             }
+            if (url != null && request != null) {
+                final String referer = request.getHeaders().getValue("Referer");
+                if (referer != null && plugin.canHandle(referer)) {
+                    rewriteHost = false;
+                    url = request.getUrl();
+                }
+            }
             if (url != null && (StringUtils.startsWithCaseInsensitive(url, "https://") || StringUtils.startsWithCaseInsensitive(url, "http://"))) {
                 if (br != null && br.getRequest() != null) {
                     if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
@@ -147,13 +159,10 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
                     }
                 }
             } else if (StringUtils.equals(url, siteDomain) || StringUtils.equals(url, plugin.getHost())) {
-                url = "http://" + url;
                 if (br != null && br.getRequest() != null) {
-                    if (StringUtils.startsWithCaseInsensitive(br.getURL(), "https")) {
-                        url = url.replaceAll("^(?i)(https?://)", "https://");
-                    } else {
-                        url = url.replaceAll("^(?i)(https?://)", "http://");
-                    }
+                    url = br._getURL().getProtocol() + "://" + url;
+                } else {
+                    url = "http://" + url;
                 }
             } else {
                 url = null;
@@ -163,9 +172,10 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             url = br.getURL();
         }
         if (url != null) {
+            // remove anchor
             url = url.replaceAll("(#.+)", "");
             final String urlDomain = Browser.getHost(url, true);
-            if (!StringUtils.equalsIgnoreCase(urlDomain, siteDomain)) {
+            if (rewriteHost && !StringUtils.equalsIgnoreCase(urlDomain, siteDomain)) {
                 url = url.replaceFirst(Pattern.quote(urlDomain), siteDomain);
             }
             return url;
@@ -176,7 +186,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     private final String siteDomain;
 
-    public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
+    public AbstractRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken, boolean boundToDomain) {
         this.plugin = plugin;
         this.br = br.cloneBrowser();
         if (br.getRequest() == null) {
@@ -305,21 +315,26 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         }
     }
 
-    protected RecaptchaV2Challenge createChallenge() {
-        return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
+    protected RecaptchaV2Challenge<T> createChallenge() {
+        return new RecaptchaV2Challenge<T>(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
             @Override
             public String getSiteUrl() {
-                return AbstractCaptchaHelperRecaptchaV2.this.getSiteUrl();
+                return AbstractRecaptchaV2.this.getSiteUrl();
+            }
+
+            @Override
+            public AbstractRecaptchaV2<T> getAbstractCaptchaHelperRecaptchaV2() {
+                return AbstractRecaptchaV2.this;
             }
 
             @Override
             public Map<String, Object> getV3Action() {
-                return AbstractCaptchaHelperRecaptchaV2.this.getV3Action();
+                return AbstractRecaptchaV2.this.getV3Action();
             }
 
             @Override
             public String getType() {
-                final TYPE type = AbstractCaptchaHelperRecaptchaV2.this.getType();
+                final TYPE type = AbstractRecaptchaV2.this.getType();
                 if (type != null) {
                     return type.name();
                 } else {

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.chat;
 
 import java.io.File;
@@ -39,7 +38,6 @@ class IRCListener implements IRCEventListener {
         // logger.info("Disconnected");
         this.owner.setLoggedIn(false);
         this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Connection lost. type /connect if jd does not connect by itself");
-
     }
 
     public void onError(final int num, final String msg) {
@@ -52,7 +50,6 @@ class IRCListener implements IRCEventListener {
                 this.owner.setNick(this.owner.getNickname());
             }
             break;
-
         }
     }
 
@@ -74,7 +71,6 @@ class IRCListener implements IRCEventListener {
 
     public void onKick(final String chan, final IRCUser u, final String nickPass, final String msg) {
         // logger.info(chan + "> " + u.getNick() + " kicks " + nickPass);
-
         this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " kicks " + nickPass + " (" + msg + ")");
     }
 
@@ -82,17 +78,14 @@ class IRCListener implements IRCEventListener {
         // logger.info("Mode: " + u.getNick() + " sets modes " + mode + " " +
         // nickPass);
         this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets modes " + mode + " " + nickPass);
-
     }
 
     public void onMode(final String chan, final IRCUser u, final IRCModeParser mp) {
         // logger.info(chan + "> " + u.getNick() + " sets mode: " +
         // mp.getLine());
-
         for (int i = 1; i <= mp.getCount(); i++) {
             this.owner.onMode(mp.getOperatorAt(i), mp.getModeAt(i), mp.getArgAt(i));
         }
-
         this.owner.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets mode: " + mp.getLine());
     }
 
@@ -127,7 +120,6 @@ class IRCListener implements IRCEventListener {
         }
         this.owner.removeUser(u.getNick());
         // owner.requestNameList();
-
     }
 
     public void onPing(final String p) {
@@ -135,9 +127,10 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onPrivmsg(final String chan, final IRCUser u, final String msg) {
-
         final User user = this.owner.getUser(u.getNick());
-        if (user == null) { return; }
+        if (user == null) {
+            return;
+        }
         final String nickt = this.owner.getNick().toLowerCase();
         final boolean isPrivate = chan.toLowerCase().equals(nickt);
         final String msgt = msg.toLowerCase();
@@ -160,14 +153,11 @@ class IRCListener implements IRCEventListener {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
                 return;
-
             }
         }
         if (msg.trim().startsWith("ACTION ")) {
             this.owner.addToText(null, ChatExtension.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
-
         } else if (chan.equals(this.owner.getNick())) {
             TreeMap<String, JDChatPMS> pms = this.owner.getPms();
             if (!pms.containsKey(user.name.toLowerCase())) {
@@ -176,12 +166,9 @@ class IRCListener implements IRCEventListener {
             }
             this.owner.notifyPMS(user.name, msg);
             this.owner.addToText(user, null, Utils.prepareMsg(msg), pms.get(user.name.toLowerCase()).getTextArea(), pms.get(user.name.toLowerCase()).getSb());
-
         } else {
             this.owner.addToText(user, null, Utils.prepareMsg(msg));
-
         }
-
     }
 
     public void onQuit(final IRCUser u, final String msg) {
@@ -208,21 +195,16 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onReply(final int num, final String value, final String msg) {
-
         // logger.info("Reply #" + num + ": " + value + " " + msg);
         if (num == IRCConstants.RPL_NAMREPLY) {
             this.owner.addUsers(msg.trim().split(" "));
         }
-
         if (num == IRCConstants.RPL_ENDOFNAMES) {
             this.owner.updateNamesPanel();
-
         }
         if (num == IRCConstants.RPL_TOPIC) {
             this.owner.setTopic(msg);
-
         }
-
     }
 
     public void onTopic(final String chan, final IRCUser u, final String topic) {

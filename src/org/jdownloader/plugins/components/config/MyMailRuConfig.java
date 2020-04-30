@@ -11,37 +11,37 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "my.mail.ru", type = Type.HOSTER)
 public interface MyMailRuConfig extends PluginConfigInterface {
     public static enum PreferredQuality implements LabelInterface {
-        DEFAULT {
+        BEST {
             @Override
             public String getLabel() {
                 return "Best";
             }
         },
-        QUALITY1 {
+        Q360P {
             @Override
             public String getLabel() {
                 return "360p";
             }
         },
-        QUALITY2 {
+        Q480P {
             @Override
             public String getLabel() {
                 return "480p";
             }
         },
-        QUALITY3 {
+        Q720P {
             @Override
             public String getLabel() {
                 return "720p";
             }
         },
-        QUALITY4 {
+        Q1080P {
             @Override
             public String getLabel() {
                 return "1080p";
             }
         },
-        QUALITY5 {
+        Q2160P {
             @Override
             public String getLabel() {
                 return "2160p (4k)";

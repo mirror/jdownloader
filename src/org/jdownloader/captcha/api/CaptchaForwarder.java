@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.http.Browser;
+import jd.plugins.PluginForDecrypt;
 
 import org.appwork.remoteapi.exceptions.FileNotFound404Exception;
 import org.appwork.remoteapi.exceptions.InternalApiException;
@@ -66,8 +67,8 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
                     };
 
                     @Override
-                    protected org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge createChallenge() {
-                        return new RecaptchaV2Challenge(lsiteKey, stoken, null, this.br, this.getSiteDomain()) {
+                    protected org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge<PluginForDecrypt> createChallenge() {
+                        return new RecaptchaV2Challenge<PluginForDecrypt>(lsiteKey, stoken, null, this.br, this.getSiteDomain()) {
                             @Override
                             public org.jdownloader.DomainInfo getDomainInfo() {
                                 return DomainInfo.getInstance(domain);
