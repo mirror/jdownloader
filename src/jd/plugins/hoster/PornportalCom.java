@@ -888,18 +888,14 @@ public class PornportalCom extends PluginForHost {
                                      * will never be checked at the same time (?)
                                      */
                                     logger.info("Pornhub external login successful");
+                                    boolean addNewAccount = false;
+                                    final PluginForHost pornhubPlugin = JDUtilities.getPluginForHost(domain_pornhub);
                                     if (pornhubAccount == null) {
                                         /* Adds account if non existant */
                                         logger.info("Failed to find special pornhub account --> Creating it");
-                                        final PluginForHost pornhubPlugin = JDUtilities.getPluginForHost(domain_pornhub);
                                         pornhubAccount = new Account(targetUsername, "123456");
                                         pornhubAccount.setPlugin(pornhubPlugin);
-                                        AccountController.getInstance().addAccount(pornhubPlugin, pornhubAccount);
-                                        pornhubAccount = findSpecialPornhubAccount(account);
-                                        if (pornhubAccount == null) {
-                                            /* This should never happen */
-                                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                        }
+                                        addNewAccount = true;
                                         /* TODO: Why does this not work? */
                                         // AccountController.getInstance().addAccount(pornhubAccount);
                                     }
@@ -924,6 +920,9 @@ public class PornportalCom extends PluginForHost {
                                      * main account of this plugin gets refreshed.
                                      */
                                     jd.plugins.hoster.PornHubCom.saveCookies(br2, pornhubAccount);
+                                    if (addNewAccount) {
+                                        AccountController.getInstance().addAccount(pornhubPlugin, pornhubAccount);
+                                    }
                                 }
                             } else if (pornhubAccount != null) {
                                 logger.info("Pornhub was supported but is not supported anymore --> Removing special account");
