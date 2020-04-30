@@ -323,15 +323,10 @@ public class GoogleDrive extends PluginForHost {
             }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
-                dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
+                /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
+                dllink = br.getRegex("\"([^\"]*?/uc\\?export=download[^<>\"]+)\"").getMatch(0);
                 if (dllink != null) {
-                    br.getPage(HTMLEntities.unhtmlentities(dllink));
-                    dllink = br.getRedirectLocation();
-                } else {
-                    dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
-                    if (dllink != null) {
-                        dllink = HTMLEntities.unhtmlentities(dllink);
-                    }
+                    dllink = HTMLEntities.unhtmlentities(dllink);
                 }
             }
             if (dllink == null && streamLink == null) {
