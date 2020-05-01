@@ -32,6 +32,8 @@ import org.jdownloader.dialogs.NewPasswordDialogInterface;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.config.GoogleConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -175,7 +177,19 @@ public class GoogleHelper {
         return br;
     }
 
+    public static String getUserAgent() {
+        final String cfgUserAgent = PluginJsonConfig.get(GoogleConfig.class).getUserAgent();
+        if (cfgUserAgent.equalsIgnoreCase("JDDEFAULT")) {
+            /* Return default */
+            return "JDownloader2";
+        } else {
+            /* Return user selection */
+            return cfgUserAgent;
+        }
+    }
+
     public boolean login(Account account) throws Exception {
+        /* TODO: Add logger output */
         try {
             /*
              * 2020-02-10: Disabled boolean again! Seems like Google Login is still working for some users.
@@ -185,7 +199,8 @@ public class GoogleHelper {
             if (pluginBroken) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nGoogle login is broken!\r\nA bugfix in the near future is very unlikely.\r\nSee svn.jdownloader.org/issues/86318 ", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            br.setHeader("User-Agent", "JDownloader2");
+            final String userAgent = getUserAgent();
+            br.setHeader("User-Agent", userAgent);
             this.br.setDebug(true);
             this.br.setCookiesExclusive(true);
             // delete all cookies
@@ -213,14 +228,15 @@ public class GoogleHelper {
                     /* 2020-01-10: Devs only */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                // logger.info("Attempting login via user cookies");
                 /*
                  * Work with the cookies the user has provided --> In this case we cannot even login via password as we do not know the
                  * users' password!
                  */
                 br.setCookies(userCookies);
+                /* TODO: Set previously "maybe added via Cookies-object" User-Agent! */
                 if (StringUtils.isEmpty(userCookies.getUserAgent())) {
-                    /* Fallback - try with current Chrome UA TODO: Add user-agent setting */
-                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36");
+                    br.getHeaders().put("User-Agent", userAgent);
                 }
                 if (isCacheEnabled() && hasBeenValidatedRecently(account)) {
                     return true;
@@ -233,13 +249,17 @@ public class GoogleHelper {
                 // /* Invalid cookies */
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // }
-                if (!validateSuccess()) {
+                if (validateSuccess()) {
+                    // logger.info("user cookies login successful");
+                    validate(account);
+                    /* TODO: Save all cookies of all domains */
+                    saveCookiesOnAccount(account);
+                    return true;
+                } else {
+                    // logger.info("user login cookies login failed");
+                    /* Give up. We only got these cookies so login via username and password is not possible! */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                validate(account);
-                /* TODO: Save all cookies of all domains */
-                saveCookiesOnAccount(account);
-                return true;
             }
             this.br.clearCookies(null);
             prepBR(this.br);

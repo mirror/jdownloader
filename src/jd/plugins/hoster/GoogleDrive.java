@@ -23,7 +23,9 @@ import java.util.regex.Pattern;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.GoogleConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -492,5 +494,10 @@ public class GoogleDrive extends PluginForHost {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
             link.removeProperty(GoogleDrive.NOCHUNKS);
         }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return GoogleConfig.class;
     }
 }
