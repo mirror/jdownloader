@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,20 +39,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz", "superload.cz" }, urls = { "https?://(?:www\\.)?stahomat\\.(?:cz|sk)/(stahnout|download)/[a-zA-Z0-9%-]+", "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahovatelka\\.cz)/(stahnout|download)/[a-zA-Z0-9%-]+" })
 public class StahomatCzSuperloadCz extends antiDDoSForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
     /* IMPORTANT2: 30.04.15: They block IPs from the following countries: es, it, jp, fr, cl, br, ar, de, mx, cn, ve */
-    private static MultiHosterManagement mhm = null;
-
     public StahomatCzSuperloadCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://" + this.getHost() + "/");
@@ -61,11 +58,6 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
     @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
-    }
-
-    @Override
-    public void init() {
-        mhm = new MultiHosterManagement(this.getHost());
     }
 
     private String get_api_base() {
@@ -198,7 +190,6 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        mhm.runCheck(account, link);
         prepBrowser(br);
         final String pass = link.getStringProperty("pass", null);
         String downloadURL = checkDirectLink(link, "superloadczdirectlink");
@@ -212,7 +203,7 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             downloadURL = PluginJSonUtils.getJsonValue(br, "link");
             if (downloadURL == null) {
                 handleErrors(account, link);
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 5 * 60 * 1000l);
             }
         }
         // might need a sleep here hoster seems to have troubles with new links.
@@ -222,20 +213,18 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
     private void handleErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         final String error = PluginJSonUtils.getJsonValue(br, "error");
         if (StringUtils.equalsIgnoreCase(error, "invalidLink")) {
-            logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-            mhm.putError(account, link, 60 * 60 * 1000l, "Invalid Link");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": Invalid Link", 3 * 60 * 1000l);
         } else if (StringUtils.equalsIgnoreCase(error, "temporarilyUnsupportedServer")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
         } else if (StringUtils.equalsIgnoreCase(error, "fileNotFound")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (StringUtils.equalsIgnoreCase(error, "unsupportedServer")) {
-            logger.info("Superload.cz says 'unsupported server', disabling real host");
-            mhm.putError(account, link, 5 * 60 * 1000l, "Unsuported Server");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": Unsupported server", 3 * 60 * 1000l);
         } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits") || StringUtils.equalsIgnoreCase(error, "insufficient credits")) {
             logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else if (StringUtils.equalsIgnoreCase(error, "no credits")) {
-            logger.info("No credits");
+            logger.info("No credits --> ZERO traffic left");
             final AccountInfo ai = account.getAccountInfo();
             ai.setTrafficLeft(0);
             account.setAccountInfo(ai);
@@ -244,12 +233,10 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             synchronized (account) {
                 account.removeProperty("token");
                 /* First temp. disable - account will either be valid or gets permanently disabled on next accountcheck */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "User deleted- or account banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
-            mhm.handleErrorGeneric(account, link, "unable_to_download_the_file", 50, 5 * 60 * 1000l);
-        } else if (StringUtils.equalsIgnoreCase(error, "User deleted")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": Unable to download the file", 3 * 60 * 1000l);
         } else if (StringUtils.equalsIgnoreCase(error, "Invalid token")) {
             /* Needs full login to refresh token on next login */
             account.removeProperty("token");

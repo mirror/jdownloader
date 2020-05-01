@@ -125,13 +125,17 @@ public class FlashfilesCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final Form freeform = br.getFormbyActionRegex(".*?freedownload\\.php");
+        Form freeform = br.getFormbyActionRegex(".*?freedownload\\.php");
+        if (freeform == null) {
+            /* 2020-05-01: E.g. free.flash-files.com */
+            freeform = br.getFormbyActionRegex(".+free\\..+");
+        }
         if (freeform == null) {
             logger.warning("Failed to find freeform");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
