@@ -44,19 +44,21 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
-    private static Object       LOCK                                         = new Object();
-    private int                 statusCode                                   = 0;
-    private String              statusMessage                                = null;
-    private String              fuid                                         = null;
-    private String              recapID                                      = null;
-    private static final int    STATUSCODE_APIDISABLED                       = 400;
-    private static final String ERRORMESSAGE_APIDISABLEDTEXT                 = "API is disabled, please wait or use filer.net from your browser";
-    private static final int    STATUSCODE_DOWNLOADTEMPORARILYDISABLED       = 500;
-    private static final String ERRORMESSAGE_DOWNLOADTEMPORARILYDISABLEDTEXT = "Download temporarily disabled!";
-    private static final int    STATUSCODE_UNKNOWNERROR                      = 599;
-    private static final String ERRORMESSAGE_UNKNOWNERRORTEXT                = "Unknown file error";
-    private static final String DIRECT_WEB                                   = "directlinkWeb";
-    private static final String DIRECT_API                                   = "directlinkApi";
+    private static Object       LOCK                                                   = new Object();
+    private int                 statusCode                                             = 0;
+    private String              statusMessage                                          = null;
+    private String              fuid                                                   = null;
+    private String              recapID                                                = null;
+    private static final int    STATUSCODE_APIDISABLED                                 = 400;
+    private static final String ERRORMESSAGE_APIDISABLEDTEXT                           = "API is disabled, please wait or use filer.net from your browser";
+    private static final int    STATUSCODE_DOWNLOADTEMPORARILYDISABLED                 = 500;
+    private static final String ERRORMESSAGE_DOWNLOADTEMPORARILYDISABLEDTEXT           = "Download temporarily disabled!";
+    private static final int    STATUSCODE_UNKNOWNERROR                                = 599;
+    private static final String ERRORMESSAGE_UNKNOWNERRORTEXT                          = "Unknown file error";
+    private static final String DIRECT_WEB                                             = "directlinkWeb";
+    private static final String DIRECT_API                                             = "directlinkApi";
+    private static final String SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS = "ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS";
+    private static final String SETTING_ENABLE_HTTP                                    = "ENABLE_HTTP";
 
     @SuppressWarnings("deprecation")
     public FilerNet(PluginWrapper wrapper) {
@@ -69,7 +71,7 @@ public class FilerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+        if (this.getPluginConfig().getBooleanProperty(SETTING_ENABLE_HTTP, false)) {
             link.setUrlDownload("http://" + this.getHost() + "/get/" + getFileID(link));
         } else {
             link.setUrlDownload("https://" + this.getHost() + "/get/" + getFileID(link));
@@ -145,7 +147,7 @@ public class FilerNet extends PluginForHost {
 
     @SuppressWarnings({ "deprecation" })
     public void doFree(final Account account, final DownloadLink downloadLink) throws Exception {
-        if (this.getPluginConfig().getBooleanProperty("ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS", true)) {
+        if (this.getPluginConfig().getBooleanProperty(SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS, true)) {
             doFreeAPI(account, downloadLink);
         } else {
             doFreeWebsite(account, downloadLink);
@@ -484,6 +486,7 @@ public class FilerNet extends PluginForHost {
         if (br.containsHTML(">Maximale Verbindungen erreicht<")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         } else if (br.containsHTML(">\\s*Leider sind alle kostenlosen Download-Slots belegt|Im Moment sind leider alle Download-Slots für kostenlose Downloads belegt|Bitte versuche es später erneut oder behebe das Problem mit einem Premium")) {
+            /* 2020-05-01 */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         }
         if (br.containsHTML(">Free Download Limit erreicht<")) {
@@ -589,8 +592,8 @@ public class FilerNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS", "Enable API for free- and free account downloads?\r\nBy disabling this you will force JD to use the website instead.\r\nThis could lead to unexpected errors.").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Use HTTP instead of HTTPS").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS, "Enable API for free- and free account downloads?\r\nBy disabling this you will force JD to use the website instead.\r\nThis could lead to unexpected errors.").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_HTTP, "Use HTTP instead of HTTPS").setDefaultValue(false));
     }
 
     @Override
