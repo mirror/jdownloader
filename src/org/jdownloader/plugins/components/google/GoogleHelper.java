@@ -16,18 +16,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.InputDialogInterface;
@@ -47,6 +35,18 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -181,7 +181,7 @@ public class GoogleHelper {
              * 2020-02-10: Disabled boolean again! Seems like Google Login is still working for some users.
              * https://svn.jdownloader.org/issues/86318
              */
-            final boolean pluginBroken = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+            final boolean pluginBroken = false;
             if (pluginBroken) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nGoogle login is broken!\r\nA bugfix in the near future is very unlikely.\r\nSee svn.jdownloader.org/issues/86318 ", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
