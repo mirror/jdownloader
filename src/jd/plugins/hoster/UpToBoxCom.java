@@ -23,6 +23,23 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -43,23 +60,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -352,36 +352,44 @@ public class UpToBoxCom extends antiDDoSForHost {
             checkErrorsWebsite(link, null);
             dllink = this.getDllinkWebsite();
             if (dllink == null) {
-                Form download1 = null;
-                for (Form form : br.getForms()) {
-                    if (form.containsHTML("waitingToken")) {
-                        download1 = form;
+                String passCode = null;
+                Form dlform = null;
+                int counter = 0;
+                final int countermax = 2;
+                do {
+                    logger.info(String.format("dlform loop %d of %d", counter + 1, countermax + 1));
+                    for (Form form : br.getForms()) {
+                        if (form.containsHTML("waitingToken")) {
+                            dlform = form;
+                            break;
+                        }
+                    }
+                    if (dlform == null) {
+                        logger.warning("Failed to find dlform");
                         break;
                     }
-                }
-                if (download1 == null) {
-                    logger.warning("Failed to find Form download1");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String passCode = null;
-                if (download1.hasInputFieldByName("file-password")) {
-                    passCode = link.getDownloadPassword();
-                    if (passCode == null) {
-                        passCode = getUserInput("Password?", link);
+                    if (dlform.hasInputFieldByName("file-password")) {
+                        passCode = link.getDownloadPassword();
+                        if (passCode == null) {
+                            passCode = getUserInput("Password?", link);
+                        }
+                        dlform.put("file-password", Encoding.urlEncode(passCode));
                     }
-                    download1.put("file-password", Encoding.urlEncode(passCode));
-                }
-                final int waittime = getPreDownloadWaittimeWebsite();
-                if (waittime > 0) {
-                    logger.info("Found pre-download-waittime: " + waittime);
-                    this.sleep(waittime * 1001l, link);
-                }
-                this.submitForm(download1);
-                checkErrorsWebsite(link, null);
-                if (passCode != null) {
-                    /* Save correctly entered password. */
-                    link.setDownloadPassword(passCode);
-                }
+                    final int waittime = getPreDownloadWaittimeWebsite();
+                    if (waittime > 0) {
+                        logger.info("Found pre-download-waittime: " + waittime);
+                        this.sleep(waittime * 1001l, link);
+                    }
+                    this.submitForm(dlform);
+                    checkErrorsWebsite(link, null);
+                    if (passCode != null) {
+                        /* Save correctly entered password. */
+                        link.setDownloadPassword(passCode);
+                    } else {
+                        link.setDownloadPassword(null);
+                    }
+                    counter++;
+                } while (counter <= countermax);
                 dllink = getDllinkWebsite();
                 if (dllink == null) {
                     logger.warning("Failed to find final downloadurl");

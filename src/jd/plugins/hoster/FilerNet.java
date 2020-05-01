@@ -240,8 +240,11 @@ public class FilerNet extends PluginForHost {
             int maxCaptchaTries = 4;
             int tries = 0;
             while (tries <= maxCaptchaTries) {
+                logger.info(String.format("Captcha loop %d of %d", tries + 1, maxCaptchaTries + 1));
                 continueForm = br.getFormbyKey("hash");
                 if (continueForm == null) {
+                    handleErrors(account, false);
+                    logger.info("Failed to find continueForm");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
@@ -262,6 +265,8 @@ public class FilerNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (dllink == null) {
                 /* This should never happen! */
+                handleErrors(account, false);
+                logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -478,6 +483,8 @@ public class FilerNet extends PluginForHost {
         }
         if (br.containsHTML(">Maximale Verbindungen erreicht<")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*Leider sind alle kostenlosen Download-Slots belegt|Im Moment sind leider alle Download-Slots für kostenlose Downloads belegt|Bitte versuche es später erneut oder behebe das Problem mit einem Premium")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         }
         if (br.containsHTML(">Free Download Limit erreicht<")) {
             final String time = br.getRegex("<span id=\"time\">(\\d+)<").getMatch(0);
@@ -508,7 +515,7 @@ public class FilerNet extends PluginForHost {
 
     private void handleErrorsAPI(Account account) throws PluginException {
         if (statusCode == 501) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 2 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         } else if (statusCode == 502) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 1 * 60 * 1000l);
         } else if (statusCode == 504) {

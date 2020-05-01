@@ -71,13 +71,13 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     public static final String getDefaultAnnotationPatternPart() {
-        return "/[A-Za-z0-9]+(?:/[^/<>]+)?";
+        return "/([A-Za-z0-9]+)(?:/[^/<>]+)?";
     }
 
     public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPart());
+            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
     }
@@ -104,7 +104,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/([A-Za-z0-9]+)");
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
         final String fid = urlinfo.getMatch(0);
         return fid;
     }
