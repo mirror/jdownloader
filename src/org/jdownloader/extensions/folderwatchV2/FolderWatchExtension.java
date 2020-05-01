@@ -28,23 +28,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.FileNameModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.parser.html.HTMLParser;
-import jd.plugins.AddonPanel;
-import jd.plugins.ContainerStatus;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginsC;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -74,6 +57,23 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.FileNameModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.parser.html.HTMLParser;
+import jd.plugins.AddonPanel;
+import jd.plugins.ContainerStatus;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginsC;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderWatchTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Long> {
     private FolderWatchConfigPanel                          configPanel;
@@ -482,7 +482,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     private final boolean modify(CrawledLink link) {
                         CrawledLink source = link;
                         while (source != null) {
-                            if (StringUtils.startsWithCaseInsensitive(source.getUrlLink(), jobIDentifier)) {
+                            if (StringUtils.startsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
                                 return true;
                             } else {
                                 source = source.getSourceLink();
@@ -533,7 +533,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                                         private final boolean modify(CrawledLink link) {
                                             CrawledLink source = link;
                                             while (source != null) {
-                                                if (StringUtils.startsWithCaseInsensitive(source.getUrlLink(), jobIDentifier)) {
+                                                if (StringUtils.startsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
                                                     return true;
                                                 } else {
                                                     source = source.getSourceLink();
@@ -565,7 +565,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             crawledLinkModifier = jobModifier;
                         }
                     }
-                    private final Charset             UTF8 = Charset.forName("UTF-8");
+                    private final Charset UTF8 = Charset.forName("UTF-8");
 
                     @Override
                     protected CrawledLink crawledLinkFactorybyURL(CharSequence url) {
