@@ -489,12 +489,22 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 postPageRaw(this.br, "/requestcaptcha", "", account);
                 final String challenge = PluginJSonUtils.getJsonValue(br, "challenge");
-                final String captcha_url = PluginJSonUtils.getJsonValue(br, "captcha_url");
+                String captcha_url = PluginJSonUtils.getJsonValue(br, "captcha_url");
                 // Dependency
                 if (inValidate(challenge) || inValidate(captcha_url)) {
                     logger.warning("challenge = " + challenge + " | captcha_url = " + captcha_url);
                     this.handleErrors(account, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (captcha_url.startsWith("https://")) {
+                    logger.info("download-captcha_url is already https");
+                } else {
+                    /*
+                     * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and
+                     * 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
+                     */
+                    logger.info("download-captcha_url is not https --> Changing it to https");
+                    captcha_url = captcha_url.replace("http://", "https://");
                 }
                 final String code = getCaptchaCode(captcha_url, downloadLink);
                 if (inValidate(code)) {
@@ -855,13 +865,13 @@ public abstract class K2SApi extends PluginForHost {
                         final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
                         String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
                         if (captcha_url.startsWith("https://")) {
-                            logger.info("download-captcha_url is already https");
+                            logger.info("login-captcha_url is already https");
                         } else {
                             /*
-                             * 2020-02-03: Possible workaround for this issue: board.jdownloader.org/showthread.php?t=82989 and 2020-04-23:
-                             * board.jdownloader.org/showthread.php?t=83927
+                             * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989
+                             * and 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
                              */
-                            logger.info("download-captcha_url is not https --> Changing it to https");
+                            logger.info("login-captcha_url is not https --> Changing it to https");
                             captcha_url = captcha_url.replace("http://", "https://");
                         }
                         // Dependency
