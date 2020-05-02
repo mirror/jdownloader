@@ -68,7 +68,7 @@ public class StreamtapeCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/v/([A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:v|e)/([A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
