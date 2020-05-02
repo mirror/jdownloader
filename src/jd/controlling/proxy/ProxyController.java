@@ -21,22 +21,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.ClonedProxy;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -64,7 +48,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
@@ -94,6 +77,22 @@ import com.btr.proxy.selector.whitelist.ProxyBypassListSelector;
 import com.btr.proxy.util.Logger;
 import com.btr.proxy.util.Logger.LogBackEnd;
 import com.btr.proxy.util.Logger.LogLevel;
+
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.ClonedProxy;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 
 //import com.btr.proxy.search.ProxySearchStrategy;
 //import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
@@ -129,9 +128,15 @@ public class ProxyController implements ProxySelectorInterface {
                                                                                                 @Override
                                                                                                 public void killQueue() {
                                                                                                     LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can ' t be killed
-                                                                                                     */
+                                                                                                                                                                    /*
+                                                                                                                                                                     * this
+                                                                                                                                                                     * queue
+                                                                                                                                                                     * can
+                                                                                                                                                                     * '
+                                                                                                                                                                     * t
+                                                                                                                                                                     * be
+                                                                                                                                                                     * killed
+                                                                                                                                                                     */
                                                                                                 }
                                                                                             };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
@@ -192,16 +197,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -1256,27 +1261,23 @@ public class ProxyController implements ProxySelectorInterface {
                 final SelectedProxy selectedProxy = getSelectedProxy(request.getProxy());
                 if (selectedProxy != null && selectedProxy.getSelector() != null) {
                     final AbstractProxySelectorImpl selector = selectedProxy.getSelector();
-                    if (e instanceof NetworkInterfaceException) {
-                        // TODO:
+                    final Plugin plg = getPluginFromThread();
+                    if (plg != null) {
+                        selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
                     } else {
-                        final Plugin plg = getPluginFromThread();
-                        if (plg != null) {
-                            selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, selectedProxy));
-                        } else {
-                            if (e instanceof ProxyEndpointConnectException) {
-                                final Socks5EndpointConnectException socks5EndpointConnectException = Exceptions.getInstanceof(e, Socks5EndpointConnectException.class);
-                                if (socks5EndpointConnectException != null) {
-                                    switch (socks5EndpointConnectException.getError()) {
-                                    case TTL_EXPIRED:
-                                        return false;
-                                    default:
-                                        break;
-                                    }
+                        if (e instanceof ProxyEndpointConnectException) {
+                            final Socks5EndpointConnectException socks5EndpointConnectException = Exceptions.getInstanceof(e, Socks5EndpointConnectException.class);
+                            if (socks5EndpointConnectException != null) {
+                                switch (socks5EndpointConnectException.getError()) {
+                                case TTL_EXPIRED:
+                                    return false;
+                                default:
+                                    break;
                                 }
-                                selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, request.getURL()));
-                            } else {
-                                selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, request.getURL()));
                             }
+                            selector.addSessionBan(new EndPointConnectExceptionBan(selector, selectedProxy, request.getURL()));
+                        } else {
+                            selector.addSessionBan(new GenericConnectExceptionBan(selector, selectedProxy, request.getURL()));
                         }
                     }
                 }
