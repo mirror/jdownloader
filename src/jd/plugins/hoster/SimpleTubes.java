@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "SimpleTubes" }, urls = { "http://(www\\.)?(anyporn|sexu|xbabe)\\.com/(\\d+|videos/[^<>/]+)/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eyny.com" }, urls = { "https?://(\\w+\\.)?eyny\\.com/watch.*" })
 public class SimpleTubes extends PluginForHost {
-
     private String dllink            = null;
     private String customFavIconHost = null;
 
@@ -57,31 +55,15 @@ public class SimpleTubes extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (br.getURL().contains("anyporn.com")) {
-            // video_url: 'http://anyporn.com/get_file/1/def52ed5f66c5c8d91b5f55dc61a20d9/6000/6xxx/6xxx.mp4/'
-            dllink = br.getRegex("video_url: \'(http://.*?)/\'").getMatch(0);
-        } else if (br.getURL().contains("sexu.com")) {
-            filename = br.getRegex("<title>(.*?) - Sexu.Com</title>").getMatch(0);
-            // file":"http:\/\/v.sexu.com\/key=hSuSvdcrVR.,end=1415352725\/sexu\/8a\/374976-480p-x.mp4","label":"480p
-            dllink = br.getRegex("file\":\"(http:[^<>:]+)\",\"label\":\"480p").getMatch(0);
-            dllink = dllink.replace("\\", "");
-        } else if (br.getURL().contains("xbabe.com")) {
-            filename = br.getRegex("<title>(.*?) - XBabe</title>").getMatch(0);
-            // video_alt_url: 'http://xbabe.com/get_file/3/eec3d5edbe58da4bbd6cee5769cde927/95000/95918/95918_360p.mp4/?br=453'
-            dllink = br.getRegex("video_alt_url: \'(http://.*?/)\\?br=\\d+\'").getMatch(0);
-        }
+        String filename = br.getRegex("<title>(.*?)( -  Free Videos & Sex Movies - XXX Tube - EYNY)?</title>").getMatch(0);
+        dllink = br.getRegex("<source.*?src=\'([^<>']*?)\'").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        logger.info("dllink: " + dllink);
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
-        ext = ext.replace("/", ""); // .mp4/ => .mp4
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
