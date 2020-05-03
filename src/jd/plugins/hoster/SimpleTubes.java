@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eyny.com" }, urls = { "https?://(\\w+\\.)?eyny\\.com/watch.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eyny.com" }, urls = { "https?://(\\w+\\.)?eyny\\.com/watch\\?v=[a-zA-Z0-9_-]+" })
 public class SimpleTubes extends PluginForHost {
     private String dllink            = null;
     private String customFavIconHost = null;
@@ -52,7 +52,7 @@ public class SimpleTubes extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML(">找不到影片<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?)( -  Free Videos & Sex Movies - XXX Tube - EYNY)?</title>").getMatch(0);
