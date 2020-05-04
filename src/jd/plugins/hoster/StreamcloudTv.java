@@ -42,7 +42,7 @@ public class StreamcloudTv extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* 2020-05-04: More may cause trouble */
-    private static final int     free_maxchunks    = -2;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
