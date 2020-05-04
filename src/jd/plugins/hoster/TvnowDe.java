@@ -740,17 +740,17 @@ public class TvnowDe extends PluginForHost {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
                     setLoginHeaders(this.br, authtoken);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l && !force) {
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
                         logger.info("Trust existing cookies without check as they're still valid");
                         return;
                     }
                     /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
                     br.getPage("https://my-prod.tvnow.de/api/subscription");
                     if (!br.toString().trim().equalsIgnoreCase("invalid token")) {
-                        logger.info("Cookie login failed");
+                        logger.info("Cookie login successful");
                         loggedIN = true;
                     } else {
-                        logger.info("Cookie login successful");
+                        logger.info("Cookie login failed");
                     }
                 }
                 if (!loggedIN) {
