@@ -240,26 +240,26 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         setConstants(null);
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        super.handleDownload(downloadLink, null);
+        super.handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void doFree(final DownloadLink link, final Account account) throws Exception {
         handleGeneralErrors(account);
         br.setFollowRedirects(false);
         if (isPremiumOnly()) {
             premiumDownloadRestriction("This file is only available to premium members");
         }
-        String dllink = getDirectLinkAndReset(downloadLink, true);
+        String dllink = getDirectLinkAndReset(link, true);
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached final link!");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.info("Refresh final link");
                 dllink = null;
@@ -325,7 +325,7 @@ public class Keep2ShareCc extends K2SApi {
                         rc.setId(id);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                        final String c = getCaptchaCode("recaptcha", cf, link);
                         postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&yt0=&uniqueId=" + uniqueID);
                         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -335,7 +335,7 @@ public class Keep2ShareCc extends K2SApi {
                         if (captchaLink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String code = getCaptchaCode(captchaLink, downloadLink);
+                        final String code = getCaptchaCode(captchaLink, link);
                         postPage(br.getURL(), "CaptchaForm%5BverifyCode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
                         if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -347,7 +347,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (waittime != null) {
                         wait = Integer.parseInt(waittime);
                     }
-                    sleep(wait * 1001l, downloadLink);
+                    sleep(wait * 1001l, link);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
                     br.getHeaders().put("X-Requested-With", null);
@@ -359,22 +359,22 @@ public class Keep2ShareCc extends K2SApi {
                 }
             }
             logger.info("dllink = " + dllink);
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
                 dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    handleGeneralServerErrors(account, downloadLink);
+                    handleGeneralServerErrors(account, link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dllink = dllink.replace("\\", "");
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
                 if (!isValidDownloadConnection(dl.getConnection())) {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    handleGeneralServerErrors(account, downloadLink);
+                    handleGeneralServerErrors(account, link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -382,7 +382,7 @@ public class Keep2ShareCc extends K2SApi {
         // add download slot
         controlSlot(+1, account);
         try {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } finally {
             // remove download slot
