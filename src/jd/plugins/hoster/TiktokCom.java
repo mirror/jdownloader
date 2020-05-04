@@ -107,12 +107,15 @@ public class TiktokCom extends antiDDoSForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String createDate = null;
         final boolean use_new_way = true;
         if (use_new_way) {
             final String videoJson = br.getRegex(">window\\.__INIT_PROPS__\\s*=\\s*(\\{.*?\\}\\})</script>").getMatch(0);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
             entries = (LinkedHashMap<String, Object>) entries.get("/embed/:id");
-            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos/video/urls/{0}");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
+            createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
+            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/urls/{0}");
         } else {
             /* Rev. 40928 and earlier */
             dllink = String.format("https://www.tiktok.com/node/video/playwm?id=%s", fid);
@@ -129,7 +132,11 @@ public class TiktokCom extends antiDDoSForHost {
                     server_issues = true;
                 } else {
                     /* Try to add date to filename */
-                    final String createDate = con.getHeaderField("Last-Modified");
+                    /*
+                     * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their
+                     * "Header dates" are all wrong now.
+                     */
+                    // createDate = con.getHeaderField("Last-Modified");
                     if (!StringUtils.isEmpty(createDate)) {
                         final String dateFormatted = convertDateFormat(createDate);
                         filename = dateFormatted + "_" + filename;
@@ -153,24 +160,29 @@ public class TiktokCom extends antiDDoSForHost {
         if (sourceDate == null) {
             return null;
         }
-        final String sourceDatePart = new Regex(sourceDate, "^[A-Za-z]+, (\\d{1,2} \\w+ \\d{4})").getMatch(0);
-        if (sourceDatePart == null) {
-            return sourceDate;
-        }
-        sourceDate = sourceDatePart;
         String result = null;
-        SimpleDateFormat source_format = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
         SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            Date date = null;
-            try {
-                date = source_format.parse(sourceDate);
-                result = target_format.format(date);
-            } catch (Throwable e) {
+        if (sourceDate.matches("\\d+")) {
+            /* Timestamp */
+            final Date theDate = new Date(Long.parseLong(sourceDate) * 1000);
+            result = target_format.format(theDate);
+        } else {
+            final String sourceDatePart = new Regex(sourceDate, "^[A-Za-z]+, (\\d{1,2} \\w+ \\d{4})").getMatch(0);
+            if (sourceDatePart == null) {
+                return sourceDate;
             }
-        } catch (Throwable e) {
-            result = sourceDate;
-            return sourceDate;
+            sourceDate = sourceDatePart;
+            final SimpleDateFormat source_format = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            try {
+                try {
+                    final Date date = source_format.parse(sourceDate);
+                    result = target_format.format(date);
+                } catch (Throwable e) {
+                }
+            } catch (Throwable e) {
+                result = sourceDate;
+                return sourceDate;
+            }
         }
         return result;
     }

@@ -93,13 +93,13 @@ public class MirroredTo extends PluginForDecrypt {
             }
             // more steps y0! 20170602
             {
-                final Form click = getClick();
-                if (click != null) {
-                    br.submitForm(click);
+                final Form continueForm = getContinueForm();
+                if (continueForm != null) {
+                    br.submitForm(continueForm);
                 }
             }
             {
-                final String continuelink = br.getRegex("\"(/m(?:ir)?stats?\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32}[^\"]*)\"").getMatch(0);
+                final String continuelink = br.getRegex("\"(/m(?:ir)?stats?\\.php\\?uid=" + uid + "[^\"]*)\"").getMatch(0);
                 if (continuelink != null) {
                     br.getPage(continuelink);
                 }
@@ -152,14 +152,16 @@ public class MirroredTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private Form getClick() {
-        final Form[] results = br.getForms();
-        for (final Form result : results) {
-            if (result.hasInputFieldByName("c_click")) {
-                return result;
-            }
-            if (result.hasInputFieldByName("c-click")) {
-                return result;
+    private Form getContinueForm() {
+        final Form[] forms = br.getForms();
+        for (final Form form : forms) {
+            if (form.hasInputFieldByName("c_click")) {
+                return form;
+            } else if (form.hasInputFieldByName("c-click")) {
+                return form;
+            } else if (form.containsHTML("dl_form")) {
+                /* 2020-05-04 */
+                return form;
             }
         }
         return null;

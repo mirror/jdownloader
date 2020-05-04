@@ -13,13 +13,15 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,12 +37,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" })
 public class HostUjeNet extends PluginForHost {
-
     public HostUjeNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -67,7 +65,7 @@ public class HostUjeNet extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", userAgent.get());
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Podany plik nie został odnaleziony|>Podany plik został skasowany z powodu naruszania praw autorskich")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Podany plik nie został odnaleziony|>Podany plik został skasowany z powodu naruszania praw autorskich")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("name=\"name\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -92,19 +90,16 @@ public class HostUjeNet extends PluginForHost {
             for (String crypted : cryptedScripts) {
                 try {
                     Regex params = new Regex(crypted, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-
                     String p = params.getMatch(0).replaceAll("\\\\", "");
                     int a = Integer.parseInt(params.getMatch(1));
                     int c = Integer.parseInt(params.getMatch(2));
                     String[] k = params.getMatch(3).split("\\|");
-
                     while (c != 0) {
                         c--;
                         if (k[c].length() != 0) {
                             p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
                         }
                     }
-
                     decoded += "\r\n" + p;
                 } catch (Exception e) {
                 }
@@ -168,17 +163,17 @@ public class HostUjeNet extends PluginForHost {
             }
         }
         // do not use static posts!
-        Form f = br.getForm(1);
-        if (f == null) {
+        Form dlform = br.getFormbyActionRegex(".*?file\\.php.*?");
+        if (dlform == null) {
+            logger.warning("Failed to find dlform");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("'sitekey'\\s*:\\s*'[\\w+]+'") && br.containsHTML("document\\.getElementById\\('pobierz'\\)\\.disabled=false")) {
+        if (dlform.containsHTML("recaptcha")) {
             // recaptcha v2
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
-
-        br.submitForm(f);
+        br.submitForm(dlform);
         String link = null;
         link = br.getRedirectLocation();
         if (link == null) {
@@ -218,7 +213,6 @@ public class HostUjeNet extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
     }

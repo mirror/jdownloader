@@ -91,6 +91,12 @@ public class VikiCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
+        // final UrlQuery query = new UrlQuery();
+        // query.append("app", "100005a", true);
+        // query.append("t", System.currentTimeMillis() + "", true);
+        // query.append("site", "www.viki.com", true);
+        /* 2020-05-04: This header is required from now on. */
+        br.getHeaders().put("x-viki-app-ver", "4.0.42-7323421");
         br.getPage(API_BASE + "/videos/" + this.getVID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
