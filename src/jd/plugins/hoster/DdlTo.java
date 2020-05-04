@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,11 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -307,19 +307,21 @@ public class DdlTo extends XFileSharingProBasic {
         super.checkErrors(link, account, checkAll);
     }
 
-    /* 2020-04-14: Workaround for Cloudflare hcaptcha issues: https://board.jdownloader.org/showthread.php?t=83712 */
+    /* 2020-04-14: Workaround for Cloudflare issues: https://board.jdownloader.org/showthread.php?t=83712 */
     @Override
     protected String getMainPage() {
         /** 2020-04-17: TODO: Remove this Override / switch to new domain ddownload.com once possible. */
         final String host;
+        // ddownload.com --> current real main domain 2020-05-04
         // api.ddownload.com alternative
+        // esimpurcuesc.ddownload.com alternative 2 2020-05-04 (http- and https)
         final String browser_host = this.br != null ? br.getHost() : null;
         if (browser_host != null) {
             host = browser_host;
         } else {
-            /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
+            /* 2020-05-04: Do not user plugin main host as internal host - workaround! */
             // host = this.getHost();
-            host = "ddownload.com";
+            host = "esimpurcuesc.ddownload.com";
         }
         String mainpage;
         final String protocol;
