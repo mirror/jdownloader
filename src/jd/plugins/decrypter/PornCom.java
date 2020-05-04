@@ -34,6 +34,8 @@ public class PornCom extends PluginForDecrypt {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        String url = parameter.getCryptedUrl();
+        final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(getHost());
         if (aa != null) {
             try {
@@ -42,9 +44,8 @@ public class PornCom extends PluginForDecrypt {
                 LogSource.exception(logger, e);
             }
         }
-        String url = parameter.getCryptedUrl();
         jd.plugins.hoster.PornHubCom.getPage(br, url.replace("/embed/", "/"));
-        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca|_deleted_single)?.png)") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca|_deleted_single)?.png)") || this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
             links.add(this.createOfflinelink(parameter.getCryptedUrl()));
             return links;
         }
@@ -52,11 +53,10 @@ public class PornCom extends PluginForDecrypt {
         links = getLinks(br, url, filename);
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (links.size() == 0) {
-            final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
             jd.plugins.hoster.PornHubCom.getPage(brc, "https://www.porn.com/videos/embed/" + fid);
-            if (brc.containsHTML("<div id=\"player-removed\">")) {
+            if (brc.containsHTML("<div id=\"player-removed\">") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
                 links.add(this.createOfflinelink(parameter.getCryptedUrl()));
                 return links;
             }

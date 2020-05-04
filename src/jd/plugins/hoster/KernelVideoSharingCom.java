@@ -163,8 +163,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     private static final List<String> domains_force_url_filename = Arrays.asList(new String[] { "thisvid.com", "xbabe.com" });
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean download_started) throws Exception {
@@ -895,6 +895,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else if (br.getHost().equalsIgnoreCase("bravoporn.com")) {
             /* 2019-08-28 */
             filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
+        } else if (br.getHost().equalsIgnoreCase("sleazyneasy.com")) {
+            /* 2020-05-04: Special: Enforce fallback to URL filename */
+            filename = regexURLFilename(br.getURL());
         } else {
             filename = null;
         }

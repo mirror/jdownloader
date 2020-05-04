@@ -244,12 +244,14 @@ public class GoogleHelper {
                 /* TODO: Try to get username/mail and set it as account username in JD */
                 getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
                 /* TODO: Maybe prefer this as validation check? */
-                // getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
-                // if (!br.containsHTML("accounts\\.google\\.com/logout")) {
-                // /* Invalid cookies */
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // }
-                if (validateSuccess()) {
+                boolean loggedIN = validateSuccess();
+                if (!loggedIN) {
+                    getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
+                    if (br.containsHTML("accounts\\.google\\.com/logout")) {
+                        loggedIN = true;
+                    }
+                }
+                if (loggedIN) {
                     // logger.info("user cookies login successful");
                     validate(account);
                     /* TODO: Save all cookies of all domains */
