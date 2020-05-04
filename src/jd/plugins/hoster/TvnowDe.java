@@ -126,7 +126,6 @@ public class TvnowDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* In case anything serious goes wrong user should still be able to see that this is supposed to be a video-file. */
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        setBrowserExclusive();
         /* Fix old urls */
         correctDownloadLink(link);
         prepBRAPI(this.br);
@@ -338,10 +337,10 @@ public class TvnowDe extends PluginForHost {
     }
 
     /* Last revision with old handling: BEFORE 38232 (30393) */
-    private void handleDownload(final DownloadLink downloadLink, final Account acc) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account acc) throws Exception {
         final TvnowConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.TvnowConfigInterface.class);
-        final boolean isFree = downloadLink.getBooleanProperty("isFREE", false);
-        final boolean isDRM = downloadLink.getBooleanProperty("isDRM", false);
+        final boolean isFree = link.getBooleanProperty("isFREE", false);
+        final boolean isDRM = link.getBooleanProperty("isDRM", false);
         // final boolean isStrictDrm1080p;
         if (this.usingNewAPI) {
             /* New API was already used in availablecheck (special case) */
@@ -363,9 +362,9 @@ public class TvnowDe extends PluginForHost {
              */
             final boolean useNewAPI = acc != null && acc.getType() == AccountType.PREMIUM;
             if (useNewAPI) {
-                accessStreamInfoViaNewAPI(downloadLink);
+                accessStreamInfoViaNewAPI(link);
             } else {
-                final String urlpart = getURLPart(downloadLink);
+                final String urlpart = getURLPart(link);
                 br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -428,13 +427,13 @@ public class TvnowDe extends PluginForHost {
             if (hlsDownloadCandidate == null) {
                 errorNoDownloadurlFound(acc, isFree);
             }
-            if (downloadLink.getComment() == null || cfg.isShowQualityInfoInComment()) {
-                downloadLink.setComment(hlsDownloadCandidate.toString());
+            if (link.getComment() == null || cfg.isShowQualityInfoInComment()) {
+                link.setComment(hlsDownloadCandidate.toString());
             }
             logger.info("Downloading quality: " + hlsDownloadCandidate.toString());
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            checkFFmpeg(link, "Download a HLS Stream");
             try {
-                dl = new HLSDownloader(downloadLink, br, hlsDownloadCandidate.getDownloadurl());
+                dl = new HLSDownloader(link, br, hlsDownloadCandidate.getDownloadurl());
             } catch (final Throwable e) {
                 /*
                  * 2017-11-15: They've changed these URLs to redirect to image content (a pixel). Most likely we have a broken HLS url -->
@@ -493,9 +492,9 @@ public class TvnowDe extends PluginForHost {
         this.usingNewAPI = true;
     }
 
-    private void errorNoDownloadurlFound(final Account acc, final boolean isFree) throws PluginException {
+    private void errorNoDownloadurlFound(final Account acc, final boolean isFreeContent) throws PluginException {
         /* 2019-01-29: TODO: Check if this can also happen when logged-in */
-        if (!isFree) {
+        if (!isFreeContent) {
             logger.info("Only downloadable via premium");
             if (acc != null && acc.getType() == AccountType.PREMIUM) {
                 /*
@@ -504,7 +503,7 @@ public class TvnowDe extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find downloadurl: content missing/broken");
             } else if (acc != null) {
-                logger.info("Account available --> WTF, maybe content has to be bought individually");
+                logger.info("Account available --> WTF, maybe content has to be bought individually or user owns a free account but needs a premium account");
             }
             throw new AccountRequiredException();
         }
@@ -716,14 +715,14 @@ public class TvnowDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         /* TODO: Fix this! */
         // final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
         // if (ageCheck != null) {
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);
         // }
-        handleDownload(downloadLink, null);
+        handleDownload(link, null);
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -738,11 +737,21 @@ public class TvnowDe extends PluginForHost {
                 boolean loggedIN = false;
                 /* Always try to re-use sessions! */
                 if (cookies != null && authtoken != null && userID != null) {
+                    logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
                     setLoginHeaders(this.br, authtoken);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l && !force) {
+                        logger.info("Trust existing cookies without check as they're still valid");
+                        return;
+                    }
                     /* Only request the fields we need to verify whether stored headers&cookies are valid or not. */
                     br.getPage("https://my-prod.tvnow.de/api/subscription");
-                    loggedIN = !br.toString().trim().equalsIgnoreCase("invalid token");
+                    if (!br.toString().trim().equalsIgnoreCase("invalid token")) {
+                        logger.info("Cookie login failed");
+                        loggedIN = true;
+                    } else {
+                        logger.info("Cookie login successful");
+                    }
                 }
                 if (!loggedIN) {
                     logger.info("Performing full login");
@@ -866,9 +875,8 @@ public class TvnowDe extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
         login(account, false);
-        /* 2019-01-16: At the moment, account implementation is not used at all for downloading as it is simply not required. */
+        requestFileInformation(link);
         handleDownload(link, account);
     }
 
