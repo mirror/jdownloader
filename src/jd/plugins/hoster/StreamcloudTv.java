@@ -41,7 +41,8 @@ public class StreamcloudTv extends antiDDoSForHost {
     /* Extension which will be used if no correct extension is found */
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    /* 2020-05-04: More may cause trouble */
+    private static final int     free_maxchunks    = -2;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
