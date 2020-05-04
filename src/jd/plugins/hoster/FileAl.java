@@ -147,6 +147,14 @@ public class FileAl extends XFileSharingProBasic {
                 } else {
                     logger.info("Site verification successful");
                 }
+                /*
+                 * 2020-05-04: Small workaround to prevent upper code from taking a redirect after this captcha as the final downloadurl by
+                 * mistake.
+                 */
+                final String redirect = br.getRedirectLocation();
+                if (!redirectSetting && redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}")) {
+                    this.getPage(redirect);
+                }
                 br.setFollowRedirects(redirectSetting);
             }
         }

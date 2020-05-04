@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -58,8 +59,13 @@ public class VidtodoCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidtodo.com", "vidtodo.me", "vidtodo.pro", "vidtodoo.com", "vidtodoo.me", "vidtodoo.pro", "vidotodo.com", "vidotodo.me", "vidotodo.pro", "vidtodu.com", "vidtodu.me", "vidtodu.pro", "vidtoro.com", "vidtoro.me", "vidtoro.pro", "playvidto.com", "vidto-do.com" });
+        ret.add(new String[] { "viddoto.com", "widtodo.com", "vidtodo.com", "vidtodo.me", "vidtodo.pro", "vidtodoo.com", "vidtodoo.me", "vidtodoo.pro", "vidotodo.com", "vidotodo.me", "vidotodo.pro", "vidtodu.com", "vidtodu.me", "vidtodu.pro", "vidtoro.com", "vidtoro.me", "vidtoro.pro", "playvidto.com", "vidto-do.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     @Override
@@ -123,8 +129,17 @@ public class VidtodoCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        /* 2019-07-04: Special */
+    protected boolean isVideohoster_enforce_video_filename() {
         return true;
+    }
+
+    @Override
+    public Form findFormDownload1Free() throws Exception {
+        /* 2020-05-04: Special: Captcha on download1 Form */
+        final Form download1 = super.findFormDownload1Free();
+        if (download1 != null) {
+            this.handleCaptcha(this.getDownloadLink(), download1);
+        }
+        return download1;
     }
 }
