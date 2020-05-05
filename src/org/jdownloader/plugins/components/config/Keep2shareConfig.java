@@ -7,6 +7,7 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "keep2share.cc", type = Type.HOSTER)
@@ -34,12 +35,14 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @Order(10)
+    @TakeValueFromSubconfig("EXPERIMENTALHANDLING")
     boolean isEnableReconnectWorkaround();
 
     void setEnableReconnectWorkaround(boolean b);
 
     @AboutConfig
     @Order(20)
+    @TakeValueFromSubconfig("CUSTOM_REFERER")
     String getReferer();
 
     void setReferer(String referer);
@@ -47,6 +50,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @Order(30)
+    @TakeValueFromSubconfig("SSL_CONNECTION_2")
     boolean isEnableSSL();
 
     void setEnableSSL(boolean b);
