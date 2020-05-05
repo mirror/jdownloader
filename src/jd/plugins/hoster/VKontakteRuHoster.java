@@ -552,7 +552,15 @@ public class VKontakteRuHoster extends PluginForHost {
         if (dl == null) {
             if (StringUtils.isEmpty(this.finalUrl)) {
                 logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* 2020-05-05: It is sometimes tricky to determine the exact error */
+                final String response_content_type = br.getHttpConnection().getContentType();
+                if (response_content_type != null && response_content_type.contains("application/json")) {
+                    logger.info("Browser contains json response --> Probably error --> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access denied or content offline");
+                } else {
+                    logger.warning("Unknown error");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             // most if not all components already opened connection via either linkOk or photolinkOk
             br.getHeaders().put("Accept-Encoding", "identity");
@@ -1124,9 +1132,9 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* Do NOT check based on cookies as they sometimes change them! */
                 if (!br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls du die zweistufige Authentifizierung aktiviert hast, deaktiviere diese und versuche es erneut.\r\n2. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n3. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. In case you have 2 factor authentification activated, deactivate it and try again.\r\n2. If your password contains special characters, change it (remove them) and try again!\r\n3. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 /* Finish login if needed */
