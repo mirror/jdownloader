@@ -29,6 +29,11 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
+import org.jdownloader.plugins.components.config.Keep2shareConfigPublish2;
+import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -69,25 +74,19 @@ public abstract class K2SApi extends PluginForHost {
     protected int                          chunks;
     protected boolean                      resumes;
     protected boolean                      isFree;
-    private final String                   lng                    = getLanguage();
-    private final String                   AUTHTOKEN              = "auth_token";
-    private int                            authTokenFail          = 0;
-    private int                            loginCaptchaFail       = -1;
+    private final String                   lng                   = getLanguage();
+    private final String                   AUTHTOKEN             = "auth_token";
+    private int                            authTokenFail         = 0;
+    private int                            loginCaptchaFail      = -1;
     /* Reconnect workaround settings */
-    protected final String                 EXPERIMENTALHANDLING   = "EXPERIMENTALHANDLING";
-    protected final boolean                default_eh             = false;
-    private Pattern                        IPREGEX                = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                 = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP              = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap          = new HashMap<String, Long>();
-    private String                         PROPERTY_LASTIP        = "K2S_PROPERTY_LASTIP";
-    private final String                   PROPERTY_LASTDOWNLOAD  = "_lastdownload_timestamp";
-    private final long                     FREE_RECONNECTWAIT     = 1 * 60 * 60 * 1000L;
-    private static String[]                IPCHECK                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    // plugin config definition
-    protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
-    protected final String                 CUSTOM_REFERER         = "CUSTOM_REFERER";
-    protected final boolean                default_SSL_CONNECTION = true;
+    private Pattern                        IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
+    private String                         PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
+    private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
+    private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
+    private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
@@ -161,8 +160,8 @@ public abstract class K2SApi extends PluginForHost {
      *
      * @return
      */
-    protected boolean supportsHTTPS() {
-        return default_SSL_CONNECTION;
+    protected boolean userPrefersHTTPS() {
+        return PluginJsonConfig.get(this.getConfigInterface()).isEnableSSL();
     }
 
     protected String getUseAPIPropertyID() {
@@ -200,10 +199,10 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected boolean isSecure() {
-        if (enforcesHTTPS() && supportsHTTPS()) {
+        if (enforcesHTTPS() && userPrefersHTTPS()) {
             // prevent bad setter from enforcing secure
             return true;
-        } else if (supportsHTTPS() && getPluginConfig().getBooleanProperty(SSL_CONNECTION, default_SSL_CONNECTION)) {
+        } else if (userPrefersHTTPS()) {
             return true;
         } else {
             return false;
@@ -219,7 +218,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
-    private static AtomicReference<String> agent           = new AtomicReference<String>(null);
+    // private static AtomicReference<String> agent = new AtomicReference<String>(null);
     private boolean                        prepBrSet       = false;
 
     @Override
@@ -229,6 +228,11 @@ public abstract class K2SApi extends PluginForHost {
         } catch (final Throwable t) {
             t.printStackTrace();
         }
+        /*
+         * 2020-05-05: Set user defined value as some hosts may allow more than 1 simultaneous download according to user:
+         * https://board.jdownloader.org/showpost.php?p=463892&postcount=5
+         */
+        totalMaxSimultanFreeDownload.set(PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeDownloads());
     }
 
     protected Browser prepBrowser(final Browser prepBr) {
@@ -471,7 +475,7 @@ public abstract class K2SApi extends PluginForHost {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
-                if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+                if (PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround()) {
                     long lastdownload = 0;
                     long passedTimeSinceLastDl = 0;
                     logger.info("New Download: currentIP = " + currentIP.get());
@@ -511,7 +515,7 @@ public abstract class K2SApi extends PluginForHost {
                     // captcha can't be blank! Why we don't return null I don't know!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
+                final String custom_referer = getCustomReferer();
                 final Map<String, Object> getURL = new HashMap<String, Object>();
                 getURL.put("file_id", fuid);
                 getURL.put("captcha_challenge", challenge);
@@ -685,7 +689,7 @@ public abstract class K2SApi extends PluginForHost {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
-                if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+                if (PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround()) {
                     long lastdownload = 0;
                     long passedTimeSinceLastDl = 0;
                     logger.info("New Download: currentIP = " + currentIP.get());
@@ -701,7 +705,7 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
-                final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, "");
+                final String custom_referer = getCustomReferer();
                 /** 2019-07-05: TODO: Fix auth stuff */
                 this.postPageRaw(br, "https://api." + this.getHost() + "/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"fb_web_app\",\"client_secret\":\"TODO_FIXME\"}", account);
                 final String access_token = PluginJSonUtils.getJson(br, "access_token");
@@ -776,8 +780,12 @@ public abstract class K2SApi extends PluginForHost {
         return null;
     }
 
+    private String getCustomReferer() {
+        return PluginJsonConfig.get(this.getConfigInterface()).getReferer();
+    }
+
     protected Browser prepBrowserForWebsite(final Browser br) {
-        final String custom_referer = this.getPluginConfig().getStringProperty(CUSTOM_REFERER, null);
+        final String custom_referer = getCustomReferer();
         if (!inValidate(custom_referer)) {
             /* Specified Referer + User-Agent gives us 150 KB/s in free mode vs ~50 KB/s without that. */
             // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
@@ -2329,5 +2337,19 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         return false;
+    }
+
+    @Override
+    public Class<? extends Keep2shareConfig> getConfigInterface() {
+        if ("fileboom.me".equalsIgnoreCase(getHost())) {
+            return Keep2shareConfigFileboom.class;
+        } else if ("publish2.me".equalsIgnoreCase(getHost())) {
+            return Keep2shareConfigPublish2.class;
+        } else if ("tezfiles.com".equalsIgnoreCase(getHost())) {
+            return Keep2shareConfigTezfiles.class;
+        } else {
+            /* keep2share.cc */
+            return Keep2shareConfig.class;
+        }
     }
 }

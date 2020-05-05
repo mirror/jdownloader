@@ -246,7 +246,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     continue;
                 } else if (dupes.contains(id)) {
                     logger.info("Skip dupe object: " + id);
-                    // continue;
+                    continue;
                 }
                 dupes.add(id);
                 String filename_prefix = "";
