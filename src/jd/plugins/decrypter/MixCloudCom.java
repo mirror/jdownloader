@@ -26,15 +26,19 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/(widget/iframe/\\?.+|[^/]+/[^/]+/)" })
 public class MixCloudCom extends antiDDoSForDecrypt {
@@ -71,6 +75,13 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 parameter = urlpart;
             }
         }
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+            plg.setBrowser(this.br);
+            ((jd.plugins.hoster.MixCloudCom) plg).login(account, false);
+            // plg.fetchAccountInfo(account);
+        }
         getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
@@ -78,7 +89,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -102,6 +113,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         String comment = "";
         int page = 0;
         boolean hasMore = false;
+        final ArrayList<String> dupes = new ArrayList<String>();
         do {
             /* Find Array with stream-objects */
             LinkedHashMap<String, Object> entries = null;
@@ -224,27 +236,46 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     /* Skip invalid objects */
                     continue;
                 }
+                final String id = (String) entries.get("id");
                 final String title = (String) entries.get("name");
+                final String url_preview = (String) entries.get("previewUrl");
+                // final Object isExclusiveO = entries.get("isExclusive");
+                // final boolean isExclusive = isExclusiveO != null ? ((Boolean) isExclusiveO).booleanValue() : false;
+                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(title)) {
+                    /* Skip invalid objects */
+                    continue;
+                } else if (dupes.contains(id)) {
+                    logger.info("Skip dupe object: " + id);
+                    // continue;
+                }
+                dupes.add(id);
+                String filename_prefix = "";
+                String downloadurl = null;
                 final Object cloudcastStreamInfo = entries.get("streamInfo");
-                if (StringUtils.isEmpty(title) || cloudcastStreamInfo == null) {
+                if (cloudcastStreamInfo == null && StringUtils.isEmpty(url_preview)) {
                     /* Skip invalid objects */
                     continue;
                 }
-                /* We should have found the correct object here! */
-                // final String url_mp3_preview = (String) entries.get("previewUrl");
-                entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
-                /*
-                 * 2017-11-15: We can chose between dash, http or hls
-                 */
-                String downloadurl = (String) entries.get("url");
-                if (downloadurl == null) {
-                    /* Skip objects without streams */
-                    continue;
-                }
-                downloadurl = decode(downloadurl);
-                if (StringUtils.isEmpty(downloadurl) || downloadurl.contains("test")) {
-                    /* Skip teststreams */
-                    continue;
+                if (cloudcastStreamInfo == null && !StringUtils.isEmpty(url_preview)) {
+                    downloadurl = url_preview;
+                    filename_prefix = "[preview] ";
+                } else {
+                    /* We should have found the correct object here! */
+                    // final String url_mp3_preview = (String) entries.get("previewUrl");
+                    entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
+                    /*
+                     * 2017-11-15: We can chose between dash, http or hls
+                     */
+                    downloadurl = (String) entries.get("url");
+                    if (downloadurl == null) {
+                        /* Skip objects without streams */
+                        continue;
+                    }
+                    downloadurl = decode(downloadurl);
+                    if (StringUtils.isEmpty(downloadurl) || downloadurl.contains("test")) {
+                        /* Skip teststreams */
+                        continue;
+                    }
                 }
                 final String ext = getFileNameExtensionFromString(downloadurl, ".mp3");
                 if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
@@ -255,7 +286,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 if (!StringUtils.isEmpty(comment)) {
                     dlink.setComment(comment);
                 }
-                dlink.setFinalFileName(title + ext);
+                dlink.setFinalFileName(filename_prefix + title + ext);
                 dlink.setAvailable(true);
                 decryptedLinks.add(dlink);
             }
