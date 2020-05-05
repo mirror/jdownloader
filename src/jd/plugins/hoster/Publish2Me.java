@@ -22,8 +22,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -50,7 +48,6 @@ public class Publish2Me extends K2SApi {
     public Publish2Me(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/#premium");
-        setConfigElements();
     }
 
     @Override
@@ -117,17 +114,6 @@ public class Publish2Me extends K2SApi {
             directlinkproperty = "freelink1";
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         }
-    }
-
-    private void setConfigElements() {
-        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled()).setEnabled(false);
-        getConfig().addEntry(cfgapi);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom
-        // Referer here (disable API to use this!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));
-        /* 2019-11-15: Works via API too */
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here").setDefaultValue(null));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(default_SSL_CONNECTION));
     }
 
     public String getFUID(final String link) {
@@ -366,7 +352,7 @@ public class Publish2Me extends K2SApi {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     @Override
