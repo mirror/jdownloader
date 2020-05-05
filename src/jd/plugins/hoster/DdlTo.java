@@ -282,6 +282,10 @@ public class DdlTo extends XFileSharingProBasic {
          * e-mail address, they cannot be used for downloading and no matter which URL the user accesses (apart from API), the website will
          * redirect him to the account overview page with a message that tells him to add his e-mail address.
          */
+        /*
+         * TODO: 2020-05-05: Maybe add this handling to our main template. According to XFS admin, this is the default XFS setting/behavior
+         * for accounts which do not yet have an e-mail set! Applies for ALL account types e.g. free & premium!
+         */
         this.getPage("/?op=my_reports");
         if (new Regex(correctedBR, ">\\s*?Please enter your e-mail").matches()) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
