@@ -275,6 +275,25 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
+        /*
+         * 2020-05-05: Accounts created e.g. with premium balance of other accounts will be fine to login but if they do not yet contain an
+         * e-mail address, they cannot be used for downloading and no matter which URL the user accesses (apart from API), the website will
+         * redirect him to the account overview page with a message that tells him to add his e-mail address.
+         */
+        this.getPage("/?op=my_reports");
+        if (new Regex(correctedBR, ">\\s*?Please enter your e-mail").matches()) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Ergänze deine E-Mail Adresse unter ddownload.com/?op=my_account#settings um diesen Account verwenden zu können!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Go to ddownload.com/?op=my_account#settings and enter your e-mail in order to be able to use this account!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+        }
+        return ai;
+    }
+
+    @Override
     public void resetDownloadlink(DownloadLink link) {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2019-11-11: Reset final downloadurls in dev mode. */
