@@ -49,7 +49,6 @@ public class PixivNetSketch extends PluginForDecrypt {
         return crawlSketch(param);
     }
 
-    /** TODO: Check offline errorhandling, check more objects in each pagination step */
     private ArrayList<DownloadLink> crawlSketch(final CryptedLink param) throws IOException {
         logger.info("Crawling sketches");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -69,6 +68,10 @@ public class PixivNetSketch extends PluginForDecrypt {
             logger.info("Crawling url: " + next);
             br.getPage(next);
             if (br.getHttpConnection().getResponseCode() == 404) {
+                /*
+                 * 2020-05-05: E.g.
+                 * {"data":{},"errors":[{"message":"user: \"@offlineUserTestInvalidUser\" is not found","code":null}],"rand":"CENSORED"}
+                 */
                 if (decryptedLinks.size() == 0) {
                     decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
                 }
