@@ -911,21 +911,23 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
     private void checkErrorsLanguageIndependant(final DownloadLink link, final Account account) throws PluginException {
-        String errorMsg = null;
+        String errorMsgURL = null;
         try {
             final UrlQuery query = UrlQuery.parse(br.getURL());
-            errorMsg = query.get("e");
-            errorMsg = URLDecoder.decode(errorMsg, "UTF-8");
+            errorMsgURL = query.get("e");
+            errorMsgURL = URLDecoder.decode(errorMsgURL, "UTF-8");
         } catch (final Throwable e) {
             logger.log(e);
         }
-        if (!StringUtils.isEmpty(errorMsg)) {
-            logger.info("Found errormessage in current URL");
-            final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsg);
+        if (!StringUtils.isEmpty(errorMsgURL)) {
+            logger.info("Found errormessage in current URL: " + errorMsgURL);
+            final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsgURL);
             if (errorMap == null) {
                 /* Not all websites have (all) language keys present e.g. ultimbox.com */
-                logger.info("Failed to find error_key");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsg);
+                logger.info("Failed to find error_key --> Trying checkErrorsURLOld");
+                checkErrorsURLOld(link, account);
+                logger.info("checkErrorsURLOld did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
             }
             final String errorkey = (String) errorMap.get("error_key");
             logger.info("Found key to errormessage: " + errorkey);
@@ -947,37 +949,37 @@ public class YetiShareCore extends antiDDoSForHost {
             /* Now handle errors */
             if (errorkey.equalsIgnoreCase("error_file_has_been_removed_by_admin") || errorkey.equalsIgnoreCase("error_file_has_been_removed_by_user") || errorkey.equalsIgnoreCase("error_file_has_been_removed_due_to_copyright") || errorkey.equalsIgnoreCase("error_file_has_expired")) {
                 // VERIFIED
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsg);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsgURL);
             }
             /* TODO: Decide whether or not we want to use original given errormessages or rather spit out all errors in English. */
             /** premiumonly errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
-                throw new AccountRequiredException(errorMsg);
+                throw new AccountRequiredException(errorMsgURL);
             } else if (errorkey.equalsIgnoreCase("error_you_must_be_a_x_user_to_download_this_file")) {
-                throw new AccountRequiredException(errorMsg);
+                throw new AccountRequiredException(errorMsgURL);
             } else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
-                throw new AccountRequiredException(errorMsg);
+                throw new AccountRequiredException(errorMsgURL);
             } else if (errorkey.equalsIgnoreCase("error_file_is_not_publicly_shared")) {
-                throw new AccountRequiredException(errorMsg);
+                throw new AccountRequiredException(errorMsgURL);
             } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
                 /* "You do not have enough bandwidth left to download this file." */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, default_waittime);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_daily_download_limit")) {
                 /* "You have reached the maximum download bandwidth today, please upgrade or try again later." */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_daily_download_limit_this_file")) {
                 /* "You do not have enough bandwidth left today to download this file." */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, default_waittime);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, default_waittime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_max_permitted_downloads")) {
                 /*
                  * "You have reached the maximum concurrent downloads. Please wait for your existing downloads to complete or register for a premium account above."
                  */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsg, default_waittime);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_must_wait_between_downloads")) {
                 // VERIFIED
                 /* E.g. "30 minutes" */
@@ -987,15 +989,17 @@ public class YetiShareCore extends antiDDoSForHost {
                     waittime = default_waittime;
                 }
                 if (waittime < 180000) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsg, waittime);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, waittime);
                 } else if (account != null) {
-                    throw new AccountUnavailableException(errorMsg, waittime);
+                    throw new AccountUnavailableException(errorMsgURL, waittime);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, waittime);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, waittime);
                 }
             } else {
-                logger.warning("Unknown errorkey");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + errorMsg);
+                logger.warning("Unknown errorkey: " + errorkey + " --> Trying checkErrorsURLOld");
+                checkErrorsURLOld(link, account);
+                logger.info("checkErrorsURLOld did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + errorMsgURL + " | Errorkey: " + errorkey);
             }
         }
     }
@@ -1032,6 +1036,21 @@ public class YetiShareCore extends antiDDoSForHost {
          * Old / fallback / English / additional errorhandling - please leave this here although checkErrorsLanguageIndependant should cover
          * most of all errors
          */
+        checkErrorsURLOld(link, account);
+        if (br.toString().equals("unknown user")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
+        } else if (br.toString().equals("ERROR: Wrong IP")) {
+            /*
+             * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
+        }
+        /** TODO: Add something similar like "sessionCheck" in XFileSharingProBasic */
+    }
+
+    @Deprecated
+    /** It is intended to replace this with checkErrorsLanguageIndependant! */
+    private void checkErrorsURLOld(final DownloadLink link, final Account account) throws PluginException {
         final String url = getCurrentURLDecoded();
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
@@ -1060,13 +1079,6 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new AccountRequiredException();
         } else if (br.getURL().contains("You+have+reached+the+maximum+permitted+downloads+in")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
-        } else if (br.toString().equals("unknown user")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
-        } else if (br.toString().equals("ERROR: Wrong IP")) {
-            /*
-             * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
     }
 
