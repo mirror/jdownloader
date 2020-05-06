@@ -902,7 +902,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String checkTypeCurrent = null;
         final String checkTypeOld = "checkfiles";
         final String checkTypeNew = "check_files";
-        /* TODO: Use new settings for storing info here */
         final String checkType_last_used_and_working = getPluginConfig().getStringProperty("ALT_AVAILABLECHECK_LAST_WORKING", null);
         String checkURL = null;
         int linkcheckTypeTryCount = 0;
@@ -2634,24 +2633,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
         }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* TODO: Finish & test this */
-            /*
-             * Errorhandling for accounts that are valid but cannot be used yet because the user has to add his mail to the account via
-             * website. E.g. accounts which have been generated via balance/points of uploaders' accounts.
-             */
-            /*
-             * TODO: Check if this would work for all XFS. It should and we should support it because by default, generated accounts do not
-             * have a mail address added but require one so that they can be used for downloading!
-             */
-            final String redirect = br.getRedirectLocation();
-            final String referer = br.getHttpConnection().getHeaderField("Referer");
-            if (this.fuid != null && br.getURL().contains("op=my_account") || (redirect != null && redirect.contains("op=my_account"))) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Ergänze deine E-Mail Adresse unter ddownload.com/?op=my_account#settings um diesen Account verwenden zu können!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Go to ddownload.com/?op=my_account#settings and enter your e-mail in order to be able to use this account!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
+        /*
+         * Errorhandling for accounts that are valid but cannot be used yet because the user has to add his mail to the account via website.
+         * E.g. accounts which have been generated via balance/points of uploaders' accounts. This should be a rare case. In this case,
+         * every request you do on the website will redirect to /?op=my_account along with an errormessage (sometimes).
+         */
+        if (account != null && (StringUtils.containsIgnoreCase(br.getURL(), "op=my_account") || StringUtils.containsIgnoreCase(br.getRedirectLocation(), "op=my_account"))) {
+            /* Try to make this language-independant: Rely only on URL and NOT html! */
+            // if (new Regex(correctedBR, ">\\s*?Please enter your e-mail").matches())
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Ergänze deine E-Mail Adresse unter %s/?op=my_account um diesen Account verwenden zu können!", this.getHost()), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Go to %s/?op=my_account and enter your e-mail in order to be able to use this account!", this.getHost()), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
         checkResponseCodeErrors(br.getHttpConnection());
@@ -3595,6 +3588,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         if (dlForm == null) {
                             checkErrors(link, account, true);
                             logger.warning("Failed to find Form download2");
+                            sessionCheck(account);
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         handlePassword(dlForm, link);
@@ -3754,6 +3748,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             if (StringUtils.isEmpty(dllink) || (!dllink.startsWith("http") && !dllink.startsWith("rtmp") && !dllink.startsWith("/"))) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                sessionCheck(account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -3839,6 +3834,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             }
+        }
+    }
+
+    /** Throws error if account != null & is not logged in. TODO: Consider merging this into checkErrors. */
+    private void sessionCheck(final Account account) throws AccountUnavailableException {
+        if (account != null && !this.isLoggedin()) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
     }
 

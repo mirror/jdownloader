@@ -283,15 +283,15 @@ public class DdlTo extends XFileSharingProBasic {
          * redirect him to the account overview page with a message that tells him to add his e-mail address.
          */
         /*
-         * TODO: 2020-05-05: Maybe add this handling to our main template. According to XFS admin, this is the default XFS setting/behavior
-         * for accounts which do not yet have an e-mail set! Applies for ALL account types e.g. free & premium!
+         * 2020-05-06: Template also has handling for this but will not detect it until download-start which is why we will keep it in here
+         * too.
          */
         this.getPage("/?op=my_reports");
         if (new Regex(correctedBR, ">\\s*?Please enter your e-mail").matches()) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Ergänze deine E-Mail Adresse unter ddownload.com/?op=my_account#settings um diesen Account verwenden zu können!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Ergänze deine E-Mail Adresse unter %s/?op=my_account#settings um diesen Account verwenden zu können!", this.getHost()), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Go to ddownload.com/?op=my_account#settings and enter your e-mail in order to be able to use this account!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Go to %s/?op=my_account#settings and enter your e-mail in order to be able to use this account!", this.getHost()), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
         return ai;

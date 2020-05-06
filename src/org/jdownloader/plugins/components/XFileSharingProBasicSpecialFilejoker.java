@@ -522,25 +522,30 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                     /* Do not only call login as we need the email/username cookie which we only get when obtaining AccountInfo! */
                     // loginAPIZeusCloudManager(apiBR, account, force);
                     AccountInfo ai = null;
-                    if (tryAPILoginInWebsiteMode_get_account_info_from_api(account)) {
-                        logger.info("API in website mode is allowed to login and fetchAccountInfo");
-                        ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
-                        logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
-                    } else {
-                        logger.info("API in website mode is only allowed to login - AccountInfo will be obtained from website");
-                        loginAPIZeusCloudManager(br, account, true);
+                    try {
+                        if (tryAPILoginInWebsiteMode_get_account_info_from_api(account)) {
+                            logger.info("API in website mode is allowed to login and fetchAccountInfo");
+                            ai = fetchAccountInfoAPIZeusCloudManager(apiBR, account);
+                            logger.info("API login successful --> Verifying cookies via website because if we're unlucky they are not valid for website mode");
+                        } else {
+                            logger.info("API in website mode is only allowed to login - AccountInfo will be obtained from website");
+                            loginAPIZeusCloudManager(br, account, true);
+                            /*
+                             * Now get AccountInfo anyways because if we don't we will not get the users' mail/username --> We have no
+                             * chance to use API cookies for website login to e.g. avoid login captchas.
+                             */
+                            logger.info("Requesting AccountInfo from API anyways but only to set correct website cookies --> API AccountInfo will not be set!");
+                            fetchAccountInfoAPIZeusCloudManager(apiBR, account);
+                        }
                         /*
-                         * Now get AccountInfo anyways because if we don't we will not get the users' mail/username --> We have no chance to
-                         * use API cookies for website login to e.g. avoid login captchas.
+                         * Set cookies converted from API handling --> Website-cookies to verify them. Only trust API login if we are sure
+                         * that API login cookies are valid in website mode!!
                          */
-                        logger.info("Requesting AccountInfo from API anyways but only to set correct website cookies --> API AccountInfo will not be set!");
-                        fetchAccountInfoAPIZeusCloudManager(apiBR, account);
+                        br.setCookies(getMainPage(), account.loadCookies(""));
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        logger.info("API handling in website handling failed");
                     }
-                    /*
-                     * Set cookies converted from API handling --> Website-cookies to verify them. Only trust API login if we are sure that
-                     * API login cookies are valid in website mode!!
-                     */
-                    br.setCookies(getMainPage(), account.loadCookies(""));
                     this.getPage(this.getMainPage());
                     if (!this.isLoggedin()) {
                         logger.info("We are NOT loggedIN according to website --> Either wrong logindata or some other kind of issue");
