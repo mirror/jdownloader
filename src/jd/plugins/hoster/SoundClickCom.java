@@ -25,10 +25,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "https?://(?:www\\.)?soundclick\\.com/(bands/page_songInfo|html5/v4/player)\\.cfm\\?(?:bandID=\\d+\\&)?songID=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "https?://(?:www\\.)?soundclick\\.com/(?:bands/page_songInfo|html5/v4/player|music/songInfo)\\.cfm\\?(?:bandID=\\d+\\&)?songID=(\\d+)" })
 public class SoundClickCom extends PluginForHost {
     public SoundClickCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,35 +43,57 @@ public class SoundClickCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Offline links should also have nice filenames */
-        downloadLink.setName(new Regex(downloadLink.getPluginPatternMatcher(), "(\\d+)$").getMatch(0) + ".mp3");
+        link.setName(getFID(link) + ".mp3");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("&content=music")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("https://www.soundclick.com/util/passkey.cfm?flash=true");
-        final String controlID = br.getRegex("<controlID>([^<>\"]*?)</controlID>").getMatch(0);
-        if (controlID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // br.getPage("https://www.soundclick.com/util/passkey.cfm?flash=true");
+        // final String controlID = br.getRegex("<controlID>([^<>\"]*?)</controlID>").getMatch(0);
+        // br.getPage("https://www.soundclick.com/util/xmlsong.cfm?songid=" + getid(link) + "&passkey=" + controlID + "&q=hi&ext=0");
+        String songName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String artist = br.getRegex("<artist>([^<>\"]*?)</artist>").getMatch(0);
+        String filename = null;
+        if (songName != null && artist != null) {
+            filename = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(songName.trim()).replace(".mp3", "") + ".mp3";
         }
-        br.getPage("https://www.soundclick.com/util/xmlsong.cfm?songid=" + getid(downloadLink) + "&passkey=" + controlID + "&q=hi&ext=0");
-        final String songName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        final String artist = br.getRegex("<artist>([^<>\"]*?)</artist>").getMatch(0);
         dllink = br.getRegex("<cdnFilename>(http[^<>\"]*?)</cdnFilename>").getMatch(0);
-        if (songName == null || artist == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // if (songName == null || artist == null || dllink == null) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        /* 2020-05-06 */
+        br.getPage("https://www.soundclick.com/utils_download/download_song.cfm?ID=" + getFID(link));
+        dllink = String.format("https://www.soundclick.com/utils_download/download_songDeliver.cfm?songID=%s&ppID=0&selectLevel=160", this.getFID(link));
+        if (filename != null) {
+            link.setFinalFileName(filename);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(songName.trim()).replace(".mp3", "") + ext);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (!con.getContentType().contains("html") && con.isContentDisposition()) {
+                final String filename_server = Plugin.getFileNameFromDispositionHeader(con);
+                link.setDownloadSize(con.getLongContentLength());
+                if (filename == null) {
+                    link.setFinalFileName(filename_server);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
