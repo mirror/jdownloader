@@ -28,7 +28,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -62,13 +61,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         if (parameter.endsWith("/")) {
             parameter = parameter.substring(0, parameter.lastIndexOf("/"));
         }
-        final CrawledLink source = getCurrentLink().getSourceLink();
-        final String subfolder;
-        if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
-            final DownloadLink downloadLink = source.getDownloadLink();
-            subfolder = downloadLink.getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-        } else {
-            subfolder = null;
+        String subfolder = this.getAdoptedCloudFolderStructure();
+        if (subfolder == null) {
+            subfolder = "";
         }
         br.getPage("https://cloud.mail.ru/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
         final String dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
@@ -117,7 +112,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         mainName = Encoding.htmlDecode(mainName.trim());
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
         entries = (LinkedHashMap<String, Object>) entries.get("body");
-        // final String title_json = (String)entries.get("name");
+        final String title_of_current_folder = (String) entries.get("name");
+        if (!StringUtils.isEmpty(title_of_current_folder) && StringUtils.isEmpty(subfolder)) {
+            subfolder = title_of_current_folder;
+        }
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
         if (ressourcelist == null || ressourcelist.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -131,9 +129,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             final String type = (String) entries.get("kind");
             String weblink = (String) entries.get("weblink");
             final String item_name = (String) entries.get("name");
-            if (StringUtils.isEmpty(weblink)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (StringUtils.isEmpty(weblink) || StringUtils.isEmpty(item_name)) {
+                /* Skip invalid objects */
+                continue;
             }
             if ("folder".equals(type)) {
                 folderContainsSubfolder = true;
@@ -144,15 +142,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 encoded_weblink = encoded_weblink.replace("+", "%20");
                 weblink = "https://cloud.mail.ru/public/" + encoded_weblink;
                 final DownloadLink folderLink = createDownloadlink(weblink);
-                if (StringUtils.isNotEmpty(item_name)) {
-                    final String folder_path;
-                    if (subfolder != null) {
-                        folder_path = subfolder + "/" + item_name;
-                    } else {
-                        folder_path = "/" + item_name;
-                    }
-                    folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
-                }
+                folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + item_name);
                 decryptedLinks.add(folderLink);
             } else {
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -194,7 +184,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 }
                 dl.setContentUrl(browserurl);
                 dl.setAvailable(true);
-                if (subfolder != null) {
+                if (!StringUtils.isEmpty(subfolder)) {
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
                 }
                 result.add(dl);
