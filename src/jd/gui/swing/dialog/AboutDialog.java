@@ -134,6 +134,73 @@ public class AboutDialog extends AbstractDialog<Integer> {
             stats.add(disable(map.get("buildDate")));
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_runtime()));
             stats.add(disable(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - SecondLevelLaunch.startup, 0)));
+            try {
+                stats.add(new JLabel("Java:"), "");
+                java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+                ExtButton comp;
+                stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit)" : "(32bit)")));
+                comp.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
+                        try {
+                            java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                            List<String> arguments = runtimeMxBean.getInputArguments();
+                            StringBuilder sb = new StringBuilder();
+                            for (String s : arguments) {
+                                if (sb.length() > 0) {
+                                    sb.append(" ");
+                                }
+                                sb.append(s);
+                            }
+                            StringSelection selection = new StringSelection(sb.toString());
+                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                            clipboard.setContents(selection, selection);
+                        } catch (final Throwable e1) {
+                        }
+                    }
+                });
+                try {
+                    java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                    List<String> arguments = runtimeMxBean.getInputArguments();
+                    StringBuilder sb = new StringBuilder();
+                    for (String s : arguments) {
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
+                        sb.append(s);
+                    }
+                    comp.setToolTipText(sb.toString());
+                } catch (final Throwable e1) {
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
+                }
+                stats.add(new JLabel("OS:"), "");
+                stats.add(disable(CrossSystem.getOSFamily() + "(" + CrossSystem.getOS() + ")"));
+                stats.add(new JLabel("Memory:"), "");
+                stats.add(comp = disable("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
+                try {
+                    final List<MemoryPoolMXBean> memoryPoolMXBeans = java.lang.management.ManagementFactory.getMemoryPoolMXBeans();
+                    StringBuilder sb = new StringBuilder();
+                    for (final MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
+                        }
+                        sb.append("Pool:").append(memoryPoolMXBean.getName()).append("\r\n");
+                        sb.append("Type:").append(memoryPoolMXBean.getType()).append("\r\n");
+                        sb.append("Managed by:").append(Arrays.toString(memoryPoolMXBean.getMemoryManagerNames())).append("\r\n");
+                        memory = memoryPoolMXBean.getCollectionUsage();
+                        if (memory != null) {
+                            sb.append("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax()));
+                        }
+                        sb.append("\r\n");
+                    }
+                    comp.setToolTipText(sb.toString());
+                } catch (final Throwable e1) {
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
+                }
+            } catch (final Throwable e) {
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+            }
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderRevision")));
@@ -166,71 +233,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("Copyright \u00A9 2009-2020 JDownloader Community"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
         stats.add(disable("Copyright \u00A9 2009-2020 JDownloader Community"));
-        try {
-            stats.add(new JLabel("Java:"), "");
-            java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-            ExtButton comp;
-            stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit)" : "(32bit)")));
-            comp.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
-                    try {
-                        java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                        List<String> arguments = runtimeMxBean.getInputArguments();
-                        StringBuilder sb = new StringBuilder();
-                        for (String s : arguments) {
-                            if (sb.length() > 0) {
-                                sb.append(" ");
-                            }
-                            sb.append(s);
-                        }
-                        StringSelection selection = new StringSelection(sb.toString());
-                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                        clipboard.setContents(selection, selection);
-                    } catch (final Throwable e1) {
-                    }
-                }
-            });
-            try {
-                java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                List<String> arguments = runtimeMxBean.getInputArguments();
-                StringBuilder sb = new StringBuilder();
-                for (String s : arguments) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
-                    }
-                    sb.append(s);
-                }
-                comp.setToolTipText(sb.toString());
-            } catch (final Throwable e1) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
-            }
-            stats.add(new JLabel("Memory:"), "");
-            stats.add(comp = disable("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
-            try {
-                final List<MemoryPoolMXBean> memoryPoolMXBeans = java.lang.management.ManagementFactory.getMemoryPoolMXBeans();
-                StringBuilder sb = new StringBuilder();
-                for (final MemoryPoolMXBean memoryPoolMXBean : memoryPoolMXBeans) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
-                    }
-                    sb.append("Pool:").append(memoryPoolMXBean.getName()).append("\r\n");
-                    sb.append("Type:").append(memoryPoolMXBean.getType()).append("\r\n");
-                    sb.append("Managed by:").append(Arrays.toString(memoryPoolMXBean.getMemoryManagerNames())).append("\r\n");
-                    memory = memoryPoolMXBean.getCollectionUsage();
-                    if (memory != null) {
-                        sb.append("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax()));
-                    }
-                    sb.append("\r\n");
-                }
-                comp.setToolTipText(sb.toString());
-            } catch (final Throwable e1) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
-            }
-        } catch (final Throwable e) {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-        }
         stats.add(new JLabel("JSON Support:"), "");
         stats.add(disable("Jackson JSON Processor 2.7.9 (https://github.com/FasterXML/jackson/)"));
         stats.add(new JLabel("RTMP Support:"), "");
