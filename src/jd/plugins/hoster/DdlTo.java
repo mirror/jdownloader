@@ -183,7 +183,7 @@ public class DdlTo extends XFileSharingProBasic {
     @Override
     protected String regExTrafficLeft() {
         /* 2019-11-03: Special */
-        final Regex trafficleft = new Regex(correctedBR, "<span>Traffic available</span>\\s*<div class=\"price\"><sup>([^<>]+)</sup>(\\d+)</div>");
+        final Regex trafficleft = new Regex(correctedBR, "<span>Traffic available</span>\\s*<div class=\"price\"><sup>([^<>]+)</sup>(-?\\d+)</div>");
         String availabletraffic = null;
         final String trafficleftUnit = trafficleft.getMatch(0);
         final String trafficleftTmp = trafficleft.getMatch(1);

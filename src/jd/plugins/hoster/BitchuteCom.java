@@ -41,7 +41,8 @@ public class BitchuteCom extends antiDDoSForHost {
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    /* 2020-05-06: Chunkload not possible anymore */
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
