@@ -8,15 +8,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,12 +28,22 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownHostingScriptCore extends antiDDoSForHost {
     public UnknownHostingScriptCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(getPurchasePremiumURL());
     }
+
     // /* 1st domain = current domain! */
     // public static String[] domains = new String[] { "dummyhost.tld" };
     //
@@ -50,7 +51,6 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     // return new String[] { domains[0] };
     // }
     //
-
     // @Override
     // public String[] siteSupportedNames() {
     // return domains;

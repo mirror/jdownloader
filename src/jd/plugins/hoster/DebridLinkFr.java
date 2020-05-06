@@ -20,14 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.config.DebridLinkFrConfig;
-import org.jdownloader.plugins.components.config.DebridLinkFrConfig.PreferredDomain;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -45,6 +37,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.config.DebridLinkFrConfig;
+import org.jdownloader.plugins.components.config.DebridLinkFrConfig.PreferredDomain;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class DebridLinkFr extends PluginForHost {
@@ -357,8 +357,8 @@ public class DebridLinkFr extends PluginForHost {
                 if ("notDebrid".equals(error)) {
                     // mh didn't detect online status & download didn't start = generic error message. but specific to this link not the
                     // hoster.
-                    // tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1001l);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    // 04.05.2020: happens when that hoster is currently not possible/limit reached, eg rapidgator daily 15 gb
+                    mhm.handleErrorGeneric(account, link, "api_error_" + error, 5, 60 * 60 * 1000l);
                 } else if ("fileNotFound".equals(error)) {
                     // The filehoster return a 'file not found' error.
                     // let another download method kick in? **

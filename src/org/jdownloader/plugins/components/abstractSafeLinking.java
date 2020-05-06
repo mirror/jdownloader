@@ -23,6 +23,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -42,6 +43,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  * @author bismarck - parts of the original
  * @author psp - parts of the original
  */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     public abstractSafeLinking(PluginWrapper wrapper) {
         super(wrapper);
@@ -563,7 +565,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
                 switch (getCaptchaTypeNumber()) {
                 case 0:
-                    /* No captcha */
+                /* No captcha */
                 {
                     timesNoUserInput++;
                     // no captcha or pre-captcha-Form: kprotector.com, click to proceed step, prior to captcha. && keeplinks also though not
