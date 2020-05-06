@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catcut.net" }, urls = { "https?://(?:www\\.)?catcut\\.net/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catcut.net" }, urls = { "https?://(?:www\\.)?catcut\\.net/(?:s/)?[A-Za-z0-9]+" })
 public class CatcutNet extends PluginForDecrypt {
     public CatcutNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,16 +43,24 @@ public class CatcutNet extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String finallink = br.getRegex("<span  id=\"noCaptchaBlock\"[^<>]+>\\s*?<a href=\"(http[^<>\"]+)\"").getMatch(0);
+        String finallink = br.getRegex("<span\\s*id\\s*=\\s*\"noCaptchaBlock\"[^<>]+>\\s*?<a href\\s*=\\s*\"(http[^<>\"]+)\"").getMatch(0);
         if (finallink == null) {
             // now within base64 element
-            String go_url = br.getRegex("var go_url\\s*=\\s*decodeURIComponent\\('(.*?)'\\)").getMatch(0);
+            String go_url = br.getRegex("var\\s*go_url\\s*=\\s*decodeURIComponent\\('(.*?)'\\)").getMatch(0);
             if (go_url != null) {
                 // under the a value
                 go_url = Encoding.urlDecode(go_url, true);
-                final String a = new Regex(go_url, "a=([a-zA-Z0-9_/\\+\\=\\-%]+)&?").getMatch(0);
-                if (a != null) {
-                    finallink = Encoding.Base64Decode(a);
+                while (true) {
+                    if (isAbort()) {
+                        return decryptedLinks;
+                    }
+                    final String a = new Regex(go_url, "a=([a-zA-Z0-9_/\\+\\=\\-%]+)&?").getMatch(0);
+                    if (a != null) {
+                        go_url = Encoding.Base64Decode(a);
+                    } else {
+                        finallink = go_url;
+                        break;
+                    }
                 }
             }
             if (finallink == null) {
