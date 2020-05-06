@@ -592,7 +592,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             dllink = PluginJSonUtils.getJsonValue(br, "generated");
             isCache = PluginJSonUtils.getJsonValue(br, "cacheDL");
             linkHash = PluginJSonUtils.getJsonValue(br, "hash");
-            if (dllink == null || StringUtils.isEmpty(dllink) || "false".equals(dllink)) {
+            if (StringUtils.isEmpty(dllink) || "false".equals(dllink)) {
                 logger.info("Direct downloadlink not found");
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinkmissing", 2, 5 * 60 * 1000l);
             }

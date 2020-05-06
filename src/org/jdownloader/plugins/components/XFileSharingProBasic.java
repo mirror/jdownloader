@@ -2634,6 +2634,26 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
         }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* TODO: Finish & test this */
+            /*
+             * Errorhandling for accounts that are valid but cannot be used yet because the user has to add his mail to the account via
+             * website. E.g. accounts which have been generated via balance/points of uploaders' accounts.
+             */
+            /*
+             * TODO: Check if this would work for all XFS. It should and we should support it because by default, generated accounts do not
+             * have a mail address added but require one so that they can be used for downloading!
+             */
+            final String redirect = br.getRedirectLocation();
+            final String referer = br.getHttpConnection().getHeaderField("Referer");
+            if (this.fuid != null && br.getURL().contains("op=my_account") || (redirect != null && redirect.contains("op=my_account"))) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Ergänze deine E-Mail Adresse unter ddownload.com/?op=my_account#settings um diesen Account verwenden zu können!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Go to ddownload.com/?op=my_account#settings and enter your e-mail in order to be able to use this account!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+            }
+        }
         checkResponseCodeErrors(br.getHttpConnection());
     }
 
