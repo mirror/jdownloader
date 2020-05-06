@@ -114,6 +114,8 @@ public class ImDbCom extends PluginForHost {
                 }
                 newWay = true;
             }
+            /* 2020-05-06: Fix start of json e.g.https://www.imdb.com/title/tt1843230/mediaviewer/rm1938049536 */
+            json = json.replace("'mediaviewer'", "\"mediaviewer\"");
             Map<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
             if (newWay) {
                 /* 2017-07-18 */
@@ -173,16 +175,25 @@ public class ImDbCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
             }
-            if (filename == null) {
-                /* Fallback to fid */
-                filename = this.getFID(link);
-            }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             // br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) +
             // "/player?uff=3");
             br.getPage("http://www.imdb.com/video/user/" + new Regex(link.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
+            final String title = br.getRegex("<a href=\"/title/tt\\d+[^\"]+\"\\s*target=\"_top\">([^<>\"]+)</a>").getMatch(0);
+            final String subtitle = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
+            if (filename == null && title != null && subtitle != null) {
+                filename = title + " - " + subtitle;
+            }
+            if (filename == null) {
+                /* Fallback to fid */
+                filename = this.getFID(link);
+            } else {
+                filename = this.getFID(link) + "_" + filename;
+            }
+            if (br.containsHTML(">\\s*This video is not available")) {
+                /* 2020-05-06 */
+                /* <div class="notavailable">This video is not available.</div> */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             this.mature_content = this.br.containsHTML("why=maturevideo");
             if (!this.mature_content) {
                 final String json = this.br.getRegex("<script class=\"imdb\\-player\\-data\" type=\"text/imdb\\-video\\-player\\-json\">([^<>]+)<").getMatch(0);
