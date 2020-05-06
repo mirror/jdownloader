@@ -17,12 +17,20 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -42,12 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -275,10 +277,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 if (page > 0) {
                     final Browser br = this.br.cloneBrowser();
                     /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
-                    if (this.isAbort()) {
-                        logger.info("User aborted decryption");
-                        return decryptedLinks;
-                    }
                     // prepBRAjax(br, username_url, maxid);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "*/*");
@@ -464,6 +462,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     private void crawlSingleImage(LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description, final String orderid) {
+        final long taken_at_timestamp = JavaScriptEngineFactory.toLong(entries.get("taken_at_timestamp"), 0);
         String server_filename = null;
         final String shortcode = (String) entries.get("shortcode");
         if (linkid_main == null && shortcode != null) {
@@ -562,6 +561,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(orderid)) {
             /* For custom packagizer filenames */
             dl.setProperty("orderid", orderid);
+        }
+        if (taken_at_timestamp > 0) {
+            final SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
+            /* Timestamp */
+            final Date theDate = new Date(taken_at_timestamp * 1000);
+            final String date_formatted = target_format.format(theDate);
+            dl.setProperty("date", date_formatted);
         }
         decryptedLinks.add(dl);
         distribute(dl);
