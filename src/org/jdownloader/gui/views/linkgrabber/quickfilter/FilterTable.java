@@ -49,9 +49,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class FilterTable extends BasicJDTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink> {
-
     private static class FilterTableUpdater {
-
         private AtomicBoolean update = new AtomicBoolean(false);
         private FilterTable   table;
 
@@ -66,7 +64,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         public AtomicBoolean getUpdate() {
             return update;
         }
-
     }
 
     /**
@@ -81,7 +78,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected static final long                            SELECTION_REFRESH_MIN = 25l;
     protected static final long                            SELECTION_REFRESH_MAX = 100l;
     private static final DelayedRunnable                   SELECTIONUPDATER      = new DelayedRunnable(EXECUTER, SELECTION_REFRESH_MIN, SELECTION_REFRESH_MAX) {
-
         @Override
         public void delayedrun() {
             if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
@@ -115,7 +111,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             @Override
             protected PackageControllerTableModelCustomizer finalizeTableModification() {
                 return new PackageControllerTableModelCustomizer() {
-
                     @Override
                     public boolean customizedTableData() {
                         LinkGrabberTableModel.getInstance().setSelectedObjects(selectedCrawledLinks);
@@ -126,13 +121,11 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                     }
                 };
             }
-
         };
     }
 
-    protected static final long                 FILTER_REFRESH_MIN     = 500l;
-    protected static final long                 FILTER_REFRESH_MAX     = 2000l;
-    private static final DelayedRunnable        FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN, FILTER_REFRESH_MAX) {
+    protected static final long                 FILTER_REFRESH_MIN     = 2000l;
+    private static final DelayedRunnable        FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN) {
         @Override
         public String getID() {
             return "FilterTable";
@@ -149,20 +142,16 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 }
                 updateFilterTables(updater);
             } catch (final Throwable e) {
-                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
         }
-
     };
     private static final PropertyChangeListener PROPERTYCHANGELISTENER = new PropertyChangeListener() {
-
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
             updateAllFiltersInstant();
         }
-
     };
-
     private static volatile Filter              filterException        = null;
     private static volatile Thread              filterExceptionThread  = null;
     private BooleanKeyHandler                   visibleKeyHandler;
@@ -227,7 +216,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 }
                 try {
                     Collections.sort(filters, new Comparator<Filter>() {
-
                         public int compare(boolean x, boolean y) {
                             return (x == y) ? 0 : (x ? -1 : 1);
                         }
@@ -240,7 +228,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                                 return compare(o1.isEnabled(), o2.isEnabled());
                             }
                         }
-
                     });
                 } catch (final Throwable e) {
                     LogController.CL(true).log(e);
@@ -248,7 +235,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             }
             updateTableData.put(filterTable, filters);
         }
-
         final Iterator<Entry<FilterTable, List<Filter>>> it2 = updateTableData.entrySet().iterator();
         while (it2.hasNext()) {
             Entry<FilterTable, List<Filter>> next = it2.next();
@@ -293,13 +279,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         this.setShowGrid(false);
         this.setShowHorizontalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
         this.setBackground((LAFOptions.getInstance().getColorForPanelBackground()));
-
         this.setIntercellSpacing(new Dimension(0, 0));
-
         sidebarListener = new GenericConfigEventListener<Boolean>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible()) {
@@ -330,7 +312,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         visible.getEventSender().addListener(sidebarListener);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(sidebarListener, true);
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 sidebarListener.onConfigValueModified(null, visible.getValue());
@@ -354,7 +335,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     private static List<Filter> getSelectedFilters() {
         final List<Filter> ret = new ArrayList<Filter>();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 for (final FilterTableUpdater filterTableUpdater : FILTERTABLES) {
@@ -369,11 +349,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final java.util.List<Filter> selection, final ExtColumn<Filter> column, final MouseEvent mouseEvent) {
         if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
             LinkGrabberTableModel.getInstance().addTableModifier(getTableDataModification(new Runnable() {
-
                 @Override
                 public void run() {
                     new EDTHelper<Void>() {
-
                         @Override
                         public Void edtRun() {
                             final JPopupMenu ret = MenuManagerLinkgrabberTableContext.getInstance().build();
@@ -381,7 +359,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                             return null;
                         }
                     }.start(true);
-
                 }
             }), false);
             return popup;
@@ -437,7 +414,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             action.actionPerformed(null);
             return true;
         case KeyEvent.VK_SPACE:
-
             for (Filter f : getModel().getSelectedObjects()) {
                 f.setEnabled(!f.isEnabled());
             }
@@ -502,7 +478,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     // }
     // return ret;
     // }
-
     public LinkGrabberTable getLinkgrabberTable() {
         return linkgrabberTable;
     }
@@ -530,5 +505,4 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     public boolean isFiltered(CrawledPackage e) {
         return false;
     }
-
 }
