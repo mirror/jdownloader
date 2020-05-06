@@ -42,19 +42,18 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 
 public class Account extends Property {
-    private static final String VALID_UNTIL                    = "VALID_UNTIL";
-    private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
-    private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
-    public static final String  IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
-    private static final long   serialVersionUID               = -7578649066389032068L;
+    private static final String VALID_UNTIL              = "VALID_UNTIL";
+    private static final String ACCOUNT_TYPE             = "ACCOUNT_TYPE";
+    private static final String LATEST_VALID_TIMESTAMP   = "LATEST_VALID_TIMESTAMP";
+    public static final String  IS_MULTI_HOSTER_ACCOUNT  = "IS_MULTI_HOSTER_ACCOUNT";
+    private static final long   serialVersionUID         = -7578649066389032068L;
     private String              user;
     private String              pass;
-    private boolean             enabled                        = true;
-    private boolean             concurrentUsePossible          = true;
-    public static final String  PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
-    public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
-    private static final String COOKIE_STORAGE                 = "COOKIE_STORAGE";
-    private static final String BROWSER_COOKIES_STORAGE        = "BROWSER_COOKIES_STORAGE";
+    private boolean             enabled                  = true;
+    private boolean             concurrentUsePossible    = true;
+    public static final String  PROPERTY_REFRESH_TIMEOUT = "PROPERTY_REFRESH_TIMEOUT";
+    private static final String COOKIE_STORAGE           = "COOKIE_STORAGE";
+    private static final String BROWSER_COOKIES_STORAGE  = "BROWSER_COOKIES_STORAGE";
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
