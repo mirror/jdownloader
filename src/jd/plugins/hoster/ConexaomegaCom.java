@@ -40,7 +40,6 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class ConexaomegaCom extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static Object                                  LOCK               = new Object();
     private static final String                            COOKIE_HOST        = "https://conexaomega.com";
 
     /**
@@ -66,7 +65,7 @@ public class ConexaomegaCom extends PluginForHost {
 
     @SuppressWarnings({ "deprecation" })
     private boolean login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /** Load cookies */
                 br.setCustomCharset("utf-8");
