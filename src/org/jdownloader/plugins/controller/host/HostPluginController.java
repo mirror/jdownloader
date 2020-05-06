@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,11 +30,13 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
@@ -247,10 +250,56 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     @Override
-    protected long[] getInfos(Class<PluginForHost> clazz) {
-        final HostPlugin infos = clazz.getAnnotation(HostPlugin.class);
-        if (infos != null) {
-            return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+    protected CHECK_RESULT checkForChanges(Map<Object, List<String>> dependenciesCache, PluginClassLoaderChild classLoader, LazyPluginClass lazyPluginClass, long lastFileModification) throws Exception {
+        if (lazyPluginClass.getLastModified() != lastFileModification) {
+            return CHECK_RESULT.FAILED_LASTMODIFIED;
+        } else if (lazyPluginClass.getDependencies() != null) {
+            if (dependenciesCache.containsKey(lazyPluginClass.getDependencies())) {
+                return CHECK_RESULT.SUCCESSFUL_DEPENDENCIES;
+            } else {
+                final Iterator<String> it = lazyPluginClass.getDependencies().iterator();
+                while (it.hasNext()) {
+                    final String className = it.next();
+                    final Class<?> checkClazz = classLoader.loadClass(className);
+                    final HostPlugin hostPlugin = checkClazz.getAnnotation(HostPlugin.class);
+                    if (hostPlugin == null) {
+                        return CHECK_RESULT.FAILED_DEPENDENCIES;
+                    } else if (!StringUtils.equals(hostPlugin.revision(), it.next())) {
+                        return CHECK_RESULT.FAILED_DEPENDENCIES;
+                    }
+                }
+                dependenciesCache.put(lazyPluginClass.getDependencies(), lazyPluginClass.getDependencies());
+                return CHECK_RESULT.SUCCESSFUL_DEPENDENCIES;
+            }
+        } else {
+            return CHECK_RESULT.SUCCESSFUL;
+        }
+    }
+
+    @Override
+    protected PluginClassInfo<PluginForHost> getPluginClassInfo(Map<Object, List<String>> dependenciesCache, Class<PluginForHost> clazz) throws Exception {
+        HostPlugin hostPlugin = clazz.getAnnotation(HostPlugin.class);
+        if (hostPlugin != null) {
+            final PluginClassInfo<PluginForHost> pluginInfo = new PluginClassInfo<PluginForHost>();
+            pluginInfo.interfaceVersion = hostPlugin.interfaceVersion();
+            pluginInfo.revision = Formatter.getRevision(hostPlugin.revision());
+            pluginInfo.clazz = clazz;
+            List<String> dependencies = new ArrayList<String>();
+            Class<?> currentClazz = clazz.getSuperclass();
+            while (currentClazz != null && PluginForHost.class.isAssignableFrom(currentClazz) && (hostPlugin = currentClazz.getAnnotation(HostPlugin.class)) != null) {
+                dependencies.add(currentClazz.getName());
+                dependencies.add(hostPlugin.revision());
+                currentClazz = currentClazz.getSuperclass();
+            }
+            if (dependencies.size() > 0) {
+                if (dependenciesCache.containsKey(dependencies)) {
+                    dependencies = dependenciesCache.get(dependencies);
+                } else {
+                    dependenciesCache.put(dependencies, dependencies);
+                }
+                pluginInfo.dependencies = dependencies;
+            }
+            return pluginInfo;
         } else {
             return null;
         }

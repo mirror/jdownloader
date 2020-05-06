@@ -5,18 +5,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgShotCore extends antiDDoSForHost {
     public ImgShotCore(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,19 +97,16 @@ public class ImgShotCore extends antiDDoSForHost {
     }
 
     /**
-     * Override to disable filesize-check! </br>
-     * default = true
+     * Override to disable filesize-check! </br> default = true
      */
     protected boolean checkFilesize() {
         return true;
     }
 
     /**
-     * Enforce official download via "dlimg.php"? </br>
-     * A lot of hosts have it enabled although they do not display a download button on their website! </br>
-     * default = true </br>
-     * Example official download supported but broken serverside: imagedecode.com, imageteam.org </br>
-     * Example official download working fine: imgwallet.com, damimage.com, imgadult.com, imgtornado.com, acidimg.com
+     * Enforce official download via "dlimg.php"? </br> A lot of hosts have it enabled although they do not display a download button on
+     * their website! </br> default = true </br> Example official download supported but broken serverside: imagedecode.com, imageteam.org
+     * </br> Example official download working fine: imgwallet.com, damimage.com, imgadult.com, imgtornado.com, acidimg.com
      */
     protected boolean enforceOfficialDownloadURL() {
         return true;

@@ -166,13 +166,17 @@ public class BaixarPremiumNet extends PluginForHost {
         login(this.br, account, false);
         final String dllink = getDllinkBaixar(this.br, this.currAcc, this.currDownloadLink);
         if (!dllink.startsWith("http")) {
-            handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
+            handleErrorRetries("dllinknull", 5, 10 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleDlErrors(this.br, this.currAcc);
-            handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
+            handleErrorRetries("unknowndlerror", 5, 10 * 60 * 1000l);
         }
         /* Now we know for sure that it is a premium account. */
         account.getAccountInfo().setStatus("Premium account");

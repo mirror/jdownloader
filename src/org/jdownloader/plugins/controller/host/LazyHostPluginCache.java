@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -20,32 +21,29 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 public class LazyHostPluginCache {
+    private static final long CACHEVERSION = 04052020001l + LazyHostPlugin.FEATURE.CACHEVERSION;
 
-    private static final long CACHEVERSION = 27062016001l + LazyHostPlugin.FEATURE.CACHEVERSION;
-
-    private static ByteArrayOutputStream readFile(File file) throws IOException {
-        final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
-            @Override
-            public synchronized byte[] toByteArray() {
-                /* avoid creating new byteArray */
-                return buf;
-            }
-        };
-        FileInputStream fis = null;
+    public static ByteArrayOutputStream readFile(File file) throws IOException {
+        final FileInputStream fis = new FileInputStream(file);
         try {
-            fis = new FileInputStream(file);
+            final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(512 * 1024) {
+                @Override
+                public synchronized byte[] toByteArray() {
+                    /* avoid creating new byteArray */
+                    return buf;
+                }
+            };
             IO.readStream((int) file.length(), fis, byteBuffer, true);
             return byteBuffer;
         } finally {
-            if (fis != null) {
-                fis.close();
-            }
+            fis.close();
         }
     }
 
     public static List<LazyHostPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(4096);
         if (file.exists()) {
+            final Map<Object, List<String>> dependenciesCache = new HashMap<Object, List<String>>();
             final ByteArrayOutputStream byteBuffer = readFile(file);
             final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
             try {
@@ -54,12 +52,29 @@ public class LazyHostPluginCache {
                 if (CACHEVERSION != version) {
                     throw new IOException("Outdated CacheVersion:" + version + "|" + CACHEVERSION);
                 }
-                final long lastModified = is.readLong();
+                final long cacheLastModified = is.readLong();
                 final int lazyPluginClassSize = is.readShort();
-                final byte[] sha256 = new byte[32];
                 final byte[] stringBuffer = new byte[32767];
                 for (int lazyPluginClassIndex = 0; lazyPluginClassIndex < lazyPluginClassSize; lazyPluginClassIndex++) {
-                    final LazyPluginClass lazyPluginClass = new LazyPluginClass(is.readString(stringBuffer), is.ensureRead(32, sha256), is.readLong(), (int) is.readLong(), is.readLong());
+                    final String className = is.readString(stringBuffer);
+                    final byte[] sha256 = is.ensureRead(32, null);
+                    final long lastModified = is.readLong();
+                    final int interfaceVersion = (int) is.readLong();
+                    final long revision = is.readLong();
+                    final int dependenciesCount = is.readShort();
+                    List<String> dependencies = null;
+                    if (dependenciesCount > 0) {
+                        dependencies = new ArrayList<String>(dependenciesCount);
+                        for (int index = 0; index < dependenciesCount; index++) {
+                            dependencies.add(is.readString(stringBuffer));
+                        }
+                        if (dependenciesCache.containsKey(dependencies)) {
+                            dependencies = dependenciesCache.get(dependencies);
+                        } else {
+                            dependenciesCache.put(dependencies, dependencies);
+                        }
+                    }
+                    final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastModified, interfaceVersion, revision, dependencies);
                     final int lazyHostPluginSize = is.readShort();
                     for (int lazyHostPluginIndex = 0; lazyHostPluginIndex < lazyHostPluginSize; lazyHostPluginIndex++) {
                         final LazyHostPlugin lazyHostPlugin = new LazyHostPlugin(lazyPluginClass, is.readString(stringBuffer), is.readString(stringBuffer), null, null);
@@ -93,7 +108,7 @@ public class LazyHostPluginCache {
                     }
                 }
                 if (lastModification != null) {
-                    lastModification.set(lastModified);
+                    lastModification.set(cacheLastModified);
                 }
             } catch (final IOException e) {
                 throw new IOException(e.getMessage() + " (" + bis.transferedBytes() + "/" + bis.available() + ")", e);
@@ -130,6 +145,15 @@ public class LazyHostPluginCache {
                 os.writeLong(lazyPluginClass.getLastModified());
                 os.writeLong(Math.max(0, lazyPluginClass.getInterfaceVersion()));
                 os.writeLong(Math.max(0, lazyPluginClass.getRevision()));
+                // plugin dependencies
+                if (lazyPluginClass.getDependencies() == null || lazyPluginClass.getDependencies().size() == 0) {
+                    os.writeShort(0);
+                } else {
+                    os.writeShort(lazyPluginClass.getDependencies().size());
+                    for (final String dependency : lazyPluginClass.getDependencies()) {
+                        os.writeString(dependency);
+                    }
+                }
                 /* plugins */
                 final List<LazyHostPlugin> plugins = lazyPluginMapEntry.getValue();
                 os.writeShort(plugins.size());

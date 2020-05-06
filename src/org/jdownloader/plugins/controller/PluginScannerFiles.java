@@ -4,9 +4,9 @@ import java.io.File;
 import java.lang.reflect.Modifier;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.Plugin;
@@ -14,6 +14,8 @@ import jd.plugins.Plugin;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.PluginController.CHECK_RESULT;
+import org.jdownloader.plugins.controller.PluginController.PluginClassInfo;
 
 public class PluginScannerFiles<T extends Plugin> {
     private final static boolean      isJava16orOlder = Application.getJavaVersion() <= Application.JAVA16;
@@ -30,6 +32,7 @@ public class PluginScannerFiles<T extends Plugin> {
     protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception, OutOfMemoryError {
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final long timeStamp = System.currentTimeMillis();
+        final Map<Object, List<String>> dependenciesCache = new HashMap<Object, List<String>>();
         try {
             final long lastFolderModifiedCheck = lastFolderModification != null ? lastFolderModification.get() : -1;
             final File folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
@@ -66,38 +69,40 @@ public class PluginScannerFiles<T extends Plugin> {
                     if (pathFileName.endsWith(".class")) {
                         final String className = pathFileName.substring(0, pathFileName.length() - 6);
                         if (className.indexOf("$") < 0 && !PluginController.IGNORELIST.contains(className)) {
-                            byte[] sha256 = null;
+                            if (cl == null || isJava16orOlder) {
+                                cl = PluginClassLoader.getInstance().getChild();
+                                cl.setMapStaticFields(false);
+                            }
                             final long lastFileModification = path.lastModified();
                             if (lazyPluginClassMap != null) {
                                 final List<LazyPlugin<T>> lazyPlugins = lazyPluginClassMap.get(className);
                                 if (lazyPlugins != null && lazyPlugins.size() > 0) {
                                     final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
-                                    if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastFileModification || ((sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
-                                        for (final LazyPlugin<T> lazyPlugin : lazyPlugins) {
-                                            // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
-                                            // lazyPluginClass.getRevision());
-                                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, lazyPlugin);
-                                            ret.add(pluginInfo);
+                                    try {
+                                        if (lazyPluginClass != null && CHECK_RESULT.isSuccessFul(getPluginController().checkForChanges(dependenciesCache, cl, lazyPluginClass, lastFileModification))) {
+                                            for (final LazyPlugin<T> lazyPlugin : lazyPlugins) {
+                                                // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
+                                                // lazyPluginClass.getRevision());
+                                                final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, lazyPlugin);
+                                                ret.add(pluginInfo);
+                                            }
+                                            continue;
                                         }
-                                        continue;
+                                    } catch (final Throwable e) {
+                                        logger.finer("Failed: " + className);
+                                        logger.log(e);
                                     }
                                 }
                             }
-                            Class<T> pluginClass = null;
-                            long[] infos = null;
+                            PluginClassInfo<T> pluginClassInfo = null;
                             try {
-                                if (cl == null || isJava16orOlder) {
-                                    cl = PluginClassLoader.getInstance().getChild();
-                                    cl.setMapStaticFields(false);
-                                }
-                                if (sha256 == null) {
-                                    sha256 = PluginController.getFileHashBytes(path, md, mdCache);
-                                }
-                                pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
+                                final Class<T> pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
                                 if (!Modifier.isAbstract(pluginClass.getModifiers()) && Plugin.class.isAssignableFrom(pluginClass)) {
-                                    infos = getPluginController().getInfos(pluginClass);
-                                    if (infos == null) {
+                                    pluginClassInfo = getPluginController().getPluginClassInfo(dependenciesCache, pluginClass);
+                                    if (pluginClassInfo == null) {
                                         continue;
+                                    } else {
+                                        pluginClassInfo.sha256 = PluginController.getFileHashBytes(path, md, mdCache);
                                     }
                                 } else {
                                     continue;
@@ -111,8 +116,8 @@ public class PluginScannerFiles<T extends Plugin> {
                                 logger.log(e);
                                 continue;
                             }
-                            final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastFileModification, (int) infos[0], infos[1]);
-                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
+                            final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, pluginClassInfo.sha256, lastFileModification, pluginClassInfo.interfaceVersion, pluginClassInfo.revision, pluginClassInfo.dependencies);
+                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClassInfo.clazz);
                             // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
                             ret.add(pluginInfo);
                         }

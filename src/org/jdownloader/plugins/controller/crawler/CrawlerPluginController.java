@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,9 +19,11 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
@@ -312,7 +315,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
@@ -378,11 +381,58 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     @Override
-    protected long[] getInfos(Class<PluginForDecrypt> clazz) {
-        final DecrypterPlugin infos = clazz.getAnnotation(DecrypterPlugin.class);
-        if (infos != null) {
-            return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+    protected CHECK_RESULT checkForChanges(Map<Object, List<String>> dependenciesCache, PluginClassLoaderChild classLoader, LazyPluginClass lazyPluginClass, long lastFileModification) throws Exception {
+        if (lazyPluginClass.getLastModified() != lastFileModification) {
+            return CHECK_RESULT.FAILED_LASTMODIFIED;
+        } else if (lazyPluginClass.getDependencies() != null) {
+            if (dependenciesCache.containsKey(lazyPluginClass.getDependencies())) {
+                return CHECK_RESULT.SUCCESSFUL_DEPENDENCIES;
+            } else {
+                final Iterator<String> it = lazyPluginClass.getDependencies().iterator();
+                while (it.hasNext()) {
+                    final String className = it.next();
+                    final Class<?> checkClazz = classLoader.loadClass(className);
+                    final DecrypterPlugin hostPlugin = checkClazz.getAnnotation(DecrypterPlugin.class);
+                    if (hostPlugin == null) {
+                        return CHECK_RESULT.FAILED_DEPENDENCIES;
+                    } else if (!StringUtils.equals(hostPlugin.revision(), it.next())) {
+                        return CHECK_RESULT.FAILED_DEPENDENCIES;
+                    }
+                }
+                dependenciesCache.put(lazyPluginClass.getDependencies(), lazyPluginClass.getDependencies());
+                return CHECK_RESULT.SUCCESSFUL_DEPENDENCIES;
+            }
+        } else {
+            return CHECK_RESULT.SUCCESSFUL;
         }
-        return null;
+    }
+
+    @Override
+    protected PluginClassInfo<PluginForDecrypt> getPluginClassInfo(Map<Object, List<String>> dependenciesCache, Class<PluginForDecrypt> clazz) throws Exception {
+        DecrypterPlugin decrypterPlugin = clazz.getAnnotation(DecrypterPlugin.class);
+        if (decrypterPlugin != null) {
+            final PluginClassInfo<PluginForDecrypt> pluginInfo = new PluginClassInfo<PluginForDecrypt>();
+            pluginInfo.interfaceVersion = decrypterPlugin.interfaceVersion();
+            pluginInfo.revision = Formatter.getRevision(decrypterPlugin.revision());
+            pluginInfo.clazz = clazz;
+            List<String> dependencies = new ArrayList<String>();
+            Class<?> currentClazz = clazz.getSuperclass();
+            while (currentClazz != null && PluginForDecrypt.class.isAssignableFrom(currentClazz) && (decrypterPlugin = currentClazz.getAnnotation(DecrypterPlugin.class)) != null) {
+                dependencies.add(currentClazz.getName());
+                dependencies.add(decrypterPlugin.revision());
+                currentClazz = currentClazz.getSuperclass();
+            }
+            if (dependencies.size() > 0) {
+                if (dependenciesCache.containsKey(dependencies)) {
+                    dependencies = dependenciesCache.get(dependencies);
+                } else {
+                    dependenciesCache.put(dependencies, dependencies);
+                }
+                pluginInfo.dependencies = dependencies;
+            }
+            return pluginInfo;
+        } else {
+            return null;
+        }
     }
 }

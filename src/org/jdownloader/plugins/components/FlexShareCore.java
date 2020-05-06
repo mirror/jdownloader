@@ -16,6 +16,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -24,6 +25,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FlexShareCore extends antiDDoSForHost {
     public FlexShareCore(PluginWrapper wrapper) {
         super(wrapper);

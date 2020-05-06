@@ -2237,9 +2237,9 @@ public class LinkCrawler {
                 }
             }
             if (StringUtils.contains(source.getURL(), "aHR0c") || StringUtils.contains(source.getURL(), "ZnRwOi")) {
-                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\]+(%3D|=){0,2})").getMatch(0);// http
+                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);// http
                 if (base64 == null) {
-                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\]+(%3D|=){0,2})").getMatch(0);// ftp
+                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);// ftp
                 }
                 if (base64 != null) {
                     if (base64.contains("%3D")) {
