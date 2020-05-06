@@ -49,17 +49,32 @@ public class ContasturboCom extends PluginForHost {
         return "https://www.contasturbo.com/";
     }
 
-    @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return -1;
-    }
-
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             br.setCustomCharset("utf-8");
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            if (userCookies != null) {
+                /* Developer debug test */
+                logger.info("Attempting user cookie login");
+                br.setCookies(userCookies);
+                if (!validateCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                    logger.info("Trust cookies as they're not that old");
+                    return false;
+                }
+                br.getPage("https://www." + account.getHoster() + "/gerador/");
+                if (this.isLoggedIN()) {
+                    logger.info("User cookie login successful");
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("User cookie login failed");
+                    /* Throw Exception as we do not have username + password and cannot refresh the session! */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 logger.info("Attempting cookie login");
@@ -100,20 +115,27 @@ public class ContasturboCom extends PluginForHost {
     }
 
     private boolean isLoggedIN() {
-        return br.getCookie(br.getHost(), "cm_auth", Cookies.NOTDELETEDPATTERN) != null;
+        return br.getCookie(br.getHost(), "ct_auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "ct_user", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.login(account, true);
-        br.getPage("/gerador/");
-        final String expireDays = br.getRegex("Premium válida por (.*?) dias").getMatch(0);
+        if (br.getURL() == null || !br.getURL().contains("/gerador")) {
+            br.getPage("/gerador/");
+        }
+        final String expireDays = br.getRegex("Premium válida por (\\d+) dias").getMatch(0);
+        final String expireExtraHours = br.getRegex("Premium válida por \\d+ dias e (\\d+) horas").getMatch(0);
         if (expireDays != null) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
             ai.setUnlimitedTraffic();
-            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expireDays) * 24 * 60 * 60 * 1000);
+            long hours_total = Long.parseLong(expireDays) * 24;
+            if (expireExtraHours != null) {
+                hours_total += Long.parseLong(expireExtraHours);
+            }
+            ai.setValidUntil(System.currentTimeMillis() + hours_total * 60 * 60 * 1000, br);
         } else {
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
@@ -129,7 +151,7 @@ public class ContasturboCom extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    /** no override to keep plugin compatible to old stable */
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         login(account, false);
