@@ -376,7 +376,7 @@ public class PornportalCom extends PluginForHost {
     public static final String  PROPERTY_plugin_jwt                        = "jwt";
     public static final String  PROPERTY_plugin_jwt_create_timestamp       = "jwt_create_timestamp";
 
-    public void login(Browser brlogin, final Account account, final String target_domain, final boolean checkCookies) throws Exception {
+    public void login(final Browser brlogin, final Account account, final String target_domain, final boolean checkCookies) throws Exception {
         synchronized (account) {
             try {
                 if (brlogin == null || account == null || target_domain == null) {
@@ -429,15 +429,13 @@ public class PornportalCom extends PluginForHost {
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        cookies = null;
-                        /* Important: Especially old Authorization headers can cause trouble! */
-                        brlogin = prepBR(new Browser());
+                        /* Important: Especially old "Authorization" headers can cause trouble! */
+                        brlogin.clearAll();
                     }
                 }
                 logger.info("Performing full login");
                 brlogin.setCookiesExclusive(true);
-                final Browser newBR = prepBR(new Browser());
-                brlogin.setHeaders(newBR.getHeaders());
+                prepBR(brlogin);
                 brlogin.setFollowRedirects(true);
                 Map<String, Object> entries;
                 String api_base;
@@ -729,10 +727,6 @@ public class PornportalCom extends PluginForHost {
                 }
                 final AccountInfo ai = new AccountInfo();
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
-                    /*
-                     * 2020-04-28: This sometimes fails after a full login --> We need to wait a short time before we can do this API call.
-                     */
-                    Thread.sleep(8000l);
                     br.getPage(getAPIBase() + "/self");
                 }
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
