@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/[^<>\"]+(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/video/[^<>\"]+(\\d+)\\.html" })
 public class StileProjectCom extends PluginForHost {
     private String  dllink        = null;
     private boolean server_issues = false;
@@ -124,10 +124,7 @@ public class StileProjectCom extends PluginForHost {
 
     // Same code as for CelebrityCuntNet
     private void getdllink() throws Exception {
-        dllink = br.getRegex("file: \\'(https?://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-        }
+        dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)[^<>]+type='video/mp4'").getMatch(0);
         if (dllink == null) {
             final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
             final String type = videoMETA.getMatch(0);
