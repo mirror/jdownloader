@@ -104,10 +104,4 @@ public class DeimosClick extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean supports_https() {
-        /* 2020-05-04: Special */
-        return false;
-    }
 }
