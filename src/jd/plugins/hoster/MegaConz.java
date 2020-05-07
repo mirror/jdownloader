@@ -1367,7 +1367,9 @@ public class MegaConz extends PluginForHost {
                     keyString = getNodeFileKey(downloadLink);
                 }
                 final String parentNodeID = getParentNodeID(downloadLink);
-                if (StringUtils.equals("alldebrid.com", buildForThisPlugin.getHost())) {
+                if (StringUtils.equals("linksnappy.com", buildForThisPlugin.getHost())) {
+                    return "https://mega.co.nz/#N!" + fileID + "!" + keyString + "!" + parentNodeID;
+                } else if (StringUtils.equals("alldebrid.com", buildForThisPlugin.getHost())) {
                     return "https://mega.co.nz/#!" + fileID + "!" + keyString + "=~~" + parentNodeID;
                 } else {
                     return "https://mega.co.nz/#!" + fileID + "!" + keyString + "!" + parentNodeID;
