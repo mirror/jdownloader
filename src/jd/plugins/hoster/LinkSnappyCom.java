@@ -21,12 +21,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
@@ -382,11 +385,18 @@ public class LinkSnappyCom extends antiDDoSForHost {
         if (dllink != null) {
             dllink = (attemptDownload(account) ? dllink : null);
         }
+        final Map<String, Object> urlinfo = new HashMap<String, Object>();
+        urlinfo.put("link", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+        urlinfo.put("type", "");
+        if (!StringUtils.isEmpty(link.getDownloadPassword())) {
+            urlinfo.put("linkpass", link.getDownloadPassword());
+        }
+        final String urlinfo_encoded = URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo));
         if (dllink == null) {
             if (AccountType.FREE == account.getType()) {
                 /* Free Account download - not possible via API! */
                 loginWebsite(account);
-                getPage("https://" + this.getHost() + "/api/linkfree?genLinks={%22link%22%20:%20%22" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "%22,%20%22type%22%20:%20%22%22,%20%22linkpass%22%20:%20%22%22}");
+                getPage("https://" + this.getHost() + "/api/linkfree?genLinks=" + urlinfo_encoded);
                 /* Returns same json as API which means we can use the same code to try to start the download! */
                 attemptDownload(account);
             } else {
@@ -394,14 +404,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 boolean hasValidatedCookies = this.loginAPI(account, false);
                 /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
                 link.setProperty("linksnappycomdirectlink", Property.NULL);
-                final String genLinks = "https://" + this.getHost() + "/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "\"}");
+                final String genLinks = "https://" + this.getHost() + "/api/linkgen?genLinks=" + urlinfo_encoded;
                 for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     getPage(genLinks);
                     final String message = PluginJSonUtils.getJsonValue(br, "error");
                     if (isLoginSessionExpired(message)) {
                         if (hasValidatedCookies) {
                             // we already logged in seconds earlier... continuously re-logging in is pointless.
-                            throw new AccountUnavailableException("Logged in multiple times in sucession, and session automatically expired. Please report to LinkSnappy.", 10 * 60 * 1000);
+                            throw new AccountUnavailableException("Session expired", 5 * 60 * 1000);
                         }
                         this.loginAPI(account, true);
                         hasValidatedCookies = true;
@@ -666,8 +676,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
             boolean validatedCookies = false;
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
+                logger.info("Attempting cookie login");
                 br.setCookies(this.getHost(), cookies);
-                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l && !validateCookies) {
+                    logger.info("Trust cookies as they're not that old");
                     return false;
                 }
                 logger.info("Validating cookies");
@@ -732,15 +744,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
             return false;
         }
         return true;
-    }
-
-    private String encode(String value) {
-        value = value.replace("\"", "%22");
-        value = value.replace(":", "%3A");
-        value = value.replace("{", "%7B");
-        value = value.replace("}", "%7D");
-        value = value.replace(",", "%2C");
-        return value;
     }
 
     @Override
