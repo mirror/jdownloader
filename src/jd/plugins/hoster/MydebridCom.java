@@ -193,7 +193,7 @@ public class MydebridCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
             final String expireDate = (String) entries.get("expiryDate");
             if (!StringUtils.isEmpty(expireDate)) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd-MM-yyyy", Locale.ENGLISH), this.br);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "MM-dd-yyyy", Locale.ENGLISH), this.br);
             }
             ai.setUnlimitedTraffic();
         }
