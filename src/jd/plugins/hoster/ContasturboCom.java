@@ -49,6 +49,10 @@ public class ContasturboCom extends PluginForHost {
         return "https://www.contasturbo.com/";
     }
 
+    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDLS    = 8;
+
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             br.setCustomCharset("utf-8");
@@ -129,6 +133,7 @@ public class ContasturboCom extends PluginForHost {
         final String expireExtraHours = br.getRegex("Premium válida por \\d+ dias e (\\d+) horas").getMatch(0);
         if (expireDays != null) {
             account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDLS);
             ai.setStatus("Premium Account");
             ai.setUnlimitedTraffic();
             long hours_total = Long.parseLong(expireDays) * 24;
@@ -160,7 +165,7 @@ public class ContasturboCom extends PluginForHost {
         if (dllink == null) {
             mhm.handleErrorGeneric(account, link, "dllinknull", 50);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50);
