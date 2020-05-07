@@ -318,7 +318,7 @@ public class CboxeraCom extends PluginForHost {
     }
 
     private void handleErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        final String errormsg = getErrormessage(this.br);
+        final String errormsg = getErrormessage(br);
         if (!StringUtils.isEmpty(errormsg)) {
             if (errormsg.equalsIgnoreCase("No Authorization was found") || errormsg.equalsIgnoreCase("Invalid Password")) {
                 /* Usually goes along with http response 401 */
@@ -344,9 +344,9 @@ public class CboxeraCom extends PluginForHost {
     private String getErrormessage(final Browser br) {
         String errormsg = null;
         try {
-        } catch (final Throwable e) {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             errormsg = (String) entries.get("msg");
+        } catch (final Throwable e) {
         }
         return errormsg;
     }

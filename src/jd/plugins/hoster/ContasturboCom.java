@@ -140,9 +140,8 @@ public class ContasturboCom extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
         }
-        /* TODO: Move away from static list of supported hosts. */
-        final String[] hostsList = { "1fichier.com", "2shared.com", "4shared.com", "alfafile.net", "aniteca.zlx.com.br", "axfiles.com", "bigfile.to", "brfiles.com", "dataFile.com", "file4go.net", "fileFactory.com", "fileNext.com", "mediafire.com", "mega.nz", "rapidgator.net", "sendspace.com", "turbobit.net", "uploaded.net", "uptobox.com", "userscloud.com" };
-        ai.setMultiHostSupport(this, Arrays.asList(hostsList));
+        final String[] hosts = br.getRegex("class=\"logo_servers\">\\s*<div[^>]*?><span>([^<>\"]+)</span>").getColumn(0);
+        ai.setMultiHostSupport(this, Arrays.asList(hosts));
         return ai;
     }
 
