@@ -21,15 +21,15 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class BtafileCom extends XFileSharingProBasic {
-    public BtafileCom(final PluginWrapper wrapper) {
+public class DailyuploadsNet extends XFileSharingProBasic {
+    public DailyuploadsNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -38,13 +38,13 @@ public class BtafileCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2020-05-08: null<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "btafile.com" });
+        ret.add(new String[] { "dailyuploads.net", "dailyuploads.cc" });
         return ret;
     }
 
@@ -66,13 +66,13 @@ public class BtafileCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return false;
+            return true;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -93,26 +93,27 @@ public class BtafileCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return 8;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return 8;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 8;
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         /* 2020-05-08: Special */
-        boolean premiumonly = super.isPremiumOnlyHTML();
-        if (!premiumonly) {
-            premiumonly = new Regex(correctedBR, ">\\s*This file reached max free downloads limit").matches();
+        String dllink = super.getDllink(link, account, br, src);
+        /* Avoid bad URLs which the main plugin may pickup. */
+        if (dllink.matches("https?://.+adskeeper.+\\.\\d+\\.js")) {
+            return null;
         }
-        return premiumonly;
+        return dllink;
     }
 }
