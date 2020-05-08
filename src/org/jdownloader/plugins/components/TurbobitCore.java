@@ -52,11 +52,12 @@ public class TurbobitCore extends antiDDoSForHost {
      */
     /* Settings */
     // private static final String SETTING_JAC = "SETTING_JAC";
-    public static final String   SETTING_FREE_PARALLEL_DOWNLOADSTARTS         = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
-    public static final String   SETTING_PREFERRED_DOMAIN                     = "SETTING_PREFERRED_DOMAIN";
-    private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING              = 20;
-    private static final boolean prefer_single_linkcheck_via_mass_linkchecker = true;
-    private static final String  premRedirectLinks                            = ".*//?download/redirect/[A-Za-z0-9]+/[a-z0-9]+";
+    public static final String   SETTING_FREE_PARALLEL_DOWNLOADSTARTS          = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    public static final String   SETTING_PREFERRED_DOMAIN                      = "SETTING_PREFERRED_DOMAIN";
+    private static String        PROPERTY_DOWNLOADLINK_checked_atleast_onetime = "checked_atleast_onetime";
+    private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING               = 20;
+    private static final boolean prefer_single_linkcheck_via_mass_linkchecker  = true;
+    private static final String  premRedirectLinks                             = ".*//?download/redirect/[A-Za-z0-9]+/[a-z0-9]+";
 
     public TurbobitCore(final PluginWrapper wrapper) {
         super(wrapper);
@@ -91,6 +92,13 @@ public class TurbobitCore extends antiDDoSForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
+        /**
+         * Disabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
+         * filesize is not known already. This will speedup the linkcheck! </br>
+         * Enabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will slow
+         * down the linkcheck and cause more http requests in a short amount of time!
+         */
+        final boolean forceDeepCheckOnMissingFilesize = false;
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
         try {
             final Browser br_linkcheck = new Browser();
@@ -141,9 +149,12 @@ public class TurbobitCore extends antiDDoSForHost {
                             final String name = fileInfo.getMatch(0);
                             dllink.setAvailable(true);
                             dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                            if (dllink.getKnownDownloadSize() < 0) {
+                            final boolean checkedBeforeAlready = dllink.getBooleanProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, false);
+                            if (dllink.getKnownDownloadSize() < 0 && (checkedBeforeAlready || forceDeepCheckOnMissingFilesize)) {
                                 deepChecks.add(dllink);
                             }
+                            /* Allows it to look for the filesize on 2nd linkcheck. */
+                            dllink.setProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, true);
                         }
                     }
                 }
@@ -166,21 +177,21 @@ public class TurbobitCore extends antiDDoSForHost {
 
     // Also check HitFileNet plugin if this one is broken
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (prefer_single_linkcheck_via_mass_linkchecker && supports_mass_linkcheck()) {
-            requestFileInformation_Mass_Linkchecker(downloadLink);
+            requestFileInformation_Mass_Linkchecker(link);
         } else {
-            requestFileInformation_Web(downloadLink);
+            requestFileInformation_Web(link);
         }
         return AvailableStatus.TRUE;
     }
 
-    public AvailableStatus requestFileInformation_Mass_Linkchecker(final DownloadLink downloadLink) throws IOException, PluginException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
+    public AvailableStatus requestFileInformation_Mass_Linkchecker(final DownloadLink link) throws IOException, PluginException {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
         }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;

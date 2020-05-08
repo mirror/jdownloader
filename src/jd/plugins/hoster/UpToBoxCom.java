@@ -388,11 +388,14 @@ public class UpToBoxCom extends antiDDoSForHost {
                     } else {
                         link.setDownloadPassword(null);
                     }
+                    dllink = getDllinkWebsite();
                     counter++;
-                } while (counter <= countermax);
-                dllink = getDllinkWebsite();
+                } while (counter <= countermax && dllink == null);
                 if (dllink == null) {
                     logger.warning("Failed to find final downloadurl");
+                    if (counter == countermax) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download currently not possible (?)", 10 * 60 * 1000l);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
