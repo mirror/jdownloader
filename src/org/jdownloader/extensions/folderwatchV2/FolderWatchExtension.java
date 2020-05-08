@@ -16,7 +16,6 @@
 package org.jdownloader.extensions.folderwatchV2;
 
 import java.io.File;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,36 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.simplejson.mapper.ClassCache;
-import org.appwork.storage.simplejson.mapper.Setter;
-import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.reflection.Clazz;
-import org.jdownloader.controlling.contextmenu.ContextMenuManager;
-import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
-import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
-import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.extensions.folderwatchV2.translate.FolderWatchTranslation;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
-import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
-import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -74,6 +43,35 @@ import jd.plugins.AddonPanel;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.simplejson.mapper.ClassCache;
+import org.appwork.storage.simplejson.mapper.Setter;
+import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.reflection.Clazz;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.extensions.folderwatchV2.translate.FolderWatchTranslation;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
+import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderWatchTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Long> {
     private FolderWatchConfigPanel                          configPanel;
@@ -482,7 +480,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     private final boolean modify(CrawledLink link) {
                         CrawledLink source = link;
                         while (source != null) {
-                            if (StringUtils.startsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
+                            if (StringUtils.endsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
                                 return true;
                             } else {
                                 source = source.getSourceLink();
@@ -533,7 +531,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                                         private final boolean modify(CrawledLink link) {
                                             CrawledLink source = link;
                                             while (source != null) {
-                                                if (StringUtils.startsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
+                                                if (StringUtils.endsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
                                                     return true;
                                                 } else {
                                                     source = source.getSourceLink();
@@ -565,11 +563,10 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             crawledLinkModifier = jobModifier;
                         }
                     }
-                    private final Charset UTF8 = Charset.forName("UTF-8");
 
                     @Override
                     protected CrawledLink crawledLinkFactorybyURL(CharSequence url) {
-                        final CrawledLink ret = super.crawledLinkFactorybyURL(jobIDentifier + Base64.encodeToString(url.toString().getBytes(UTF8)));
+                        final CrawledLink ret = super.crawledLinkFactorybyURL(url.toString() + "#" + jobIDentifier);
                         ret.setCustomCrawledLinkModifier(crawledLinkModifier);
                         return ret;
                     }

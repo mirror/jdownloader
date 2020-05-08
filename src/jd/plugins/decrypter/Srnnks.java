@@ -40,7 +40,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/([a-z]{1,2}[_-][a-f0-9]{16}.*|go\\-[a-f0-9]{128}/)", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "https?://[\\w\\.]*?serienjunkies\\.org/([a-z]{1,2}[_-][a-f0-9]{16}.*|go\\-[a-f0-9]{128}/)", "https?://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" })
 public class Srnnks extends antiDDoSForDecrypt {
     class DecryptRunnable implements Runnable {
         private final Form                    downloadForm;
@@ -65,7 +65,7 @@ public class Srnnks extends antiDDoSForDecrypt {
                     this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
                 } else {
                     // not sure if there are still pages that use this old system
-                    final String link = br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
+                    final String link = br.getRegex("SRC=\"(https?://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
                     if (link != null) {
                         Thread.sleep(FW_WAIT);
                         if (isAbort()) {
@@ -211,11 +211,14 @@ public class Srnnks extends antiDDoSForDecrypt {
             br.setFollowRedirects(false);
             br.setCookiesExclusive(true);
             getPage(parameter.toString());
+            if (br.getRedirectLocation() != null && canHandle(br.getRedirectLocation())) {
+                getPage(br.getRedirectLocation());
+            }
             if (br.containsHTML("<h2>Error 404 \\- Page not found\\!</h2>")) {
                 logger.warning("Invalid URL: " + parameter);
             } else {
                 final String grab = br.getRegex("<p><strong>[\\w\\-\\.]+</strong><br />(.*?)<div class=\"post\\_details\">").getMatch(0);
-                final String[] links = new Regex(grab, "href=\"(http://[\\w\\.]*?serienjunkies\\.org/.*?)\" target").getColumn(0);
+                final String[] links = new Regex(grab, "href=\"(https?://[\\w\\.]*?serienjunkies\\.org/.*?)\" target").getColumn(0);
                 if (links != null && links.length != 0) {
                     for (final String link : links) {
                         ret.add(createDownloadlink(link));
@@ -228,6 +231,9 @@ public class Srnnks extends antiDDoSForDecrypt {
                 // redirect support if the user adds copies these temp hash
                 br.setFollowRedirects(false);
                 getPage(parameter.getCryptedUrl());
+                if (br.getRedirectLocation() != null && canHandle(br.getRedirectLocation())) {
+                    getPage(br.getRedirectLocation());
+                }
                 final String link = br.getRedirectLocation();
                 if (link != null) {
                     ret.add(createDownloadlink(link));
@@ -242,6 +248,9 @@ public class Srnnks extends antiDDoSForDecrypt {
                             return ret;
                         }
                         getPage(parameter.getCryptedUrl());
+                        if (br.getRedirectLocation() != null && canHandle(br.getRedirectLocation())) {
+                            getPage(br.getRedirectLocation());
+                        }
                         if (limitsReached(br)) {
                             return ret;
                         }

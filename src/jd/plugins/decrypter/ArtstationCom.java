@@ -31,6 +31,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -52,7 +53,14 @@ public class ArtstationCom extends antiDDoSForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
             /* Login whenever possible - this may unlock some otherwise hidden user content. */
-            jd.plugins.hoster.ArtstationCom.login(this.br, aa, false);
+            try {
+                jd.plugins.hoster.ArtstationCom.login(this.br, aa, false);
+            } catch (PluginException e) {
+                handleAccountException(aa, e);
+            }
+        }
+        if (br.getURL() == null) {
+            // getPage("https://www.artstation.com/");
         }
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {

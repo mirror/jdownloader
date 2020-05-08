@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.Collator;
@@ -26,8 +25,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,9 +39,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe|toplist).*?/.+" })
-public class SrnnksCategory extends antiDDoSForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "https?://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "https?://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe|toplist).*?/.+" })
+public class SrnnksCategory extends antiDDoSForDecrypt {
     public SrnnksCategory(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -114,37 +112,30 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
             UserIO.getInstance().requestMessageDialog(JDL.L("plugins.decrypter.srnks.overloaded", lng_overLoadedMessage));
             return new ArrayList<DownloadLink>();
         }
-
         IdNamePair selectedCategory = letTheUserSelectCategory();
         if (selectedCategory == null) {
             return new ArrayList<DownloadLink>();
         }
-        getPage("http://serienjunkies.org/" + selectedCategory.getId() + "/");
+        getPage("https://serienjunkies.org/" + selectedCategory.getId() + "/");
         String page = br.toString();
-
         Format selectedFormat = letTheUserSelectFormat(page);
         if (selectedFormat == null) {
             return new ArrayList<DownloadLink>();
         }
-
         List<String> links = letTheUserSelectMirrors(selectedFormat);
         if (links == null) {
             return new ArrayList<DownloadLink>();
         }
-
         return confirmSelectedLinks(links);
-
     }
 
     private ArrayList<DownloadLink> confirmSelectedLinks(List<String> links) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-
         String linksAsSingleString = convertListOfLinksToString(links);
         String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.RemoveUnwantedLinks", lng_removeUnwantedLinksMessage), linksAsSingleString);
         if (linklist == null) {
             return new ArrayList<DownloadLink>();
         }
-
         String[] urls = HTMLParser.getHttpLinks(linklist, null);
         for (String url : urls) {
             ret.add(this.createDownloadlink(url));
@@ -174,7 +165,6 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
         if (selectedMirrorsIndices == null || selectedMirrorsIndices.length == 0) {
             return null;
         }
-
         List<String> links = selectedFormat.getLinks(selectedMirrorsIndices);
         return links;
     }
@@ -193,7 +183,6 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
         } else if (formats.length == 1) {
             selectedFormat = formats[0];
         }
-
         if (selectedFormat == null) {
             return null;
         }
@@ -209,7 +198,6 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
         if (res < 0) {
             return null;
         }
-
         IdNamePair selectedCategory = categories[res];
         return selectedCategory;
     }
@@ -224,19 +212,15 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
     }
 
     private IdNamePair[] parseCategories() {
-        String[] ids = br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(0);
-
-        String[] names = br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(1);
-
+        String[] ids = br.getRegex("\\&nbsp\\;<a href=\"https?://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(0);
+        String[] names = br.getRegex("\\&nbsp\\;<a href=\"https?://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(1);
         if (ids.length != names.length) {
             throw new IllegalStateException("Found " + ids.length + " ids and " + names.length + " names");
         }
-
         IdNamePair[] idNames = new IdNamePair[names.length];
         for (int i = 0; i < names.length; i++) {
             idNames[i] = new IdNamePair(ids[i], names[i]);
         }
-
         // May ignore Season/Staffel Difference when sorting
         Arrays.sort(idNames);
         return idNames;
@@ -254,12 +238,9 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
     // sb.append("\r\n");
     // }
     // }
-
     private Format[] parseFormats(String page) {
         List<Format> result = new ArrayList<Format>();
-
         String[] lines = page.split("\n");
-
         Format currentFormat = new Format("");
         String normalName = "";
         for (String line : lines) {
@@ -295,7 +276,6 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
 
     private static class IdNamePair implements Comparable<IdNamePair> {
         private static final Collator collator = Collator.getInstance(Locale.GERMAN);
-
         private final String          id;
         private final String          name;
 
@@ -319,11 +299,8 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
     }
 
     private static class Link {
-
         private final String url;
-
         private final String mirror;
-
         private final String name;
 
         public Link(String url, String mirror, String name) {
@@ -344,30 +321,19 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
         public String toString() {
             return name + " (" + mirror + ")";
         }
-
     }
 
     private static class Format {
-
         private static final int    MIN_SUFFIX_LENGTH = 2;
-
         private static final String UPLOADER_KEY      = "Uploader";
-
         private static final String LANGUAGE_KEY      = "Sprache";
-
         private static final String DURATION_KEY      = "Dauer";
-
         private static final String FORMAT_KEY        = "Format";
-
         private static final String SIZE_PER_EPISODE  = "Größe";
-
         private static final String INFO              = "Info";
-
         private final Properties    descriptions      = new Properties();
-
         private final Set<String>   mirrors           = new HashSet<String>();
         private final Set<String>   names             = new HashSet<String>();
-
         private final List<Link>    links             = new ArrayList<Link>();
 
         public Format(String description) {
@@ -402,7 +368,6 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
          */
         public List<String> getLinks(Set<String> mirrors) {
             List<String> result = new ArrayList<String>();
-
             for (Link link : links) {
                 if (mirrors.contains(link.getMirror())) {
                     result.add(link.getUrl());
@@ -479,15 +444,12 @@ public class SrnnksCategory extends antiDDoSForDecrypt {
             appendIfNotEmpty(b, UPLOADER_KEY);
             appendIfNotEmpty(b, SIZE_PER_EPISODE);
             appendIfNotEmpty(b, INFO);
-
             return b.toString();
         }
-
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }

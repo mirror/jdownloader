@@ -121,7 +121,10 @@ public class ArtstationCom extends PluginForHost {
 
     /** Sets correct json headers */
     public static void setHeaders(final Browser br) {
-        final String token = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        String token = br.getRegex("name\\s*=\\s*\"authenticity_token\"\\s*type\\s*=\\s*\"hidden\"\\s*value\\s*=\\s*\"([^<>\"]*?)\"").getMatch(0);
+        if (token == null) {
+            token = br.getRegex("type\\s*=\\s*\"hidden\"\\s*name\\s*=\\s*\"authenticity_token\"\\s*value\\s*=\\s*\"([^<>\"]*?)\"").getMatch(0);
+        }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         if (token != null) {
             br.getHeaders().put("X-CSRF-Token", token);
@@ -152,22 +155,20 @@ public class ArtstationCom extends PluginForHost {
         }
     }
 
-    private static Object LOCK = new Object();
-
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public static void login(final Browser br, final Account account, boolean verify) throws Exception {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (!verify && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
                     br.getPage("https://www." + account.getHoster() + "/");
-                    if (br.containsHTML("users/sign_out")) {
+                    if (br.containsHTML("users/sign_out") && br.getCookie(account.getHoster(), "ArtStationSessionCookie", Cookies.NOTDELETEDPATTERN) != null) {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
@@ -178,11 +179,12 @@ public class ArtstationCom extends PluginForHost {
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("user[email]", Encoding.urlEncode(account.getUser()));
-                loginform.put("user[password]", Encoding.urlEncode(account.getPass()));
-                loginform.put("user[remember_me]", "true");
-                br.submitForm(loginform);
-                if (br.getCookie(account.getHoster(), "remember_user_token") == null) {
+                loginform.put(loginform.getBestVariable("email"), Encoding.urlEncode(account.getUser()));
+                loginform.put(loginform.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
+                final Browser brc = br.cloneBrowser();
+                setHeaders(brc);
+                brc.submitForm(loginform);
+                if (br.getCookie(account.getHoster(), "ArtStationSessionCookie", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -201,12 +203,7 @@ public class ArtstationCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */

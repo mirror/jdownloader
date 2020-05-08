@@ -215,9 +215,18 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     public void onAfterRequestException(HttpRequest request, HttpResponse response, Throwable e) {
     }
 
+    protected String lastRequestString = null;
+
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
         try {
+            synchronized (BrowserReference.this) {
+                final String requestString = request.getRemoteAddress() + "\r\n" + request.getRequestedURL() + "\r\n" + request.getRequestHeaders();
+                if (!StringUtils.equals(lastRequestString, requestString)) {
+                    lastRequestString = requestString;
+                    getLogger().info(requestString);
+                }
+            }
             HTTPHeader originHeader = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_ORIGIN);
             // todo: origin check
             if ("/resource".equals(request.getRequestedPath())) {
@@ -340,6 +349,13 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
+        synchronized (BrowserReference.this) {
+            final String requestString = request.getRemoteAddress() + "\r\n" + request.getRequestedURL() + "\r\n" + request.getRequestHeaders();
+            if (!StringUtils.equals(lastRequestString, requestString)) {
+                lastRequestString = requestString;
+                getLogger().info(requestString);
+            }
+        }
         if (request.getRequestedPath() != null && !request.getRequestedPath().matches("^/" + Pattern.quote(challenge.getHttpPath()) + "/.*$")) {
             return false;
         }

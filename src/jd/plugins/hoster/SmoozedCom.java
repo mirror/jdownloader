@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,19 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,6 +33,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SmoozedTranslation;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" })
 public class SmoozedCom extends antiDDoSForHost {
@@ -351,13 +352,21 @@ public class SmoozedCom extends antiDDoSForHost {
         br.setFollowRedirects(false);
         final String postParam = "session_key=" + Encoding.urlEncode(session_Key) + "&" + "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&silent_errors=true";
         URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createPostRequest(getAPI() + "/api/download", postParam));
-        Request request;
+        Request request = null;
         if (StringUtils.contains(con.getHeaderField("Content-Type"), "application/json") || con.getRequest().getLocation() == null) {
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             request = br.createRedirectFollowingRequest(br.getRequest());
         }
         // subquent requests are to download servers, these are not hosted via cloudflare. -raztoki20160118
@@ -370,19 +379,32 @@ public class SmoozedCom extends antiDDoSForHost {
                     br.setFollowRedirects(true);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest().getUrl(), maxChunks > 0, maxChunks >= 1 ? -maxChunks : 1);
                     if (!dl.getConnection().isContentDisposition()) {
-                        br.followConnection();
+                        try {
+                            br.followConnection(true);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
                         errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        dl.startDownload();
+                        return;
                     }
-                    dl.startDownload();
-                    return;
                 } else {
-                    br.followConnection();
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             request = br.createRedirectFollowingRequest(request);
         }
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server-Error:Redirectloop");

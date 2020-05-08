@@ -141,8 +141,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink link = getDownloadLink();
         if (link != null) {
             return link.getJobID();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     /**
@@ -157,8 +158,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getView().getBytesTotal();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     /**
@@ -423,12 +425,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setEnabled(boolean b) {
-        if (b == enabledState) {
-            return;
-        }
-        enabledState = b;
-        if (hasNotificationListener()) {
-            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, b));
+        if (b != enabledState) {
+            enabledState = b;
+            if (hasNotificationListener()) {
+                nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, b));
+            }
         }
     }
 
