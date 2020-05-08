@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.appwork.storage.JSonStorage;
@@ -47,17 +46,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|member_illust\\.php\\?mode=[a-z0-9]+\\&illust_id=\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
 public class PixivNetGallery extends PluginForDecrypt {
     public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* TODO: Update these */
-    private static final String TYPE_GALLERY        = ".+/member_illust\\.php\\?mode=[a-z]+\\&illust_id=\\d+";
-    private static final String TYPE_ARTWORKS       = ".+/artworks/\\d+";
-    private static final String TYPE_GALLERY_MEDIUM = ".+/member_illust\\.php\\?mode=medium\\&illust_id=\\d+";
-    private static final String TYPE_GALLERY_MANGA  = ".+/member_illust\\.php\\?mode=manga\\&illust_id=\\d+";
+    private static final String TYPE_GALLERY = ".+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -74,78 +69,55 @@ public class PixivNetGallery extends PluginForDecrypt {
                 handleAccountException(aa, e);
             }
         }
-        String userid = new Regex(parameter, "id=(\\d+)").getMatch(0);
+        String itemID = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String fpName = null;
         String uploadDate = null;
-        if (parameter.matches(TYPE_GALLERY) || parameter.matches(TYPE_ARTWORKS)) {
-            /* 2020-04-28: TODO: Check this with a lot of URLs */
-            if (parameter.matches(TYPE_ARTWORKS)) {
-                userid = new Regex(parameter, "artworks/(\\d+)").getMatch(0);
-                br.getPage(parameter);
-            } else if (parameter.matches(TYPE_GALLERY_MEDIUM)) {
-                br.getPage(PixivNet.createSingleImageUrl(userid));
-                /* TODO: Review/check this */
-                if (br.containsHTML("mode=manga&amp;illust_id=" + userid)) {
-                    parameter = PixivNet.createGalleryUrl(userid);
-                    br.getPage(parameter);
-                }
-            } else if (parameter.matches(TYPE_GALLERY_MANGA)) {
-                br.getPage(PixivNet.createGalleryUrl(userid));
-                /* TODO: Review/check this */
-                if (br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
-                    parameter = PixivNet.createSingleImageUrl(userid);
-                    br.getPage(parameter);
-                }
-            } else {
-                br.getPage(PixivNet.createGalleryUrl(userid));
-            }
-            if (userid == null) {
+        if (parameter.matches(TYPE_GALLERY)) {
+            itemID = new Regex(parameter, TYPE_GALLERY).getMatch(0);
+            if (itemID == null) {
                 return null;
             }
-            uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
-            /* Decrypt gallery */
-            String json = br.getRegex("id=\"meta-preload-data\" content='(\\{.*?\\})'").getMatch(0);
-            /* New attempt 2020-04-08 */
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            int pagecount = 1;
-            final Map<String, Object> illust = (Map<String, Object>) entries.get("illust");
+            br.getPage("https://www." + this.getHost() + "/ajax/illust/" + itemID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* {"error":true,"message":"Work has been deleted or the ID does not exist.","body":[]} */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("body");
+            /* 2020-05-08: 0 = image, 1 = ??, 2 = animation (?) */
+            final long illustType = JavaScriptEngineFactory.toLong(entries.get("illustType"), 0);
+            if (illustType == 2) {
+                logger.info("Found animation (?)");
+            }
+            uploadDate = (String) entries.get("uploadDate");
+            int pagecount = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 1);
             String userName = null;
             String illustUploadDate = null;
-            String illustId = null;
             String illustTitle = null;
             String tags = null;
-            final Set<Entry<String, Object>> illustSet = illust.entrySet();
-            final int illustsNumb = illustSet.size();
-            for (Map.Entry<String, Object> entry : illustSet) {
-                final Map<String, Object> illustInfo = (Map<String, Object>) entry.getValue();
-                illustId = (String) illustInfo.get("illustId");
-                illustTitle = (String) illustInfo.get("illustTitle");
-                if (illustsNumb == 1) {
-                    pagecount = (int) JavaScriptEngineFactory.toLong(illustInfo.get("pageCount"), 1);
+            // final String illustId = (String) entries.get("illustId");
+            illustTitle = (String) entries.get("illustTitle");
+            /*
+             * Users want to have a maximum of information in filenames: https://board.jdownloader.org/showpost.php?p=462062&postcount=41
+             */
+            final String alt = (String) entries.get("alt");
+            if (!StringUtils.isEmpty(alt) && !StringUtils.isEmpty(illustTitle)) {
+                if (alt.contains(illustTitle)) {
+                    illustTitle = alt;
+                } else {
+                    illustTitle = alt + " " + illustTitle;
                 }
-                /*
-                 * Users want to have a maximum of information in filenames:
-                 * https://board.jdownloader.org/showpost.php?p=462062&postcount=41
-                 */
-                final String alt = (String) illustInfo.get("alt");
-                if (!StringUtils.isEmpty(alt) && !StringUtils.isEmpty("illustTitle")) {
-                    if (alt.contains(illustTitle)) {
-                        illustTitle = alt;
-                    } else {
-                        illustTitle = alt + " " + illustTitle;
-                    }
-                }
-                final String singleLink = (String) JavaScriptEngineFactory.walkJson(illustInfo, "urls/regular");
-                if (StringUtils.isEmpty(illustId)) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                decryptedLinks.add(generateDownloadLink(parameter, illustId, illustTitle, illustUploadDate, userName, tags, singleLink));
+            } else {
+                /* Fallback */
+                illustTitle = itemID;
             }
-            if (illustSet.size() == 1 && pagecount > 1) {
+            final String singleLink = (String) JavaScriptEngineFactory.walkJson(entries, "urls/regular");
+            decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, userName, tags, singleLink));
+            if (pagecount > 1) {
                 /* == click on "Load more" */
-                br.getPage(String.format("https://www.%s/ajax/illust/%s/pages?lang=en", this.getHost(), userid));
+                br.getPage(String.format("https://www.%s/ajax/illust/%s/pages?lang=en", this.getHost(), itemID));
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final ArrayList<Object> additionalpics = (ArrayList<Object>) entries.get("body");
                 int counter = 0;
@@ -161,20 +133,20 @@ public class PixivNetGallery extends PluginForDecrypt {
                         /* Skip invalid items */
                         continue;
                     }
-                    decryptedLinks.add(generateDownloadLink(parameter, illustId, illustTitle, illustUploadDate, userName, tags, directurl));
+                    decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, userName, tags, directurl));
                 }
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(illustId + " " + illustTitle);
+                fp.setName(itemID + " " + illustTitle);
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
         } else {
             /* Decrypt user */
-            if (userid == null) {
+            if (itemID == null) {
                 /* 2020-01-27 */
-                userid = new Regex(parameter, "users/(\\d+)").getMatch(0);
+                itemID = new Regex(parameter, "users/(\\d+)").getMatch(0);
             }
-            if (userid == null) {
+            if (itemID == null) {
                 logger.warning("Failed to find userid");
                 return null;
             }
@@ -203,10 +175,10 @@ public class PixivNetGallery extends PluginForDecrypt {
             boolean isManga = false;
             final UrlQuery querybase = new UrlQuery();
             if (parameter.contains("/bookmarks")) {
-                url = String.format("https://www.%s/ajax/user/%s/illusts/bookmarks", br.getHost(), userid);
+                url = String.format("https://www.%s/ajax/user/%s/illusts/bookmarks", br.getHost(), itemID);
                 isBookmarks = true;
             } else if (parameter.contains("/manga")) {
-                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), userid);
+                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), itemID);
                 // url = String.format("https://www.%s/ajax/user/%s/profile/illusts", br.getHost(), userid);
                 // querybase.append("ids[]", "", false);
                 // querybase.append("work_category", "manga", false);
@@ -214,7 +186,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 isManga = true;
             } else {
                 /* 2020-04-06: E.g. "/illustrations" */
-                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), userid);
+                url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), itemID);
                 /* All items on one page! */
                 maxitemsperpage = -1;
             }
@@ -301,10 +273,10 @@ public class PixivNetGallery extends PluginForDecrypt {
             } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && maxitemsperpage != -1 && !this.isAbort());
         }
         if (fpName == null) {
-            fpName = userid;
+            fpName = itemID;
         } else {
             fpName = Encoding.htmlOnlyDecode(fpName);
-            fpName = userid + "_" + fpName;
+            fpName = itemID + "_" + fpName;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -388,11 +360,11 @@ public class PixivNetGallery extends PluginForDecrypt {
         return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("この作品は削除されました。|>This work was deleted|>Artist has made their work private\\.");
     }
 
-    private boolean isAdultImageLoginRequired(String lid) {
-        /* 2019-01-18: TODO: Add way to get around r18-block (without account) */
-        return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1") || br.containsHTML("r18-image") || br.containsHTML("\"tag\":\"R-18\",\"locked\":true");
-    }
-
+    // private boolean isAdultImageLoginRequired(String lid) {
+    // /* 2019-01-18: TODO: Add way to get around r18-block (without account) --> 2020-05-08: Way around is using ajax request */
+    // return br.containsHTML("r18=true") || br.containsHTML("\"illustId\"\\s*:\\s*\"" + lid + "\".*?\"xRestrict\"\\s*:\\s*1") ||
+    // br.containsHTML("r18-image") || br.containsHTML("\"tag\":\"R-18\",\"locked\":true");
+    // }
     public static boolean isAccountOrRightsRequired(final Browser br) {
         return br.getURL().contains("return_to=");
     }
