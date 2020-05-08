@@ -89,7 +89,12 @@ public class SugarSyncCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pf-error-information-message\"")) {
+            /* 2020-05-08 e.g. <div class="pf-main-error-message">Die Datei ist nicht mehr verfügbar.</div> */
+            /*
+             * or <div class="pf-error-information-message">Die Datei, auf die Sie zugreifen wollen, ist nicht mehr zum Herunterladen
+             * verfügbar.<br/>Wenden Sie sich an den Besitzer, wenn Sie Fragen haben.</div>
+             */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // br.getPage(link.getPluginPatternMatcher());
