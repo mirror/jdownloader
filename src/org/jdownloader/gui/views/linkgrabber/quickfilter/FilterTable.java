@@ -124,8 +124,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         };
     }
 
-    protected static final long                 FILTER_REFRESH_MIN     = 2000l;
-    private static final DelayedRunnable        FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN) {
+    protected static final long                 FILTER_REFRESH_MIN     = 1000l;
+    protected static final long                 FILTER_REFRESH_MAX     = 3000l;
+    private static final DelayedRunnable        FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN, FILTER_REFRESH_MAX) {
         @Override
         public String getID() {
             return "FilterTable";

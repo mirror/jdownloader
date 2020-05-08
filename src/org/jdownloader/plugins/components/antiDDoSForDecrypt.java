@@ -102,7 +102,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Pragma", null);
         // we now set
