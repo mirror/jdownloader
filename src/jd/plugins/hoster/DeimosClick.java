@@ -15,12 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -36,7 +39,7 @@ public class DeimosClick extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-05-04: Untested <br />
+     * limit-info: 2020-05-08: Free untested, no limits in premium mode <br />
      * captchatype-info: 2020-05-04: Untested null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
@@ -57,7 +60,35 @@ public class DeimosClick extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return DeimosClick.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String getDefaultAnnotationPatternPartDeimos() {
+        return "/((?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?|\\?op=login\\&redirect=[a-z0-9]{12})";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPartDeimos());
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink dl) {
+        try {
+            final String result;
+            if (dl.getPluginPatternMatcher().matches(".+/\\?op=login\\&redirect=([a-z0-9]{12})")) {
+                result = new Regex(dl.getPluginPatternMatcher(), "redirect=([a-z0-9]{12})").getMatch(0);
+            } else {
+                result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
+            }
+            return result;
+        } catch (MalformedURLException e) {
+            logger.log(e);
+        }
+        return null;
     }
 
     @Override
