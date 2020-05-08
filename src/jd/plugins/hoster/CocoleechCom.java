@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "" })
 public class CocoleechCom extends PluginForHost {
     private static final String          API_ENDPOINT        = "https://members.cocoleech.com/auth/api";
     /* Last updated: 2017-02-08 according to admin request. */

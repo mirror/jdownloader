@@ -54,7 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "" })
 public class OffCloudCom extends PluginForHost {
     /** Using API: https://github.com/offcloud/offcloud-api */
     private static final String                            CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK        = "CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK";

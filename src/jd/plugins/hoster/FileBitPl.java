@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,13 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "" })
 public class FileBitPl extends PluginForHost {
     private static final String          APIKEY    = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
     private static final String          API_BASE  = "https://filebit.pl/api/index.php";
@@ -286,8 +286,8 @@ public class FileBitPl extends PluginForHost {
     }
 
     /**
-     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br> DO
-     * NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
+     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br>
+     * DO NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
      */
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         this.loginWebsite(account);

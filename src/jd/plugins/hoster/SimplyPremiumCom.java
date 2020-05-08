@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom extends PluginForHost {
     private static final String          NICE_HOST         = "simply-premium.com";
     private static final String          NICE_HOSTproperty = "simplypremiumcom";

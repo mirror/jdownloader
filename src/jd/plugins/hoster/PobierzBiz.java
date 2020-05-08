@@ -46,7 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "" })
 public class PobierzBiz extends PluginForHost {
     /* Tags: pobierz.biz, rapidtraffic.pl */
     public PobierzBiz(PluginWrapper wrapper) {

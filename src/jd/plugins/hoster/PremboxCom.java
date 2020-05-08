@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "" })
 public class PremboxCom extends PluginForHost {
     private static final String                            CLEAR_DOWNLOAD_HISTORY                    = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
     /* Properties */

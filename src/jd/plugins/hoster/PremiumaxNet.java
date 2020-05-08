@@ -46,7 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "" })
 public class PremiumaxNet extends antiDDoSForHost {
     private static MultiHosterManagement mhm               = new MultiHosterManagement("premiumax.net");
     private static final String          NOCHUNKS          = "NOCHUNKS";

@@ -43,7 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "" })
 public class EasyFilesPl extends PluginForHost {
     // IMPORTANT: Sync ALL: EasyFilesPl, TurbixPl, Rapids24Pl
     // Based on API: easyfiles.pl/api_dokumentacja.php?api_en=1

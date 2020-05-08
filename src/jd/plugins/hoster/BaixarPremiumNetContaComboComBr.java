@@ -13,11 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,18 +33,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "contacombo.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "contacombo.com.br" }, urls = { "" })
 public class BaixarPremiumNetContaComboComBr extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            MAINPAGE           = "http://contacombo.com.br";
-
     private static final String                            NICE_HOST          = "contacombo.com.br";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     private Account                                        currAcc            = null;
     private DownloadLink                                   currDownloadLink   = null;
 
@@ -90,9 +86,7 @@ public class BaixarPremiumNetContaComboComBr extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         setConstants(account, link);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -108,13 +102,11 @@ public class BaixarPremiumNetContaComboComBr extends PluginForHost {
                 }
             }
         }
-
         login(this.br, account, true);
         final String dllink = jd.plugins.hoster.BaixarPremiumNet.getDllinkBaixar(this.br, this.currAcc, this.currDownloadLink);
         if (!dllink.startsWith("http")) {
             handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -185,5 +177,4 @@ public class BaixarPremiumNetContaComboComBr extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

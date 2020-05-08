@@ -44,7 +44,7 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xt7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xt7.pl" }, urls = { "" })
 public class Xt7Pl extends PluginForHost {
     private String                                         MAINPAGE           = "https://xt7.pl/";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();

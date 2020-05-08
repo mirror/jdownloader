@@ -21,6 +21,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
@@ -40,12 +45,7 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidtraffic.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidtraffic.pl" }, urls = { "" })
 public class RapidtrafficPl extends PluginForHost {
     private String                                         MAINPAGE           = "http://rapidtraffic.pl/";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
