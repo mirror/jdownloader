@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,6 +20,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,30 +41,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * @author pspzockerscene
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "" })
 public class FastixRu extends antiDDoSForHost {
-
     /** Using API: http://fastix.ru/apidoc */
     private final String                                   NOCHUNKS                     = "NOCHUNKS";
     private final String                                   DOMAIN                       = "https://fastix.ru/api_v2/";
     private final String                                   NICE_HOST                    = "fastix.ru";
     private final String                                   NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
     /* Connection limits */
     private final boolean                                  ACCOUNT_PREMIUM_RESUME       = true;
     private final int                                      ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
     private final int                                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     // used for checkDirectLink
     private boolean                                        supportsHeadConnection       = true;
@@ -132,7 +128,6 @@ public class FastixRu extends antiDDoSForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
         br = newBrowser();
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -148,7 +143,6 @@ public class FastixRu extends antiDDoSForHost {
                 }
             }
         }
-
         String dllink = checkDirectLink(NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             // from google translate
@@ -165,7 +159,6 @@ public class FastixRu extends antiDDoSForHost {
             // Please note: In the account profile can also be configured IP restrictions and forced SSL. But they will be ignored if
             // present in the API request these settings
             // Important Parameter [ip] can not take the address format IPv6, as well as masks (approx. 192.168. *. *)
-
             // IP might not even be needed in the scheme of things?? - raztoki
             final HTTPProxy proxyThatWillBeUsed = br.getProxy().getProxiesByURL(new URL(DOMAIN)).get(0);
             final String externalIP = new BalancedWebIPCheck(new StaticProxySelector(proxyThatWillBeUsed)).getExternalIP().getIP();
@@ -268,7 +261,6 @@ public class FastixRu extends antiDDoSForHost {
         }
         account.setProperty("fastixapikey", apikey);
         getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getaccountdetails");
-
         final String points = PluginJSonUtils.getJsonValue(br, "points");
         // null or parse exceptions will result in 0 traffic, users should complain and we can 'fix'
         long p = 0;
@@ -284,7 +276,6 @@ public class FastixRu extends antiDDoSForHost {
             p = 0;
         }
         ai.setTrafficLeft(p);
-
         /*
          * Other methods to get this list: allowed_fileshares, allowed_sources - directing_status is the best as they refresh it every 15
          * minutes and it contains lists of working/non working and partially working services
@@ -451,5 +442,4 @@ public class FastixRu extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

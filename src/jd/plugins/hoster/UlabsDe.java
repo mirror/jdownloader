@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,19 +40,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "u-labs.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "u-labs.de" }, urls = { "" })
 public class UlabsDe extends PluginForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://u-labs.de";
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
-
     private static final String                            url_accountboerse  = "https://u-labs.de/accountBoerse/";
-
     /* Contains <host><aavailable_traffic> */
     private static HashMap<String, Long>                   hostTrafficleftMap = new HashMap<String, Long>();
 
@@ -97,7 +93,6 @@ public class UlabsDe extends PluginForHost {
 
     /* no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -113,7 +108,6 @@ public class UlabsDe extends PluginForHost {
                 }
             }
         }
-
         String dllink = checkDirectLink(link, NICE_HOST + "directlink");
         if (dllink == null) {
             if (this.useAPI()) {
@@ -126,7 +120,6 @@ public class UlabsDe extends PluginForHost {
         if (link.getBooleanProperty(UlabsDe.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
         } catch (final SocketTimeoutException e) {
@@ -420,5 +413,4 @@ public class UlabsDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

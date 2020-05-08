@@ -44,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "" })
 public class FoxLeechCom extends antiDDoSForHost {
     private static MultiHosterManagement mhm       = new MultiHosterManagement("foxleech.com");
     private static final String          NOCHUNKS  = "NOCHUNKS";

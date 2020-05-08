@@ -55,7 +55,7 @@ import jd.plugins.components.PluginJSonUtils;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "" })
 public class MobilismOrg extends antiDDoSForHost {
     /* Tags: Script vinaget.us */
     private static final String                   DOMAIN               = "http://mblservices.org";
