@@ -61,13 +61,48 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.(?:xhamster\\.(?:com|xxx|desi|one)|xhamster(1|2|3)\\.desi)/(?:preview|movies|videos)/(?:\\d+[a-z0-9\\-]+|[a-z0-9\\-]+\\-\\d+$)|(?:xhamster\\.(?:com|xxx|desi|one)|xhamster(1|2|3)\\.desi)/(embed/\\d+|x?embed\\.php\\?video=\\d+|movies/[0-9]+/[^/]+\\.html|videos/[\\w\\-]+-\\d+))|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
     public XHamsterCom(PluginWrapper wrapper) {
         super(wrapper);
-        // Actually only free accounts are supported
+        /* Actually only free accounts are supported */
         this.enablePremium("http://xhamsterpremiumpass.com/");
         setConfigElements();
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi", "xhamster.one", "xhamster1.desi", "xhamster2.desi", "xhamster3.desi" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:preview|movies|videos)/[a-z0-9\\-]+\\-\\d+";
+            /* Embed pattern: 2020-05-08: /embed/123 = current pattern, x?embed.php = old one */
+            pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(embed/\\d+|x?embed\\.php\\?video=\\d+)";
+            /* Old pattern */
+            pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/movies/[0-9]+/[^/]+\\.html";
+            /* Premium pattern */
+            pattern += "|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)";
+            ret.add(pattern);
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* DEV NOTES */
@@ -151,10 +186,10 @@ public class XHamsterCom extends PluginForHost {
         } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
         } else if (link.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
-            fid = new Regex(link.getPluginPatternMatcher(), "xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/[^/]+/(\\d+)").getMatch(0);
+            fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(\\d+)").getMatch(0);
             if (fid == null) {
                 /* 2018-07-19: New */
-                fid = new Regex(link.getPluginPatternMatcher(), "xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
+                fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/[a-z0-9\\-]+\\-(\\d+)$").getMatch(0);
             }
         } else {
             fid = new Regex(link.getPluginPatternMatcher(), "(?:movies|videos)/(\\d+)/?").getMatch(0);
@@ -172,7 +207,7 @@ public class XHamsterCom extends PluginForHost {
     private String getLinkpart(final DownloadLink dl) {
         String linkpart = null;
         if (dl.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
-            linkpart = new Regex(dl.getPluginPatternMatcher(), "xhamster(?:1|2)?\\.(?:com|xxx|desi|one)/[^/]+/(.+)").getMatch(0);
+            linkpart = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0);
         } else if (!dl.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             linkpart = new Regex(dl.getPluginPatternMatcher(), "videos/([\\w\\-]+\\-\\d+)").getMatch(0);
         }
@@ -204,7 +239,7 @@ public class XHamsterCom extends PluginForHost {
             /* quick fix to force old player */
             String filename = null;
             String filesizeStr = null;
-            Account aa = AccountController.getInstance().getValidAccount("xhamster.com");
+            Account aa = AccountController.getInstance().getValidAccount(this.getHost());
             if (aa == null) {
                 aa = AccountController.getInstance().getValidAccount(domain_premium);
             }
@@ -252,11 +287,15 @@ public class XHamsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 // embeded correction --> Usually not needed
-                if (link.getPluginPatternMatcher().matches(".*?\\.(com|xxx|desi|one)/xembed.php.*")) {
+                if (link.getPluginPatternMatcher().matches(".+/xembed\\.php.*")) {
+                    logger.info("Trying to change embed URL --> Real URL");
                     String realpage = br.getRegex("main_url=(https?[^\\&]+)").getMatch(0);
                     if (realpage != null) {
+                        logger.info("Successfully changed: " + link.getPluginPatternMatcher() + " ----> " + realpage);
                         link.setUrlDownload(Encoding.htmlDecode(realpage));
                         br.getPage(link.getPluginPatternMatcher());
+                    } else {
+                        logger.info("Failed to change embed URL --> Real URL");
                     }
                 }
                 // recaptchav2 here, don't trigger captcha until download....
@@ -338,7 +377,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getSiteTitle() {
-        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(\\.com|\\.xxx|\\.desi|\\.one)?</title>").getMatch(0);
+        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(" + buildHostsPatternPart(getPluginDomains().get(0)) + ")?</title>").getMatch(0);
         return title;
     }
 
