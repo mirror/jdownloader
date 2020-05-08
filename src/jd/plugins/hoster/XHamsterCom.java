@@ -70,6 +70,7 @@ public class XHamsterCom extends PluginForHost {
         setConfigElements();
     }
 
+    /** Make sure this is the same in classes XHamsterCom and XHamsterGallery! */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -93,10 +94,11 @@ public class XHamsterCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
+            /* Videos current pattern */
             String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:preview|movies|videos)/[a-z0-9\\-]+\\-\\d+";
             /* Embed pattern: 2020-05-08: /embed/123 = current pattern, x?embed.php = old one */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(embed/\\d+|x?embed\\.php\\?video=\\d+)";
-            /* Old pattern */
+            /* Movies old pattern */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/movies/[0-9]+/[^/]+\\.html";
             /* Premium pattern */
             pattern += "|https?://gold\\.xhamsterpremium\\.com/videos/([A-Za-z0-9]+)";
