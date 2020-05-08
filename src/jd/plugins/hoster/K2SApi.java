@@ -128,10 +128,11 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected final String getDirectLinkAndReset(DownloadLink downloadLink, boolean reset) {
-        final String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+    /** Returns stored final downloadurl via given property and resets property if reset == true. */
+    protected final String getDirectLinkAndReset(final DownloadLink link, final boolean reset) {
+        final String dllink = link.getStringProperty(directlinkproperty, null);
         if (reset) {
-            downloadLink.removeProperty(directlinkproperty);
+            link.removeProperty(directlinkproperty);
         }
         return dllink;
     }
@@ -421,19 +422,23 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void handleDownload(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         logger.info(getRevisionInfo());
         // linkcheck
-        reqFileInformation(downloadLink);
-        String fuid = getFUID(downloadLink);
-        String dllink = getDirectLinkAndReset(downloadLink, true);
+        reqFileInformation(link);
+        String fuid = getFUID(link);
+        /*
+         * 2020-05-08: Do NOT reset directurl here anymore. See if that causes any issues but it should not. It should either lead to an
+         * error which would have happened anyways or 401 --> This will also clear the stored direct-URL and retry!
+         */
+        String dllink = getDirectLinkAndReset(link, false);
         // required to get overrides to work
         br = prepAPI(br);
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 try {
@@ -446,18 +451,19 @@ public abstract class K2SApi extends PluginForHost {
                  * or
                  * "Download link is outdated, invalid or assigned to another IP address.If you see this error, most likely you will need to get new download link"
                  */
-                handleGeneralServerErrors(account, downloadLink);
+                handleGeneralServerErrors(account, link);
                 // we now want to restore!
                 br = obr;
                 dllink = null;
             }
         }
+        logger.info("Trying to generate new directurl");
         // if above has failed, dllink will be null
         if (inValidate(dllink)) {
-            if ("premium".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+            if ("premium".equalsIgnoreCase(link.getStringProperty("access", null)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessage(3));
-            } else if ("private".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+            } else if ("private".equalsIgnoreCase(link.getStringProperty("access", null)) && isFree) {
                 privateDownloadRestriction(getErrorMessage(8));
             }
             if (isFree) {
@@ -510,7 +516,7 @@ public abstract class K2SApi extends PluginForHost {
                     logger.info("download-captcha_url is not https --> Changing it to https");
                     captcha_url = captcha_url.replace("http://", "https://");
                 }
-                final String code = getCaptchaCode(captcha_url, downloadLink);
+                final String code = getCaptchaCode(captcha_url, link);
                 if (inValidate(code)) {
                     // captcha can't be blank! Why we don't return null I don't know!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -546,7 +552,7 @@ public abstract class K2SApi extends PluginForHost {
                         if (wait_seconds > 180) {
                             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
                         }
-                        sleep(wait_seconds * 1000l, downloadLink);
+                        sleep(wait_seconds * 1000l, link);
                         getURL.put("free_download_key", free_download_key);
                         getURL.remove("captcha_challenge");
                         getURL.remove("captcha_response");
@@ -583,9 +589,9 @@ public abstract class K2SApi extends PluginForHost {
                     blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
                     getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                 }
-                setIP(downloadLink, account);
+                setIP(link, account);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
@@ -594,14 +600,14 @@ public abstract class K2SApi extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors(account, downloadLink);
+                handleGeneralServerErrors(account, link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         // add download slot
         controlSlot(+1, account);
         try {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } finally {
             // remove download slot
