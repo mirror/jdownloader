@@ -598,7 +598,15 @@ public abstract class K2SApi extends PluginForHost {
                          */
                         final int wait_seconds = Integer.parseInt(wait_seconds_str) + 2;
                         if (wait_seconds > 180) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
+                            if (account != null) {
+                                /*
+                                 * 2020-05-11: Account traffic will be reset after reconnect too but without reconnect, user will have to
+                                 * wait that time until he can start new DLs with a free account!
+                                 */
+                                throw new AccountUnavailableException("Downloadlimit reached", wait_seconds * 1000l);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
+                            }
                         }
                         sleep(wait_seconds * 1000l, link);
                         getURL.put("free_download_key", free_download_key);
