@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -21,9 +24,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "https?://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?[\\w_]+|[\\w_]+\\?language=\\w+|playlists/\\d+/[^/]+)" })
 public class TedCom extends PluginForDecrypt {
@@ -87,7 +87,7 @@ public class TedCom extends PluginForDecrypt {
     private SubConfiguration        cfg                                = null;
 
     /** Old 'apikey' value = "TEDDOWNLOAD" */
-    /** Ild download-way: "http://www.ted.com/download/links/slug/" + plainfilename (slug) + "/type/talks/ext/mp4" */
+    /** Old download-way: "http://www.ted.com/download/links/slug/" + plainfilename (slug) + "/type/talks/ext/mp4" */
     /***
      * HLS info:
      *
@@ -158,7 +158,7 @@ public class TedCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(externalLink));
                 return;
             }
-            json = this.br.getRegex("<script>q\\(\"talkPage\\.init\",\\s*?(\\{.*?)\\)</script>").getMatch(0);
+            json = this.br.getRegex("<script[^>]*>q\\(\"talkPage\\.init\",\\s*?(\\{.*?)\\)</script>").getMatch(0);
             if (json == null) {
                 this.decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
@@ -184,6 +184,9 @@ public class TedCom extends PluginForDecrypt {
                 }
                 return;
             }
+            /* Official download-URLs */
+            LinkedHashMap<String, Object> http_download_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/downloads/nativeDownloads");
+            /* Stream-URLs */
             LinkedHashMap<String, Object> http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/internal");
             if (http_stream_url_list == null) {
                 http_stream_url_list = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "talks/{0}/player_talks/{0}/resources");
@@ -198,89 +201,108 @@ public class TedCom extends PluginForDecrypt {
             final String tedID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             String url_mp3 = null;
             long filesize_mp3 = 0;
-            /*
-             * 2017-09-26: 'resources' object is still available sometimes, containing http/hls/rtmp[?] URLs but much less qualities than
-             * 'internal'.
-             */
-            // final ArrayList<Object> rtmp_resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "resources/rtmp");
-            final Iterator<Entry<String, Object>> iteratorAvailableQualities = http_stream_url_list.entrySet().iterator();
-            while (iteratorAvailableQualities.hasNext()) {
-                final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
-                if ("hls".equals(currentObject.getKey())) {
-                    // TODO: check after HLS support
-                    continue;
+            if (http_download_url_list != null && !http_download_url_list.isEmpty()) {
+                /* Prefer official download-URLs over stream-URLs */
+                final Iterator<Entry<String, Object>> iteratorAvailableQualities = http_download_url_list.entrySet().iterator();
+                while (iteratorAvailableQualities.hasNext()) {
+                    final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
+                    final String qualityKey = currentObject.getKey();
+                    final String downloadurl = (String) currentObject.getValue();
+                    final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    dl.setProperty("directlink", downloadurl);
+                    dl.setProperty("type", "video");
+                    dl.setProperty("selectedvideoquality", qualityKey);
+                    if (cfg.getBooleanProperty(CHECKFAST_VIDEOS, false)) {
+                        dl.setAvailable(true);
+                    }
+                    final String finalName = title + "_" + qualityKey + ".mp4";
+                    dl.setFinalFileName(finalName);
+                    dl.setProperty("finalfilename", finalName);
+                    dl.setLinkID(finalName);
+                    dl._setFilePackage(fp);
+                    dl.setContentUrl(parameter);
+                    foundVideoLinks.put(qualityKey, dl);
                 }
-                final String qualityKey = currentObject.getKey();
-                final LinkedHashMap<String, Object> tmp;
-                if (currentObject.getValue() instanceof List) {
-                    tmp = (LinkedHashMap<String, Object>) ((List<Object>) currentObject.getValue()).get(0);
-                } else {
-                    tmp = (LinkedHashMap<String, Object>) currentObject.getValue();
-                }
-                final long filesize = JavaScriptEngineFactory.toLong(tmp.get("filesize_bytes"), 0);
-                String url_http = (String) tmp.get("uri");
-                if (url_http == null) {
-                    url_http = (String) tmp.get("file");
+            } else {
+                final Iterator<Entry<String, Object>> iteratorAvailableQualities = http_stream_url_list.entrySet().iterator();
+                while (iteratorAvailableQualities.hasNext()) {
+                    final Entry<String, Object> currentObject = iteratorAvailableQualities.next();
+                    if ("hls".equals(currentObject.getKey())) {
+                        // TODO: check after HLS support
+                        continue;
+                    }
+                    final String qualityKey = currentObject.getKey();
+                    final LinkedHashMap<String, Object> tmp;
+                    if (currentObject.getValue() instanceof List) {
+                        tmp = (LinkedHashMap<String, Object>) ((List<Object>) currentObject.getValue()).get(0);
+                    } else {
+                        tmp = (LinkedHashMap<String, Object>) currentObject.getValue();
+                    }
+                    final long filesize = JavaScriptEngineFactory.toLong(tmp.get("filesize_bytes"), 0);
+                    String url_http = (String) tmp.get("uri");
                     if (url_http == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        url_http = (String) tmp.get("file");
+                        if (url_http == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
+                    if (qualityKey.equalsIgnoreCase("audio-podcast")) {
+                        /* Audio download user selection is handled below. */
+                        filesize_mp3 = filesize;
+                        url_mp3 = url_http;
+                        break;
+                    } else if (!formats.containsKey(qualityKey)) {
+                        /* Allow unknown qualities */
+                        // continue;
+                    }
+                    final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    dl.setProperty("directlink", url_http);
+                    dl.setProperty("type", "video");
+                    dl.setProperty("selectedvideoquality", qualityKey);
+                    if (cfg.getBooleanProperty(CHECKFAST_VIDEOS, false)) {
+                        dl.setAvailable(true);
+                    }
+                    final String[] vidinfo = formats.get(qualityKey);
+                    /* Get format-String for filename */
+                    String formatString = "";
+                    if (vidinfo != null) {
+                        // TODO: check after HLS support
+                        final String videoCodec = vidinfo[0];
+                        final String videoBitrate = vidinfo[1];
+                        final String videoResolution = vidinfo[2];
+                        final String audioCodec = vidinfo[3];
+                        final String audioBitrate = vidinfo[4];
+                        if (videoCodec != null) {
+                            formatString += videoCodec + "_";
+                        }
+                        if (videoResolution != null) {
+                            formatString += videoResolution + "_";
+                        }
+                        if (videoBitrate != null) {
+                            formatString += videoBitrate + "_";
+                        }
+                        if (audioCodec != null) {
+                            formatString += audioCodec + "_";
+                        }
+                        if (audioBitrate != null) {
+                            formatString += audioBitrate;
+                        }
+                        if (formatString.endsWith("_")) {
+                            formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+                        }
+                    }
+                    final String finalName = title + "_" + formatString + ".mp4";
+                    dl.setFinalFileName(finalName);
+                    dl.setProperty("finalfilename", finalName);
+                    dl.setLinkID(finalName);
+                    dl._setFilePackage(fp);
+                    dl.setContentUrl(parameter);
+                    if (filesize > 0) {
+                        dl.setDownloadSize(filesize);
+                        dl.setAvailable(true);
+                    }
+                    foundVideoLinks.put(qualityKey, dl);
                 }
-                if (qualityKey.equalsIgnoreCase("audio-podcast")) {
-                    /* Audio download user selection is handled below. */
-                    filesize_mp3 = filesize;
-                    url_mp3 = url_http;
-                    break;
-                } else if (!formats.containsKey(qualityKey)) {
-                    /* Skip unknown qualities */
-                    // continue;
-                }
-                final DownloadLink dl = createDownloadlink("decrypted://decryptedtedcom.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                dl.setProperty("directlink", url_http);
-                dl.setProperty("type", "video");
-                dl.setProperty("selectedvideoquality", qualityKey);
-                if (cfg.getBooleanProperty(CHECKFAST_VIDEOS, false)) {
-                    dl.setAvailable(true);
-                }
-                final String[] vidinfo = formats.get(qualityKey);
-                /* Get format-String for filename */
-                String formatString = "";
-                if (vidinfo != null) {
-                    // TODO: check after HLS support
-                    final String videoCodec = vidinfo[0];
-                    final String videoBitrate = vidinfo[1];
-                    final String videoResolution = vidinfo[2];
-                    final String audioCodec = vidinfo[3];
-                    final String audioBitrate = vidinfo[4];
-                    if (videoCodec != null) {
-                        formatString += videoCodec + "_";
-                    }
-                    if (videoResolution != null) {
-                        formatString += videoResolution + "_";
-                    }
-                    if (videoBitrate != null) {
-                        formatString += videoBitrate + "_";
-                    }
-                    if (audioCodec != null) {
-                        formatString += audioCodec + "_";
-                    }
-                    if (audioBitrate != null) {
-                        formatString += audioBitrate;
-                    }
-                    if (formatString.endsWith("_")) {
-                        formatString = formatString.substring(0, formatString.lastIndexOf("_"));
-                    }
-                }
-                final String finalName = title + "_" + formatString + ".mp4";
-                dl.setFinalFileName(finalName);
-                dl.setProperty("finalfilename", finalName);
-                dl.setLinkID(finalName);
-                dl._setFilePackage(fp);
-                dl.setContentUrl(parameter);
-                if (filesize > 0) {
-                    dl.setDownloadSize(filesize);
-                    dl.setAvailable(true);
-                }
-                foundVideoLinks.put(qualityKey, dl);
             }
             title = encodeUnicode(title);
             /* Add user selected video qualities */
@@ -314,8 +336,8 @@ public class TedCom extends PluginForDecrypt {
             }
             /** Decrypt subtitles */
             if (subtitleText != null && tedID != null || entries.containsKey("languages")) {
-                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" },
-                        { "sr", "Serbian" }, { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
+                final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" }, { "sr", "Serbian" },
+                        { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
                 final ArrayList<String[]> selectedSubtitles = new ArrayList<String[]>();
                 final LinkedHashMap<String, String> foundSubtitles = new LinkedHashMap();
                 if (subtitleText != null) {
