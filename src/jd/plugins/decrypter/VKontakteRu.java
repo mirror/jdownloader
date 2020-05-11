@@ -427,7 +427,7 @@ public class VKontakteRu extends PluginForDecrypt {
             postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&is_loading_all=1&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
         }
         br.postPage(getBaseURL() + "/al_audio.php", postData);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(regexJsonInsideHTML(this.br));
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         if (StringUtils.isEmpty(fpName)) {
             fpName = (String) entries.get("title");
         }
@@ -437,7 +437,8 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-        final ArrayList<Object> audioData = VKontakteRuHoster.getAudioDataArray(this.br);
+        /* TODO: 2020-05-11: Fix this */
+        final ArrayList<Object> audioData = (ArrayList<Object>) entries.get("payload");
         if (audioData == null || audioData.size() == 0) {
             logger.info("Nothing found --> Probably offline");
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -723,6 +724,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
                 return;
+            } else if (foundQualities.isEmpty()) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             filename = Encoding.htmlDecode(filename.trim());
             filename = encodeUnicode(filename);
