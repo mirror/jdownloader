@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)(?:-|/)([A-Za-z0-9]+)\\.html" })
 public class LuckfileCom extends PluginForHost {
@@ -50,6 +50,7 @@ public class LuckfileCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = -2;
     private static final int     FREE_MAXDOWNLOADS = 1;
+
     // private static final boolean ACCOUNT_FREE_RESUME = false;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 1;
@@ -58,7 +59,6 @@ public class LuckfileCom extends PluginForHost {
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
@@ -106,10 +106,12 @@ public class LuckfileCom extends PluginForHost {
             if (br.containsHTML("/down2-" + fid)) {
                 br.getPage("/down2-" + fid + ".html");
                 down2_url = this.br.getURL();
+            } else if (br.containsHTML("/down2/" + fid)) {
+                br.getPage("/down2/" + fid + ".html");
+                down2_url = this.br.getURL();
             }
             final String fid_internal = br.getRegex("file_id=(\\d+)").getMatch(0);
             if (fid_internal == null) {
-                logger.warning("Failed to find fid_internal");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* 2020-05-11: Captcha & continueURL skippable */
@@ -167,12 +169,16 @@ public class LuckfileCom extends PluginForHost {
         link.setProperty(directlinkproperty, dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -190,6 +196,7 @@ public class LuckfileCom extends PluginForHost {
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {

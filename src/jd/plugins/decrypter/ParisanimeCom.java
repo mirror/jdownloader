@@ -17,13 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parisanime.com" }, urls = { "https?://(?:www\\.)?parisanime\\.com/video/[A-Za-z0-9]+" })
 public class ParisanimeCom extends antiDDoSForDecrypt {
@@ -52,8 +54,7 @@ public class ParisanimeCom extends antiDDoSForDecrypt {
         }
         final String finallink = this.br.getRegex("data-url=\\'(https?://[^<>\"\\']+)\\'").getMatch(0);
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
