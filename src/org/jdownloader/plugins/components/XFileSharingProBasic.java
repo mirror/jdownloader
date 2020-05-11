@@ -1283,9 +1283,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformationWebsite(downloadLink, null, true);
-        doFree(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformationWebsite(link, null, true);
+        doFree(link, null);
     }
 
     /** Handles pre-download forms & captcha for free (anonymous) + FREE ACCOUNT modes. */
