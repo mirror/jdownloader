@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/([^/]+)?)" })
 public class SpankBangCom extends PluginForDecrypt {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -105,7 +105,13 @@ public class SpankBangCom extends PluginForDecrypt {
         /* Decrypt start */
         final FilePackage fp = FilePackage.getInstance();
         /* Decrypt qualities START */
-        String title = br.getRegex("<title>([^<>\"]*?)( free HD Porn Video)? - SpankBang.*?</title>").getMatch(0);
+        /* 2020-05-11: Prefer filenames from inside URL as they are always 'good'. */
+        String title = new Regex(parameter, "/video/(.+)").getMatch(0);
+        if (title != null) {
+            title = Encoding.urlDecode(title, false);
+        } else {
+            title = br.getRegex("<title>(?:Watch\\s*)?([^<>\"]*?)( free HD Porn Video)? - SpankBang.*?</title>").getMatch(0);
+        }
         final String fid = getFid(parameter);
         foundQualities = findQualities(this.br, parameter);
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
