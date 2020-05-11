@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,9 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)(?:\\-|/)([A-Za-z0-9]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)(?:-|/)([A-Za-z0-9]+)\\.html" })
 public class LuckfileCom extends PluginForHost {
     public LuckfileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,8 +49,7 @@ public class LuckfileCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = -2;
-    private static final int     FREE_MAXDOWNLOADS = 20;
-
+    private static final int     FREE_MAXDOWNLOADS = 1;
     // private static final boolean ACCOUNT_FREE_RESUME = false;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 1;
@@ -59,6 +58,7 @@ public class LuckfileCom extends PluginForHost {
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
@@ -77,8 +77,8 @@ public class LuckfileCom extends PluginForHost {
         if (br.containsHTML("文件不存在或已删除") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2><i[^>]+></i>(?:檔案名|文件名)\\：\\s*([^<]+)\\s*</h2>").getMatch(0);
-        String filesize = br.getRegex("<span>(?:檔案大小|文件大小)：<b>\\s*([^<>\"]+)\\s*<").getMatch(0);
+        String filename = br.getRegex("<h2>[^<>]*?<i[^>]*?></i>檔案名：([^<]+)</h2>").getMatch(0);
+        String filesize = br.getRegex("<span>檔案大小：<b>([^<>\"]+)</b>").getMatch(0);
         if (filename != null) {
             /* Set final filename here because server filenames are bad. */
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
@@ -93,9 +93,9 @@ public class LuckfileCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -106,36 +106,48 @@ public class LuckfileCom extends PluginForHost {
             if (br.containsHTML("/down2-" + fid)) {
                 br.getPage("/down2-" + fid + ".html");
                 down2_url = this.br.getURL();
-            } else if (br.containsHTML("/down2/" + fid)) {
-                br.getPage("/down2/" + fid + ".html");
-                down2_url = this.br.getURL();
             }
+            final String fid_internal = br.getRegex("file_id=(\\d+)").getMatch(0);
+            if (fid_internal == null) {
+                logger.warning("Failed to find fid_internal");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* 2020-05-11: Captcha & continueURL skippable */
+            final boolean skipCaptcha = true;
+            final boolean skipContinueURL = true;
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String continue_url = br.getRegex("id=\"downpage_link\" href=\"(down(?:\\-|/)" + fid + ".html)").getMatch(0);
-            if (continue_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* 2019-07-09: 30 seconds pre-download-waittime is skippable */
-            br.getPage("/" + continue_url);
-            final String fileID = br.getRegex("file_id=(\\d+)").getMatch(0);
-            if (fileID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!skipContinueURL) {
+                String continue_url = br.getRegex("id=\"downpage_link\" href=\"(down(?:-|/)[^\"]+\\.html)").getMatch(0);
+                if (continue_url == null) {
+                    logger.warning("Failed to find continue_url");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!continue_url.startsWith("/")) {
+                    continue_url = "/" + continue_url;
+                }
+                /* 2019-07-09: 30 seconds pre-download-waittime is skippable */
+                br.getPage(continue_url);
             }
             if (br.containsHTML("imagecode\\.php")) {
-                /* 2019-06-27: TODO: Improve this captcha-check! */
-                final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-                ajax.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-                if (ajax.toString().equals("false")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                logger.info("Captcha required");
+                if (skipCaptcha) {
+                    logger.info("Skipping captcha");
+                } else {
+                    logger.info("Handling captcha");
+                    final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
+                    ajax.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+                    if (ajax.toString().equals("false")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    if (down2_url != null) {
+                        this.br.getHeaders().put("Referer", down2_url);
+                    }
+                    /* If we don't wait for some seconds here, the continue_url will redirect us to the main url!! */
+                    this.sleep(5 * 1001l, link);
                 }
-                if (down2_url != null) {
-                    this.br.getHeaders().put("Referer", down2_url);
-                }
-                /* If we don't wait for some seconds here, the continue_url will redirect us to the main url!! */
-                this.sleep(5 * 1001l, link);
-                ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + Encoding.urlEncode(fileID));
             }
+            ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + Encoding.urlEncode(fid_internal));
             // final String dlarg = br.getRegex("url : \\'ajax\\.php\\',\\s*?data\\s*?:\\s*?\\'action=(pc_\\d+)").getMatch(0);
             // if (dlarg != null) {
             // ajax.postPage("/ajax.php", "action=" + dlarg + "&file_id=" + fid + "&ms=" + System.currentTimeMillis() + "&sc=640*480");
@@ -153,7 +165,7 @@ public class LuckfileCom extends PluginForHost {
             }
         }
         link.setProperty(directlinkproperty, dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
