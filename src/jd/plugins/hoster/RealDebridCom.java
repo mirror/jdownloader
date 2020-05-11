@@ -51,16 +51,23 @@ import jd.plugins.download.HashInfo;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.realDebridCom.RealDebridComConfig;
 import org.jdownloader.plugins.components.realDebridCom.api.Error;
 import org.jdownloader.plugins.components.realDebridCom.api.json.CheckLinkResponse;
@@ -577,6 +584,10 @@ public class RealDebridCom extends PluginForHost {
                         return br.containsHTML("A temporary code has been sent to your email address and is required");
                     }
 
+                    private final boolean is2FARequired(Form form) {
+                        return form.containsHTML("A temporary code has been sent to your email address and is required");
+                    }
+
                     private final Boolean check(SolverJob<Boolean> job, Browser br) throws Exception {
                         if (isInvalid(autoSolveBr)) {
                             loginsInvalid.set(true);
@@ -595,52 +606,75 @@ public class RealDebridCom extends PluginForHost {
                         return null;
                     }
 
+                    protected Form getLoginForm(Browser br) throws PluginException {
+                        final Form loginForm = br.getFormbyActionRegex("/authorize\\?.+");
+                        if (loginForm == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            return loginForm;
+                        }
+                    }
+
+                    protected Form handleLoginForm(Browser br, Form loginForm) throws PluginException, InterruptedException, DialogClosedException, DialogCanceledException {
+                        if (loginForm.containsHTML("g-recaptcha")) {
+                            logger.info("Login requires Recaptcha");
+                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
+                            RealDebridCom.this.setDownloadLink(dummyLink);
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, br).getToken();
+                            loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        }
+                        loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
+                        loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
+                        if (is2FARequired(loginForm)) {
+                            if (Application.isHeadless() || !BrowserSolverService.getInstance().isOpenBrowserSupported()) {
+                                String text = loginForm.getRegex("(A temporary.*?)\\s*</").getMatch(0);
+                                if (StringUtils.isEmpty(text)) {
+                                    text = "A temporary code has been sent to your email address and is required to complete the login:";
+                                }
+                                final InputDialog mfaDialog = new InputDialog(UIOManager.LOGIC_COUNTDOWN, "Account is 2fa protected!", text, null, null, _GUI.T.lit_continue(), null);
+                                mfaDialog.setTimeout(5 * 60 * 1000);
+                                final InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, mfaDialog);
+                                handler.throwCloseExceptions();
+                                loginForm.getInputField("pa").setValue(Encoding.urlEncode(mfaDialog.getText()));
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                        }
+                        return loginForm;
+                    }
+
                     private final boolean handleAutoSolveChallenge(SolverJob<Boolean> job) {
                         try {
                             final String verificationUrl = getUrl();
                             autoSolveBr.clearCookies(verificationUrl);
                             autoSolveBr.getPage(verificationUrl);
-                            Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
-                            if (loginForm == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            if (loginForm.containsHTML("g-recaptcha")) {
-                                logger.info("Login requires Recaptcha");
-                                final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
-                                RealDebridCom.this.setDownloadLink(dummyLink);
-                                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
-                                loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                            }
-                            loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
-                            loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
+                            Form loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
                             autoSolveBr.submitForm(loginForm);
                             Boolean result = check(job, autoSolveBr);
                             if (result != null) {
                                 return result.booleanValue();
                             } else if (is2FARequired(autoSolveBr)) {
-                                return false;
+                                loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
+                                autoSolveBr.submitForm(loginForm);
+                                result = check(job, autoSolveBr);
+                                if (result != null) {
+                                    return result.booleanValue();
+                                }
                             }
                             Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
                             if (allow == null) {
-                                loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
-                                if (loginForm == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                if (loginForm.containsHTML("g-recaptcha")) {
-                                    logger.info("Login requires Recaptcha");
-                                    final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getUser(), getHost(), "https://real-debrid.com", true);
-                                    RealDebridCom.this.setDownloadLink(dummyLink);
-                                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
-                                    loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                                }
-                                loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
-                                loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
+                                loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
                                 autoSolveBr.submitForm(loginForm);
                                 result = check(job, autoSolveBr);
                                 if (result != null) {
                                     return result.booleanValue();
                                 } else if (is2FARequired(autoSolveBr)) {
-                                    return false;
+                                    loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
+                                    autoSolveBr.submitForm(loginForm);
+                                    result = check(job, autoSolveBr);
+                                    if (result != null) {
+                                        return result.booleanValue();
+                                    }
                                 }
                                 allow = autoSolveBr.getFormBySubmitvalue("Allow");
                             }
