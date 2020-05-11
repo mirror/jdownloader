@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -19,6 +20,10 @@ public interface Keep2shareConfig extends PluginConfigInterface {
 
         public String getReferer_label() {
             return "Set custom Referer here";
+        }
+
+        public String getForceCustomReferer_label() {
+            return "Force custom Referer even if Referer is given in URL via '?site=http://...'?";
         }
 
         public String getEnableSSL_label() {
@@ -43,9 +48,17 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @Order(20)
     @TakeValueFromSubconfig("CUSTOM_REFERER")
+    @DescriptionForConfigEntry("By default, source URL will be used as Referer which means most of the time no Referer will be used.")
     String getReferer();
 
     void setReferer(String referer);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Order(25)
+    boolean isForceCustomReferer();
+
+    void setForceCustomReferer(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -58,6 +71,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultIntValue(1)
     @SpinnerValidator(min = 1, max = 20, step = 1)
+    @Order(40)
     int getMaxSimultaneousFreeDownloads();
 
     void setMaxSimultaneousFreeDownloads(int maxFree);

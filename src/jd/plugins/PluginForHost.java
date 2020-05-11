@@ -1465,7 +1465,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * to signal rewrite support this method must return destination host(eg getHost()) for host==null
+     * Use this whenever you change the "main domain" of a plugin. It will then e.g. change for all existing downloadurls in a users'
+     * downloadlist and also in Account Manager. To signal rewrite support this method must return destination host(eg getHost()) for
+     * host==null
      *
      * see implementsRewriteHost
      *
@@ -1609,10 +1611,10 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      *
-     * can we expect a captcha if we try to load link with acc
+     * Can we expect a captcha if we try to load link with acc?
      *
      *
-     * use within plugin only
+     * Use within plugin only.
      *
      * @param link
      * @param acc
@@ -1668,7 +1670,7 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    /* do we have anticaptcha available for this host */
+    /* Do we have anticaptcha available for this host? */
     /* ONLY override if you have customized this */
     public boolean hasAutoCaptcha() {
         return JACMethod.hasMethod(getHost());
