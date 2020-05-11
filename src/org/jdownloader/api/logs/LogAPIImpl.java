@@ -21,6 +21,7 @@ import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.startup.commands.ThreadDump;
 
 public class LogAPIImpl implements LogAPI {
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
@@ -55,6 +56,7 @@ public class LogAPIImpl implements LogAPI {
         if (selectedFolders == null || selectedFolders.length == 0) {
             throw new BadParameterException("selection empty or null");
         }
+        new ThreadDump().run(null, new String[0]);
         final ArrayList<LogFolder> logFolders = AbstractLogAction.getLogFolders();
         final ArrayList<LogFolder> selectedLogFolders = new ArrayList<LogFolder>();
         for (final LogFolderStorable storable : selectedFolders) {
@@ -86,7 +88,7 @@ public class LogAPIImpl implements LogAPI {
                             }
                         }
                     } catch (Throwable th) {
-                        th.printStackTrace();
+                        LogController.CL().log(th);
                     } finally {
                         synchronized (logIDRef) {
                             logIDRef.notifyAll();

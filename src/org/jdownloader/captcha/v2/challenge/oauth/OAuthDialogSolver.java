@@ -85,7 +85,7 @@ public class OAuthDialogSolver extends ChallengeSolver<Boolean> {
     }
 
     public void requestFocus(Challenge<?> challenge) {
-        OAuthDialogHandler hndlr = handler;
+        final OAuthDialogHandler hndlr = handler;
         if (hndlr != null) {
             hndlr.requestFocus();
         }
