@@ -167,6 +167,14 @@ public class TinyfilesCom extends XFileSharingProBasic {
         if (captchaForm != null && captchaForm.containsHTML("googletoken") && reCaptchaKey != null) {
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
             captchaForm.put("googletoken", Encoding.urlEncode(recaptchaV2Response));
+            // br.getHeaders().put("accept",
+            // "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+            // br.getHeaders().put("content-type", "application/x-www-form-urlencoded");
+            // br.getHeaders().put("origin", "https://tiny-files.com");
+            // br.getHeaders().put("sec-fetch-dest", "document");
+            // br.getHeaders().put("sec-fetch-mode", "navigate");
+            // br.getHeaders().put("sec-fetch-site", "same-origin");
+            // br.getHeaders().put("sec-fetch-user", "?1");
         } else {
             /* Fallback to template handling and hope that it will work */
             super.handleCaptcha(link, captchaForm);
