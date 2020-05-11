@@ -44,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/[a-z]{2}/redir/[^<>\"]+\\.html|https?://(?:www\\.)?esoubory\\.cz/[a-z]{2}/(?:file|soubor)/[a-f0-9]{8}/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/(?:[a-z]{2}/)?redir/[^<>\"]+\\.html|https?://(?:www\\.)?esoubory\\.cz/(?:[a-z]{2}/)?(?:file|soubor)/[a-f0-9]{8}/[a-z0-9\\-]+(?:/?|\\.html)" })
 public class EsouboryCz extends PluginForHost {
     public EsouboryCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +67,7 @@ public class EsouboryCz extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         return true;
     }
 
@@ -78,13 +78,27 @@ public class EsouboryCz extends PluginForHost {
         return false;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(?:[a-z]{2}/)?(?:file|soubor)/([a-f0-9]{8})").getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        final String name_url = new Regex(link.getDownloadURL(), "/file/[^/]+/(.+)\\.html").getMatch(0);
+        final String name_url = new Regex(link.getPluginPatternMatcher(), "(?:file|soubor)/[a-f0-9]{8}/([a-z0-9\\-]+)").getMatch(0);
         if (name_url != null) {
             link.setName(name_url);
         }
@@ -104,8 +118,8 @@ public class EsouboryCz extends PluginForHost {
             link.setFinalFileName(filename);
         } else {
             /* API disabled and/or API usage without account is not possible */
-            br.getPage(link.getDownloadURL());
-            if (br.getURL().contains("/search/")) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // final Regex linkinfo = br.getRegex("<h1>([^<>\"]*?)<span class=\"bluetext upper\">\\(([^<>\"]*?)\\)</span>");
@@ -156,9 +170,9 @@ public class EsouboryCz extends PluginForHost {
                 br.setFollowRedirects(true);
                 /* Downloadlink has to be accessed otherwise we're not able to download via 'finallink' below! */
                 br.getPage(link.getPluginPatternMatcher());
-                finallink = "https://www.esoubory.cz/en/redir/" + new Regex(link.getPluginPatternMatcher(), "([^/]+/[^/]+)(?:\\.html)?$").getMatch(0) + ".html";
+                finallink = "https://www." + this.getHost() + "/redir/" + new Regex(link.getPluginPatternMatcher(), "(?:file|soubor|redir)/(.*?)(?:\\.html)?$").getMatch(0) + ".html";
                 // br.setFollowRedirects(false);
-                // final String continue_url = "https://www.esoubory.cz/en/redir/" + new Regex(link.getPluginPatternMatcher(),
+                // final String continue_url = "https://www.esoubory.cz/redir/" + new Regex(link.getPluginPatternMatcher(),
                 // "([^/]+/[^/]+)(?:\\.html)?$").getMatch(0) + ".html";
                 // br.getPage(continue_url);
                 // finallink = br.getRedirectLocation();
@@ -189,15 +203,19 @@ public class EsouboryCz extends PluginForHost {
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
         if (cookies != null) {
+            logger.info("Attempting cookie login");
             br.setCookies(this.getHost(), cookies);
             br.getPage("https://www." + account.getHoster() + "/en/");
             if (br.containsHTML("/account/logout/")) {
                 /* Cookie login successful */
+                logger.info("Cookie login successful");
                 return;
             }
             /* Full login required */
+            logger.info("Cookie login failed");
             br.clearCookies(br.getHost());
         }
+        logger.info("Performing full login");
         br.getPage("https://www." + account.getHoster() + "/en/account/login/");
         final Form loginform = br.getFormbyProperty("name", "FormLogin_form");
         loginform.put("email", account.getUser());
