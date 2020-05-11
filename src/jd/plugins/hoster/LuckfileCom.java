@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,7 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)\\-([A-Za-z0-9]+)\\.html" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckfile.com" }, urls = { "https?://(?:www\\.)?luckfile\\.com/(?:file|down)(?:\\-|/)([A-Za-z0-9]+)\\.html" })
 public class LuckfileCom extends PluginForHost {
     public LuckfileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,6 +50,7 @@ public class LuckfileCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = -2;
     private static final int     FREE_MAXDOWNLOADS = 20;
+
     // private static final boolean ACCOUNT_FREE_RESUME = false;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 1;
@@ -58,7 +59,6 @@ public class LuckfileCom extends PluginForHost {
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
@@ -77,8 +77,8 @@ public class LuckfileCom extends PluginForHost {
         if (br.containsHTML("文件不存在或已删除") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2><i[^>]+></i>文件名\\：([^<]+)</h2>").getMatch(0);
-        String filesize = br.getRegex("<span>文件大小：<b>([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("<h2><i[^>]+></i>(?:檔案名|文件名)\\：\\s*([^<]+)\\s*</h2>").getMatch(0);
+        String filesize = br.getRegex("<span>(?:檔案大小|文件大小)：<b>\\s*([^<>\"]+)\\s*<").getMatch(0);
         if (filename != null) {
             /* Set final filename here because server filenames are bad. */
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
@@ -106,15 +106,22 @@ public class LuckfileCom extends PluginForHost {
             if (br.containsHTML("/down2-" + fid)) {
                 br.getPage("/down2-" + fid + ".html");
                 down2_url = this.br.getURL();
+            } else if (br.containsHTML("/down2/" + fid)) {
+                br.getPage("/down2/" + fid + ".html");
+                down2_url = this.br.getURL();
             }
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String continue_url = br.getRegex("id=\"downpage_link\" href=\"(down\\-\\d+\\.html)").getMatch(0);
+            final String continue_url = br.getRegex("id=\"downpage_link\" href=\"(down(?:\\-|/)" + fid + ".html)").getMatch(0);
             if (continue_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* 2019-07-09: 30 seconds pre-download-waittime is skippable */
-            br.getPage(continue_url);
+            br.getPage("/" + continue_url);
+            final String fileID = br.getRegex("file_id=(\\d+)").getMatch(0);
+            if (fileID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (br.containsHTML("imagecode\\.php")) {
                 /* 2019-06-27: TODO: Improve this captcha-check! */
                 final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
@@ -127,7 +134,7 @@ public class LuckfileCom extends PluginForHost {
                 }
                 /* If we don't wait for some seconds here, the continue_url will redirect us to the main url!! */
                 this.sleep(5 * 1001l, link);
-                ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + Encoding.urlEncode(fid));
+                ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + Encoding.urlEncode(fileID));
             }
             // final String dlarg = br.getRegex("url : \\'ajax\\.php\\',\\s*?data\\s*?:\\s*?\\'action=(pc_\\d+)").getMatch(0);
             // if (dlarg != null) {
@@ -140,7 +147,7 @@ public class LuckfileCom extends PluginForHost {
                 /* Usually 10 minute wait --> Let's reconnect! */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-            dllink = ajax.getRegex("true\\|<a href=\"(http[^<>\"]+)").getMatch(0);
+            dllink = ajax.getRegex("true\\|<a href=\"(https?[^<>\"]+)").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
