@@ -30,9 +30,6 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
-import org.jdownloader.plugins.components.config.Keep2shareConfigPublish2;
-import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -85,18 +82,37 @@ public abstract class K2SApi extends PluginForHost {
     private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
     private String                         PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
     private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
+    private final String                   PROPERTY_URL_REFERER  = "url_referer";
     private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
     private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://" + this.getHost() + "/premium.html");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://" + this.getHost() + "/page/terms.html";
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Respect users protocol choosing. */
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^https?://", getProtocol()));
+    }
+
+    private String getRefererFromURL(final DownloadLink link) {
+        /* TODO */
+        // return new Regex(link.getPluginPatternMatcher(), "\\?site=(.+)").getMatch(0);
+        return null;
     }
 
     /**
-     * sets domain the API will use!
+     * Sets domain the API will use!
      *
      */
-    protected abstract String getDomain();
+    protected abstract String getInternalAPIDomain();
 
     /**
      * Does the site enforce HTTPS? <br />
@@ -152,7 +168,12 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      */
     protected String getRevisionInfo() {
-        return "RevisionInfo: " + this.getClass().getSimpleName() + "=" + Math.max(super.getVersion(), 0) + ", K2SApi=" + getAPIRevision();
+        return "RevisionInfo: " + this.getClass().getSimpleName() + "=" + Math.max(getVersion(), 0) + ", K2SApi=" + getAPIRevision();
+    }
+
+    @Override
+    public long getVersion() {
+        return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
     }
 
     /**
@@ -166,7 +187,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getUseAPIPropertyID() {
-        /* 2019-11-15: Website mode is broken. Reset this setting to force all users to use API and disabled setting to disable API. */
+        /* 2019-11-15: Website mode is unsupported. Reset this setting to force all users to use API and disabled setting to disable API. */
         return "USE_API_2019_11_15";
     }
 
@@ -181,11 +202,13 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean useAPI() {
-        return getPluginConfig().getBooleanProperty(getUseAPIPropertyID(), isUseAPIDefaultEnabled());
+        // return getPluginConfig().getBooleanProperty(getUseAPIPropertyID(), isUseAPIDefaultEnabled());
+        /* 2020-05-09: Website mode not supported anymore. */
+        return true;
     }
 
     protected String getApiUrl() {
-        return getProtocol() + getDomain() + "/api/v2";
+        return getProtocol() + getInternalAPIDomain() + "/api/v2";
     }
 
     /**
@@ -215,7 +238,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     public String getFUID(final String link) {
-        return new Regex(link, "/([a-z0-9]+)$").getMatch(0);
+        return new Regex(link, this.getSupportedLinks()).getMatch(0);
     }
 
     private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
@@ -225,7 +248,7 @@ public abstract class K2SApi extends PluginForHost {
     @Override
     public void init() {
         try {
-            Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
+            Browser.setRequestIntervalLimitGlobal(getInternalAPIDomain(), 3000, 20, 60000);
         } catch (final Throwable t) {
             t.printStackTrace();
         }
@@ -254,6 +277,8 @@ public abstract class K2SApi extends PluginForHost {
         prepBr.getHeaders().put("Accept-Charset", null);
         // prepBr.getHeaders().put("Cache-Control", null);
         prepBr.getHeaders().put("Pragma", null);
+        prepBr.setConnectTimeout(90 * 1000);
+        prepBr.setReadTimeout(90 * 1000);
         prepBrSet = true;
         return prepBr;
     }
@@ -269,19 +294,28 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * sets DownloadLink LinkID property
      *
-     * @param downloadLink
+     * @param link
      * @throws PluginException
      */
-    protected void setFUID(final DownloadLink downloadLink) throws PluginException {
-        if (downloadLink.getSetLinkID() == null) {
-            final String linkID = getFUID(downloadLink);
+    protected void setFUID(final DownloadLink link) throws PluginException {
+        if (link.getSetLinkID() == null) {
+            final String linkID = getFUID(link);
             if (linkID != null) {
                 // do not use getDomain as it may change. use something static like getHost
-                downloadLink.setLinkID(getLinkIDDomain() + "://" + linkID);
+                link.setLinkID(getLinkIDDomain() + "://" + linkID);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+    }
+
+    /**
+     * easiest way to set variables, without the need for multiple declared references
+     *
+     * @param account
+     */
+    protected void setConstants(final Account account) {
+        /* Override this */
     }
 
     protected String getLinkIDDomain() {
@@ -421,7 +455,21 @@ public abstract class K2SApi extends PluginForHost {
     protected void setAccountLimits(final Account account) {
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        setConstants(null);
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        handleDownload(link, null);
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
+        setConstants(account);
+        handleDownload(link, account);
+    }
+
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         logger.info(getRevisionInfo());
         // linkcheck
@@ -497,6 +545,7 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
+                final String custom_referer = getCustomReferer(link);
                 postPageRaw(this.br, "/requestcaptcha", "", account);
                 final String challenge = PluginJSonUtils.getJsonValue(br, "challenge");
                 String captcha_url = PluginJSonUtils.getJsonValue(br, "captcha_url");
@@ -521,7 +570,6 @@ public abstract class K2SApi extends PluginForHost {
                     // captcha can't be blank! Why we don't return null I don't know!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                final String custom_referer = getCustomReferer();
                 final Map<String, Object> getURL = new HashMap<String, Object>();
                 getURL.put("file_id", fuid);
                 getURL.put("captcha_challenge", challenge);
@@ -642,23 +690,22 @@ public abstract class K2SApi extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
-    public void handleDownloadWebsite(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception {
         if (true) {
             /** 2019-07-05: Website download is still broken */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Use API for linkcheck as it is more reliable */
-        reqFileInformation(downloadLink);
-        final String fuid = getFUID(downloadLink);
-        String dllink = getDirectLinkAndReset(downloadLink, true);
+        reqFileInformation(link);
+        final String fuid = getFUID(link);
+        String dllink = getDirectLinkAndReset(link, true);
         // required to get overrides to work
         br = prepAPI(br);
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 try {
@@ -666,7 +713,7 @@ public abstract class K2SApi extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors(account, downloadLink);
+                handleGeneralServerErrors(account, link);
                 // we now want to restore!
                 br = obr;
                 dllink = null;
@@ -674,10 +721,10 @@ public abstract class K2SApi extends PluginForHost {
         }
         // if above has failed, dllink will be null
         if (inValidate(dllink)) {
-            if ("premium".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+            if ("premium".equalsIgnoreCase(link.getStringProperty("access", null)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessage(3));
-            } else if ("private".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+            } else if ("private".equalsIgnoreCase(link.getStringProperty("access", null)) && isFree) {
                 privateDownloadRestriction(getErrorMessage(8));
             }
             if (isFree) {
@@ -711,7 +758,7 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
-                final String custom_referer = getCustomReferer();
+                final String custom_referer = getCustomReferer(link);
                 /** 2019-07-05: TODO: Fix auth stuff */
                 this.postPageRaw(br, "https://api." + this.getHost() + "/v1/auth/token", "{\"grant_type\":\"client_credentials\",\"client_id\":\"fb_web_app\",\"client_secret\":\"TODO_FIXME\"}", account);
                 final String access_token = PluginJSonUtils.getJson(br, "access_token");
@@ -732,7 +779,7 @@ public abstract class K2SApi extends PluginForHost {
                         logger.warning("Failed to find waittime");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    this.sleep(Long.parseLong(waitStr) * 1001l, downloadLink);
+                    this.sleep(Long.parseLong(waitStr) * 1001l, link);
                     getPage("https://api." + this.getHost() + "/v1/files/" + fuid + "/download?referer=" + Encoding.urlEncode(custom_referer));
                 }
             } else {
@@ -755,9 +802,9 @@ public abstract class K2SApi extends PluginForHost {
                     blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
                     getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                 }
-                setIP(downloadLink, account);
+                setIP(link, account);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
@@ -766,14 +813,14 @@ public abstract class K2SApi extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors(account, downloadLink);
+                handleGeneralServerErrors(account, link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         // add download slot
         controlSlot(+1, account);
         try {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } finally {
             // remove download slot
@@ -786,19 +833,26 @@ public abstract class K2SApi extends PluginForHost {
         return null;
     }
 
-    private String getCustomReferer() {
-        return PluginJsonConfig.get(this.getConfigInterface()).getReferer();
-    }
-
-    protected Browser prepBrowserForWebsite(final Browser br) {
-        final String custom_referer = getCustomReferer();
-        if (!inValidate(custom_referer)) {
-            /* Specified Referer + User-Agent gives us 150 KB/s in free mode vs ~50 KB/s without that. */
-            // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0");
-            br.getHeaders().put("Referer", custom_referer);
+    private String getCustomReferer(final DownloadLink link) {
+        final Keep2shareConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final String custom_referer = cfg.getReferer();
+        final String url_referer = this.getRefererFromURL(link);
+        final String sourceURL = link.getContainerUrl();
+        if (!StringUtils.isEmpty(url_referer) && !cfg.isForceCustomReferer()) {
+            /* Use Referer from inside added URL if given. */
+            return url_referer;
+        } else if (!StringUtils.isEmpty(custom_referer)) {
+            /* Use user selected Referer */
+            return custom_referer;
+        } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).matches()) {
+            /*
+             * Try to use source URL as Referer if it does not match any supported URL of this plugin.
+             */
+            return sourceURL;
+        } else {
+            /* No Referer at all. */
+            return null;
         }
-        br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
-        return br;
     }
 
     public Browser newWebBrowser(boolean followRedirects) {
@@ -895,7 +949,7 @@ public abstract class K2SApi extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         // final dummy
-                        final DownloadLink dummyLink = new DownloadLink(null, "Account", getDomain(), "https://" + getDomain(), true);
+                        final DownloadLink dummyLink = new DownloadLink(null, "Account", getInternalAPIDomain(), "https://" + getInternalAPIDomain(), true);
                         final String code = getCaptchaCode(captcha_url, dummyLink);
                         if (inValidate(code)) {
                             // captcha can't be blank! Why we don't return null I don't know!
@@ -935,7 +989,7 @@ public abstract class K2SApi extends PluginForHost {
                         final boolean dummyLink = getDownloadLink() == null;
                         try {
                             if (dummyLink) {
-                                setDownloadLink(new DownloadLink(null, "Account", getDomain(), cbr.toString(), true));
+                                setDownloadLink(new DownloadLink(null, "Account", getInternalAPIDomain(), cbr.toString(), true));
                             }
                             final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
                             final String recaptchaV2Response = rc2.getToken();
@@ -1341,7 +1395,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 72) {
                 msg = "Dein Account wurde gesperrt!";
             } else if (code == 73) {
-                msg = "Du kannst dich mit deiner aktuellen Verbindung nicht zu " + getDomain() + " verbinden!";
+                msg = "Du kannst dich mit deiner aktuellen Verbindung nicht zu " + getInternalAPIDomain() + " verbinden!";
             } else if (code == 74) {
                 msg = "Unbekannter Login Fehler!";
             }
@@ -1385,7 +1439,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 72) {
                 msg = "A sua conta foi banida!";
             } else if (code == 73) {
-                msg = "Não pode aceder " + getDomain() + " a partir desta ligação de NET!";
+                msg = "Não pode aceder " + getInternalAPIDomain() + " a partir desta ligação de NET!";
             } else if (code == 74) {
                 msg = "Erro, Login desconhecido!";
             }
@@ -1429,7 +1483,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 72) {
                 msg = "¡Su cuenta ha sido baneada!";
             } else if (code == 73) {
-                msg = "¡Usted no puede acceder " + getDomain() + " desde su conexión de red actual!";
+                msg = "¡Usted no puede acceder " + getInternalAPIDomain() + " desde su conexión de red actual!";
             } else if (code == 74) {
                 msg = "¡Error de inicio de sesión desconocido!";
             }
@@ -1473,7 +1527,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 72) {
                 msg = "Konto zosta³o zablokowane!";
             } else if (code == 73) {
-                msg = "Nie mo¿na po³±czyæ siê z " + getDomain() + " u¿ywaj±c obecnych ustawieñ sieciowych!";
+                msg = "Nie mo¿na po³±czyæ siê z " + getInternalAPIDomain() + " u¿ywaj±c obecnych ustawieñ sieciowych!";
             } else if (code == 74) {
                 msg = "Nieznany b³±d logowania!";
             }
@@ -1521,7 +1575,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 72) {
                 msg = "Your account has been banned!";
             } else if (code == 73) {
-                msg = "You can not access " + getDomain() + " from your current network connection!";
+                msg = "You can not access " + getInternalAPIDomain() + " from your current network connection!";
             } else if (code == 74) {
                 msg = "Unknown login error!";
             } else if (code == 75) {
@@ -2347,15 +2401,6 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public Class<? extends Keep2shareConfig> getConfigInterface() {
-        if ("fileboom.me".equalsIgnoreCase(getHost())) {
-            return Keep2shareConfigFileboom.class;
-        } else if ("publish2.me".equalsIgnoreCase(getHost())) {
-            return Keep2shareConfigPublish2.class;
-        } else if ("tezfiles.com".equalsIgnoreCase(getHost())) {
-            return Keep2shareConfigTezfiles.class;
-        } else {
-            /* keep2share.cc */
-            return Keep2shareConfig.class;
-        }
+        return Keep2shareConfig.class;
     }
 }
