@@ -52,9 +52,10 @@ import jd.plugins.components.PluginJSonUtils;
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean  ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private MultiHosterManagement mhm                       = null;
+    private static final boolean  ACCOUNT_PREMIUM_RESUME                      = true;
+    private static final int      ACCOUNT_PREMIUM_MAXCHUNKS                   = 0;
+    private static final String   PROPERTY_ACCOUNT_successfully_loggedin_once = "successfully_loggedin_once";
+    private MultiHosterManagement mhm                                         = null;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -699,7 +700,7 @@ abstract public class ZeveraCore extends UseNet {
                 if (!isLoggedIn(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    account.setProperty("successfully_loggedin_once", true);
+                    account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
                 }
             } finally {
                 /*
@@ -715,7 +716,7 @@ abstract public class ZeveraCore extends UseNet {
                 /* E.g. {"status":"error","message":"customer_id and pin parameter missing or not logged in "} */
                 loginInvalid(account);
             } else {
-                account.setProperty("successfully_loggedin_once", true);
+                account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, true);
             }
         }
         final String customer_id = PluginJSonUtils.getJson(br, "customer_id");
@@ -728,8 +729,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /* 2020-04-1: Temp. workaround for possible API issue */
     private void loginInvalid(final Account account) throws PluginException {
-        final boolean successfully_loggedin_once = account.getBooleanProperty("successfully_loggedin_once", false);
+        final boolean successfully_loggedin_once = account.getBooleanProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, false);
         if (successfully_loggedin_once) {
+            /* Display permanent error on next failed login attempt! */
+            account.setProperty(PROPERTY_ACCOUNT_successfully_loggedin_once, false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Maybe API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "API key invalid! Make sure you entered your current API key which can be found here: " + account.getHoster() + "/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
