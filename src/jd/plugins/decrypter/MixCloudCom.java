@@ -248,14 +248,14 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     logger.info("Skip dupe object: " + id);
                     continue;
                 }
-                dupes.add(id);
-                String filename_prefix = "";
-                String downloadurl = null;
                 final Object cloudcastStreamInfo = entries.get("streamInfo");
                 if (cloudcastStreamInfo == null && StringUtils.isEmpty(url_preview)) {
                     /* Skip invalid objects */
                     continue;
                 }
+                dupes.add(id);
+                String filename_prefix = "";
+                String downloadurl = null;
                 if (cloudcastStreamInfo == null && !StringUtils.isEmpty(url_preview)) {
                     downloadurl = url_preview;
                     filename_prefix = "[preview] ";
