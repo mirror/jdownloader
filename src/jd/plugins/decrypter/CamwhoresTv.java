@@ -38,7 +38,7 @@ public class CamwhoresTv extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
-        String parameter = param.toString().replaceFirst("camwhores.tv/", "camwhores.cc/");
+        String parameter = param.toString();
         br.getPage(parameter);
         if (jd.plugins.hoster.CamwhoresTv.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
