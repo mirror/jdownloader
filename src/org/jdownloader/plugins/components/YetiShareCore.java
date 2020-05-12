@@ -1045,7 +1045,7 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
-        /** TODO: Add something similar like "sessionCheck" in XFileSharingProBasic */
+        /** TODO: Add something similar to "checkErrorsLastResort" in XFileSharingProBasic */
     }
 
     @Deprecated

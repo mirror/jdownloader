@@ -654,8 +654,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = fallback_filename;
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
-            /* This should never happen! */
-            logger.warning("filename equals null, throwing \"plugin defect\"");
+            /* This should never happen! Most likely the reason for this happening will be a developer mistake! */
+            logger.warning("filename equals null --> Throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Set md5hash - most times there is no md5hash available! */
@@ -1395,7 +1395,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 checkErrors(link, account, false);
                 /* Okay we finally have no idea what happened ... */
                 logger.warning("Failed to find download2 Form");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                checkErrorsLastResort(account);
             }
             logger.info("Found download2 Form");
             /*
@@ -1429,7 +1429,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 waitTime(link, timeBefore);
-                final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(dlForm));
                 if (!formCon.getContentType().contains("text") && formCon.isOK() && formCon.isContentDisposition()) {
                     /* Very rare case - e.g. tiny-files.com */
                     handleDownload(link, account, dllink, formCon.getRequest());
@@ -1449,16 +1449,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 if (dllink == null) {
                     dllink = getDllink(link, account);
                 }
-                final boolean dlformIsThere = findFormDownload2Free() != null;
-                if (StringUtils.isEmpty(dllink) && (!dlformIsThere || download2counter == download2max)) {
+                dlForm = findFormDownload2Free();
+                if (StringUtils.isEmpty(dllink) && (dlForm != null || download2counter == download2max)) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    /* Check if maybe an error happened before stepping in download2 loop --> Throw that */
                     if (download2counter == download2start + 1 && exceptionBeforeDownload2Submit != null) {
                         logger.info("Throwing exceptionBeforeDownload2Submit");
                         throw exceptionBeforeDownload2Submit;
                     }
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (StringUtils.isEmpty(dllink) && dlformIsThere) {
-                    dlForm = findFormDownload2Free();
+                    checkErrorsLastResort(account);
+                } else if (StringUtils.isEmpty(dllink) && dlForm != null) {
                     invalidateLastChallengeResponse();
                     continue;
                 } else {
@@ -1467,7 +1467,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
         handleDownload(link, account, dllink, null);
     }
 
@@ -1688,7 +1687,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 logger.warning("Fatal reCaptchaV2 ajax handling failure");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                checkErrorsLastResort(null);
             }
             br.getHeaders().remove("X-Requested-With");
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
@@ -1708,7 +1707,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 final String[][] letters = new Regex(br, "<span style='position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
                 if (letters == null || letters.length == 0) {
                     logger.warning("plaintext captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    checkErrorsLastResort(null);
                 }
                 final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                 for (String[] letter : letters) {
@@ -1719,7 +1718,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     code.append(value);
                 }
                 captchaForm.put("code", code.toString());
-                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in captchaForm");
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             } else if (StringUtils.containsIgnoreCase(correctedBR, "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
@@ -1727,7 +1726,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 String captchaurl = null;
                 if (sitelinks == null || sitelinks.length == 0) {
                     logger.warning("Standard captcha captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    checkErrorsLastResort(null);
                 }
                 for (final String linkTmp : sitelinks) {
                     if (linkTmp.contains("/captchas/")) {
@@ -1743,8 +1742,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 // captchaurl = new Regex(correctedBR, "(/captchas/[^<>\"\\']*)").getMatch(0);
                 // }
                 if (captchaurl == null) {
-                    logger.warning("Standard captcha captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.warning("Standard captcha captchahandling broken2!");
+                    checkErrorsLastResort(null);
                 }
                 String code = getCaptchaCode("xfilesharingprobasic", captchaurl, link);
                 captchaForm.put("code", code);
@@ -2652,6 +2651,23 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         checkResponseCodeErrors(br.getHttpConnection());
     }
 
+    /* Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
+    protected void checkErrorsLastResort(final Account account) throws PluginException {
+        logger.info("Last resort errorhandling");
+        String website_error = new Regex(correctedBR, "class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
+        if (account != null && !this.isLoggedin()) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        } else if (website_error != null) {
+            if (Encoding.isHtmlEntityCoded(website_error)) {
+                website_error = Encoding.htmlDecode(website_error);
+            }
+            logger.info("Found website error: " + website_error);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, website_error, 5 * 60 * 1000l);
+        }
+        logger.warning("Unknown error happened");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
     /** Can be executed after API calls to check for- and handle errors. */
     protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         /**
@@ -3309,6 +3325,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             }
                             loginForm = findLoginform(this.br);
                             if (loginForm == null) {
+                                logger.warning("Failed to find loginform");
                                 /* E.g. 503 error during login */
                                 checkResponseCodeErrors(br.getHttpConnection());
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -3590,8 +3607,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         if (dlForm == null) {
                             checkErrors(link, account, true);
                             logger.warning("Failed to find Form download2");
-                            sessionCheck(account);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            checkErrorsLastResort(account);
                         }
                         handlePassword(dlForm, link);
                         final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
@@ -3750,8 +3766,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             if (StringUtils.isEmpty(dllink) || (!dllink.startsWith("http") && !dllink.startsWith("rtmp") && !dllink.startsWith("/"))) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                sessionCheck(account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                checkErrorsLastResort(account);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             if (dllink.startsWith("rtmp")) {
@@ -3836,13 +3851,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             }
-        }
-    }
-
-    /** Throws error if account != null & is not logged in. TODO: Consider merging this into checkErrors. */
-    private void sessionCheck(final Account account) throws AccountUnavailableException {
-        if (account != null && !this.isLoggedin()) {
-            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
     }
 
