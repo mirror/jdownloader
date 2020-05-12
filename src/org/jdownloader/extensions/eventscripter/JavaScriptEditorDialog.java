@@ -136,7 +136,6 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             txt = T.T.emptyScript();
         }
         editor.setText(txt);
-        delayer.resetAndStart();
         // toolbar
         toolbar.add(new ExtButton(new AppAction() {
             {
@@ -158,7 +157,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                updateHighlighter();
+                delayer.resetAndStart();
             }
         }));
         toolbar.add(new ExtButton(new AppAction() {
@@ -208,34 +207,45 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
     protected void updateHighlighter() {
         final AtomicInteger caretPosition = new AtomicInteger();
-        String text = new EDTHelper<String>() {
-            @Override
-            public String edtRun() {
-                caretPosition.set(editor.getCaretPosition());
-                return editor.getText();
-            }
-        }.getReturnValue();
-        String before = text.substring(0, caretPosition.get()).replaceAll(CLEANUP, "");
-        final String formatedText = format(text);
-        if (!formatedText.equals(text)) {
-            for (int i = 0; i < formatedText.length(); i++) {
-                String sb = formatedText.substring(0, i).replaceAll(CLEANUP, "");
-                if (sb.length() == before.length()) {
-                    final int caret = i;
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            editor.setText(formatedText);
-                            editor.setCaretPosition(caret);
-                        }
-                    }.waitForEDT();
-                    return;
+        try {
+            String text = new EDTHelper<String>() {
+                @Override
+                public String edtRun() {
+                    editor.setEditable(false);
+                    caretPosition.set(editor.getCaretPosition());
+                    return editor.getText();
                 }
+            }.getReturnValue();
+            String before = text.substring(0, caretPosition.get()).replaceAll(CLEANUP, "");
+            final String formatedText = format(text);
+            if (!formatedText.equals(text)) {
+                final int max = Math.min(caretPosition.get(), formatedText.length());
+                for (int i = 0; i < max; i++) {
+                    final String sb = formatedText.substring(0, i).replaceAll(CLEANUP, "");
+                    if (sb.length() == before.length()) {
+                        final int caret = i;
+                        new EDTRunner() {
+                            @Override
+                            protected void runInEDT() {
+                                editor.setText(formatedText);
+                                editor.setCaretPosition(caret);
+                            }
+                        }.waitForEDT();
+                        return;
+                    }
+                }
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        editor.setText(formatedText);
+                    }
+                }.waitForEDT();
             }
+        } finally {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    editor.setText(formatedText);
+                    editor.setEditable(true);
                 }
             }.waitForEDT();
         }
@@ -244,7 +254,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     private synchronized String format(String script) {
         try {
             Context cx = Context.enter();
-            cx.setOptimizationLevel(-1);
+            cx.setOptimizationLevel(9);
             cx.setLanguageVersion(Context.VERSION_1_5);
             if (scope == null) {
                 scope = new Global();
