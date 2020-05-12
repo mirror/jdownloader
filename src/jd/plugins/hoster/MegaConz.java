@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -100,6 +101,7 @@ public class MegaConz extends PluginForHost {
     private final String CHECK_RESERVED = "CHECK_RESERVED";
     private final String USE_TMP        = "USE_TMP_V2";
     private final String HIDE_APP       = "HIDE_APP_V2";
+    private final String USED_PLUGIN    = "usedPlugin";
     private final String encrypted      = ".encrypted";
 
     @Override
@@ -627,7 +629,7 @@ public class MegaConz extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink != null) {
-            if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", getHost()), getHost())) {
+            if (!StringUtils.equals((String) downloadLink.getProperty(USED_PLUGIN, getHost()), getHost())) {
                 return false;
             }
         }
@@ -755,11 +757,13 @@ public class MegaConz extends PluginForHost {
     }
 
     private void apiDownload(DownloadLink link, Account account) throws Exception {
+        if (link.getDownloadCurrent() > 0 && !StringUtils.equalsIgnoreCase(getHost(), link.getStringProperty(USED_PLUGIN, null))) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot resume paritial loaded file!");
+        }
         final AvailableStatus available = requestFileInformation(link);
         if (AvailableStatus.FALSE == available) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (AvailableStatus.TRUE != available) {
+        } else if (AvailableStatus.TRUE != available) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
         }
         final String sid = getSID(account);
@@ -784,19 +788,21 @@ public class MegaConz extends PluginForHost {
                 return src;
             }
         };
+        final AtomicBoolean successfulFlag = new AtomicBoolean(false);
         try {
             checkAndReserve(link, reservation);
             if (src.exists() && src.length() == link.getVerifiedFileSize()) {
                 // ready for decryption
                 decryptingDownloadLink = link;
                 try {
-                    decrypt(path, encryptionDone, link, keyString);
+                    decrypt(path, encryptionDone, successfulFlag, link, keyString);
                 } finally {
                     decryptingDownloadLink = null;
                 }
                 link.getLinkStatus().setStatus(LinkStatus.FINISHED);
                 return;
             }
+            successfulFlag.set(false);
             try {
                 if (fileID == null || keyString == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -888,7 +894,7 @@ public class MegaConz extends PluginForHost {
                 }
                 if (dl.startDownload()) {
                     if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
-                        decrypt(path, encryptionDone, link, keyString);
+                        decrypt(path, encryptionDone, successfulFlag, link, keyString);
                     }
                 }
             } catch (IOException e) {
@@ -897,8 +903,8 @@ public class MegaConz extends PluginForHost {
                 }
                 throw e;
             } finally {
-                if (link.getDownloadCurrent() > 0) {
-                    link.setProperty("usedPlugin", getHost());
+                if (!successfulFlag.get() && link.getDownloadCurrent() > 0) {
+                    link.setProperty(USED_PLUGIN, getHost());
                 }
             }
         } finally {
@@ -1015,7 +1021,7 @@ public class MegaConz extends PluginForHost {
     private static Object         DECRYPTLOCK            = new Object();
     private volatile DownloadLink decryptingDownloadLink = null;
 
-    private void decrypt(final String path, AtomicLong encryptionDone, DownloadLink link, String keyString) throws Exception {
+    private void decrypt(final String path, AtomicLong encryptionDone, AtomicBoolean successFulFlag, DownloadLink link, String keyString) throws Exception {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
         int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
@@ -1137,7 +1143,8 @@ public class MegaConz extends PluginForHost {
                     }
                     deleteDst = false;
                     link.getLinkStatus().setStatusText("Finished");
-                    link.removeProperty("usedPlugin");
+                    link.removeProperty(USED_PLUGIN);
+                    successFulFlag.set(true);
                     try {
                         link.setInternalTmpFilenameAppend(null);
                         link.setInternalTmpFilename(null);
@@ -1384,7 +1391,7 @@ public class MegaConz extends PluginForHost {
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         if (downloadLink != null) {
             if (plugin != null) {
-                if (!StringUtils.equals(downloadLink.getStringProperty("usedPlugin", plugin.getHost()), plugin.getHost())) {
+                if (!StringUtils.equals(downloadLink.getStringProperty(USED_PLUGIN, plugin.getHost()), plugin.getHost())) {
                     return false;
                 }
             }
@@ -1400,7 +1407,7 @@ public class MegaConz extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         if (link != null) {
-            link.removeProperty("usedPlugin");
+            link.removeProperty(USED_PLUGIN);
         }
     }
 }
