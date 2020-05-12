@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)|https?://(?:www\\.)?twitch\\.tv/[^/]+/clip/[A-Za-z0-9]+|https?://clips\\.twitch\\.tv/embed\\?clip=[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)|https?://(?:www\\.)?twitch\\.tv/[^/]+/clip/[A-Za-z0-9]+|https?://clips\\.twitch\\.tv/(embed\\?clip=)?[A-Za-z0-9]+" })
 public class TwitchTvDecrypt extends PluginForDecrypt {
     public TwitchTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +87,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
     private final String FASTLINKCHECK  = "FASTLINKCHECK";
     private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
     private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/(?:[^<>/\"]+/v/\\d+|videos/\\d+))";
-    private final String typeClip       = "(?:.+/clip/|.+clips\\.twitch\\.tv/embed\\?clip=)(.+)";
+    private final String typeClip       = "(?:.+/clip/|.+clips\\.twitch\\.tv/(?:embed\\?clip=)?)(.+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -134,12 +134,15 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(clipBR.toString(), TypeRef.HASHMAP);
             final Map<String, Object> userInfo = (Map<String, Object>) entries.get("broadcaster");
+            final Map<String, Object> thumbnailInfo = (Map<String, Object>) entries.get("thumbnails");
             final String username = (String) userInfo.get("name");
             final String tracking_id = (String) entries.get("tracking_id");
             if (StringUtils.isEmpty(username) || StringUtils.isEmpty(tracking_id)) {
                 logger.warning("Failed to find tracking_id");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String thumbnail = (String) thumbnailInfo.get("medium");
+            String offset = new Regex(thumbnail, "-offset-(\\d+)").getMatch(0);
             String title = (String) entries.get("title");
             if (StringUtils.isEmpty(title)) {
                 /* Fallback */
@@ -152,7 +155,13 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             }
             final String filename = date_formatted + "_" + username + "_" + slug + "_" + title + ".mp4";
             /* https://discuss.dev.twitch.tv/t/clips-api-does-not-expose-video-url/15763/2 */
-            final String finallink = "directhttp://https://clips-media-assets2.twitch.tv/AT-cm%7C" + tracking_id + ".mp4";
+            String finallink = "directhttp://https://clips-media-assets2.twitch.tv/AT-cm%7C" + tracking_id + ".mp4";
+            if (offset != null) {
+                /* Sometimes required but there is also newer content which is only available via segment-streaming! */
+                finallink = "directhttp://https://clips-media-assets2.twitch.tv/vod-" + tracking_id + "-offset-" + offset + ".mp4";
+            } else {
+                finallink = "directhttp://https://clips-media-assets2.twitch.tv/AT-cm%7C" + tracking_id + ".mp4";
+            }
             final DownloadLink dl = this.createDownloadlink(finallink);
             dl.setFinalFileName(filename);
             dl.setContentUrl(parameter);
