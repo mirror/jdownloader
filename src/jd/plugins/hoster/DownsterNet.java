@@ -15,11 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -37,25 +43,28 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downster.net" }, urls = { "https?://downster\\.net/api/download/get/\\d+/.+" })
 public class DownsterNet extends antiDDoSForHost {
-    public DownsterNet(PluginWrapper wrapper) {
+    public DownsterNet(PluginWrapper wrapper) throws FileNotFoundException, IOException {
         super(wrapper);
         this.enablePremium("https://downster.net");
+        this.loadUserFlowId();
     }
 
     @Override
     public String getAGBLink() {
-        return "https://downster.net";
+        return "https://downster.net/legal";
     }
 
-    private static final String          API_BASE                      = "https://downster.net/api/";
+    private static final String          API_BASE                      = "https://downster.net/api";
     private static MultiHosterManagement mhm                           = new MultiHosterManagement("downster.net");
     private static final String          DLLINK_PROP_NAME              = "downsterdirectlink";
     private static final String          NOCHUNKS                      = "NOCHUNKS";
     private static final String          MAX_RETRIES_DL_ERROR_PROPERTY = "MAX_RETRIES_DL_ERROR";
     private static final int             DEFAULT_MAX_RETRIES_DL_ERROR  = 50;
+    private String                       userFlowId                    = "";
     private String                       dllink                        = null;
 
     @Override
@@ -80,11 +89,35 @@ public class DownsterNet extends antiDDoSForHost {
             prepBr.setConnectTimeout(60 * 1000);
             prepBr.setReadTimeout(60 * 1000);
             prepBr.setHeader("Content-Type", "application/json");
-            /* 401 can happen when user enters invalid logindata */
-            prepBr.addAllowedResponseCodes(401);
+            prepBr.addAllowedResponseCodes(new int[] { 401, 403, 412, 422, 503, 512 });
             prepBr.getHeaders().put("User-Agent", "JDownloader " + getVersion());
+            prepBr.getHeaders().put("X-Flow-ID", "JDL_" + userFlowId + "_" + randomFlowId());
         }
         return prepBr;
+    }
+
+    private void loadUserFlowId() throws FileNotFoundException, IOException {
+        File flowIdFile = JDUtilities.getResourceFile("flowId.txt");
+        if (flowIdFile.exists() && flowIdFile.canRead()) {
+            userFlowId = new BufferedReader(new FileReader(flowIdFile)).readLine();
+        }
+        if (userFlowId.isEmpty()) {
+            userFlowId = this.randomFlowId();
+            if (flowIdFile.createNewFile()) {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(flowIdFile));
+                writer.write(userFlowId);
+                writer.flush();
+            }
+        }
+    }
+
+    private String randomFlowId() {
+        String flowId = "";
+        for (int i = 0; i < 2; i++) {
+            String hex = Integer.toHexString((int) (Math.random() * 255));
+            flowId += hex.length() > 1 ? hex : "0" + hex;
+        }
+        return flowId;
     }
 
     private String login(final Account account) throws Exception {
@@ -97,6 +130,7 @@ public class DownsterNet extends antiDDoSForHost {
         json = PluginJSonUtils.ammendJson(json, "password", account.getPass());
         postPage(API_BASE + "/user/authenticate", json);
         if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
+            account.saveCookies(br.getCookies(this.getHost()), "");
             return null;
         }
         return PluginJSonUtils.getJsonValue(br, "error");
@@ -140,6 +174,8 @@ public class DownsterNet extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        prepBrowser(br, "downster.net");
+        br.setCookies(API_BASE, account.loadCookies(""));
         if (account.getUser().equals("") || account.getPass().equals("")) {
             /* Server returns 401 if you send empty fields (logindata) */
             accountInvalid();
@@ -170,13 +206,13 @@ public class DownsterNet extends antiDDoSForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        prepBrowser(br, "downster.net");
+        br.setCookies(API_BASE, account.loadCookies(""));
         String loginError = login(account);
         if (loginError != null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + loginError);
         }
         mhm.runCheck(account, link);
-        /* since no requests are done with this.br we need to manually set so checkdirectlink is correct */
-        prepBrowser(br, "https://downster.net/");
         dllink = checkDirectLink(link);
         if (dllink == null) {
             String downloadlink = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
@@ -255,7 +291,7 @@ public class DownsterNet extends antiDDoSForHost {
                 final Browser br2 = br.cloneBrowser();
                 final URLConnectionAdapter con = br2.openGetConnection(dllink);
                 try {
-                    if (StringUtils.containsIgnoreCase(con.getContentType(), "text") || !con.isOK() || con.getLongContentLength() == -1) {
+                    if (con.getResponseCode() >= 400 || !con.isOK() || con.getLongContentLength() == -1) {
                         downloadLink.setProperty(DLLINK_PROP_NAME, Property.NULL);
                         return null;
                     } else {
