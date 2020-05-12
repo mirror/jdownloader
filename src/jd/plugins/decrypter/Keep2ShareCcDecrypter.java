@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,7 +41,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://((www|new|spa)\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/(folder|file)/(info/)?[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/folder/(?:info/)?([a-z0-9]+)" })
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public Keep2ShareCcDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +49,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance("keep2share.cc");
+        /* TODO: Add support for the other k2s hosts: fileboom.me, tezfiles.com, publish2.me */
+        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(this.getHost());
         plugin.setBrowser(br);
         plugin.setLogger(getLogger());
         if (plugin == null) {
@@ -57,7 +59,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser(true);
         // set cross browser support
         ((jd.plugins.hoster.Keep2ShareCc) plugin).setBrowser(br);
-        final String fuid = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFUID(param.getCryptedUrl());
+        final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilesinfo", "{\"ids\":[\"" + fuid + "\"]}", null);
         Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         boolean folderHandling = false;
@@ -122,7 +124,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                             final String md5 = (String) file.get("md5");
                             final String size = file.get("size").toString();
                             if (Boolean.FALSE.equals(isFolder)) {
-                                final DownloadLink link = createDownloadlink("https://k2s.cc/file/" + id);
+                                final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
                                 if (StringUtils.isNotEmpty(name)) {
                                     link.setName(name);
                                 }
