@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,9 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterGallery extends PluginForDecrypt {
@@ -68,7 +68,7 @@ public class XHamsterGallery extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            final String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/photos/(?:gallery/[0-9A-Za-z_\\-/]+(?:\\.html)?|view/[0-9A-Za-z_\\-/]+(?:\\.html)?)";
+            final String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/photos/gallery/[0-9A-Za-z_\\-/]+-(\\d+)";
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);
@@ -124,13 +124,20 @@ public class XHamsterGallery extends PluginForDecrypt {
         final String total_numberof_picsStr = br.getRegex("page-title__count\">(\\d+)<").getMatch(0);
         logger.info("total_numberof_pics: " + total_numberof_picsStr);
         final int total_numberof_picsInt = total_numberof_picsStr != null ? Integer.parseInt(total_numberof_picsStr) : -1;
+        final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         String fpname = br.getRegex("<title>\\s*(.*?)\\s*\\-\\s*\\d+\\s*(Pics|Bilder)\\s*(?:\\-|\\|)\\s*xHamster(\\.com|\\.xxx|\\.desi|\\.one)?\\s*</title>").getMatch(0);
         if (fpname == null) {
             fpname = br.getRegex("<title>(.*?)\\s*>\\s*").getMatch(0);
         }
-        if (fpname == null) {
+        /*
+         * 2020-05-12: They often have different galleries with the exact same title --> Include galleryID so we do not get multiple
+         * packages with the same title --> Then gets auto merged by default
+         */
+        if (fpname != null && !fpname.contains(galleryID)) {
+            fpname += "_" + galleryID;
+        } else if (fpname == null) {
             /* Final fallback */
-            fpname = new Regex(parameter, "/(?:gallery|view)/(.+)(?:\\.html)?").getMatch(0);
+            fpname = galleryID;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpname.trim()));
