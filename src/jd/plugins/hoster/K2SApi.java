@@ -82,7 +82,6 @@ public abstract class K2SApi extends PluginForHost {
     private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
     private String                         PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
     private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
-    private final String                   PROPERTY_URL_REFERER  = "url_referer";
     private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
     private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
@@ -102,10 +101,37 @@ public abstract class K2SApi extends PluginForHost {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^https?://", getProtocol()));
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = this.getFUID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     private String getRefererFromURL(final DownloadLink link) {
-        /* TODO */
-        // return new Regex(link.getPluginPatternMatcher(), "\\?site=(.+)").getMatch(0);
-        return null;
+        String url_referer = null;
+        try {
+            /* Try-catch to allow other plugins to use other patterns */
+            url_referer = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(4);
+        } catch (final Throwable e) {
+        }
+        return url_referer;
+    }
+
+    private String getFallbackFilename(final DownloadLink link) {
+        String name_url = null;
+        try {
+            /* Try-catch to allow other plugins to use other patterns */
+            name_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        } catch (final Throwable e) {
+        }
+        if (name_url == null) {
+            name_url = this.getFUID(link);
+        }
+        return name_url;
     }
 
     /**
@@ -233,8 +259,8 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected String getFUID(final DownloadLink downloadLink) {
-        return getFUID(downloadLink.getPluginPatternMatcher());
+    protected String getFUID(final DownloadLink link) {
+        return getFUID(link.getPluginPatternMatcher());
     }
 
     public String getFUID(final String link) {
@@ -292,24 +318,6 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
-     * sets DownloadLink LinkID property
-     *
-     * @param link
-     * @throws PluginException
-     */
-    protected void setFUID(final DownloadLink link) throws PluginException {
-        if (link.getSetLinkID() == null) {
-            final String linkID = getFUID(link);
-            if (linkID != null) {
-                // do not use getDomain as it may change. use something static like getHost
-                link.setLinkID(getLinkIDDomain() + "://" + linkID);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-    }
-
-    /**
      * easiest way to set variables, without the need for multiple declared references
      *
      * @param account
@@ -364,6 +372,8 @@ public abstract class K2SApi extends PluginForHost {
                     final String isFolder = PluginJSonUtils.getJsonValue(filter, "is_folder");
                     if (!inValidate(name)) {
                         dl.setName(name);
+                    } else {
+                        dl.setName(getFallbackFilename(dl));
                     }
                     if (!inValidate(size)) {
                         dl.setVerifiedFileSize(Long.parseLong(size));
@@ -384,10 +394,10 @@ public abstract class K2SApi extends PluginForHost {
                         }
                     }
                     if (!inValidate(isFolder) && "true".equalsIgnoreCase(isFolder)) {
+                        /* This should never happen */
                         dl.setAvailable(false);
                         dl.setComment(getErrorMessage(23));
                     }
-                    setFUID(dl);
                 }
                 if (index == urls.length) {
                     break;
@@ -848,14 +858,17 @@ public abstract class K2SApi extends PluginForHost {
         final String sourceURL = link.getContainerUrl();
         if (!StringUtils.isEmpty(url_referer) && !cfg.isForceCustomReferer()) {
             /* Use Referer from inside added URL if given. */
+            logger.info("Using referer from URL: " + url_referer);
             return url_referer;
         } else if (!StringUtils.isEmpty(custom_referer)) {
             /* Use user selected Referer */
+            logger.info("Using custom referer: " + custom_referer);
             return custom_referer;
         } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).matches()) {
             /*
              * Try to use source URL as Referer if it does not match any supported URL of this plugin.
              */
+            logger.info("Using referer from Source-URL: " + sourceURL);
             return sourceURL;
         } else {
             /* No Referer at all. */
