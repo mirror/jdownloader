@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)|https?://(?:www\\.)?twitch\\.tv/[^/]+/clip/[A-Za-z0-9]+|https?://clips\\.twitch\\.tv/embed\\?clip=[A-Za-z0-9]+" })
 public class TwitchTvDecrypt extends PluginForDecrypt {
     public TwitchTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,6 +87,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
     private final String FASTLINKCHECK  = "FASTLINKCHECK";
     private final String videoSingleWeb = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/[^<>/\"]+/((b|c)/\\d+)|(?:www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)";
     private final String videoSingleHLS = "https?://(?:(?:www\\.|[a-z]{2}\\.|secure\\.)?(?:twitchtv\\.com|twitch\\.tv)/(?:[^<>/\"]+/v/\\d+|videos/\\d+))";
+    private final String typeClip       = "(?:.+/clip/|.+clips\\.twitch\\.tv/embed\\?clip=)(.+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -114,25 +115,49 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             final Browser brc = ajaxGetPage("https://api.twitch.tv/api/viewer/token.json?as3=t");
             token = brc.getRegex("\"token\":\"([a-z0-9]+)\"").getMatch(0);
             if (token != null) {
-                additionalparameters = "?as3=t&oauth_token=" + token;
+                additionalparameters = "as3=t&oauth_token=" + token;
             }
         } else {
             logger.info("NOT logged in via decrypter");
         }
-        br.getPage(parameter);
         if (parameter.matches("https?://(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+")) {
             parameter = new Regex(parameter, "https?://[^/]+/").getMatch(-1) + System.currentTimeMillis() + "/b/" + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
-        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.|<h1>This channel is closed</h1>|>I\\'m sorry, that page is in another castle") || br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(createOfflinelink(parameter, null));
-            } catch (final Throwable t) {
-                logger.log(t);
-                logger.info("OfflineLink :" + parameter);
+        if (parameter.matches(typeClip)) {
+            /* Single Clip */
+            final String slug = new Regex(parameter, typeClip).getMatch(0);
+            /* https://dev.twitch.tv/docs/v5/reference/clips */
+            Browser clipBR = ajaxGetPage("https://api.twitch.tv/kraken/clips/" + slug);
+            if (clipBR.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
-            return decryptedLinks;
-        }
-        if (parameter.contains("/videos") && !new Regex(parameter, videoSingleHLS).matches()) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(clipBR.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> userInfo = (Map<String, Object>) entries.get("broadcaster");
+            final String username = (String) userInfo.get("name");
+            final String tracking_id = (String) entries.get("tracking_id");
+            if (StringUtils.isEmpty(username) || StringUtils.isEmpty(tracking_id)) {
+                logger.warning("Failed to find tracking_id");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String title = (String) entries.get("title");
+            if (StringUtils.isEmpty(title)) {
+                /* Fallback */
+                title = slug;
+            }
+            final String created_at = (String) entries.get("created_at");
+            String date_formatted = new Regex(created_at, "^(\\d{4}_\\d{2}_\\d{2})").getMatch(0);
+            if (date_formatted == null) {
+                date_formatted = created_at;
+            }
+            final String filename = date_formatted + "_" + username + "_" + slug + "_" + title + ".mp4";
+            /* https://discuss.dev.twitch.tv/t/clips-api-does-not-expose-video-url/15763/2 */
+            final String finallink = "directhttp://https://clips-media-assets2.twitch.tv/AT-cm%7C" + tracking_id + ".mp4";
+            final DownloadLink dl = this.createDownloadlink(finallink);
+            dl.setFinalFileName(filename);
+            dl.setContentUrl(parameter);
+            decryptedLinks.add(dl);
+        } else if (parameter.contains("/videos") && !new Regex(parameter, videoSingleHLS).matches()) {
             final String username = new Regex(parameter, "/([^<>\"/]*?)/videos").getMatch(0);
             String[] decryptAgainLinks = null;
             if (br.getURL().contains("/profile")) {
@@ -146,8 +171,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     }
                     decryptAgainLinks = ajax.getRegex("(/" + username + "/(b|c)/\\d+)\"").getColumn(0);
                     if (decryptAgainLinks == null || decryptAgainLinks.length == 0) {
-                        logger.warning("Decrypter broken: " + parameter);
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     for (final String dl : decryptAgainLinks) {
                         decryptedLinks.add(createDownloadlink("https://twitch.tv" + dl));
@@ -174,9 +198,13 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             String date = null;
             String fpName = null;
             final FilePackage fp = FilePackage.getInstance();
-            if (br.getURL().matches(videoSingleWeb)) {
+            if (parameter.matches(videoSingleWeb)) {
                 // no longer get videoname from html, it requires api call.
                 Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?on_site=1&");
+                if (ajax.getHttpConnection().getResponseCode() == 404) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
                 final Map<String, Object> ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
                 filename = (String) ajaxMap.get("title");
                 channelName = (String) JavaScriptEngineFactory.walkJson(ajaxMap, "channel/display_name");
@@ -190,7 +218,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 boolean failed = true;
                 for (int i = 1; i <= 10; i++) {
                     try {
-                        ajax = ajaxGetPage("https://api.twitch.tv/api/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + additionalparameters);
+                        ajax = ajaxGetPage("https://api.twitch.tv/api/videos/" + (new Regex(parameter, "/b/\\d+$").matches() ? "a" : "c") + vid + "?" + additionalparameters);
                         if (ajax.containsHTML("\"restrictions\":\\{\"live\":\"chansub\"")) {
                             failreason = "Only downloadable for subscribers";
                         } else {
@@ -280,7 +308,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 fpName += " - [" + links.length + "]" + " - " + used_quality;
                 fp.setName(fpName);
                 fp.addLinks(decryptedLinks);
-            } else if (br.getURL().matches(videoSingleHLS)) {
+            } else if (parameter.matches(videoSingleHLS)) {
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
                 Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/videos/v" + vid);
@@ -476,6 +504,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 fp.addLinks(desiredLinks);
             } else {
                 // unsupported feature
+                logger.warning("Unsupported URL: " + parameter);
                 decryptedLinks.add(createOfflinelink(parameter, null));
             }
             // chat logs?, needs to be here so it can get filename stuff from other if statements setters
