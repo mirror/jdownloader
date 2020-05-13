@@ -108,10 +108,6 @@ public class FiledotXyz extends XFileSharingProBasic {
     @Override
     public ArrayList<String> getCleanupHTMLRegexes() {
         final ArrayList<String> regexStuff = super.getCleanupHTMLRegexes();
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
-        /* generic cleanup */
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(<font color=\"white\">[^<>]+</font>)");
         return regexStuff;
     }
