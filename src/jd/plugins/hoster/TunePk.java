@@ -62,6 +62,20 @@ public class TunePk extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
@@ -69,7 +83,7 @@ public class TunePk extends PluginForHost {
         e = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)").getMatch(0);
+        final String fid = getFID(link);
         link.setName(fid);
         // br.getPage("https://embed." + this.getHost() + "/play/" + fid + "?autoplay=no&ssl=no&inline=true");
         // br.getPage(link.getDownloadURL().replace("http:", "https:"));
