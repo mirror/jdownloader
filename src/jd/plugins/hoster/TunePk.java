@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -30,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tune.pk" }, urls = { "https?://(?:www\\.)?tune\\.pk/player/embed_player\\.php\\?vid=\\d+|https?://embed\\.tune\\.pk/play/\\d+|https?(?:www\\.)?://tune\\.pk/video/\\d+" })
 public class TunePk extends PluginForHost {
@@ -59,25 +61,28 @@ public class TunePk extends PluginForHost {
         return "http://tune.pk/policy/terms";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
         e = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
+        final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)").getMatch(0);
         link.setName(fid);
         // br.getPage("https://embed." + this.getHost() + "/play/" + fid + "?autoplay=no&ssl=no&inline=true");
         // br.getPage(link.getDownloadURL().replace("http:", "https:"));
-        /* 2017-04-27: apikey from website: 777750fea4d3bd585bf47dc1873619fc */
-        br.getPage("https://" + this.getHost() + "/api_public/playerConfigs/?api_key=777750fea4d3bd585bf47dc1873619fc&id=" + fid + "&autoplay=yes&embed=true&country=de");
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"gotune\"|>Not available!<|Video does not exist")) {
+        /* 2020-05-13: Static key from website */
+        br.getHeaders().put("x-key", "777750fea4d3bd585bf47dc1873619fc");
+        br.setAllowedResponseCodes(400);
+        br.getPage("https://" + this.getHost() + "/api/v3/videos/" + fid + "/player?snippets=configs,structure&ref=undefined");
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. Woops,<br>this video has been deactivated <a href="//tune.pk" class="gotune" target="_blank">Goto tune.pk</a> */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("Unable to load player configurations")) {
+            /* Old fallback to website */
             br.getPage("https://embed." + getHost() + "/play/" + fid + "?autoplay=no&ssl=yes&inline=true");
             if (br.containsHTML(">this video has been deactivated")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -99,13 +104,14 @@ public class TunePk extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        String filename = (String) JavaScriptEngineFactory.walkJson(entries, "data/details/video/title");
-        final String errormessage = (String) JavaScriptEngineFactory.walkJson(entries, "data/error/message");
+        final String errormessage = (String) JavaScriptEngineFactory.walkJson(entries, "data/configs/error/message");
         if (!StringUtils.isEmpty(errormessage) && errormessage.equalsIgnoreCase("This video has been deactivated")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/configs/details");
+        String filename = (String) JavaScriptEngineFactory.walkJson(entries, "video/title");
         /* Find highest quality */
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/details/player/sources");
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "player/sources");
         String dllinktemp = null;
         long bitratetemp = 0;
         long bitratemax = 0;
@@ -113,43 +119,39 @@ public class TunePk extends PluginForHost {
             entries = (LinkedHashMap<String, Object>) qualityo;
             dllinktemp = (String) entries.get("file");
             bitratetemp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
-            if (bitratetemp > bitratemax && dllinktemp != null && !dllinktemp.equals("")) {
+            if (StringUtils.isEmpty(dllinktemp) || bitratetemp <= 0) {
+                /* Skip invalid objects */
+                continue;
+            }
+            final boolean isHLS = dllinktemp.contains(".m3u8");
+            if (isHLS && !dllinktemp.contains("/index.m3u8")) {
+                /* 2020-05-13: We have to get around the index files */
+                logger.info("Skipping quality because it does not work: " + dllinktemp);
+                continue;
+            } else if (bitratetemp > bitratemax && !StringUtils.isEmpty(dllinktemp)) {
+                if (isHLS) {
+                    dllinktemp = dllinktemp.replace("/index.m3u8", "/" + bitratetemp + ".m3u8");
+                }
                 bitratemax = bitratetemp;
                 dllink = dllinktemp;
             }
         }
         if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
             filename = fid;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink, default_Extension);
-        if (dllink != null && ext == null) {
-            ext = getFileNameExtensionFromString(dllink, default_Extension);
-            if (StringUtils.isEmpty(ext)) {
-                ext = default_Extension;
-            }
+        if (!filename.endsWith(default_Extension)) {
+            filename += default_Extension;
         }
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        if (dllink != null) {
-            link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
+        link.setFinalFileName(filename);
+        if (dllink != null && !dllink.contains(".m3u8")) {
+            br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br2.openHeadConnection(dllink);
-                } catch (final BrowserException ebr) {
-                    this.e = ebr;
-                }
+                con = br.openHeadConnection(dllink);
                 if (this.e == null) {
                     if (!con.getContentType().contains("html")) {
                         link.setDownloadSize(con.getLongContentLength());
@@ -172,8 +174,8 @@ public class TunePk extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (this.e != null) {
             throw this.e;
         } else if (server_issues) {
@@ -181,21 +183,29 @@ public class TunePk extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (dllink.contains(".m3u8")) {
+            /* HLS download - new since 2020-05-13 */
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+            dl.startDownload();
+        } else {
+            /* HTTP download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     /** For embed.tune.pk. */
