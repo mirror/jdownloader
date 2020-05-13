@@ -15,13 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +25,11 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -43,14 +38,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downster.net" }, urls = { "https?://downster\\.net/api/download/get/\\d+/.+" })
 public class DownsterNet extends antiDDoSForHost {
-    public DownsterNet(PluginWrapper wrapper) throws FileNotFoundException, IOException {
+
+    public DownsterNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://downster.net");
-        this.loadUserFlowId();
     }
 
     @Override
@@ -86,8 +80,8 @@ public class DownsterNet extends antiDDoSForHost {
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
-            prepBr.setConnectTimeout(60 * 1000);
-            prepBr.setReadTimeout(60 * 1000);
+            prepBr.setConnectTimeout(60 * 1000); // application default 20 seconds
+            // prepBr.setReadTimeout(60 * 1000); // application default is already 60 seconds
             prepBr.setHeader("Content-Type", "application/json");
             prepBr.addAllowedResponseCodes(new int[] { 401, 403, 412, 422, 503, 512 });
             prepBr.getHeaders().put("User-Agent", "JDownloader " + getVersion());
@@ -96,18 +90,11 @@ public class DownsterNet extends antiDDoSForHost {
         return prepBr;
     }
 
-    private void loadUserFlowId() throws FileNotFoundException, IOException {
-        File flowIdFile = JDUtilities.getResourceFile("flowId.txt");
-        if (flowIdFile.exists() && flowIdFile.canRead()) {
-            userFlowId = new BufferedReader(new FileReader(flowIdFile)).readLine();
-        }
-        if (userFlowId.isEmpty()) {
-            userFlowId = this.randomFlowId();
-            if (flowIdFile.createNewFile()) {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(flowIdFile));
-                writer.write(userFlowId);
-                writer.flush();
-            }
+    private void loadUserFlowId(final Account account) {
+        userFlowId = account.getStringProperty("flowId", null);
+        if (userFlowId == null) {
+            userFlowId = randomFlowId();
+            account.setProperty("flowId", userFlowId);
         }
     }
 
@@ -121,22 +108,35 @@ public class DownsterNet extends antiDDoSForHost {
     }
 
     private String login(final Account account) throws Exception {
-        getPage(API_BASE + "/user/info");
-        if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
-            return null;
+        synchronized (account) {
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(getHost(), cookies);
+            }
+            loadUserFlowId(account);
+            getPage(API_BASE + "/user/info");
+            if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
+                // refresh values
+                account.saveCookies(br.getCookies(getHost()), "");
+                return null;
+            }
+            if (cookies != null) {
+                account.clearCookies("");
+            }
+            String json = null;
+            json = PluginJSonUtils.ammendJson(json, "email", account.getUser());
+            json = PluginJSonUtils.ammendJson(json, "password", account.getPass());
+            postPage(API_BASE + "/user/authenticate", json);
+            if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
+                account.saveCookies(br.getCookies(getHost()), "");
+                return null;
+            }
+            return PluginJSonUtils.getJsonValue(br, "error");
         }
-        String json = null;
-        json = PluginJSonUtils.ammendJson(json, "email", account.getUser());
-        json = PluginJSonUtils.ammendJson(json, "password", account.getPass());
-        postPage(API_BASE + "/user/authenticate", json);
-        if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
-            account.saveCookies(br.getCookies(this.getHost()), "");
-            return null;
-        }
-        return PluginJSonUtils.getJsonValue(br, "error");
     }
 
     private class Hoster {
+
         public String  name;
         public Long    limit;
         public Long    used;
@@ -151,10 +151,10 @@ public class DownsterNet extends antiDDoSForHost {
         if ("false".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCould not get hoster list: " + PluginJSonUtils.getJsonValue(br, "error"));
         }
-        List<Hoster> hosters = new ArrayList<Hoster>();
-        String data = PluginJSonUtils.getJsonArray(br, "data");
+        final List<Hoster> hosters = new ArrayList<Hoster>();
+        final String data = PluginJSonUtils.getJsonArray(br, "data");
         for (String hosterJson : PluginJSonUtils.getJsonResultsFromArray(data)) {
-            Hoster hoster = new Hoster();
+            final Hoster hoster = new Hoster();
             hoster.name = PluginJSonUtils.getJsonValue(hosterJson, "hoster");
             hoster.limit = Long.parseLong(PluginJSonUtils.getJsonValue(hosterJson, "limit"));
             hoster.used = Long.parseLong(PluginJSonUtils.getJsonValue(hosterJson, "used"));
@@ -174,45 +174,39 @@ public class DownsterNet extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        prepBrowser(br, "downster.net");
-        br.setCookies(API_BASE, account.loadCookies(""));
-        if (account.getUser().equals("") || account.getPass().equals("")) {
+        if ("".equals(account.getUser()) || "".equals(account.getPass())) {
             /* Server returns 401 if you send empty fields (logindata) */
             accountInvalid();
         }
         final AccountInfo ac = new AccountInfo();
-        ac.setUnlimitedTraffic();
         String loginError = login(account);
         if (loginError != null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + loginError);
         }
-        Long premiumUntil = Long.parseLong(PluginJSonUtils.getJsonValue(br, "premiumUntil"));
-        // premiumUntil is reported in seconds but java needs milliseconds
-        ac.setValidUntil(premiumUntil * 1000L, br);
+        final Long premiumUntil = Long.parseLong(PluginJSonUtils.getJsonValue(br, "premiumUntil"));
         if (premiumUntil > 0) {
-            ac.setStatus("Premium active");
-            ac.setExpired(false);
+            // premiumUntil is reported in seconds but we needs milliseconds
+            ac.setValidUntil(premiumUntil * 1000L, br);
+            ac.setUnlimitedTraffic();
+            account.setType(AccountType.PREMIUM);
         } else {
-            ac.setStatus("No premium");
+            account.setType(AccountType.FREE);
             ac.setExpired(true);
         }
-        List<String> hosters = new ArrayList<String>();
-        for (Hoster hoster : getHosters(account)) {
+        final List<String> hosters = new ArrayList<String>();
+        for (final Hoster hoster : getHosters(account)) {
             hosters.add(hoster.name);
         }
         ac.setMultiHostSupport(this, hosters);
         return ac;
     }
 
-    /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBrowser(br, "downster.net");
-        br.setCookies(API_BASE, account.loadCookies(""));
+        mhm.runCheck(account, link);
         String loginError = login(account);
         if (loginError != null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + loginError);
         }
-        mhm.runCheck(account, link);
         dllink = checkDirectLink(link);
         if (dllink == null) {
             String downloadlink = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
@@ -243,6 +237,7 @@ public class DownsterNet extends antiDDoSForHost {
         if (link.getBooleanProperty(DownsterNet.NOCHUNKS, false)) {
             chunks = 1;
         }
+        // don't think we need to wrap this in try/catch the core should handle this already.
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         } catch (final SocketTimeoutException e) {
@@ -255,7 +250,7 @@ public class DownsterNet extends antiDDoSForHost {
         }
         try {
             // start the dl
-            if (!this.dl.startDownload()) {
+            if (!dl.startDownload()) {
                 try {
                     if (dl.externalDownloadStop()) {
                         return;
@@ -269,7 +264,7 @@ public class DownsterNet extends antiDDoSForHost {
                 }
             }
         } catch (final PluginException e) {
-            // New V2 chunk errorhandling
+            // New V2 chunk error handling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DownsterNet.NOCHUNKS, false) == false) {
                 link.setProperty(DownsterNet.NOCHUNKS, Boolean.valueOf(true));
@@ -316,7 +311,6 @@ public class DownsterNet extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
     }
