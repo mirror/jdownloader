@@ -107,6 +107,7 @@ public class FiledotXyz extends XFileSharingProBasic {
 
     @Override
     public ArrayList<String> getCleanupHTMLRegexes() {
+        /* 2020-05-13: Special */
         final ArrayList<String> regexStuff = super.getCleanupHTMLRegexes();
         regexStuff.add("(<font color=\"white\">[^<>]+</font>)");
         return regexStuff;
