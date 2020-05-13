@@ -289,9 +289,6 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                // if (!loggedin) {
-                // dl.setProperty("free_downloadable", true);
-                // }
                 foundQualities.put(format, dl);
             }
             /* TODO: Quality selection would have to be here */

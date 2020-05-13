@@ -29,10 +29,8 @@ import jd.plugins.HostPlugin;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(?:www\\.)?(?:fboom|fileboom)\\.me/file/([a-z0-9]{13,})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:fboom|fileboom)\\.me/file/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class FileBoomMe extends K2SApi {
-    private final String MAINPAGE = "https://fboom.me";
-
     public FileBoomMe(PluginWrapper wrapper) {
         super(wrapper);
     }

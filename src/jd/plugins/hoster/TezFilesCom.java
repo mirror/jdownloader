@@ -24,7 +24,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(?:ile)?/([a-z0-9]{13,})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?tezfiles\\.com/f(?:ile)?/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
     public TezFilesCom(PluginWrapper wrapper) {
         super(wrapper);

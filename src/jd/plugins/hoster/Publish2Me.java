@@ -24,7 +24,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(?:www\\.)?publish2\\.me/file/([a-z0-9]{13,})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?publish2\\.me/file/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class Publish2Me extends K2SApi {
     public Publish2Me(PluginWrapper wrapper) {
         super(wrapper);

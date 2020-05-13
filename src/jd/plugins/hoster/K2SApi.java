@@ -932,11 +932,14 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * @throws Exception
      */
-    public void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
+    public void postPageRaw(final Browser ibr, String url, final String arg, final Account account) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
             try {
-                con = ibr.openPostConnection(getApiUrl() + url, arg);
+                if (!url.startsWith("http")) {
+                    url = getApiUrl() + url;
+                }
+                con = ibr.openPostConnection(url, arg);
                 readConnection(con, ibr);
                 antiDDoS(ibr);
                 // only do captcha stuff on the login page.
