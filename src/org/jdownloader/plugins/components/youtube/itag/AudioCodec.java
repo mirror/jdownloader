@@ -67,19 +67,22 @@ public enum AudioCodec implements LabelInterface, TooltipInterface {
     public static AudioCodec getByVariant(AbstractVariant o1) {
         if (o1 instanceof AudioInterface) {
             return ((AudioInterface) o1).getAudioCodec();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static int getSortId(AbstractVariant v) {
-        AudioCodec res = getByVariant(v);
+        final AudioCodec res = getByVariant(v);
         if (res == null) {
             return -1;
+        } else {
+            final Number intObj = YT_STATICS.SORTIDS_AUDIO_CODEC.get(res);
+            if (intObj == null) {
+                return -1;
+            } else {
+                return intObj.intValue();
+            }
         }
-        Object intObj = YT_STATICS.SORTIDS_AUDIO_CODEC.get(res);
-        if (intObj == null) {
-            return -1;
-        }
-        return ((Number) intObj).intValue();
     }
 }
