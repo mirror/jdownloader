@@ -13,8 +13,14 @@ public enum YoutubeITAG {
     DASH_VIDEO_240p_AV1(395, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_360p_AV1(396, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_480p_AV1(397, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    // check again, maybe FPS_60?
     DASH_VIDEO_720p_AV1(398, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    // check again,maybe FPS_60?
     DASH_VIDEO_1080p_AV1(399, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.AV1, VideoFrameRate.FPS_30),
+    DASH_VIDEO_1440p_AV1(400, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.AV1, VideoFrameRate.FPS_60),
+    DASH_VIDEO_2160p_AV1(401, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.AV1, VideoFrameRate.FPS_60),
+    DASH_VIDEO_4320p_AV1(402, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
+    DASH_VIDEO_4320p_AV1_HIGHER_BITRATE(571, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_AUDIO_128K_AAC(140, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_128),
     // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
@@ -56,8 +62,8 @@ public enum YoutubeITAG {
     DASH_VIDEO_360P_H264(134, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_480P_H264(135, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
     /*
-     *
-     *
+     * 
+     * 
      * Video ID : 1 Format : AVC Format/Info : Advanced Video Codec Format profile : Main@L3 Format settings, CABAC : Yes Format settings,
      * ReFrames : 3 frames Codec ID : avc1 Codec ID/Info : Advanced Video Coding Duration : 6s 773ms Bit rate : 1 063 Kbps Width : 720
      * pixels Height : 480 pixels Display aspect ratio : 3:2 Frame rate mode : Variable Frame rate : 29.970 fps Minimum frame rate : 29.970

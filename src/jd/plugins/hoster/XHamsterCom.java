@@ -26,15 +26,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +51,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -316,7 +316,6 @@ public class XHamsterCom extends PluginForHost {
                 if (br.containsHTML("(403 Forbidden|>This video was deleted<)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                filename = getSiteTitle();
                 final String onlyfor = videoOnlyForFriendsOf();
                 if (onlyfor != null) {
                     link.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
@@ -385,9 +384,12 @@ public class XHamsterCom extends PluginForHost {
 
     private String getFilename(final DownloadLink link) throws PluginException, IOException {
         final String fid = getFID(link);
-        String filename = br.getRegex("<h1.*?itemprop=\"name\">(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("\"videoEntity\"\\s*:\\s*\\{[^\\}\\{]*\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("<h1.*?itemprop=\"name\">(.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (filename == null) {
             filename = getSiteTitle();
