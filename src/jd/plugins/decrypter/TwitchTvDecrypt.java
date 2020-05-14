@@ -167,23 +167,49 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             dl.setContentUrl(parameter);
             decryptedLinks.add(dl);
         } else if (parameter.contains("/videos") && !new Regex(parameter, videoSingleHLS).matches()) {
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             final String username = new Regex(parameter, "/([^<>\"/]*?)/videos").getMatch(0);
             String[] decryptAgainLinks = null;
-            if (br.getURL().contains("/profile")) {
+            final boolean forceAPI = true;
+            if (br.getURL() != null && (br.getURL().contains("/profile")) || forceAPI) {
                 final int step = 100;
                 int maxVideos = 0;
                 int offset = 0;
                 do {
-                    final Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/channels/" + username + "/videos?limit=100&offset=" + offset + "&on_site=1");
-                    if (offset == 0) {
-                        maxVideos = Integer.parseInt(ajax.getRegex("\"_total\":(\\d+)").getMatch(0));
+                    /* First get userID of username */
+                    final Browser ajaxUser = ajaxGetPage("https://api.twitch.tv/kraken/users?login=" + username);
+                    if (ajaxUser.getHttpConnection().getResponseCode() == 404) {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
                     }
-                    decryptAgainLinks = ajax.getRegex("(/" + username + "/(b|c)/\\d+)\"").getColumn(0);
-                    if (decryptAgainLinks == null || decryptAgainLinks.length == 0) {
+                    final String userID = PluginJSonUtils.getJson(ajaxUser, "_id");
+                    if (StringUtils.isEmpty(userID)) {
+                        logger.warning("Failed to find userID");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    for (final String dl : decryptAgainLinks) {
-                        decryptedLinks.add(createDownloadlink("https://twitch.tv" + dl));
+                    final Browser ajax = ajaxGetPage("https://api.twitch.tv/kraken/channels/" + userID + "/videos?limit=100&offset=" + offset + "&on_site=1");
+                    if (ajax.getHttpConnection().getResponseCode() == 404) {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    }
+                    if (offset == 0) {
+                        maxVideos = Integer.parseInt(PluginJSonUtils.getJson(ajax, "_total"));
+                    }
+                    decryptAgainLinks = ajax.getRegex("/videos/(\\d+)").getColumn(0);
+                    /* TODO: Walk through json instead of using RegEx */
+                    Map<String, Object> entries = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("videos");
+                    if (ressourcelist.size() == 0) {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    }
+                    /* TODO: Maybe filter videos that are e.g. not streamable anymore to reduce requests. */
+                    for (final String videoID : decryptAgainLinks) {
+                        decryptedLinks.add(createDownloadlink("https://twitch.tv/videos/" + videoID));
                     }
                     offset += step;
                 } while (decryptedLinks.size() < maxVideos);
