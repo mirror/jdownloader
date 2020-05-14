@@ -585,6 +585,7 @@ public abstract class K2SApi extends PluginForHost {
                 getURL.put("captcha_challenge", challenge);
                 getURL.put("captcha_response", code);
                 if (StringUtils.isNotEmpty(custom_referer)) {
+                    logger.info("Using Referer: " + custom_referer);
                     getURL.put("url_referrer", custom_referer);
                 }
                 postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account);
