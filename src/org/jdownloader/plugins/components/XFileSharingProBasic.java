@@ -2654,10 +2654,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /* Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
     protected void checkErrorsLastResort(final Account account) throws PluginException {
         logger.info("Last resort errorhandling");
-        String website_error = new Regex(correctedBR, "class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
         if (account != null && !this.isLoggedin()) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
-        } else if (website_error != null) {
+        }
+        String website_error = new Regex(correctedBR, "class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
+        if (website_error != null) {
             if (Encoding.isHtmlEntityCoded(website_error)) {
                 website_error = Encoding.htmlDecode(website_error);
             }

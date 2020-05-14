@@ -524,7 +524,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     final Form continueform = getContinueForm(i, continue_link);
                     if (i == startValue && continueform == null) {
                         logger.info("No continue_form/continue_link available, plugin broken");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        checkErrorsLastResort(link, account);
                     } else if (continueform == null) {
                         logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
                         break;
@@ -583,7 +583,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         if (continue_link == null) {
                             checkErrors(link, account);
                             logger.warning("Failed to find continue_link");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            checkErrorsLastResort(link, account);
                         }
                         br.setFollowRedirects(false);
                         waitTime(link, timeBeforeCaptchaInput);
@@ -630,7 +630,7 @@ public class YetiShareCore extends antiDDoSForHost {
          */
         if (dl == null) {
             checkErrors(link, account);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            checkErrorsLastResort(link, account);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         checkResponseCodeErrors(dl.getConnection());
@@ -640,7 +640,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             checkErrors(link, account);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            checkErrorsLastResort(link, account);
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
@@ -1046,6 +1046,14 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
         /** TODO: Add something similar to "checkErrorsLastResort" in XFileSharingProBasic */
+    }
+
+    public void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
+        logger.info("Last resort errorhandling");
+        if (account != null && !this.isLoggedin()) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Deprecated
