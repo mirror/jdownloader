@@ -116,6 +116,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             // https://2captcha.com/2captcha-api
             q.appendEncoded("key", config.getApiKey());
             q.appendEncoded("method", "userrecaptcha");
+            q.appendEncoded("json", "1");
             q.appendEncoded("googlekey", challenge.getSiteKey());
             q.appendEncoded("pageurl", challenge.getSiteDomain());
             final AbstractRecaptchaV2<?> recaptchaChallenge = challenge.getAbstractCaptchaHelperRecaptchaV2();

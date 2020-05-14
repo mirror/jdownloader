@@ -32,6 +32,7 @@ import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 
 public class JavaScriptEditorDialog extends AbstractDialog<Object> {
@@ -253,7 +254,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
     private synchronized String format(String script) {
         try {
-            Context cx = Context.enter();
+            final Context cx = Context.enter();
             cx.setOptimizationLevel(9);
             cx.setLanguageVersion(Context.VERSION_1_5);
             if (scope == null) {
@@ -279,7 +280,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             return formated;
             // ProcessBuilderFactory.runCommand(commandline);
         } catch (Throwable e) {
-            e.printStackTrace();
+            LogController.CL().log(e);
         } finally {
             Context.exit();
         }

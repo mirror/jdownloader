@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.AbortException;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.AbortException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrored.to" }, urls = { "https?://(?:www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}|https?://(?:www\\.)?mirrored\\.to/multilinks/[a-z0-9]+" })
 public class MirroredTo extends PluginForDecrypt {
@@ -74,8 +74,8 @@ public class MirroredTo extends PluginForDecrypt {
             br.setFollowRedirects(false);
             // set packagename
             // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
-            String fpName = br.getRegex("<title>([^<>\"]+) \\- Mirrored\\.to").getMatch(0);
-            final String filesize = br.getRegex(">File size\\s*:\\s*<span>([^<>\"]+)<").getMatch(0);
+            String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\-\\s*Mirrored\\.to").getMatch(0);
+            final String filesize = br.getRegex(">\\s*File\\s+size\\s*:\\s*<span>\\s*([^<>\"]+)\\s*<").getMatch(0);
             if (fpName != null) {
                 // here we will strip extensions!
                 String ext;
@@ -128,7 +128,10 @@ public class MirroredTo extends PluginForDecrypt {
             } else {
                 // older shit
                 // they comment in fakes, so we will just try them all!
-                String[] links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
+                String[] links = br.getRegex("(/getlink/[^/]+/[^/]+/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
+                }
                 if (links == null || links.length == 0) {
                     links = br.getRegex("\"(/hosts/" + uid + "[^\"]+)\"").getColumn(0);
                     if (links == null || links.length == 0) {

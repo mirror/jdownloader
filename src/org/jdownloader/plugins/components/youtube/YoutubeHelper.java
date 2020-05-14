@@ -68,6 +68,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.CompareUtils;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -1426,8 +1427,11 @@ public class YoutubeHelper {
         br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
         // cookie for new Style(Polymer?)
         // br.setCookie("youtube.com", "VISITOR_INFO1_LIVE", "Qa1hUZu3gtk");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/44.0 (Chrome)");
-        br.getPage(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999");
+        br.addAllowedResponseCodes(429);
+        br.getPage(base + "/watch?has_verified=1&bpctr=9999999999&hl=en&v=" + vid.videoID + "&disable_polymer=true&gl=US");
+        if (br.getRequest().getHttpConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too Many Requests", 10 * 60 * 1000l);
+        }
         parserJson();
         vid.approxThreedLayout = br.getRegex("\"approx_threed_layout\"\\s*\\:\\s*\"([^\"]*)").getMatch(0);
         String[][] keyWordsGrid = br.getRegex("<meta\\s+property=\"([^\"]*)\"\\s+content=\"yt3d\\:([^\"]+)=([^\"]+)\">").getMatches();
@@ -1685,14 +1689,24 @@ public class YoutubeHelper {
                             } catch (Throwable e) {
                                 logger.log(e);
                             }
-                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.getWidth(), c.getHeight(), StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
+                            final String itagID = query.get("itag");
+                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(itagID), c.getWidth(), c.getHeight(), StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
                             if (itag == null) {
                                 this.logger.info("Unknown Line: " + query);
                                 this.logger.info(query + "");
+                                try {
+                                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
+                                        Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                                    }
+                                } catch (Exception e) {
+                                    logger.log(e);
+                                }
+                                continue;
+                            } else if (Boolean.FALSE.equals(isSupported(itag))) {
+                                this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
                                 continue;
                             }
-                            YoutubeStreamData vsd;
-                            vsd = new YoutubeStreamData(mpdUrl.src, vid, c.getDownloadurl(), itag, query);
+                            final YoutubeStreamData vsd = new YoutubeStreamData(mpdUrl.src, vid, c.getDownloadurl(), itag, query);
                             try {
                                 vsd.setHeight(Integer.parseInt(query.get("height")));
                             } catch (Throwable e) {
@@ -1944,12 +1958,15 @@ public class YoutubeHelper {
             if (itag == null) {
                 logger.info("UNSUPPORTED/UNKNOWN?:" + JSonStorage.toString(entry));
                 try {
-                    if (!Application.isJared(null)) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
                         Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
                     }
                 } catch (Exception e) {
                     logger.log(e);
                 }
+                return null;
+            } else if (Boolean.FALSE.equals(isSupported(itag))) {
+                this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
                 return null;
             }
             final YoutubeStreamData ret = new YoutubeStreamData(src, vid, url, itag, null);
@@ -2150,8 +2167,25 @@ public class YoutubeHelper {
         if (StringUtils.isNotEmpty(type)) {
             type = Encoding.urlDecode(type, false);
         }
-        int itagId = Integer.parseInt(query.get("itag"));
-        final YoutubeITAG itag = YoutubeITAG.get(itagId, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
+        final int itagID = Integer.parseInt(query.get("itag"));
+        final YoutubeITAG itag = YoutubeITAG.get(itagID, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
+        if (itag == null) {
+            this.logger.info("Unknown Line: " + r);
+            this.logger.info("Unknown ITAG: " + query.get("itag"));
+            this.logger.info(url + "");
+            this.logger.info(query + "");
+            try {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
+                    Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            return;
+        } else if (Boolean.FALSE.equals(isSupported(itag))) {
+            this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
+            return;
+        }
         logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
         NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
         ArrayList<String> segmentsList = new ArrayList<String>();
@@ -2179,9 +2213,8 @@ public class YoutubeHelper {
                 segmentsList.add(seg);
             }
         }
-        if (url != null && itag != null) {
-            YoutubeStreamData vsd;
-            vsd = new YoutubeStreamData(src.src, vid, url, itag, query);
+        if (url != null) {
+            final YoutubeStreamData vsd = new YoutubeStreamData(src.src, vid, url, itag, query);
             vsd.setHeight(height);
             vsd.setWidth(width);
             vsd.setFps(fps);
@@ -2195,18 +2228,6 @@ public class YoutubeHelper {
                     ret.put(itag, lst);
                 }
                 lst.add(vsd);
-            }
-        } else {
-            this.logger.info("Unknown Line: " + r);
-            this.logger.info("Unknown ITAG: " + query.get("itag"));
-            this.logger.info(url + "");
-            this.logger.info(query + "");
-            try {
-                if (!Application.isJared(null)) {
-                    new ItagHelper(vid, br, query, url).run();
-                }
-            } catch (Exception e) {
-                logger.log(e);
             }
         }
     }
@@ -2702,36 +2723,36 @@ public class YoutubeHelper {
         if (StringUtils.isNotEmpty(type)) {
             type = Encoding.urlDecode(type, false);
         }
-        String itagString = query.get("itag");
+        final String itagID = query.get("itag");
         try {
-            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
-            if (itag != null && Boolean.FALSE.equals(isSupported(itag))) {
+            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(itagID), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
+            if (itag == null) {
+                this.logger.info("Unknown ITAG: " + itagID);
+                this.logger.info(url + "");
+                this.logger.info(query + "");
+                try {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
+                        Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+                return null;
+            } else if (Boolean.FALSE.equals(isSupported(itag))) {
                 this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
                 return null;
             }
             final String quality = Encoding.urlDecode(query.get("quality"), false);
             logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
-            if (url != null && itag != null) {
+            if (url != null) {
                 final YoutubeStreamData vsd = new YoutubeStreamData(src.src, vid, url, itag, query);
                 vsd.setHeight(height);
                 vsd.setWidth(width);
                 vsd.setFps(fps);
                 return vsd;
-            } else {
-                this.logger.info("Unknown Line: " + query);
-                this.logger.info(url + "");
-                this.logger.info(query + "");
-                try {
-                    if (!Application.isJared(null)) {
-                        new ItagHelper(vid, br, query, url).run();
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
             }
             return null;
         } catch (NumberFormatException e) {
-            e.printStackTrace();
             throw e;
         }
     }

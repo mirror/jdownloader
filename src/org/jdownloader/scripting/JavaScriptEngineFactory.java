@@ -31,6 +31,10 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
+import jd.parser.Regex;
+import jd.plugins.components.ThrowingRunnable;
+
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.logging.LogController;
 import org.mozilla.javascript.ConsString;
@@ -49,9 +53,6 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
-
-import jd.parser.Regex;
-import jd.plugins.components.ThrowingRunnable;
 
 public class JavaScriptEngineFactory {
     /**
@@ -1097,7 +1098,8 @@ public class JavaScriptEngineFactory {
                 engine.eval("var response=" + string + ";");
                 return toMap(engine.get("response"));
             } catch (ScriptException e2) {
-                throw new Exception("JavaScript to Java failed: " + string);
+                Exceptions.addSuppressed(e2, e);
+                throw new Exception("JavaScript to Java failed: " + string, e2);
             }
         }
     }

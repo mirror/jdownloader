@@ -784,6 +784,10 @@ public class HLSDownloader extends DownloadInterface {
                 l.add("1");
             }
         }
+        if (false) {
+            // https://svn.jdownloader.org/issues/85472#note-8
+            l.add("-copyts");
+        }
         applyBitStreamFilter(l, format, ffmpeg);
         l.add("-c:v");
         l.add("copy");
