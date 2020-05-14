@@ -252,7 +252,7 @@ public class PornHubCom extends PluginForHost {
             if (br.containsHTML(html_privateimage)) {
                 final Account aa = AccountController.getInstance().getValidAccount(this);
                 if (aa != null) {
-                    this.login(this, br, aa, false);
+                    login(this, br, aa, false);
                 }
                 br.setFollowRedirects(true);
                 getPage(br, createPornhubImageLink(viewKey, aa));
@@ -345,39 +345,33 @@ public class PornHubCom extends PluginForHost {
             link.setFinalFileName(html_filename);
         }
         if (!verifyFinalURL(link, this.dlUrl)) {
+            if (format == null || !format.contains("mp4")) {
+                /* We cannot refresh directurls of e.g. photo content - final downloadurls should be static --> WTF */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
+            logger.info("Directurl has expired (?) --> Trying to generate new directurl");
             final Map<String, Map<String, String>> qualities = getVideoLinks(this, br);
             if (qualities == null || qualities.size() == 0) {
-                if (br.containsHTML(REMOVED_VIDEO)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                logger.warning("Failed to find any video qualities");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
             if (this.dlUrl == null) {
                 logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                /* Last chance */
-                if (!verifyFinalURL(link, this.dlUrl)) {
-                    getPage(br, source_url);
-                    this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
-                    if (this.dlUrl == null) {
-                        if (br.containsHTML(REMOVED_VIDEO)) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else {
-                            logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                }
+            }
+            /* Last chance */
+            logger.info("Checking fresh directurl");
+            if (!verifyFinalURL(link, this.dlUrl)) {
+                logger.info("Fresh directurl did not lead to downloadable content");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
             }
         }
         return AvailableStatus.TRUE;
     }
 
-    public boolean verifyFinalURL(final DownloadLink downloadLink, final String url) throws Exception {
-        final String format = downloadLink.getStringProperty("format");
+    public boolean verifyFinalURL(final DownloadLink link, final String url) throws Exception {
+        final String format = link.getStringProperty("format");
         if (StringUtils.equalsIgnoreCase("hls", format)) {
             final Browser hlsCheck = br.cloneBrowser();
             hlsCheck.setFollowRedirects(true);
@@ -401,7 +395,7 @@ public class PornHubCom extends PluginForHost {
                         } else if (StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                             return false;
                         } else {
-                            downloadLink.setProperty("directlink", url);
+                            link.setProperty("directlink", url);
                             return true;
                         }
                     } finally {
@@ -433,9 +427,9 @@ public class PornHubCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     if (con.getLongContentLength() > 0) {
-                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        link.setDownloadSize(con.getLongContentLength());
                     }
-                    downloadLink.setProperty("directlink", url);
+                    link.setProperty("directlink", url);
                     return true;
                 }
             } finally {
