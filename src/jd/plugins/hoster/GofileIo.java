@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/\\?c=[A-Za-z0-9]+#file=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=\\d+)?" })
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,11 +49,11 @@ public class GofileIo extends PluginForHost {
     }
 
     private String getC(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "c=([A-Za-z0-9]+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "(?:c=|/d/)([A-Za-z0-9]+)").getMatch(0);
     }
 
     private String getFileID(final DownloadLink link) throws PluginException {
-        return new Regex(link.getPluginPatternMatcher(), "file=(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "#file=(\\d+)").getMatch(0);
     }
 
     /* Connection stuff */
@@ -66,8 +66,9 @@ public class GofileIo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         final String c = getC(link);
-        br.getPage("https://gofile.io/?c=" + c);
+        br.getPage("https://" + this.getHost() + "/d/" + c);
         final GetRequest server = br.createGetRequest("https://apiv2.gofile.io/getServer?c=" + c);
         server.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
         Browser brc = br.cloneBrowser();

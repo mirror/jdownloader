@@ -159,8 +159,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         decryptUserSets();
                     } else if (TYPE_USER_IN_PLAYLIST.matcher(parameter).find()) {
                         decryptUserInPlaylists();
-                    } else if (TYPE_USER_LIKES.matcher(parameter).find()) {
-                        decryptLikes();
                     } else if (TYPE_GROUPS.matcher(parameter).find()) {
                         decryptGroups();
                     } else {
@@ -527,44 +525,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         logger.info("Seems like we decrypted all likes-pages - stopping");
     }
 
-    private void decryptLikes() throws Exception {
-        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + SoundcloudCom.getClientId(br));
-        data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        String user_id = null;
-        if ("302 - Found".equals(data.get("status"))) {
-            // json redirect
-            final String redirect = (String) data.get("location");
-            if (redirect == null || redirect.equals("")) {
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
-            }
-            user_id = new Regex(redirect, "users/(\\d+)").getMatch(0);
-            br.getPage(redirect);
-            data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        }
-        if (user_id == null) {
-            user_id = getString(data, "id");
-        }
-        if (user_id == null || user_id.equals("")) {
-            throw new DecrypterException("Decrypter broken for link: " + parameter);
-        }
-        String nextPage = null;
-        final long items_count = ((Number) data.get("likes_count")).intValue();
-        final long pages = items_count / max_entries_per_request;
-        int page = 1;
-        setFilePackage(username, playlistname);
-        do {
-            logger.info("Decrypting page " + page + " of probably " + pages);
-            final String next_page_url = nextPage != null ? nextPage : "https://api.soundcloud.com/e1/users/" + user_id + "/likes?limit=" + max_entries_per_request + "&linked_partitioning=1&offset=" + ((page - 1) * max_entries_per_request) + "&order=favorited_at&page_number=" + page + "&page_size=" + max_entries_per_request + "&client_id=" + SoundcloudCom.getClientId(br);
-            br.getPage(next_page_url);
-            List<Map<String, Object>> collection = parseCollection();
-            page++;
-            if (collection == null || (nextPage = (String) data.get("next_href")) == null) {
-                break;
-            }
-        } while (!this.isAbort());
-        logger.info("Seems like we decrypted all likes-pages - stopping");
-    }
-
     private void decryptGroups() throws Exception {
         url_username = new Regex(parameter, "/groups/(.+)").getMatch(0);
         resolve(parameter);
@@ -664,13 +624,27 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return collection;
     }
 
+    /** E.g. complete user profile, all liked tracks of a user, all reposted tracks of a user */
     private void decryptUser() throws Exception {
         resolve(null);
         /* Decrypt all tracks of a user */
         final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         username = getString(data, "username");
         final String userID = getString(data, "id");
-        final String type = new Regex(parameter, TYPE_USER_REPOST).matches() ? "/reposts" : "";
+        String url_base;
+        if (new Regex(parameter, TYPE_USER_REPOST).matches()) {
+            /* Reposts of a user */
+            url_base = SoundcloudCom.API_BASEv2 + "/stream/users/" + userID + "/reposts";
+            playlistname = "reposts";
+        } else if (new Regex(parameter, TYPE_USER_LIKES).matches()) {
+            /* Likes of a user */
+            url_base = SoundcloudCom.API_BASEv2 + "/users/" + userID + "/likes";
+            playlistname = "likes";
+        } else {
+            /* Complete user profile */
+            url_base = SoundcloudCom.API_BASEv2 + "/stream/users/" + userID;
+            playlistname = "";
+        }
         if (userID == null) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -678,12 +652,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         // still valid far as I can see raztoki20160208
         int maxPerCall = 200;
         setFilePackage(username, playlistname);
+        final UrlQuery query = new UrlQuery();
+        query.append("client_id", SoundcloudCom.getClientId(br), true);
+        query.append("linked_partitioning", "1", true);
+        query.append("app_version", SoundcloudCom.getAppVersion(br), true);
+        query.append("limit", maxPerCall + "", true);
         String next_href = null;
         String offset = "0";
-        final String url = String.format(SoundcloudCom.API_BASEv2 + "/stream/users/%s%s", userID, type);
+        url_base += "?" + query.toString();
+        int page = 1;
         do {
-            final String base = url + "?client_id=" + SoundcloudCom.getClientId(br) + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + SoundcloudCom.getAppVersion(br);
-            br.getPage(base);
+            logger.info("Crawling pagination page: " + page);
+            br.getPage(url_base + "&offset=" + offset);
             final List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() == 0) {
                 break;
@@ -691,7 +671,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             this.data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             next_href = (String) this.data.get("next_href");
             offset = new Regex(next_href, "offset=([^&]+)").getMatch(0);
-        } while (next_href != null && offset != null && !this.isAbort());
+        } while (!this.isAbort() && !StringUtils.isEmpty(next_href) && offset != null);
     }
 
     private boolean isList() throws DecrypterException {
