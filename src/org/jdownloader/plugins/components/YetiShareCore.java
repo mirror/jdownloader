@@ -253,17 +253,19 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * <b> Enabling this may lead to at least one additional website-request! </b><br />
-     * TODO: 2019-02-20: Find website which supports video streaming! --> 2020-03-25: vidload.net
+     * TODO: 2019-02-20: Find website which supports video streaming! --> 2020-03-25: vidload.net Deprecated since 2020-05-14 as this has
+     * never been used so far!
      *
      * @return true: Implies that website supports embedding videos. <br />
      *         false: Implies that website does NOT support embedding videos. <br />
      *         default: false
      */
+    @Deprecated
     protected boolean supports_embed_stream_download() {
         return false;
     }
 
-    /** TODO: See fetchAccountInfoAPI */
+    /** See fetchAccountInfoAPI */
     protected boolean supports_api() {
         return false;
     }
@@ -297,6 +299,7 @@ public class YetiShareCore extends antiDDoSForHost {
         try {
             if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher() + "~i");
+                /* Offline check is unsafe which is why we need to check for other errors first! */
                 try {
                     this.checkErrors(link, account);
                 } catch (final PluginException e) {
@@ -313,6 +316,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             } else {
                 getPage(link.getPluginPatternMatcher());
+                /* Offline check is very unsafe which is why we need to check for other errors first! */
                 try {
                     this.checkErrors(link, account);
                 } catch (final PluginException e) {
@@ -951,7 +955,6 @@ public class YetiShareCore extends antiDDoSForHost {
                 // VERIFIED
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsgURL);
             }
-            /* TODO: Decide whether or not we want to use original given errormessages or rather spit out all errors in English. */
             /** premiumonly errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
                 throw new AccountRequiredException(errorMsgURL);
@@ -960,6 +963,8 @@ public class YetiShareCore extends antiDDoSForHost {
             } else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
                 throw new AccountRequiredException(errorMsgURL);
             } else if (errorkey.equalsIgnoreCase("error_file_is_not_publicly_shared")) {
+                /* Very very rare case */
+                logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
             } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
@@ -1045,7 +1050,6 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
-        /** TODO: Add something similar to "checkErrorsLastResort" in XFileSharingProBasic */
     }
 
     public void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
@@ -1118,12 +1122,6 @@ public class YetiShareCore extends antiDDoSForHost {
         // final boolean currentURLContainsFID = br.getURL().contains(fid);
         final boolean isDownloadable = this.getContinueLink() != null;
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
-        /*
-         * 2019-06-12: TODO: E.g. special case: 'error.html?e=File+is+not+publicly+available.' --> File is online but can only be downloaded
-         * by owner. E.g. an uploader uploaded something and then changed it to private - all other users accessing that URL will get this
-         * errormessage. For now we'll leave it as it is and treat this case as offline but if the uploader decided to re-puflish that
-         * content, it would be available again via the same URL! File-host used for tests: sundryfiles.com.
-         */
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
         final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
         if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
@@ -1423,7 +1421,11 @@ public class YetiShareCore extends antiDDoSForHost {
         return ai;
     }
 
-    /** 2019-08-28: TODO: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 */
+    /**
+     * 2020-05-14: psp: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
+     * Their API implementation and documentation is SO BAD - I've not seen it working, checked about 15 websites --> We will probably never
+     * be able to add support for it!
+     */
     protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         return null;
     }
