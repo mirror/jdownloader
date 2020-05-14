@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KooFileCom extends XFileSharingProBasic {
-    public KooFileCom(final PluginWrapper wrapper) {
+public class ZipfileCc extends XFileSharingProBasic {
+    public ZipfileCc(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,15 +36,20 @@ public class KooFileCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * limit-info: 2020-05-14: Untested because website is under maintenance <br />
+     * captchatype-info: 2020-05-14: Untested because website is under maintenance<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "koofile.com" });
+        ret.add(new String[] { "zipfile.cc", "filevast.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
@@ -80,13 +85,13 @@ public class KooFileCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -3;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
