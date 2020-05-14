@@ -7,7 +7,7 @@ import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
-public enum VideoResolution implements LabelInterface,IntegerInterface {
+public enum VideoResolution implements LabelInterface, IntegerInterface {
     // Order is default quality sort order
     P_4320(7680, 4320),
     P_2160(3840, 2160),
@@ -23,15 +23,13 @@ public enum VideoResolution implements LabelInterface,IntegerInterface {
     P_180(320, 180),
     P_144(256, 144),
     P_90(120, 90),
-    P_72(128, 72),;
-
+    P_72(128, 72), ;
     private int height;
     private int width;
 
     private VideoResolution(int width, int height) {
         this.height = height;
         this.width = width;
-
     }
 
     public int getHeight() {
@@ -39,7 +37,6 @@ public enum VideoResolution implements LabelInterface,IntegerInterface {
     }
 
     public String getLabel() {
-
         return height + "p";
     }
 
@@ -66,21 +63,22 @@ public enum VideoResolution implements LabelInterface,IntegerInterface {
             return ((VideoVariant) o1).getVideoResolution();
         } else if (o1 instanceof ImageVariant) {
             return getByHeight(((ImageVariant) o1).getHeight());
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static int getSortId(AbstractVariant v) {
-
-        VideoResolution res = getByVariant(v);
+        final VideoResolution res = getByVariant(v);
         if (res == null) {
             return -1;
+        } else {
+            final Number intObj = YT_STATICS.SORTIDS_VIDEO_RESOLUTION.get(res);
+            if (intObj == null) {
+                return -1;
+            } else {
+                return intObj.intValue();
+            }
         }
-        Object intObj = YT_STATICS.SORTIDS_VIDEO_RESOLUTION.get(res);
-        if (intObj == null) {
-            return -1;
-        }
-        return ((Number) intObj).intValue();
     }
-
 }

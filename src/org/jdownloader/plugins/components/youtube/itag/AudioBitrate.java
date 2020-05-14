@@ -53,12 +53,14 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
         final AudioBitrate res = getByVariant(v);
         if (res == null) {
             return -1;
+        } else {
+            final Number intObj = YT_STATICS.SORTIDS_AUDIO_BITRATE.get(res);
+            if (intObj == null) {
+                return -1;
+            } else {
+                return intObj.intValue();
+            }
         }
-        final Object intObj = YT_STATICS.SORTIDS_AUDIO_BITRATE.get(res);
-        if (intObj == null) {
-            return -1;
-        }
-        return ((Number) intObj).intValue();
     }
 
     public static AudioBitrate getByInt(int bitrate) {

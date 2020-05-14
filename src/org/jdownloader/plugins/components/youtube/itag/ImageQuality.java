@@ -3,26 +3,6 @@ package org.jdownloader.plugins.components.youtube.itag;
 import org.jdownloader.gui.translate._GUI;
 
 public enum ImageQuality {
-    HIGH(3, 10) {
-        @Override
-        public String getLocaleName() {
-            return _GUI.T.YoutubeVariant_name_IMAGE_HQ();
-        }
-
-        public String getLocaleTag() {
-            return _GUI.T.YoutubeVariant_filenametag_IMAGE_HQ();
-        }
-    },
-    LOW(1, 10) {
-        @Override
-        public String getLocaleName() {
-            return _GUI.T.YoutubeVariant_name_IMAGE_LQ();
-        }
-
-        public String getLocaleTag() {
-            return _GUI.T.YoutubeVariant_filenametag_IMAGE_LQ();
-        }
-    },
     HIGHEST(4, 10) {
         @Override
         public String getLocaleName() {
@@ -33,6 +13,16 @@ public enum ImageQuality {
             return _GUI.T.YoutubeVariant_filenametag_IMAGE_MAX();
         }
     },
+    HIGH(3, 10) {
+        @Override
+        public String getLocaleName() {
+            return _GUI.T.YoutubeVariant_name_IMAGE_HQ();
+        }
+
+        public String getLocaleTag() {
+            return _GUI.T.YoutubeVariant_filenametag_IMAGE_HQ();
+        }
+    },
     NORMAL(2, 10) {
         @Override
         public String getLocaleName() {
@@ -41,6 +31,16 @@ public enum ImageQuality {
 
         public String getLocaleTag() {
             return _GUI.T.YoutubeVariant_filenametag_IMAGE_MQ();
+        }
+    },
+    LOW(1, 10) {
+        @Override
+        public String getLocaleName() {
+            return _GUI.T.YoutubeVariant_name_IMAGE_LQ();
+        }
+
+        public String getLocaleTag() {
+            return _GUI.T.YoutubeVariant_filenametag_IMAGE_LQ();
         }
     };
     private double rating = -1;
@@ -60,5 +60,4 @@ public enum ImageQuality {
     public void setRating(double rating) {
         this.rating = rating;
     }
-
 }

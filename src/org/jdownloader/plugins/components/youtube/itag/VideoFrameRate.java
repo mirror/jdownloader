@@ -13,7 +13,6 @@ public enum VideoFrameRate implements IntegerInterface, LabelInterface {
     FPS_24(24),
     FPS_15(15),
     FPS_6(6);
-
     private final double fps;
 
     public final double getFps() {
@@ -36,19 +35,22 @@ public enum VideoFrameRate implements IntegerInterface, LabelInterface {
     public static VideoFrameRate getByVariant(AbstractVariant o1) {
         if (o1 instanceof VideoVariant) {
             return ((VideoVariant) o1).getiTagVideo().getVideoFrameRate();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static int getSortId(AbstractVariant v) {
         final VideoFrameRate res = getByVariant(v);
         if (res == null) {
             return -1;
+        } else {
+            final Number intObj = YT_STATICS.SORTIDS_VIDEO_FRAMERATE.get(res);
+            if (intObj == null) {
+                return -1;
+            } else {
+                return intObj.intValue();
+            }
         }
-        Object intObj = YT_STATICS.SORTIDS_VIDEO_FRAMERATE.get(res);
-        if (intObj == null) {
-            return -1;
-        }
-        return ((Number) intObj).intValue();
     }
 }
