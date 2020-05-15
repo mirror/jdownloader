@@ -2467,7 +2467,7 @@ public class YoutubeHelper {
             };
             helper.setLogger(logger);
             helper.setCacheEnabled(false);
-            if (helper.login(account)) {
+            if (helper.login(account, refresh)) {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies cYT = br.getCookies("youtube.com");
                 for (final Cookie c : cYT.getCookies()) {

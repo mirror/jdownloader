@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -78,7 +79,7 @@ public class GoogleDrive extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(plg);
         boolean loggedin = false;
         if (aa != null) {
-            loggedin = jd.plugins.hoster.GoogleDrive.login(br, aa);
+            login(this.br, aa);
         }
         logger.info("LoggedIn:" + loggedin);
         if (parameter.contains("open?id")) {
@@ -300,6 +301,12 @@ public class GoogleDrive extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    public boolean login(final Browser br, final Account account) throws Exception {
+        final GoogleHelper helper = new GoogleHelper(br);
+        helper.setLogger(this.getLogger());
+        return helper.login(account, false);
     }
 
     /* NO OVERRIDE!! */

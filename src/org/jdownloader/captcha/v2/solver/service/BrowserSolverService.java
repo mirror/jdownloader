@@ -15,12 +15,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.Account;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -50,6 +44,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.components.google.GoogleAccountConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.config.AccountJsonConfig;
+
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
 
 public class BrowserSolverService extends AbstractSolverService {
     public static final String                ID       = "browser";
@@ -234,8 +234,9 @@ public class BrowserSolverService extends AbstractSolverService {
                         GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc.getPlugin(), acc);
                         if (cfg.isUsageRecaptchaV1Enabled()) {
                             GoogleHelper helper = new GoogleHelper(rcBr);
+                            helper.setLogger(rcBr.getLogger());
                             helper.setCacheEnabled(true);
-                            if (helper.login(acc)) {
+                            if (helper.login(acc, false)) {
                                 return;
                             }
                         }

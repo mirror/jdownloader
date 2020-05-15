@@ -1,13 +1,10 @@
 package jd.plugins;
 
-import jd.http.Cookie;
-
 import org.appwork.storage.Storable;
 
+import jd.http.Cookie;
+
 public class CookieStorable implements Storable {
-
-    private String path = null;
-
     public String getPath() {
         if (this.cookie != null) {
             return this.cookie.getPath();
@@ -96,6 +93,7 @@ public class CookieStorable implements Storable {
         this.expireTime = expireTime;
     }
 
+    private String  path   = null;
     private String  host   = null;
     private String  value  = null;
     private String  key    = null;
@@ -116,7 +114,6 @@ public class CookieStorable implements Storable {
     private long         hostTime     = -1;
     private long         creationTime = -1;
     private long         expireTime   = -1;
-
     private final Cookie cookie;
 
     public CookieStorable(/* Storable */) {

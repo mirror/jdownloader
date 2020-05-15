@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.GoogleConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
@@ -146,14 +147,16 @@ public class GoogleDrive extends PluginForHost {
         br = new Browser();
         privatefile = false;
         download_might_not_be_possible = false;
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        if (account != null) {
             try {
-                login(br, aa);
+                login(br, account, false);
             } catch (final Throwable e) {
+                Log.log(e);
+                logger.info("Login failure");
             }
         }
-        prepBrowser(br, aa);
+        prepBrowser(br, account);
         br.getPage("https://docs.google.com/leaf?id=" + getID(link));
         if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -459,20 +462,21 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    public static boolean login(final Browser br, final Account account) throws Exception {
+    private boolean login(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
         final GoogleHelper helper = new GoogleHelper(br);
-        return helper.login(account);
+        helper.setLogger(this.getLogger());
+        return helper.login(account, forceLoginValidation);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        if (!login(br, account)) {
+        if (!login(br, account, true)) {
             throw new Exception("Login Failed");
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        /* free accounts cannot have captchas */
+        /* Free accounts cannot have captchas */
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(20);
         return ai;
