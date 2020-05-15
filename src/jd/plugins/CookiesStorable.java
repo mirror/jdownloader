@@ -3,11 +3,12 @@ package jd.plugins;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.storage.Storable;
-
 import jd.http.Cookie;
 import jd.http.Cookies;
 
+import org.appwork.storage.Storable;
+
+@Deprecated
 public class CookiesStorable implements Storable {
     public String getUserAgent() {
         if (this.cookiesObject != null) {
