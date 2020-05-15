@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,7 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.)?8muses\\.com/(?:(comics/)?picture/([^/]+/){1,}\\d+|forum/(?:data/)?attachments/.+)" })
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/(?:(comics/)?picture/([^/]+/){1,}\\d+|forum/(?:data/)?attachments/.+)" })
 public class EightMusesCom extends antiDDoSForHost {
     public EightMusesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,20 +73,20 @@ public class EightMusesCom extends antiDDoSForHost {
             filename = new Regex(link.getPluginPatternMatcher(), "8muses\\.com/(?:[^/]*/)?picture/(?:\\d+\\-)?(.+)").getMatch(0);
             filename = filename.replace("/", "_");
             final String ractive_public = n(br.getRegex("<script id=\"ractive-public\" type=\"text/plain\">\\s*(.*?)\\s*<").getMatch(0));
-            final String imageDir = br.getRegex("imageDir\" value=\"(/data/.{2}/)\"").getMatch(0);
-            final String imageName = br.getRegex("imageName\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String imageHost = br.getRegex("imageHost\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String imageDir = br.getRegex("imageDir\"\\s*value\\s*=\\s*\"(/data/.{2}/)\"").getMatch(0);
+            final String imageName = br.getRegex("imageName\"\\s*value\\s*=\\s*\"([^<>\"]*?)\"").getMatch(0);
+            final String imageHost = br.getRegex("imageHost\"\\s*value\\s*=\\s*\"([^<>\"]*?)\"").getMatch(0);
             if (imageDir != null && imageName != null) {
                 dllink = imageDir + imageName;
             } else if (imageHost != null && imageName != null) {
                 dllink = imageHost + "/image/fl/" + imageName;
             } else if (imageName != null) {
                 /* 2018-02-09 */
-                dllink = "https://www.8muses.com/image/fl/" + imageName;
+                dllink = br.getURL("/image/fl/" + imageName).toString();
             } else if (ractive_public != null) {
                 final String image = new Regex(ractive_public, "\"picture\"\\s*:\\s*\\{.*?\"public.*?\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (image != null) {
-                    dllink = "https://www.8muses.com/image/fl/" + image + ".jpg";
+                    dllink = br.getURL("/image/fl/" + image + ".jpg").toString();
                 }
             }
             if (ractive_public.contains("\"pictures\":[]")) {
