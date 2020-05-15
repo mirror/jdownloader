@@ -92,7 +92,7 @@ public class GoogleHelper {
                 final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
                     try {
-                        this.login(n);
+                        this.login(n, false);
                         if (n.isValid()) {
                             return true;
                         }
@@ -188,62 +188,55 @@ public class GoogleHelper {
         }
     }
 
-    public boolean login(Account account) throws Exception {
-        /* TODO: Add logger output */
+    public boolean login(final Account account, final boolean forceLoginValidation) throws Exception {
         try {
-            /*
-             * 2020-02-10: Disabled boolean again! Seems like Google Login is still working for some users.
-             * https://svn.jdownloader.org/issues/86318
-             */
-            final boolean pluginBroken = false;
-            if (pluginBroken) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nGoogle login is broken!\r\nA bugfix in the near future is very unlikely.\r\nSee svn.jdownloader.org/issues/86318 ", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
             final String userAgent = getUserAgent();
             br.setHeader("User-Agent", userAgent);
             this.br.setDebug(true);
             this.br.setCookiesExclusive(true);
             // delete all cookies
             this.br.clearCookies(null);
+            /* TODO: Do we still need this? */
             this.br.setCookie("https://google.com", "PREF", "hl=en-GB");
             final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
-            /* Check stored cookies */
-            /* TODO: Check password change --> When user all of the sudden changes PW field and inputs other cookies! */
-            /* TODO: Save- and load cookies of all domains? */
-            final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
-                br.setCookies(cookies);
-                if (isCacheEnabled() && hasBeenValidatedRecently(account) || !true) {
-                    return true;
-                }
-                getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                if (validateSuccess()) {
-                    validate(account);
-                    return true;
-                }
-            }
-            /* If stored cookies fail, try user cookies --> Also important as user could change password(= cookies) at any time */
+            final Cookies cookies;
             if (userCookies != null) {
-                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /* 2020-01-10: Devs only */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                cookies = account.loadCookiesObject("");
+            } else {
+                cookies = account.loadCookies("");
+            }
+            /* Check stored cookies */
+            /* TODO: Save- and load cookies of all domains? */
+            if (cookies != null || userCookies != null) {
+                if (cookies != null) {
+                    /* 2020-05-15: Stored cookies will now also contain stored User-Agent */
+                    logger.info("Attempting to login with stored cookies");
+                    br.setCookies(cookies);
+                } else {
+                    /* E.g. first login with user-given cookies */
+                    logger.info("Attempting to login with user cookies (first time login)");
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        /* 2020-01-10: Devs only */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    br.setCookies(userCookies);
+                    /* No User-Agent given in users' cookies? Add User selected User-Agent */
+                    if (StringUtils.isEmpty(userCookies.getUserAgent())) {
+                        logger.info("User-Agent is not given in Cookies object --> Using user defined User-Agent: " + userAgent);
+                        br.getHeaders().put("User-Agent", userAgent);
+                    }
                 }
-                // logger.info("Attempting login via user cookies");
-                /*
-                 * Work with the cookies the user has provided --> In this case we cannot even login via password as we do not know the
-                 * users' password!
-                 */
-                br.setCookies(userCookies);
-                /* TODO: Set previously "maybe added via Cookies-object" User-Agent! */
-                if (StringUtils.isEmpty(userCookies.getUserAgent())) {
-                    br.getHeaders().put("User-Agent", userAgent);
-                }
-                if (isCacheEnabled() && hasBeenValidatedRecently(account)) {
+                if (isCacheEnabled() && hasBeenValidatedRecently(account) && !forceLoginValidation) {
+                    logger.info("Trust cookies without check");
                     return true;
                 }
-                /* TODO: Try to get username/mail and set it as account username in JD */
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* 2020-05-15: Wrong cookies --> Error 400 */
+                    br.setAllowedResponseCodes(new int[] { 400 });
+                }
+                /* TODO: Remove one check - rely on a single check only! */
+                /* TODO: Check why the first check would always fail with cookies imported via EditThisCookie */
                 getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                /* TODO: Maybe prefer this as validation check? */
                 boolean loggedIN = validateSuccess();
                 if (!loggedIN) {
                     getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
@@ -252,17 +245,24 @@ public class GoogleHelper {
                     }
                 }
                 if (loggedIN) {
-                    // logger.info("user cookies login successful");
+                    logger.info("Login with cookies successful");
                     validate(account);
-                    /* TODO: Save all cookies of all domains */
-                    saveCookiesOnAccount(account);
+                    if (userCookies != null) {
+                        account.saveCookiesObject(br.getCookiesWithUserAgent(br.getURL()), "");
+                    } else {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    }
                     return true;
                 } else {
-                    // logger.info("user login cookies login failed");
-                    /* Give up. We only got these cookies so login via username and password is not possible! */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    logger.info("Login with stored cookies failed");
+                    if (userCookies == null) {
+                        /* Give up. We only got these cookies so login via username and password is not possible! */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
             }
+            /* TODO: Check if ANY if this code still works */
+            logger.info("Attempting full login via website");
             this.br.clearCookies(null);
             prepBR(this.br);
             this.br.setFollowRedirects(true);
@@ -410,8 +410,10 @@ public class GoogleHelper {
         }
     }
 
+    /** TODO: Update- or remove this! */
     private void saveCookiesOnAccount(final Account account) {
         account.saveCookies(br.getCookies(br.getURL()), "");
+        // account.saveCookiesObject(br.getCookiesWithUserAgent(br.getURL()), "");
     }
 
     /**

@@ -42,18 +42,19 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 
 public class Account extends Property {
-    private static final String VALID_UNTIL              = "VALID_UNTIL";
-    private static final String ACCOUNT_TYPE             = "ACCOUNT_TYPE";
-    private static final String LATEST_VALID_TIMESTAMP   = "LATEST_VALID_TIMESTAMP";
-    public static final String  IS_MULTI_HOSTER_ACCOUNT  = "IS_MULTI_HOSTER_ACCOUNT";
-    private static final long   serialVersionUID         = -7578649066389032068L;
+    private static final String VALID_UNTIL                    = "VALID_UNTIL";
+    private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
+    private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
+    public static final String  IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
+    private static final long   serialVersionUID               = -7578649066389032068L;
     private String              user;
     private String              pass;
-    private boolean             enabled                  = true;
-    private boolean             concurrentUsePossible    = true;
-    public static final String  PROPERTY_REFRESH_TIMEOUT = "PROPERTY_REFRESH_TIMEOUT";
-    private static final String COOKIE_STORAGE           = "COOKIE_STORAGE";
-    private static final String BROWSER_COOKIES_STORAGE  = "BROWSER_COOKIES_STORAGE";
+    private boolean             enabled                        = true;
+    private boolean             concurrentUsePossible          = true;
+    public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
+    private static final String COOKIE_STORAGE                 = "COOKIE_STORAGE";
+    private static final String COOKIES_STORAGE_COOKIES_OBJECT = "COOKIES_STORAGE_COOKIES_OBJECT";
+    private static final String BROWSER_COOKIES_STORAGE        = "BROWSER_COOKIES_STORAGE";
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
@@ -105,16 +106,12 @@ public class Account extends Property {
 
     public synchronized long saveCookies(final Cookies cookies, final String ID) {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
-        final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
         /*
-         * do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
+         * Do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
          */
-        final String antiddosCookies = org.jdownloader.plugins.components.antiDDoSForHost.antiDDoSCookiePattern;
-        for (final Cookie cookie : cookies.getCookies()) {
-            if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies) && !cookie.isExpired()) {
-                cookieStorables.add(new CookieStorable(cookie));
-            }
-        }
+        // final CookiesStorable cookiesStorable = new CookiesStorable(cookies);
+        /* TODO: Maybe always save ALL cookies but add ability to NOT load Cloudflare cookies - this might be the easier way ... */
+        final List<CookieStorable> cookieStorables = getListOfCookieStorablesWithoutAntiDdosCookies(cookies);
         setProperty(COOKIE_STORAGE, validation);
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
         setProperty(COOKIE_STORAGE_ID, JSonStorage.toString(cookieStorables));
@@ -124,7 +121,57 @@ public class Account extends Property {
         return ret;
     }
 
+    /* * TODO: Merge this with "saveCookies" --> We do not need two methods for this. This one exists just for testing! */
+    public synchronized long saveCookiesObject(final Cookies cookies, final String ID) {
+        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
+        setProperty(COOKIES_STORAGE_COOKIES_OBJECT, validation);
+        /*
+         * TODO: Do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts! Attention:
+         * This would save Cloudflare cookies atm.!
+         */
+        final CookiesStorable cookiesStorable = new CookiesStorable(cookies);
+        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIES_STORAGE_COOKIES_OBJECT + ":TS:" + ID;
+        final long ret = System.currentTimeMillis();
+        setProperty(COOKIE_STORAGE_TIMESTAMP_ID, ret);
+        setProperty(COOKIES_STORAGE_COOKIES_OBJECT + ":" + ID, JSonStorage.toString(cookiesStorable));
+        return ret;
+    }
+
+    /** TODO: This might not be the right place for this satatic method! */
+    public static List<CookieStorable> getListOfCookieStorables(final Cookies cookies) {
+        if (cookies == null) {
+            return null;
+        }
+        final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
+        for (final Cookie cookie : cookies.getCookies()) {
+            if (cookie.getKey() != null && !cookie.isExpired()) {
+                cookieStorables.add(new CookieStorable(cookie));
+            }
+        }
+        return cookieStorables;
+    }
+
+    /**
+     * Returns Array List of CookieStorable of all cookies that do NOT match
+     * org.jdownloader.plugins.components.antiDDoSForHost.antiDDoSCookiePattern!
+     */
+    /** TODO: This might not be the right place for this static method! */
+    public static List<CookieStorable> getListOfCookieStorablesWithoutAntiDdosCookies(final Cookies cookies) {
+        if (cookies == null) {
+            return null;
+        }
+        final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
+        final String antiddosCookies = org.jdownloader.plugins.components.antiDDoSForHost.antiDDoSCookiePattern;
+        for (final Cookie cookie : cookies.getCookies()) {
+            if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies) && !cookie.isExpired()) {
+                cookieStorables.add(new CookieStorable(cookie));
+            }
+        }
+        return cookieStorables;
+    }
+
     public synchronized void clearCookies(final String ID) {
+        /* TODO: Also remove COOKIES_STORAGE_COOKIES_OBJECT */
         removeProperty(COOKIE_STORAGE);
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
         removeProperty(COOKIE_STORAGE_ID);
@@ -137,6 +184,13 @@ public class Account extends Property {
         return getLongProperty(COOKIE_STORAGE_TIMESTAMP_ID, -1);
     }
 
+    /* * TODO: Merge this with "getCookiesTimeStamp" --> We do not need two methods for this. This one exists just for testing! */
+    public synchronized long getCookiesObjectTimeStamp(final String ID) {
+        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIES_STORAGE_COOKIES_OBJECT + ":TS:" + ID;
+        return getLongProperty(COOKIE_STORAGE_TIMESTAMP_ID, -1);
+    }
+
+    /** Returns list of stored cookies WITHOUT additional information such as User-Agent header. */
     public synchronized Cookies loadCookies(final String ID) {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         if (StringUtils.equals(getStringProperty(COOKIE_STORAGE), validation)) {
@@ -156,6 +210,33 @@ public class Account extends Property {
                     return ret;
                 } catch (Throwable e) {
                     LogController.CL().log(e);
+                }
+            }
+        }
+        clearCookies(ID);
+        return null;
+    }
+
+    /**
+     * Loads Cookies object with can contain additional information e.g. User-Agent header. </br>
+     * TODO: Merge this with "loadCookies" --> We do not need two methods for this. This one exists just for testing!
+     */
+    public synchronized Cookies loadCookiesObject(final String ID) {
+        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
+        if (StringUtils.equals(getStringProperty(COOKIES_STORAGE_COOKIES_OBJECT), validation)) {
+            final String COOKIE_STORAGE_ID = COOKIES_STORAGE_COOKIES_OBJECT + ":" + ID;
+            final String cookieStorables = getStringProperty(COOKIE_STORAGE_ID);
+            if (StringUtils.isNotEmpty(cookieStorables)) {
+                try {
+                    final String COOKIE_STORAGE_ID_TEST = COOKIES_STORAGE_COOKIES_OBJECT + ":" + ID;
+                    final String cookiesStorableStr = getStringProperty(COOKIE_STORAGE_ID_TEST);
+                    final CookiesStorable cookiesStorable = JSonStorage.restoreFromString(cookiesStorableStr, new TypeRef<CookiesStorable>() {
+                    }, null);
+                    final Cookies ret = cookiesStorable._restore();
+                    return ret;
+                } catch (Throwable e) {
+                    LogController.CL().log(e);
+                    e.printStackTrace();
                 }
             }
         }
@@ -284,7 +365,7 @@ public class Account extends Property {
     }
 
     /**
-     * @Deprecated Use #setError
+     * @Deprecated Use setError
      * @param b
      */
     @Deprecated
