@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,11 +47,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
-    @Override
-    protected boolean useRUA() {
-        return true;
-    }
-
     @Override
     protected long getStartIntervall(DownloadLink downloadLink, Account account) {
         if (account != null && account.getType() == AccountType.PREMIUM) {
@@ -328,8 +324,10 @@ public class UploadgigCom extends antiDDoSForHost {
                     br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                getPage("https://" + account.getHoster() + "/login/form");
-                final Form loginform = br.getForm(0);
+                getPage("https://" + account.getHoster());
+                final Browser brc = br.cloneBrowser();
+                getPage(brc, "https://" + account.getHoster() + "/login/form");
+                final Form loginform = brc.getForm(0);
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -342,9 +340,9 @@ public class UploadgigCom extends antiDDoSForHost {
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("rememberme", "1");
-                br.getHeaders().put("X-MOD-SBB-CTYPE", "xhr");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                submitForm(loginform);
+                Request request = brc.createFormRequest(loginform);
+                request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                sendRequest(request);
                 if (isAccountCookiesMissing()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -354,7 +352,9 @@ public class UploadgigCom extends antiDDoSForHost {
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             } finally {
                 br.setFollowRedirects(ifr);
