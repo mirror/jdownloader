@@ -286,11 +286,11 @@ public class UploadgigCom extends antiDDoSForHost {
         return new Regex(dl.getDownloadURL(), "/download/([^/]+)").getMatch(0);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) throws Exception {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) throws Exception {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             if (!testLink(dllink, false)) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 return null;
             }
         }
@@ -311,10 +311,8 @@ public class UploadgigCom extends antiDDoSForHost {
         // "0" and "e" shouldn't happen
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
@@ -329,7 +327,7 @@ public class UploadgigCom extends antiDDoSForHost {
                         return;
                     }
                     logger.info("Checking login cookies");
-                    this.getPage("http://" + this.getHost() + "/user/my_account");
+                    getPage("http://" + this.getHost());
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
                         /* Save new cookie timestamp */
@@ -352,6 +350,27 @@ public class UploadgigCom extends antiDDoSForHost {
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("rememberme", "1");
+                /* Handle login-captcha if required */
+                if (this.containsRecaptchaV2Class(brc)) {
+                    /* 2020-05-15: New */
+                    logger.info("Login captcha required");
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                } else {
+                    logger.info("Login captcha NOT required");
+                }
                 Request request = brc.createFormRequest(loginform);
                 request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 sendRequest(request);
@@ -375,7 +394,6 @@ public class UploadgigCom extends antiDDoSForHost {
         return missing;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -406,7 +424,6 @@ public class UploadgigCom extends antiDDoSForHost {
             ai.setTrafficMax(traffic_max);
             ai.setTrafficLeft(traffic_left);
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -414,32 +431,19 @@ public class UploadgigCom extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         setConstants(account);
-        synchronized (LOCK) {
-            login(account, false);
-            br.setFollowRedirects(false);
-            getPage(link.getDownloadURL());
-            // ok we need a check that cookie session hasn't been deleted!!!
-            if (isLoggedIN()) {
-                // to ensure cookies are gone!
-                account.clearCookies("");
-                // you can't not have the cookies here, login method will throw exception.
-                login(account, true);
-                getPage(link.getDownloadURL());
-                // if cookies are now gone.. wtf, site issue???
-                if (isLoggedIN()) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-        }
+        /* 2020-05-15: Always verify cookies for this host! */
+        login(account, true);
         if (account.getType() == AccountType.FREE) {
             doFree(link);
         } else {
+            br.setFollowRedirects(false);
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
                 // can be redirect
+                getPage(link.getPluginPatternMatcher());
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = link.getDownloadURL();
+                    dllink = link.getPluginPatternMatcher();
                 }
                 testLink(dllink, true);
             }
@@ -469,6 +473,7 @@ public class UploadgigCom extends antiDDoSForHost {
         if (ibr.getHttpConnection() != null && ibr.getHttpConnection().getResponseCode() == 429) {
             if ("ERROR 702".equals(ibr.toString())) {
                 // I have no idea what this means
+                /* 2020-05-15: psp: Wow brilliant comment :D */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "702 Error", 2 * 60 * 1000l);
             }
             // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429", 5 * 60 * 1000l);
