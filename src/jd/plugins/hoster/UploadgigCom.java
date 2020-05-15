@@ -21,6 +21,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,11 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -320,22 +320,34 @@ public class UploadgigCom extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
+                    /* Avoid login-captcha whenever possible */
+                    logger.info("Attempting cookie login");
                     br.setCookies(this.getHost(), cookies);
-                    return;
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l && !force) {
+                        logger.info("Trust login cookies as they're not yet that old");
+                        return;
+                    }
+                    logger.info("Checking login cookies");
+                    this.getPage("http://" + this.getHost() + "/user/my_account");
+                    if (this.isLoggedIN()) {
+                        logger.info("Cookie login successful");
+                        /* Save new cookie timestamp */
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
+                    }
                 }
+                logger.info("Attempting full login");
                 getPage("https://" + account.getHoster());
                 final Browser brc = br.cloneBrowser();
                 getPage(brc, "https://" + account.getHoster() + "/login/form");
                 final Form loginform = brc.getForm(0);
                 if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
@@ -343,12 +355,8 @@ public class UploadgigCom extends antiDDoSForHost {
                 Request request = brc.createFormRequest(loginform);
                 request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 sendRequest(request);
-                if (isAccountCookiesMissing()) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -362,8 +370,8 @@ public class UploadgigCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isAccountCookiesMissing() {
-        final boolean missing = br.getCookie(this.getHost(), "fs_secure") == null || "deleted".equalsIgnoreCase(br.getCookie(this.getHost(), "fs_secure"));
+    private boolean isLoggedIN() {
+        final boolean missing = br.getCookie(this.getHost(), "fs_secure", Cookies.NOTDELETEDPATTERN) != null;
         return missing;
     }
 
@@ -411,14 +419,14 @@ public class UploadgigCom extends antiDDoSForHost {
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
             // ok we need a check that cookie session hasn't been deleted!!!
-            if (isAccountCookiesMissing()) {
+            if (isLoggedIN()) {
                 // to ensure cookies are gone!
                 account.clearCookies("");
                 // you can't not have the cookies here, login method will throw exception.
                 login(account, true);
                 getPage(link.getDownloadURL());
                 // if cookies are now gone.. wtf, site issue???
-                if (isAccountCookiesMissing()) {
+                if (isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
