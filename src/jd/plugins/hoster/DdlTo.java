@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,11 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -198,16 +198,6 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     @Override
-    public String regexFilenameAbuse(final Browser br) {
-        String filename = br.getRegex("label>Filename</label>\\s*<input[^>]*value=\"([^<>\"]+)\"").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback to template */
-            filename = super.regexFilenameAbuse(br);
-        }
-        return filename;
-    }
-
-    @Override
     public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
@@ -217,8 +207,9 @@ public class DdlTo extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
-        fileInfo[0] = new Regex(correctedBR, "<div class=\"name\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
-        fileInfo[1] = new Regex(correctedBR, "<span>Uploaded on[^<]*?</span>\\s*<span>([^<>\"]+)</span>").getMatch(0);
+        /* 2020-05-17 */
+        fileInfo[0] = new Regex(correctedBR, "<div class=\"name position-relative\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
+        fileInfo[1] = new Regex(correctedBR, "class=\"file-size\">([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
             /* Fallback to template handling */
             super.scanInfo(fileInfo);
@@ -367,6 +358,21 @@ public class DdlTo extends XFileSharingProBasic {
         return false;
     }
 
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2020-04-20: Not supported anymore */
+        return false;
+    }
+
+    // @Override
+    // public String regexFilenameAbuse(final Browser br) {
+    // String filename = br.getRegex("label>Filename</label>\\s*<input[^>]*value=\"([^<>\"]+)\"").getMatch(0);
+    // if (StringUtils.isEmpty(filename)) {
+    // /* Fallback to template */
+    // filename = super.regexFilenameAbuse(br);
+    // }
+    // return filename;
+    // }
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
