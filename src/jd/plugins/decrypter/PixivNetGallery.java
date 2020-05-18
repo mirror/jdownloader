@@ -90,9 +90,9 @@ public class PixivNetGallery extends PluginForDecrypt {
             final long illustType = JavaScriptEngineFactory.toLong(entries.get("illustType"), 0);
             uploadDate = (String) entries.get("uploadDate");
             int pagecount = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 1);
-            String userName = null;
-            String illustUploadDate = null;
-            String illustTitle = null;
+            String userName = (String) entries.get("userName");
+            String illustUploadDate = (String) entries.get("createDate");
+            String illustTitle = (String) entries.get("illustTitle");
             String tags = null;
             // final String illustId = (String) entries.get("illustId");
             illustTitle = (String) entries.get("illustTitle");
