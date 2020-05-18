@@ -11,6 +11,12 @@ public class LogFolderStorable implements Storable {
     public LogFolderStorable(/* Storable */) {
     }
 
+    public LogFolderStorable(LogFolder folder) {
+        setCreated(folder.getCreated());
+        setCurrent(folder.isCurrent());
+        setLastModified(folder.getLastModified());
+    }
+
     public long getCreated() {
         return created;
     }
@@ -33,13 +39,5 @@ public class LogFolderStorable implements Storable {
 
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
-    }
-
-    public static LogFolderStorable create(LogFolder folder) {
-        LogFolderStorable storable = new LogFolderStorable();
-        storable.setCreated(folder.getCreated());
-        storable.setCurrent(folder.isCurrent());
-        storable.setLastModified(folder.getLastModified());
-        return storable;
     }
 }

@@ -15,10 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,6 +34,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "https?://[\\w\\.]*?gigapeta\\.com/dl/\\w+" })
 public class GigaPetaCom extends PluginForHost {
     // Gehört zu tenfiles.com/tenfiles.info
@@ -50,8 +51,9 @@ public class GigaPetaCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("All threads for IP")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
-        }
-        if (br.containsHTML("<div id=\"page_error\">") && !br.containsHTML("To download this file please <a")) {
+        } else if (br.containsHTML("Due to technical reasons, file is temporarily not available.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Due to technical reasons, file is temporarily not available.");
+        } else if (br.containsHTML("<div id=\"page_error\">") && !br.containsHTML("To download this file please <a")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />\\-\\->(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
@@ -110,14 +112,28 @@ public class GigaPetaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("All threads for IP")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
+            handleErrors(br, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    protected void handleErrors(Browser br, boolean downloading) throws PluginException {
+        if (br.containsHTML("All threads for IP")) {
+            if (downloading) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
+            }
+        } else if (br.containsHTML("Due to technical reasons, file is temporarily not available.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Due to technical reasons, file is temporarily not available.");
+        }
     }
 
     @Override
@@ -170,7 +186,12 @@ public class GigaPetaCom extends PluginForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -6);
             if (!(dl.getConnection().isContentDisposition())) {
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleErrors(br, true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -187,7 +208,11 @@ public class GigaPetaCom extends PluginForHost {
          * error but we can login and download fine then.
          */
         br.getPage("http://gigapeta.com/dl/");
-        final String auth_token = br.getRegex("name=\"auth_token\" value=\"([a-z0-9]+)\"").getMatch(0);
+        String auth_token = br.getRegex("name\\s*=\\s*\"auth_token\"\\s*value\\s*=\\s*\"([a-z0-9]+)\"").getMatch(0);
+        if (auth_token == null) {
+            br.getPage("http://gigapeta.com/");
+            auth_token = br.getRegex("name\\s*=\\s*\"auth_token\"\\s*value\\s*=\\s*\"([a-z0-9]+)\"").getMatch(0);
+        }
         final String lang = System.getProperty("user.language");
         if (auth_token == null) {
             if ("de".equalsIgnoreCase(lang)) {

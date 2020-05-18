@@ -27,6 +27,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
@@ -114,10 +116,28 @@ public class OuoIo extends antiDDoSForDecrypt {
         br.submitForm(captchaForm);
         final String finallink = getFinalLink();
         if (StringUtils.isEmpty(finallink)) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            getPage(finallink);
+            // auto handle simple redirects
+            if (br.getRedirectLocation() != null) {
+                br.followRedirect(true);
+                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(https?://.*)\"").getMatch(0);
+                if (redirect != null) {
+                    decryptedLinks.add(createDownloadlink(redirect));
+                } else {
+                    decryptedLinks.add(createDownloadlink(br.getURL()));
+                }
+            } else {
+                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(https?://.*)\"").getMatch(0);
+                if (redirect != null) {
+                    decryptedLinks.add(createDownloadlink(redirect));
+                } else {
+                    decryptedLinks.add(createDownloadlink(finallink));
+                }
+            }
+            return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
     }
 
     private String getFinalLink() throws Exception {
