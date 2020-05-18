@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -138,7 +139,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
                 }
+                int videoIndex = 0;
                 for (final Object videoo : video) {
+                    videoIndex++;
+                    final String videoIndexFormatted = new DecimalFormat("00").format(videoIndex);
                     final LinkedHashMap<String, Object> entries_video = (LinkedHashMap<String, Object>) videoo;
                     final String thumbnail = (String) entries_video.get("preview_image_url");
                     final ArrayList<Object> sources_video = (ArrayList) entries_video.get("sources");
@@ -157,7 +161,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         /* Avoid too long filenames */
                         titlethis = titlethis.substring(0, 80);
                     }
-                    titlethis = sanitizeString(titlethis);
+                    titlethis = videoIndexFormatted + "_" + sanitizeString(titlethis);
                     String vIdTemp = "";
                     String bestFMT = null;
                     String subtitle = null;
