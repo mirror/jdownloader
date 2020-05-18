@@ -23,6 +23,16 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -48,16 +58,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -587,7 +587,7 @@ public abstract class K2SApi extends PluginForHost {
                 getURL.put("captcha_challenge", challenge);
                 getURL.put("captcha_response", code);
                 if (StringUtils.isNotEmpty(custom_referer)) {
-                    logger.info("Using Referer: " + custom_referer);
+                    logger.info("Using Referer value: " + custom_referer);
                     getURL.put("url_referrer", custom_referer);
                 }
                 postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account);
@@ -856,15 +856,27 @@ public abstract class K2SApi extends PluginForHost {
 
     private String getCustomReferer(final DownloadLink link) {
         final Keep2shareConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        final String custom_referer = cfg.getReferer();
-        final String url_referer = this.getRefererFromURL(link);
+        String custom_referer = cfg.getReferer();
+        String url_referer = this.getRefererFromURL(link);
         final String sourceURL = link.getContainerUrl();
         if (!StringUtils.isEmpty(url_referer) && !cfg.isForceCustomReferer()) {
             /* Use Referer from inside added URL if given. */
             logger.info("Using referer from URL: " + url_referer);
+            if (!url_referer.startsWith("http")) {
+                logger.info("Applying protocol to url_referer:");
+                logger.info("url_referer before: " + url_referer);
+                url_referer = "https://" + url_referer;
+                logger.info("url_referer after: " + url_referer);
+            }
             return url_referer;
         } else if (!StringUtils.isEmpty(custom_referer)) {
             /* Use user selected Referer */
+            if (!custom_referer.startsWith("http")) {
+                logger.info("Applying protocol to custom_referer:");
+                logger.info("custom_referer before: " + custom_referer);
+                custom_referer = "https://" + custom_referer;
+                logger.info("custom_referer after: " + custom_referer);
+            }
             logger.info("Using custom referer: " + custom_referer);
             return custom_referer;
         } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).matches()) {
