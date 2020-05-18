@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfig;
+import org.jdownloader.plugins.components.config.XFSConfigVideoSupervideoTv;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -113,5 +115,10 @@ public class SupervideoTv extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 7;
+    }
+
+    @Override
+    public Class<? extends XFSConfig> getConfigInterface() {
+        return XFSConfigVideoSupervideoTv.class;
     }
 }
