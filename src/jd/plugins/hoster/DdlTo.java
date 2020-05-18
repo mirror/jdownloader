@@ -36,6 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -120,6 +121,30 @@ public class DdlTo extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return true;
+        }
+    }
+
+    @Override
+    public String buildContainerDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        final String ret = downloadLink.getContentUrl();
+        if (ret != null) {
+            return ret;
+        } else {
+            return buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        final String fid = getFUIDFromURL(downloadLink);
+        if (fid != null) {
+            if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+                return "http://" + getHost() + "/" + fid;
+            } else {
+                return "https://" + getHost() + "/" + fid;
+            }
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
     }
 
