@@ -53,7 +53,7 @@ public class DdlTo extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info: 2019-05-22: premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-05-22: null<br />
+     * captchatype-info: 2020-05-18: reCaptchaV2<br />
      * other:<br />
      */
     public static String[] getAnnotationNames() {
@@ -74,7 +74,6 @@ public class DdlTo extends XFileSharingProBasic {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
-    /** 2020-04-17: TODO: Switch to ddownload.com once possible */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -87,6 +86,10 @@ public class DdlTo extends XFileSharingProBasic {
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
+    /**
+     * 2020-05-18: The only reason why we are overriding this is the https setting. TODO: Make a PluginConfigInterface for this which can be
+     * used for all XFS plugins, then remove this here!
+     */
     @Override
     public void correctDownloadLink(DownloadLink link) {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
@@ -167,7 +170,7 @@ public class DdlTo extends XFileSharingProBasic {
 
     @Override
     protected boolean supports_availablecheck_filesize_html() {
-        /* 2020-01-16: Special */
+        /* 2020-01-16: Special: Disabled as it would return invalid results */
         return false;
     }
 
@@ -335,7 +338,9 @@ public class DdlTo extends XFileSharingProBasic {
         } else {
             /* 2020-05-04: Do not user plugin main host as internal host - workaround! */
             // host = this.getHost();
-            host = "esimpurcuesc.ddownload.com";
+            // host = "esimpurcuesc.ddownload.com";
+            /* 2020-05-18: Use "real" main domain again */
+            host = "ddownload.com";
         }
         String mainpage;
         final String protocol;
