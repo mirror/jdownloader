@@ -16,6 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -27,8 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndoe.com" }, urls = { "https?://(?:[a-z]{2}\\.)?porndoe\\.com/video(?:/embed)?/\\d+/[a-z0-9\\-]+" })
 public class PorndoeCom extends PluginForHost {
@@ -61,6 +69,7 @@ public class PorndoeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -72,35 +81,38 @@ public class PorndoeCom extends PluginForHost {
         final String url_filename = new Regex(this.br.getURL(), "/video/(.+)").getMatch(0);
         String filename = br.getRegex("<h1.*?>([^<>]+)</h1>").getMatch(0);
         if (filename == null) {
+            /* Fallback */
             filename = url_filename;
         }
-        /* Find highest quality */
-        int quality_max = 0;
-        int quality_temp = 0;
-        String quality_temp_str = null;
-        final String[] sources = this.br.getRegex("<source([^<>]+)/>").getColumn(0);
-        for (final String source : sources) {
-            quality_temp_str = new Regex(source, "(\\d+)p").getMatch(0);
-            if (quality_temp_str == null) {
-                continue;
-            }
-            quality_temp = Integer.parseInt(quality_temp_str);
-            if (quality_temp > quality_max) {
-                quality_max = quality_temp;
-                dllink = new Regex(source, "src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            }
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            String embedURL = br.getRegex("itemprop=\"embedURL\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (embedURL != null) {
-                br.getPage(embedURL);
-                dllink = br.getRegex("<source\\s*src=\"(http[^<>\"]*?)\"\\s*type=\"video/mp4\" label=\"480p\"").getMatch(0);
+        final String videoid = PluginJSonUtils.getJson(br, "id");
+        if (!StringUtils.isEmpty(videoid)) {
+            br.getPage("https://porndoe.com/service/index?device=desktop&page=video&id=" + videoid);
+            /* Find highest quality */
+            int quality_max = 0;
+            int quality_temp = 0;
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "video/player/sources");
+            final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+            Map<String, Object> qualityInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                qualityInfo = (Map<String, Object>) entry.getValue();
+                final String qualityStr = entry.getKey();
+                final String dllinkTmp = (String) qualityInfo.get("url");
+                if (StringUtils.isEmpty(dllinkTmp) || !dllinkTmp.contains(".mp4")) {
+                    /* E.g. skip ad-URLs like: "/signup?utm_campaign=porndoe&utm_medium=desktop&utm_source=player_1080p" */
+                    continue;
+                }
+                if (!qualityStr.matches("\\d+")) {
+                    /* This should never happen */
+                    this.dllink = dllinkTmp;
+                    break;
+                }
+                quality_temp = Integer.parseInt(qualityStr);
+                if (quality_temp > quality_max) {
+                    quality_max = quality_temp;
+                    this.dllink = dllinkTmp;
+                }
             }
         }
         if (filename == null) {
