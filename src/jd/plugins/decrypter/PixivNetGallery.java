@@ -90,12 +90,11 @@ public class PixivNetGallery extends PluginForDecrypt {
             final long illustType = JavaScriptEngineFactory.toLong(entries.get("illustType"), 0);
             uploadDate = (String) entries.get("uploadDate");
             int pagecount = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 1);
-            String userName = (String) entries.get("userName");
-            String illustUploadDate = (String) entries.get("createDate");
+            final String userName = (String) entries.get("userName");
+            final String illustUploadDate = (String) entries.get("createDate");
             String illustTitle = (String) entries.get("illustTitle");
             String tags = null;
             // final String illustId = (String) entries.get("illustId");
-            illustTitle = (String) entries.get("illustTitle");
             /*
              * Users want to have a maximum of information in filenames: https://board.jdownloader.org/showpost.php?p=462062&postcount=41
              */
