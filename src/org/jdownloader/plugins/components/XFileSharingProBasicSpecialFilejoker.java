@@ -698,6 +698,10 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                  * }
                  */
                 throw new AccountRequiredException();
+            } else if (message.equalsIgnoreCase("Premium Only file")) {
+                /* 2020-05-19: novafile.com */
+                /* {"file_size":"500000000","file_name":"test.dat","file_code":"xxxxxxxxxxxx","message":"Premium Only file"} */
+                throw new AccountRequiredException();
             }
             logger.warning("Possibly unhandled API errormessage: " + message);
         }

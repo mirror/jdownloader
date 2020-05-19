@@ -184,7 +184,18 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                     loginform.put("amember_login", URLEncoder.encode(account.getUser(), "UTF-8"));
                     loginform.put("amember_pass", URLEncoder.encode(account.getPass(), "UTF-8"));
-                    if (loginform.containsHTML("recaptcha")) {
+                    final String loginAttemptID = br.getRegex("name=\"login_attempt_id\" value=\"(\\d+)\"").getMatch(0);
+                    if (loginAttemptID != null) {
+                        /* 2020-05-19 */
+                        logger.info("Found loginAttemptID: " + loginAttemptID);
+                        if (!loginform.hasInputFieldByName("login_attempt_id")) {
+                            loginform.put("login_attempt_id", loginAttemptID);
+                        }
+                    } else {
+                        logger.info("Failed to find loginAttemptID");
+                    }
+                    final boolean forceCaptcha = false;
+                    if (loginform.containsHTML("recaptcha") || forceCaptcha) {
                         final DownloadLink dlinkbefore = this.getDownloadLink();
                         try {
                             final DownloadLink dl_dummy;
