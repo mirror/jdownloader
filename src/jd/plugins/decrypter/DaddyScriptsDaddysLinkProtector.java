@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Cookies;
@@ -34,6 +31,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
@@ -72,7 +72,7 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
                         /* 3rd try, ask user and do not rely on auto-solver */
                         captcha_method_name = "ziddu.com_manualcaptcha";
                     } else {
-                        captcha_method_name = "ziddu.com";
+                        captcha_method_name = "ziddu6.com";
                     }
                     final String code = this.getCaptchaCode(captcha_method_name, "/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
                     confirmationForm.put("security_code", Encoding.urlEncode(code));
