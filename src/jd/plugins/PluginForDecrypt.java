@@ -667,8 +667,9 @@ public abstract class PluginForDecrypt extends Plugin {
             return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag);
         } else if ("solvemedia".equalsIgnoreCase(method)) {
             return new SolveMediaCaptchaChallenge(file, defaultValue, explain, this, flag);
+        } else {
+            return new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
         }
-        return new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
     }
 
     protected void setBrowserExclusive() {
