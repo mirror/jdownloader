@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -13,8 +15,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -903,6 +903,20 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         // 2019-01-24 hqwo.cc (no main webpage, only works when you have URLs which lead to content!)
         externID = br.getRegex("(//hqwo\\.cc/player/[^<>\"]+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = this.createDownloadlink(externID);
+            /* Filename is good to have but not necessarily required, */
+            if (title != null) {
+                title += ".mp4";
+                dl.setFinalFileName(title);
+            }
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
+        /* 2020-05-19: cwtembeds.com (main page will display error 404, they ONLY provide embedded URLs! E.g. /embed/1362088 ) */
+        externID = br.getRegex("(https?://(?:www\\.)?cwtvembeds\\.com/embed/\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = this.createDownloadlink(externID);
             /* Filename is good to have but not necessarily required, */
