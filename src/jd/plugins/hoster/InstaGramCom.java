@@ -276,8 +276,10 @@ public class InstaGramCom extends PluginForHost {
                     br.setCookies(MAINPAGE, cookies);
                     br.getPage(MAINPAGE + "/");
                     if (br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(MAINPAGE).get("ds_user_id", Cookies.NOTDELETEDPATTERN) == null) {
+                        /* Full login required */
                         br.clearCookies(MAINPAGE);
                     } else {
+                        /* Saved cookies were valid */
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
@@ -298,7 +300,9 @@ public class InstaGramCom extends PluginForHost {
                 post.getHeaders().put("X-CSRFToken", csrftoken);
                 post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 post.setContentType("application/x-www-form-urlencoded");
-                post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&queryParams=%7B%7D");
+                /* 2020-05-19: https://github.com/instaloader/instaloader/pull/623 */
+                final String enc_password = "#PWD_INSTAGRAM_BROWSER:0:" + System.currentTimeMillis() + ":" + account.getPass();
+                post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&enc_password=" + Encoding.urlEncode(enc_password) + "&queryParams=%7B%7D");
                 br.getPage(post);
                 if ("fail".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                     // 2 factor (Coded semi blind).
