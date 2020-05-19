@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -15,13 +21,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(?:fembed\\.com|there\\.to|gcloud\\.live|plycdn\\.xyz|hlsmp4\\.com|svpri\\.xyz|asianclub\\.tv|javcl\\.me|feurl\\.com|zidiplay\\.com|embed\\.media|javideo\\.pw|playvideo\\.best|ffem\\.club|dunbed\\.xyz|embed\\.casa|sexhd\\.co|fileone\\.tv|luxubu\\.review|anime789.com)/(?:f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(?:fembed\\.com|there\\.to|gcloud\\.live|plycdn\\.xyz|hlsmp4\\.com|svpri\\.xyz|asianclub\\.tv|javcl\\.me|feurl\\.com|zidiplay\\.com|embed\\.media|javideo\\.pw|playvideo\\.best|ffem\\.club|dunbed\\.xyz|embed\\.casa|sexhd\\.co|fileone\\.tv|luxubu\\.review|anime789\\.com)/(?:f|v)/([a-zA-Z0-9_-]+)(#javclName=[a-fA-F0-9]+)?" })
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
         super(wrapper);
