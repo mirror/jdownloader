@@ -69,6 +69,10 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.InputDialogInterface;
@@ -1021,149 +1025,173 @@ public class MegaConz extends PluginForHost {
     private static Object         DECRYPTLOCK            = new Object();
     private volatile DownloadLink decryptingDownloadLink = null;
 
-    private void decrypt(final String path, AtomicLong encryptionDone, AtomicBoolean successFulFlag, DownloadLink link, String keyString) throws Exception {
-        byte[] b64Dec = b64decode(keyString);
-        int[] intKey = aByte_to_aInt(b64Dec);
-        int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
-        byte[] key = aInt_to_aByte(keyNOnce[0], keyNOnce[1], keyNOnce[2], keyNOnce[3]);
-        int[] iiv = new int[] { keyNOnce[4], keyNOnce[5], 0, 0 };
-        byte[] iv = aInt_to_aByte(iiv);
-        final IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        File dst = null;
-        File src = null;
-        File tmp = null;
-        if (path.endsWith(encrypted)) {
-            src = new File(path);
-            String path2 = path.substring(0, path.length() - encrypted.length());
-            if (useTMP()) {
-                tmp = new File(path2 + ".decrypted");
-            }
-            dst = new File(path2);
-        } else {
-            src = new File(path);
-            tmp = new File(path + ".decrypted");
-            dst = new File(path);
-        }
-        if (tmp != null && tmp.exists() && tmp.delete() == false) {
-            throw new IOException("Could not delete temp:" + tmp);
-        }
-        if (dst.exists() && dst.delete() == false) {
-            throw new IOException("Could not delete dest:" + dst);
-        }
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        boolean deleteDst = true;
-        final long total = src.length();
-        final AtomicReference<String> message = new AtomicReference<String>();
-        final PluginProgress progress = new PluginProgress(0, total, null) {
-            long lastCurrent    = -1;
-            long startTimeStamp = -1;
-
-            public String getMessage(Object requestor) {
-                return message.get();
+    private void decrypt(final String path, AtomicLong encryptionDone, AtomicBoolean successFulFlag, final DownloadLink link, String keyString) throws Exception {
+        final ShutdownVetoListener vetoListener = new ShutdownVetoListener() {
+            @Override
+            public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+                throw new ShutdownVetoException(getHost() + " decryption in progress:" + link.getName(), this);
             }
 
             @Override
-            public PluginTaskID getID() {
-                return PluginTaskID.DECRYPTING;
+            public void onShutdownVeto(ShutdownRequest request) {
             }
 
             @Override
-            public void updateValues(long current, long total) {
-                super.updateValues(current, total);
-                if (lastCurrent == -1 || lastCurrent > current) {
-                    lastCurrent = current;
-                    startTimeStamp = System.currentTimeMillis();
-                    this.setETA(-1);
-                    return;
-                }
-                long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
-                if (currentTimeDifference <= 0) {
-                    return;
-                }
-                long speed = (current * 10000) / currentTimeDifference;
-                if (speed == 0) {
-                    return;
-                }
-                long eta = ((total - current) * 10000) / speed;
-                this.setETA(eta);
+            public void onShutdown(ShutdownRequest request) {
+            }
+
+            @Override
+            public long getShutdownVetoPriority() {
+                return 0;
             }
         };
-        progress.setProgressSource(this);
-        progress.setIcon(new AbstractIcon(IconKey.ICON_LOCK, 16));
-        final File outputFile;
-        if (tmp != null) {
-            outputFile = tmp;
-        } else {
-            outputFile = dst;
-        }
+        ShutdownController.getInstance().addShutdownVetoListener(vetoListener);
         try {
-            try {
-                message.set("Queued for decryption");
-                link.addPluginProgress(progress);
-                synchronized (DECRYPTLOCK) {
-                    message.set("Decrypting");
-                    fis = new FileInputStream(src);
-                    try {
-                        FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
-                        fos = new FileOutputStream(outputFile);
-                        final DigestInputStream dis = new DigestInputStream(fis, MessageDigest.getInstance("SHA-256"));
-                        final DigestOutputStream dos = new DigestOutputStream(fos, MessageDigest.getInstance("SHA-256"));
-                        try {
-                            final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
-                            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-                            final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(dos, 1024 * 1024), cipher);
-                            int read = 0;
-                            final byte[] buffer = new byte[512 * 1024];
-                            while ((read = dis.read(buffer)) != -1) {
-                                if (read > 0) {
-                                    progress.updateValues(progress.getCurrent() + read, total);
-                                    cos.write(buffer, 0, read);
-                                    encryptionDone.addAndGet(-read);
-                                }
-                            }
-                            cos.close();
-                            logger.info("Decryption-Input-SHA256:" + HexFormatter.byteArrayToHex(dis.getMessageDigest().digest()));
-                            logger.info("Decryption-Output-SHA256:" + HexFormatter.byteArrayToHex(dos.getMessageDigest().digest()));
-                        } finally {
-                            fos.close();
-                        }
-                    } finally {
-                        fis.close();
+            byte[] b64Dec = b64decode(keyString);
+            int[] intKey = aByte_to_aInt(b64Dec);
+            int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
+            byte[] key = aInt_to_aByte(keyNOnce[0], keyNOnce[1], keyNOnce[2], keyNOnce[3]);
+            int[] iiv = new int[] { keyNOnce[4], keyNOnce[5], 0, 0 };
+            byte[] iv = aInt_to_aByte(iiv);
+            final IvParameterSpec ivSpec = new IvParameterSpec(iv);
+            final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+            File dst = null;
+            File src = null;
+            File tmp = null;
+            if (path.endsWith(encrypted)) {
+                src = new File(path);
+                String path2 = path.substring(0, path.length() - encrypted.length());
+                if (useTMP()) {
+                    tmp = new File(path2 + ".decrypted");
+                }
+                dst = new File(path2);
+            } else {
+                src = new File(path);
+                tmp = new File(path + ".decrypted");
+                dst = new File(path);
+            }
+            if (tmp != null && tmp.exists() && tmp.delete() == false) {
+                throw new IOException("Could not delete temp:" + tmp);
+            }
+            if (dst.exists() && dst.delete() == false) {
+                throw new IOException("Could not delete dest:" + dst);
+            }
+            FileInputStream fis = null;
+            FileOutputStream fos = null;
+            boolean deleteDst = true;
+            final long total = src.length();
+            final AtomicReference<String> message = new AtomicReference<String>();
+            final PluginProgress progress = new PluginProgress(0, total, null) {
+                long lastCurrent    = -1;
+                long startTimeStamp = -1;
+
+                public String getMessage(Object requestor) {
+                    return message.get();
+                }
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.DECRYPTING;
+                }
+
+                @Override
+                public void updateValues(long current, long total) {
+                    super.updateValues(current, total);
+                    if (lastCurrent == -1 || lastCurrent > current) {
+                        lastCurrent = current;
+                        startTimeStamp = System.currentTimeMillis();
+                        this.setETA(-1);
+                        return;
                     }
-                    if (tmp == null) {
-                        src.delete();
-                    } else {
-                        if (tmp.renameTo(dst)) {
+                    long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                    if (currentTimeDifference <= 0) {
+                        return;
+                    }
+                    long speed = (current * 10000) / currentTimeDifference;
+                    if (speed == 0) {
+                        return;
+                    }
+                    long eta = ((total - current) * 10000) / speed;
+                    this.setETA(eta);
+                }
+            };
+            progress.setProgressSource(this);
+            progress.setIcon(new AbstractIcon(IconKey.ICON_LOCK, 16));
+            final File outputFile;
+            if (tmp != null) {
+                outputFile = tmp;
+            } else {
+                outputFile = dst;
+            }
+            try {
+                try {
+                    message.set("Queued for decryption");
+                    link.addPluginProgress(progress);
+                    synchronized (DECRYPTLOCK) {
+                        message.set("Decrypting");
+                        fis = new FileInputStream(src);
+                        try {
+                            FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
+                            fos = new FileOutputStream(outputFile);
+                            final DigestInputStream dis = new DigestInputStream(fis, MessageDigest.getInstance("SHA-256"));
+                            final DigestOutputStream dos = new DigestOutputStream(fos, MessageDigest.getInstance("SHA-256"));
+                            try {
+                                final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
+                                cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+                                final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(dos, 1024 * 1024), cipher);
+                                int read = 0;
+                                final byte[] buffer = new byte[512 * 1024];
+                                while ((read = dis.read(buffer)) != -1) {
+                                    if (read > 0) {
+                                        progress.updateValues(progress.getCurrent() + read, total);
+                                        cos.write(buffer, 0, read);
+                                        encryptionDone.addAndGet(-read);
+                                    }
+                                }
+                                cos.close();
+                                logger.info("Decryption-Input-SHA256:" + HexFormatter.byteArrayToHex(dis.getMessageDigest().digest()));
+                                logger.info("Decryption-Output-SHA256:" + HexFormatter.byteArrayToHex(dos.getMessageDigest().digest()));
+                            } finally {
+                                fos.close();
+                            }
+                        } finally {
+                            fis.close();
+                        }
+                        if (tmp == null) {
                             src.delete();
                         } else {
-                            throw new IOException("Could not rename:" + tmp + "->" + dst);
+                            if (tmp.renameTo(dst)) {
+                                src.delete();
+                            } else {
+                                throw new IOException("Could not rename:" + tmp + "->" + dst);
+                            }
+                        }
+                        deleteDst = false;
+                        link.getLinkStatus().setStatusText("Finished");
+                        link.removeProperty(USED_PLUGIN);
+                        successFulFlag.set(true);
+                        try {
+                            link.setInternalTmpFilenameAppend(null);
+                            link.setInternalTmpFilename(null);
+                        } catch (final Throwable e) {
+                        }
+                        new MegaHashCheck(link, dst).finalHashResult();
+                    }
+                } finally {
+                    link.removePluginProgress(progress);
+                    if (deleteDst) {
+                        if (tmp != null) {
+                            tmp.delete();
+                        } else {
+                            dst.delete();
                         }
                     }
-                    deleteDst = false;
-                    link.getLinkStatus().setStatusText("Finished");
-                    link.removeProperty(USED_PLUGIN);
-                    successFulFlag.set(true);
-                    try {
-                        link.setInternalTmpFilenameAppend(null);
-                        link.setInternalTmpFilename(null);
-                    } catch (final Throwable e) {
-                    }
-                    new MegaHashCheck(link, dst).finalHashResult();
                 }
             } finally {
-                link.removePluginProgress(progress);
-                if (deleteDst) {
-                    if (tmp != null) {
-                        tmp.delete();
-                    } else {
-                        dst.delete();
-                    }
-                }
+                FileStateManager.getInstance().releaseFileState(outputFile, this);
             }
         } finally {
-            FileStateManager.getInstance().releaseFileState(outputFile, this);
+            ShutdownController.getInstance().removeShutdownVetoListener(vetoListener);
         }
     }
 
