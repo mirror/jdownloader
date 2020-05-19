@@ -165,6 +165,20 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
                 this.setDownloadStarted(link, FREE_RECONNECTWAIT_DEFAULT);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached the daily download limit", FREE_RECONNECTWAIT_DEFAULT);
             }
+        } else if (new Regex(correctedBR, "We have detected an unusual activity from multiple IPs using your account|Your account has been temporarily suspended|Please check your email and follow the link that has been sent to you to reactivate").matches()) {
+            /* 2020-05-19: E.g. accountsharing / usage of VPN */
+            throw new AccountUnavailableException("Your account has been temporarily suspended", 10 * 60 * 1000l);
+        }
+    }
+
+    @Override
+    public void checkServerErrors() throws NumberFormatException, PluginException {
+        /* 2020-05-19: Special */
+        super.checkServerErrors();
+        if (new Regex(correctedBR.trim(), ">\\s*Wrong IP").matches()) {
+            /* 2020-05-19: May happen when user uses a VPN - this can then especially happen in premium mode for all downloads. */
+            /* jdlog://1827915302851/ */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
         }
     }
 
