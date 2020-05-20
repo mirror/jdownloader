@@ -138,7 +138,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     private static final String PROPERTY_LASTDOWNLOAD_API                       = "lastdownload_timestamp_api";
     private static final String PROPERTY_LASTDOWNLOAD_WEBSITE                   = "lastdownload_timestamp_website";
     private static final String PROPERTY_COOKIES_API                            = "PROPERTY_COOKIES_API";
-    public static final String  PROPERTY_SETTING_USE_API                        = "USE_API_2020_01";
+    public static final String  PROPERTY_SETTING_USE_API                        = "USE_API_2020_05_20";
     public static final String  PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK    = "PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK";
     public static final boolean default_PROPERTY_SETTING_USE_API                = true;
 
@@ -475,7 +475,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      *
      * @throws PluginException
      */
-    private void tempDisableAPI(final Account account, final String failure_reason) throws PluginException {
+    protected void tempDisableAPI(final Account account, final String failure_reason) throws PluginException {
         account.setProperty(PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK, System.currentTimeMillis());
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait for retry via website because: " + failure_reason, 1 * 60 * 1000l);
     }

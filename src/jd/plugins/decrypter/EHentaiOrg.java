@@ -44,7 +44,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/g/(\\d+)/([a-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/(?:g|mpv)/(\\d+)/([a-z0-9]+)" })
 public class EHentaiOrg extends PluginForDecrypt {
     public EHentaiOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,9 +59,14 @@ public class EHentaiOrg extends PluginForDecrypt {
             ((jd.plugins.hoster.EHentaiOrg) hostplugin).login(this.br, aa, false);
         }
         // links are transferable between the login enforced url and public, but may not be available on public
-        final String parameter = aa == null ? param.toString().replace("exhentai.org/", "g.e-hentai.org/") : param.toString().replace("g.e-hentai.org/", "exhentai.org/");
-        final String galleryid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String galleryhash = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        final String galleryid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String galleryhash = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
+        final String parameter;
+        if (aa == null) {
+            parameter = "https://e-hentai.org/g/" + galleryid + "/" + galleryhash + "/";
+        } else {
+            parameter = "https://exhentai.org/g/" + galleryid + "/" + galleryhash + "/";
+        }
         if (galleryid == null || galleryhash == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
