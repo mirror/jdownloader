@@ -535,10 +535,10 @@ public class PornportalCom extends PluginForHost {
                 account.saveCookies(brlogin.getCookies(brlogin.getHost()), target_domain);
                 setStoredAPIAuthHeaderAccount(brlogin, account, target_domain);
             } catch (final PluginException e) {
-                /* TODO: Maybe never delete these cookies */
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies(target_domain);
-                }
+                /* 2020-05-20: Never delete login cookies! */
+                // if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                // account.clearCookies(target_domain);
+                // }
                 throw e;
             }
         }

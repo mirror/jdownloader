@@ -22,10 +22,10 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,13 +41,9 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
-    private final String   maxSimultaneousDownloads_LIMIT = "MaxSimultaneousDownloads_LIMIT_2019_06";
-    private final String[] maxSimultaneousDownloads       = new String[] { "DEFAULT", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
-
     public DdlTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
-        setConfigElements();
     }
 
     /**
@@ -87,29 +83,6 @@ public class DdlTo extends XFileSharingProBasic {
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
-    /**
-     * 2020-05-18: The only reason why we are overriding this is the https setting. TODO: Make a PluginConfigInterface for this which can be
-     * used for all XFS plugins, then remove this here!
-     */
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null) {
-            /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
-                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
-            }
-            link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
-            link.setLinkID(getHost() + "://" + fuid);
-        }
-        /* Keep that legacy setting */
-        if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
-            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^https://", "http://"));
-        } else {
-            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^http://", "https://"));
-        }
-    }
-
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
@@ -138,7 +111,7 @@ public class DdlTo extends XFileSharingProBasic {
     public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
         final String fid = getFUIDFromURL(downloadLink);
         if (fid != null) {
-            if (this.getPluginConfig().getBooleanProperty("ENABLE_HTTP", true)) {
+            if (this.supports_https()) {
                 return "http://" + getHost() + "/" + fid;
             } else {
                 return "https://" + getHost() + "/" + fid;
@@ -163,19 +136,8 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     public int getMaxDownloadSelect() {
-        final int chosenDownloadLimit = getPluginConfig().getIntegerProperty(maxSimultaneousDownloads_LIMIT, 0);
-        try {
-            final String value = maxSimultaneousDownloads[chosenDownloadLimit];
-            if ("DEFAULT".equals(value)) {
-                return 1;
-            } else {
-                return Integer.parseInt(value);
-            }
-        } catch (final Throwable e) {
-            /* Return default limit */
-            logger.log(e);
-            return 1;
-        }
+        final XFSConfigVideoDdownloadCom cfg = PluginJsonConfig.get(this.getConfigInterface());
+        return cfg.getMaxSimultaneousFreeDownloads();
     }
 
     @Override
@@ -349,39 +311,6 @@ public class DdlTo extends XFileSharingProBasic {
         super.checkErrors(link, account, checkAll);
     }
 
-    /* 2020-04-14: Workaround for Cloudflare issues: https://board.jdownloader.org/showthread.php?t=83712 */
-    @Override
-    protected String getMainPage() {
-        /** 2020-04-17: TODO: Remove this Override / switch to new domain ddownload.com once possible. */
-        final String host;
-        // ddownload.com --> current real main domain 2020-05-04
-        // api.ddownload.com alternative
-        // esimpurcuesc.ddownload.com alternative 2 2020-05-04 (http- and https)
-        final String browser_host = this.br != null ? br.getHost() : null;
-        if (browser_host != null) {
-            host = browser_host;
-        } else {
-            /* 2020-05-04: Do not user plugin main host as internal host - workaround! */
-            // host = this.getHost();
-            // host = "esimpurcuesc.ddownload.com";
-            /* 2020-05-18: Use "real" main domain again */
-            host = "ddownload.com";
-        }
-        String mainpage;
-        final String protocol;
-        if (this.supports_https()) {
-            protocol = "https://";
-        } else {
-            protocol = "http://";
-        }
-        mainpage = protocol;
-        if (requires_WWW()) {
-            mainpage += "www.";
-        }
-        mainpage += host;
-        return mainpage;
-    }
-
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         /* 2020-04-20: Not supported anymore */
@@ -403,8 +332,8 @@ public class DdlTo extends XFileSharingProBasic {
     // }
     // return filename;
     // }
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), maxSimultaneousDownloads_LIMIT, maxSimultaneousDownloads, "Max. simultaneous downloads (Free+Free account)").setDefaultValue(0));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_HTTP", "Enable HTTP").setDefaultValue(false));
+    @Override
+    public Class<? extends XFSConfigVideoDdownloadCom> getConfigInterface() {
+        return XFSConfigVideoDdownloadCom.class;
     }
 }
