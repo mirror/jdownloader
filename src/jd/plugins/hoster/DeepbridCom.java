@@ -286,7 +286,7 @@ public class DeepbridCom extends antiDDoSForHost {
             /* List can be given in two different varieties */
             if (hostO instanceof LinkedHashMap) {
                 entries = (LinkedHashMap<String, Object>) hostO;
-                for (String host : entries.keySet()) {
+                for (final String host : entries.keySet()) {
                     final String isUP = (String) entries.get(host);
                     if (!"up".equalsIgnoreCase(isUP)) {
                         /* Skip hosts which do not work via this MOCH at this moment! */
