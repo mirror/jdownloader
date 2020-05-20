@@ -394,7 +394,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     /**
-     * this seems to happen in this manner
+     * This seems to happen in this manner
      *
      * @throws Exception
      **/
@@ -657,53 +657,74 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
         // when they turn off additional captchas within api vs website, we will go back to website
-        requestFileInformationWeb(downloadLink);
+        requestFileInformationWeb(link);
         fetchAccountInfoWeb(account, false, false);
         // is free user?
         if (account.getType() == AccountType.FREE) {
-            requestFileInformationApi(downloadLink); // Required, to do checkLinks to check premiumOnly
-            doFree(account, downloadLink);
+            requestFileInformationApi(link); // Required, to do checkLinks to check premiumOnly
+            doFree(account, link);
             return;
         }
         // check cached download
-        dllink = downloadLink.getStringProperty(directlinkproperty);
+        dllink = link.getStringProperty(directlinkproperty);
         if (!inValidate(dllink)) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (dl.getConnection().isContentDisposition()) {
-                downloadLink.setProperty(directlinkproperty, dllink);
+                link.setProperty(directlinkproperty, dllink);
                 dl.startDownload();
                 return;
             }
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            handleDownloadErrors(account, downloadLink, false);
+            link.setProperty(directlinkproperty, Property.NULL);
+            handleDownloadErrors(account, link, false);
         }
         // could be directlink
-        dllink = downloadLink.getDownloadURL();
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+        dllink = link.getDownloadURL();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
         if (dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
             return;
         }
         br.followConnection();
         // not directlink
-        randomHash(downloadLink);
-        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
-        handleDownloadErrors(account, downloadLink, false);
+        randomHash(link);
+        handlePremiumVPNWarningCaptcha(link);
+        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
+        handleDownloadErrors(account, link, false);
         dllink = br.getRegex("<a id=\"download\" href=\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
         if (dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, dllink);
+            link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
             return;
         }
-        handleDownloadErrors(account, downloadLink, true);
+        handleDownloadErrors(account, link, true);
+    }
+
+    /** Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN. */
+    private void handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
+        if (br.containsHTML("To get rid of the captcha, please avoid using a dedicated server")) {
+            logger.info("Premium VPN captcha required");
+            final String urlBefore = br.getURL();
+            /* 2020-02-20: Here is their reCaptchaV2 site-key for testing: 6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy */
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            if (!ajax.containsHTML("passed")) {
+                logger.info("Premium captcha failure");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            logger.info("Premium captcha success");
+            logger.info("Reloading urlBefore: " + urlBefore);
+            this.getPage(urlBefore);
+        } else {
+            logger.info("Premium VPN captcha NOT required!");
+        }
     }
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {

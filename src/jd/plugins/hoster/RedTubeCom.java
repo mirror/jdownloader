@@ -23,7 +23,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?(redtube\\.(cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?(?:redtube\\.(?:cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(?:cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)(\\d+)" })
 public class RedTubeCom extends PluginForHost {
     public RedTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,10 +65,24 @@ public class RedTubeCom extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload("https://www.redtube.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("https://www.redtube.com/" + getFID(link));
     }
 
     @SuppressWarnings("unchecked")
@@ -82,9 +96,9 @@ public class RedTubeCom extends PluginForHost {
         br.setCookie("https://www.redtube.com", "language", "en");
         br.getPage(link.getPluginPatternMatcher().toLowerCase());
         // Offline link
-        if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("is no longer available") || br.containsHTML(">\\s*404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("class=\"video-deleted-info\"") || br.containsHTML("class=\"unavailable_text\"")) {
+        } else if (br.containsHTML("class=\"video-deleted-info\"") || br.containsHTML("class=\"unavailable_text\"") || br.containsHTML(">\\s*This video has been removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
@@ -92,10 +106,7 @@ public class RedTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         private_video = this.br.containsHTML("class=\"private_video_text\"");
-        String fileName = br.getRegex("<h1 class=\"videoTitle[^>]+>(.*?)</h1>").getMatch(0);
-        if (fileName == null) {
-            fileName = br.getRegex("<title>(.*?) (?:(?:-|\\|)|(?:&#124;)) RedTube[^<]+</title>").getMatch(0);
-        }
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         br.setFollowRedirects(true);
         final String playervars = br.getRegex("playervars: (.+?\\}),\n").getMatch(0);
         if (playervars != null) {
@@ -159,14 +170,15 @@ public class RedTubeCom extends PluginForHost {
             /* 2017-03-11 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (filename == null) {
+            filename = this.getFID(link);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
         String ext = new Regex(dllink, "(\\.flv|\\.mp4).+$").getMatch(0);
         if (ext == null) {
             ext = ".mp4";
         }
-        if (fileName != null || ext != null) {
-            fileName = Encoding.htmlOnlyDecode(fileName);
-            link.setName(fileName.trim() + ext);
-        }
+        link.setFinalFileName(filename + ext);
         return AvailableStatus.TRUE;
     }
 
