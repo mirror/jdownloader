@@ -115,10 +115,25 @@ public class EHentaiOrg extends PluginForDecrypt {
         int counter = 1;
         final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         for (int page = 0; page <= pagemax; page++) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
-                return decryptedLinks;
-            }
+            // final boolean isMultiPageViewActive = br.containsHTML("/mpv/\\d+/[^/]+/#page1");
+            // if (isMultiPageViewActive) {
+            // logger.info("Multi-Page-View active --> Trying to deactivate it");
+            // final String previousURL = br.getURL();
+            // if (aa == null) {
+            // logger.warning("WTF no account available");
+            // }
+            // br.getPage("https://e-hentai.org/uconfig.php");
+            // final Form[] forms = br.getForms();
+            // Form settings = new Form();
+            // settings = forms[forms.length - 1];
+            // // settings.setMethod(MethodType.POST);
+            // // settings.setAction(br.getURL());
+            // settings.remove("qb");
+            // settings.put("qb", "0");
+            // settings.put("apply", "Apply");
+            // br.submitForm(settings);
+            // br.getPage(previousURL);
+            // }
             final Browser br2 = br.cloneBrowser();
             if (page > 0) {
                 sleep(new Random().nextInt(5000), param);
@@ -130,10 +145,6 @@ public class EHentaiOrg extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String link[] : links) {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return decryptedLinks;
-                }
                 final String singleLink = link[0];
                 final DownloadLink dl = createDownloadlink(singleLink);
                 final String imgposition = df.format(counter);
@@ -179,6 +190,10 @@ public class EHentaiOrg extends PluginForDecrypt {
                 distribute(dl);
                 decryptedLinks.add(dl);
                 counter++;
+            }
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return decryptedLinks;
             }
         }
         return decryptedLinks;

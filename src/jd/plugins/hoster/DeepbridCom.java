@@ -21,6 +21,15 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,15 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -286,13 +286,19 @@ public class DeepbridCom extends antiDDoSForHost {
             /* List can be given in two different varieties */
             if (hostO instanceof LinkedHashMap) {
                 entries = (LinkedHashMap<String, Object>) hostO;
-                for (final String host : entries.keySet()) {
+                for (String host : entries.keySet()) {
                     final String isUP = (String) entries.get(host);
                     if (!"up".equalsIgnoreCase(isUP)) {
                         /* Skip hosts which do not work via this MOCH at this moment! */
                         continue;
                     }
-                    supportedhostslist.add(host);
+                    if (host.equalsIgnoreCase("icerbox")) {
+                        /* 2020-05-20: Workaround: https://board.jdownloader.org/showthread.php?t=84429 */
+                        supportedhostslist.add("icerbox.com");
+                        supportedhostslist.add("icerbox.biz");
+                    } else {
+                        supportedhostslist.add(host);
+                    }
                 }
             } else if (hostO instanceof String) {
                 supportedhostslist.add((String) hostO);

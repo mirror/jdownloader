@@ -497,8 +497,6 @@ public class EHentaiOrg extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 Cookies cookies = account.loadCookies("");
-                /* Debug test */
-                // cookies = null;
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
                     br.setCookies("http://exhentai.org/", cookies);
