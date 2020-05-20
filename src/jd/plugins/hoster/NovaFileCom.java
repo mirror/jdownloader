@@ -172,13 +172,20 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     @Override
-    public void checkServerErrors() throws NumberFormatException, PluginException {
+    public void checkServerErrors(final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         /* 2020-05-19: Special */
-        super.checkServerErrors();
+        super.checkServerErrors(link, account);
         if (new Regex(correctedBR.trim(), ">\\s*Wrong IP").matches()) {
-            /* 2020-05-19: May happen when user uses a VPN - this can then especially happen in premium mode for all downloads. */
+            /*
+             * 2020-05-19: May happen when user uses a VPN - this can then especially happen in premium mode for all downloads (via API?!).
+             */
             /* jdlog://1827915302851/ */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
+            if (this.internal_useAPIZeusCloudManager(account)) {
+                /* 2020-05-20: Workaround attempt --> Try via website next time */
+                this.tempDisableAPI(account, "VPN block workaround");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
+            }
         }
     }
 

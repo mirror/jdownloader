@@ -2867,7 +2867,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Handles all kinds of errors which can happen if we get the final downloadlink but we get html code instead of the file we want to
      * download.
      */
-    public void checkServerErrors() throws NumberFormatException, PluginException {
+    public void checkServerErrors(final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         if (new Regex(correctedBR.trim(), "^No file$").matches()) {
             /* Possibly dead file but it is supposed to be online so let's wait and retry! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
@@ -3879,7 +3879,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 storeDirecturl(link, account, location);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
-            handleDownloadErrors(link);
+            handleDownloadErrors(link, account);
             try {
                 fixFilename(link);
             } catch (Exception e) {
@@ -3966,7 +3966,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 storeDirecturl(link, account, dllink);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
-                handleDownloadErrors(link);
+                handleDownloadErrors(link, account);
                 try {
                     fixFilename(link);
                 } catch (Exception e) {
@@ -4032,13 +4032,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Handles errors right before starting the download. */
-    protected void handleDownloadErrors(final DownloadLink link) throws Exception {
+    protected void handleDownloadErrors(final DownloadLink link, final Account account) throws Exception {
         if (dl.getConnection().getContentType().contains("html")) {
             checkResponseCodeErrors(dl.getConnection());
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
-            checkServerErrors();
+            checkServerErrors(link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadlink did not lead to downloadable content");
         }
     }
