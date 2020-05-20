@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfig;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
 import org.jdownloader.plugins.components.config.XFSConfigVideoSupervideoTv;
 
 import jd.PluginWrapper;
@@ -118,7 +118,7 @@ public class SupervideoTv extends XFileSharingProBasic {
     }
 
     @Override
-    public Class<? extends XFSConfig> getConfigInterface() {
+    public Class<? extends XFSConfigVideo> getConfigInterface() {
         return XFSConfigVideoSupervideoTv.class;
     }
 }

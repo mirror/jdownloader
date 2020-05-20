@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoDeltabitCo;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -107,5 +109,14 @@ public class DeltabitCo extends XFileSharingProBasic {
     protected boolean isVideohoster_enforce_video_filename() {
         /* 2019-09-29: Special */
         return true;
+    }
+
+    /**
+     * 2020-05-19: It might not matter which quality the user selects as sometimes they only have 2 qualities available and both are the
+     * same.
+     */
+    @Override
+    public Class<? extends XFSConfigVideo> getConfigInterface() {
+        return XFSConfigVideoDeltabitCo.class;
     }
 }
