@@ -3173,6 +3173,12 @@ public class YoutubeHelper {
                 this.ytPlayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
             }
         }
+        if (this.ytInitialPlayerResponse == null && this.ytPlayerConfig != null) {
+            final Object playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/player_response");
+            if (playerResponse instanceof String) {
+                this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(playerResponse.toString());
+            }
+        }
         {
             // there are many of these on the page
             final String ytcfgSet = br.getRegex("ytcfg\\.set\\((\\{.*?\\})\\);ytcfg\\.set").getMatch(0);
