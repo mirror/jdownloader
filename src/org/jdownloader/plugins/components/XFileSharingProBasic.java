@@ -1677,8 +1677,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             case LOW:
                 return "l";
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     protected void handleRecaptchaV2(final DownloadLink link, final Form captchaForm) throws Exception {

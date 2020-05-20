@@ -131,16 +131,16 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
-    private static final String PROPERTY_SESSIONID                                   = "cookie_zeus_cloud_sessionid";
-    private static final String PROPERTY_EMAIL                                       = "cookie_email";
-    private static final String PROPERTY_USERNAME                                    = "cookie_username";
-    private static final String PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE      = "timestamp_last_api_login_failure_in_website_mode";
-    private static final String PROPERTY_LASTDOWNLOAD_API                            = "lastdownload_timestamp_api";
-    private static final String PROPERTY_LASTDOWNLOAD_WEBSITE                        = "lastdownload_timestamp_website";
-    private static final String PROPERTY_COOKIES_API                                 = "PROPERTY_COOKIES_API";
-    public static final String  PROPERTY_SETTING_USE_API                             = "USE_API_2020_01";
-    public static final String  PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK         = "PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK";
-    public static final boolean default_PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK = false;
+    private static final String PROPERTY_SESSIONID                              = "cookie_zeus_cloud_sessionid";
+    private static final String PROPERTY_EMAIL                                  = "cookie_email";
+    private static final String PROPERTY_USERNAME                               = "cookie_username";
+    private static final String PROPERTY_LAST_API_LOGIN_FAILURE_IN_WEBSITE_MODE = "timestamp_last_api_login_failure_in_website_mode";
+    private static final String PROPERTY_LASTDOWNLOAD_API                       = "lastdownload_timestamp_api";
+    private static final String PROPERTY_LASTDOWNLOAD_WEBSITE                   = "lastdownload_timestamp_website";
+    private static final String PROPERTY_COOKIES_API                            = "PROPERTY_COOKIES_API";
+    public static final String  PROPERTY_SETTING_USE_API                        = "USE_API_2020_01";
+    public static final String  PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK    = "PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK";
+    public static final boolean default_PROPERTY_SETTING_USE_API                = false;
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
@@ -155,11 +155,6 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         return useAPIZeusCloudManager(account) && !isAPITempDisabled(account);
     }
 
-    /** If enabled, random User-Agent will be used in API mode! */
-    protected boolean useRandomUserAgentAPI() {
-        return false;
-    }
-
     /**
      * API login may avoid the need of login captchas. If enabled, ZeusCloudManagerAPI login will be tried even if API is disabled and
      * resulting cookies will be used in website mode. Only enable this if tested! </br>
@@ -170,7 +165,9 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /**
-     * If disabled[and tryAPILoginInWebsiteMode enabled], API can be used to login in website mode but account information will be obtained
+     * If enabled [and tryAPILoginInWebsiteMode enabled], API can be used to login- and obtain account information even if API is disabled
+     * and downloads will be executed via website. </br>
+     * If disabled [and tryAPILoginInWebsiteMode enabled], API can be used to login in website mode but account information will be obtained
      * from website.
      */
     protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api(final Account account) {
@@ -185,6 +182,11 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     /** Override this depending on host (2019-08-21: Some use "login", some use "email" [login via email:password or username:password]) */
     protected String getRelativeAPILoginParamsFormatAPIZeusCloudManager() {
         return null;
+    }
+
+    /** If enabled, random User-Agent will be used in API mode! */
+    protected boolean useRandomUserAgentAPI() {
+        return false;
     }
 
     /** 2019-08-20: API will also work fine with different User-Agent values. */
@@ -469,7 +471,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /**
-     * Sets a timestamp so we can e.g. disable API downloads for 60 minutes hardcoded (= use website) and try again via API then.
+     * Sets a timestamp so we can e.g. disable API downloads for 60 minutes hardcoded, use website and try again via API afterwards.
      *
      * @throws PluginException
      */
