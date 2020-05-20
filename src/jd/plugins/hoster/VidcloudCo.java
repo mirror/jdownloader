@@ -17,6 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,19 +37,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.co" }, urls = { "https?://(?:www\\.)?(?:vidcloud\\.co|vcstream\\.to)/(?:embed|v)/([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.ru" }, urls = { "https?://(?:www\\.)?(?:vidcloud\\.co|vcstream\\.to|vidcloud\\.ru)/(?:embed|v)/([a-z0-9]+)" })
 public class VidcloudCo extends PluginForHost {
     public VidcloudCo(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host.equalsIgnoreCase("vidcloud.co")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     /* DEV NOTES */
@@ -65,7 +74,7 @@ public class VidcloudCo extends PluginForHost {
     }
 
     public String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
@@ -87,7 +96,8 @@ public class VidcloudCo extends PluginForHost {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
         }
         br.getPage("https://" + this.getHost() + "/player?fid=" + fid + "&page=embed");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        final String status = PluginJSonUtils.getJson(br, "status");
+        if (br.getHttpConnection().getResponseCode() == 404 || "false".equals(status)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fallbackFilename = link.getStringProperty("fallback_filename");

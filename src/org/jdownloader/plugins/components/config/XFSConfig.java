@@ -2,19 +2,14 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
-// @PluginHost(host = "TODO.todo", type = Type.HOSTER)
 public interface XFSConfig extends PluginConfigInterface {
-    public static class TRANSLATION {
-        public String getPreferHTTP_label() {
-            return "Prefer http instead of https (not recommended)?";
-        }
-    }
-
     @AboutConfig
     @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Prefer http instead of https (not recommended)?")
     @Order(30)
     boolean isPreferHTTP();
 

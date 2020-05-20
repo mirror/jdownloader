@@ -41,7 +41,11 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.PreferredDownloadQuality;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.PreferredStreamQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -243,7 +247,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         default: true
      */
     protected boolean supports_https() {
-        return true;
+        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
+        if (cfgO != null) {
+            return !PluginJsonConfig.get(cfgO).isPreferHTTP();
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -1484,7 +1493,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /**
      * Checks if official video download is possible and returns final downloadurl if possible. </br>
-     * This should by default NOT throw any Exceptions!
+     * This should NOT throw any Exceptions!
      *
      * @param returnFilesize
      *            true = Only return filesize of selected quality. Use this in availablecheck. </br>
@@ -1503,7 +1512,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Match on line - safe attempt but this may not include filesize! */
             videoQualityHTMLs = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
         }
-        /** TODO: Add quality selection: Low, Medium, Original Example: deltabit.co */
         /*
          * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
          */
@@ -1517,11 +1525,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String videoQualityStr = null;
         String videoHash = null;
         String targetHTML = null;
+        final String userSelectedQualityValue = getPreferredDownloadQuality();
+        boolean foundUserSelectedQuality = false;
         if (videoQualityHTMLs.length == 0) {
             logger.info("Failed to find any official video downloads");
         }
-        // logger.info("Trying to find selected quality for official video download");
-        logger.info("Trying to find highest quality for official video download");
+        if (userSelectedQualityValue == null) {
+            logger.info("Trying to find highest quality for official video download");
+        } else {
+            logger.info(String.format("Trying to find user selected quality %s for official video download", userSelectedQualityValue));
+        }
         for (final String videoQualityHTML : videoQualityHTMLs) {
             final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
             // final String vid = videoinfo.getMatch(0);
@@ -1543,22 +1556,39 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Skipping unknown quality: " + videoQualityStrTmp);
                 continue;
             }
-            final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
-            if (internalQualityValueTmp < maxInternalQualityValue) {
-                /* Only continue with qualities that are higher than the highest we found so far. */
-                continue;
+            if (userSelectedQualityValue != null && videoQualityStrTmp.equalsIgnoreCase(userSelectedQualityValue)) {
+                logger.info("Found user selected quality: " + userSelectedQualityValue);
+                foundUserSelectedQuality = true;
+                videoQualityStr = videoQualityStrTmp;
+                videoHash = videoHashTmp;
+                if (filesizeStrTmp != null) {
+                    /*
+                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                     * RegEx fails e.g. for supervideo.tv.
+                     */
+                    filesizeStr = filesizeStrTmp;
+                }
+                targetHTML = videoQualityHTML;
+                break;
+            } else {
+                /* Look for best quality */
+                final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
+                if (internalQualityValueTmp < maxInternalQualityValue) {
+                    /* Only continue with qualities that are higher than the highest we found so far. */
+                    continue;
+                }
+                maxInternalQualityValue = internalQualityValueTmp;
+                videoQualityStr = videoQualityStrTmp;
+                videoHash = videoHashTmp;
+                if (filesizeStrTmp != null) {
+                    /*
+                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                     * RegEx fails e.g. for supervideo.tv.
+                     */
+                    filesizeStr = filesizeStrTmp;
+                }
+                targetHTML = videoQualityHTML;
             }
-            maxInternalQualityValue = internalQualityValueTmp;
-            videoQualityStr = videoQualityStrTmp;
-            videoHash = videoHashTmp;
-            if (filesizeStrTmp != null) {
-                /*
-                 * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
-                 * RegEx fails e.g. for supervideo.tv.
-                 */
-                filesizeStr = filesizeStrTmp;
-            }
-            targetHTML = videoQualityHTML;
         }
         if (targetHTML == null || videoQualityStr == null || videoHash == null) {
             if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
@@ -1567,7 +1597,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             return null;
         }
-        logger.info("Selected videoquality: " + videoQualityStr);
+        if (foundUserSelectedQuality) {
+            logger.info("Found user selected quality: " + userSelectedQualityValue);
+        } else {
+            logger.info("Picked BEST quality: " + videoQualityStr);
+        }
+        if (filesizeStr == null) {
+            /* No dramatic failure */
+            logger.info("Failed to find filesize");
+        }
         if (returnFilesize) {
             /* E.g. in availablecheck */
             return filesizeStr;
@@ -1620,6 +1658,27 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("Successfully found dllink via official video download");
         }
         return dllink;
+    }
+
+    private String getPreferredDownloadQuality() {
+        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
+        if (cfgO != null) {
+            final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
+            final PreferredDownloadQuality quality = cfg.getPreferredDownloadQuality();
+            switch (quality) {
+            default:
+                return null;
+            case BEST:
+                return null;
+            case HIGH:
+                return "h";
+            case NORMAL:
+                return "n";
+            case LOW:
+                return "l";
+            }
+        }
+        return null;
     }
 
     protected void handleRecaptchaV2(final DownloadLink link, final Form captchaForm) throws Exception {
@@ -2066,6 +2125,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
         }
         if (!StringUtils.isEmpty(jssource)) {
+            logger.info("Found video json source");
             /** TODO: 2019-10-03: Add quality selection */
             /*
              * Different services store the values we want under different names. E.g. vidoza.net uses 'res', most providers use 'label'.
@@ -2081,13 +2141,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /*
                  * Important: Default is -1 so that even if only one quality is available without quality-identifier, it will be used!
                  */
-                long quality_best = -1;
+                long quality_picked = -1;
                 String dllink_temp = null;
                 final List<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
+                final long userSelectedQuality = getPreferredStreamQuality();
+                boolean foundUserSelectedQuality = false;
+                if (userSelectedQuality == -1) {
+                    logger.info("Looking for BEST video stream");
+                } else {
+                    logger.info("Looking for user selected video stream quality: " + userSelectedQuality);
+                }
                 for (final Object videoo : ressourcelist) {
+                    /* Check for single URL without any quality information e.g. uqload.com */
                     if (videoo instanceof String && onlyOneQualityAvailable) {
-                        /* Maybe single URL without any quality information e.g. uqload.com */
+                        logger.info("Only one quality available --> Returning that");
                         dllink_temp = (String) videoo;
                         if (dllink_temp.startsWith("http")) {
                             dllink = dllink_temp;
@@ -2109,7 +2177,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (StringUtils.isEmpty(dllink_temp)) {
                         /* No downloadurl found --> Continue */
                         continue;
+                    } else if (dllink_temp.contains(".mpd")) {
+                        /* 2020-05-20: This plugin cannot yet handle DASH stream downloads */
+                        logger.info("Skipping DASH stream: " + dllink_temp);
+                        continue;
                     }
+                    /* Find quality + downloadurl */
                     for (final String possibleQualityObjectName : possibleQualityObjectNames) {
                         try {
                             quality_temp_o = entries.get(possibleQualityObjectName);
@@ -2123,6 +2196,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 break;
                             }
                         } catch (final Throwable e) {
+                            /* This should never happen */
                             logger.log(e);
                             logger.info("Failed to find quality via key '" + possibleQualityObjectName + "' for current downloadurl candidate: " + dllink_temp);
                             if (!onlyOneQualityAvailable) {
@@ -2133,13 +2207,30 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (StringUtils.isEmpty(dllink_temp)) {
                         continue;
                     }
-                    if (quality_temp > quality_best) {
-                        quality_best = quality_temp;
+                    if (quality_temp == userSelectedQuality) {
+                        /* Found user selected quality */
+                        logger.info("Found user selected quality: " + userSelectedQuality);
+                        foundUserSelectedQuality = true;
+                        quality_picked = quality_temp;
                         dllink = dllink_temp;
+                        break;
+                    } else {
+                        /* Look for best quality */
+                        if (quality_temp > quality_picked) {
+                            quality_picked = quality_temp;
+                            dllink = dllink_temp;
+                        }
                     }
                 }
                 if (!StringUtils.isEmpty(dllink)) {
-                    logger.info("BEST handling for multiple video source succeeded - best quality is: " + quality_best);
+                    logger.info("Quality handling for multiple video stream sources succeeded - picked quality is: " + quality_picked);
+                    if (foundUserSelectedQuality) {
+                        logger.info("Successfully found user selected quality: " + userSelectedQuality);
+                    } else {
+                        logger.info("Successfully found BEST quality: " + quality_picked);
+                    }
+                } else {
+                    logger.info("Failed to find any stream downloadurl");
                 }
             } catch (final Throwable e) {
                 logger.log(e);
@@ -2168,6 +2259,33 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             dllink = new Regex(src, Pattern.compile("\"(https?://[^/]+/[a-z0-9]{60}/[^\"]+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
         return dllink;
+    }
+
+    /** Returns user selected stream quality. -1 = BEST/no selection */
+    private long getPreferredStreamQuality() {
+        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
+        if (cfgO != null) {
+            final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
+            final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+            switch (quality) {
+            default:
+                return -1;
+            case BEST:
+                return -1;
+            case Q2160P:
+                return 2160;
+            case Q1080P:
+                return 1080;
+            case Q720P:
+                return 720;
+            case Q480P:
+                return 480;
+            case Q360P:
+                return 360;
+            }
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -3702,9 +3820,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             LinkedHashMap<String, Object> entries_tmp;
             entries = (LinkedHashMap<String, Object>) entries.get("result");
-            /** TODO: Add quality selection */
+            /**
+             * TODO: Add quality selection. 2020-05-20: Did not add selection yet because so far this API call has NEVER worked for ANY
+             * filehost!
+             */
             /* For videohosts: Pick the best quality */
-            final String[] qualities = new String[] { "o", "h", "n" };
+            final String[] qualities = new String[] { "o", "h", "n", "l" };
             for (final String quality : qualities) {
                 final Object qualityO = entries.get(quality);
                 if (qualityO != null) {
@@ -4054,5 +4175,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected final long internal_waittime_on_alternative_availablecheck_failures() {
         return 7 * 24 * 60 * 60 * 1000;
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideo> getConfigInterface() {
+        return null;
     }
 }

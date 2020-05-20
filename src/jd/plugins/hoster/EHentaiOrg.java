@@ -166,6 +166,10 @@ public class EHentaiOrg extends antiDDoSForHost {
                     getPage(continue_url);
                 }
                 dllink = br.getRegex("document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
+                if (dllink == null && br.containsHTML("name=\"dlcheck\" value=\"Insufficient Funds\"")) {
+                    /* 2020-05-20: E.g. not enough credits for archive downloads (?) but enough to download single images (?) */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download archives with this account (?)");
+                }
             }
             return AvailableStatus.TRUE;
         }

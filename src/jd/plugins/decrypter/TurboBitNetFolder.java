@@ -93,6 +93,7 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
         // rows = 100 000 makes sure that we only get one page with all links
         // br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
         final String host = Browser.getHost(parameter);
+        br.setFollowRedirects(true);
         getPage(String.format("http://%s/downloadfolder/gridFile?rootId=%s?currentId=%s&_search=false&nd=&rows=100000&page=1&sidx=file_type&sord=asc", host, id, id));
         if (br.containsHTML("\"records\":0,\"total\":0,\"") || br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));

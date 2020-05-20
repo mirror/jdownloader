@@ -4,10 +4,10 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.jdownloader.plugins.config.Order;
 
-// @PluginHost(host = "TODO.todo", type = Type.HOSTER)
 public interface XFSConfigVideo extends XFSConfig {
-    public static enum PreferredQuality implements LabelInterface {
+    public static enum PreferredStreamQuality implements LabelInterface {
         BEST {
             @Override
             public String getLabel() {
@@ -46,10 +46,46 @@ public interface XFSConfigVideo extends XFSConfig {
         };
     }
 
+    public static enum PreferredDownloadQuality implements LabelInterface {
+        BEST {
+            @Override
+            public String getLabel() {
+                return "Original/Best";
+            }
+        },
+        HIGH {
+            @Override
+            public String getLabel() {
+                return "High quality";
+            }
+        },
+        NORMAL {
+            @Override
+            public String getLabel() {
+                return "Normal quality";
+            }
+        },
+        LOW {
+            @Override
+            public String getLabel() {
+                return "Low quality";
+            }
+        };
+    }
+
     @AboutConfig
     @DefaultEnumValue("BEST")
-    @DescriptionForConfigEntry("If your preferred quality is not found, best quality will be downloaded instead.")
-    PreferredQuality getPreferredQuality();
+    @DescriptionForConfigEntry("If your preferred stream quality is not found, best quality will be downloaded instead.")
+    @Order(100)
+    PreferredStreamQuality getPreferredStreamQuality();
 
-    void setPreferredQuality(PreferredQuality quality);
+    void setPreferredStreamQuality(PreferredStreamQuality quality);
+
+    @AboutConfig
+    @DefaultEnumValue("BEST")
+    @DescriptionForConfigEntry("If your preferred download quality is not found, best quality will be downloaded instead.")
+    @Order(120)
+    PreferredDownloadQuality getPreferredDownloadQuality();
+
+    void setPreferredDownloadQuality(PreferredDownloadQuality quality);
 }
