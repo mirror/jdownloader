@@ -400,12 +400,36 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     /* *************************** SPECIAL API STUFF STARTS HERE *************************** */
     @Override
     protected boolean useAPIZeusCloudManager(final Account account) {
-        return this.getPluginConfig().getBooleanProperty(XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, default_PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK);
+        /*
+         * 2020-05-20: API would always return wait times for free accounts --> Do not use API for free account downloads anymore Example
+         * json: {"file_size":"100000000","file_name":"10Mo.dat","file_code":"xxxxxxxxxxxx",
+         * "message":"You have to wait 5 hours, 56 minutes, 10 seconds until the next download becomes available."}
+         */
+        final boolean allow_api_only_usage = true;
+        final boolean use_api = this.getPluginConfig().getBooleanProperty(XFileSharingProBasicSpecialFilejoker.PROPERTY_SETTING_USE_API, default_PROPERTY_SETTING_USE_API);
+        if (!allow_api_only_usage) {
+            /* API usage is internally disabled. */
+            return false;
+        } else if (account == null) {
+            return use_api;
+        } else if (account.getType() == AccountType.FREE) {
+            /* 2020-05-20: API usage is not allowed anymore for free accounts! */
+            return false;
+        } else {
+            /* 2020-05-20: API usage is still allowed for premium accounts. */
+            return use_api;
+        }
     }
 
     @Override
     protected boolean tryAPILoginInWebsiteMode(final Account account) {
-        /* 2019-09-12: Verified and working */
+        /* 2020-05-20: Verified and working */
+        return true;
+    }
+
+    @Override
+    protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api(final Account account) {
+        /* 2020-05-20: Verified and working */
         return true;
     }
 
