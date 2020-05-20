@@ -140,7 +140,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     private static final String PROPERTY_COOKIES_API                            = "PROPERTY_COOKIES_API";
     public static final String  PROPERTY_SETTING_USE_API                        = "USE_API_2020_01";
     public static final String  PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK    = "PROPERTY_API_FAILURE_TOGGLE_WEBSITE_FALLBACK";
-    public static final boolean default_PROPERTY_SETTING_USE_API                = false;
+    public static final boolean default_PROPERTY_SETTING_USE_API                = true;
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
