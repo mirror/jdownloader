@@ -182,7 +182,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             /* jdlog://1827915302851/ */
             if (this.internal_useAPIZeusCloudManager(account)) {
                 /* 2020-05-20: Workaround attempt --> Try via website next time */
-                this.tempDisableAPI(account, "VPN block workaround");
+                this.tempDisableAPI(account, "Server error: 'Wrong IP' - attempting website workaround");
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
             }
