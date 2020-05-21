@@ -225,6 +225,7 @@ public class DdlTo extends XFileSharingProBasic {
         final String premium_extra_trafficStr = PluginJSonUtils.getJson(brc, "premium_traffic_left");
         final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
         // final String trafficusedStr = PluginJSonUtils.getJson(brc, "traffic_used");
+        final boolean trustAPITrafficLeft = false;
         if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
             long traffic_left = Long.parseLong(trafficleftStr) * 1000 * 1000;
             if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
@@ -238,13 +239,17 @@ public class DdlTo extends XFileSharingProBasic {
                     }
                 }
             }
-            ai.setTrafficLeft(traffic_left);
             /*
              * 2020-02-17: Their API has a bug where it randomly returns wrong values for some users and they did not fix it within 2 weeks:
              * https://board.jdownloader.org/showthread.php?t=82525&page=2
              */
-            logger.info("Setting unlimited traffic instead of API trafficleft value " + traffic_left + " to prefer website value");
-            ai.setUnlimitedTraffic();
+            if (trustAPITrafficLeft) {
+                logger.info("Trust API trafficleft value: " + traffic_left);
+                ai.setTrafficLeft(traffic_left);
+            } else {
+                logger.info("Setting unlimited traffic instead of API trafficleft value " + traffic_left + " to prefer website value");
+                ai.setUnlimitedTraffic();
+            }
         } else {
             /*
              * They will return "traffic_left":"0" for free accounts which is wrong. It is unlimited on their website. By setting it to
