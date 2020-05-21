@@ -89,16 +89,18 @@ public class EHentaiOrg extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         fp.setProperty(FilePackage.PROPERTY_PACKAGE_KEY, galleryid);
-        /* Crawl process can take some time so let's add this always existing URL first */
-        final DownloadLink galleryArchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
-        galleryArchive.setContentUrl(parameter);
-        galleryArchive.setFinalFileName(fpName + ".zip");
-        if (archiveFileSize != null) {
-            galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
+        if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.SETTING_DOWNLOAD_ZIP, jd.plugins.hoster.EHentaiOrg.default_ENABLE_DOWNLOAD_ZIP)) {
+            /* Crawl process can take some time so let's add this always existing URL first */
+            final DownloadLink galleryArchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
+            galleryArchive.setContentUrl(parameter);
+            galleryArchive.setFinalFileName(fpName + ".zip");
+            if (archiveFileSize != null) {
+                galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
+            }
+            galleryArchive.setAvailable(true);
+            decryptedLinks.add(galleryArchive);
+            distribute(galleryArchive);
         }
-        galleryArchive.setAvailable(true);
-        decryptedLinks.add(galleryArchive);
-        distribute(galleryArchive);
         /* Now add all single images */
         int pagemax = 0;
         final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);

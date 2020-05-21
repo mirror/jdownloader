@@ -78,8 +78,9 @@ public class VcryptNet extends antiDDoSForDecrypt {
                     br.setCookie(br.getHost(), cookieParams[0], cookieParams[1]);
                 }
             }
-            if (redirect != null && redirect.contains("wss1")) {
-                br.getPage(redirect);
+            // if (redirect != null && redirect.contains("wss1")) {
+            if (redirect != null) {
+                getPage(redirect);
             }
             Form continueForm = br.getFormByInputFieldKeyValue("submit", "Continue");
             if (continueForm == null) {

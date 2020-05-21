@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -34,11 +35,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/embed/\\d+" })
-public class CamwhoresTv extends PluginForHost {
+public class CamwhoresTv extends antiDDoSForHost {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.camwhores.tv/");
@@ -102,11 +102,11 @@ public class CamwhoresTv extends PluginForHost {
         br.setCookie(getCurrentDomain(), "kt_is_visited", "1");
         final String videoID = getVideoID(link.getPluginPatternMatcher());
         if (videoID != null && StringUtils.equals(videoID, getVideoID(link.getContentUrl()))) {
-            br.getPage(link.getContentUrl());
+            getPage(link.getContentUrl());
         } else if (videoID != null) {
-            br.getPage("http://www." + getCurrentDomain() + "/videos/" + videoID + "/video/");
+            getPage("http://www." + getCurrentDomain() + "/videos/" + videoID + "/video/");
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
         }
         if (isOffline(this.br)) {
             /* 2017-01-21: For now, we do not support private videos --> Offline */
@@ -138,7 +138,7 @@ public class CamwhoresTv extends PluginForHost {
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (con.isOK() && !con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -228,7 +228,7 @@ public class CamwhoresTv extends PluginForHost {
                 if (cookies != null && !force) {
                     this.br.setCookies(host, cookies);
                     if (test) {
-                        br.getPage("http://www." + host + "/");
+                        getPage("http://www." + host + "/");
                         final String kt_member = br.getCookie(host, "kt_member");
                         if (kt_member != null && !StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
                             account.saveCookies(this.br.getCookies(host), "");
@@ -239,12 +239,12 @@ public class CamwhoresTv extends PluginForHost {
                     }
                 }
                 br.clearCookies(host);
-                br.getPage("http://www." + host + "/login/");
+                getPage("http://www." + host + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
                  * premium accounts available at all.
                  */
-                br.postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + host + "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + host + "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 final String kt_member = br.getCookie(host, "kt_member");
                 if (kt_member == null || StringUtils.equalsIgnoreCase(kt_member, "deleted")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
