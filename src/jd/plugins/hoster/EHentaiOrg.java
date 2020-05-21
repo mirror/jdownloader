@@ -16,9 +16,13 @@
 package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -47,7 +51,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(?:s/[a-f0-9]{10}/\\d+-\\d+|mpv/\\d+/[a-f0-9]{10}/#page\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends antiDDoSForHost {
     @Override
     public String rewriteHost(String host) {
@@ -68,23 +72,23 @@ public class EHentaiOrg extends antiDDoSForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean        free_resume              = true;
+    private static final boolean        free_resume                       = true;
     /* Limit chunks to 1 as we only download small files */
-    private static final int            free_maxchunks           = 1;
-    private static final int            free_maxdownloads        = -1;
-    private static final long           minimal_filesize         = 1000;
-    private String                      dllink                   = null;
-    private boolean                     server_issues            = false;
-    private final boolean               ENABLE_RANDOM_UA         = true;
-    public static final String          PREFER_ORIGINAL_QUALITY  = "PREFER_ORIGINAL_QUALITY";
-    public static final String          ENABLE_FILENAME_FIX      = "ENABLE_FILENAME_FIX";
-    public static final String          PREFER_ORIGINAL_FILENAME = "PREFER_ORIGINAL_FILENAME";
-    public static final String          SETTING_DOWNLOAD_ZIP     = "DOWNLOAD_ZIP";
-    private static final String         TYPE_EXHENTAI            = "exhentai\\.org";
-    private static final String         TYPE_ARCHIVE             = "ehentaiarchive://\\d+/[a-z0-9]+";
-    private final LinkedHashSet<String> dupe                     = new LinkedHashSet<String>();
-    private String                      uid_chapter              = null;
-    private String                      uid_page                 = null;
+    private static final int            free_maxchunks                    = 1;
+    private static final int            free_maxdownloads                 = -1;
+    private static final long           minimal_filesize                  = 1000;
+    private String                      dllink                            = null;
+    private boolean                     server_issues                     = false;
+    private final boolean               ENABLE_RANDOM_UA                  = true;
+    public static final String          PREFER_ORIGINAL_QUALITY           = "PREFER_ORIGINAL_QUALITY";
+    public static final String          ENABLE_FILENAME_FIX               = "ENABLE_FILENAME_FIX";
+    public static final String          PREFER_ORIGINAL_FILENAME          = "PREFER_ORIGINAL_FILENAME";
+    public static final String          SETTING_DOWNLOAD_ZIP              = "DOWNLOAD_ZIP";
+    private static final String         TYPE_EXHENTAI                     = "exhentai\\.org";
+    private static final String         TYPE_ARCHIVE                      = "ehentaiarchive://\\d+/[a-z0-9]+";
+    private static final String         TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
+    private static final String         TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
+    private final LinkedHashSet<String> dupe                              = new LinkedHashSet<String>();
 
     @Override
     public String getAGBLink() {
@@ -92,11 +96,24 @@ public class EHentaiOrg extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account == null && (new Regex(downloadLink.getPluginPatternMatcher(), TYPE_EXHENTAI).matches() || new Regex(downloadLink.getPluginPatternMatcher(), TYPE_ARCHIVE).matches())) {
+    public String getLinkID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE)) {
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE);
+            return this.getHost() + "://" + urlinfo.getMatch(1) + "_" + urlinfo.getMatch(2);
+        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW)) {
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW);
+            return this.getHost() + "://" + urlinfo.getMatch(0) + "_" + urlinfo.getMatch(2);
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (requiresAccount(link) && account == null) {
             return false;
         } else {
-            return super.canHandle(downloadLink, account);
+            return super.canHandle(link, account);
         }
     }
 
@@ -109,6 +126,10 @@ public class EHentaiOrg extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         return requestFileInformation(downloadLink, null, false);
+    }
+
+    private boolean requiresAccount(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches() || new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches();
     }
 
     /**
@@ -137,11 +158,16 @@ public class EHentaiOrg extends antiDDoSForHost {
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         }
         prepBR(br);
+        // nullfication
+        dupe.clear();
+        dllink = null;
+        final boolean preferOriginalQuality = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
-        if (account == null && new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches()) {
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
+            if (account == null) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches()) {
             /* Account archive download */
             if (account == null) {
                 /* Cannot check without account */
@@ -173,162 +199,215 @@ public class EHentaiOrg extends antiDDoSForHost {
                 }
             }
             return AvailableStatus.TRUE;
-        }
-        // nullfication
-        dupe.clear();
-        dllink = null;
-        String dllink_fullsize = null;
-        // uids
-        uid_chapter = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        uid_page = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        final String mainlink = getMainlink(link);
-        br.setFollowRedirects(true);
-        getPage(mainlink);
-        if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
-            if (account == null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP address has been temporarily banned for excessive pageloads");
-            }
-            String tmpYears = new Regex(br, "(\\d+)\\s+years?").getMatch(0);
-            String tmpdays = new Regex(br, "(\\d+)\\s+days?").getMatch(0);
-            String tmphrs = new Regex(br, "(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(br, "(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = new Regex(br, "(\\d+)\\s+seconds?").getMatch(0);
-            long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-            if (StringUtils.isEmpty(tmpYears)) {
-                years = Integer.parseInt(tmpYears);
-            }
-            if (StringUtils.isEmpty(tmpdays)) {
-                days = Integer.parseInt(tmpdays);
-            }
-            if (StringUtils.isEmpty(tmphrs)) {
-                hours = Integer.parseInt(tmphrs);
-            }
-            if (StringUtils.isEmpty(tmpmin)) {
-                minutes = Integer.parseInt(tmpmin);
-            }
-            if (StringUtils.isEmpty(tmpsec)) {
-                seconds = Integer.parseInt(tmpsec);
-            }
-            long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-            throw new AccountUnavailableException("Your IP address has been temporarily banned for excessive pageloads", expireS);
-        }
-        if (isOffline(br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String namepart = getNamePart(link);
-        if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
-            /* Try to get fullsize (original) image. */
-            final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
-            dllink_fullsize = fulllinkinfo.getMatch(0);
-            final String html_filesize = fulllinkinfo.getMatch(1);
-            if (dllink_fullsize != null && html_filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(html_filesize));
-            }
-        }
-        getDllink(link, account);
-        final String originalFileName = br.getRegex("<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
-        final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
-        final String ext = getFileNameExtensionFromString(dllink, ".png");
-        /* package customiser altered, or user altered value, we need to update this value. */
-        if (link.getForcedFileName() != null) {
-            link.setForcedFileName(namepart + ext);
-        } else {
-            // package customiser altered, or user altered value, we need to update this value.
-            if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && link.getForcedFileName() != null && !link.getForcedFileName().endsWith(ext)) {
-                link.setForcedFileName(namepart + ext);
-            } else if (link.getFinalFileName() == null) {
-                /* Set filename based on user setting */
-                if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
-                    link.setFinalFileName(originalFileName);
-                } else {
-                    // decrypter doesn't set file extension.
-                    link.setFinalFileName(namepart + ext);
-                }
-            }
-        }
-        if (dllink_fullsize != null) {
-            dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
-            /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
-            dllink = dllink_fullsize;
-            if (requiresAccount(dllink)) {
-                maybeLoginFailure(account);
-            } else {
-                return AvailableStatus.TRUE;
-            }
-        } else {
-            /* 2020-03-06: Sometimes needed for exhentai URLs but not that important. */
-            final String filesize2 = br.getRegex(":: ([^:<>\"]+)</div><div class=\"sn\"").getMatch(0);
-            if (filesize2 != null) {
-                link.setDownloadSize(SizeFormatter.getSize(filesize2));
-            }
-        }
-        final boolean check_filesize_via_directurl = false;
-        if (dllink != null && check_filesize_via_directurl) {
+        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW).matches()) {
+            /* 2020-05-21: New linktype "Multi Page View" */
+            br.setFollowRedirects(true);
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW);
+            final String galleryid = urlinfo.getMatch(0);
+            final String page = urlinfo.getMatch(2);
             /*
-             * Old fallback handling --> Website has a button "reload if image fails loading" --> This is what this does --> Should never be
-             * required thus deactivated 2020-03-06.
+             * 2020-05-21: TODO: Check if this ever expires - it would be easy to renew this but would require additional http requests
+             * which slows down the process of downloading a lot of small files significantly!
              */
-            while (true) {
-                if (!dupe.add(dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String mpvkey = link.getStringProperty("mpvkey", null);
+            final String imagekey = link.getStringProperty("imagekey", null);
+            if (galleryid == null || page == null || mpvkey == null || imagekey == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> postData = new HashMap<String, Object>();
+            postData.put("method", "imagedispatch");
+            postData.put("gid", galleryid);
+            postData.put("page", page);
+            postData.put("imgkey", imagekey);
+            postData.put("mpvkey", mpvkey);
+            br.postPageRaw("https://api.e-hentai.org/api.php", JSonStorage.serializeToJson(postData));
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String filesizeStr;
+            final String lowResInfo = (String) entries.get("d");
+            final String origInfo = (String) entries.get("o");
+            /* 2020-05-21: Only registered users can download originals! */
+            if (account != null && preferOriginalQuality) {
+                /* Download original file */
+                filesizeStr = new Regex(origInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
+                this.dllink = (String) entries.get("lf");
+                if (!this.dllink.startsWith("http") && !this.dllink.startsWith("/")) {
+                    this.dllink = "https://e-hentai.org/" + this.dllink;
                 }
-                final Browser br2 = br.cloneBrowser();
-                // In case the link redirects to the finallink
-                br2.setFollowRedirects(true);
+            } else {
+                /* Download "lower quality" file */
+                filesizeStr = new Regex(lowResInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
+                this.dllink = (String) entries.get("i");
+            }
+            /* Only perform linkcheck if filesize is not given as text! */
+            if (filesizeStr != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+            } else {
                 URLConnectionAdapter con = null;
                 try {
-                    try {
-                        con = this.openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                    } catch (final BrowserException ebr) {
-                        logger.log(ebr);
-                        // socket issues, lets try another mirror also.
-                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image failsloading</a>").getRow(0);
-                        if (failed == null || failed.length == 2) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                        getDllink(link, account);
-                        if (dllink != null) {
-                            continue;
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        /* Whatever happens - its most likely a server problem for this host! */
-                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    con = this.openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                    if (!con.getContentType().contains("html")) {
+                        link.setDownloadSize(con.getCompleteContentLength());
                     }
-                    if (con.getResponseCode() == 404) {
-                        // we can try another mirror
-                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image failsloading</a>").getRow(0);
-                        if (failed != null && failed.length == 2) {
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        } else {
+            /* TYPE_SINGLE_IMAGE */
+            String dllink_fullsize = null;
+            final String mainlink = getMainlink(link);
+            br.setFollowRedirects(true);
+            getPage(mainlink);
+            if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
+                if (account == null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP address has been temporarily banned for excessive pageloads");
+                }
+                String tmpYears = new Regex(br, "(\\d+)\\s+years?").getMatch(0);
+                String tmpdays = new Regex(br, "(\\d+)\\s+days?").getMatch(0);
+                String tmphrs = new Regex(br, "(\\d+)\\s+hours?").getMatch(0);
+                String tmpmin = new Regex(br, "(\\d+)\\s+minutes?").getMatch(0);
+                String tmpsec = new Regex(br, "(\\d+)\\s+seconds?").getMatch(0);
+                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                if (StringUtils.isEmpty(tmpYears)) {
+                    years = Integer.parseInt(tmpYears);
+                }
+                if (StringUtils.isEmpty(tmpdays)) {
+                    days = Integer.parseInt(tmpdays);
+                }
+                if (StringUtils.isEmpty(tmphrs)) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (StringUtils.isEmpty(tmpmin)) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (StringUtils.isEmpty(tmpsec)) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                throw new AccountUnavailableException("Your IP address has been temporarily banned for excessive pageloads", expireS);
+            }
+            if (isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String namepart = getNamePart(link);
+            if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
+                /* Try to get fullsize (original) image. */
+                final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
+                dllink_fullsize = fulllinkinfo.getMatch(0);
+                final String html_filesize = fulllinkinfo.getMatch(1);
+                if (dllink_fullsize != null && html_filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(html_filesize));
+                }
+            }
+            getDllink(link, account);
+            final String originalFileName = br.getRegex("<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
+            final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EHentaiOrg.PREFER_ORIGINAL_FILENAME, jd.plugins.hoster.EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
+            final String ext = getFileNameExtensionFromString(dllink, ".png");
+            /* package customiser altered, or user altered value, we need to update this value. */
+            if (link.getForcedFileName() != null) {
+                link.setForcedFileName(namepart + ext);
+            } else {
+                // package customiser altered, or user altered value, we need to update this value.
+                if (getPluginConfig().getBooleanProperty(ENABLE_FILENAME_FIX, default_ENABLE_FILENAME_FIX) && link.getForcedFileName() != null && !link.getForcedFileName().endsWith(ext)) {
+                    link.setForcedFileName(namepart + ext);
+                } else if (link.getFinalFileName() == null) {
+                    /* Set filename based on user setting */
+                    if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
+                        link.setFinalFileName(originalFileName);
+                    } else {
+                        // decrypter doesn't set file extension.
+                        link.setFinalFileName(namepart + ext);
+                    }
+                }
+            }
+            if (dllink_fullsize != null) {
+                dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
+                /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
+                dllink = dllink_fullsize;
+                if (requiresAccount(dllink)) {
+                    maybeLoginFailure(account);
+                } else {
+                    return AvailableStatus.TRUE;
+                }
+            } else {
+                /* 2020-03-06: Sometimes needed for exhentai URLs but not that important. */
+                final String filesize2 = br.getRegex(":: ([^:<>\"]+)</div><div class=\"sn\"").getMatch(0);
+                if (filesize2 != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize2));
+                }
+            }
+            final boolean check_filesize_via_directurl = false;
+            if (dllink != null && check_filesize_via_directurl) {
+                /*
+                 * Old fallback handling --> Website has a button "reload if image fails loading" --> This is what this does --> Should
+                 * never be required thus deactivated 2020-03-06.
+                 */
+                while (true) {
+                    if (!dupe.add(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final Browser br2 = br.cloneBrowser();
+                    // In case the link redirects to the finallink
+                    br2.setFollowRedirects(true);
+                    URLConnectionAdapter con = null;
+                    try {
+                        try {
+                            con = this.openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
+                        } catch (final BrowserException ebr) {
+                            logger.log(ebr);
+                            // socket issues, lets try another mirror also.
+                            final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image failsloading</a>").getRow(0);
+                            if (failed == null || failed.length == 2) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                             getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
                             getDllink(link, account);
                             if (dllink != null) {
                                 continue;
                             } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            /* Whatever happens - its most likely a server problem for this host! */
+                            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                        }
+                        if (con.getResponseCode() == 404) {
+                            // we can try another mirror
+                            final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image failsloading</a>").getRow(0);
+                            if (failed != null && failed.length == 2) {
+                                getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
+                                getDllink(link, account);
+                                if (dllink != null) {
+                                    continue;
+                                } else {
+                                    /* Failed */
+                                    break;
+                                }
+                            } else {
                                 /* Failed */
                                 break;
                             }
-                        } else {
-                            /* Failed */
-                            break;
                         }
-                    }
-                    final long conlength = con.getLongContentLength();
-                    if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
-                        link.setDownloadSize(conlength);
-                        link.setProperty("directlink", dllink);
-                        return AvailableStatus.TRUE;
-                    } else {
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                } finally {
-                    if (con != null) {
-                        if (con.getRequest() instanceof HeadRequest) {
-                            br2.loadConnection(con);
+                        final long conlength = con.getLongContentLength();
+                        if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
+                            link.setDownloadSize(conlength);
+                            link.setProperty("directlink", dllink);
+                            return AvailableStatus.TRUE;
                         } else {
-                            try {
-                                con.disconnect();
-                            } catch (final Throwable e) {
+                            return AvailableStatus.UNCHECKABLE;
+                        }
+                    } finally {
+                        if (con != null) {
+                            if (con.getRequest() instanceof HeadRequest) {
+                                br2.loadConnection(con);
+                            } else {
+                                try {
+                                    con.disconnect();
+                                } catch (final Throwable e) {
+                                }
                             }
                         }
                     }
