@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,11 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MixdropCo extends antiDDoSForHost {
@@ -127,7 +127,7 @@ public class MixdropCo extends antiDDoSForHost {
              * https://mixdrop.co/api#fileinfo --> Also supports multiple fileIDs but as we are unsure how long this will last and this is
              * only a small filehost, we're only using this to check single fileIDs.
              */
-            getPage(API_BASE + "/fileinfo?email=" + getAPIMail() + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
+            getPage(API_BASE + "/fileinfo?email=" + Encoding.urlEncode(getAPIMail()) + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
             if (br.getHttpConnection().getResponseCode() == 404 || !"true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "success"))) {
                 /* E.g. {"success":false,"result":{"msg":"file not found"}} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
