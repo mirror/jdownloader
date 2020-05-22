@@ -23,16 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -58,6 +48,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -1528,9 +1528,9 @@ public abstract class K2SApi extends PluginForHost {
             }
         } else if ("pl".equalsIgnoreCase(lng)) {
             if (code == 1) {
-                msg = "Pobra³e¶ ju¿ maksymaln± liczbê plików!";
+                msg = "Pobrałeś maksymalną liczbę plików.";
             } else if (code == 2) {
-                msg = "Osi±gniêto limit pobierania!";
+                msg = "Osiągnięto limit ruchu!";
             } else if (code == 3) {
                 msg = "Ograniczenie na rozmiar plików";
             } else if (code == 4) {
@@ -1538,37 +1538,37 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 5) {
                 msg = "Wykryto czas oczekiwania!";
             } else if (code == 6) {
-                msg = "Osi±gniêto maksymaln± liczbê równoczesnych pobierañ!";
+                msg = "Osiągnięto maksymalną liczbę równoległych pobrań!";
             } else if (code == 7) {
-                msg = "Ograniczenia w dostêpie - tylko u¿ytkownicy Premium mog± pobraæ wybrany plik!";
+                msg = "Ograniczenie dostępu - tylko użytkownicy premium mogą pobrać ten plik!!";
             } else if (code == 8) {
-                msg = "Ograniczenia w dostêpie - tylko w³a¶ciciel pliku mo¿e go pobraæ!";
+                msg = "Ograniczenie dostępu - tylko właściciel tego pliku może go pobrać!!";
             } else if (code == 10) {
-                msg = "Brak dostêpu!";
+                msg = "Nie masz uprawnień!";
             } else if (code == 11) {
-                msg = "auth_token wygas³!";
+                msg = "token autoryzacji wygasł!";
             } else if (code == 21 || code == 42) {
-                msg = "Pobieranie teraz niemo¿liwe! Ogólny Kod b³êdu z podkodem!";
+                msg = "Pobieranie obecnie niemożliwe! Ogólny kod błędu z subkodem!";
             } else if (code == 23) {
-                msg = "Wskazany URL to Katalog, nie mo¿na pobraæ Katalogu jako pliku!";
+                msg = "To jest folder - nie możesz pobrać folderu jako pliku!";
             } else if (code == 30 || code == 33) {
-                msg = "wymagany kod Captcha!";
+                msg = "Potrzebny Captcha!";
             } else if (code == 31) {
-                msg = "B³êdny kod Captcha";
+                msg = "Nieprawidłowy captcha";
             } else if (code == 40) {
-                msg = "Nieprawid³owy klucz pobierania";
+                msg = "Niepoprawny klucz pobierania";
             } else if (code == 41) {
                 msg = "Wykryto czas oczekiwania!";
             } else if (code == 70) {
-                msg = "Nieprawid³owa nazwa u¿ytkownika/has³o!\r\nJeste¶ pewien, ¿e wprowadzi³e¶ poprawne has³o i nazwê u¿ytkownika? Podpowied¼:\r\n1. Je¶li w twoim ha¶le wystêpuj± znaki specjalne, zmieñ je (usuñ) i spróbuj ponownie!\r\n2. Wprowad¼ has³o i nazwê u¿ytkownika rêcznie, bez u¿ywania <Kopiuj i Wklej>.";
+                msg = "Nieprawidłowa nazwa użytkownika lub hasło!\r\nJesteś pewien, że wprowadzona nazwa użytkownika i hasło są poprawne? Spróbuj wykonać następujące czynności:\r\n1. Jeśli hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź dane logowania ręcznie (bez kopiowania / wklejania).";
             } else if (code == 71) {
-                msg = "Zbyt wiele prób zalogowania!";
+                msg = "Zbyt wiele prób logowania!";
             } else if (code == 72) {
-                msg = "Konto zosta³o zablokowane!";
+                msg = "Twoje konto zostało zablokowane!";
             } else if (code == 73) {
-                msg = "Nie mo¿na po³±czyæ siê z " + getInternalAPIDomain() + " u¿ywaj±c obecnych ustawieñ sieciowych!";
+                msg = "Nie możesz połączyć się z " + getInternalAPIDomain() + " przy obecnym połączeniu!";
             } else if (code == 74) {
-                msg = "Nieznany b³±d logowania!";
+                msg = "Nieznany błąd logowania!";
             }
         }
         if (inValidate(msg)) {
