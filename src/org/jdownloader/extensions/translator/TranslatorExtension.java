@@ -12,6 +12,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.captcha.translate.CaptchaTranslation;
+import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
+import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
+import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTranslation;
+import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -24,6 +31,7 @@ import org.appwork.txtresource.DynamicResourcePath;
 import org.appwork.txtresource.TranslateData;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslateResource;
+import org.appwork.txtresource.TranslatedEntry;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.txtresource.TranslationHandler;
 import org.appwork.txtresource.TranslationSource;
@@ -74,13 +82,6 @@ import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
-
-import jd.captcha.translate.CaptchaTranslation;
-import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
-import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
-import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTranslation;
-import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
-import jd.gui.swing.jdgui.JDGui;
 
 /**
  * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
@@ -676,7 +677,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 for (Method m : h.getMethods()) {
                     TranslateEntry te = map.get(m);
                     if (te.isOK() || te.isDefault()) {
-                        data.put(te.getKey(), te.getTranslation());
+                        data.put(te.getKey(), new TranslatedEntry(te.getTranslation()));
                     }
                 }
                 String file = TranslationUtils.serialize(data);
