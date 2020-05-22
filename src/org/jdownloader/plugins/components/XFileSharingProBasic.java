@@ -1776,10 +1776,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.containsIgnoreCase(correctedBR, ";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
                 /* Captcha method by ManiacMansion */
-                final String[][] letters = new Regex(br, "<span style='position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                String[][] letters = new Regex(br, "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
                 if (letters == null || letters.length == 0) {
-                    logger.warning("plaintext captchahandling broken!");
-                    checkErrorsLastResort(null);
+                    /* Try again, this time look in non-cleaned-up html as correctBR() could have removed this part! */
+                    letters = new Regex(br.toString(), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                    if (letters == null || letters.length == 0) {
+                        logger.warning("plaintext captchahandling broken!");
+                        checkErrorsLastResort(null);
+                    }
                 }
                 final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                 for (String[] letter : letters) {
