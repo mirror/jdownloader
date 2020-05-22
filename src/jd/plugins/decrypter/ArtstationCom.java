@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,6 +32,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
@@ -62,8 +62,14 @@ public class ArtstationCom extends antiDDoSForDecrypt {
         if (br.getURL() == null) {
             // getPage("https://www.artstation.com/");
         }
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        try {
+            getPage(parameter);
+        } catch (PluginException e) {
+            // we can still access the json api
+            logger.log(e);
+            br.setCurrentURL(parameter);
+        }
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -82,7 +88,8 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             final String projectTitle = (String) json.get("title");
             for (final Object jsono : resource_data_list) {
                 final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) jsono;
-                final String url = (String) imageJson.get("image_url");
+                String url = (String) imageJson.get("image_url");
+                final long width = JavaScriptEngineFactory.toLong(imageJson.get("width"), -1l);
                 final String fid = Long.toString(JavaScriptEngineFactory.toLong(imageJson.get("id"), -1));
                 final String imageTitle = (String) imageJson.get("title");
                 final Boolean hasImage = (Boolean) imageJson.get("has_image");
@@ -120,11 +127,10 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 if (fid.equals("-1") || url == null || Boolean.FALSE.equals(hasImage)) {
                     continue;
                 }
-                // /* 2020-05-21: This might be a possibility to get higher quality content:
-                // https://board.jdownloader.org/showthread.php?t=84436 */
-                // if (url.contains("/large/")) {
-                // final String url_hq = url.replace("/large/", "/4k/");
-                // }
+                if (width > 1920 && StringUtils.contains(url, "/large/")) {
+                    logger.info("Auto 4k for '" + url + "' because width>1920=" + width);
+                    url = url.replace("/large/", "/4k/");
+                }
                 if (isAbort()) {
                     break;
                 }
