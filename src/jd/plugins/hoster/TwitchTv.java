@@ -749,7 +749,7 @@ public class TwitchTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q480p", JDL.L("plugins.hoster.twitchtv.check480p", "Grab 480p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.twitchtv.check360p", "Grab 360p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.twitchtv.check240p", "Grab 240p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "60fps", JDL.L("plugins.hoster.twitchtv.60fps", "Grab 60 fps?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_PREFERRED_FPS, AVAILABLE_FPS_SETTING, "Preferred FPS:").setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "avoidChunked", JDL.L("plugins.hoster.twitchtv.avoidChunked", "Avoid source quality (chunked)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "expspeed", JDL.L("plugins.hoster.twitchtv.expspeed", "Increase download speed (experimental)? ")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "meta", JDL.L("plugins.hoster.twitchtv.meta", "Set meta data? ")).setDefaultValue(true));
@@ -757,6 +757,9 @@ public class TwitchTv extends PluginForHost {
         // JDL.L("plugins.hoster.twitchtv.grabChatHistory", "Download given videos chat
         // history.")).setDefaultValue(defaultGrabChatHistory));
     }
+
+    private final String[]      AVAILABLE_FPS_SETTING  = new String[] { "30 & 60 FPS", "30 FPS", "60 FPS" };
+    private static final String SELECTED_PREFERRED_FPS = "SELECTED_PREFERRED_FPS";
 
     @Override
     public void reset() {

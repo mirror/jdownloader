@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 
@@ -123,8 +122,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 type = "None";
             }
             br.setAllowedResponseCodes(200, 400);
-            URLConnectionAdapter conn = br.openRequestConnection(r);
-            br.loadConnection(conn);
+            br.getPage(r);
             DBCUploadResponse uploadStatus = JSonStorage.restoreFromString(br.toString(), DBCUploadResponse.TYPE);
             DBCUploadResponse status = uploadStatus;
             if (status != null && status.getCaptcha() > 0) {

@@ -340,7 +340,14 @@ public class ImgSrcRu extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
+        if (br.containsHTML(">\\s*Adult content warning") && br.containsHTML(">\\s*You are about to enter")) {
+            final String enter = br.getRegex("(/main/warn[^\"']*over18[^\"']*)").getMatch(-1);
+            if (enter != null) {
+                jd.plugins.decrypter.ImgSrcRu.getPage(br, enter);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
             // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
             // lets look for the link
             final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\?warned=yeah").getMatch(-1);
