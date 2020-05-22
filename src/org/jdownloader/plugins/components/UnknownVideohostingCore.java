@@ -40,6 +40,8 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -254,8 +256,19 @@ public class UnknownVideohostingCore extends PluginForHost {
             /* https://vev.io/api#pair_access */
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/pair");
             br.setAllowedResponseCodes(new int[] { 400 });
+            /*
+             * 2020-05-22: Although the API is pretty much unusable as long as the user did not enable pairing via browser, it does return
+             * an offline status for invalid items --> By enabling this, we will check for this right away!
+             */
+            final boolean linkcheckOnFirstRequest = true;
             synchronized (LOCK) {
-                br.getPage("https://" + this.getHost() + "/api/pair");
+                if (linkcheckOnFirstRequest) {
+                    br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
+                    /* Check for offline status */
+                    handleAPIIErrors(link, null, false);
+                } else {
+                    br.getPage("https://" + this.getHost() + "/api/pair");
+                }
                 /*
                  * 2020-05-22: E.g. failure:
                  * {"code":400,"message":"IP is not currently paired. Please visit https://vidup.io/pair for more information.","errors":[]}
@@ -306,13 +319,13 @@ public class UnknownVideohostingCore extends PluginForHost {
                         logger.info("Pairing failed");
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Pairing failure", 30 * 60 * 1000l);
                     }
-                    handleAPIIErrors();
+                    handleAPIIErrors(link, null, false);
                 }
             }
-            br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
-            if (br.containsHTML("invalid video specified")) {
-                /* 2020-05-22 e.g. {"code":400,"message":"invalid video specified","errors":[]} along with http response 400 */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL() == null || !br.getURL().contains(this.getFID(link))) {
+                /* Only perform this API call if it hasn't been done already! */
+                br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
+                handleAPIIErrors(link, null, false);
             }
         } else {
             br.getHeaders().put("Origin", "https://" + this.getHost());
@@ -362,7 +375,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            this.handleAPIIErrors();
+            this.handleAPIIErrors(link, null, false);
         }
         String dllink = null;
         try {
@@ -401,11 +414,25 @@ public class UnknownVideohostingCore extends PluginForHost {
     private boolean isPaired() {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         try {
-            final ArrayList<Object> sessions = (ArrayList<Object>) entries.get("sessions");
-            if (sessions != null && !sessions.isEmpty()) {
-                return true;
+            /* Return result depending on which API call was performed before */
+            if (br.getURL().matches(".+api/pair/[a-z0-9]+")) {
+                /*
+                 * 2020-05-22: E.g.
+                 * {"code":400,"message":"IP is not currently paired. Please visit https://vidup.io/pair for more information.","errors":[]}
+                 */
+                final String message = (String) entries.get("message");
+                if (message != null && message.contains("IP is not currently paired")) {
+                    return false;
+                } else {
+                    return true;
+                }
             } else {
-                return false;
+                final ArrayList<Object> sessions = (ArrayList<Object>) entries.get("sessions");
+                if (sessions != null && !sessions.isEmpty()) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         } catch (final Throwable e) {
             logger.log(e);
@@ -459,13 +486,24 @@ public class UnknownVideohostingCore extends PluginForHost {
         return thread;
     }
 
-    private void handleAPIIErrors() throws PluginException {
+    private void handleAPIIErrors(final DownloadLink link, final Account account, final boolean handleUnknownErrors) throws PluginException {
         final String errormessage = PluginJSonUtils.getJson(br, "message");
         if (!StringUtils.isEmpty(errormessage)) {
-            if (errormessage.equalsIgnoreCase("invalid video code")) {
+            if (errormessage.equalsIgnoreCase("invalid video code") || errormessage.equalsIgnoreCase("invalid video specified")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errormessage.equalsIgnoreCase("captcha required") || errormessage.equalsIgnoreCase("invalid captcha verification")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            logger.info("Unknown error has happened: " + errormessage);
+            if (handleUnknownErrors) {
+                logger.info("Handling unknown error");
+                if (link == null) {
+                    throw new AccountUnavailableException(errormessage, 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 5 * 60 * 1000l);
+                }
+            } else {
+                logger.info("NOT handling unknown error");
             }
         }
     }

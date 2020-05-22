@@ -41,7 +41,7 @@ public class VevIo extends UnknownVideohostingCore {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        // do not correct links from thevideos.ga
+        // do not correct URLs from thevideos.ga
         if (!StringUtils.equalsIgnoreCase("thevideos.ga", getHost())) {
             super.correctDownloadLink(link);
         }
@@ -65,16 +65,6 @@ public class VevIo extends UnknownVideohostingCore {
         return false;
     }
 
-    // @Override
-    // protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws
-    // PluginException {
-    // return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()) {
-    // @Override
-    // public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
-    // return TYPE.INVISIBLE;
-    // }
-    // };
-    // }
     @Override
     protected String getReCaptchaKey() {
         return "6Ld6RqIUAAAAAKjcjfIgh2TmF_HmAc5hvrQx_D9a";
