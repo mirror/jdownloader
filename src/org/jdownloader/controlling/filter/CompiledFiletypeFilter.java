@@ -376,7 +376,8 @@ public class CompiledFiletypeFilter {
         VOB,
         WMV,
         GP3,
-        WEBM;
+        WEBM,
+        APNG;
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -522,6 +523,7 @@ public class CompiledFiletypeFilter {
         RAW,
         SVG,
         ICO,
+        CUR,
         WEBP,
         MVIEW;
         private final Pattern  pattern;
