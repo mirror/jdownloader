@@ -116,7 +116,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         }
         /* Check if the user has activated "Multi page View" in his account --> Switch to required URL if needed. */
         final boolean isMultiPageViewActive = br.containsHTML("/mpv/\\d+/[^/]+/#page\\d+");
-        final String mpv_url = "https://e-hentai.org/mpv/" + galleryid + "/" + galleryhash + "/";
+        final String mpv_url = "https://" + br.getHost() + "/mpv/" + galleryid + "/" + galleryhash + "/";
         if (isMultiPageViewActive && !br.getURL().contains("/mpv/")) {
             logger.info("Switching to multi page view ...");
             br.getPage(mpv_url);

@@ -163,11 +163,7 @@ public class EHentaiOrg extends antiDDoSForHost {
         dllink = null;
         final boolean preferOriginalQuality = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
-        if (new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
-            if (account == null) {
-                return AvailableStatus.UNCHECKABLE;
-            }
-        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches()) {
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches()) {
             /* Account archive download */
             if (account == null) {
                 /* Cannot check without account */
@@ -221,7 +217,14 @@ public class EHentaiOrg extends antiDDoSForHost {
             postData.put("page", page);
             postData.put("imgkey", imagekey);
             postData.put("mpvkey", mpvkey);
-            br.postPageRaw("https://api.e-hentai.org/api.php", JSonStorage.serializeToJson(postData));
+            final String host;
+            if (link.getPluginPatternMatcher().contains("")) {
+                host = "exhentai.org";
+                br.postPageRaw("https://exhentai.org/api.php", JSonStorage.serializeToJson(postData));
+            } else {
+                host = "e-hentai.org";
+                br.postPageRaw("https://api.e-hentai.org/api.php", JSonStorage.serializeToJson(postData));
+            }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String filesizeStr;
             final String lowResInfo = (String) entries.get("d");
@@ -232,7 +235,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 filesizeStr = new Regex(origInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
                 this.dllink = (String) entries.get("lf");
                 if (!this.dllink.startsWith("http") && !this.dllink.startsWith("/")) {
-                    this.dllink = "https://e-hentai.org/" + this.dllink;
+                    this.dllink = "https://" + host + "/" + this.dllink;
                 }
             } else {
                 /* Download "lower quality" file */
@@ -255,6 +258,10 @@ public class EHentaiOrg extends antiDDoSForHost {
                     } catch (final Throwable e) {
                     }
                 }
+            }
+        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
+            if (account == null) {
+                return AvailableStatus.UNCHECKABLE;
             }
         } else {
             /* TYPE_SINGLE_IMAGE */
