@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVidloxMe;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -156,5 +158,10 @@ public class VidloxTv extends XFileSharingProBasic {
     public String[] scanInfo(final String[] fileInfo) {
         fileInfo[0] = new Regex(correctedBR, "<title>\\s*Watch([^<>\"]+)</title>").getMatch(0);
         return super.scanInfo(fileInfo);
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideo> getConfigInterface() {
+        return XFSConfigVideoVidloxMe.class;
     }
 }

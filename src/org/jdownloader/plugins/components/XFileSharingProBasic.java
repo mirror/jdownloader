@@ -2146,13 +2146,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 String dllink_temp = null;
                 final List<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
-                final long userSelectedQuality = getPreferredStreamQuality();
-                boolean foundUserSelectedQuality = false;
+                final int userSelectedQuality = getPreferredStreamQuality();
                 if (userSelectedQuality == -1) {
                     logger.info("Looking for BEST video stream");
                 } else {
                     logger.info("Looking for user selected video stream quality: " + userSelectedQuality);
                 }
+                boolean foundUserSelectedQuality = false;
                 for (final Object videoo : ressourcelist) {
                     /* Check for single URL without any quality information e.g. uqload.com */
                     if (videoo instanceof String && onlyOneQualityAvailable) {
@@ -2188,10 +2188,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         try {
                             quality_temp_o = entries.get(possibleQualityObjectName);
                             if (quality_temp_o != null && quality_temp_o instanceof Long) {
-                                quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                                quality_temp = (int) JavaScriptEngineFactory.toLong(quality_temp_o, 0);
                             } else if (quality_temp_o != null && quality_temp_o instanceof String) {
                                 /* E.g. '360p' */
-                                quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0));
+                                quality_temp = (int) Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0));
                             }
                             if (quality_temp > 0) {
                                 break;
@@ -2263,7 +2263,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns user selected stream quality. -1 = BEST/no selection */
-    private long getPreferredStreamQuality() {
+    private int getPreferredStreamQuality() {
         final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
         if (cfgO != null) {
             final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
@@ -3942,7 +3942,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             } else if (dllink.contains(".m3u8")) {
-                /* 2019-08-29: HLS download - more and more streaming-hosts have this (example: streamty.com) */
+                /* 2019-08-29: HLS download - more and more streaming-hosts have this (example: streamty.com, vidlox.me) */
                 dllink = handleQualitySelectionHLS(dllink);
                 checkFFmpeg(link, "Download a HLS Stream");
                 dl = new HLSDownloader(link, br, dllink);
@@ -3989,39 +3989,42 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    /** Returns user selected streaming quality. Returns BEST by default / no selection. */
     protected String handleQualitySelectionHLS(final String hls_master) throws Exception {
+        if (hls_master == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         this.getPage(hls_master);
         final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(br);
         if (hlsQualities == null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown HLS streaming error");
         }
-        /** TODO: Add quality selection */
-        final boolean preferBEST = true;
-        final String selectedQuality = "TODO";
         HlsContainer hlsSelected = null;
-        if (preferBEST) {
-            logger.info("BEST quality is selected");
+        final int userSelectedQuality = getPreferredStreamQuality();
+        if (userSelectedQuality == -1) {
+            logger.info("Looking for BEST video stream");
             hlsSelected = HlsContainer.findBestVideoByBandwidth(hlsQualities);
         } else {
-            logger.info("Looking for selected quality");
+            logger.info("Looking for user selected video stream quality: " + userSelectedQuality);
             for (final HlsContainer hlsQualityTmp : hlsQualities) {
                 /*
                  * TODO: Check if they're always the same or if they can also be crooked numbers. See ZDFMediathekDecrypter -->
                  * getHeightForQualitySelection()
                  */
                 final int height = hlsQualityTmp.getHeight();
-                if (Integer.toString(height).equals(selectedQuality)) {
-                    logger.info("Successfully found selected quality: " + selectedQuality);
+                if (height == userSelectedQuality) {
+                    logger.info("Successfully found selected quality: " + userSelectedQuality);
                     hlsSelected = hlsQualityTmp;
                     break;
                 }
             }
+            if (hlsSelected == null) {
+                logger.info("Failed to find user selected quality --> Returning BEST instead");
+                hlsSelected = HlsContainer.findBestVideoByBandwidth(hlsQualities);
+            }
         }
-        if (hlsSelected == null) {
-            /* Fallback */
-            logger.info("Failed to find selected quality --> Using BEST instead");
-            hlsSelected = HlsContainer.findBestVideoByBandwidth(hlsQualities);
-        }
+        logger.info(String.format("Picked stream quality = %sp", hlsSelected.getHeight()));
         return hlsSelected.getDownloadurl();
     }
 
