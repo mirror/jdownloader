@@ -572,6 +572,13 @@ public class ClipboardMonitoring {
                                                         }
                                                     });
                                                 }
+                                                if (browserURL == null) {
+                                                    try {
+                                                        browserURL = getCurrentBrowserURL(currentContent, dataFlavors, null);
+                                                    } catch (final Throwable e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                }
                                                 job.setCustomSourceUrl(browserURL);
                                                 LinkCollector.getInstance().addCrawlerJob(job);
                                             }
@@ -642,7 +649,13 @@ public class ClipboardMonitoring {
                 if (htmlFragment != null) {
                     return new ClipboardContent(sb.toString(), htmlFragment.getSourceURL());
                 } else {
-                    return new ClipboardContent(sb.toString(), null);
+                    String sourceURL = null;
+                    try {
+                        sourceURL = getCurrentBrowserURL(currentContent);
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                    return new ClipboardContent(sb.toString(), sourceURL);
                 }
             }
         }
@@ -789,7 +802,7 @@ public class ClipboardMonitoring {
                 }
             }
         }
-        final byte[] htmlDataBytes = getBytes(transferable, dataFlavors, null, htmlFlavor);
+        final byte[] htmlDataBytes = getBytes(transferable, flavors, null, htmlFlavor);
         if (htmlDataBytes != null && htmlDataBytes.length != 0) {
             final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
             final String result = convertBytes(htmlDataBytes, Charset.forName(charSet), true);
@@ -800,14 +813,15 @@ public class ClipboardMonitoring {
                     if (!StringUtils.isEmpty(sourceURL) && HTMLParser.getProtocol(sourceURL) != null) {
                         return new HTMLFragment(sourceURL, fragment);
                     }
-                    final String browserURL = getCurrentBrowserURL(transferable, dataFlavors, result);
+                    final String browserURL = getCurrentBrowserURL(transferable, flavors, result);
                     return new HTMLFragment(browserURL, fragment);
                 }
             }
-            final String browserURL = getCurrentBrowserURL(transferable, dataFlavors, result);
+            final String browserURL = getCurrentBrowserURL(transferable, flavors, result);
             return new HTMLFragment(browserURL, result);
+        } else {
+            return null;
         }
-        return null;
     }
 
     private final static boolean startsWith(byte[] array, int startIndex, byte[] check) {

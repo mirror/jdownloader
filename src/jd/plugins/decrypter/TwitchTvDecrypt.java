@@ -19,13 +19,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -49,6 +45,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.|secure\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)(?:[^<>/\"]+/(?:(b|c|v)/\\d+|videos(\\?page=\\d+)?|video/\\d+)|videos/\\d+)|(www\\.|secure\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)|https?://(?:www\\.)?twitch\\.tv/[^/]+/clip/[A-Za-z0-9]+|https?://clips\\.twitch\\.tv/(embed\\?clip=)?[A-Za-z0-9]+" })
 public class TwitchTvDecrypt extends PluginForDecrypt {
@@ -444,14 +445,43 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     boolean q480 = this.getPluginConfig().getBooleanProperty("q480p", true);
                     boolean q360 = this.getPluginConfig().getBooleanProperty("q360p", true);
                     boolean q240 = this.getPluginConfig().getBooleanProperty("q240p", true);
-                    final boolean fps60 = this.getPluginConfig().getBooleanProperty("60fps", true);
-                    if (!fps60) {
+                    final int preferredFPS = getPluginConfig().getIntegerProperty("SELECTED_PREFERRED_FPS", 0);
+                    final boolean preferred60FPS = preferredFPS == 2;
+                    final boolean preferred30FPS = preferredFPS == 1;
+                    if (preferred30FPS || preferred60FPS) {
+                        final List<DownloadLink> fps60 = new ArrayList<DownloadLink>();
+                        final List<DownloadLink> fps30 = new ArrayList<DownloadLink>();
                         final Iterator<DownloadLink> it = hlsStreams.iterator();
                         while (it.hasNext()) {
                             final DownloadLink next = it.next();
-                            if (next.getIntegerProperty("fps", -1) == 60) {
+                            switch (next.getIntegerProperty("fps", -1)) {
+                            case 60:
+                                fps60.add(next);
                                 it.remove();
+                                break;
+                            case 30:
+                                fps30.add(next);
+                                it.remove();
+                                break;
+                            default:
+                                break;
                             }
+                        }
+                        if (preferred30FPS) {
+                            if (fps30.size() > 0) {
+                                hlsStreams.addAll(fps30);
+                            } else {
+                                hlsStreams.addAll(fps60);
+                            }
+                        } else if (preferred60FPS) {
+                            if (fps60.size() > 0) {
+                                hlsStreams.addAll(fps60);
+                            } else {
+                                hlsStreams.addAll(fps30);
+                            }
+                        } else {
+                            hlsStreams.addAll(fps30);
+                            hlsStreams.addAll(fps60);
                         }
                     }
                     // covers when users are idiots and disables all qualities.

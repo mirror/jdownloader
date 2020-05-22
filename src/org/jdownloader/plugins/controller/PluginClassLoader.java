@@ -34,23 +34,23 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-                                                                                              /**
+        /**
          *
          */
-                                                                                              private static final long serialVersionUID = -5337264051307565501L;
-                                                                                              {
-                                                                                                  add("java.lang.Boolean");
-                                                                                                  add("java.lang.Byte");
-                                                                                                  add("java.lang.String");
-                                                                                                  add("java.lang.Double");
-                                                                                                  add("java.lang.Integer");
-                                                                                                  add("java.lang.Long");
-                                                                                                  add("java.lang.Float");
-                                                                                                  add("java.lang.Short");
-                                                                                                  add("java.math.BigInteger");
-                                                                                                  add("java.math.BigDecimal");
-                                                                                              }
-                                                                                          };
+        private static final long serialVersionUID = -5337264051307565501L;
+        {
+            add("java.lang.Boolean");
+            add("java.lang.Byte");
+            add("java.lang.String");
+            add("java.lang.Double");
+            add("java.lang.Integer");
+            add("java.lang.Long");
+            add("java.lang.Float");
+            add("java.lang.Short");
+            add("java.math.BigInteger");
+            add("java.math.BigDecimal");
+        }
+    };
 
     private static class PluginClassLoaderClass {
         private final WeakReference<Class<?>> clazz;
@@ -90,10 +90,10 @@ public class PluginClassLoader extends URLClassLoader {
             this.mapStaticFields = mapStaticFields;
         }
 
-        private boolean      jared           = Application.isJared(PluginClassLoader.class);
-        private String       pluginClass     = null;
-        private final String creationHistory = Exceptions.getStackTrace(new Throwable());
+        private boolean jared       = Application.isJared(PluginClassLoader.class);
+        private String  pluginClass = null;
 
+        // private final String creationHistory = Exceptions.getStackTrace(new Throwable());
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
         }
