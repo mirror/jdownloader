@@ -55,12 +55,17 @@ public class EHentaiOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("e-hentai.org");
+        // final String url_host = Browser.getHost(param.getCryptedUrl());
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
         if (aa != null) {
             ((jd.plugins.hoster.EHentaiOrg) hostplugin).login(this.br, aa, false);
         }
         // links are transferable between the login enforced url and public, but may not be available on public
-        final String gallerytype = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        String gallerytype = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (aa == null) {
+            /* Enforce "normal" gallery type as "/mpv/" is only available for loggedin users!" */
+            gallerytype = "g";
+        }
         final String galleryid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
         final String galleryhash = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(2);
         final String parameter;
@@ -147,7 +152,7 @@ public class EHentaiOrg extends PluginForDecrypt {
             final Browser br2 = br.cloneBrowser();
             if (page > 0) {
                 sleep(new Random().nextInt(5000), param);
-                br2.getPage(parameter + "/?p=" + page);
+                br2.getPage(parameter + "?p=" + page);
             }
             if (isMultiPageURL) {
                 /* 2020-05-21: New feature of the websites which some users can activate in their account */
@@ -162,7 +167,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                     final String originalFilename = (String) entries.get("n");
                     final String imagekey = (String) entries.get("k");
                     if (StringUtils.isEmpty(originalFilename) || StringUtils.isEmpty(imagekey)) {
-                        /* Akip invalid items (this should never happen) */
+                        /* Skip invalid items (this should never happen) */
                         continue;
                     }
                     final String url = mpv_url + "#page" + counter;
@@ -174,6 +179,8 @@ public class EHentaiOrg extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                     counter++;
                 }
+                logger.info("Stepping out of loop as mpv URLs have all objects on the first page");
+                break;
             } else {
                 final String[][] links = br2.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + galleryid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
                 if (links == null || links.length == 0 || fpName == null) {
