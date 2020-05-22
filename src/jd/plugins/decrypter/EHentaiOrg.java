@@ -114,9 +114,17 @@ public class EHentaiOrg extends PluginForDecrypt {
                 }
             }
         }
+        /* Check if the user has activated "Multi page View" in his account --> Switch to required URL if needed. */
+        final boolean isMultiPageViewActive = br.containsHTML("/mpv/\\d+/[^/]+/#page\\d+");
+        final String mpv_url = "https://e-hentai.org/mpv/" + galleryid + "/" + galleryhash + "/";
+        if (isMultiPageViewActive && !br.getURL().contains("/mpv/")) {
+            logger.info("Switching to multi page view ...");
+            br.getPage(mpv_url);
+        }
+        /* Check again as we could also get redirected to a normal gallery URL containing '/g/' */
+        final boolean isMultiPageURL = br.getURL().contains("/mpv/");
         int counter = 1;
         for (int page = 0; page <= pagemax; page++) {
-            final boolean isMultiPageViewActive = br.containsHTML("/mpv/\\d+/[^/]+/#page\\d+") || br.getURL().contains("/mpv/");
             // if (isMultiPageViewActive) {
             // logger.info("Multi-Page-View active --> Trying to deactivate it");
             // final String previousURL = br.getURL();
@@ -141,10 +149,9 @@ public class EHentaiOrg extends PluginForDecrypt {
                 sleep(new Random().nextInt(5000), param);
                 br2.getPage(parameter + "/?p=" + page);
             }
-            if (isMultiPageViewActive) {
+            if (isMultiPageURL) {
                 /* 2020-05-21: New feature of the websites which some users can activate in their account */
                 final String mpvkey = br.getRegex("var mpvkey\\s*=\\s*\"([a-z0-9]+)\";").getMatch(0);
-                final String mpv_url = "https://e-hentai.org/mpv/" + galleryid + "/" + galleryhash + "/";
                 if (mpvkey == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
