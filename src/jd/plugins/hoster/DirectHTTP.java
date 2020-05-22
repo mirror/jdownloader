@@ -78,7 +78,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-"https?(viajd)?://[\\p{L}\\p{Nd}\\w\\.:\\-@\\[\\]]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+        "https?(viajd)?://[\\p{L}\\p{Nd}\\w\\.:\\-@\\[\\]]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
     public static final String ENDINGS               = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String NORESUME              = "nochunkload";
@@ -239,11 +239,14 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
-    private final String  SSLTRUSTALL        = "SSLTRUSTALL";
-    private final boolean SSLTRUSTAL_default = true;
+    private final String  SSLTRUSTALL                       = "SSLTRUSTALL";
+    private final boolean SSLTRUSTAL_default                = true;
+    private final String  AUTO_USE_FLASHGOT_REFERER         = "AUTO_USE_FLASHGOT_REFERER";
+    private final boolean AUTO_USE_FLASHGOT_REFERER_default = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSLTRUSTALL, JDL.L("plugins.hoster.http.ssltrustall", "Ignore SSL issues?")).setDefaultValue(SSLTRUSTAL_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTO_USE_FLASHGOT_REFERER, "Auto use referer set by Flashgot?").setDefaultValue(AUTO_USE_FLASHGOT_REFERER_default));
     }
 
     private boolean isSSLTrustALL() {
@@ -903,19 +906,22 @@ public class DirectHTTP extends antiDDoSForHost {
             map.put("image/gif", "gif");
             map.put("image/jpeg", "jpeg");
             map.put("image/png", "png");
+            map.put("image/apng", "apng");
             map.put("image/tiff", "tiff");
+            map.put("image/webp", "webp");
             map.put("video/mp4", "mp4");
             map.put("video/ogg", "ogg");
             map.put("video/webm", "webm");
             map.put("audio/mp3", "mp3");
             map.put("audio/mp4", "mp4");
-            map.put("audio/wav", "wav");
+            map.put("audio/x-flac", "flac");
             map.put("audio/wav", "wav");
             map.put("text/css", "css");
             map.put("text/javascript", "js");
             map.put("text/xml", "xml");
             map.put("text/html", "html");
             map.put("text/plain", "txt");
+            map.put("application/x-xz", "xz");
             map.put("application/gzip", "gz");
             map.put("application/json", "json");
             map.put("application/xml", "xml");
@@ -980,8 +986,9 @@ public class DirectHTTP extends antiDDoSForHost {
         /*
          * try the referer set by flashgot, maybe it works
          */
-        if (downloadLink.getBooleanProperty("tryoldref", false) && downloadLink.getStringProperty("referer", null) != null) {
+        if ((getPluginConfig().getBooleanProperty(AUTO_USE_FLASHGOT_REFERER, AUTO_USE_FLASHGOT_REFERER_default) || downloadLink.getBooleanProperty("tryoldref", false)) && downloadLink.getStringProperty("referer", null) != null) {
             /* refURL is for internal use */
+            downloadLink.setProperty("tryoldref", true);
             br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         }
         if (downloadLink.getStringProperty("cookies", null) != null) {
@@ -1062,11 +1069,11 @@ public class DirectHTTP extends antiDDoSForHost {
         if (link != null) {
             /* prefer domain via public suffic list */
             return Browser.getHost(link.getDownloadURL());
-        }
-        if (account != null) {
+        } else if (account != null) {
             return account.getHoster();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
