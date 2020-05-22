@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,19 +41,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-file.com" }, urls = { "" })
 public class DebridFileCom extends PluginForHost {
     /* This is a "updated" version of website tout-debrid.ch */
     private static final String          WEBSITE_BASE                 = "https://debrid-file.com";
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("debrid-file.com");
     private static final boolean         account_PREMIUM_resume       = true;
-    /** 2020-03-21: phg: In my tests, it is OK for the chunkload with the value of 5 */
-    private static final int             account_PREMIUM_maxchunks    = -5;
+    /** 2020-05-22: PHG: In my tests, it is OK for the chunkload with the value of 10 */
+    private static final int             account_PREMIUM_maxchunks    = -10;
     private static final int             account_PREMIUM_maxdownloads = -1;
     private static final boolean         account_FREE_resume          = true;
     private static final int             account_FREE_maxchunks       = 1;
@@ -57,12 +57,12 @@ public class DebridFileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public DebridFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://debrid-file.com/dashboard.php?pages=paiement");
+        this.enablePremium(WEBSITE_BASE + "/site/paiement");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://debrid-file.com/dashboard.php?pages=faq";
+        return WEBSITE_BASE + "/site/faq";
     }
 
     private Browser newBrowser() {
@@ -122,7 +122,11 @@ public class DebridFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (dllink == null) {
             this.loginWebsite(account);
-            br.postPage("/getlink2.php", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + link.getDownloadPassword());
+            br.getPage(WEBSITE_BASE + "/service");
+            final String csrfTokenStr = br.getRegex("meta name=\"csrf-token\" content=\"(.*?)>").getMatch(0);
+            br.setHeader("referer", WEBSITE_BASE + "/service");
+            br.setHeader("x-csrf-token", csrfTokenStr);
+            br.postPage("/service/get-link", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             dllink = br.getRegex("href='(http[^<>\"\\']+)'>").getMatch(0);
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
@@ -161,11 +165,11 @@ public class DebridFileCom extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account);
-        if (br.getURL() == null || !br.getURL().contains("/dashboard.php?pages=service&hl=en")) {
-            br.getPage(WEBSITE_BASE + "/dashboard.php?pages=service&hl=en");
+        if (br.getURL() == null || !br.getURL().contains("/service")) {
+            br.getPage(WEBSITE_BASE + "/service");
         }
         final String premiumDaysStr = br.getRegex("Premium\\s*:\\s*(\\d+)\\s*<small").getMatch(0);
-        String trafficleftStr = br.getRegex("</small><b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>").getMatch(0);
+        String trafficleftStr = br.getRegex("</small>((<b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>)|<strong>([A-Za-zé]+)</strong>)").getMatch(0);
         if (premiumDaysStr == null) {
             /* Free or plugin failure */
             /*
@@ -179,12 +183,13 @@ public class DebridFileCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(account_PREMIUM_maxdownloads);
-            ai.setTrafficMax("300 GB");
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(premiumDaysStr) * 24 * 60 * 60 * 1000l, this.br);
         }
         if (trafficleftStr == null) {
             /* Downloads are not possible if the traffic has not be retrieved */
             ai.setTrafficLeft(0);
+        } else if (trafficleftStr.contains("Unlimited")) {
+            ai.setUnlimitedTraffic();
         } else {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleftStr));
         }
@@ -205,7 +210,7 @@ public class DebridFileCom extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Trying to login via cookies");
                     br.setCookies(WEBSITE_BASE, cookies);
-                    br.getPage(WEBSITE_BASE + "/dashboard.php?pages=service&hl=en");
+                    br.getPage(WEBSITE_BASE + "/site/login");
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
@@ -215,13 +220,13 @@ public class DebridFileCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage(WEBSITE_BASE + "/dashboard.php?pages=login");
-                final Form loginform = br.getFormbyKey("pass");
+                br.getPage(WEBSITE_BASE + "/site/login");
+                final Form loginform = br.getFormbyAction("/site/login");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("add", Encoding.urlEncode(account.getUser()));
-                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                loginform.put("LoginForm%5Busername%5D", Encoding.urlEncode(account.getUser()));
+                loginform.put("LoginForm%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
                 if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
                     /* 2020-03-19: reCaptchaV2 is always required but they may make it optional in the future. */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -230,18 +235,14 @@ public class DebridFileCom extends PluginForHost {
                         if (dlinkbefore != null) {
                             dl_dummy = dlinkbefore;
                         } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster() + "/dashboard.php", true);
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster() + "/service", true);
                             this.setDownloadLink(dl_dummy);
                         }
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     } finally {
                         this.setDownloadLink(dlinkbefore);
                     }
-                }
-                if (loginform.getAction() == null || !loginform.getAction().startsWith("http") || !loginform.getAction().startsWith("/")) {
-                    /* 2020-03-19: Action = javascript --> "javascript:gonder();" --> We need to correct this */
-                    loginform.setAction("/verif.php");
                 }
                 br.submitForm(loginform);
                 if (!isLoggedIN()) {
@@ -268,9 +269,9 @@ public class DebridFileCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
         }
-        boolean bCookieOK = br.getCookie(br.getHost(), "loginhash", Cookies.NOTDELETEDPATTERN) != null;
+        boolean bCookieOK = br.getCookie(br.getHost(), "advanced-frontend", Cookies.NOTDELETEDPATTERN) != null;
         if (bCookieOK) {
-            if (br.containsHTML("You must be logged")) {
+            if (br.containsHTML("Connexion")) {
                 bCookieOK = false;
             }
         }
