@@ -1617,6 +1617,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              * TODO: Fix issue where first request leads to '<br><b class="err">Security error</b>' (reproduced over multiple filehosts e.g.
              * xvideosharing.com)
              */
+            /* 2020-05-22: Workaround attempt for unnerving class="err">Security error< which can sometimes appear if you're too fast */
+            final int extraWaitSeconds = 5;
+            logger.info("Waiting extra wait seconds: " + extraWaitSeconds);
+            this.sleep(extraWaitSeconds * 1000l, link);
             getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
             /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
             final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
