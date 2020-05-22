@@ -20,7 +20,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,11 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownVideohostingCore extends PluginForHost {
@@ -87,6 +95,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
+    private final Object         LOCK              = new Object();
 
     @Override
     public String getAGBLink() {
@@ -222,95 +231,162 @@ public class UnknownVideohostingCore extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
-        return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey());
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, final String rcKey) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey) {
+            @Override
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        };
     }
 
-    /** 2019-08-06: See e.g. https://vev.io/api. Alternative way: https://vev.io/pair (this also requires solving reCaptcha) */
+    /** If enabled, pairing API will be used for downloading e.g. see vev.io/pair */
+    protected boolean usePairingMode() {
+        return true;
+    }
+
+    protected int getPairingTimeoutSeconds() {
+        return 120;
+    }
+
     private String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
-        br.getHeaders().put("Origin", "https://" + this.getHost());
-        br.getHeaders().put("Referer", "https://" + this.getHost() + "/" + this.getFID(link));
-        br.getHeaders().put("Accept", "application/json");
-        /* According to website, this way we'll get a higher downloadspeed */
-        br.getHeaders().put("x-adblock", "0");
-        br.setAllowedResponseCodes(new int[] { 400 });
-        int loop = 0;
-        boolean captchaFailed = false;
-        String recaptchaV2Response = null;
-        do {
-            String postData = "";
-            // br.getPage(link.getPluginPatternMatcher());
-            // recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()).getToken();
-            if (loop > 0) {
-                postData = "{\"g-recaptcha-verify\":\"" + recaptchaV2Response + "\"}";
-            }
-            br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
-            br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
-                final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
-                br.setFollowRedirects(false);
-                br.getPage(url);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (usePairingMode()) {
+            /* https://vev.io/api#pair_access */
+            br.getHeaders().put("Referer", "https://" + this.getHost() + "/pair");
+            br.setAllowedResponseCodes(new int[] { 400 });
+            synchronized (LOCK) {
+                br.getPage("https://" + this.getHost() + "/api/pair");
+                /*
+                 * 2020-05-22: E.g. failure:
+                 * {"code":400,"message":"IP is not currently paired. Please visit https://vidup.io/pair for more information.","errors":[]}
+                 */
+                if (!isPaired()) {
+                    logger.info("New pairing session required");
+                    if (!isDownload) {
+                        /* Avoid captchas during linkcheck */
+                        return null;
+                    }
+                    final boolean doAutoPairing = false;
+                    if (doAutoPairing) {
+                        /* 2020-05-22: This is not yet working! */
+                        br.getPage("https://" + this.getHost() + "/pair");
+                        // final Form continueForm = br.getForm(0);
+                        // br.submitForm(continueForm);
+                        final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKeyPairing()).getToken();
+                        final Map<String, Object> postData = new HashMap<String, Object>();
+                        postData.put("g-recaptcha-response", recaptchaV2Response);
+                        postData.put("ihash", "TODO");
+                        /* 2020-05-22: Example good response: {"session":{"ip":["12.12.12.12"],"expire":14400}} */
+                        br.postPageRaw("/api/pair", JSonStorage.serializeToJson(postData));
+                    } else {
+                        /* TODO */
+                        final Thread dialog = displayPairingDialog();
+                        try {
+                            final int maxwait = getPairingTimeoutSeconds();
+                            final int waitStepsSeconds = 5;
+                            int remainingWaitSeconds = maxwait;
+                            do {
+                                logger.info("Remaining pairing seconds: " + remainingWaitSeconds);
+                                this.sleep(waitStepsSeconds * 1000l, link);
+                                br.getPage("https://" + this.getHost() + "/api/pair");
+                                if (isPaired()) {
+                                    logger.info("Pairing successful");
+                                    break;
+                                } else {
+                                    logger.info("Pairing failed");
+                                    remainingWaitSeconds -= waitStepsSeconds;
+                                }
+                            } while (remainingWaitSeconds > 0);
+                        } finally {
+                            /* Close dialog */
+                            dialog.interrupt();
+                        }
+                    }
+                    if (!isPaired()) {
+                        logger.info("Pairing failed");
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Pairing failure", 30 * 60 * 1000l);
+                    }
+                    handleAPIIErrors();
                 }
-                return br.getRedirectLocation();
             }
-            /* 2nd offlinecheck */
-            final String errormessage = PluginJSonUtils.getJson(br, "message");
-            if (errormessage != null) {
-                if (errormessage.equalsIgnoreCase("invalid video code")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (errormessage.equalsIgnoreCase("captcha required") || errormessage.equalsIgnoreCase("invalid captcha verification")) {
+            br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
+            if (br.containsHTML("invalid video specified")) {
+                /* 2020-05-22 e.g. {"code":400,"message":"invalid video specified","errors":[]} along with http response 400 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            br.getHeaders().put("Origin", "https://" + this.getHost());
+            br.getHeaders().put("Referer", "https://" + this.getHost() + "/" + this.getFID(link));
+            br.getHeaders().put("Accept", "application/json;charset=UTF-8");
+            br.getHeaders().put("sec-fetch-dest", "empty");
+            br.getHeaders().put("sec-fetch-mode", "cors");
+            br.getHeaders().put("sec-fetch-site", "same-origin");
+            /* According to website, this way we'll get a higher downloadspeed */
+            br.getHeaders().put("x-adblock", "0");
+            br.setAllowedResponseCodes(new int[] { 400 });
+            int loop = 0;
+            boolean captchaFailed = false;
+            String recaptchaV2Response = null;
+            do {
+                String postData = "";
+                // br.getPage(link.getPluginPatternMatcher());
+                // recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()).getToken();
+                if (loop > 0 || recaptchaV2Response != null) {
+                    postData = "{\"g-recaptcha-verify\":\"" + recaptchaV2Response + "\"}";
+                }
+                br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
+                br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
+                    final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
+                    br.setFollowRedirects(false);
+                    br.getPage(url);
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    return br.getRedirectLocation();
+                }
+                /* 2nd offlinecheck */
+                final String errormessage = PluginJSonUtils.getJson(br, "message");
+                if (errormessage != null && (errormessage.equalsIgnoreCase("captcha required") || errormessage.equalsIgnoreCase("invalid captcha verification"))) {
                     if (!isDownload) {
                         logger.info("Failed to find downloadlink because we don't want to ask for captchas during availablecheck");
                         return null;
                     }
                     captchaFailed = true;
-                    recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()).getToken();
                 }
+                loop++;
+            } while (loop <= 1);
+            if (captchaFailed) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            loop++;
-        } while (loop <= 1);
-        if (captchaFailed) {
-            /* This should never happen! */
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            this.handleAPIIErrors();
         }
         String dllink = null;
         try {
             HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            entries = (HashMap<String, Object>) entries.get("qualities");
-            Object quality_temp_o = null;
+            final ArrayList<Object> quals;
+            final Object qualitiesO = entries.get("qualities");
+            if (qualitiesO instanceof ArrayList) {
+                quals = (ArrayList<Object>) qualitiesO;
+            } else {
+                quals = new ArrayList<Object>();
+                entries = (HashMap<String, Object>) entries.get("qualities");
+                final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+                while (it.hasNext()) {
+                    quals.add(it.next().getValue());
+                }
+            }
             long quality_temp = 0;
-            String quality_temp_str = null;
             long quality_best = 0;
-            String dllink_temp = null;
-            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, Object> entry = it.next();
-                quality_temp_o = entry.getKey();
-                dllink_temp = (String) entry.getValue();
-                if (quality_temp_o != null && quality_temp_o instanceof Long) {
-                    quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
-                } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                    quality_temp_str = (String) quality_temp_o;
-                    if (quality_temp_str.matches("\\d+p")) {
-                        /* E.g. '360p' */
-                        quality_temp = Long.parseLong(new Regex(quality_temp_str, "(\\d+)p").getMatch(0));
-                    } else {
-                        /* Bad / Unsupported format */
-                        continue;
-                    }
-                }
-                if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
-                    continue;
-                } else if (dllink_temp.contains(".m3u8")) {
-                    /* Skip hls */
-                    continue;
-                }
+            for (final Object qualO : quals) {
+                entries = (HashMap<String, Object>) qualO;
+                quality_temp = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "size/{0}"), 0);
                 if (quality_temp > quality_best) {
                     quality_best = quality_temp;
-                    dllink = dllink_temp;
+                    dllink = (String) entries.get("src");
                 }
             }
             if (!StringUtils.isEmpty(dllink)) {
@@ -322,6 +398,78 @@ public class UnknownVideohostingCore extends PluginForHost {
         return dllink;
     }
 
+    private boolean isPaired() {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        try {
+            final ArrayList<Object> sessions = (ArrayList<Object>) entries.get("sessions");
+            if (sessions != null && !sessions.isEmpty()) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        }
+    }
+
+    /** Displays information regarding pairing to allow API downloads. */
+    public Thread displayPairingDialog() throws InterruptedException {
+        logger.info("Displaying Pairing information message");
+        final int max_wait_seconds = getPairingTimeoutSeconds();
+        final String host = this.getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - neue Download Methode";
+                        message += "Hallo liebe(r) NutzerIn\r\n";
+                        message += "Bitte folge den Anweisungen um von " + host + " herunterladen zu können:\r\n";
+                        message += "1. Öffne " + host + "/pair sofern das nicht automatisch passiert.\r\n";
+                        message += "2. Folge den Anweisungen im Browser.\r\n";
+                        message += "Falls du einen headless JD/myjd verwendest, gehe sicher, dass du das Pairing mit derselben IP bestätigst, die auch der andere JDownloader hat!\r\n";
+                        message += "Falls du einen Proxy in JDownloader verwendest, musst du denselben auch im Browser verwenden ansonsten wird das Pairing nicht funktionieren!\r\n";
+                        message += "Dieses Fenster wird sich automatisch schließen.\r\n";
+                    } else {
+                        title = host + " - New download method";
+                        message += "Hello dear user\r\n";
+                        message += "Please follow the instructions to be able to download from " + host + ":\r\n";
+                        message += "1. Open " + host + "/pair in your browser if this did not happen automatically already.\r\n";
+                        message += "2. Follow the instructions given in browser.\r\n";
+                        message += "If you are on headless/myjdownloader, make sure to confirm pairing with the SAME IP, your JDownloader is using!.\r\n";
+                        message += "If you are using a proxy in JD, you will have to use it in your browser too otherwise pairing will fail!.\r\n";
+                        message += "Once completed, this dialog will auto-close!\r\n";
+                    }
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL("https://" + host + "/pair");
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(max_wait_seconds * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    private void handleAPIIErrors() throws PluginException {
+        final String errormessage = PluginJSonUtils.getJson(br, "message");
+        if (!StringUtils.isEmpty(errormessage)) {
+            if (errormessage.equalsIgnoreCase("invalid video code")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (errormessage.equalsIgnoreCase("captcha required") || errormessage.equalsIgnoreCase("invalid captcha verification")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        }
+    }
+
     /**
      * Useful if direct-urls are available without captcha --> We can display the filesize in linkgrabber. <br/>
      * default: false
@@ -331,7 +479,12 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     /** Can be overridden to set a hardcoded reCaptcha key */
-    public String getReCaptchaKey() {
+    protected String getReCaptchaKey() {
+        return null;
+    }
+
+    /** Returns reCaptchaV2 key for "/pair" page. */
+    protected String getReCaptchaKeyPairing() {
         return null;
     }
 

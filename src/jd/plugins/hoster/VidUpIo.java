@@ -52,11 +52,27 @@ public class VidUpIo extends UnknownVideohostingCore {
 
     @Override
     public boolean check_filesize_via_directurl() {
-        return true;
+        return false;
+    }
+
+    // @Override
+    // protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws
+    // PluginException {
+    // return new CaptchaHelperHostPluginRecaptchaV2(this, br, this.getReCaptchaKey()) {
+    // @Override
+    // public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+    // return TYPE.INVISIBLE;
+    // }
+    // };
+    // }
+    @Override
+    protected String getReCaptchaKey() {
+        return "6LeoRqIUAAAAALdCUWGtkTQb8xRVm0dgsK-DYYDq";
     }
 
     @Override
-    public String getReCaptchaKey() {
+    protected String getReCaptchaKeyPairing() {
+        /* 2020-05-22: They're using the same key for streaming- and pairing! */
         return "6LeoRqIUAAAAALdCUWGtkTQb8xRVm0dgsK-DYYDq";
     }
 
