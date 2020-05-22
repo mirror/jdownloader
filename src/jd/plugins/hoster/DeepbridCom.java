@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -52,12 +53,12 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
-    private static final String          API_BASE            = "https://www.deepbrid.com/backend-dl/index.php";
-    private static final String          NICE_HOST           = "deepbrid.com";
-    private static MultiHosterManagement mhm                 = new MultiHosterManagement("deepbrid.com");
-    private static final int             defaultMAXDOWNLOADS = -1;
-    private static final int             defaultMAXCHUNKS    = 0;
-    private static final boolean         defaultRESUME       = true;
+    private static final String          API_BASE                   = "https://www.deepbrid.com/backend-dl/index.php";
+    private static MultiHosterManagement mhm                        = new MultiHosterManagement("deepbrid.com");
+    private static final int             defaultMAXDOWNLOADS        = -1;
+    private static final int             defaultMAXCHUNKS           = 0;
+    private static final boolean         defaultRESUME              = true;
+    private static final String          PROPERTY_ACCOUNT_maxchunks = "maxchunks";
 
     public DeepbridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -188,7 +189,12 @@ public class DeepbridCom extends antiDDoSForHost {
             }
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
+        int maxchunks = (int) account.getLongProperty(PROPERTY_ACCOUNT_maxchunks, defaultMAXCHUNKS);
+        if (maxchunks > 0) {
+            maxchunks = -maxchunks;
+        }
+        logger.info("Max. allowed chunks: " + maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isContentDisposition()) {
             br.followConnection();
             handleKnownErrors(this.br, account, link);
@@ -261,6 +267,7 @@ public class DeepbridCom extends antiDDoSForHost {
             this.getAPISafe(API_BASE + "?page=api&action=accountInfo", account, null);
         }
         final String is_premium = PluginJSonUtils.getJson(br, "type");
+        final String maxDownloadsStr = PluginJSonUtils.getJson(br, "maxDownloads");
         if (!"premium".equalsIgnoreCase(is_premium)) {
             account.setType(AccountType.FREE);
             /*
@@ -271,12 +278,26 @@ public class DeepbridCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(0);
         } else {
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
+            if (maxDownloadsStr != null && maxDownloadsStr.matches("\\d+")) {
+                logger.info("Using API maxdownloads: " + maxDownloadsStr);
+                account.setMaxSimultanDownloads(Integer.parseInt(maxDownloadsStr));
+            } else {
+                logger.info("Using DEFAULT maxdownloads: " + defaultMAXDOWNLOADS);
+                account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
+            }
             final String validuntil = PluginJSonUtils.getJsonValue(br, "expiration");
             ai.setStatus("Premium account");
             /* Correct expire-date - add 24 hours */
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000, br);
             ai.setUnlimitedTraffic();
+        }
+        final String maxConnectionsStr = PluginJSonUtils.getJson(br, "maxConnections");
+        if (maxConnectionsStr != null && maxConnectionsStr.matches("\\d+")) {
+            logger.info("Setting maxchunks value: " + maxConnectionsStr);
+            account.setProperty(PROPERTY_ACCOUNT_maxchunks, Long.parseLong(maxConnectionsStr));
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && maxDownloadsStr != null && maxConnectionsStr != null) {
+                ai.setStatus(ai.getStatus() + String.format(" | MaxDls: %s MaxCon: %s", maxDownloadsStr, maxConnectionsStr));
+            }
         }
         this.getAPISafe(API_BASE + "?page=api&action=hosters", account, null);
         LinkedHashMap<String, Object> entries;
