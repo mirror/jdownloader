@@ -17,11 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
@@ -170,5 +174,34 @@ public class MexashareCom extends XFileSharingProBasic {
             }
         }
         super.checkErrors(link, account, checkAll);
+    }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+        /* 2020-05-22: Special */
+        if (captchaForm.containsHTML("class=\"captcha_code\"")) {
+            logger.info("Detected captcha method \"Plaintext Captcha\"");
+            /** Captcha method by ManiacMansion */
+            String[][] letters = captchaForm.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
+            if (letters == null || letters.length == 0) {
+                letters = new Regex(br.toString(), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                if (letters == null || letters.length == 0) {
+                    logger.warning("plaintext captchahandling broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+            for (String[] letter : letters) {
+                capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+            }
+            final StringBuilder code = new StringBuilder();
+            for (String value : capMap.values()) {
+                code.append(value);
+            }
+            captchaForm.put("code", code.toString());
+        } else {
+            /* Use template handling */
+            super.handleCaptcha(link, captchaForm);
+        }
     }
 }

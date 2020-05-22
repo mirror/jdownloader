@@ -225,13 +225,18 @@ public class DdlTo extends XFileSharingProBasic {
         final String premium_extra_trafficStr = PluginJSonUtils.getJson(brc, "premium_traffic_left");
         final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
         // final String trafficusedStr = PluginJSonUtils.getJson(brc, "traffic_used");
-        final boolean trustAPITrafficLeft = false;
+        /*
+         * 2020-02-17: Their API has a bug where it randomly returns wrong values for some users and they did not fix it within 2 weeks:
+         * https://board.jdownloader.org/showthread.php?t=82525&page=2
+         */
+        /* 2020-05-22: This bug is fixed now according to their support --> We can trust this API value again! */
+        final boolean trustAPITrafficLeft = true;
         if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
-            long traffic_left = Long.parseLong(trafficleftStr) * 1000 * 1000;
+            long traffic_left = SizeFormatter.getSize(trafficleftStr + "MB");
             if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
-                final long premium_extra_traffic = Long.parseLong(premium_extra_trafficStr) * 1000 * 1000;
-                traffic_left += premium_extra_traffic;
+                final long premium_extra_traffic = SizeFormatter.getSize(premium_extra_trafficStr + "MB");
                 if (premium_extra_traffic > 0) {
+                    traffic_left += premium_extra_traffic;
                     if (ai.getStatus() != null) {
                         ai.setStatus(ai.getStatus() + " | Extra traffic available: " + SizeFormatter.formatBytes(premium_extra_traffic));
                     } else {
@@ -239,10 +244,6 @@ public class DdlTo extends XFileSharingProBasic {
                     }
                 }
             }
-            /*
-             * 2020-02-17: Their API has a bug where it randomly returns wrong values for some users and they did not fix it within 2 weeks:
-             * https://board.jdownloader.org/showthread.php?t=82525&page=2
-             */
             if (trustAPITrafficLeft) {
                 logger.info("Trust API trafficleft value: " + traffic_left);
                 ai.setTrafficLeft(traffic_left);
