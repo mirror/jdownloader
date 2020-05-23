@@ -134,6 +134,16 @@ public class UnknownVideohostingCore extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    /*
+     * TODO: Activate this. This would solve the following issue: Check if it is a good idea to use this in "real" linkcheck because there
+     * is no other way to get the offline state. This is a big issue with this provider: Without solving a captcha or having an (preferably
+     * active) pairing session, there is no way to find out whether content is offline or online which means at this moment most of the
+     * content will be recognized as online and if it is offline, status will change accordngly on download attempt!
+     */
+    protected boolean allowPairingLinkcheck() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         return requestFileInformation(link, false);
@@ -145,20 +155,28 @@ public class UnknownVideohostingCore extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        if (allowPairingLinkcheck()) {
+            /* Without this, we will often not get the online/offline state until we actually attempt to download! */
+            prepBrAPI(this.br);
+            br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
+            handleAPIIErrors(link, null, false);
+        }
+        final Browser brc = new Browser();
+        brc.getPage(link.getPluginPatternMatcher());
         /* 1st offlinecheck */
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (brc.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("<title> EMBED</title>")) {
+        if (brc.containsHTML("<title> EMBED</title>")) {
+            /* TODO: Check if this is still needed */
             final String redirectLink = link.getStringProperty("redirect_link");
             if (StringUtils.isEmpty(redirectLink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
             }
-            br.setFollowRedirects(false);
-            br.getPage(redirectLink);
-            if (br.getRedirectLocation() != null) {
-                link.setPluginPatternMatcher(br.getRedirectLocation());
+            brc.setFollowRedirects(false);
+            brc.getPage(redirectLink);
+            if (brc.getRedirectLocation() != null) {
+                link.setPluginPatternMatcher(brc.getRedirectLocation());
                 return requestFileInformation(link);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -168,7 +186,7 @@ public class UnknownVideohostingCore extends PluginForHost {
         boolean requiresCaptcha = true;
         String filename = null;
         try {
-            final String json = br.getRegex("window\\.__INITIAL_STATE__=(\\{.*?\\});\\(function\\(\\)").getMatch(0);
+            final String json = brc.getRegex("window\\.__INITIAL_STATE__=(\\{.*?\\});\\(function\\(\\)").getMatch(0);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
             entries = (LinkedHashMap<String, Object>) entries.get("videoplayer");
             final Object errorO = entries.get("error");
@@ -254,11 +272,16 @@ public class UnknownVideohostingCore extends PluginForHost {
         return 120;
     }
 
+    private Browser prepBrAPI(final Browser br) {
+        br.setAllowedResponseCodes(new int[] { 400 });
+        return br;
+    }
+
     protected String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         if (usePairingMode()) {
             /* https://vev.io/api#pair_access */
+            prepBrAPI(br);
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/pair");
-            br.setAllowedResponseCodes(new int[] { 400 });
             /*
              * 2020-05-22: Although the API is pretty much unusable as long as the user did not enable pairing via browser, it does return
              * an offline status for invalid items --> By enabling this, we will check for this right away!
@@ -269,13 +292,9 @@ public class UnknownVideohostingCore extends PluginForHost {
             // this.sleep(1000, link);
             // }
             synchronized (LOCK) {
-                if (linkcheckOnFirstRequest) {
-                    /*
-                     * TODO: Check if it is a good idea to use this in "real" linkcheck because there is no other way to get the offline
-                     * state. This is a big issue with this provider: Without solving a captcha or having an (preferably active) pairing
-                     * session, there is no way to find out whether content is offline or online which means at this moment most of the
-                     * content will be recognized as online and if it is offline, status will change accordngly on download attempt!
-                     */
+                if (allowPairingLinkcheck()) {
+                    /* Do nothing as pairing URL has already been accessed before */
+                } else if (linkcheckOnFirstRequest) {
                     br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
                     /* Check for offline status */
                     handleAPIIErrors(link, null, false);

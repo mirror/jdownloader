@@ -476,8 +476,8 @@ public class PornportalCom extends PluginForHost {
                     final String failureUrl = "https://" + hostname + "/access/failure";
                     logindata.put("username", account.getUser());
                     logindata.put("password", account.getPass());
-                    logindata.put("failureUrl", successUrl);
-                    logindata.put("successUrl", failureUrl);
+                    logindata.put("failureUrl", failureUrl);
+                    logindata.put("successUrl", successUrl);
                     /* 2020-04-03: So far, all pornportal websites required a captcha on login. */
                     final DownloadLink dlinkbefore = getDownloadLink();
                     String recaptchaV2Response = null;
