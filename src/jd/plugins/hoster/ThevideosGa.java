@@ -64,6 +64,12 @@ public class ThevideosGa extends UnknownVideohostingCore {
     }
 
     @Override
+    protected boolean allowPairingLinkcheck() {
+        /* 2020-05-23: Not possible as their embedded videos cannot be accessed via their API: https://vev.io/api#startcontent */
+        return false;
+    }
+
+    @Override
     protected String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
         final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
