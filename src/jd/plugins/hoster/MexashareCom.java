@@ -179,7 +179,9 @@ public class MexashareCom extends XFileSharingProBasic {
     @Override
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* 2020-05-22: Special */
-        if (captchaForm.containsHTML("class=\"captcha_code\"")) {
+        // if (captchaForm.containsHTML("class=\"captcha_code\"")) {
+        /* 2020-05-23: New attempt: */
+        if (br.containsHTML("class=\"captcha_code\"")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
             String[][] letters = captchaForm.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();

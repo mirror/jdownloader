@@ -15,7 +15,9 @@ package org.jdownloader.plugins.components;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -29,6 +31,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -97,7 +100,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
-    private final Object         LOCK              = new Object();
+    private static final Object  LOCK              = new Object();
 
     @Override
     public String getAGBLink() {
@@ -251,7 +254,7 @@ public class UnknownVideohostingCore extends PluginForHost {
         return 120;
     }
 
-    private String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
+    protected String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         if (usePairingMode()) {
             /* https://vev.io/api#pair_access */
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/pair");
@@ -261,8 +264,18 @@ public class UnknownVideohostingCore extends PluginForHost {
              * an offline status for invalid items --> By enabling this, we will check for this right away!
              */
             final boolean linkcheckOnFirstRequest = true;
+            // while (pairingActive.get()) {
+            // logger.info("Waiting for pairing to finish");
+            // this.sleep(1000, link);
+            // }
             synchronized (LOCK) {
                 if (linkcheckOnFirstRequest) {
+                    /*
+                     * TODO: Check if it is a good idea to use this in "real" linkcheck because there is no other way to get the offline
+                     * state. This is a big issue with this provider: Without solving a captcha or having an (preferably active) pairing
+                     * session, there is no way to find out whether content is offline or online which means at this moment most of the
+                     * content will be recognized as online and if it is offline, status will change accordngly on download attempt!
+                     */
                     br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
                     /* Check for offline status */
                     handleAPIIErrors(link, null, false);
@@ -292,7 +305,6 @@ public class UnknownVideohostingCore extends PluginForHost {
                         /* 2020-05-22: Example good response: {"session":{"ip":["12.12.12.12"],"expire":14400}} */
                         br.postPageRaw("/api/pair", JSonStorage.serializeToJson(postData));
                     } else {
-                        /* TODO */
                         final Thread dialog = displayPairingDialog();
                         try {
                             final int maxwait = getPairingTimeoutSeconds();
@@ -319,7 +331,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                         logger.info("Pairing failed");
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Pairing failure", 30 * 60 * 1000l);
                     }
-                    handleAPIIErrors(link, null, false);
+                    displayPairingSuccessDialog();
                 }
             }
             if (br.getURL() == null || !br.getURL().contains(this.getFID(link))) {
@@ -350,6 +362,8 @@ public class UnknownVideohostingCore extends PluginForHost {
                 br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
                 br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
                 if (br.getHttpConnection().getResponseCode() == 404) {
+                    /* 2020-05-23: E.g. thevideos.ga special embed URLs from sources in e.g. KinoxTo crawler. */
+                    /* TODO: Check if this is generally possible to use or only for embedded content or only for thevideos.ga */
                     br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
                     final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
                     br.setFollowRedirects(false);
@@ -408,6 +422,9 @@ public class UnknownVideohostingCore extends PluginForHost {
         } catch (final Throwable e) {
             logger.info("BEST handling for multiple video source failed");
         }
+        if (StringUtils.isEmpty(dllink)) {
+            this.handleAPIIErrors(link, null, true);
+        }
         return dllink;
     }
 
@@ -454,11 +471,11 @@ public class UnknownVideohostingCore extends PluginForHost {
                         title = host + " - neue Download Methode";
                         message += "Hallo liebe(r) NutzerIn\r\n";
                         message += "Bitte folge den Anweisungen um von " + host + " herunterladen zu können:\r\n";
-                        message += "1. Öffne " + host + "/pair sofern das nicht automatisch passiert.\r\n";
+                        message += "1. Öffne " + host + "/pair sofern das nicht bereits automatisch passiert ist.\r\n";
                         message += "2. Folge den Anweisungen im Browser.\r\n";
                         message += "Falls du einen headless JD/myjd verwendest, gehe sicher, dass du das Pairing mit derselben IP bestätigst, die auch der andere JDownloader hat!\r\n";
                         message += "Falls du einen Proxy in JDownloader verwendest, musst du denselben auch im Browser verwenden ansonsten wird das Pairing nicht funktionieren!\r\n";
-                        message += "Dieses Fenster wird sich automatisch schließen.\r\n";
+                        message += "Dieses Fenster wird sich nach erfolgreichem Pairing automatisch schließen.\r\n";
                     } else {
                         title = host + " - New download method";
                         message += "Hello dear user\r\n";
@@ -467,10 +484,69 @@ public class UnknownVideohostingCore extends PluginForHost {
                         message += "2. Follow the instructions given in browser.\r\n";
                         message += "If you are on headless/myjdownloader, make sure to confirm pairing with the SAME IP, your JDownloader is using!.\r\n";
                         message += "If you are using a proxy in JD, you will have to use it in your browser too otherwise pairing will fail!.\r\n";
-                        message += "Once completed, this dialog will auto-close!\r\n";
+                        message += "Once the pairing process is completed, this dialog will auto-close!\r\n";
                     }
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
                         CrossSystem.openURL("https://" + host + "/pair");
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(max_wait_seconds * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    public Thread displayPairingSuccessDialog() throws InterruptedException {
+        logger.info("Displaying Pairing success information message");
+        final int max_wait_seconds = 60;
+        final String pairingDurationStr = PluginJSonUtils.getJson(br, "expire");
+        final String howLongLastsPairing;
+        if (pairingDurationStr == null || !pairingDurationStr.matches("\\d+")) {
+            /* This should never happen */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                howLongLastsPairing = "unbekannt";
+            } else {
+                howLongLastsPairing = "unknown";
+            }
+        } else {
+            final int pairingValidity = Integer.parseInt(pairingDurationStr) * 1000;
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                final String formattedDate = formatter.format(new Date(System.currentTimeMillis() + pairingValidity));
+                howLongLastsPairing = String.format("Diese Pairing Session ist gültig für %s also bis zum %s Uhr", TimeFormatter.formatMilliSeconds(pairingValidity, 0), formattedDate);
+            } else {
+                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+                final String formattedDate = formatter.format(new Date(System.currentTimeMillis() + pairingValidity));
+                howLongLastsPairing = String.format("This pairing session is valid for %s (until %s)", TimeFormatter.formatMilliSeconds(pairingValidity, 0), formattedDate);
+            }
+        }
+        final String host = this.getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Pairing erfolgreich";
+                        message += "Pairing erfolgreich!\r\n";
+                        message += howLongLastsPairing + "\r\n";
+                        message += "Danach wirst du das Pairing erneut durchführen müssen.\r\n";
+                        message += "Bedenke, dass die Session nur für die IP gültig ist, unter der sie erstellt wurde!\r\n";
+                        message += "Eine Änderung deiner IP/Proxy (oder Reconnect) würde die pairing Session sofort ungültig machen!\r\n";
+                    } else {
+                        title = host + " - Pairing successful";
+                        message += "Pairing successful!\r\n";
+                        message += howLongLastsPairing + "\r\n";
+                        message += "After this time you will have to do the pairing process again.\r\n";
+                        message += "Keep in mind that this pairing session is bound to the IP which you've used during the pairing process!\r\n";
+                        message += "Changing your IP/Proxy (or doing a reconnect) will invalidate this session immediately!\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(max_wait_seconds * 1000);
@@ -493,6 +569,12 @@ public class UnknownVideohostingCore extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errormessage.equalsIgnoreCase("captcha required") || errormessage.equalsIgnoreCase("invalid captcha verification")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (errormessage.equalsIgnoreCase("invalid request")) {
+                /*
+                 * 2020-05-23: They seem to shadow-ban VPNs. When using one, they may return the following no matter which request you do:
+                 * {"code":400,"message":"invalid request","errors":[]}
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage + " (Possibly VPN/proxy shadowban - change IT/disable proxy and retry)", 5 * 60 * 1000l);
             }
             logger.info("Unknown error has happened: " + errormessage);
             if (handleUnknownErrors) {

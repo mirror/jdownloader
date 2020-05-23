@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.AbortException;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.AbortException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrored.to" }, urls = { "https?://(?:www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}|https?://(?:www\\.)?mirrored\\.to/multilinks/[a-z0-9]+" })
 public class MirroredTo extends PluginForDecrypt {
@@ -57,7 +57,7 @@ public class MirroredTo extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", userAgent);
             if (param.toString().contains("/multilinks/")) {
                 br.getPage(param.toString());
-                final String[] urls = br.getRegex("(https?://[^<>\"]+/files/[^<>\"]+)").getColumn(0);
+                final String[] urls = br.getRegex("(https?://[^<>\"]+/files/[^<>\"]+|https?://mir\\.cr/[A-Za-z0-9]+)").getColumn(0);
                 if (urls == null || urls.length == 0) {
                     return null;
                 }

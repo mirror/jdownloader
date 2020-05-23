@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import static java.lang.String.format;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-import static java.lang.String.format;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www[0-9]*\\.)?kino[xyzs]\\.(?:ai|af|am|click|cloud|club|digital|direct|express|fun|fyi|gratis|gs|gy|io|lol|me|mobi|ms|nu|pe|party|pub|sg|sh|si|space|sx|to|tube|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www[0-9]*\\.)?kino[xyzs]\\.(?:ai|af|am|click|cloud|club|digital|direct|express|fun|fyi|gratis|gs|gy|io|li|lol|me|mobi|ms|nu|pe|party|pub|sg|sh|si|space|sx|to|tube|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
     public KinoxTo(PluginWrapper wrapper) {
         super(wrapper);
