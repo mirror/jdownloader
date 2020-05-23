@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,18 +24,25 @@ import org.jdownloader.plugins.components.UnknownVideohostingCore;
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VevIo extends UnknownVideohostingCore {
-    public VevIo(PluginWrapper wrapper) {
+public class ThevideosGa extends UnknownVideohostingCore {
+    public ThevideosGa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vev.io", "thevideo.me", "thevideo.cc", "vev.red" });
+        ret.add(new String[] { "thevideos.ga" });// standalone domain/site, only hosting embedded content
         return ret;
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        // do not correct URLs from thevideos.ga!
     }
 
     public static String[] getAnnotationNames() {
@@ -52,17 +60,35 @@ public class VevIo extends UnknownVideohostingCore {
 
     @Override
     public boolean check_filesize_via_directurl() {
-        return false;
+        return true;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
+        br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
+        final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
+        br.setFollowRedirects(false);
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return br.getRedirectLocation();
     }
 
     @Override
     protected String getReCaptchaKey() {
-        return "6Ld6RqIUAAAAAKjcjfIgh2TmF_HmAc5hvrQx_D9a";
+        return null;
     }
 
     @Override
     protected String getReCaptchaKeyPairing() {
-        return "6Ld4TlsUAAAAAAeU5tInYtZNMEOTANb6LKxP94it";
+        return null;
+    }
+
+    @Override
+    protected boolean usePairingMode() {
+        /* 2020-05-23: Special */
+        return false;
     }
 
     @Override

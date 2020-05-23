@@ -63,7 +63,7 @@ import jd.utils.JDUtilities;
 public class PornportalCom extends PluginForHost {
     public PornportalCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://join.fakehub.com/signup/signup.php");
+        this.enablePremium("https://www.pornportal.com/");
         // setConfigElements();
     }
 

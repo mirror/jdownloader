@@ -43,6 +43,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -259,16 +260,19 @@ public class EHentaiOrg extends antiDDoSForHost {
                     }
                 }
             }
-        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches()) {
-            if (account == null) {
+        } else {
+            if (link.getPluginPatternMatcher().contains("exhentai") && account == null) {
                 return AvailableStatus.UNCHECKABLE;
             }
-        } else {
-            /* TYPE_SINGLE_IMAGE */
+            /* TYPE_SINGLE_IMAGE e-hentai.org and exhentai.org */
             String dllink_fullsize = null;
             final String mainlink = getMainlink(link);
             br.setFollowRedirects(true);
             getPage(mainlink);
+            if (br.toString().length() <= 100) {
+                /* 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it. */
+                throw new AccountRequiredException();
+            }
             if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
                 if (account == null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP address has been temporarily banned for excessive pageloads");

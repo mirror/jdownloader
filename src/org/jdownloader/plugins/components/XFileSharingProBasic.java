@@ -1535,7 +1535,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             logger.info(String.format("Trying to find user selected quality %s for official video download", userSelectedQualityValue));
         }
-        for (final String videoQualityHTML : videoQualityHTMLs) {
+        int qualityIndex;
+        for (qualityIndex = 0; qualityIndex < videoQualityHTMLs.length; qualityIndex++) {
+            final String videoQualityHTML = videoQualityHTMLs[qualityIndex];
             final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
             // final String vid = videoinfo.getMatch(0);
             final Regex videoinfo = new Regex(videoQualityHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
@@ -1590,12 +1592,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 targetHTML = videoQualityHTML;
             }
         }
+        ;
         if (targetHTML == null || videoQualityStr == null || videoHash == null) {
             if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
                 /* This should never happen */
                 logger.info(String.format("Failed to find officially downloadable video quality although there are %d qualities available", videoQualityHTMLs.length));
             }
             return null;
+        }
+        if (filesizeStr == null) {
+            /*
+             * Last chance attempt to find filesize for selected quality. Only allow units "MB" and "GB" as most filesizes will have one of
+             * these units.
+             */
+            final String[] filesizeCandidates = br.getRegex("(\\d+(?:\\.\\d{1,2})? *(MB|GB))").getColumn(0);
+            /* Are there as many filesizes available as there are video qualities --> Chose correct filesize by index */
+            if (filesizeCandidates.length == videoQualityHTMLs.length) {
+                filesizeStr = filesizeCandidates[qualityIndex];
+            }
         }
         if (foundUserSelectedQuality) {
             logger.info("Found user selected quality: " + userSelectedQualityValue);
@@ -1605,6 +1619,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (filesizeStr == null) {
             /* No dramatic failure */
             logger.info("Failed to find filesize");
+        } else {
+            logger.info("Found filesize of official video download: " + filesizeStr);
         }
         if (returnFilesize) {
             /* E.g. in availablecheck */
@@ -3139,6 +3155,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 setAccountLimitsByType(account, AccountType.FREE);
             } else {
                 /* Expire date is in the future --> It is a premium account */
+                logger.info("Premium account");
                 ai.setValidUntil(expire_milliseconds);
                 setAccountLimitsByType(account, AccountType.PREMIUM);
             }
