@@ -1592,7 +1592,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 targetHTML = videoQualityHTML;
             }
         }
-        ;
         if (targetHTML == null || videoQualityStr == null || videoHash == null) {
             if (videoQualityHTMLs != null && videoQualityHTMLs.length > 0) {
                 /* This should never happen */
