@@ -18,11 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/hd\\-porn/\\w+(/[^/]+)?" })
 public class EPornerCom extends PluginForHost {
@@ -43,7 +42,6 @@ public class EPornerCom extends PluginForHost {
 
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @Override
@@ -166,72 +164,58 @@ public class EPornerCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     private void get_dllink(final Browser br) {
-        final SubConfiguration cfg = getPluginConfig();
-        boolean q240 = cfg.getBooleanProperty("240p", false);
-        boolean q360 = cfg.getBooleanProperty("360p", false);
-        boolean q480 = cfg.getBooleanProperty("480p", false);
-        boolean q720 = cfg.getBooleanProperty("720p", false);
-        boolean q1080 = cfg.getBooleanProperty("1080p", false);
-        boolean q1440 = cfg.getBooleanProperty("1440p", false);
-        boolean q2160 = cfg.getBooleanProperty("2160p", false);
-        if (cfg.getBooleanProperty("ALLOW_BEST", false) == true) {
-            q2160 = true;
-            q1440 = true;
-            q1080 = true;
-            q720 = true;
-            q480 = true;
-            q360 = true;
-            q240 = true;
-        }
-        if (q2160) {
-            vq = "2160p";
+        vq = getPreferredStreamQuality();
+        if (vq != null) {
+            logger.info("Looking for user selected quality");
             dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
-        }
-        if (q1440) {
-            vq = "1440p";
-            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
-        }
-        if (q1080) {
-            vq = "1080p";
-            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
-        }
-        if (dllink == null) {
-            if (q720) {
-                vq = "720p";
-                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
+            if (dllink != null) {
+                logger.info("Found user selected quality");
+            } else {
+                logger.info("Failed to find user selected quality");
             }
         }
         if (dllink == null) {
-            if (q480) {
-                vq = "480p";
+            logger.info("Looking for BEST quality");
+            final String[] allQualities = new String[] { "2160p", "1440p", "1080p", "720p", "480p", "360p", "240p" };
+            for (final String qualityCandidate : allQualities) {
+                vq = qualityCandidate;
                 dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
+                if (dllink != null) {
+                    logger.info("Picked quality: " + vq);
+                    break;
+                }
             }
-        }
-        if (dllink == null) {
-            if (q360) {
-                vq = "360p";
-                dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
-            }
-        }
-        if (dllink == null) {
-            vq = "240p"; // Default
-            dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
         }
         return;
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_BEST", JDL.L("plugins.hoster.EPornerCom.checkbest", "Only grab the best available resolution")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "240p", JDL.L("plugins.hoster.EPornerCom.check240p", "Choose 240p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "360p", JDL.L("plugins.hoster.EPornerCom.check360p", "Choose 360p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.EPornerCom.check480p", "Choose 480p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.EPornerCom.check720p", "Choose 720p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "1080p", JDL.L("plugins.hoster.EPornerCom.check1080p", "Choose 1080p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "1440p", JDL.L("plugins.hoster.EPornerCom.check1080p", "Choose 1440p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "2160p", JDL.L("plugins.hoster.EPornerCom.check1080p", "Choose 2160p?")).setDefaultValue(true));
+    private String getPreferredStreamQuality() {
+        final EpornerComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        default:
+            return null;
+        case BEST:
+            return null;
+        case Q2160P:
+            return "2160p";
+        case Q1080P:
+            return "1080p";
+        case Q720P:
+            return "720p";
+        case Q480P:
+            return "480p";
+        case Q360P:
+            return "360p";
+        case Q240P:
+            return "240p";
+        }
+    }
+
+    @Override
+    public Class<? extends EpornerComConfig> getConfigInterface() {
+        return EpornerComConfig.class;
     }
 
     @Override

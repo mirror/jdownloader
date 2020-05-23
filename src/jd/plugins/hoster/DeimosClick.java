@@ -39,8 +39,8 @@ public class DeimosClick extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-05-08: Free untested, no limits in premium mode <br />
-     * captchatype-info: 2020-05-04: Untested null 4dignum solvemedia reCaptchaV2<br />
+     * limit-info: 2020-05-23: no limits in premium mode <br />
+     * captchatype-info: 2020-05-23: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -102,7 +102,7 @@ public class DeimosClick extends XFileSharingProBasic {
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -111,13 +111,13 @@ public class DeimosClick extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 1;
+            return -1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return -1;
         }
     }
 
