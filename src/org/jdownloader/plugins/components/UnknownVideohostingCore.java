@@ -1,20 +1,5 @@
 package org.jdownloader.plugins.components;
 
-//jDownloader - Downloadmanager
-//Copyright (C) 2017  JD-Team support@jdownloader.org
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
-//
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
-//
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,6 +22,10 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -52,6 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
@@ -142,11 +132,11 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
@@ -289,7 +279,7 @@ public class UnknownVideohostingCore extends PluginForHost {
         return br;
     }
 
-    protected String getDllink(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
+    protected String getDllink(final DownloadLink link, final boolean isDownload) throws Exception {
         if (usePairingMode()) {
             /* https://vev.io/api#pair_access */
             prepBrAPI(br);
@@ -342,21 +332,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                     } else {
                         final Thread dialog = displayPairingDialog();
                         try {
-                            final int maxwait = getPairingTimeoutSeconds();
-                            final int waitStepsSeconds = 5;
-                            int remainingWaitSeconds = maxwait;
-                            do {
-                                logger.info("Remaining pairing seconds: " + remainingWaitSeconds);
-                                this.sleep(waitStepsSeconds * 1000l, link);
-                                br.getPage("https://" + this.getHost() + "/api/pair");
-                                if (isPaired()) {
-                                    logger.info("Pairing successful");
-                                    break;
-                                } else {
-                                    logger.info("Pairing failed");
-                                    remainingWaitSeconds -= waitStepsSeconds;
-                                }
-                            } while (remainingWaitSeconds > 0);
+                            waitForPairing(link);
                         } finally {
                             /* Close dialog */
                             dialog.interrupt();
@@ -364,7 +340,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                     }
                     if (!isPaired()) {
                         logger.info("Pairing failed");
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Pairing failure", 30 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Pairing failure", 15 * 60 * 1000l);
                     }
                     displayPairingSuccessDialog();
                 }
@@ -450,6 +426,85 @@ public class UnknownVideohostingCore extends PluginForHost {
             this.handleAPIIErrors(link, null, true);
         }
         return dllink;
+    }
+
+    private void waitForPairing(final DownloadLink link) throws Exception {
+        final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+            // protected long lastCurrent = -1;
+            // protected long lastTotal = -1;
+            // protected long startTimeStamp = -1;
+            @Override
+            public PluginTaskID getID() {
+                return PluginTaskID.WAIT;
+            }
+
+            @Override
+            public String getMessage(Object requestor) {
+                if (requestor instanceof ETAColumn) {
+                    final long eta = getETA();
+                    if (eta >= 0) {
+                        return TimeFormatter.formatMilliSeconds(eta, 0);
+                    }
+                    return "";
+                }
+                return "Waiting for user to complete pairing process in browser ...";
+            }
+            // @Override
+            // public void updateValues(long current, long total) {
+            // super.updateValues(current, total);
+            // if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+            // lastTotal = total;
+            // lastCurrent = current;
+            // startTimeStamp = System.currentTimeMillis();
+            // // this.setETA(-1);
+            // return;
+            // }
+            // long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+            // if (currentTimeDifference <= 0) {
+            // return;
+            // }
+            // long speed = (current * 10000) / currentTimeDifference;
+            // if (speed == 0) {
+            // return;
+            // }
+            // long eta = ((total - current) * 10000) / speed;
+            // // this.setETA(eta);
+            // }
+        };
+        waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+        waitProgress.setProgressSource(this);
+        try {
+            final int maxwait = getPairingTimeoutSeconds();
+            final int waitStepsSeconds = 5;
+            int remainingWaitSeconds = maxwait;
+            do {
+                logger.info("Remaining pairing seconds: " + remainingWaitSeconds);
+                // this.sleep(waitStepsSeconds * 1000l, this.getDownloadLink());
+                br.getPage("https://" + this.getHost() + "/api/pair");
+                if (isPaired()) {
+                    logger.info("Pairing successful");
+                    break;
+                } else {
+                    logger.info("Pairing failed / not yet done by user");
+                    remainingWaitSeconds -= waitStepsSeconds;
+                    link.addPluginProgress(waitProgress);
+                    final int progress = (int) (100 - ((float) remainingWaitSeconds / (float) maxwait) * 100);
+                    logger.info("Remaining wait seconds: " + remainingWaitSeconds);
+                    logger.info("WaitProgress = " + progress);
+                    waitProgress.updateValues(progress, 100);
+                    waitProgress.setETA(remainingWaitSeconds * 1000);
+                    for (int sleepRound = 0; sleepRound < waitStepsSeconds; sleepRound++) {
+                        if (isAbort()) {
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        } else {
+                            Thread.sleep(1000);
+                        }
+                    }
+                }
+            } while (remainingWaitSeconds > 0);
+        } finally {
+            this.getDownloadLink().removePluginProgress(waitProgress);
+        }
     }
 
     private boolean isPaired() {
@@ -546,11 +601,11 @@ public class UnknownVideohostingCore extends PluginForHost {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm");
                 final String formattedDate = formatter.format(new Date(System.currentTimeMillis() + pairingValidity));
-                howLongLastsPairing = String.format("Diese Pairing Session ist gültig für %s also bis zum %s Uhr", TimeFormatter.formatMilliSeconds(pairingValidity, 0), formattedDate);
+                howLongLastsPairing = String.format("Deine Pairing Session ist gültig für %s also bis zum %s Uhr.", TimeFormatter.formatMilliSeconds(pairingValidity, 0), formattedDate);
             } else {
                 final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm");
                 final String formattedDate = formatter.format(new Date(System.currentTimeMillis() + pairingValidity));
-                howLongLastsPairing = String.format("This pairing session is valid for %s (until %s)", TimeFormatter.formatMilliSeconds(pairingValidity, 0), formattedDate);
+                howLongLastsPairing = String.format("Your pairing session is valid for %s (until %s)", TimeFormatter.formatMilliSeconds(pairingValidity, 0), formattedDate);
             }
         }
         final String host = this.getHost();
@@ -666,7 +721,7 @@ public class UnknownVideohostingCore extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        if (isPairing.get()) {
+        if (isPairing.get() && usePairingMode()) {
             return 1;
         } else {
             return free_maxdownloads;

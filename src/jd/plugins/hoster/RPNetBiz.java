@@ -190,7 +190,7 @@ public class RPNetBiz extends PluginForHost {
         return true;
     }
 
-    /** no override to keep plugin compatible to old stable */
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         final String downloadURL = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         prepBrowser();
@@ -276,10 +276,21 @@ public class RPNetBiz extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_RETRY);
                             }
                             br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
-                            final JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-                            final JSonObject downloadNode = (JSonObject) node2.get("download");
-                            final String tmp = downloadNode.get("status").toString();
-                            final Integer currentProgress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
+                            JSonObject node2 = null;
+                            JSonObject downloadNode = null;
+                            String tmp = null;
+                            Integer currentProgress = null;
+                            try {
+                                node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
+                                downloadNode = (JSonObject) node2.get("download");
+                                tmp = downloadNode.get("status").toString();
+                                currentProgress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
+                            } catch (final Throwable e) {
+                                /* 2020-05-24: E.g. {"downloads":null} */
+                                logger.log(e);
+                                logger.info("Error parsing json");
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad json response");
+                            }
                             // download complete?
                             if (currentProgress.intValue() == 100) {
                                 String tmp2 = downloadNode.get("rpnet_link").toString();
