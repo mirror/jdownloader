@@ -34,15 +34,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -56,8 +47,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
@@ -66,6 +56,15 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
     private int labelHeight;
@@ -104,10 +103,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                         };
                         d.setPreferredSize(JDGui.getInstance().getMainFrame().getSize());
                         Dialog.getInstance().showDialog(d);
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
+                    } catch (DialogNoAnswerException ignore) {
                     }
                 }
             });
