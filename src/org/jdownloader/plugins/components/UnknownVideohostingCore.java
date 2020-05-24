@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -93,18 +94,24 @@ public class UnknownVideohostingCore extends PluginForHost {
     // return super.rewriteHost(host);
     // }
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    private static final String        default_extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
-    private static final Object  LOCK              = new Object();
+    private static final boolean       free_resume       = true;
+    private static final int           free_maxchunks    = 0;
+    private static final int           free_maxdownloads = -1;
+    protected String                   dllink            = null;
+    protected boolean                  server_issues     = false;
+    private static final Object        LOCK              = new Object();
+    private static final AtomicBoolean isPairing         = new AtomicBoolean(true);
 
     @Override
     public String getAGBLink() {
         return "https://" + this.getHost() + "/home";
+    }
+
+    @Override
+    public void init() {
+        isPairing.set(true);
     }
 
     @Override
@@ -123,7 +130,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     }
 
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:(?:embed/)?[a-z0-9]{12}|embed-\\p{XDigit}++\\.html)";
+        return "/(?:embed/)?([a-z0-9]{12})";
     }
 
     public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
@@ -132,16 +139,6 @@ public class UnknownVideohostingCore extends PluginForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + UnknownVideohostingCore.getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
-    }
-
-    /*
-     * TODO: Activate this. This would solve the following issue: Check if it is a good idea to use this in "real" linkcheck because there
-     * is no other way to get the offline state. This is a big issue with this provider: Without solving a captcha or having an (preferably
-     * active) pairing session, there is no way to find out whether content is offline or online which means at this moment most of the
-     * content will be recognized as online and if it is offline, status will change accordngly on download attempt!
-     */
-    protected boolean allowPairingLinkcheck() {
-        return false;
     }
 
     @Override
@@ -155,7 +152,7 @@ public class UnknownVideohostingCore extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (allowPairingLinkcheck()) {
+        if (allowPairingAPILinkcheck()) {
             /* Without this, we will often not get the online/offline state until we actually attempt to download! */
             prepBrAPI(this.br);
             br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
@@ -167,21 +164,21 @@ public class UnknownVideohostingCore extends PluginForHost {
         if (brc.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (brc.containsHTML("<title> EMBED</title>")) {
-            /* TODO: Check if this is still needed */
-            final String redirectLink = link.getStringProperty("redirect_link");
-            if (StringUtils.isEmpty(redirectLink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
-            }
-            brc.setFollowRedirects(false);
-            brc.getPage(redirectLink);
-            if (brc.getRedirectLocation() != null) {
-                link.setPluginPatternMatcher(brc.getRedirectLocation());
-                return requestFileInformation(link);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        // if (brc.containsHTML("<title> EMBED</title>")) {
+        // /* TODO: Check if this is still needed */
+        // final String redirectLink = link.getStringProperty("redirect_link");
+        // if (StringUtils.isEmpty(redirectLink)) {
+        // logger.info("page expired and no redirect_link found");
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // brc.setFollowRedirects(false);
+        // brc.getPage(redirectLink);
+        // if (brc.getRedirectLocation() == null) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // link.setPluginPatternMatcher(brc.getRedirectLocation());
+        // return requestFileInformation(link);
+        // }
         /* 2019-05-08: TODO: Unsure about that */
         boolean requiresCaptcha = true;
         String filename = null;
@@ -238,7 +235,13 @@ public class UnknownVideohostingCore extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
+                    if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (con.getCompleteContentLength() < 1000) {
+                        /* 2020-05-24 */
+                        logger.info("File is very small --> Must be offline");
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (!con.getContentType().contains("html")) {
                         link.setDownloadSize(con.getLongContentLength());
                     } else {
                         server_issues = true;
@@ -268,6 +271,15 @@ public class UnknownVideohostingCore extends PluginForHost {
         return true;
     }
 
+    /*
+     * 2020-05-24: Pairing API will return offline status for dead files even if user did not yet execute pairing. Via website, solving a
+     * reCaptchaV2 is required to find the real online/offline status! This works for all supported sites except thevideos.ga. See also
+     * vev.io/pair
+     */
+    protected boolean allowPairingAPILinkcheck() {
+        return true;
+    }
+
     protected int getPairingTimeoutSeconds() {
         return 120;
     }
@@ -282,25 +294,29 @@ public class UnknownVideohostingCore extends PluginForHost {
             /* https://vev.io/api#pair_access */
             prepBrAPI(br);
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/pair");
-            /*
-             * 2020-05-22: Although the API is pretty much unusable as long as the user did not enable pairing via browser, it does return
-             * an offline status for invalid items --> By enabling this, we will check for this right away!
-             */
-            final boolean linkcheckOnFirstRequest = true;
             // while (pairingActive.get()) {
             // logger.info("Waiting for pairing to finish");
             // this.sleep(1000, link);
             // }
             synchronized (LOCK) {
-                if (allowPairingLinkcheck()) {
-                    /* Do nothing as pairing URL has already been accessed before */
-                } else if (linkcheckOnFirstRequest) {
+                if (allowPairingAPILinkcheck() && !isPaired()) {
+                    /*
+                     * We could have waited several minutes because of synchronization so we need to access the page again to refresh the
+                     * status! If we don't do that, user may receive two pairing-dialogs if he e.g. tries to start a lof of vev.io downloads
+                     * at the same time but never went through the pairing process before!
+                     */
+                    logger.info("Accessing pairing page again to avoid multiple pairing dialogs at the same time");
+                    br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
+                } else {
                     br.getPage("https://" + this.getHost() + "/api/pair/" + this.getFID(link));
                     /* Check for offline status */
                     handleAPIIErrors(link, null, false);
-                } else {
-                    br.getPage("https://" + this.getHost() + "/api/pair");
                 }
+                /*
+                 * Returns current pairing session - we do not need this at this moment. Example response with no active sessions:
+                 * {"sessions":[]}
+                 */
+                // br.getPage("https://" + this.getHost() + "/api/pair");
                 /*
                  * 2020-05-22: E.g. failure:
                  * {"code":400,"message":"IP is not currently paired. Please visit https://vidup.io/pair for more information.","errors":[]}
@@ -352,6 +368,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                     }
                     displayPairingSuccessDialog();
                 }
+                isPairing.set(false);
             }
             if (br.getURL() == null || !br.getURL().contains(this.getFID(link))) {
                 /* Only perform this API call if it hasn't been done already! */
@@ -380,18 +397,6 @@ public class UnknownVideohostingCore extends PluginForHost {
                 }
                 br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
                 br.postPageRaw("https://" + this.getHost() + "/api/serve/video/" + this.getFID(link), postData);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    /* 2020-05-23: E.g. thevideos.ga special embed URLs from sources in e.g. KinoxTo crawler. */
-                    /* TODO: Check if this is generally possible to use or only for embedded content or only for thevideos.ga */
-                    br.setCurrentURL("https://" + this.getHost() + "/" + this.getFID(link));
-                    final String url = "https://" + this.getHost() + "/stream" + this.getFID(link) + ".mp4";
-                    br.setFollowRedirects(false);
-                    br.getPage(url);
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    return br.getRedirectLocation();
-                }
                 /* 2nd offlinecheck */
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
                 if (errormessage != null && (errormessage.equalsIgnoreCase("captcha required") || errormessage.equalsIgnoreCase("invalid captcha verification"))) {
@@ -536,6 +541,8 @@ public class UnknownVideohostingCore extends PluginForHost {
             }
         } else {
             final int pairingValidity = Integer.parseInt(pairingDurationStr) * 1000;
+            /* Save this timestamp as it might be useful in the future! */
+            this.getDownloadLink().setProperty("pairing_validity", System.currentTimeMillis() + pairingValidity);
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 final SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm");
                 final String formattedDate = formatter.format(new Date(System.currentTimeMillis() + pairingValidity));
@@ -633,6 +640,8 @@ public class UnknownVideohostingCore extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             dllink = this.getDllink(link, true);
         }
+        /* Debug-Test */
+        // isPairing.set(false);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
@@ -657,7 +666,11 @@ public class UnknownVideohostingCore extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        if (isPairing.get()) {
+            return 1;
+        } else {
+            return free_maxdownloads;
+        }
     }
 
     @Override
