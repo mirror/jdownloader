@@ -61,8 +61,9 @@ public class HqpornerCom extends PornEmbedParser {
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (decryptedLinks.size() > 0 && names.length() > 0) {
+            final String accressName = names.toString();
             for (final DownloadLink dl : decryptedLinks) {
-                dl.setProperty("actress_name", names.toString());
+                dl.setProperty("actress_name", accressName);
             }
         }
         return decryptedLinks;
