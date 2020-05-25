@@ -91,7 +91,7 @@ public class UnknownVideohostingCore extends PluginForHost {
     private static final int           free_maxdownloads = -1;
     protected String                   dllink            = null;
     protected boolean                  server_issues     = false;
-    private static final Object        LOCK              = new Object();
+    private static Object              LOCK              = new Object();
     private static final AtomicBoolean isPairing         = new AtomicBoolean(true);
 
     @Override
