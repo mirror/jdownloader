@@ -20,6 +20,8 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -83,40 +85,78 @@ public class ThevideosGa extends antiDDoSForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        dllink = String.format("https://thevideos.ga/stream%s.mp4", this.getFID(link));
-        br.setAllowedResponseCodes(new int[] { 502 });
-        br.setFollowRedirects(false);
-        br.getPage(dllink);
-        /* 2020-05-24: 502 is typical for timed-out URLs here */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 502) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.info("No redirect found --> Content is probably offline");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-            if (con.getResponseCode() == 404) {
+        final String directurlproperty = "directurl";
+        dllink = checkDirectLink(link, "directurl");
+        if (dllink != null) {
+            logger.info("Successfully re-used stored directurl");
+        } else {
+            /*
+             * 2020-05-25: Basically the URLs which the user adds expire after some time but the final downloadurls seem to last
+             * longer/forever (?)
+             */
+            logger.info("Failed to find/re-use old directurl");
+            dllink = String.format("https://thevideos.ga/stream%s.mp4", this.getFID(link));
+            br.setAllowedResponseCodes(new int[] { 502 });
+            br.setFollowRedirects(false);
+            br.getPage(dllink);
+            /* 2020-05-24: 502 is typical for timed-out URLs here */
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 502) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.getCompleteContentLength() < 1000) {
-                /* 2020-05-24 */
-                logger.info("File is very small --> Must be offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                server_issues = true;
             }
-        } finally {
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.info("No redirect found --> Content is probably offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (con.getCompleteContentLength() < 1000) {
+                    /* 2020-05-24 */
+                    logger.info("File is very small --> Must be offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty(directurlproperty, dllink);
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                    return null;
+                }
+                link.setDownloadSize(con.getCompleteContentLength());
+                return dllink;
+            } catch (final Exception e) {
+                logger.log(e);
+                link.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
     }
 
     @Override
