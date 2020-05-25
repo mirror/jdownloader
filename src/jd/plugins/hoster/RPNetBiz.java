@@ -20,11 +20,10 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-import org.appwork.storage.simplejson.JSonArray;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonNode;
-import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.IconKey;
@@ -32,6 +31,7 @@ import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,15 +48,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
+import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(?:www\\.)?dl[^\\.]*ßß.rpnet\\.biz/download/.*/([^/\\s]+)?" })
 public class RPNetBiz extends PluginForHost {
-    private static final String mName              = "rpnet.biz";
-    private static final String mProt              = "http://";
-    private static final String api_base           = "https://premium.rpnet.biz/";
-    private static final int    HDD_WAIT_THRESHOLD = 10 * 60000;                  // 10 mins in
+    private static final String          mName              = "rpnet.biz";
+    private static final String          mProt              = "http://";
+    private static final String          api_base           = "https://premium.rpnet.biz/";
+    private static MultiHosterManagement mhm                = new MultiHosterManagement("premium.rpnet.biz");
+    private static final int             HDD_WAIT_THRESHOLD = 10 * 60000;                                    // 10 mins in
 
-    // ms
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
@@ -86,7 +87,6 @@ public class RPNetBiz extends PluginForHost {
     }
 
     public void prepBrowser() {
-        // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
@@ -145,13 +145,13 @@ public class RPNetBiz extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (StringUtils.isEmpty(account.getUser())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "User name can not be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (StringUtils.isEmpty(account.getPass()) || !account.getPass().matches("[a-f0-9]{40}")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use API Key as password!\r\nYou can find it here: premium.rpnet.biz/usercp.php?action=showAccountInfo", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         prepBrowser();
         br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + URLEncoder.encode(account.getPass(), "UTF-8") + "&action=showAccountInformation");
         if (br.toString().contains("Invalid authentication.")) {
@@ -159,17 +159,22 @@ public class RPNetBiz extends PluginForHost {
         } else if (br.containsHTML("IP Ban in effect for")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is temporarily banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
-        JSonObject accountInfo = (JSonObject) node.get("accountInfo");
-        long expiryDate = Long.parseLong(accountInfo.get("premiumExpiry").toString().replaceAll("\"", ""));
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("accountInfo");
+        final String currentServer = (String) entries.get("currentServer");
+        final long expiryDate = JavaScriptEngineFactory.toLong(entries.get("premiumExpiry"), 0);
         ai.setValidUntil(expiryDate * 1000, br);
-        String hosts = br.getPage(api_base + "hostlist.php");
+        final String hosts = br.getPage(api_base + "hostlist.php");
         if (hosts != null) {
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
             ai.setMultiHostSupport(this, supportedHosts);
         }
         account.setType(AccountType.PREMIUM);
-        ai.setStatus("Premium Account");
+        String status = "Premium Account";
+        if (!StringUtils.isEmpty(currentServer)) {
+            status += String.format(" [Current server: %s]", currentServer);
+        }
+        ai.setStatus(status);
         return ai;
     }
 
@@ -205,22 +210,21 @@ public class RPNetBiz extends PluginForHost {
             /* request Download */
             String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
             br.getPage(apiDownloadLink);
-            JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-            JSonArray links = (JSonArray) node.get("links");
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("links");
             // for now there is only one generated link per api call, could be changed in the future, therefore iterate anyway
-            for (JSonNode linkNode : links) {
-                JSonObject linkObj = (JSonObject) linkNode;
-                JSonNode errorNode = linkObj.get("error");
-                if (errorNode != null) {
+            for (final Object linkO : ressourcelist) {
+                entries = (Map<String, Object>) linkO;
+                final Object errorO = entries.get("error");
+                if (errorO != null) {
                     // shows a more detailed error message returned by the API, especially if the DL Limit is reached for a host
-                    String msg = errorNode.toString();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
+                    mhm.handleErrorGeneric(account, link, (String) errorO, 50);
                 }
                 // Only ID given? => request the download from rpnet hdd
-                JSonNode idNode = linkObj.get("id");
+                final Object queueIDO = entries.get("id");
                 generatedLink = null;
-                if (idNode != null) {
-                    final String id = idNode.toString();
+                if (queueIDO != null) {
+                    final int queueID = ((Number) queueIDO).intValue();
                     final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
                         protected long lastCurrent    = -1;
                         protected long lastTotal      = -1;
@@ -275,26 +279,26 @@ public class RPNetBiz extends PluginForHost {
                                 logger.info("Process aborted by user");
                                 throw new PluginException(LinkStatus.ERROR_RETRY);
                             }
-                            br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
-                            JSonObject node2 = null;
-                            JSonObject downloadNode = null;
+                            br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + queueID);
                             String tmp = null;
-                            Integer currentProgress = null;
+                            int currentProgress = 0;
                             try {
-                                node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-                                downloadNode = (JSonObject) node2.get("download");
-                                tmp = downloadNode.get("status").toString();
+                                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                                entries = (Map<String, Object>) entries.get("download");
+                                tmp = (String) entries.get("status");
                                 currentProgress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
                             } catch (final Throwable e) {
+                                /* This should never happen */
                                 /* 2020-05-24: E.g. {"downloads":null} */
                                 logger.log(e);
                                 logger.info("Error parsing json");
+                                // mhm.handleErrorGeneric(account, link, "Bad json response", 50);
                                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad json response");
                             }
                             // download complete?
-                            if (currentProgress.intValue() == 100) {
-                                String tmp2 = downloadNode.get("rpnet_link").toString();
-                                final Object max_connections = downloadNode.get("max_connections");
+                            if (currentProgress == 100) {
+                                String tmp2 = (String) entries.get("rpnet_link");
+                                final Object max_connections = entries.get("max_connections");
                                 if (max_connections != null) {
                                     final int chunks = Integer.valueOf(max_connections.toString());
                                     if (chunks > 0) {
@@ -305,7 +309,7 @@ public class RPNetBiz extends PluginForHost {
                                 break;
                             } else {
                                 link.addPluginProgress(waitProgress);
-                                waitProgress.updateValues(currentProgress.intValue(), 100);
+                                waitProgress.updateValues(currentProgress, 100);
                                 for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
                                     if (isAbort()) {
                                         throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -313,9 +317,9 @@ public class RPNetBiz extends PluginForHost {
                                         Thread.sleep(1000);
                                     }
                                 }
-                                if (currentProgress.intValue() != lastProgress) {
+                                if (currentProgress != lastProgress) {
                                     lastProgressChange = System.currentTimeMillis();
-                                    lastProgress = currentProgress.intValue();
+                                    lastProgress = currentProgress;
                                 }
                             }
                         }
@@ -324,23 +328,22 @@ public class RPNetBiz extends PluginForHost {
                     }
                 } else {
                     /* Direct download */
-                    String tmp = ((JSonObject) linkNode).get("generated").toString();
-                    final Object max_connections = ((JSonObject) linkNode).get("max_connections");
+                    final Object max_connections = entries.get("max_connections");
                     if (max_connections != null) {
-                        final int chunks = Integer.valueOf(max_connections.toString());
+                        final int chunks = ((Number) max_connections).intValue();
                         if (chunks > 0) {
                             maxChunks = -chunks;
                         }
                     }
-                    generatedLink = tmp.substring(1, tmp.length() - 1);
-                    filename = ((JSonObject) linkNode).get("filename").toString();
+                    generatedLink = (String) entries.get("generated");
+                    filename = (String) entries.get("filename");
                     break;
                 }
             }
         }
         showMessage(link, "Download begins!");
         if (StringUtils.isEmpty(generatedLink)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 3 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 20);
         }
         try {
             /*
