@@ -121,7 +121,7 @@ public class ShareOnlineTo extends XFileSharingProBasic {
 
     @Override
     protected boolean allow_api_availablecheck_in_premium_mode_if_apikey_is_available(final Account account) {
-        final boolean apikey_is_available = this.getAPIKey(account) != null;
+        final boolean apikey_is_available = this.getAPIKeyFromAccount(account) != null;
         /* Enable this switch to be able to use this in dev mode. Default = off as we do not use the API by default! */
         final boolean allow_api_premium_download = true;
         return DebugMode.TRUE_IN_IDE_ELSE_FALSE && apikey_is_available && allow_api_premium_download;

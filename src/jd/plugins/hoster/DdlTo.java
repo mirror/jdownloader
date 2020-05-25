@@ -329,6 +329,27 @@ public class DdlTo extends XFileSharingProBasic {
         return false;
     }
 
+    /** 2020-05-25: This is just a test */
+    // @Override
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // return massLinkcheckerAPI(urls, this.getAPIKeyFromConfig(), true);
+    // }
+    /**
+     * 2020-05-25 Test-run :) Worst thing that can happen is user puts in a wrong apikey --> Linkcheck fails but download will still work as
+     * it checks links via website!
+     */
+    @Override
+    protected boolean allow_single_linkcheck_over_api() {
+        /* 2020-05-25: Special API test. */
+        final String apikey = this.getAPIKeyFromConfig();
+        if (this.isAPIKey(apikey)) {
+            return true;
+        } else {
+            /* E.g. bad user input */
+            return false;
+        }
+    }
+
     // @Override
     // public String regexFilenameAbuse(final Browser br) {
     // String filename = br.getRegex("label>Filename</label>\\s*<input[^>]*value=\"([^<>\"]+)\"").getMatch(0);

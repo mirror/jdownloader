@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoUpstreamTo;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -107,5 +109,27 @@ public class UpstreamTo extends XFileSharingProBasic {
     protected boolean isVideohosterEmbed() {
         /* 2020-01-22: Special */
         return true;
+    }
+
+    /** 2020-05-25: This is just a test */
+    // @Override
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // return massLinkcheckerAPI(urls, this.getAPIKeyFromConfig(), true);
+    // }
+    @Override
+    protected boolean allow_single_linkcheck_over_api() {
+        /* 2020-05-25: Special API test. */
+        final String apikey = this.getAPIKeyFromConfig();
+        if (this.isAPIKey(apikey)) {
+            return true;
+        } else {
+            /* E.g. bad user input */
+            return false;
+        }
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideo> getConfigInterface() {
+        return XFSConfigVideoUpstreamTo.class;
     }
 }

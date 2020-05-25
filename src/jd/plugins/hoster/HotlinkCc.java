@@ -188,7 +188,7 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    public boolean isPremiumOnly() {
         /*
          * 2020-01-30: Special because template code matches also on ">\\s*Available Only for Premium Members" which is always present in
          * their html

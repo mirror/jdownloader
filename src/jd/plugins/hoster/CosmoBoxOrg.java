@@ -111,9 +111,9 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    public boolean isPremiumOnly() {
         /* 2019-07-23: Special */
-        boolean premiumonlyHTML = super.isPremiumOnlyHTML();
+        boolean premiumonlyHTML = super.isPremiumOnly();
         if (!premiumonlyHTML) {
             premiumonlyHTML = new Regex(correctedBR, "This file can only be downloaded by").matches();
         }

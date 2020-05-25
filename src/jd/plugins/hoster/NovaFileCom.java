@@ -202,7 +202,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    public boolean isPremiumOnly() {
         /* 2019-08-21 */
         return new Regex(correctedBR, ">\\s*This file can only be downloaded by Premium").matches();
     }
