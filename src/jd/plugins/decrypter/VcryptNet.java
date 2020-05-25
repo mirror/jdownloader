@@ -38,6 +38,10 @@ public class VcryptNet extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    protected boolean useRUA() {
+        return true;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://").replace("vcrypt.pw/", "vcrypt.net/");
@@ -62,7 +66,7 @@ public class VcryptNet extends antiDDoSForDecrypt {
             }
             final String code = this.getCaptchaCode(captchaurl, param);
             textCaptchaForm.put("answerpost", code);
-            br.submitForm(textCaptchaForm);
+            submitForm(textCaptchaForm);
             if (br.containsHTML("convert_string_img")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -97,6 +101,7 @@ public class VcryptNet extends antiDDoSForDecrypt {
             } else if (continueForm != null) {
                 submitForm(continueForm);
             }
+            /* 2020-05-25 */
             /* Single redirect url */
             redirect = br.getRedirectLocation();
             if (redirect == null) {

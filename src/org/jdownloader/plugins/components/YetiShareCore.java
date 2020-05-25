@@ -511,8 +511,9 @@ public class YetiShareCore extends antiDDoSForHost {
             final int startValue = 0;
             /* loopLog holds information about the continue_link of each loop so afterwards we get an overview via logger */
             String loopLog = continue_link;
-            for (int i = startValue; i <= 5; i++) {
-                logger.info("Handling pre-download page #" + (i + 1));
+            final int maxLoops = 8;
+            for (int i = startValue; i <= maxLoops; i++) {
+                logger.info("Handling pre-download page " + (i + 1) + " of max. allowed " + maxLoops);
                 timeBeforeCaptchaInput = System.currentTimeMillis();
                 if (i > startValue) {
                     loopLog += " --> " + continue_link;
@@ -702,7 +703,7 @@ public class YetiShareCore extends antiDDoSForHost {
     /** If overridden, make sure to make isDownloadlink compatible as well! */
     protected String getDllink(final Browser br) {
         /* 2020-02-26: Example without 'http': cnubis.com */
-        String ret = br.getRegex("\"((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
+        String ret = br.getRegex("(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         if (StringUtils.isEmpty(ret)) {
             ret = br.getRegex("\"(https?://[^\"]+/files/[^\"]+)\"").getMatch(0);
         }

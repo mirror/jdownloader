@@ -593,6 +593,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                         account.setType(AccountType.FREE);
                         ai.setStatus("Free Account");
                     }
+                } else {
+                    account.setType(AccountType.FREE);
+                    ai.setStatus("Free Account");
                 }
                 // extra traffic in webmode isn't added to daily traffic, so we need to do it manually. (api mode is has been added to
                 // traffic left/max)
