@@ -2265,7 +2265,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     public String getGenericDownloadlinkRegExFile() {
         // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
+        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
     }
 
     public String getGenericDownloadlinkRegExImage() {
