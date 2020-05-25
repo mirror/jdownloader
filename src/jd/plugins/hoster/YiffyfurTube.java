@@ -82,12 +82,14 @@ public class YiffyfurTube extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final boolean use_api = true;
+        /* 2020-05-25: API disabled as website seems to be more reliable */
+        final boolean use_api = false;
         ArrayList<Object> ressourcelist = null;
         String filename = null;
         String dllink_fallback = null;
         final String streamtype_fallback = "iphone";
         String streamtype = "h264";
+        boolean websiteUsed = false;
         if (use_api) {
             final String fid = this.getFID(link);
             br.getPage("https://api.beastialitytube.link/api.php?ajaxFunction=video&vid=" + fid);
@@ -107,11 +109,12 @@ public class YiffyfurTube extends antiDDoSForHost {
             ressourcelist = (ArrayList<Object>) entries.get("files");
         } else {
             /* Website */
+            websiteUsed = true;
             getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String jssource = br.getRegex("videoFilesJson(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+            final String jssource = br.getRegex("videoFilesJson(?:\")?\\s*(?::|=)\\s*(\\[.*?\\])").getMatch(0);
             if (jssource != null) {
                 ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
             }
@@ -164,7 +167,7 @@ public class YiffyfurTube extends antiDDoSForHost {
                 logger.info("BEST handling for multiple video source failed");
             }
         }
-        if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink) && dllink_fallback != null) {
             dllink = dllink_fallback;
             streamtype = streamtype_fallback;
         }
@@ -187,9 +190,11 @@ public class YiffyfurTube extends antiDDoSForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        if (!StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isNotEmpty(dllink)) {
             /* Now try to find correct host and base (2020-03-03: hardcoded ) */
-            br.getPage(link.getPluginPatternMatcher());
+            if (!websiteUsed) {
+                br.getPage(link.getPluginPatternMatcher());
+            }
             final String host = br.getRegex("h264Base\\s*=\\s*\\'(https?://[^<>\"\\']+)\\'\\s*\\+ h264Base;").getMatch(0);
             String base = br.getRegex("var h264Base\\s*=\\s*\\'([^<>\"\\']+)\\';").getMatch(0);
             /* 2020-03-03: Hardcode base! */
@@ -199,21 +204,24 @@ public class YiffyfurTube extends antiDDoSForHost {
             } else if (!dllink.startsWith("http")) {
                 dllink = String.format("https://cdn.beastialitytube.link/static/webseed/%s/%s", streamtype, dllink);
             }
-            if (!isDownload) {
-                /* Do not check URL if user wants to download otherwise we'll get an error 403. */
-                URLConnectionAdapter con = null;
+        } else {
+            /* Final fallback */
+            dllink = br.getRegex("\\s+var iphoneVideoSource = \\'(http[^<>\"\\']+\\.mp4)\\';").getMatch(0);
+        }
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            /* Do not check URL if user wants to download otherwise we'll get an error 403. */
+            URLConnectionAdapter con = null;
+            try {
+                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                    server_issues = true;
+                } else {
+                    link.setDownloadSize(con.getLongContentLength());
+                }
+            } finally {
                 try {
-                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                    if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                        server_issues = true;
-                    } else {
-                        link.setDownloadSize(con.getLongContentLength());
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }
