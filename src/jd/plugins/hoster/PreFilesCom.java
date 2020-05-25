@@ -109,9 +109,9 @@ public class PreFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    public boolean isPremiumOnly() {
         /* 2019-07-03: Special */
-        boolean premiumonly = super.isPremiumOnlyHTML();
+        boolean premiumonly = super.isPremiumOnly();
         if (!premiumonly) {
             premiumonly = new Regex(correctedBR, "<p>Sorry, This file only can be downloaded by PRO Membership").matches();
         }

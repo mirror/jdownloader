@@ -14,4 +14,11 @@ public interface XFSConfig extends PluginConfigInterface {
     boolean isPreferHTTP();
 
     void setPreferHTTP(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Enter your API key which can be used for linkchecking")
+    @Order(31)
+    String getApikey();
+
+    void setApikey(String apiKey);
 }

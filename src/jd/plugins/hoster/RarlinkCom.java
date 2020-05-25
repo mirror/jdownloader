@@ -105,12 +105,12 @@ public class RarlinkCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    public boolean isPremiumOnly() {
         /*
          * 2019-10-01: Special: According to website, free users can download files smaller than 1 MB but for those, they will just display
          * another errormessage.
          */
-        boolean isPremiumonlyHTML = super.isPremiumOnlyHTML();
+        boolean isPremiumonlyHTML = super.isPremiumOnly();
         if (!isPremiumonlyHTML) {
             final boolean premiumonly_filehost = new Regex(correctedBR, "Upgrade Premium to Download this File").matches();
             isPremiumonlyHTML = premiumonly_filehost;

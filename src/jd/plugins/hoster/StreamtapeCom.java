@@ -133,7 +133,6 @@ public class StreamtapeCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            /* 2020-04-21: Not yet working */
             dllink = br.getRegex("(/get_video\\?id=[^<>\"']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");

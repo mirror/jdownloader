@@ -107,9 +107,9 @@ public class BtafileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnlyHTML() {
+    public boolean isPremiumOnly() {
         /* 2020-05-08: Special */
-        boolean premiumonly = super.isPremiumOnlyHTML();
+        boolean premiumonly = super.isPremiumOnly();
         if (!premiumonly) {
             premiumonly = new Regex(correctedBR, ">\\s*This file reached max free downloads limit").matches();
         }
