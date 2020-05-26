@@ -202,148 +202,149 @@ public class RPNetBiz extends PluginForHost {
         String generatedLink = checkDirectLink(link, "cachedDllink");
         int maxChunks = 0;
         String filename = null;
-        if (generatedLink != null) {
-            logger.info("Reusing cached download link");
-        } else {
+        Object max_connections = null;
+        if (generatedLink == null) {
             // end of workaround
             showMessage(link, "Generating Link");
             /* request Download */
             String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
             br.getPage(apiDownloadLink);
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("links");
-            // for now there is only one generated link per api call, could be changed in the future, therefore iterate anyway
-            for (final Object linkO : ressourcelist) {
-                entries = (Map<String, Object>) linkO;
-                final Object errorO = entries.get("error");
-                if (errorO != null) {
-                    // shows a more detailed error message returned by the API, especially if the DL Limit is reached for a host
-                    mhm.handleErrorGeneric(account, link, (String) errorO, 50);
-                }
-                // Only ID given? => request the download from rpnet hdd
-                final Object queueIDO = entries.get("id");
-                generatedLink = null;
-                if (queueIDO != null) {
-                    final int queueID = ((Number) queueIDO).intValue();
-                    final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
-                        protected long lastCurrent    = -1;
-                        protected long lastTotal      = -1;
-                        protected long startTimeStamp = -1;
+            final Object downloadsO = entries.get("downloads");
+            if (downloadsO != null) {
+                /* Should always be given! */
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "downloads/{0}");
+            }
+            final Object errorO = entries.get("error");
+            if (errorO != null) {
+                // shows a more detailed error message returned by the API, especially if the DL Limit is reached for a host
+                mhm.handleErrorGeneric(account, link, (String) errorO, 50);
+            }
+            max_connections = entries.get("max_connections");
+            // Only ID given? => request the download from rpnet hdd
+            final Object queueIDO = entries.get("id");
+            if (queueIDO != null) {
+                logger.info("Queue download");
+                final int queueID = ((Number) queueIDO).intValue();
+                final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+                    protected long lastCurrent    = -1;
+                    protected long lastTotal      = -1;
+                    protected long startTimeStamp = -1;
 
-                        @Override
-                        public PluginTaskID getID() {
-                            return PluginTaskID.WAIT;
-                        }
+                    @Override
+                    public PluginTaskID getID() {
+                        return PluginTaskID.WAIT;
+                    }
 
-                        @Override
-                        public String getMessage(Object requestor) {
-                            if (requestor instanceof ETAColumn) {
-                                final long eta = getETA();
-                                if (eta >= 0) {
-                                    return TimeFormatter.formatMilliSeconds(eta, 0);
-                                }
-                                return "";
+                    @Override
+                    public String getMessage(Object requestor) {
+                        if (requestor instanceof ETAColumn) {
+                            final long eta = getETA();
+                            if (eta >= 0) {
+                                return TimeFormatter.formatMilliSeconds(eta, 0);
                             }
-                            return "Waiting for upload to rpnet HDD";
+                            return "";
                         }
+                        return "Waiting for upload to rpnet HDD";
+                    }
 
-                        @Override
-                        public void updateValues(long current, long total) {
-                            super.updateValues(current, total);
-                            if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
-                                lastTotal = total;
-                                lastCurrent = current;
-                                startTimeStamp = System.currentTimeMillis();
-                                // this.setETA(-1);
-                                return;
-                            }
-                            long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
-                            if (currentTimeDifference <= 0) {
-                                return;
-                            }
-                            long speed = (current * 10000) / currentTimeDifference;
-                            if (speed == 0) {
-                                return;
-                            }
-                            long eta = ((total - current) * 10000) / speed;
-                            this.setETA(eta);
+                    @Override
+                    public void updateValues(long current, long total) {
+                        super.updateValues(current, total);
+                        if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                            lastTotal = total;
+                            lastCurrent = current;
+                            startTimeStamp = System.currentTimeMillis();
+                            // this.setETA(-1);
+                            return;
                         }
-                    };
-                    waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-                    waitProgress.setProgressSource(this);
-                    try {
-                        long lastProgressChange = System.currentTimeMillis();
-                        int lastProgress = -1;
-                        while (System.currentTimeMillis() - lastProgressChange < HDD_WAIT_THRESHOLD) {
-                            if (isAbort()) {
-                                logger.info("Process aborted by user");
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            }
-                            br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + queueID);
-                            String tmp = null;
-                            int currentProgress = 0;
+                        long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                        if (currentTimeDifference <= 0) {
+                            return;
+                        }
+                        long speed = (current * 10000) / currentTimeDifference;
+                        if (speed == 0) {
+                            return;
+                        }
+                        long eta = ((total - current) * 10000) / speed;
+                        this.setETA(eta);
+                    }
+                };
+                waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+                waitProgress.setProgressSource(this);
+                try {
+                    long lastProgressChange = System.currentTimeMillis();
+                    int lastProgress = -1;
+                    while (System.currentTimeMillis() - lastProgressChange < HDD_WAIT_THRESHOLD) {
+                        if (isAbort()) {
+                            logger.info("Process aborted by user");
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                        // br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
+                        // Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + queueID);
+                        br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadsInformation&type=queue&ids%5B%5D=" + queueID);
+                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "downloads/{0}");
+                        final String error = (String) entries.get("error");
+                        if (!StringUtils.isEmpty(error)) {
+                            mhm.handleErrorGeneric(account, link, error, 20);
+                        }
+                        String statusText = null;
+                        statusText = (String) entries.get("text_status");
+                        int currentProgress = 0;
+                        if ("completed".equalsIgnoreCase(statusText)) {
+                            currentProgress = 100;
+                        } else {
                             try {
-                                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                                entries = (Map<String, Object>) entries.get("download");
-                                tmp = (String) entries.get("status");
-                                currentProgress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
+                                currentProgress = Integer.parseInt(statusText.substring(1, statusText.length() - 1));
                             } catch (final Throwable e) {
-                                /* This should never happen */
-                                /* 2020-05-24: E.g. {"downloads":null} */
-                                logger.log(e);
-                                logger.info("Error parsing json");
-                                // mhm.handleErrorGeneric(account, link, "Bad json response", 50);
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad json response");
-                            }
-                            // download complete?
-                            if (currentProgress == 100) {
-                                String tmp2 = (String) entries.get("rpnet_link");
-                                final Object max_connections = entries.get("max_connections");
-                                if (max_connections != null) {
-                                    final int chunks = Integer.valueOf(max_connections.toString());
-                                    if (chunks > 0) {
-                                        maxChunks = -chunks;
-                                    }
-                                }
-                                generatedLink = tmp2.substring(1, tmp2.length() - 1);
-                                break;
-                            } else {
-                                link.addPluginProgress(waitProgress);
-                                waitProgress.updateValues(currentProgress, 100);
-                                for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
-                                    if (isAbort()) {
-                                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                                    } else {
-                                        Thread.sleep(1000);
-                                    }
-                                }
-                                if (currentProgress != lastProgress) {
-                                    lastProgressChange = System.currentTimeMillis();
-                                    lastProgress = currentProgress;
-                                }
                             }
                         }
-                    } finally {
-                        link.removePluginProgress(waitProgress);
-                    }
-                } else {
-                    /* Direct download */
-                    final Object max_connections = entries.get("max_connections");
-                    if (max_connections != null) {
-                        final int chunks = ((Number) max_connections).intValue();
-                        if (chunks > 0) {
-                            maxChunks = -chunks;
+                        // download complete?
+                        if (currentProgress == 100) {
+                            generatedLink = (String) entries.get("rpnet_link");
+                            filename = (String) entries.get("filename");
+                            max_connections = entries.get("max_connections");
+                            break;
+                        } else {
+                            link.addPluginProgress(waitProgress);
+                            waitProgress.updateValues(currentProgress, 100);
+                            for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                                if (isAbort()) {
+                                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                                } else {
+                                    Thread.sleep(1000);
+                                }
+                            }
+                            if (currentProgress != lastProgress) {
+                                lastProgressChange = System.currentTimeMillis();
+                                lastProgress = currentProgress;
+                            }
                         }
                     }
-                    generatedLink = (String) entries.get("generated");
-                    filename = (String) entries.get("filename");
-                    break;
+                } finally {
+                    link.removePluginProgress(waitProgress);
                 }
+            } else {
+                logger.info("Direct download");
+                generatedLink = (String) entries.get("generated");
+                filename = (String) entries.get("filename");
             }
         }
         showMessage(link, "Download begins!");
         if (StringUtils.isEmpty(generatedLink)) {
             mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 20);
+        }
+        if (max_connections != null) {
+            maxChunks = Integer.valueOf(max_connections.toString());
+            logger.info("Found API maxConnections value: " + maxChunks);
+        }
+        if (maxChunks == 1) {
+            maxChunks = 1;
+        } else if (maxChunks > 0) {
+            maxChunks = -maxChunks;
+        } else {
+            maxChunks = 0;
         }
         try {
             /*
