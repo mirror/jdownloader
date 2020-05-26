@@ -24,10 +24,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +48,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "https?://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" })
 public class FileRioCom extends PluginForHost {
@@ -313,14 +313,14 @@ public class FileRioCom extends PluginForHost {
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "\"(https?://(\\d+\\.\\d+\\.\\d+\\.\\d+|([a-z0-9]+\\.)filerio\\.in):\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, "\"(https?://(\\d+\\.\\d+\\.\\d+\\.\\d+|([a-z0-9]+\\.)filerio\\.in)(?::\\d+)?/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<span style=\"width:915px; height:67px; font\\-family:\"Tahoma\"; font\\-size:12px; color:#356186; border:1px solid #bbb; padding:7px;\">[\t\n\r ]+<a href=\"(https[^<>\"]*?)\"").getMatch(0);
                         if (dllink == null) {
                             // Try to find crypted link
                             dllink = br.getRegex(">eval\\(unescape\\(\\'([^<>\"]*?)\\'\\)\\)").getMatch(0);
                             if (dllink != null) {
-                                dllink = new Regex(Encoding.htmlDecode(dllink), "location\\.href=\"(http[^<>\"]*?)\"").getMatch(0);
+                                dllink = new Regex(Encoding.htmlDecode(dllink), "location\\.href=\"(https?[^<>\"]*?)\"").getMatch(0);
                             }
                             if (dllink == null) {
                                 String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -477,7 +477,7 @@ public class FileRioCom extends PluginForHost {
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file','(http.*?)'\\)").getMatch(0);
+                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file','(https?.*?)'\\)").getMatch(0);
                 }
             }
         }
