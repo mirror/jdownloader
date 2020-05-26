@@ -24,9 +24,15 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,6 +48,7 @@ public class EPornerCom extends PluginForHost {
 
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.eporner.com/");
     }
 
     @Override
@@ -70,9 +77,14 @@ public class EPornerCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
-        this.setBrowserExclusive();
+        /* This would dump our login cookies in account mode! */
+        // this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (!this.br.getURL().contains("porn/") || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -167,7 +179,12 @@ public class EPornerCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    public void handleDownload(DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -179,7 +196,12 @@ public class EPornerCom extends PluginForHost {
             br.followConnection();
             /* 2020-05-26: Limit = 100 videos per day for unregistered users, no limit for registered users */
             if (br.containsHTML(">\\s*You have downloaded more than|>\\s*Please try again tomorrow or register for free to unlock unlimited")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 60 * 60 * 1000l);
+                if (account != null) {
+                    /* 2020-05-26: This should never happen in account mode */
+                    throw new AccountUnavailableException("Daily download limit reached or session error", 10 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 60 * 60 * 1000l);
+                }
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download server error", 10 * 60 * 1000l);
         }
@@ -240,9 +262,95 @@ public class EPornerCom extends PluginForHost {
         }
     }
 
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                final Form loginform = new Form();
+                loginform.setMethod(MethodType.POST);
+                loginform.setAction("https://www." + this.getHost() + "/xhr/login/");
+                loginform.put("xhr", "1");
+                loginform.put("act", "login");
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("haslo", Encoding.urlEncode(account.getPass()));
+                loginform.put("ref", "/");
+                br.submitForm(loginform);
+                /* 2020-05-26: E.g. login failed: {"status":0,"msg_head":"Login failed.","msg_body":"Bad login\/password"} */
+                br.getPage("/");
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.containsHTML("/logout");
+    }
+
+    /** Free accounts do not have any downloadlimits. Anonymous users can download max. 100 files per day. */
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        account.setConcurrentUsePossible(false);
+        ai.setStatus("Registered (free) user");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
+        this.requestFileInformation(link, account);
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
     @Override
     public Class<? extends EpornerComConfig> getConfigInterface() {
         return EpornerComConfig.class;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /* 2020-05-26: No captchas at all */
+        return false;
     }
 
     @Override
