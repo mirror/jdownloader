@@ -35,9 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(?:www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
     private String dllink = null;
@@ -87,10 +86,10 @@ public class YouJizzCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         // if (!br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         if (filename == null || filename.trim().length() == 0) {
@@ -98,6 +97,10 @@ public class YouJizzCom extends PluginForHost {
         }
         if (filename == null || filename.trim().length() == 0) {
             filename = br.getRegex("title1\">(.*?)</").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback */
+            filename = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -109,7 +112,7 @@ public class YouJizzCom extends PluginForHost {
         }
         br.getPage(Encoding.htmlOnlyDecode(embed));
         // 20170717
-        final String filter = br.getRegex("var\\s+encodings\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+        final String filter = br.getRegex("dataEncodings\\s*=\\s*(\\[.*?\\]);").getMatch(0);
         if (filter != null) {
             final ArrayList<Object> results = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
             // mobile has mp4 and non mobile is hls
@@ -127,7 +130,6 @@ public class YouJizzCom extends PluginForHost {
                     dllink = d;
                 }
             }
-
         }
         if (dllink == null) {
             dllink = br.getRegex("addVariable\\(\"file\"\\s*,.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
@@ -153,14 +155,13 @@ public class YouJizzCom extends PluginForHost {
                     Browser br2 = br.cloneBrowser();
                     br2.getPage(playlist);
                     // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
-                    dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
+                    dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t]+</levels>").getMatch(0);
                     if (dllink != null) {
                         dllink = dllink.replace("%252", "%2");
                     }
                 }
             }
         }
-
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -173,8 +174,8 @@ public class YouJizzCom extends PluginForHost {
             con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
