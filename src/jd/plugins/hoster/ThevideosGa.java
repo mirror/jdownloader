@@ -91,8 +91,8 @@ public class ThevideosGa extends antiDDoSForHost {
             logger.info("Successfully re-used stored directurl");
         } else {
             /*
-             * 2020-05-25: Basically the URLs which the user adds expire after some time but the final downloadurls seem to last
-             * longer/forever (?)
+             * 2020-05-25: Basically the URLs which the user adds expire after some time but the final downloadurls seem to last longer
+             * (multiple hours longer than the URL which the user adds).
              */
             logger.info("Failed to find/re-use old directurl");
             dllink = String.format("https://thevideos.ga/stream%s.mp4", this.getFID(link));
