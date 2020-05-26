@@ -581,43 +581,60 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     private void decryptArdmediathekDeNew() throws Exception {
-        String ardBase64 = new Regex(this.parameter, "/([^/]+)/?$").getMatch(0);
-        if (ardBase64 == null) {
-            /* This should never happen */
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        /* E.g. old classic.ardmediathek.de URLs */
+        final boolean requiresOldContentIDHandling;
+        String ardDocumentID = new Regex(this.parameter, "documentId=(\\d+)").getMatch(0);
+        Map<String, Object> entries = null;
+        if (ardDocumentID != null) {
+            requiresOldContentIDHandling = true;
+            this.title = ardDocumentID;
+        } else {
+            requiresOldContentIDHandling = false;
+            String ardBase64;
+            final String pattern_player = ".+/player/([^/]+).*";
+            if (parameter.matches(pattern_player)) {
+                /* E.g. URLs that are a little bit older */
+                ardBase64 = new Regex(this.parameter, pattern_player).getMatch(0);
+            } else {
+                /* New URLs */
+                ardBase64 = new Regex(this.parameter, "/([^/]+)/?$").getMatch(0);
+            }
+            if (ardBase64 == null) {
+                /* This should never happen */
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            if (Encoding.isUrlCoded(ardBase64)) {
+                ardBase64 = Encoding.urlDecode(ardBase64, true);
+            }
+            /* Check if we really have a base64 String otherwise we can abort right away */
+            final String ardBase64Decoded = Encoding.Base64Decode(ardBase64);
+            if (StringUtils.equals(ardBase64, ardBase64Decoded)) {
+                logger.info("Unsupported URL (?)");
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) + "?devicetype=pc&embedded=true");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            ardDocumentID = PluginJSonUtils.getJson(br, "contentId");
+            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "widgets/{0}/");
+            final String broadcastedOn = (String) entries.get("broadcastedOn");
+            final String ardtitle = (String) entries.get("title");
+            final String showname = (String) JavaScriptEngineFactory.walkJson(entries, "show/title");
+            if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String date_formatted = new Regex(broadcastedOn, "(\\d\\d{4}-\\d\\d{2}-\\d{2})").getMatch(0);
+            if (date_formatted == null) {
+                /* Fallback */
+                date_formatted = broadcastedOn;
+            }
+            this.title = showname + " - " + ardtitle;
+            this.date_timestamp = getDateMilliseconds(broadcastedOn);
         }
-        if (Encoding.isUrlCoded(ardBase64)) {
-            ardBase64 = Encoding.urlDecode(ardBase64, true);
-        }
-        /* Check if we really have a base64 String otherwise we can abort right away */
-        final String ardBase64Decoded = Encoding.Base64Decode(ardBase64);
-        if (StringUtils.equals(ardBase64, ardBase64Decoded)) {
-            logger.info("Unsupported URL (?)");
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
-        br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) + "?devicetype=pc&embedded=true");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
-        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "widgets/{0}/");
-        final String broadcastedOn = (String) entries.get("broadcastedOn");
-        final String ardtitle = (String) entries.get("title");
-        final String showname = (String) JavaScriptEngineFactory.walkJson(entries, "show/title");
-        if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String date_formatted = new Regex(broadcastedOn, "(\\d\\d{4}-\\d\\d{2}-\\d{2})").getMatch(0);
-        if (date_formatted == null) {
-            /* Fallback */
-            date_formatted = broadcastedOn;
-        }
-        this.title = showname + " - " + ardtitle;
-        this.date_timestamp = getDateMilliseconds(broadcastedOn);
-        final boolean requiresOldContentID = false;
-        if (requiresOldContentID) {
-            final String ardDocumentID = PluginJSonUtils.getJson(br, "contentId");
+        if (requiresOldContentIDHandling) {
             if (StringUtils.isEmpty(ardDocumentID)) {
                 /* Probably offline content */
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
