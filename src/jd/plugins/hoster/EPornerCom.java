@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/hd\\-porn/\\w+(/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/hd\\-porn/(\\w+)(/[^/]+)?" })
 public class EPornerCom extends PluginForHost {
     public String   dllink        = null;
     private String  vq            = null;
@@ -54,35 +54,48 @@ public class EPornerCom extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (!this.br.getURL().contains("porn/") || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
         if (filename == null) {
             /* Filename inside url */
-            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/\\w+/(.+)").getMatch(0);
+            filename = new Regex(link.getPluginPatternMatcher(), "eporner\\.com/hd\\-porn/\\w+/(.+)").getMatch(0);
             if (filename != null) {
                 /* url filename --> Nicer url filename */
                 filename = filename.replace("-", " ");
             }
         }
         if (filename == null) {
-            /* linkid inside url */
-            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\w+)").getMatch(0);
+            /* Fallback to linkid inside url */
+            filename = getFID(link);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         long filesize = 0;
-        get_dllink(br);
+        getDllink(this.br, link);
         if (dllink == null) {
             /* First try to get DOWNLOADurls */
             final String[][] dloadinfo = this.br.getRegex("href=\"(/dload/[^<>\"]+)\">Download MP4 \\(\\d+p, ([^<>\"]+)\\)</a>").getMatches();
@@ -121,8 +134,12 @@ public class EPornerCom extends PluginForHost {
             server_issues = true;
         }
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".mp4");
-        if (filesize == 0 && dllink != null && !server_issues) {
+        link.setFinalFileName(filename + ".mp4");
+        /*
+         * 2020-05-26: Checking their downloadlink counts to their daily downloadlimit so only check them if the filesize has not been found
+         * already!
+         */
+        if (link.getView().getBytesTotal() <= 0 && dllink != null && !server_issues) {
             /* Only get filesize from url if we were not able to find it in html --> Saves us time! */
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -133,6 +150,7 @@ public class EPornerCom extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     filesize = con.getLongContentLength();
                 } else {
+                    /* 2020-05-26: Probably daily limit reached */
                     server_issues = true;
                 }
             } finally {
@@ -143,36 +161,40 @@ public class EPornerCom extends PluginForHost {
             }
         }
         if (filesize > 0) {
-            downloadLink.setDownloadSize(filesize);
+            link.setDownloadSize(filesize);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2020-05-26: Limit = 100 videos per day for unregistered users, no limit for registered users */
+            if (br.containsHTML(">\\s*You have downloaded more than|>\\s*Please try again tomorrow or register for free to unlock unlimited")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 60 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
 
-    private void get_dllink(final Browser br) {
+    private void getDllink(final Browser br, final DownloadLink link) {
         vq = getPreferredStreamQuality();
         if (vq != null) {
             logger.info("Looking for user selected quality");
             dllink = br.getRegex("<a href=\"(/dload/[^\"]+)\"\\s*>Download MP4 \\(" + vq).getMatch(0);
             if (dllink != null) {
-                logger.info("Found user selected quality");
+                logger.info("Found user selected quality: " + vq);
             } else {
-                logger.info("Failed to find user selected quality");
+                logger.info("Failed to find user selected quality: " + vq);
             }
         }
         if (dllink == null) {
@@ -186,6 +208,11 @@ public class EPornerCom extends PluginForHost {
                     break;
                 }
             }
+        }
+        final String filesize = br.getRegex(">Download MP4 \\(" + vq + "\\s*,\\s*(\\d+[^<>\"]+)\\)").getMatch(0);
+        if (filesize != null) {
+            logger.info("Found filesize for picked quality: " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return;
     }
