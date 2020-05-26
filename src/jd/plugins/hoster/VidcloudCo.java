@@ -17,15 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,6 +28,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidcloud.ru" }, urls = { "https?://(?:www\\.)?(?:vidcloud\\.co|vcstream\\.to|vidcloud\\.ru)/(?:embed|v)/([a-z0-9]+)" })
 public class VidcloudCo extends PluginForHost {
     public VidcloudCo(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class VidcloudCo extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host.equalsIgnoreCase("vidcloud.co")) {
+        if (host == null || host.equalsIgnoreCase("vidcloud.co")) {
             return this.getHost();
         } else {
             return super.rewriteHost(host);
