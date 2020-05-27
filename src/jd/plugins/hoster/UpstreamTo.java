@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.components.config.XFSConfigVideoUpstreamTo;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoUpstreamTo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpstreamTo extends XFileSharingProBasic {
@@ -118,26 +118,16 @@ public class UpstreamTo extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supportsMassLinkcheck() {
-        final String apikey = getAPIKeyFromConfig();
-        if (apikey != null) {
-            /* Allow mass linkcheck over API. */
-            return true;
-        } else {
-            /* Without apikey, mass linkchecking is not possible for this host! */
-            return false;
-        }
+    protected boolean supports_mass_linkcheck_over_api() {
+        final String apiKey = getAPIKeyFromConfig();
+        return isAPIKey(apiKey);
     }
 
     @Override
     protected boolean supports_single_linkcheck_over_api() {
         /* 2020-05-25: Special API test. */
-        final String apikey = getAPIKeyFromConfig();
-        if (apikey != null) {
-            return true;
-        } else {
-            return false;
-        }
+        final String apiKey = getAPIKeyFromConfig();
+        return isAPIKey(apiKey);
     }
 
     @Override

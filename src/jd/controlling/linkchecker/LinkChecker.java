@@ -14,14 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -34,6 +26,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class LinkChecker<E extends CheckableLink> {
     protected static class InternCheckableLink {
@@ -371,7 +371,7 @@ public class LinkChecker<E extends CheckableLink> {
                                         } else {
                                             this.plugin.setLogger(logger = LogController.getFastPluginLogger(plugin.getHost() + "_" + plugin.getLazyP().getClassName()));
                                             ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
-                                            if (PluginForHost.internal_supportsMassLinkcheck(plugin)) {
+                                            if (plugin.internal_supportsMassLinkcheck()) {
                                                 logger.info("Check Multiple FileInformation");
                                                 try {
                                                     final HashSet<DownloadLink> downloadLinks = new HashSet<DownloadLink>();

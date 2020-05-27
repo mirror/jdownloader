@@ -18,13 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -38,6 +31,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdlTo extends XFileSharingProBasic {
@@ -336,15 +336,9 @@ public class DdlTo extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean supportsMassLinkcheck() {
-        final String apikey = getAPIKeyFromConfig();
-        if (apikey != null) {
-            /* Allow mass linkcheck over API. */
-            return true;
-        } else {
-            /* Without apikey, mass linkchecking is not possible for this host! */
-            return false;
-        }
+    protected boolean supports_mass_linkcheck_over_api() {
+        final String apiKey = getAPIKeyFromConfig();
+        return isAPIKey(apiKey);
     }
 
     /**
@@ -354,12 +348,8 @@ public class DdlTo extends XFileSharingProBasic {
     @Override
     protected boolean supports_single_linkcheck_over_api() {
         /* 2020-05-25: Special API test. */
-        final String apikey = getAPIKeyFromConfig();
-        if (apikey != null) {
-            return true;
-        } else {
-            return false;
-        }
+        final String apiKey = getAPIKeyFromConfig();
+        return isAPIKey(apiKey);
     }
 
     @Override
