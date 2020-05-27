@@ -17,13 +17,16 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,15 +40,15 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/([a-z0-9]{32}|[a-z0-9]{20})(?:/(?:folder|file)/(\\d+))?" })
 public class BoxCom extends antiDDoSForDecrypt {
-    private static final String            TYPE_APP    = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
-    private String                         cryptedlink = null;
-    private static AtomicReference<String> lastValidPW = new AtomicReference<String>(null);
+    private static final String            TYPE_APP      = "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/(?:[a-z0-9]{32}|[a-z0-9]{20})(?:/folder/\\d+)?";
+    private static final String            TYPE_APP_FILE = "https?://[^/]+/s(?:hared)?/([a-z0-9]{32}|[a-z0-9]{20})/file/(\\d+)";
+    private String                         cryptedlink   = null;
+    private static AtomicReference<String> lastValidPW   = new AtomicReference<String>(null);
 
     public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,7 +113,6 @@ public class BoxCom extends antiDDoSForDecrypt {
         cryptedlink = parameter.toString().replace("box.net/", "box.com/");
         logger.finer("Decrypting: " + cryptedlink);
         br.setFollowRedirects(true);
-        // our default is german, this returns german!!
         final List<String> passCodes = new ArrayList<String>();
         CrawledLink current = getCurrentLink();
         while (current != null) {
@@ -133,6 +135,14 @@ public class BoxCom extends antiDDoSForDecrypt {
                 passCodes.add(0, passCode);
             }
         }
+        if (cryptedlink.toString().matches(TYPE_APP_FILE)) {
+            /* Single file - Pass this to host plugin */
+            final String sharedname = new Regex(cryptedlink, TYPE_APP_FILE).getMatch(0);
+            final String itemID = new Regex(cryptedlink, TYPE_APP_FILE).getMatch(1);
+            final DownloadLink dl = this.createDownloadlink(String.format("https://app.box.com/s/%s/file/%s", sharedname, itemID));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         getPage(parameter, cryptedlink);
         final String passCodeBefore = passCode;
         passCode = handlePassword(br, passCodes, parameter);
@@ -142,46 +152,11 @@ public class BoxCom extends antiDDoSForDecrypt {
         if (br._getURL().getPath().equals("/freeshare")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
-        }
-        if (jd.plugins.hoster.BoxCom.isOffline(br)) {
+        } else if (jd.plugins.hoster.BoxCom.isOffline(br)) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
         }
-        if (br.getURL().matches(TYPE_APP)) {
-            decryptedLinks.addAll(decryptApp(parameter, passCode));
-            // single link share url!
-            if (decryptedLinks.isEmpty()) {
-                // test links for password/empty folder/login required https://svn.jdownloader.org/issues/83897
-                if (br.containsHTML("<strong>There are no items in this folder.</strong>")) {
-                    // could be a empty folder.
-                    return decryptedLinks;
-                }
-                // single link should still have fuid
-                final String fuid = br.getRegex("typedID\"\\s*:\\s*\"f_(\\d+)\"").getMatch(0);
-                final String filename = br.getRegex("\"name\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
-                final String itemSize = br.getRegex("\"itemSize\"\\s*:\\s*(\\d+)").getMatch(0);
-                if (fuid == null) {
-                    if (br.containsHTML("/login\\?redirect_url=" + Pattern.quote(br._getURL().getPath()))) {
-                        // login required
-                        decryptedLinks.add(createOfflinelink(cryptedlink, filename, "Login Required, unsupported feature"));
-                        return decryptedLinks;
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String url = br.getURL() + "/file/" + fuid;
-                final DownloadLink dl = createDownloadlink(url);
-                // otherwise will enter decrypter again..
-                dl.setAvailable(true);
-                dl.setName(Encoding.htmlOnlyDecode(filename));
-                if (itemSize != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(itemSize));
-                }
-                dl.setLinkID("box.com://file/" + fuid);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-        }
-        // define all types within own methods......
+        decryptedLinks.addAll(decryptApp(parameter, passCode));
         return decryptedLinks;
     }
 
@@ -190,11 +165,16 @@ public class BoxCom extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptApp(CryptedLink cryptedLink, final String passCode) throws Exception {
-        // 20170711
+        final String sharedname = new Regex(cryptedlink, this.getSupportedLinks()).getMatch(0);
+        final String itemID = new Regex(cryptedlink, this.getSupportedLinks()).getMatch(1);
+        String offlinename = sharedname;
+        if (itemID != null) {
+            offlinename += "_" + itemID;
+        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final HashSet<String> dupe = new HashSet<String>();
-        final String fpName = br.getRegex("\"currentFolderName\":\"([^\"]*?)\"").getMatch(0);
-        final FilePackage fp = fpName != null ? FilePackage.getInstance() : null;
+        final String fpName = PluginJSonUtils.getJson(br, "currentFolderName");
+        final FilePackage fp = !StringUtils.isEmpty(fpName) ? FilePackage.getInstance() : null;
         if (fp != null) {
             fp.setName(Encoding.unicodeDecode(fpName));
         }
@@ -206,103 +186,136 @@ public class BoxCom extends antiDDoSForDecrypt {
             subFolder = "";
         }
         do {
-            // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
-            final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\})").getColumn(0);
-            if (results != null && results.length > 0) {
-                logger.info("Links found: " + results.length);
-                for (final String result : results) {
-                    final String type = new Regex(result, "\"type\":\"([^\"]*?)\"").getMatch(0);
-                    final String item_name = new Regex(result, "\"name\":\"([^\"]*?)\"").getMatch(0);
-                    if (StringUtils.isEmpty(type) || StringUtils.isEmpty(item_name)) {
-                        /* Skip invalid items --> This should never happen */
+            final String json = br.getRegex("<script>\\s*Box\\.postStreamData\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
+            Map<String, Object> rootMap = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            rootMap = (LinkedHashMap<String, Object>) rootMap.get("/app-api/enduserapp/shared-folder");
+            final long pageNumber = JavaScriptEngineFactory.toLong(rootMap.get("pageNumber"), 1);
+            final long pageCount = JavaScriptEngineFactory.toLong(rootMap.get("pageCount"), 1);
+            logger.info("Crawling page " + pageNumber + " of " + pageCount);
+            Map<String, Object> entries;
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) rootMap.get("items");
+            if (ressourcelist.size() == 0) {
+                logger.info("Empty folder");
+                decryptedLinks.add(this.createOfflinelink(cryptedlink.toString(), "Folder_empty_" + offlinename, "Empty folder"));
+                return decryptedLinks;
+            }
+            for (final Object itemO : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) itemO;
+                final String type = (String) entries.get("type");
+                final String item_name = (String) entries.get("name");
+                final long fuid = JavaScriptEngineFactory.toLong(entries.get("id"), 0);
+                if (StringUtils.isEmpty(type) || StringUtils.isEmpty(item_name) || fuid == 0) {
+                    /* Skip invalid items --> This should never happen */
+                    continue;
+                }
+                if ("file".equals(type)) {
+                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("itemSize"), 0);
+                    final String link = new Regex(cryptedlink, "(https?://[^/]*?box\\.com/s/[a-z0-9]+)").getMatch(0) + "/file/" + fuid;
+                    // logger.info("cryptedlink: " + cryptedlink);
+                    // logger.info("link: " + link);
+                    if (!dupe.add(link)) {
                         continue;
                     }
-                    if ("file".equals(type)) {
-                        final String size = new Regex(result, "\"itemSize\":(\\d+),").getMatch(0);
-                        final String fuid = new Regex(result, "\"typedID\":\"f_(\\d+)\"").getMatch(0);
-                        if (StringUtils.isEmpty(size) || StringUtils.isEmpty(fuid)) {
-                            /* Skip invalid items --> This should never happen */
-                            continue;
-                        }
-                        final String link = new Regex(cryptedlink, "(https?://[^/]*?box\\.com/s/[a-z0-9]+)").getMatch(0) + "/file/" + fuid;
-                        // logger.info("cryptedlink: " + cryptedlink);
-                        // logger.info("link: " + link);
-                        if (!dupe.add(link)) {
-                            continue;
-                        }
-                        final DownloadLink dl = createDownloadlink(link);
-                        dl.setLinkID("box.com://file/" + fuid);
-                        if (passCode != null) {
-                            dl.setDownloadPassword(passCode);
-                        }
-                        dl.setName(Encoding.unicodeDecode(item_name));
-                        dl.setVerifiedFileSize(Long.parseLong(size));
-                        dl.setAvailable(true);
-                        if (StringUtils.isNotEmpty(subFolder)) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
-                        }
-                        decryptedLinks.add(dl);
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                        distribute(dl);
-                    } else {
-                        // directory
-                        final String duid = new Regex(result, "\"typedID\":\"d_(\\d+)\"").getMatch(0);
-                        final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
-                        final String link;
-                        if (rootFolder != null) {
-                            link = rootFolder + "/folder/" + duid;
-                        } else {
-                            link = cryptedlink + "/folder/" + duid;
-                        }
-                        if (!dupe.add(link)) {
-                            continue;
-                        }
-                        final DownloadLink dl = createDownloadlink(link);
-                        dl.setLinkID("box.com://folder/" + duid);
-                        if (passCode != null) {
-                            dl.setDownloadPassword(passCode);
-                        }
-                        final String thisSubfolder = subFolder + "/" + item_name;
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisSubfolder);
-                        decryptedLinks.add(dl);
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                        distribute(dl);
+                    final DownloadLink dl = createDownloadlink(link);
+                    dl.setLinkID("box.com://file/" + fuid);
+                    if (passCode != null) {
+                        dl.setDownloadPassword(passCode);
                     }
+                    dl.setName(Encoding.unicodeDecode(item_name));
+                    if (filesize > 0) {
+                        dl.setVerifiedFileSize(filesize);
+                    }
+                    dl.setAvailable(true);
+                    if (StringUtils.isNotEmpty(subFolder)) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                    }
+                    decryptedLinks.add(dl);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    distribute(dl);
+                } else {
+                    // directory
+                    final String rootFolder = new Regex(cryptedlink, "(.+)/folder/\\d+").getMatch(0);
+                    final String link;
+                    if (rootFolder != null) {
+                        link = rootFolder + "/folder/" + fuid;
+                    } else {
+                        link = cryptedlink + "/folder/" + fuid;
+                    }
+                    if (!dupe.add(link)) {
+                        continue;
+                    }
+                    final DownloadLink dl = createDownloadlink(link);
+                    dl.setLinkID("box.com://folder/" + fuid);
+                    if (passCode != null) {
+                        dl.setDownloadPassword(passCode);
+                    }
+                    final String thisSubfolder = subFolder + "/" + item_name;
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisSubfolder);
+                    decryptedLinks.add(dl);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
+                    distribute(dl);
                 }
             }
-        } while (hasNextPage(cryptedLink));
+            if (pageCount > pageNumber) {
+                logger.info("Accessing next page");
+                final long nextPage = pageNumber + 1;
+                getPage(cryptedLink, cryptedlink + "?page=" + nextPage);
+                continue;
+            } else {
+                logger.info("Seems like we've crawled everything");
+                break;
+            }
+            /* 2020-05-27: Seems like we don't need he code below anymore */
+            // final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
+            // final String result = br.getRegex(r).getMatch(-1);
+            // final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
+            // if (nextPage) {
+            // final String url = new Regex(result, r).getMatch(0);
+            // if (url != null) {
+            // getPage(cryptedLink, Encoding.htmlOnlyDecode(url));
+            // return true;
+            // }
+            // }
+            // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
+            // final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\})").getColumn(0);
+            // if (results != null && results.length > 0) {
+            // logger.info("Links found: " + results.length);
+            // for (final String result : results) {
+            //
+            // }
+            // }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 
-    private boolean hasNextPage(CryptedLink cryptedLink) throws Exception {
-        final String pageCountString = br.getRegex("\"pageCount\":(\\d+),").getMatch(0);
-        final String pageNumerString = br.getRegex("\"pageNumber\":(\\d+),").getMatch(0);
-        if (pageCountString != null && pageNumerString != null) {
-            final int pageCount = Integer.parseInt(pageCountString);
-            final int pageNumber = Integer.parseInt(pageNumerString);
-            if (pageCount > pageNumber) {
-                final int nextPage = pageNumber + 1;
-                getPage(cryptedLink, cryptedlink + "?page=" + nextPage);
-                return true;
-            }
-            final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
-            final String result = br.getRegex(r).getMatch(-1);
-            final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
-            if (nextPage) {
-                final String url = new Regex(result, r).getMatch(0);
-                if (url != null) {
-                    getPage(cryptedLink, Encoding.htmlOnlyDecode(url));
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
+    // private boolean hasNextPage(CryptedLink cryptedLink) throws Exception {
+    // final String pageCountString = br.getRegex("\"pageCount\":(\\d+),").getMatch(0);
+    // final String pageNumerString = br.getRegex("\"pageNumber\":(\\d+),").getMatch(0);
+    // if (pageCountString != null && pageNumerString != null) {
+    // final int pageCount = Integer.parseInt(pageCountString);
+    // final int pageNumber = Integer.parseInt(pageNumerString);
+    // if (pageCount > pageNumber) {
+    // final int nextPage = pageNumber + 1;
+    // getPage(cryptedLink, cryptedlink + "?page=" + nextPage);
+    // return true;
+    // }
+    // final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
+    // final String result = br.getRegex(r).getMatch(-1);
+    // final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
+    // if (nextPage) {
+    // final String url = new Regex(result, r).getMatch(0);
+    // if (url != null) {
+    // getPage(cryptedLink, Encoding.htmlOnlyDecode(url));
+    // return true;
+    // }
+    // }
+    // }
+    // return false;
+    // }
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
