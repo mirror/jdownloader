@@ -331,19 +331,12 @@ public class DdlTo extends XFileSharingProBasic {
 
     @Override
     protected boolean supports_mass_linkcheck_over_api() {
-        final String apiKey = getAPIKeyFromConfig();
-        return isAPIKey(apiKey);
+        return isAPIKey(getAPIKeyFromConfig());
     }
 
-    /**
-     * 2020-05-25 Test-run :) Worst thing that can happen is user puts in a wrong apikey --> Linkcheck fails but download will still work as
-     * it checks links via website!
-     */
     @Override
     protected boolean supports_single_linkcheck_over_api() {
-        /* 2020-05-25: Special API test. */
-        final String apiKey = getAPIKeyFromConfig();
-        return isAPIKey(apiKey);
+        return isAPIKey(getAPIKeyFromConfig());
     }
 
     @Override

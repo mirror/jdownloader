@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVupTo;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -135,5 +136,20 @@ public class VupTo extends XFileSharingProBasic {
     protected final String getAPIBase() {
         /* 2020-05-27: Special and https-only! */
         return "https://api.vup.to/api";
+    }
+
+    @Override
+    protected boolean supports_mass_linkcheck_over_api() {
+        return isAPIKey(getAPIKeyFromConfig());
+    }
+
+    @Override
+    protected boolean supports_single_linkcheck_over_api() {
+        return isAPIKey(getAPIKeyFromConfig());
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideoVupTo> getConfigInterface() {
+        return XFSConfigVideoVupTo.class;
     }
 }
