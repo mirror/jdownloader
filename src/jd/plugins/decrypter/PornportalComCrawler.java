@@ -274,7 +274,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                     plugin_to_use = plg;
                 } else {
                     /* Without account users can only download trailers and their directurls never expire. */
-                    patternMatcher = "directhttp://" + downloadurl;
+                    patternMatcher = downloadurl;
                     contentURL = patternMatcher;
                     plugin_to_use = JDUtilities.getPluginForHost("DirectHTTP");
                 }
