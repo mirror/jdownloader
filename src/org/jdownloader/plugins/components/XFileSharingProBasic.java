@@ -487,6 +487,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
+    /** @default false */
     protected boolean supports_mass_linkcheck_over_website() {
         return false;
     }
@@ -4251,6 +4252,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Override this and let it return true whenever an user provided API key is available to allow the plugin to do single linkchecks via
      * API. </br>
+     * 
+     * @default false
      */
     protected boolean supports_single_linkcheck_over_api() {
         // final String apikey = this.getAPIKeyFromConfig();
@@ -4263,6 +4266,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
+    /** @default false */
     protected boolean supports_mass_linkcheck_over_api() {
         // final String apikey = this.getAPIKeyFromConfig();
         // if (this.isAPIKey(apikey)) {
