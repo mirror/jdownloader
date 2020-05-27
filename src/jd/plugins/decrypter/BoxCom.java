@@ -269,53 +269,10 @@ public class BoxCom extends antiDDoSForDecrypt {
                 logger.info("Seems like we've crawled everything");
                 break;
             }
-            /* 2020-05-27: Seems like we don't need he code below anymore */
-            // final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
-            // final String result = br.getRegex(r).getMatch(-1);
-            // final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
-            // if (nextPage) {
-            // final String url = new Regex(result, r).getMatch(0);
-            // if (url != null) {
-            // getPage(cryptedLink, Encoding.htmlOnlyDecode(url));
-            // return true;
-            // }
-            // }
-            // final String[] results = br.getRegex("<li class=\"tbl-list-item.*?</div>\\s*</li>").getColumn(-1);
-            // final String[] results = br.getRegex("(\\{\"typedID\".*?\\]\\})").getColumn(0);
-            // if (results != null && results.length > 0) {
-            // logger.info("Links found: " + results.length);
-            // for (final String result : results) {
-            //
-            // }
-            // }
         } while (!this.isAbort());
         return decryptedLinks;
     }
 
-    // private boolean hasNextPage(CryptedLink cryptedLink) throws Exception {
-    // final String pageCountString = br.getRegex("\"pageCount\":(\\d+),").getMatch(0);
-    // final String pageNumerString = br.getRegex("\"pageNumber\":(\\d+),").getMatch(0);
-    // if (pageCountString != null && pageNumerString != null) {
-    // final int pageCount = Integer.parseInt(pageCountString);
-    // final int pageNumber = Integer.parseInt(pageNumerString);
-    // if (pageCount > pageNumber) {
-    // final int nextPage = pageNumber + 1;
-    // getPage(cryptedLink, cryptedlink + "?page=" + nextPage);
-    // return true;
-    // }
-    // final String r = "<a href=\"([^\"]+pageNumber=\\d+)\"[^>]+aria-label=\"Next Page\"[^>]+";
-    // final String result = br.getRegex(r).getMatch(-1);
-    // final boolean nextPage = result != null ? !new Regex(result, "btn page-forward is-disabled").matches() : false;
-    // if (nextPage) {
-    // final String url = new Regex(result, r).getMatch(0);
-    // if (url != null) {
-    // getPage(cryptedLink, Encoding.htmlOnlyDecode(url));
-    // return true;
-    // }
-    // }
-    // }
-    // return false;
-    // }
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
