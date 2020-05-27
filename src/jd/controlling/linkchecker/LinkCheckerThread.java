@@ -13,13 +13,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.UseSetLinkStatusThread;
 
 public class LinkCheckerThread extends BrowserSettingsThread implements UseSetLinkStatusThread {
-
     public LinkCheckerThread() {
         super();
     }
 
     protected List<InternCheckableLink>   checkableLinks;
-
     private Map<DownloadLink, LinkStatus> linkStatusMap = new HashMap<DownloadLink, LinkStatus>();
 
     public LinkChecker<?> getLinkCheckerByLink(CheckableLink link) {
@@ -35,13 +33,15 @@ public class LinkCheckerThread extends BrowserSettingsThread implements UseSetLi
     }
 
     private boolean match(CheckableLink a, CheckableLink b) {
-        if (a == b) {
+        if (a == null || b == null) {
+            return false;
+        } else if (a == b) {
             return true;
-        }
-        if (a != null && b != null) {
+        } else if (a != null && b != null) {
             return a.getDownloadLink() == b.getDownloadLink();
+        } else {
+            return false;
         }
-        return false;
     }
 
     protected PluginForHost plugin;
