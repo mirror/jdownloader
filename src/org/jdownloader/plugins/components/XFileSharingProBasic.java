@@ -2838,7 +2838,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Failed to find apikey (with Exception) --> Continuing via website");
                 logger.log(e);
             }
-            if (apikey != null) {
+            if (apikey != null && this.isAPIKey(apikey)) {
                 /*
                  * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way
                  * to get account information.
