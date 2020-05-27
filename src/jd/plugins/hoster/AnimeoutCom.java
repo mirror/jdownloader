@@ -48,8 +48,8 @@ public class AnimeoutCom extends PluginForHost {
 
     /* Connection stuff */
     private final boolean    RESUME           = true;
-    private final int        MAXCHUNKS        = 0;
-    private final int        MAXDOWNLOADS     = 20;
+    private final int        MAXCHUNKS        = -1;
+    private final int        MAXDOWNLOADS     = 1;
     private String           dllink           = null;
     private boolean          server_issues    = false;
     public static final long trust_cookie_age = 300000l;

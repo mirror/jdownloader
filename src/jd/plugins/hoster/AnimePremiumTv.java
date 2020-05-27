@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animepremium.tv" }, urls = { "http://(s\\d000\\.animepremium\\.tv/download/\\d+|embeds\\.animepremium\\.tv/share\\.php\\?id=\\d+|download\\.animepremium\\.tv/video/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animepremium.tv" }, urls = { "https?://(s\\d000\\.animepremium\\.tv/download/\\d+|embeds\\.animepremium\\.tv/share\\.php\\?id=\\d+|download\\.animepremium\\.tv/video/\\d+)" })
 public class AnimePremiumTv extends PluginForHost {
     public AnimePremiumTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +74,10 @@ public class AnimePremiumTv extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("(https?://\\w+\\.tinyvid\\.net[^<>\"]*?\\.mp4)").getMatch(0);
         }
-        if (filename == null && DLLINK == null) {
+        if (DLLINK == null) {
+            if (!br.getURL().contains("animepremium")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (filename == null || filename.equals("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
