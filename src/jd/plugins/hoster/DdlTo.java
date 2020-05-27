@@ -230,7 +230,7 @@ public class DdlTo extends XFileSharingProBasic {
          * https://board.jdownloader.org/showthread.php?t=82525&page=2
          */
         /* 2020-05-22: This bug is fixed now according to their support --> We can trust this API value again! */
-        final boolean trustAPITrafficLeft = true;
+        final boolean trustAPITrafficLeft = false;
         if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
             long traffic_left = SizeFormatter.getSize(trafficleftStr + "MB");
             if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
