@@ -610,7 +610,7 @@ public class LinkChecker<E extends CheckableLink> {
 
     public static boolean isForcedLinkCheck(CheckableLink downloadLink) {
         if (Thread.currentThread() instanceof LinkCheckerThread) {
-            LinkChecker<?> linkchecker = ((LinkCheckerThread) Thread.currentThread()).getLinkCheckerByLink(downloadLink);
+            final LinkChecker<?> linkchecker = ((LinkCheckerThread) Thread.currentThread()).getLinkCheckerByLink(downloadLink);
             if (linkchecker != null) {
                 return linkchecker.isForceRecheck();
             }
