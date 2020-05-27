@@ -325,9 +325,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             showFreeDialog(getHost());
         }
         final String currentIP = getIP();
-        String finalDownloadURL;
+        String finalDownloadURL = null;
         if (!StringUtils.isEmpty(hotLinkURL)) {
-            logger.info("Seems to be a hotlink file!");
+            logger.info("Seems to be a hotlink file:" + hotLinkURL);
             finalDownloadURL = hotLinkURL;
         } else {
             finalDownloadURL = checkDirectLink(link, account);
@@ -521,7 +521,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
                 finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
             }
-            boolean resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+            // 27.05.2020, rapidgator now advertises that it doesn't support resume for free accounts
+            final boolean resume = false && link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
             /* E.g. when directurl was re-used successfully, download is already ready to be started! */
             if (dl == null) {
                 if (!resume) {
@@ -530,7 +531,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
             }
             /* 2020-03-17: Content-Disposition should always be given */
-            if (dl.getConnection().getContentType().contains("html") || !dl.getConnection().isContentDisposition()) {
+            if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isContentDisposition()) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 final URLConnectionAdapter con = dl.getConnection();
                 final int responsecode = con.getResponseCode();
                 if (responsecode == 404) {
@@ -557,7 +563,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                     link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(false));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                br.followConnection();
                 if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
                 } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
@@ -578,7 +583,9 @@ public class RapidGatorNet extends antiDDoSForHost {
              * Always allow resume again for next attempt as a "failed" attempt will still get us a usable direct-URL thus no time- or
              * captcha attempt gets wasted!
              */
-            link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(true));
+            if (resume && link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false) == false) {
+                link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(true));
+            }
             link.setProperty(getDownloadModeDirectlinkProperty(account), finalDownloadURL);
             RapidGatorNet.hasAttemptedDownloadstart.set(true);
             dl.startDownload();
@@ -608,8 +615,9 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.PREMIUM) {
-            return maxPremChunks;
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            // 21.11.16, check highest that can be handled without server issues
+            return -5;
         } else {
             /* Free & Free account */
             return 1;
@@ -639,8 +647,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             } catch (final InterruptedException e) {
                 throw e;
             } catch (final Exception e) {
-                link.setProperty(directlinkproperty, Property.NULL);
                 logger.log(e);
+                link.setProperty(directlinkproperty, Property.NULL);
             } finally {
                 if (!valid) {
                     try {
@@ -1256,12 +1264,16 @@ public class RapidGatorNet extends antiDDoSForHost {
         if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
             url = url.replaceFirst("^http://", "https://");
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, maxPremChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, getMaxChunks(account));
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             handleErrors_api(session_id, link, account, dl.getConnection());
             // so we can see errors maybe proxy errors etc.
-            br.followConnection();
             /* Try that errorhandling but it might not help! */
             handleErrors_api(session_id, link, account, br.getHttpConnection());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1411,8 +1423,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private final int maxPremChunks = -5; // 21.11.16, check highest that can be handled without server issues
-
     @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         logger.info("Performing cached login sequence!!");
@@ -1461,9 +1471,12 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(account));
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 handleErrors_api(null, link, account, dl.getConnection());
-                // so we can see errors maybe proxy errors etc.
-                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
