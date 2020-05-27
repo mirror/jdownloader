@@ -14,6 +14,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -27,16 +35,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-
 public class LinkChecker<E extends CheckableLink> {
-
     protected static class InternCheckableLink {
         protected final CheckableLink                        link;
         protected final long                                 linkCheckerGeneration;
@@ -89,7 +88,6 @@ public class LinkChecker<E extends CheckableLink> {
         public final LinkChecker<? extends CheckableLink> getLinkChecker() {
             return checker;
         }
-
     }
 
     /* static variables */
@@ -100,7 +98,6 @@ public class LinkChecker<E extends CheckableLink> {
     private final static HashMap<String, Thread>                                                       CHECK_THREADS          = new HashMap<String, Thread>();
     private final static HashMap<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>> LINKCHECKER            = new HashMap<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>>();
     private final static Object                                                                        LOCK                   = new Object();
-
     /* local variables for this LinkChecker */
     private final AtomicLong                                                                           linksRequested         = new AtomicLong(0);
     private final boolean                                                                              forceRecheck;
@@ -282,7 +279,6 @@ public class LinkChecker<E extends CheckableLink> {
                 return;
             }
             final LinkCheckerThread newThread = new LinkCheckerThread() {
-
                 public void run() {
                     int stopDelay = 1;
                     try {
@@ -375,7 +371,7 @@ public class LinkChecker<E extends CheckableLink> {
                                         } else {
                                             this.plugin.setLogger(logger = LogController.getFastPluginLogger(plugin.getHost() + "_" + plugin.getLazyP().getClassName()));
                                             ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
-                                            if (PluginForHost.implementsCheckLinks(this.plugin)) {
+                                            if (PluginForHost.internal_supportsMassLinkcheck(plugin)) {
                                                 logger.info("Check Multiple FileInformation");
                                                 try {
                                                     final HashSet<DownloadLink> downloadLinks = new HashSet<DownloadLink>();
@@ -494,7 +490,6 @@ public class LinkChecker<E extends CheckableLink> {
                 public boolean isVerbose() {
                     return true;
                 }
-
             };
             newThread.setName("LinkChecker: " + LINKCHECKER_THREAD_NUM.incrementAndGet() + ":" + threadHost);
             newThread.setDaemon(true);

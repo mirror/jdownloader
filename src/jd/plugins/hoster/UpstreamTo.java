@@ -112,18 +112,30 @@ public class UpstreamTo extends XFileSharingProBasic {
     }
 
     /** 2020-05-25: This is just a test */
-    // @Override
-    // public boolean checkLinks(final DownloadLink[] urls) {
-    // return massLinkcheckerAPI(urls, this.getAPIKeyFromConfig(), true);
-    // }
     @Override
-    protected boolean allow_single_linkcheck_over_api() {
-        /* 2020-05-25: Special API test. */
-        final String apikey = this.getAPIKeyFromConfig();
-        if (this.isAPIKey(apikey)) {
+    public boolean checkLinks(final DownloadLink[] urls) {
+        return massLinkcheckerAPI(urls, this.getAPIKeyFromConfig(), true);
+    }
+
+    @Override
+    public boolean supportsMassLinkcheck() {
+        final String apikey = getAPIKeyFromConfig();
+        if (apikey != null) {
+            /* Allow mass linkcheck over API. */
             return true;
         } else {
-            /* E.g. bad user input */
+            /* Without apikey, mass linkchecking is not possible for this host! */
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean supports_single_linkcheck_over_api() {
+        /* 2020-05-25: Special API test. */
+        final String apikey = getAPIKeyFromConfig();
+        if (apikey != null) {
+            return true;
+        } else {
             return false;
         }
     }
