@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,11 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
 public class YouPornCom extends PluginForHost {
@@ -191,6 +191,13 @@ public class YouPornCom extends PluginForHost {
         }
         if (dllink == null) {
             dllink = br.getRegex("<ul class=\"downloadList\">.*?href=\"(https?://[^\"]+)\">.*?</ul>").getMatch(0);
+        }
+        if (dllink == null) {
+            /*
+             * 2020-05-27: Workaround for some users who seem to get a completely different pornhub page (???) RE:
+             * https://svn.jdownloader.org/issues/88346
+             */
+            dllink = br.getRegex("meta name=\"twitter:player:stream\" content=\"(http[^<>\"\\']+)\"").getMatch(0);
         }
         if (dllink != null) {
             /* Do NOT htmldecode! */
