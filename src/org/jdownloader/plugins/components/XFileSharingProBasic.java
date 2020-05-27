@@ -487,6 +487,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
+    protected boolean supports_mass_linkcheck_over_website() {
+        return false;
+    }
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
@@ -582,19 +586,50 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*File could not be found due to expiration or removal by the file owner|>\\s*The file of the above link no longer exists)").matches();
     }
 
+    /**
+     * TODO: Add functionality and add an easy way to activate api/website mass linkchecking e.g. by Overriding one boolean return function.
+     */
+    // @Override
+    // public boolean supportsMassLinkcheck() {
+    // final String apikey = getAPIKeyFromConfig();
+    // if (apikey != null && this.supports_mass_linkcheck_over_api()) {
+    // /* Allow mass linkcheck over API. */
+    // return true;
+    // } else if (this.supports_mass_linkcheck_over_website()) {
+    // return true;
+    // } else {
+    // /* Without apikey, mass linkchecking is not possible for this host! */
+    // return false;
+    // }
+    // }
+    /**
+     * TODO: Add functionality and add an easy way to activate api/website mass linkchecking e.g. by Overriding one boolean return function.
+     */
+    // @Override
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // final String apikey = getAPIKeyFromConfig();
+    // if (apikey != null && this.supports_mass_linkcheck_over_api()) {
+    // return massLinkcheckerAPI(urls, this.getAPIKeyFromConfig(), true);
+    // } else {
+    // return this.massLinkcheckerWebsite(urls, true);
+    // }
+    // }
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformationAuto(link, null, false);
     }
 
     public AvailableStatus requestFileInformationAuto(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
-        if (this.allow_single_linkcheck_over_api()) {
+        if (this.supports_single_linkcheck_over_api()) {
             if (account != null && this.getAPIKeyFromAccount(account) != null) {
+                /* Prefer apikey of current account over apikey in plugin config. */
                 return this.requestFileInformationAPI(link, this.getAPIKeyFromAccount(account));
             } else {
+                /* Use apikey from plugin config. */
                 return this.requestFileInformationAPI(link, this.getAPIKeyFromConfig());
             }
         } else {
+            /* API linkcheck not possible --> Do linkcheck via website. */
             return requestFileInformationWebsite(link, null, false);
         }
     }
@@ -4111,12 +4146,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    /** @return apikey but only if it is considered valid! */
     protected final String getAPIKeyFromConfig() {
         final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
         if (cfgO == null) {
             return null;
         } else {
-            return PluginJsonConfig.get(cfgO).getApikey();
+            final String apikey = PluginJsonConfig.get(cfgO).getApikey();
+            if (StringUtils.isEmpty(apikey) || !this.isAPIKey(apikey)) {
+                return null;
+            } else {
+                return apikey;
+            }
         }
     }
 
@@ -4208,12 +4249,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Override this and let iot return true whenever an user provided API key is available to allow the plugin to check links via API.
-     * </br>
-     * 2020-05-25: Do NOT trust our users as they could also put in apikeys for hosts which do not even have the XFS "API Mod" installed!
-     * Override this if you want to allow users to use the API for linkchecking!
+     * Override this and let it return true whenever an user provided API key is available to allow the plugin to do single linkchecks via
+     * API. </br>
      */
-    protected boolean allow_single_linkcheck_over_api() {
+    protected boolean supports_single_linkcheck_over_api() {
+        // final String apikey = this.getAPIKeyFromConfig();
+        // if (this.isAPIKey(apikey)) {
+        // return true;
+        // } else {
+        // /* E.g. bad user input */
+        // return false;
+        // }
+        return false;
+    }
+
+    protected boolean supports_mass_linkcheck_over_api() {
         // final String apikey = this.getAPIKeyFromConfig();
         // if (this.isAPIKey(apikey)) {
         // return true;
