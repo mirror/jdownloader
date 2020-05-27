@@ -31,9 +31,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+(?:#\\d+)?(?:\\-0)?(?:\\&downloadpassword=[^<>\"\\&=]+)?|yunpan\\.cn/[a-zA-Z0-9]{13})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan(?:\\.360)?\\.cn/lk/[A-Za-z0-9_]+(?:#\\d+)?(?:\\-0)?(?:\\&downloadpassword=[^<>\"\\&=]+)?|yunpan(?:\\.360)\\.cn/[a-zA-Z0-9]{13})" })
 public class YunpanCn extends antiDDoSForDecrypt {
     public YunpanCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +51,10 @@ public class YunpanCn extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = param.toString();
-        fid = new Regex(parameter, "yunpan\\.cn/(?:lk/)?([A-Za-z0-9]+)").getMatch(0);
+        fid = new Regex(parameter, "https?://[^/]+/(?:lk/)?([A-Za-z0-9_]+)").getMatch(0);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String subfolder_id = new Regex(parameter, "#(\\d+)").getMatch(0);
         passCode = new Regex(parameter, "\\&downloadpassword=([^<>\"\\&=]+)").getMatch(0);
         if (passCode != null) {
@@ -59,7 +64,7 @@ public class YunpanCn extends antiDDoSForDecrypt {
         String json;
         final String host;
         final String host_url = new Regex(parameter, "https?://([^/]+)/").getMatch(0);
-        if (host_url.equals("yunpan.cn") || subfolder_id == null) {
+        if (host_url.equals("yunpan.cn") || host_url.equals("yunpan360.cn") || subfolder_id == null) {
             br.getPage(parameter);
             host = new Regex(br.getURL(), "https?://([^/]+)/").getMatch(0);
             host_with_protocol = "http://" + host;

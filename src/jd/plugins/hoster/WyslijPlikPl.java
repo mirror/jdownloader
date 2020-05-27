@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -31,25 +30,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadfile.pl" }, urls = { "http://(?:www\\.)?(?:wyslij\\-plik|uploadfile)\\.pl/pokaz/\\d+[^/]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wrzucplik.pl" }, urls = { "http://(?:www\\.)?(?:wyslij\\-plik|uploadfile|wrzucplik)\\.pl/pokaz/\\d+[^/]+\\.html" })
 public class WyslijPlikPl extends PluginForHost {
-
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "uploadfile.pl", "wyslij-plik.pl" };
+        return new String[] { "uploadfile.pl", "wyslij-plik.pl", "wrzucplik.pl" };
     }
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null) {
-            return "uploadfile.pl";
+        if (host == null || host.equalsIgnoreCase("uploadfile.pl")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
         }
-        for (final String supportedName : siteSupportedNames()) {
-            if (supportedName.equals(host)) {
-                return "uploadfile.pl";
-            }
-        }
-        return super.rewriteHost(host);
     }
 
     public WyslijPlikPl(PluginWrapper wrapper) {
@@ -67,8 +61,9 @@ public class WyslijPlikPl extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("wyslij-plik.pl/", "uploadfile.pl/").replace("//www.", "//"));
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        final String host = Browser.getHost(link.getPluginPatternMatcher());
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace(host + "/", "wrzucplik.pl/").replace("//www.", "//"));
     }
 
     @Override
@@ -163,5 +158,4 @@ public class WyslijPlikPl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

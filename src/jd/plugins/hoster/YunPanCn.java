@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -27,11 +26,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://yunpandecrypted\\.cn/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://yunpandecrypted\\.cn/\\d+" })
 public class YunPanCn extends PluginForHost {
-
-    public static final String html_preDownloadPassword = "<input class=\"pwd-input\" type=\"";
+    public static final String html_preDownloadPassword = "class=\"pwd-input\"";
 
     public YunPanCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,9 +55,9 @@ public class YunPanCn extends PluginForHost {
         fileid = link.getStringProperty("fileid", null);
         host = link.getStringProperty("host", null);
         if (folderid == null || fileid == null || mainlink == null || host == null) {
+            /* Required data is missing --> Should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         br.getPage(mainlink);
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("id=\"linkError\"")) {
             // if the link was removed, it wouldn't have a password!
@@ -70,27 +69,27 @@ public class YunPanCn extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (br.containsHTML(html_preDownloadPassword)) {
             boolean failed = true;
             for (int i = 0; i != 3; i++) {
-                String passCode = downloadLink.getDownloadPassword();
+                String passCode = link.getDownloadPassword();
                 if (passCode == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = Plugin.getUserInput("Password?", link);
                 }
                 if (passCode == null) {
                     logger.info("User has entered blank password, exiting handlePassword");
-                    downloadLink.setDownloadPassword(null);
+                    link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
                 br.postPage("http://" + host + "/share/verifyPassword", "shorturl=" + folderid + "&linkpassword=" + Encoding.urlEncode(passCode));
                 if (br.containsHTML("\"errno\":0,")) {
-                    downloadLink.setDownloadPassword(passCode);
+                    link.setDownloadPassword(passCode);
                     failed = false;
                     break;
                 } else {
-                    downloadLink.setDownloadPassword(null);
+                    link.setDownloadPassword(null);
                 }
             }
             if (failed) {
@@ -108,13 +107,16 @@ public class YunPanCn extends PluginForHost {
         br.postPage("https://" + host + "/share/downloadfile/", postdata);
         String dllink = br.getRegex("\"downloadurl\":\"(https?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
+            final String errmsg = PluginJSonUtils.getJson(br, "errmsg");
             if (download_permit_token == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with the yunpan.cn software");
+            } else if (errmsg != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errmsg);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -134,5 +136,4 @@ public class YunPanCn extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

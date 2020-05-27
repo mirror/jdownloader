@@ -17,6 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -26,10 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/((?:comix/|comics/)?(?:index/category/[a-z0-9\\-_]+|album(?:/[a-z0-9\\-_]+){1,6})|forum/(?!.*attachments/).+)" })
 public class EightMusesComDecrypter extends antiDDoSForDecrypt {
@@ -60,13 +60,10 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
             for (final String attachment : attachments) {
-                final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + attachment);
-                String url_name = new Regex(attachment, "/attachments/(.+)\\.\\d+/?$").getMatch(0);
+                final String forumURL = "https://" + br.getHost() + attachment;
+                final DownloadLink dl = this.createDownloadlink(forumURL);
+                String url_name = jd.plugins.hoster.EightMusesCom.getURLNameForum(forumURL);
                 if (url_name != null) {
-                    if (url_name.contains("-")) {
-                        /* Fix filenames so they look nicer and have an extension */
-                        url_name = url_name.substring(0, url_name.lastIndexOf("-")).replace("-", " ") + "." + url_name.substring(url_name.lastIndexOf("-") + 1);
-                    }
                     dl.setName(url_name);
                 }
                 dl.setAvailable(true);

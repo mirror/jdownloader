@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -28,9 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zmags.com" }, urls = { "http://(www\\.)?viewer\\.zmags\\.com/publication/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zmags.com" }, urls = { "http://(www\\.)?viewer\\.zmags\\.com/publication/[a-z0-9]+" })
 public class ZMagsCom extends PluginForHost {
-
     public ZMagsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,11 +39,17 @@ public class ZMagsCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Publication not found<|>The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /* 2020-05-27: E.g. "The publication you are trying to view has not been activated by the publisher." */
+            // throw new AccountRequiredException();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+        } else if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("(>Publication not found<|>The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
@@ -53,7 +57,9 @@ public class ZMagsCom extends PluginForHost {
                 filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /** Server often sends us wrong/same filenames */
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -82,5 +88,4 @@ public class ZMagsCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AnonFilesCom extends UnknownHostingScriptCore {
@@ -90,8 +90,14 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "anonfiles.com" });
+        /* 2020-05-27: anonfile.com is now also anonfiles.com - anonfile.com plugin has been deleted! */
+        ret.add(new String[] { "anonfiles.com", "anonfile.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
