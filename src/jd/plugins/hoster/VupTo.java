@@ -130,4 +130,10 @@ public class VupTo extends XFileSharingProBasic {
         /* 2019-10-01: Special */
         return true;
     }
+
+    @Override
+    protected final String getAPIBase() {
+        /* 2020-05-27: Special and https-only! */
+        return "https://api.vup.to/api";
+    }
 }
