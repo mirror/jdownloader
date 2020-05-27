@@ -193,9 +193,10 @@ public class YouPornCom extends PluginForHost {
             dllink = br.getRegex("<ul class=\"downloadList\">.*?href=\"(https?://[^\"]+)\">.*?</ul>").getMatch(0);
         }
         if (dllink == null) {
-            /*
-             * 2020-05-27: Workaround for some users who seem to get a completely different pornhub page (???) RE:
-             * https://svn.jdownloader.org/issues/88346
+            /**
+             * 2020-05-27: Workaround/Fallback for some users who seem to get a completely different pornhub page (???) RE:
+             * https://svn.jdownloader.org/issues/88346 </br>
+             * This source will be lower quality than their other sources!
              */
             dllink = br.getRegex("meta name=\"twitter:player:stream\" content=\"(http[^<>\"\\']+)\"").getMatch(0);
         }
