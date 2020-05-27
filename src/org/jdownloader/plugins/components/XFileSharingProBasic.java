@@ -590,22 +590,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * TODO: Add functionality and add an easy way to activate api/website mass linkchecking e.g. by Overriding one boolean return function.
      */
-    // @Override
-    // public boolean supportsMassLinkcheck() {
-    // final String apikey = getAPIKeyFromConfig();
-    // if (apikey != null && this.supports_mass_linkcheck_over_api()) {
-    // /* Allow mass linkcheck over API. */
-    // return true;
-    // } else if (this.supports_mass_linkcheck_over_website()) {
-    // return true;
-    // } else {
-    // /* Without apikey, mass linkchecking is not possible for this host! */
-    // return false;
-    // }
-    // }
-    /**
-     * TODO: Add functionality and add an easy way to activate api/website mass linkchecking e.g. by Overriding one boolean return function.
-     */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         final String apiKey = getAPIKeyFromConfig();
@@ -614,6 +598,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         } else if (supports_mass_linkcheck_over_website()) {
             return this.massLinkcheckerWebsite(urls, true);
         } else {
+            /* No mass linkchecking possible */
             return false;
         }
     }
