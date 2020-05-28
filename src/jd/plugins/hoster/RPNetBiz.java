@@ -88,7 +88,7 @@ public class RPNetBiz extends PluginForHost {
 
     public void prepBrowser() {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.getHeaders().put("User-Agent", "JDownloader2");
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
