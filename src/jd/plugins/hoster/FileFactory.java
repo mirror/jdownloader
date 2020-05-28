@@ -386,11 +386,12 @@ public class FileFactory extends PluginForHost {
                     br.getPage("https://" + this.getHost() + "/account/tools/link-checker.php");
                     links.clear();
                     while (true) {
-                        if (index == urls.length || links.size() > 100) {
+                        if (index == urls.length || links.size() == 100) {
                             break;
+                        } else {
+                            links.add(urls[index]);
+                            index++;
                         }
-                        links.add(urls[index]);
-                        index++;
                     }
                     sb.delete(0, sb.capacity());
                     sb.append("links=");
@@ -1081,11 +1082,12 @@ public class FileFactory extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    if (links.size() > 100 || index == urls.length) {
+                    if (links.size() == 100 || index == urls.length) {
                         break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
                     }
-                    links.add(urls[index]);
-                    index++;
                 }
                 sb.delete(0, sb.capacity());
                 sb.append("file=");

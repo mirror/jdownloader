@@ -24,8 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,6 +41,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
@@ -83,8 +83,8 @@ public class FreshfilePl extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 49) {
+                    /* we test max 50 links at once */
+                    if (index == urls.length || links.size() == 50) {
                         break;
                     }
                     links.add(urls[index]);
@@ -114,8 +114,7 @@ public class FreshfilePl extends PluginForHost {
                 for (final DownloadLink dllink : links) {
                     final String source = new Regex(response, "\"" + fileNumber + "\":\\{(.+?)\\}").getMatch(0);
                     if (source == null) {
-                        logger.warning("Availablecheck broken for freshfile.pl");
-                        return false;
+                        throw new Exception("Availablecheck broken for freshfile.pl");
                     }
                     String fileStatus = getJson("status", source);
                     String fileName = getJson("name", source);
