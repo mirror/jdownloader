@@ -299,13 +299,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             }
             /* Log in if required */
             if (loggedIn == false && StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                // TODO: add check for free/accountOnly ondemand content
                 logger.info("Account required to crawl this link");
                 final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
                 final Account acc = accs != null && accs.size() > 0 ? accs.get(0) : null;
                 loggedIn = acc != null && login(acc);
                 if (!loggedIn) {
-                    logger.info("Cannot crawl this link without account");
-                    return decryptedLinks;
+                    logger.info("Maybe cannot crawl this link without account!");
                 } else {
                     lock = acc;
                 }
@@ -396,17 +396,19 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             unlistedHash = (String) clip.get("unlisted_hash");
                         }
                     } else if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
-                        List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
-                        if (clips != null) {
-                            for (final Map<String, Object> clip : clips) {
-                                if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
-                                    title = (String) clip.get("name");
-                                    break;
+                        if (videoID != null && JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}") != null) {
+                            final List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
+                            if (clips != null) {
+                                for (final Map<String, Object> clip : clips) {
+                                    if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
+                                        title = (String) clip.get("name");
+                                        break;
+                                    }
                                 }
                             }
                         }
-                        if (StringUtils.isEmpty(title)) {
-                            clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
+                        if (StringUtils.isEmpty(title) && JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}") != null) {
+                            final List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
                             if (clips != null) {
                                 if (videoID == null && clips.size() == 1) {
                                     videoID = String.valueOf(clips.get(0).get("id"));
@@ -429,7 +431,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 final boolean tryToFindOfficialDownloadURLs = this.qORG;
                 final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
                 if (containers == null) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (containers.size() == 0) {
                     return decryptedLinks;
@@ -619,9 +621,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
         if ((decryptedLinks == null || decryptedLinks.size() == 0) && skippedLinks == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
     public static String getVideoidFromURL(final String url) {

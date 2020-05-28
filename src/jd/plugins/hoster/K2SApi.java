@@ -342,11 +342,12 @@ public abstract class K2SApi extends PluginForHost {
                 links.clear();
                 final StringBuilder sb = new StringBuilder();
                 while (true) {
-                    if (links.size() > 100 || index == urls.length) {
+                    if (links.size() == 100 || index == urls.length) {
                         break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
                     }
-                    links.add(urls[index]);
-                    index++;
                 }
                 for (final DownloadLink dl : links) {
                     sb.append("\"" + getFUID(dl) + "\"");

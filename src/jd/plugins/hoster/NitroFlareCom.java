@@ -24,11 +24,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +43,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
@@ -138,11 +138,12 @@ public class NitroFlareCom extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    if (links.size() > 100 || index == urls.length) {
+                    if (links.size() == 100 || index == urls.length) {
                         break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
                     }
-                    links.add(urls[index]);
-                    index++;
                 }
                 final StringBuilder sb = new StringBuilder();
                 sb.append("files=");
