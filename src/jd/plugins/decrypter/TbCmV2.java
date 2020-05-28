@@ -30,6 +30,27 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.utils.locale.JDL;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -66,27 +87,6 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
 public class TbCmV2 extends PluginForDecrypt {
@@ -328,7 +328,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
-        ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
+        final ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         boolean reversePlaylistNumber = false;
         try {
             Boolean userWorkaround = null;
@@ -372,8 +372,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 channelWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
             }
-            ArrayList<YoutubeClipData> playlist;
-            videoIdsToAdd.addAll(playlist = parsePlaylist(playlistID));
+            ArrayList<YoutubeClipData> playlist = parsePlaylist(playlistID);
+            videoIdsToAdd.addAll(playlist);
             if (Boolean.TRUE.equals(channelWorkaround)) {
                 if (playlist.size() == 0) {
                     videoIdsToAdd.addAll(parseChannelgrid(channelID));
@@ -410,18 +410,16 @@ public class TbCmV2 extends PluginForDecrypt {
         for (YoutubeClipData vid : videoIdsToAdd) {
             if (this.isAbort()) {
                 return decryptedLinks;
-            }
-            if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
+            } else if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
                 continue;
             }
             try {
                 // make sure that we reload the video
-                boolean hasCache = ClipDataCache.hasCache(helper, vid.videoID);
+                final boolean hasCache = ClipDataCache.hasCache(helper, vid.videoID);
+                final YoutubeClipData old = vid;
                 try {
-                    YoutubeClipData old = vid;
                     vid = ClipDataCache.get(helper, vid.videoID);
-                    vid.playlistEntryNumber = reversePlaylistNumber ? videoIdsToAdd.size() - old.playlistEntryNumber + 1 : old.playlistEntryNumber;
                 } catch (Exception e) {
                     if (hasCache) {
                         ClipDataCache.clearCache(vid.videoID);
@@ -430,6 +428,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         throw e;
                     }
                 }
+                vid.playlistEntryNumber = reversePlaylistNumber ? videoIdsToAdd.size() - old.playlistEntryNumber + 1 : old.playlistEntryNumber;
             } catch (Exception e) {
                 logger.log(e);
                 String emsg = null;
@@ -812,10 +811,9 @@ public class TbCmV2 extends PluginForDecrypt {
                     altIds.add(vi.getVariant().getStorableString());
                 }
             }
-            DownloadLink thislink;
-            thislink = createDownloadlink(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant(), altIds));
-            YoutubeHelper helper;
-            ClipDataCache.referenceLink(helper = new YoutubeHelper(br, getLogger()), thislink, clip);
+            final DownloadLink thislink = createDownloadlink(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant(), altIds));
+            final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
+            ClipDataCache.referenceLink(helper, thislink, clip);
             // thislink.setAvailable(true);
             if (cfg.isSetCustomUrlEnabled()) {
                 thislink.setCustomURL(getBase() + "/watch?v=" + clip.videoID);
@@ -837,8 +835,8 @@ public class TbCmV2 extends PluginForDecrypt {
             // thislink.setProperty(YoutubeHelper.YT_VARIANT, variantInfo.getVariant()._getUniqueId());
             YoutubeHelper.writeVariantToDownloadLink(thislink, variantInfo.getVariant());
             // variantInfo.fillExtraProperties(thislink, alternatives);
-            String filename;
-            thislink.setFinalFileName(filename = helper.createFilename(thislink));
+            String filename = helper.createFilename(thislink);
+            thislink.setFinalFileName(filename);
             thislink.setLinkID(YoutubeHelper.createLinkID(clip.videoID, variantInfo.getVariant(), altIds));
             FilePackage fp = FilePackage.getInstance();
             final String fpName = helper.replaceVariables(thislink, helper.getConfig().getPackagePattern());

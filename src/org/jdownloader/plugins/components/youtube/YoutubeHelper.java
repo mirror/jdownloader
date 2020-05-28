@@ -3136,6 +3136,7 @@ public class YoutubeHelper {
         }
     }
 
+    // it's important to clean fields because YoutubeHelper might be shared instance
     public void parserJson() throws Exception {
         {
             String ytInitialData = br.getRegex("window\\[\"ytInitialData\"\\]\\s*=\\s*(\\{.*?\\})\\s*;\\s*[\r\n]").getMatch(0);
@@ -3147,6 +3148,8 @@ public class YoutubeHelper {
             }
             if (ytInitialData != null) {
                 this.ytInitialData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialData);
+            } else {
+                this.ytInitialData = null;
             }
         }
         {
@@ -3162,6 +3165,8 @@ public class YoutubeHelper {
             }
             if (ytInitialPlayerResponse != null) {
                 this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytInitialPlayerResponse);
+            } else {
+                this.ytInitialPlayerResponse = null;
             }
         }
         {
@@ -3171,12 +3176,14 @@ public class YoutubeHelper {
             }
             if (ytplayerConfig != null) {
                 this.ytPlayerConfig = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
-            }
-        }
-        if (this.ytInitialPlayerResponse == null && this.ytPlayerConfig != null) {
-            final Object playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/player_response");
-            if (playerResponse instanceof String) {
-                this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(playerResponse.toString());
+                if (this.ytInitialPlayerResponse == null && this.ytPlayerConfig != null) {
+                    final Object playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/player_response");
+                    if (playerResponse instanceof String) {
+                        this.ytInitialPlayerResponse = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(playerResponse.toString());
+                    }
+                }
+            } else {
+                this.ytPlayerConfig = null;
             }
         }
         {
@@ -3184,6 +3191,8 @@ public class YoutubeHelper {
             final String ytcfgSet = br.getRegex("ytcfg\\.set\\((\\{.*?\\})\\);ytcfg\\.set").getMatch(0);
             if (ytcfgSet != null) {
                 this.ytCfgSet = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(ytcfgSet);
+            } else {
+                this.ytCfgSet = null;
             }
         }
     }
