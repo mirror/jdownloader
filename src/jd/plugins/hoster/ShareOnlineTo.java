@@ -128,9 +128,9 @@ public class ShareOnlineTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final boolean setAndAnonymizeUsername) throws Exception {
+    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
         final Browser brc = br.cloneBrowser();
-        final AccountInfo ai = super.fetchAccountInfoAPI(brc, account, setAndAnonymizeUsername);
+        final AccountInfo ai = super.fetchAccountInfoAPI(brc, account);
         /* Original XFS API ('API Mod') does not return trafficleft but theirs is modified and more useful! */
         /* 2019-11-27: Not sure but this must be the traffic you can buy via 'extend traffic': /?op=payments */
         final String premium_extra_trafficStr = PluginJSonUtils.getJson(brc, "premium_traffic_left");
