@@ -182,11 +182,6 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
         }
-        /* 2020-03-16: Sometimes user adds more exact url e.g. "/videos/upload" or "/videos/paid". */
-        if (!br.getURL().contains("/videos")) {
-            /* 2020-01-22: Without this we will not get all items! */
-            br.getPage(br.getURL() + "/videos");
-        }
         final Set<String> dupes = new HashSet<String>();
         final Set<String> pages = new HashSet<String>();
         int page = 0;
@@ -197,26 +192,29 @@ public class PornHubCom extends PluginForDecrypt {
             page++;
             logger.info(String.format("Crawling page %d / %d", page, maxPage));
             /* 2020-03-17: Keep in mind: In premium modes, users may be able to see more items here than in free! */
-            final String src;
+            String src = null;
             /*
              * 2020-03-26: html code contains matching stuff everywhere so let's try to either only pick what we want or at least remove
              * some stuff we don't want.
              */
-            final String contentWeWant = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
-            if (contentWeWant != null) {
-                logger.info("Found html snippet contentWeWant");
-                src = contentWeWant;
-            } else {
-                logger.info("Failed to find html snippet contentWeWant");
-                final String contentWeDoNotWant = br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
-                if (contentWeDoNotWant != null) {
-                    logger.info("Successfully found html snippet contentWeDoNotWant");
-                    src = br.toString().replace(contentWeDoNotWant, "");
-                } else {
-                    logger.info("Failed to grab html_snippet --> Crawling in full html code");
-                    src = br.toString();
-                }
-            }
+            /* 2020-05-28: Not needed anymore for now. */
+            // final String contentWeWant = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
+            // if (contentWeWant != null) {
+            // logger.info("Found html snippet contentWeWant");
+            // src = contentWeWant;
+            // } else {
+            // logger.info("Failed to find html snippet contentWeWant");
+            // final String contentWeDoNotWant =
+            // br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
+            // if (contentWeDoNotWant != null) {
+            // logger.info("Successfully found html snippet contentWeDoNotWant");
+            // src = br.toString().replace(contentWeDoNotWant, "");
+            // } else {
+            // logger.info("Failed to grab html_snippet --> Crawling in full html code");
+            // src = br.toString();
+            // }
+            // }
+            src = br.toString();
             final String[] viewkeys = new Regex(src, "/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
             if (viewkeys.length == 0) {
                 logger.info("Stopping now because could not find ANY content on this page");
@@ -250,7 +248,7 @@ public class PornHubCom extends PluginForDecrypt {
                 maxPage = Integer.parseInt(maxPageStr);
             }
             if (next != null && pages.add(next)) {
-                logger.info("HTML pagination handling");
+                logger.info("HTML pagination handling - parsing page: " + next);
                 br.getPage(next);
             } else if (ajaxPaginationURL != null && page < maxPage) {
                 /* E.g. max page given = 4 --> Stop AFTER counter == 3 as 3+1 == 4 */

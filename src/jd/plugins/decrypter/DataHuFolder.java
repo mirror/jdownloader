@@ -86,7 +86,7 @@ public class DataHuFolder extends PluginForDecrypt {
                 /* Decode json answer */
                 br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
             }
-        } while (nextpage != null);
+        } while (!this.isAbort() && nextpage != null);
         if (decryptedLinks.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
