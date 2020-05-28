@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(?:www\\.)?dl[^\\.]*ßß.rpnet\\.biz/download/.*/([^/\\s]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(?:www\\.)?dl[^\\.]*\\.rpnet\\.biz/download/.*/([^/\\s]+)?" })
 public class RPNetBiz extends PluginForHost {
     private static final String          mName              = "rpnet.biz";
     private static final String          mProt              = "http://";
@@ -102,13 +102,13 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
-        handleDL(link, link.getPluginPatternMatcher(), -6);
+        handleDL(link, link.getPluginPatternMatcher(), 1);
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception, PluginException {
-        // requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, -6);
+        /* 2020-05-28: Limited maxchunks of their directurls to 1 (testing). */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
         URLConnectionAdapter con = dl.getConnection();
         List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
         if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
