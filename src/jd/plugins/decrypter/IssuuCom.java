@@ -13,11 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.components.config.IssuuComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,7 +34,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(?:www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+|https?://e\\.issuu\\.com/embed\\.html#\\d+/\\d+" })
 public class IssuuCom extends PluginForDecrypt {
-
     public IssuuCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,6 +42,7 @@ public class IssuuCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://www.", "http://").toLowerCase().replace("http://", "https://");
         final String embed_ids = new Regex(parameter, "embed\\.html#(\\d+/\\d+)").getMatch(0);
+        final IssuuComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         this.br.setFollowRedirects(true);
         final String documentID;
         if (embed_ids != null) {
@@ -81,7 +83,8 @@ public class IssuuCom extends PluginForDecrypt {
             return null;
         }
         final String general_naming = Encoding.htmlDecode(rareTitle.trim()) + " by " + Encoding.htmlDecode(username.trim()) + " [" + originalDocName + "] (" + pageInfos.length + " pages)";
-        if (br.containsHTML("downloadable=\"true\"")) {
+        final boolean preferImagesOverPDF = cfg.isPreferImagesOverPDF();
+        if (br.containsHTML("downloadable=\"true\"") && !preferImagesOverPDF) {
             final DownloadLink mainDownloadlink = createDownloadlink(parameter.replace("issuu.com/", "issuudecrypted.com/"));
             mainDownloadlink.setAvailable(true);
             final String pdfName = general_naming + ".pdf";
@@ -104,5 +107,10 @@ public class IssuuCom extends PluginForDecrypt {
 
     private boolean isOffline() {
         return br.getHttpConnection().getResponseCode() == 404;
+    }
+
+    @Override
+    public Class<? extends IssuuComConfig> getConfigInterface() {
+        return IssuuComConfig.class;
     }
 }
