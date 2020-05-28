@@ -1496,18 +1496,12 @@ public class YoutubeHelper {
         }
         if (fmtMaps.size() == 0) {
             apiBrowser = br.cloneBrowser();
-            apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
-            apiBrowser.getPage(this.base + "/get_video_info?ps=default&el=embedded&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID));
-            if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
-                // StatsManager.I().track("youtube/vInfo1");
-                apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
-                if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
-                    // StatsManager.I().track("youtube/vInfo2");
-                    // example https://www.youtube.com/v/p7S_u5TzI-I
-                    // age protected
-                    apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
-                }
+            if (true) {
+                apiBrowser.setCurrentURL(this.base + "/embed/" + vid.videoID);
+            } else {
+                apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
             }
+            apiBrowser.getPage(this.base + "/get_video_info?ps=default&el=embedded&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&gl=US&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID));
             collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
             if (apiBrowser.containsHTML("requires_purchase=1")) {
                 logger.warning("Download not possible: You have to pay to watch this video");
@@ -1912,7 +1906,11 @@ public class YoutubeHelper {
             }
             String url = (String) entry.get("url");
             if (StringUtils.isEmpty(url)) {
-                final String cipher = (String) entry.get("cipher");
+                String cipher = (String) entry.get("cipher");
+                if (cipher == null) {
+                    // 28.05.2020
+                    cipher = (String) entry.get("signatureCipher");
+                }
                 try {
                     final UrlQuery query = UrlQuery.parse(cipher);
                     String queryURL = query.get("url");
