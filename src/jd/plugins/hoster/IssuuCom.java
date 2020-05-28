@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.jdownloader.plugins.components.config.IssuuComConfig;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
@@ -34,7 +35,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" })
 public class IssuuCom extends PluginForHost {
-
     public IssuuCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://issuu.com/signup");
@@ -138,11 +138,9 @@ public class IssuuCom extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) User");
         return ai;
@@ -163,7 +161,6 @@ public class IssuuCom extends PluginForHost {
         if (DOCUMENTID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         login(account, true);
         final String token = br.getCookie(MAINPAGE, "site.model.token");
         br.getPage("http://api." + this.getHost() + "/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
@@ -211,4 +208,8 @@ public class IssuuCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
+    public Class<? extends IssuuComConfig> getConfigInterface() {
+        return IssuuComConfig.class;
+    }
 }
