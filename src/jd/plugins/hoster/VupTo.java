@@ -133,12 +133,6 @@ public class VupTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected final String getAPIBase() {
-        /* 2020-05-27: Special and https-only! */
-        return "https://api.vup.to/api";
-    }
-
-    @Override
     protected boolean supports_mass_linkcheck_over_api() {
         return isAPIKey(getAPIKeyFromConfig());
     }

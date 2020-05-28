@@ -16,7 +16,7 @@ public interface XFSConfig extends PluginConfigInterface {
     void setPreferHTTP(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Enter your API key which can be used for linkchecking")
+    @DescriptionForConfigEntry("Enter your API key which will be used for linkchecking in case there is no apikey available via any added accounts of this host")
     @Order(31)
     String getApikey();
 
