@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -41,9 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://[\\w\\.]*?data.hu/get/(\\d+)/([^<>\"/%]+)" })
 public class DataHu extends antiDDoSForHost {
-
     private int statuscode = 0;
 
     public DataHu(PluginWrapper wrapper) {
@@ -101,12 +99,13 @@ public class DataHu extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 50 links at once (limit = 50) */
-                    if (index == urls.length || links.size() > 50) {
+                    /* 2020-05-28: Limit == 50 but their API won't allow 50 (wtf) so we only check 30 at the same time. */
+                    if (index == urls.length || links.size() == 30) {
                         break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
                     }
-                    links.add(urls[index]);
-                    index++;
                 }
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink dl : links) {
@@ -323,7 +322,7 @@ public class DataHu extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "data.hu/get/(\\d+)").getMatch(0);
+        return new Regex(dl.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     private void getAPISafe(final String accesslink) throws Exception {
