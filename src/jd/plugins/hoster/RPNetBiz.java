@@ -88,7 +88,7 @@ public class RPNetBiz extends PluginForHost {
 
     public void prepBrowser() {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put("User-Agent", "JDownloader2");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -210,10 +210,16 @@ public class RPNetBiz extends PluginForHost {
             String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
             br.getPage(apiDownloadLink);
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Object downloadsO = entries.get("downloads");
+            String objectname = "downloads";
+            Object downloadsO = entries.get(objectname);
+            if (downloadsO == null) {
+                /* 2020-05-28: New?! */
+                objectname = "links";
+                downloadsO = entries.get(objectname);
+            }
             if (downloadsO != null) {
                 /* Should always be given! */
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "downloads/{0}");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, objectname + "/{0}");
             }
             final Object errorO = entries.get("error");
             if (errorO != null) {
