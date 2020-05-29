@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,14 +60,7 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.|m\\.|download\\d+\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
     /** Settings stuff */
     private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
@@ -88,6 +88,7 @@ public class MediafireCom extends PluginForHost {
     /** end of random agents **/
     private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
     private static final String PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
+    private static final String TYPE_DIRECT           = "https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)";
 
     public static abstract class PasswordSolver {
         protected Browser       br;
@@ -153,14 +154,23 @@ public class MediafireCom extends PluginForHost {
         setConfigElements();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final String id = getFUID(link);
-        if (id != null) {
-            link.setProperty("LINKDUPEID", "mediafirecom_" + id);
+        final String id;
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+            /* 2020-05-29: Correct direct-URL --> Normal URL */
+            final Regex dlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_DIRECT);
+            id = dlinfo.getMatch(0);
+            final String url_filename = dlinfo.getMatch(1);
+            final String newURL = String.format("http://www.mediafire.com/file/%s/%s", id, url_filename);
+            link.setPluginPatternMatcher(newURL);
+        } else {
+            id = getFUID(link);
         }
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://media", "http://www.media"));
+        if (id != null) {
+            link.setLinkID("mediafirecom_" + id);
+        }
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("http://media", "http://www.media"));
     }
 
     @SuppressWarnings("deprecation")
@@ -172,7 +182,6 @@ public class MediafireCom extends PluginForHost {
         } catch (final PluginException e) {
             throw e;
         }
-        account.setValid(true);
         final String usedSpace = PluginJSonUtils.getJsonValue(api, "used_storage_size");
         ai.setUsedSpace(usedSpace != null ? Long.parseLong(usedSpace) : 0);
         if (account.getType() == AccountType.FREE) {
