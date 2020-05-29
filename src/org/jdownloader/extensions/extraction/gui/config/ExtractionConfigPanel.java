@@ -72,20 +72,6 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         customPath = this.addPair(T.T.settings_extract_to_path(), null, new FolderChooser());
         customPath.setConditionPair(toggleCustomizedPath);
         toggleUseSubpath = this.addPair(T.T.settings_use_subpath(), null, new Checkbox());
-        Spinner spinner = new Spinner(0, Integer.MAX_VALUE);
-        spinner.setFormat("# " + T.T.files2());
-        // ((DefaultEditor) spinner.getEditor()).getTextField().setHorizontalAlignment(JTextField.LEFT);
-        String lblConstraints = "gapleft 37,aligny center,alignx right";
-        subPathMinFiles = this.addPair(T.T.settings_subpath_minnum3(), lblConstraints, null, spinner);
-        subPathMinFiles.setConditionPair(toggleUseSubpath);
-        Spinner spinner2 = new Spinner(0, Integer.MAX_VALUE);
-        spinner2.setFormat("# " + T.T.folders());
-        subPathMinFolders = this.addPair(T.T.and(), lblConstraints, null, spinner2);
-        subPathMinFolders.setConditionPair(toggleUseSubpath);
-        Spinner spinner3 = new Spinner(0, Integer.MAX_VALUE);
-        spinner3.setFormat("# " + T.T.files_and_folders());
-        subPathMinFilesOrFolders = this.addPair(T.T.and(), lblConstraints, null, spinner3);
-        subPathMinFilesOrFolders.setConditionPair(toggleUseSubpath);
         subPath = this.addPair(T.T.settings_subpath(), null, new TextInput() {
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
@@ -197,6 +183,20 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             }
         });
         subPath.setConditionPair(toggleUseSubpath);
+        Spinner spinner = new Spinner(0, Integer.MAX_VALUE);
+        spinner.setFormat("# " + T.T.files2());
+        // ((DefaultEditor) spinner.getEditor()).getTextField().setHorizontalAlignment(JTextField.LEFT);
+        String lblConstraints = "gapleft 37,aligny center,alignx right";
+        subPathMinFiles = this.addPair(T.T.settings_subpath_minnum3(), lblConstraints, null, spinner);
+        subPathMinFiles.setConditionPair(toggleUseSubpath);
+        Spinner spinner2 = new Spinner(0, Integer.MAX_VALUE);
+        spinner2.setFormat("# " + T.T.folders());
+        subPathMinFolders = this.addPair(T.T.and(), lblConstraints, null, spinner2);
+        subPathMinFolders.setConditionPair(toggleUseSubpath);
+        Spinner spinner3 = new Spinner(0, Integer.MAX_VALUE);
+        spinner3.setFormat("# " + T.T.files_and_folders());
+        subPathMinFilesOrFolders = this.addPair(T.T.and(), lblConstraints, null, spinner3);
+        subPathMinFilesOrFolders.setConditionPair(toggleUseSubpath);
         this.addHeader(T.T.settings_various(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
         final FileCreationManager.DeleteOption[] deleteOptions;
         if (JDFileUtils.isTrashSupported()) {
