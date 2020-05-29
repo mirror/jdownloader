@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FastfileCc extends XFileSharingProBasic {
@@ -102,4 +102,19 @@ public class FastfileCc extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return 6;
     }
+
+    @Override
+    protected boolean supports_mass_linkcheck_over_api() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    protected boolean supports_single_linkcheck_over_api() {
+        return isAPIKey(this.getAPIKey());
+    }
+    /* 2020-05-29: Just a test */
+    // @Override
+    // protected boolean enable_account_api_only_mode() {
+    // return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+    // }
 }

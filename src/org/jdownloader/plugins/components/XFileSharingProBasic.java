@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components;
 
+import java.awt.Color;
 //jDownloader - Downloadmanager
 //Copyright (C) 2013  JD-Team support@jdownloader.org
 //
@@ -31,8 +32,13 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -43,6 +49,8 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.XFSConfigVideo;
 import org.jdownloader.plugins.components.config.XFSConfigVideo.PreferredDownloadQuality;
 import org.jdownloader.plugins.components.config.XFSConfigVideo.PreferredStreamQuality;
@@ -52,6 +60,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -67,6 +76,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -428,16 +438,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Implies that a host supports login via 'API Mod'[https://sibsoft.net/xfilesharing/mods/api.html] via one of these APIs:
      * https://xvideosharing.docs.apiary.io/ OR https://xfilesharingpro.docs.apiary.io/ <br />
-     * This enabled = rely on API ONLY - the complete XFS website can be avoided and API will be used instead (very rare case!)</br>
-     * Sadly, it seems like their linkcheck function often only works on the files in the users' own account:
-     * https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
-     * 2019-05-30: TODO: Add nice AccountFactory for hosts which have API support!<br />
+     * Enabling this will do the following: </br>
+     * - Change login process to accept apikey instead of username & password </br>
+     * - Use API for single- and mass linkchecking </br>
+     * - Enforce API usage on account downloads: Never download via website, does NOT fallback to website! </br>
+     * Sadly, it seems like their linkcheck function often only works for self uploaded conent. </br>
+     * API docs: https://xvideosharing.docs.apiary.io/#reference/file/file-info/get-info/check-file(s) <br />
      * 2019-08-20: Some XFS websites are supported via another API via play.google.com/store/apps/details?id=com.zeuscloudmanager --> This
      * has nothing todo with the official XFS API! </br>
-     * Example: xvideosharing.com <br />
+     * Example: xvideosharing.com, clicknupload.co <br />
      * default: false
      */
-    protected boolean enable_api_only_mode() {
+    protected boolean enable_account_api_only_mode() {
         return false;
     }
 
@@ -595,7 +607,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         final String apiKey = this.getAPIKey();
-        if ((isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) || enable_api_only_mode()) {
+        if ((isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) || enable_account_api_only_mode()) {
             return massLinkcheckerAPI(urls, apiKey, true);
         } else if (supports_mass_linkcheck_over_website()) {
             return this.massLinkcheckerWebsite(urls, true);
@@ -2301,6 +2313,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     public String getGenericDownloadlinkRegExFile() {
         // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
+        /* TODO: Remove "premium" pattern into rapidrar.com plugin class as that is only used by them! */
         return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
     }
 
@@ -2779,7 +2792,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai;
-        if (this.enable_api_only_mode()) {
+        if (this.enable_account_api_only_mode()) {
             ai = this.fetchAccountInfoAPI(this.br, account);
         } else {
             ai = this.fetchAccountInfoWebsite(account);
@@ -3463,89 +3476,91 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        if (AccountType.FREE.equals(account.getType())) {
-            /*
-             * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http request.
-             */
-            requestFileInformationWebsite(link, account, true);
-            /* TODO: Add API download functionality for free accounts or completely merge free- & premium-account download handling. */
-            final boolean verifiedLogin = loginWebsite(account, false);
-            /* Access main Content-URL */
-            this.getPage(link.getPluginPatternMatcher());
-            if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
-                loginWebsite(account, true);
-                getPage(link.getPluginPatternMatcher());
-            }
-            doFree(link, account);
-        } else {
-            /*
-             * 2019-05-21: TODO: Maybe try download right away instead of checking this here --> This could speed-up the
-             * download-start-procedure!
-             */
+        if (this.enable_account_api_only_mode()) {
+            /* API mode */
             String dllink = checkDirectLink(link, directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
-                /* First API --> This will also do linkcheck but only require one http request */
-                try {
-                    dllink = this.getDllinkAPI(link, account);
-                } catch (final Throwable e) {
-                    /* Do not allow exception to happen --> Fallback to website instead */
-                    logger.log(e);
-                    logger.warning("Error in API download handling");
-                }
-                /* API failed/not supported? Try website! */
-                if (StringUtils.isEmpty(dllink)) {
-                    /* Even when we are using website download, API linkcheck might work. */
-                    /* TODO: Try to eliminate the availablecheck completely, this would save 1-2 http requests! */
-                    if (allow_api_availablecheck_in_premium_mode_if_apikey_is_available(account)) {
-                        requestFileInformationAPI(link, this.getAPIKeyFromAccount(account));
-                    } else {
-                        /*
-                         * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http
-                         * request.
-                         */
-                        requestFileInformationWebsite(link, account, true);
-                    }
-                    br.setFollowRedirects(false);
-                    final boolean verifiedLogin = loginWebsite(account, false);
-                    getPage(link.getPluginPatternMatcher());
-                    if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
-                        loginWebsite(account, true);
-                        getPage(link.getPluginPatternMatcher());
-                    }
-                    /*
-                     * Check for final downloadurl here because if user/host has direct downloads enabled, PluginPatternMatcher will
-                     * redirect to our final downloadurl thus isLoggedin might return false although we are loggedin!
-                     */
-                    /*
-                     * First check for official video download as this is sometimes only available via account (example: xvideosharing.com)!
-                     */
-                    dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-                    if (StringUtils.isEmpty(dllink)) {
-                        dllink = getDllink(link, account);
-                    }
-                    if (StringUtils.isEmpty(dllink)) {
-                        final Form dlForm = findFormDownload2Premium();
-                        if (dlForm == null) {
-                            checkErrors(link, account, true);
-                            logger.warning("Failed to find Form download2");
-                            checkErrorsLastResort(account);
-                        }
-                        handlePassword(dlForm, link);
-                        final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
-                        if (isDownloadableContent(formCon)) {
-                            /* Very rare case - e.g. tiny-files.com */
-                            handleDownload(link, account, dllink, formCon.getRequest());
-                            return;
-                        } else {
-                            br.followConnection();
-                            this.correctBR();
-                        }
-                        checkErrors(link, account, true);
-                        dllink = getDllink(link, account);
-                    }
-                }
+                dllink = this.getDllinkAPI(link, account);
             }
             handleDownload(link, account, dllink, null);
+        } else {
+            /* Website mode (might sometimes also perform some API requests) */
+            if (AccountType.FREE.equals(account.getType())) {
+                /*
+                 * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http request.
+                 */
+                requestFileInformationWebsite(link, account, true);
+                /* TODO: Add API download functionality for free accounts or completely merge free- & premium-account download handling. */
+                final boolean verifiedLogin = loginWebsite(account, false);
+                /* Access main Content-URL */
+                this.getPage(link.getPluginPatternMatcher());
+                if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
+                    loginWebsite(account, true);
+                    getPage(link.getPluginPatternMatcher());
+                }
+                doFree(link, account);
+            } else {
+                /*
+                 * 2019-05-21: TODO: Maybe try download right away instead of checking this here --> This could speed-up the
+                 * download-start-procedure!
+                 */
+                String dllink = checkDirectLink(link, directlinkproperty);
+                if (StringUtils.isEmpty(dllink)) {
+                    /* First API --> This will also do linkcheck but only require one http request */
+                    try {
+                        dllink = this.getDllinkAPI(link, account);
+                    } catch (final Throwable e) {
+                        /* Do not allow exception to happen --> Fallback to website instead */
+                        logger.log(e);
+                        logger.warning("Error in API download handling");
+                    }
+                    /* API failed/not supported? Try website! */
+                    if (StringUtils.isEmpty(dllink)) {
+                        /* TODO: Maybe skip this, check for offline later */
+                        requestFileInformationWebsite(link, account, true);
+                        br.setFollowRedirects(false);
+                        final boolean verifiedLogin = loginWebsite(account, false);
+                        getPage(link.getPluginPatternMatcher());
+                        if (isAccountLoginVerificationEnabled(account, verifiedLogin) && !isLoggedin()) {
+                            loginWebsite(account, true);
+                            getPage(link.getPluginPatternMatcher());
+                        }
+                        /*
+                         * Check for final downloadurl here because if user/host has direct downloads enabled, PluginPatternMatcher will
+                         * redirect to our final downloadurl thus isLoggedin might return false although we are loggedin!
+                         */
+                        /*
+                         * First check for official video download as this is sometimes only available via account (example:
+                         * xvideosharing.com)!
+                         */
+                        dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
+                        if (StringUtils.isEmpty(dllink)) {
+                            dllink = getDllink(link, account);
+                        }
+                        if (StringUtils.isEmpty(dllink)) {
+                            final Form dlForm = findFormDownload2Premium();
+                            if (dlForm == null) {
+                                checkErrors(link, account, true);
+                                logger.warning("Failed to find Form download2");
+                                checkErrorsLastResort(account);
+                            }
+                            handlePassword(dlForm, link);
+                            final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                            if (isDownloadableContent(formCon)) {
+                                /* Very rare case - e.g. tiny-files.com */
+                                handleDownload(link, account, dllink, formCon.getRequest());
+                                return;
+                            } else {
+                                br.followConnection();
+                                this.correctBR();
+                            }
+                            checkErrors(link, account, true);
+                            dllink = getDllink(link, account);
+                        }
+                    }
+                }
+                handleDownload(link, account, dllink, null);
+            }
         }
     }
 
@@ -3743,7 +3758,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    /* *************************** PUT API METHODS HERE *************************** */
+    /* *************************** PUT API RELATED METHODS HERE *************************** */
     protected String getAPIBase() {
         final String custom_apidomain = this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_api_domain_with_protocol);
         if (custom_apidomain != null) {
@@ -3762,7 +3777,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * Only execude this if you know that a particular host has enabled this API call! </br>
          * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
          */
-        if (this.enable_api_only_mode() || this.allow_api_download_if_apikey_is_available(account)) {
+        if (this.enable_account_api_only_mode() || this.allow_api_download_if_apikey_is_available(account)) {
             /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
             // requestFileInformationAPI(link, account);
             logger.info("Trying to get dllink via API");
@@ -3926,7 +3941,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 ai.setAccountBalance(balance);
             }
         }
-        if (this.enable_api_only_mode() && !StringUtils.isEmpty(email)) {
+        if (this.enable_account_api_only_mode() && !StringUtils.isEmpty(email)) {
             /*
              * Each account is unique. Do not care what the user entered - trust what API returns! </br> This is not really important - more
              * visually so that something that makes sense is displayed to the user in his account managers' "Username" column!
@@ -4149,7 +4164,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (errorMsg.equalsIgnoreCase("This function not allowed in API")) {
                 /* {"msg":"This function not allowed in API","server_time":"2019-10-31 17:02:31","status":403} */
                 /* This should never happen! Plugin needs to be */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported API function - plugin might need update", 2 * 60 * 60 * 1000l);
+                if (link == null) {
+                    /*
+                     * Login via API either not supported at all (wtf why is there an apikey available) or only for special/unlocked users!
+                     */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI login impossible!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported API function - plugin might need update", 2 * 60 * 60 * 1000l);
+                }
             } else {
                 /* {"msg":"Wrong auth","server_time":"2019-10-31 16:54:05","status":403} */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid or expired apikey!\r\nWhen changing your apikey via website, make sure to update it in JD too!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -4167,7 +4189,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected final String getAPIKeyFromAccount(final Account account) {
         synchronized (account) {
             final String apikey;
-            if (this.enable_api_only_mode()) {
+            if (this.enable_account_api_only_mode()) {
                 /* In API only mode, apikey is stored in password field. */
                 apikey = account.getPass();
             } else {
@@ -4212,6 +4234,90 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected boolean isAPIKey(final String apiKey) {
         return apiKey != null && apiKey.matches("^[a-z0-9]{16,}$");
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        if (this.enable_account_api_only_mode()) {
+            return new XFSApiAccountFactory(callback);
+        } else {
+            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+        }
+    }
+
+    public static class XFSApiAccountFactory extends MigPanel implements AccountBuilderInterface {
+        private static final long serialVersionUID = 1L;
+        private final String      PINHELP          = "Enter your API Key";
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            }
+            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                return null;
+            }
+            return new String(this.pass.getPassword());
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private static String          EMPTYPW = " ";
+        private final JLabel           idLabel;
+
+        public XFSApiAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Click here to find your API Key:"));
+            add(new JLink("https://examplehost.com/?op=my_account"));
+            this.add(this.idLabel = new JLabel("Enter your API Key:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(PINHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            final String password = getPassword();
+            if (password == null || !password.trim().matches("^[a-z0-9]{16,}$")) {
+                idLabel.setForeground(Color.RED);
+                return false;
+            }
+            idLabel.setForeground(Color.BLACK);
+            return getPassword() != null;
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
     }
 
     /**
@@ -4294,7 +4400,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // }
     @Override
     public boolean internal_supportsMassLinkcheck() {
-        return supports_mass_linkcheck_over_api() || supports_mass_linkcheck_over_website() || enable_api_only_mode();
+        return this.supports_mass_linkcheck_over_api() || this.supports_mass_linkcheck_over_website() || this.enable_account_api_only_mode();
     }
 
     /**
@@ -4357,6 +4463,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected final long internal_waittime_on_alternative_availablecheck_failures() {
         return 7 * 24 * 60 * 60 * 1000;
+    }
+
+    /**
+     * Function to check whether or not a filehost is running XFS API mod or not. Only works for APIs running on their main domain and not
+     * any other/special domain! </br>
+     * Example test working & API available: https://fastfile.cc/api/account/info </br>
+     * Example not working but API available: https://api-v2.ddownload.com/api/account/info </br>
+     * Example API not available (= XFS API Mod not installed): </br>
+     */
+    private boolean test_supports_api() throws IOException {
+        br.getPage(this.getAPIBase() + "/account/info");
+        /* 2020-05-29: Answer we'd expect if API is available: {"msg":"Invalid key","server_time":"2020-05-29 17:16:36","status":400} */
+        final String msg = PluginJSonUtils.getJson(br, "msg");
+        final String server_time = PluginJSonUtils.getJson(br, "server_time");
+        if (!StringUtils.isEmpty(msg) && !StringUtils.isEmpty(server_time)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
