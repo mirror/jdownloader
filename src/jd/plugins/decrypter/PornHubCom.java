@@ -84,7 +84,7 @@ public class PornHubCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.|[a-z]{2}\\.)?" + buildHostsPatternPart(domains) + "/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|(pornstar|model)/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(?:/(?:upload|paid))?)?|channels/[A-Za-z0-9\\-_]+/videos|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|playlist/\\d+)");
+            ret.add("https?://(?:www\\.|[a-z]{2}\\.)?" + buildHostsPatternPart(domains) + "/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|(pornstar|model)/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(?:/(?:upload|paid))?)?|channels/[A-Za-z0-9\\-_]+(?:/videos)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|playlist/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -158,7 +158,7 @@ public class PornHubCom extends PluginForDecrypt {
             /* Main profile URL --> Assume user wants to have all videos of that profile */
             logger.info("Model/Pornstar");
             ret = decryptAllVideosOfAPornstar();
-        } else if (parameter.matches("(?i).*/(?:users|channels)/.*")) {
+        } else if (parameter.matches("(?i).*/(?:users|channels).*")) {
             if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
                 logger.info("Users->Model|pornstar");
                 ret = decryptAllVideosOfAPornstar();
@@ -272,7 +272,7 @@ public class PornHubCom extends PluginForDecrypt {
             return true;
         }
         FilePackage fp = null;
-        // TODO: better check for user/model/pornstar and handle all possible cases
+        // TODO: better check for user[channel]/model/pornstar and handle all possible cases
         if (parameter.matches("(?i).*/pornstar/[^/]+/videos/upload")) {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
             final String user = getUser(br);
@@ -302,6 +302,9 @@ public class PornHubCom extends PluginForDecrypt {
                 fp.setName(user + "'s Public Videos");
             }
         } else if (parameter.matches("(?i).*/channels/.+")) {
+            if (!parameter.endsWith("/videos") && !parameter.endsWith("/")) {
+                parameter += "/videos";
+            }
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
             final String user = getUser(br);
             if (user != null) {
@@ -311,7 +314,7 @@ public class PornHubCom extends PluginForDecrypt {
         } else {
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">There are no videos...<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">There are no videos\\.\\.\\.<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
         }
