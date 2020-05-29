@@ -17,10 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,6 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(?:www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
 public class GirlsReleasedCom extends antiDDoSForDecrypt {
@@ -127,9 +127,6 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                 links = new Regex(apiResult, "\\[[^,\\]]+,[^,\\]]+,[^,\\]]+,[^,\\]]+,\"([^\"]+)\"").getColumn(0);
                 String[] fpLookup = new Regex(apiResult, "\"site\":\"([^\"]+)\",\"models\":\\[\\[(\\d+),\"([^\"]+)\"").getRow(0);
                 if (fpLookup != null && fpLookup.length > 2) {
-                    /* <sourcesite> - <modelname> - Set <SetID> */
-                    // fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + fpLookup[1];
-                    /* 2020-05-29: New RE: https://board.jdownloader.org/showthread.php?t=77542 */
                     fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + setID;
                 }
             } else if (pageType == PageType.GR_SITE || pageType == PageType.GR_MODELS) {

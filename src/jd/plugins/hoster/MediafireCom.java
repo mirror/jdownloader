@@ -25,13 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,6 +52,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -162,7 +162,7 @@ public class MediafireCom extends PluginForHost {
             final Regex dlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_DIRECT);
             id = dlinfo.getMatch(0);
             final String url_filename = dlinfo.getMatch(1);
-            final String newURL = String.format("http://www.mediafire.com/file/%s/%s", id, url_filename);
+            final String newURL = String.format("https://www.mediafire.com/file/%s/%s", id, url_filename);
             link.setPluginPatternMatcher(newURL);
         } else {
             id = getFUID(link);
@@ -170,7 +170,7 @@ public class MediafireCom extends PluginForHost {
         if (id != null) {
             link.setLinkID("mediafirecom_" + id);
         }
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("http://media", "http://www.media"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("https?://media", "https://www.media"));
     }
 
     @SuppressWarnings("deprecation")
