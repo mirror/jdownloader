@@ -51,6 +51,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -591,13 +592,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*File could not be found due to expiration or removal by the file owner|>\\s*The file of the above link no longer exists)").matches();
     }
 
-    /**
-     * TODO: Add functionality and add an easy way to activate api/website mass linkchecking e.g. by Overriding one boolean return function.
-     */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        final String apiKey = getAPIKeyFromConfig();
-        if (isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) {
+        final String apiKey = this.getAPIKey();
+        if ((isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) || enable_api_only_mode()) {
             return massLinkcheckerAPI(urls, apiKey, true);
         } else if (supports_mass_linkcheck_over_website()) {
             return this.massLinkcheckerWebsite(urls, true);
@@ -609,23 +607,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformationAuto(link, null, false);
-    }
-
-    public AvailableStatus requestFileInformationAuto(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
-        if (this.supports_single_linkcheck_over_api()) {
-            /* Prefer apikey of current account over apikey in plugin config. */
-            String apiKey = account != null ? getAPIKeyFromAccount(account) : null;
-            if (!isAPIKey(apiKey)) {
-                /* Use apikey from plugin config. */
-                apiKey = this.getAPIKeyFromConfig();
-            }
-            if (isAPIKey(apiKey)) {
-                return this.requestFileInformationAPI(link, apiKey);
-            }
+        final String apikey = getAPIKey();
+        if (this.supports_single_linkcheck_over_api() && apikey != null) {
+            /* API linkcheck */
+            return this.requestFileInformationAPI(link, apikey);
+        } else {
+            /* Website linkcheck */
+            return requestFileInformationWebsite(link, null, false);
         }
-        /* API linkcheck not possible --> Do linkcheck via website. */
-        return requestFileInformationWebsite(link, account, false);
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
@@ -2832,7 +2821,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Failed to find apikey (with Exception) --> Continuing via website");
                 logger.log(e);
             }
-            if (apikey != null && this.isAPIKey(apikey)) {
+            if (apikey != null) {
                 /*
                  * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way
                  * to get account information.
@@ -3496,7 +3485,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             String dllink = checkDirectLink(link, directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
                 /* First API --> This will also do linkcheck but only require one http request */
-                dllink = this.getDllinkAPI(link, account);
+                try {
+                    dllink = this.getDllinkAPI(link, account);
+                } catch (final Throwable e) {
+                    /* Do not allow exception to happen --> Fallback to website instead */
+                    logger.log(e);
+                    logger.warning("Error in API download handling");
+                }
                 /* API failed/not supported? Try website! */
                 if (StringUtils.isEmpty(dllink)) {
                     /* Even when we are using website download, API linkcheck might work. */
@@ -3843,17 +3838,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Successfully found dllink via API");
             } else {
                 logger.warning("Failed to find dllink via API");
-                if (this.enable_api_only_mode()) {
-                    this.checkErrorsAPI(br, link, account);
-                    logger.warning("API only mode is active --> Plugin broken");
-                    /**
-                     * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with
-                     * a waittime.
-                     */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    logger.info("Continuing via website as fallback");
-                }
+                this.checkErrorsAPI(br, link, account);
+                /**
+                 * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with a
+                 * waittime.
+                 */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return dllink;
@@ -3954,17 +3944,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final boolean followRedirects = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
-                if (this.getAPIKeyFromAccount(account) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid APIKEY - only lowercase characters and numbers are allowed!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String apikey = this.getAPIKeyFromAccount(account);
+                if (!this.isAPIKey(apikey)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid apikey format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage(br, this.getAPIBase() + "/account/info?key=" + getAPIKeyFromAccount(account));
+                getPage(br, this.getAPIBase() + "/account/info?key=" + apikey);
                 final String msg = PluginJSonUtils.getJson(br, "msg");
                 final String status = PluginJSonUtils.getJson(br, "status");
-                /*
-                 * Returns XML: ExtAllowed, ExtNotAllowed, MaxUploadFilesize, ServerURL[for uploads], SessionID[our login cookie], Error,
-                 * SiteName, LoginLogic
-                 */
-                /* 2019-05-30: There are no cookies at all (only "__cfduid" sometimes.) */
+                /* 2019-05-30: There are no cookies at all (only "__cfduid" [Cloudflare cookie] sometimes.) */
                 final boolean jsonOK = msg != null && msg.equalsIgnoreCase("ok") && status != null && status.equals("200");
                 if (!jsonOK) {
                     /* E.g. {"msg":"Wrong auth","server_time":"2019-05-29 19:29:03","status":403} */
@@ -3974,8 +3961,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     // the string behind 'key=' in JDownloader!", account.getHoster());
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            } catch (final PluginException e) {
-                throw e;
             } finally {
                 br.setFollowRedirects(followRedirects);
             }
@@ -4010,7 +3995,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test max 50 links at once */
+                    /*
+                     * We test max 50 links at once. 2020-05-29: XFS default API linkcheck limit is exactly 50 items. If you check more than
+                     * 50 items, it will only return results for the first 50 items.
+                     */
                     if (index == urls.length || links.size() == 50) {
                         break;
                     } else {
@@ -4048,10 +4036,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                     }
                     if (!foundResult) {
-                        /*
-                         * This should never happen. If it does, the apikey which was used by the user might not have access to this API
-                         * call or can only check his own uploaded files or any other API issue happened.
+                        /**
+                         * This should never happen. Possible reasons: </br>
+                         * - Wrong APIKey </br>
+                         * - We tried to check too many items at once </br>
+                         * - API only allows users to check self-uploaded content --> Disable API linkchecking in plugin! </br>
+                         * - API does not not allow linkchecking at all --> Disable API linkchecking in plugin! </br>
                          */
+                        logger.warning("WTF failed to find information for fuid: " + fuid);
                         linkcheckerHasFailed = true;
                         continue;
                     }
@@ -4150,8 +4142,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         case 400:
             /* {"msg":"Invalid key","server_time":"2019-10-31 17:20:02","status":400} */
             /*
-             * Basically same as 403 but this will only happen if given key has invalid format e.g. "blabla" instead of "[a-z0-9]{20}" e.g.
-             * if user enters apikey.
+             * This should never happen!
              */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid apikey!\r\nEntered apikey does not match expected format.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         case 403:
@@ -4161,13 +4152,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported API function - plugin might need update", 2 * 60 * 60 * 1000l);
             } else {
                 /* {"msg":"Wrong auth","server_time":"2019-10-31 16:54:05","status":403} */
-                if (enable_api_only_mode()) {
-                    /* Normal 'Wrong logindata' errormessage */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    /* We are in API only mode --> Display extra hint */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid or expired apikey!\r\nWhen changing your apikey via website, make sure to update it here as well!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid or expired apikey!\r\nWhen changing your apikey via website, make sure to update it in JD too!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         case 404:
             /* {"msg":"No file","server_time":"2019-10-31 17:23:17","status":404} */
@@ -4209,6 +4194,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } else {
                 return null;
             }
+        }
+    }
+
+    /**
+     * This will try to return an apikey, preferably from a valid account. </br>
+     * Uses API key from config as fallback.
+     */
+    protected final String getAPIKey() {
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        if (acc != null && this.getAPIKeyFromAccount(acc) != null) {
+            return this.getAPIKeyFromAccount(acc);
+        } else {
+            return this.getAPIKeyFromConfig();
         }
     }
 
@@ -4291,13 +4289,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * that this may require to solve a captcha while the stream download does not. This is an unfinished method, designed to be used in the
      * future when we may have XFS plugin settings e.g. for video quality! TODO: Add setting for this
      */
-    private final boolean internal_videohost_prefer_OfficialOriginalVideoDownload() {
-        return false;
-    }
-
+    // private final boolean internal_videohost_prefer_OfficialOriginalVideoDownload() {
+    // return false;
+    // }
     @Override
     public boolean internal_supportsMassLinkcheck() {
-        return supports_single_linkcheck_over_api() || supports_mass_linkcheck_over_website();
+        return supports_mass_linkcheck_over_api() || supports_mass_linkcheck_over_website() || enable_api_only_mode();
     }
 
     /**
@@ -4307,14 +4304,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @default false
      */
     protected boolean supports_single_linkcheck_over_api() {
-        // return isAPIKey(getAPIKeyFromConfig());
+        // return isAPIKey(this.getAPIKey());
         /* On Override, you would typically use the above line of code as return value. */
         return false;
     }
 
     /** @default false */
     protected boolean supports_mass_linkcheck_over_api() {
-        // return isAPIKey(getAPIKeyFromConfig());
+        // return isAPIKey(this.getAPIKey());
         /* On Override, you would typically use the above line of code as return value. */
         return false;
     }

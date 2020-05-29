@@ -331,12 +331,12 @@ public class DdlTo extends XFileSharingProBasic {
 
     @Override
     protected boolean supports_mass_linkcheck_over_api() {
-        return isAPIKey(getAPIKeyFromConfig());
+        return isAPIKey(this.getAPIKey());
     }
 
     @Override
     protected boolean supports_single_linkcheck_over_api() {
-        return isAPIKey(getAPIKeyFromConfig());
+        return isAPIKey(this.getAPIKey());
     }
 
     /** TODO: Remove this Override in 2020-07 as template now auto detects- and uses special API domains! */

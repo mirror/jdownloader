@@ -113,12 +113,12 @@ public class UpstreamTo extends XFileSharingProBasic {
 
     @Override
     protected boolean supports_mass_linkcheck_over_api() {
-        return isAPIKey(getAPIKeyFromConfig());
+        return isAPIKey(this.getAPIKey());
     }
 
     @Override
     protected boolean supports_single_linkcheck_over_api() {
-        return isAPIKey(getAPIKeyFromConfig());
+        return isAPIKey(this.getAPIKey());
     }
 
     @Override
