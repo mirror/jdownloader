@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(?:www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
 public class GirlsReleasedCom extends antiDDoSForDecrypt {
     public GirlsReleasedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,11 +80,13 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         String[][] idList = null;
         String payload = null;
         idList = new Regex(parameter, "#\\w+/([^$\\/\\?]+)").getMatches();
+        String setID = null;
         if (pageType == PageType.GR_SET) {
             if (idList != null && idList.length > 0) {
                 String timestamp = br.getRegex("var w = \'([^\']+)\';").getMatch(0);
                 if (timestamp != null && timestamp.length() > 0) {
-                    payload = "{\"tasks\":[\"getset\"],\"set\":{\"id\":\"" + idList[0][0] + "\"},\"w\":\"" + timestamp + "\"}";
+                    setID = idList[0][0];
+                    payload = "{\"tasks\":[\"getset\"],\"set\":{\"id\":\"" + setID + "\"},\"w\":\"" + timestamp + "\"}";
                 }
             }
         } else if (pageType == PageType.GR_SITE) {
@@ -125,7 +127,10 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                 links = new Regex(apiResult, "\\[[^,\\]]+,[^,\\]]+,[^,\\]]+,[^,\\]]+,\"([^\"]+)\"").getColumn(0);
                 String[] fpLookup = new Regex(apiResult, "\"site\":\"([^\"]+)\",\"models\":\\[\\[(\\d+),\"([^\"]+)\"").getRow(0);
                 if (fpLookup != null && fpLookup.length > 2) {
-                    fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + fpLookup[1];
+                    /* <sourcesite> - <modelname> - Set <SetID> */
+                    // fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + fpLookup[1];
+                    /* 2020-05-29: New RE: https://board.jdownloader.org/showthread.php?t=77542 */
+                    fpName = fpLookup[0] + " - " + fpLookup[2] + " - " + "Set " + setID;
                 }
             } else if (pageType == PageType.GR_SITE || pageType == PageType.GR_MODELS) {
                 String[][] rawLlinks = new Regex(apiResult, "\\[(\\d+),\"([^,\\]]+)\"").getMatches();
