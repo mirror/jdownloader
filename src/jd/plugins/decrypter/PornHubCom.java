@@ -47,6 +47,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -123,7 +124,7 @@ public class PornHubCom extends PluginForDecrypt {
             logger.info("Offline because premiumonly");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        if (br.containsHTML("class=\"g-recaptcha\"") && br.containsHTML("/captcha/validate\\?token=")) {
+        if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) && br.containsHTML("/captcha/validate\\?token=")) {
             final Form form = br.getFormByInputFieldKeyValue("captchaType", "1");
             logger.info("Detected captcha method \"reCaptchaV2\" for this host");
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
@@ -142,7 +143,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (br.containsHTML("href\\s*=\\s*\"/login\"")) {
                 logger.info("Debug info: href= /login is found for registered user, re-login failed?");
             }
-            if (br.containsHTML("class=\"g-recaptcha\"")) {
+            if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
                 // logger.info("Debug info: captcha handling is required now!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
