@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -121,5 +122,10 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
     protected boolean supports_availablecheck_filesize_html() {
         /* 2019-07-25: Special */
         return false;
+    }
+
+    @Override
+    protected boolean enable_account_api_only_mode() {
+        return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     }
 }
