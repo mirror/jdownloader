@@ -23,10 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -48,6 +44,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -144,7 +144,7 @@ public class PornHubCom extends PluginForDecrypt {
             }
             if (br.containsHTML("class=\"g-recaptcha\"")) {
                 // logger.info("Debug info: captcha handling is required now!");
-                throw new DecrypterException("Decrypter broken, captcha handling is required now!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final boolean ret;
@@ -171,9 +171,10 @@ public class PornHubCom extends PluginForDecrypt {
             return decryptSingleVideo();
         }
         if (ret == false && decryptedLinks.isEmpty()) {
-            throw new DecrypterException("Decrypter broken for link: " + parameter);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
     /** Handles pornhub.com/bla/(model|pornstar)/bla */
@@ -548,7 +549,7 @@ public class PornHubCom extends PluginForDecrypt {
             }
             final String newLink = br.getRegex("<link_url>(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             parameter = newLink;
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
