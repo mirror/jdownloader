@@ -304,7 +304,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             }
             {
                 // RecaptchaV3, grecaptcha.execute(apiKey)
-                siteKey = new Regex(source, "grecaptcha\\.execute\\s*\\(\\s*('|\")(" + apiKeyRegex + ")\\1").getMatch(1);
+                siteKey = new Regex(source, "grecaptcha\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
                 if (siteKey != null) {
                     return siteKey;
                 }
