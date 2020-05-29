@@ -63,13 +63,14 @@ public class StackstorageCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final String subdomain = new Regex(downloadLink.getContainerUrl(), "https?://([a-z0-9]+)\\.").getMatch(0);
-        final String path = downloadLink.getStringProperty("download_path", null);
-        final String folderid = new Regex(downloadLink.getContainerUrl(), "/s/(.+)").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String subdomain = new Regex(link.getContainerUrl(), "https?://([a-z0-9]+)\\.").getMatch(0);
+        final String path = link.getStringProperty("download_path", null);
+        final String folderid = new Regex(link.getContainerUrl(), "/s/([A-Za-z0-9]+)").getMatch(0);
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         if (csrftoken == null || path == null || folderid == null) {
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Upgrade-Insecure-Requests", "1");
@@ -86,7 +87,7 @@ public class StackstorageCom extends antiDDoSForHost {
         dlform.put("query", "");
         dlform.put("CSRF-Token", csrftoken);
         dlform.put(URLEncode.encodeURIComponent("paths[]"), Encoding.urlEncode(path));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -96,7 +97,7 @@ public class StackstorageCom extends antiDDoSForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
+        link.setProperty("directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
