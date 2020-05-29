@@ -52,11 +52,14 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(?:www\\.)?dl[^\\.]*\\.rpnet\\.biz/download/.*/([^/\\s]+)?" })
 public class RPNetBiz extends PluginForHost {
-    private static final String          mName              = "rpnet.biz";
-    private static final String          mProt              = "http://";
-    private static final String          api_base           = "https://premium.rpnet.biz/";
-    private static MultiHosterManagement mhm                = new MultiHosterManagement("premium.rpnet.biz");
-    private static final int             HDD_WAIT_THRESHOLD = 10 * 60000;                                    // 10 mins in
+    private static final String          mName                    = "rpnet.biz";
+    private static final String          mProt                    = "http://";
+    private static final String          api_base                 = "https://premium.rpnet.biz/";
+    private static MultiHosterManagement mhm                      = new MultiHosterManagement("premium.rpnet.biz");
+    private static final int             HDD_WAIT_THRESHOLD       = 10 * 60000;                                    // 10 mins in
+    private static final String          PROPERTY_queue_id        = "rpnet_queue_id";
+    private static final String          PROPERTY_max_connections = "rpnet_api_max_connections";
+    private static final int             default_maxchunks        = -6;
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,13 +105,13 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
-        handleDL(link, link.getPluginPatternMatcher(), 1);
+        handleDL(link, link.getPluginPatternMatcher(), default_maxchunks);
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception, PluginException {
-        /* 2020-05-28: Limited maxchunks of their directurls to 1 (testing). */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+        /* Directurls will work without logging in which is why we'll allow handleFree in this case. */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, default_maxchunks);
         URLConnectionAdapter con = dl.getConnection();
         List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
         if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
@@ -122,13 +125,13 @@ public class RPNetBiz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = br.openHeadConnection(link.getPluginPatternMatcher());
             List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
             if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -200,38 +203,49 @@ public class RPNetBiz extends PluginForHost {
         final String downloadURL = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         prepBrowser();
         String generatedLink = checkDirectLink(link, "cachedDllink");
-        int maxChunks = 0;
+        /* Try to restore last API maxchunks value so it will be used for stored directurls too! */
+        int maxChunks = (int) link.getLongProperty(PROPERTY_max_connections, default_maxchunks);
         String filename = null;
-        Object max_connections = null;
+        Object maxChunksO = null;
+        /*
+         * 2020-05-29: Their queue download does not return any detailed status (only "completed" or "Queued") and needs a long time to
+         * complete thus we're trying to avoid this from blocking download slots.
+         */
+        final boolean allowQueueToBlockDownloadSlot = false;
+        Map<String, Object> entries = null;
         if (generatedLink == null) {
-            // end of workaround
-            showMessage(link, "Generating Link");
-            /* request Download */
-            String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
-            br.getPage(apiDownloadLink);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            String objectname = "downloads";
-            Object downloadsO = entries.get(objectname);
-            if (downloadsO == null) {
-                /* 2020-05-28: New?! */
-                objectname = "links";
-                downloadsO = entries.get(objectname);
+            long queueID = link.getLongProperty(PROPERTY_queue_id, 0);
+            if (queueID > 0) {
+                logger.info("Continuing with stored queueID: " + queueID);
+            } else {
+                showMessage(link, "Generating Link");
+                /* request Download */
+                String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
+                br.getPage(apiDownloadLink);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                String objectname = "downloads";
+                Object downloadsO = entries.get(objectname);
+                if (downloadsO == null) {
+                    /* 2020-05-28: New?! */
+                    objectname = "links";
+                    downloadsO = entries.get(objectname);
+                }
+                if (downloadsO != null) {
+                    /* Should always be given! */
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, objectname + "/{0}");
+                }
+                checkErrors(link, account, entries);
+                maxChunksO = entries.get("max_connections");
+                final Object queueIDO = entries.get("id");
+                if (queueIDO != null) {
+                    // logger.info("Queue download");
+                    queueID = ((Number) queueIDO).longValue();
+                }
             }
-            if (downloadsO != null) {
-                /* Should always be given! */
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, objectname + "/{0}");
-            }
-            final Object errorO = entries.get("error");
-            if (errorO != null) {
-                // shows a more detailed error message returned by the API, especially if the DL Limit is reached for a host
-                mhm.handleErrorGeneric(account, link, (String) errorO, 50);
-            }
-            max_connections = entries.get("max_connections");
-            // Only ID given? => request the download from rpnet hdd
-            final Object queueIDO = entries.get("id");
-            if (queueIDO != null) {
+            if (queueID > 0) {
+                // QueueID given? => request the download from rpnet hdd
                 logger.info("Queue download");
-                final int queueID = ((Number) queueIDO).intValue();
+                link.setProperty(PROPERTY_queue_id, queueID);
                 final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
                     protected long lastCurrent    = -1;
                     protected long lastTotal      = -1;
@@ -291,9 +305,11 @@ public class RPNetBiz extends PluginForHost {
                         br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadsInformation&type=queue&ids%5B%5D=" + queueID);
                         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "downloads/{0}");
-                        final String error = (String) entries.get("error");
-                        if (!StringUtils.isEmpty(error)) {
-                            mhm.handleErrorGeneric(account, link, error, 20);
+                        checkErrors(link, account, entries);
+                        if (entries == null) {
+                            /* Maybe invalid/old queueID? */
+                            link.removeProperty(PROPERTY_queue_id);
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error in queue handling", 5 * 60 * 1000l);
                         }
                         String statusText = null;
                         statusText = (String) entries.get("text_status");
@@ -310,9 +326,12 @@ public class RPNetBiz extends PluginForHost {
                         if (currentProgress == 100) {
                             generatedLink = (String) entries.get("rpnet_link");
                             filename = (String) entries.get("filename");
-                            max_connections = entries.get("max_connections");
+                            maxChunksO = entries.get("max_connections");
                             break;
                         } else {
+                            if (!allowQueueToBlockDownloadSlot) {
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for queue download to finish", 1 * 60 * 1000l);
+                            }
                             link.addPluginProgress(waitProgress);
                             waitProgress.updateValues(currentProgress, 100);
                             for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
@@ -341,8 +360,8 @@ public class RPNetBiz extends PluginForHost {
         if (StringUtils.isEmpty(generatedLink)) {
             mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 20);
         }
-        if (max_connections != null) {
-            maxChunks = Integer.valueOf(max_connections.toString());
+        if (maxChunksO != null) {
+            maxChunks = Integer.valueOf(maxChunksO.toString());
             logger.info("Found API maxConnections value: " + maxChunks);
         }
         if (maxChunks == 1) {
@@ -351,6 +370,10 @@ public class RPNetBiz extends PluginForHost {
             maxChunks = -maxChunks;
         } else {
             maxChunks = 0;
+        }
+        if (maxChunksO != null) {
+            /* Save to re-use later */
+            link.setProperty(PROPERTY_max_connections, (long) maxChunks);
         }
         try {
             /*
@@ -373,6 +396,21 @@ public class RPNetBiz extends PluginForHost {
             } else if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_FAILED) {
                 logger.info("rpnet.biz: ERROR_DOWNLOAD_FAILED --> Quitting loop");
                 throw e1;
+            }
+        }
+    }
+
+    /**
+     * Handle errors in multihoster mode
+     *
+     * @throws InterruptedException
+     * @throws PluginException
+     */
+    private void checkErrors(final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException, InterruptedException {
+        if (entries != null) {
+            final String error = (String) entries.get("error");
+            if (!StringUtils.isEmpty(error)) {
+                mhm.handleErrorGeneric(account, link, error, 20);
             }
         }
     }
