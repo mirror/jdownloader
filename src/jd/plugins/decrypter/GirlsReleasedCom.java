@@ -83,7 +83,7 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         String setID = null;
         if (pageType == PageType.GR_SET) {
             if (idList != null && idList.length > 0) {
-                String timestamp = br.getRegex("var w = \'([^\']+)\';").getMatch(0);
+                final String timestamp = br.getRegex("var w = \'([^\']+)\';").getMatch(0);
                 if (timestamp != null && timestamp.length() > 0) {
                     setID = idList[0][0];
                     payload = "{\"tasks\":[\"getset\"],\"set\":{\"id\":\"" + setID + "\"},\"w\":\"" + timestamp + "\"}";
