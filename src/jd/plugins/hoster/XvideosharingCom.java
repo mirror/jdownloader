@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoXvideosharingCom;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -170,4 +171,9 @@ public class XvideosharingCom extends XFileSharingProBasic {
     // /* 2019-07-10: Special: For testing purposes */
     // return true;
     // }
+
+    @Override
+    public Class<? extends XFSConfigVideoXvideosharingCom> getConfigInterface() {
+        return XFSConfigVideoXvideosharingCom.class;
+    }
 }
