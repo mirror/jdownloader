@@ -140,7 +140,6 @@ public class FlashfilesCom extends PluginForHost {
             /* 2020-06-02: freedownload.flash-files.com */
             freeform = br.getFormbyActionRegex(".+free(download)?\\..+");
         }
-        freeform = null;
         if (freeform == null) {
             /* 2020-06-02 */
             final Form[] forms = br.getForms();
