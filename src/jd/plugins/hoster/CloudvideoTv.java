@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoCloudvideoTv;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -118,5 +119,10 @@ public class CloudvideoTv extends XFileSharingProBasic {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken");
         }
         super.checkErrors(link, account, checkAll);
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideoCloudvideoTv> getConfigInterface() {
+        return XFSConfigVideoCloudvideoTv.class;
     }
 }

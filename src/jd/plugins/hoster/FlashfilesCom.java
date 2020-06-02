@@ -111,6 +111,9 @@ public class FlashfilesCom extends PluginForHost {
         final String fid = this.getFID(link);
         if (this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("role=\"tabpanel\"|name=\"hash\"")) {
+            /* 2020-06-02: Not a file e.g.: https://flash-files.com/faq */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex(">FileSize\\s*:([^<>\"]+)<").getMatch(0);
@@ -134,10 +137,22 @@ public class FlashfilesCom extends PluginForHost {
         Form freeform = br.getFormbyActionRegex(".*?freedownload\\.php");
         if (freeform == null) {
             /* 2020-05-01: E.g. free.flash-files.com */
-            freeform = br.getFormbyActionRegex(".+free\\..+");
+            /* 2020-06-02: freedownload.flash-files.com */
+            freeform = br.getFormbyActionRegex(".+free(download)?\\..+");
+        }
+        freeform = null;
+        if (freeform == null) {
+            /* 2020-06-02 */
+            final Form[] forms = br.getForms();
+            for (final Form form : forms) {
+                if (form.containsHTML("Free Download")) {
+                    freeform = form;
+                    break;
+                }
+            }
         }
         if (freeform == null) {
-            logger.warning("Failed to find freeform");
+            logger.warning("Failed to find freeform1");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(freeform);
