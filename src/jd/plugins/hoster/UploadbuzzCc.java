@@ -18,20 +18,17 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VidtodoCom extends XFileSharingProBasic {
-    public VidtodoCom(final PluginWrapper wrapper) {
+public class UploadbuzzCc extends XFileSharingProBasic {
+    public UploadbuzzCc(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -40,9 +37,22 @@ public class VidtodoCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-07-04: null<br />
+     * captchatype-info: 2020-06-02: null<br />
      * other:<br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "uploadbuzz.cc", "uploadbuzz.net", "uploadbuzz.org" });
+        return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2020-06-02: Their new main domain is uploadbuzz.cc while old ones were uploadbuzz.net & uploadbuzz.org */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -56,24 +66,13 @@ public class VidtodoCom extends XFileSharingProBasic {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "viddoto.com", "widtodo.com", "vidtodo.com", "vidtodo.me", "vidtodo.pro", "vidtodoo.com", "vidtodoo.me", "vidtodoo.pro", "vidotodo.com", "vidotodo.me", "vidotodo.pro", "vidtodu.com", "vidtodu.me", "vidtodu.pro", "vidtoro.com", "vidtoro.me", "vidtoro.pro", "playvidto.com", "vidto-do.com", "vixtodo.com" });
-        return ret;
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    }
-
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -84,62 +83,31 @@ public class VidtodoCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return -2;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            return 1;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -2;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return 10;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return 10;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        /* 2019-07-04: Special: Upper class will return bad filenames! */
-        super.scanInfo(fileInfo);
-        // final String upper_class_filename_result = fileInfo[0];
-        final String new_filename_result = new Regex(correctedBR, "id=\"content\" class=\"left\">\\s*?<h2>([^<>\"]+)</h2> ").getMatch(0);
-        if (!StringUtils.isEmpty(new_filename_result)) {
-            fileInfo[0] = new_filename_result;
-        }
-        return fileInfo;
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        return false;
-    }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        return true;
-    }
-
-    @Override
-    public Form findFormDownload1Free() throws Exception {
-        /* 2020-05-04: Special: Captcha on download1 Form */
-        final Form download1 = super.findFormDownload1Free();
-        if (download1 != null) {
-            this.handleCaptcha(this.getDownloadLink(), download1);
-        }
-        return download1;
+        return 10;
     }
 }
