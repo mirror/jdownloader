@@ -197,7 +197,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         logger.info("Failed to find loginAttemptID");
                     }
                     final boolean forceCaptcha = false;
-                    if (loginform.containsHTML("recaptcha") || forceCaptcha) {
+                    if (loginform.containsHTML("recaptcha") || br.containsHTML("class=\"row row-wide row-login-recaptcha\"") || forceCaptcha) {
                         final DownloadLink dlinkbefore = this.getDownloadLink();
                         try {
                             final DownloadLink dl_dummy;
