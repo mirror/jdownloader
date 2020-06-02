@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
@@ -28,6 +29,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,6 +38,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
@@ -88,28 +92,29 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
+        /* TODO: Fix thumbnail support */
         final String url_thumbnail = br.getRegex("class=\"album-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
-        String theName = br.getRegex("class=\"cloudcast-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
-        if (theName == null) {
-            theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
-            if (theName == null) {
-                theName = br.getRegex("property=\"og:title\"[^>]* content=\"([^<>\"]*?)\"").getMatch(0);
-                if (theName == null) {
-                    theName = br.getRegex("<title>(.*?) \\| Mixcloud</title>").getMatch(0);
-                    if (theName == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                }
-            }
+        final Regex urlregex = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)/?");
+        final String username = urlregex.getMatch(0);
+        final String slug = urlregex.getMatch(1);
+        String theName = slug;
+        final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+        if (csrftoken == null || username == null || slug == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        theName = Encoding.htmlDecode(theName).trim();
+        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.getHeaders().put("x-csrftoken", csrftoken);
+        br.getHeaders().put("accept", "application/json");
+        br.getHeaders().put("content-type", "application/json");
+        final String postdata = String.format(
+                "{\"id\":\"q13\",\"query\":\"query HeaderQuery($lookup_0:CloudcastLookup!,$lighten_1:Int!,$alpha_2:Float!) {cloudcastLookup(lookup:$lookup_0) {id,...Fn}} fragment F0 on Cloudcast {picture {urlRoot,primaryColor},id} fragment F1 on Cloudcast {id,name,slug,owner {username,id}} fragment F2 on Cloudcast {owner {id,displayName,followers {totalCount}},id} fragment F3 on Cloudcast {restrictedReason,owner {displayName,country,username,isSubscribedTo,isViewer,id},slug,id,isAwaitingAudio,isDraft,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},audioLength,currentPosition,proportionListened,repeatPlayAmount,hasPlayCompleted,seekRestriction,previewUrl,isExclusivePreviewOnly,isExclusive,picture {primaryColor,isLight,_primaryColor2pfPSM:primaryColor(lighten:$lighten_1),_primaryColor3Yfcks:primaryColor(alpha:$alpha_2)}} fragment F4 on Node {id,__typename} fragment F5 on Cloudcast {id,isFavorited,isPublic,hiddenStats,favorites {totalCount},slug,owner {id,isFollowing,username,isSelect,displayName,isViewer}} fragment F6 on Cloudcast {id,isUnlisted,isPublic} fragment F7 on Cloudcast {id,isReposted,isPublic,hiddenStats,reposts {totalCount},owner {isViewer,id}} fragment F8 on Cloudcast {id,isUnlisted,isPublic,slug,description,picture {urlRoot},owner {displayName,isViewer,username,id}} fragment F9 on Cloudcast {id,slug,isSpam,owner {username,isViewer,id}} fragment Fa on Cloudcast {owner {isViewer,isSubscribedTo,username,hasProFeatures,isBranded,id},sections {__typename,...F4},id,slug,isExclusive,isUnlisted,isShortLength,...F5,...F6,...F7,...F8,...F9} fragment Fb on Cloudcast {qualityScore,listenerMinutes,id} fragment Fc on Cloudcast {slug,plays,publishDate,hiddenStats,owner {username,id},id,...Fb} fragment Fd on User {id} fragment Fe on User {username,hasProFeatures,hasPremiumFeatures,isStaff,isSelect,id} fragment Ff on User {id,isFollowed,isFollowing,isViewer,followers {totalCount},username,displayName} fragment Fg on Cloudcast {isExclusive,isExclusivePreviewOnly,slug,id,owner {username,id}} fragment Fh on Cloudcast {isExclusive,owner {id,username,displayName,...Fd,...Fe,...Ff},id,...Fg} fragment Fi on Cloudcast {id,streamInfo {uuid,url,hlsUrl,dashUrl},audioLength,seekRestriction,currentPosition} fragment Fj on Cloudcast {owner {displayName,isSelect,username,id},seekRestriction,id} fragment Fk on Cloudcast {id,waveformUrl,previewUrl,audioLength,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},restrictedReason,seekRestriction,currentPosition,...Fj} fragment Fl on Cloudcast {__typename,isExclusivePreviewOnly,isExclusive,owner {isSelect,isSubscribedTo,username,displayName,isViewer,id},id} fragment Fm on Cloudcast {owner {username,displayName,isSelect,id},id} fragment Fn on Cloudcast {id,name,picture {isLight,primaryColor,urlRoot,primaryColor},owner {displayName,isViewer,isBranded,selectUpsell {text},id},repeatPlayAmount,restrictedReason,seekRestriction,...F0,...F1,...F2,...F3,...Fa,...Fc,...Fh,...Fi,...Fk,...Fl,...Fm}\",\"variables\":{\"lookup_0\":{\"username\":\"%s\",\"slug\":\"%s\"},\"lighten_1\":15,\"alpha_2\":0.3}}",
+                username, slug);
+        this.postPageRaw("/graphql", postdata);
         String comment = "";
         int page = 0;
         boolean hasMore = false;
@@ -120,45 +125,55 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             ArrayList<Object> audio_objects = new ArrayList<Object>();
             /* Find correct json ArrayList */
             if (page == 0) {
-                String json = br.getRegex("id=\"relay-data\"[^>]*>(.*?)<").getMatch(0);
-                json = Encoding.htmlOnlyDecode(json);
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                for (final Object audioO : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) audioO;
-                    /* All items of a user? */
-                    Object userLookup = JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
-                    if (userLookup == null) {
-                        /* 2019-11-10 */
-                        userLookup = JavaScriptEngineFactory.walkJson(entries, "userLookup/data/userLookup");
+                String json = br.toString();
+                // json = Encoding.htmlOnlyDecode(json);
+                final Object jsonO = JavaScriptEngineFactory.jsonToJavaObject(json);
+                if (jsonO instanceof Map) {
+                    /* 2020-06-02 */
+                    entries = (LinkedHashMap<String, Object>) jsonO;
+                    final Object cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
+                    if (cloudcastLookupO != null) {
+                        audio_objects.add(cloudcastLookupO);
                     }
-                    /* More likely a single item? */
-                    Object cloudcastLookup = JavaScriptEngineFactory.walkJson(entries, "cloudcast/data/cloudcastLookup");
-                    if (cloudcastLookup == null) {
-                        /* 2019-11-10 */
-                        cloudcastLookup = JavaScriptEngineFactory.walkJson(entries, "cloudcastLookup/data/cloudcastLookup");
-                    }
-                    if (cloudcastLookup != null) {
-                        audio_objects.add(cloudcastLookup);
-                    } else if (userLookup != null) {
-                        entries = (LinkedHashMap<String, Object>) userLookup;
-                        Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-                        while (iterator.hasNext()) {
-                            final Entry<String, Object> entry = iterator.next();
-                            final String keyName = entry.getKey();
-                            if (keyName.matches("_stream.+")) {
-                                entries = (LinkedHashMap<String, Object>) entry.getValue();
+                } else {
+                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) jsonO;
+                    for (final Object audioO : ressourcelist) {
+                        entries = (LinkedHashMap<String, Object>) audioO;
+                        /* All items of a user? */
+                        Object userLookup = JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
+                        if (userLookup == null) {
+                            /* 2019-11-10 */
+                            userLookup = JavaScriptEngineFactory.walkJson(entries, "userLookup/data/userLookup");
+                        }
+                        /* More likely a single item? */
+                        Object cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
+                        if (cloudcastLookupO == null) {
+                            /* 2019-11-10 */
+                            cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
+                        }
+                        if (cloudcastLookupO != null) {
+                            audio_objects.add(cloudcastLookupO);
+                        } else if (userLookup != null) {
+                            entries = (LinkedHashMap<String, Object>) userLookup;
+                            Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                            while (iterator.hasNext()) {
+                                final Entry<String, Object> entry = iterator.next();
+                                final String keyName = entry.getKey();
+                                if (keyName.matches("_stream.+")) {
+                                    entries = (LinkedHashMap<String, Object>) entry.getValue();
+                                    break;
+                                }
+                            }
+                            final Object audio_objects_o = entries.get("edges");
+                            if (audio_objects_o != null && audio_objects_o instanceof ArrayList) {
+                                audio_objects = (ArrayList<Object>) audio_objects_o;
+                                /* Only set this boolean if we at least found our array */
+                                try {
+                                    hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
+                                } catch (final Throwable e) {
+                                }
                                 break;
                             }
-                        }
-                        final Object audio_objects_o = entries.get("edges");
-                        if (audio_objects_o != null && audio_objects_o instanceof ArrayList) {
-                            audio_objects = (ArrayList<Object>) audio_objects_o;
-                            /* Only set this boolean if we at least found our array */
-                            try {
-                                hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
-                            } catch (final Throwable e) {
-                            }
-                            break;
                         }
                     }
                 }
