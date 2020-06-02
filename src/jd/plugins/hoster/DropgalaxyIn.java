@@ -169,4 +169,23 @@ public class DropgalaxyIn extends XFileSharingProBasic {
         }
         return super.getDllink(link, account, br, src);
     }
+
+    @Override
+    protected Form findFormDownload2Free() {
+        /* 2020-06-02: Special */
+        Form dlForm = super.findFormDownload2Free();
+        if (dlForm != null) {
+            // final InputField adb = dlForm.getInputField("adblock_detected");
+            // if (StringUtils.isEmpty(adb.getValue())) {
+            // dlForm.removeInputField(adb);
+            // adb.setValue("0");
+            // dlForm.addInputField(adb);
+            // }
+            dlForm.remove("chkIsAdd");
+            dlForm.put("adblock_check", "0");
+            dlForm.put("adblock_detected", "0");
+            dlForm.put("securedownload", "1");
+        }
+        return dlForm;
+    }
 }

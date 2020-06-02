@@ -553,7 +553,10 @@ public class Ardmediathek extends PluginForDecrypt {
         if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
             http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
         }
-        /* 2nd case */
+        /* 2020-06-02 */
+        final String pattern_ard = "(?:https?:)?//hlsodswr-vh\\.akamaihd\\.net/i/(.*?/\\d+),[A-Za-z,\\.]+\\.mp4\\.csmil/master\\.m3u8";
+        final String pattern_hr = "//hrardmediathek-vh\\.akamaihd.net/i/(.*?),.+\\.mp4\\.csmil/master\\.m3u8$";
+        /* Daserste */
         if (hls_master.contains("dasersteuni-vh.akamaihd.net")) {
             if (urlpart2 != null) {
                 http_url_format = "https://pdvideosdaserste-a.akamaihd.net/" + urlpart2 + "/%s.mp4";
@@ -568,14 +571,20 @@ public class Ardmediathek extends PluginForDecrypt {
         } else if (hls_master.contains("rbbmediaadp-vh") && urlpart2 != null) {
             /* For all RBB websites e.g. also sandmann.de */
             http_url_format = "https://rbbmediapmdp-a.akamaihd.net/" + urlpart2 + "_%s.mp4";
-        }
-        /* 3rd case */
-        if (hls_master.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
+        } else if (hls_master.contains("ndrod-vh.akamaihd.net") && urlpart != null) {
             /* 2018-03-07: There is '/progressive/' and '/progressive_geo/' --> We have to grab this from existing http urls */
             final String server_http = br.getRegex("(https?://mediandr\\-a\\.akamaihd\\.net/progressive[^/]*?/)[^\"]+\\.mp4").getMatch(0);
             if (server_http != null) {
                 http_url_format = server_http + urlpart + ".%s.mp4";
             }
+        } else if (new Regex(hls_master, pattern_ard).matches()) {
+            urlpart = new Regex(hls_master, pattern_ard).getMatch(0);
+            http_url_format = "https://pdodswr-a.akamaihd.net/" + urlpart + "%s.mp4";
+        } else if (new Regex(hls_master, pattern_hr).matches()) {
+            urlpart = new Regex(hls_master, pattern_hr).getMatch(0);
+            http_url_format = "http://hrardmediathek-a.akamaihd.net/" + urlpart + "%skbit.mp4";
+        } else {
+            /* Unsupported URL */
         }
         return http_url_format;
     }
@@ -879,8 +888,7 @@ public class Ardmediathek extends PluginForDecrypt {
          */
         String http_url_audio = br.getRegex("((?:https?:)?//[^<>\"]+\\.mp3)\"").getMatch(0);
         final String hls_master = br.getRegex("(//[^<>\"]+\\.m3u8[^<>\"]*?)").getMatch(0);
-        final Regex regex_hls = new Regex(hls_master, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
-        final String quality_string = regex_hls.getMatch(1);
+        final String quality_string = new Regex(hls_master, ".*?/i/.*?,([A-Za-z0-9_,\\-\\.]+),?\\.mp4\\.csmil.*?").getMatch(0);
         if (StringUtils.isEmpty(hls_master) && http_url_audio == null && httpStreamsQualityIdentifiers.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("Plugin broken");
