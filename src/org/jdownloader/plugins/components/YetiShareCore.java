@@ -253,8 +253,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * <b> Enabling this may lead to at least one additional website-request! </b><br />
-     * TODO: 2019-02-20: Find website which supports video streaming! --> 2020-03-25: vidload.net Deprecated since 2020-05-14 as this has
-     * never been used so far!
+     * TODO: 2019-02-20: Find website which supports video streaming! --> 2020-03-25: Deprecated since 2020-05-14 as this has never been
+     * used so far!
      *
      * @return true: Implies that website supports embedding videos. <br />
      *         false: Implies that website does NOT support embedding videos. <br />
