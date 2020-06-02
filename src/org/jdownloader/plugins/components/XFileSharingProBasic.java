@@ -797,7 +797,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + fuid + "/([^<>\"]+)<").getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* 2019-05-21: E.g. datoporn.co */
-                fileInfo[0] = new Regex(br.toString(), "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
+                fileInfo[0] = new Regex(correctedBR, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
                 if (StringUtils.isEmpty(correctedBR)) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
