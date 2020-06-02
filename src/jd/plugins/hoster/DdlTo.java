@@ -339,13 +339,6 @@ public class DdlTo extends XFileSharingProBasic {
         return isAPIKey(this.getAPIKey());
     }
 
-    /** TODO: Remove this Override in 2020-07 as template now auto detects- and uses special API domains! */
-    @Override
-    protected final String getAPIBase() {
-        /* 2020-05-26: Special and https-only! */
-        return "https://api-v2.ddownload.com/api";
-    }
-
     // @Override
     // public String regexFilenameAbuse(final Browser br) {
     // String filename = br.getRegex("label>Filename</label>\\s*<input[^>]*value=\"([^<>\"]+)\"").getMatch(0);

@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,9 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -205,7 +205,12 @@ public class TnaFlixCom extends PluginForHost {
         }
         if (configLink == null && vkey != null && videoid != null && nkey != null) {
             /* 2019-06-13: Used for tnaflix AND empflix! */
-            configLink = "https://cdn-fck.tnaflix.com/tnaflix/" + vkey + ".fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=30&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
+            if (currenthost.contains("empflix")) {
+                /* 2020-06-02 */
+                configLink = "https://cdn-fck.empflix.com/empflix/" + vkey + "-1.fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=6&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
+            } else {
+                configLink = "https://cdn-fck.tnaflix.com/tnaflix/" + vkey + ".fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=30&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
+            }
         }
         if (configLink == null && download == null && dllink1 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

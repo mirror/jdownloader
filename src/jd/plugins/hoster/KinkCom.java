@@ -78,7 +78,7 @@ public class KinkCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+) \\- Kink</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = linkid;
         } else {
