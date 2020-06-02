@@ -130,6 +130,8 @@ public class DebridFileCom extends PluginForHost {
             dllink = br.getRegex("href='(http[^<>\"\\']+)'>").getMatch(0);
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
+            } else {
+                dllink = dllink.replace("\\", "");
             }
         }
         handleDLMultihoster(account, link, dllink);
