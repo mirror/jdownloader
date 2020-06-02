@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.components.config.XFSConfigVideoDeltabitCo;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -29,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DeltabitCo extends XFileSharingProBasic {
-    public DeltabitCo(final PluginWrapper wrapper) {
+public class OneloadXyz extends XFileSharingProBasic {
+    public OneloadXyz(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -39,14 +37,20 @@ public class DeltabitCo extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-09-29: null<br />
+     * captchatype-info: 2020-06-02: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "deltabit.co" });
+        ret.add(new String[] { "oneload.xyz", "oneload.co" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2020-06-02: Domain changed from oneload.co to oneload.xyz */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
@@ -64,10 +68,11 @@ public class DeltabitCo extends XFileSharingProBasic {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -78,15 +83,16 @@ public class DeltabitCo extends XFileSharingProBasic {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            return 1;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
@@ -103,27 +109,5 @@ public class DeltabitCo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        /* 2019-09-29: Special */
-        return true;
-    }
-
-    /**
-     * 2020-05-19: It might not matter which quality the user selects as sometimes they only have 2 qualities available and both are the
-     * same.
-     */
-    @Override
-    public Class<? extends XFSConfigVideo> getConfigInterface() {
-        return XFSConfigVideoDeltabitCo.class;
-    }
-
-    @Override
-    public ArrayList<String> getCleanupHTMLRegexes() {
-        final ArrayList<String> regexStuff = new ArrayList<String>();
-        /* 2020-06-02: Return empty list as template handling would lead to failures e.g. filename will not be found! */
-        return regexStuff;
     }
 }
