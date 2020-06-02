@@ -166,6 +166,7 @@ public class DebridFileCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account);
         if (br.getURL() == null || !br.getURL().contains("/service")) {
+            br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
             br.getPage(WEBSITE_BASE + "/service");
         }
         final String premiumDaysStr = br.getRegex("Premium\\s*:\\s*(\\d+)\\s*<small").getMatch(0);
@@ -206,6 +207,7 @@ public class DebridFileCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
+                br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Trying to login via cookies");
