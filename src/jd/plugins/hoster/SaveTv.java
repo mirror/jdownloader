@@ -1070,7 +1070,10 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialogCrawler();
             checkFeatureDialogNew();
         }
-        requestFileInformation(link);
+        final AvailableStatus status = requestFileInformation(link);
+        if (status == AvailableStatus.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         setConstants(account, link);
         /* Check whether content has been recorded already or not! */
         final long runtime_end = link.getLongProperty(PROPERTY_originaldate_end, System.currentTimeMillis() + 1);
