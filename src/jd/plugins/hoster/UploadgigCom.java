@@ -189,7 +189,7 @@ public class UploadgigCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* 2020-06-03: TODO: Check/fix this */
-            final long id = Long.parseLong(waittime_str) - 4;
+            final long id = Long.parseLong(idStr) - 4;
             this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
             final String directurl = url + "id=" + id + "&" + params;
             this.testLink(directurl, true);

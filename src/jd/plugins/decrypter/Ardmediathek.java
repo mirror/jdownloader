@@ -697,7 +697,6 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         title = getMediathekTitle(brBefore, this.br);
-        subtitleLink = getJsonSubtitleURL(this.br);
         Object entries = null;
         try {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -715,6 +714,7 @@ public class Ardmediathek extends PluginForDecrypt {
         /*
          * Grab all http qualities inside json
          */
+        subtitleLink = getJsonSubtitleURL(this.br);
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
