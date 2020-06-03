@@ -40,7 +40,9 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/([a-z0-9]{32}|[a-z0-9]{20})(?:/(?:folder|file)/(\\d+))?" })
@@ -188,6 +190,18 @@ public class BoxCom extends antiDDoSForDecrypt {
         do {
             final String json = br.getRegex("<script>\\s*Box\\.postStreamData\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
             Map<String, Object> rootMap = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> itemInfoMap = (LinkedHashMap<String, Object>) rootMap.get("/app-api/enduserapp/shared-item");
+            final String itemType = (String) itemInfoMap.get("itemType");
+            final long fuidSingle = JavaScriptEngineFactory.toLong(itemInfoMap.get("itemID"), 0);
+            if ("file".equalsIgnoreCase(itemType)) {
+                /* Single file */
+                if (fuidSingle == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink dl = createDownloadlink("https://app.box.com/s/" + sharedname + "/file/" + fuidSingle);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             rootMap = (LinkedHashMap<String, Object>) rootMap.get("/app-api/enduserapp/shared-folder");
             final long pageNumber = JavaScriptEngineFactory.toLong(rootMap.get("pageNumber"), 1);
             final long pageCount = JavaScriptEngineFactory.toLong(rootMap.get("pageCount"), 1);
