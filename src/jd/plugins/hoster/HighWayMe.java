@@ -309,6 +309,15 @@ public class HighWayMe extends UseNet {
         jd.plugins.hoster.SimplyPremiumCom.handle503(this.br, responsecode);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            /* 2020-06-03: E.g. cache/serverside download handling/status */
+            final String retry_in_secondsStr = PluginJSonUtils.getJson(br, "retry_in_seconds");
+            if (retry_in_secondsStr != null && retry_in_secondsStr.matches("\\d+")) {
+                String msg = PluginJSonUtils.getJson(br, "for_jd");
+                if (StringUtils.isEmpty(msg)) {
+                    msg = "Cache handling retry";
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, Integer.parseInt(retry_in_secondsStr) * 1000l);
+            }
             mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         try {
