@@ -16,6 +16,7 @@ package org.jdownloader.plugins.components;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -27,13 +28,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -58,6 +52,14 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -217,8 +219,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -271,9 +273,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed e.g. filemia.com </br>
-     * default = false
+     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
@@ -612,19 +612,34 @@ public class YetiShareCore extends antiDDoSForHost {
                         continue;
                     }
                 }
-                checkResponseCodeErrors(dl.getConnection());
-                if (dl.getConnection().isContentDisposition()) {
-                    success = true;
-                    loopLog += " --> " + dl.getConnection().getURL().toString();
-                    break;
+                final URLConnectionAdapter con = dl.getConnection();
+                try {
+                    checkResponseCodeErrors(con);
+                } catch (final PluginException e) {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException ioe) {
+                        throw Exceptions.addSuppressed(e, ioe);
+                    }
+                    throw e;
                 }
-                br.followConnection();
-                /* Get new continue_link for the next run */
-                continue_link = getContinueLink();
-                checkErrors(link, account);
-                if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    logger.info("Wrong captcha");
-                    continue;
+                if (isDownloadableContent(con)) {
+                    success = true;
+                    loopLog += " --> " + con.getURL().toString();
+                    break;
+                } else {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    /* Get new continue_link for the next run */
+                    continue_link = getContinueLink();
+                    checkErrors(link, account);
+                    if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        logger.info("Wrong captcha");
+                        continue;
+                    }
                 }
             }
             logger.info("loopLog: " + loopLog);
@@ -637,17 +652,31 @@ public class YetiShareCore extends antiDDoSForHost {
             checkErrors(link, account);
             checkErrorsLastResort(link, account);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        checkResponseCodeErrors(dl.getConnection());
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
+        final URLConnectionAdapter con = dl.getConnection();
+        link.setProperty(directlinkproperty, con.getURL().toString());
+        try {
+            checkResponseCodeErrors(con);
+        } catch (final PluginException e) {
+            try {
+                br.followConnection(true);
+            } catch (IOException ioe) {
+                throw Exceptions.addSuppressed(e, ioe);
+            }
+            throw e;
+        }
+        if (!isDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (captcha && !success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             checkErrors(link, account);
             checkErrorsLastResort(link, account);
         }
-        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
         dl.startDownload();
     }
 
@@ -969,7 +998,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Very very rare case */
                 logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
-            } /** Limit errorhandling */
+            }/** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
@@ -1099,25 +1128,23 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Handles all kinds of error-responsecodes! */
-    private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
-        if (con == null) {
-            return;
-        }
-        final long responsecode = con.getResponseCode();
-        if (responsecode == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-        } else if (responsecode == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-        } else if (responsecode == 416) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 2 * 60 * 1000l);
-        } else if (responsecode == 429) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 connection limit reached, please contact our support!", 5 * 60 * 1000l);
+    protected void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
+        if (con != null) {
+            final long responsecode = con.getResponseCode();
+            if (responsecode == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (responsecode == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else if (responsecode == 416) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 2 * 60 * 1000l);
+            } else if (responsecode == 429) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            }
         }
     }
 
     /**
-     * @return true = file is offline, false = file is online </br>
-     *         Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
@@ -1180,7 +1207,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     logger.info("Stored directurl lead to 429 | too many connections");
                     valid = true;
                     return dllink;
-                } else if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
+                } else if (!isDownloadableContent(con) || con.getLongContentLength() == -1) {
                     link.setProperty(directlinkproperty, Property.NULL);
                     return null;
                 } else {
@@ -1203,6 +1230,10 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         }
         return null;
+    }
+
+    protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
+        return con != null && con.isOK() && (con.isContentDisposition() || StringUtils.equalsIgnoreCase(con.getContentType(), "application/octet-stream") || !StringUtils.containsIgnoreCase(con.getContentType(), "text") || (con.getCompleteContentLength() >= 1024 * 1024l));
     }
 
     protected String getProtocol() {
@@ -1426,9 +1457,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * 2020-05-14: psp: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
-     * Their API implementation and documentation is SO BAD - I've not seen it working, checked about 15 websites --> We will probably never
-     * be able to add support for it!
+     * 2020-05-14: psp: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br> Their API
+     * implementation and documentation is SO BAD - I've not seen it working, checked about 15 websites --> We will probably never be able
+     * to add support for it!
      */
     protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         return null;
