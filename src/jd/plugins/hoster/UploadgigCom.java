@@ -22,6 +22,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,11 +46,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -147,11 +148,11 @@ public class UploadgigCom extends antiDDoSForHost {
         doFree(downloadLink);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    private void doFree(final DownloadLink link) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             // premium only content
             if (br.containsHTML(">This file can be downloaded by Premium Member only\\.<")) {
@@ -164,7 +165,8 @@ public class UploadgigCom extends antiDDoSForHost {
                     br.setCookie(this.br.getHost(), "firewall", csrf_tester);
                 }
             }
-            final String fid = getFID(downloadLink);
+            final String fid = getFID(link);
+            br.setCookie(br.getHost(), "last_file_code", fid);
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             String postData = "file_id=" + fid + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
             if (csrf_tester != null) {
@@ -179,17 +181,20 @@ public class UploadgigCom extends antiDDoSForHost {
                 /* Usually only happens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
-            if ("0".equals(br2.toString())) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            }
-            int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(br2, "cd");
-            if (waittime_str != null) {
-                wait = Integer.parseInt(waittime_str);
+            final String idStr = PluginJSonUtils.getJson(br2, "id");
+            final String url = PluginJSonUtils.getJson(br2, "sp");
+            final String params = PluginJSonUtils.getJson(br2, "q");
+            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(params) || StringUtils.isEmpty(idStr) || !idStr.matches("\\d+") || StringUtils.isEmpty(waittime_str) || !waittime_str.matches("\\d+")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.sleep(wait * 1001l, downloadLink);
+            /* 2020-06-03: TODO: Check/fix this */
+            final long id = Long.parseLong(waittime_str) - 4;
+            this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
+            final String directurl = url + "id=" + id + "&" + params;
+            this.testLink(directurl, true);
             // they use javascript to determine finallink...
-            getDllink(br2);
+            // getDllink(br2);
         }
         if (dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -214,7 +219,7 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -262,7 +267,7 @@ public class UploadgigCom extends antiDDoSForHost {
         return false;
     }
 
-    private boolean testLink(String dllink, boolean throwException) throws Exception {
+    private boolean testLink(final String dllink, boolean throwException) throws Exception {
         try {
             final Browser br2 = this.br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(br2, this.getDownloadLink(), dllink, resumes, chunks);
@@ -312,7 +317,12 @@ public class UploadgigCom extends antiDDoSForHost {
     private void errorhandlingFree(final Browser br) throws PluginException {
         if ("m".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit for the hour", 1 * 60 * 60 * 1000l);
-        } else if ("rfd".equals(br.toString()) || "fl".equals(br.toString())) {
+        } else if ("0".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        } else if ("fl".equalsIgnoreCase(br.toString())) {
+            throw new AccountRequiredException();
+        } else if ("rfd".equalsIgnoreCase(br.toString())) {
+            /* File exceeded max number of free downloads --> Buy premium */
             throw new AccountRequiredException();
         }
         // "0" and "e" shouldn't happen
