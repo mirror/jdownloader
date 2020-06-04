@@ -18,7 +18,9 @@ package jd.plugins.hoster;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -183,10 +185,11 @@ public class DownsterNet extends antiDDoSForHost {
         if (loginError != null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + loginError);
         }
-        final Long premiumUntil = Long.parseLong(PluginJSonUtils.getJsonValue(br, "premiumUntil"));
-        if (premiumUntil > 0) {
+        final String premiumUntil = PluginJSonUtils.getJsonValue(br, "premiumUntil");
+        final Long premiumUntilTs = TimeFormatter.getMilliSeconds(premiumUntil, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.US);
+        if (premiumUntilTs > 0) {
             // premiumUntil is reported in seconds but we needs milliseconds
-            ac.setValidUntil(premiumUntil * 1000L, br);
+            ac.setValidUntil(premiumUntilTs, br);
             ac.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
         } else {
@@ -217,7 +220,7 @@ public class DownsterNet extends antiDDoSForHost {
             if (status == 510 || status == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
             } else if (status >= 500 || "false".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
-                mhm.putError(account, link, 5 * 60 * 1000l, error);
+                mhm.putError(account, link, 10 * 60 * 1000l, error);
             }
             dllink = PluginJSonUtils.getJsonValue(br, "downloadUrl");
             if (dllink == null) {
@@ -246,7 +249,7 @@ public class DownsterNet extends antiDDoSForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
-            mhm.handleErrorGeneric(account, link, "unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "unknowndlerror", maxRetriesOnDownloadError, 10 * 60 * 1000l);
         }
         try {
             // start the dl
