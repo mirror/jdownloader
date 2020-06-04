@@ -48,7 +48,7 @@ public class ProLeechLink extends antiDDoSForHost {
         this.enablePremium("https://proleech.link/signup");
         /* 2020-05-29: Try to avoid <div class="alert danger"><b>Too many requests! Please try again in a few seconds.</b></div> */
         /* TODO: Check if this is required in API-only mode too! */
-        // this.setStartIntervall(5000l);
+        this.setStartIntervall(5000l);
     }
 
     private static MultiHosterManagement        mhm                                    = new MultiHosterManagement("proleech.link");
