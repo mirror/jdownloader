@@ -8,18 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.ProleechLinkConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +27,18 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.ProleechLinkConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(?:/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
@@ -51,8 +51,8 @@ public class ProLeechLink extends antiDDoSForHost {
     private static MultiHosterManagement        mhm                                    = new MultiHosterManagement("proleech.link");
     /** Contains all filenames of files we attempted to download or downloaded via this account. */
     private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist = new CopyOnWriteArrayList<String>();
-    // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
 
+    // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
     @Override
     public String getAGBLink() {
         return "https://proleech.link/page/terms";
@@ -189,8 +189,8 @@ public class ProLeechLink extends antiDDoSForHost {
         List<String> old_list_of_supported_hosts = null;
         try {
             old_list_of_supported_hosts = account.getAccountInfo().getMultiHostSupport();
-        } catch (final Throwable e) {
-            /* Catcha NPE */
+        } catch (final NullPointerException e) {
+            logger.log(e);
         }
         String traffic_max_dailyStr = null;
         try {
@@ -198,6 +198,7 @@ public class ProLeechLink extends antiDDoSForHost {
             filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite();
             traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
         } catch (final Throwable e) {
+            logger.log(e);
             logger.info("Failed to fetch list of supported hosts from website");
         }
         if (traffic_max_dailyStr != null) {
