@@ -8,6 +8,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.ProleechLinkConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -27,18 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.ProleechLinkConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(?:/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
@@ -51,8 +51,9 @@ public class ProLeechLink extends antiDDoSForHost {
     private static MultiHosterManagement        mhm                                    = new MultiHosterManagement("proleech.link");
     /** Contains all filenames of files we attempted to download or downloaded via this account. */
     private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist = new CopyOnWriteArrayList<String>();
-
     // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
+    private static final String                 API_BASE                               = "https://proleech.link/dl/debrid/deb_api.php";
+
     @Override
     public String getAGBLink() {
         return "https://proleech.link/page/terms";
@@ -61,6 +62,11 @@ public class ProLeechLink extends antiDDoSForHost {
     /** TODO: Add setting to switch between API/website */
     private boolean useAPIOnly() {
         return PluginJsonConfig.get(this.getConfigInterface()).isEnableBetaAPIOnly();
+    }
+
+    private Browser prepBrAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
     }
 
     /**
@@ -165,6 +171,7 @@ public class ProLeechLink extends antiDDoSForHost {
         if (!this.isAPIKey(account.getPass())) {
             this.accountInvalidAPI();
         }
+        prepBrAPI(this.br);
         final AccountInfo ai = new AccountInfo();
         /* Using this request to login is just a workaround! */
         final UrlQuery query = new UrlQuery();
@@ -208,7 +215,7 @@ public class ProLeechLink extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         }
         if (filehosts_premium_onlineArray.isEmpty() && old_list_of_supported_hosts != null && !old_list_of_supported_hosts.isEmpty()) {
-            /* 2020-06-04: Workaround: Keep old list of supported hosts if fetching the list via website e.g. fails because of Cloudflare */
+            /* Fallback - try to re-use old list of supported hosts if available */
             filehosts_premium_onlineArray = old_list_of_supported_hosts;
         }
         ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
@@ -827,6 +834,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     private String getDllinkAPI(final String apiuser, final String apikey, final DownloadLink link, final Account account) throws Exception {
         /* TODO: Check what happens when a user adds a "cloud download" URL in API mode */
+        prepBrAPI(this.br);
         final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
         final UrlQuery query = new UrlQuery();
         query.add("apiusername", Encoding.urlEncode(apiuser));

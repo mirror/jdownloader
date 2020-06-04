@@ -553,9 +553,9 @@ public class Ardmediathek extends PluginForDecrypt {
         if (hls_master.contains("sr_hls_od-vh") && urlpart != null) {
             http_url_format = "http://mediastorage01.sr-online.de/Video/" + urlpart + "_%s.mp4";
         }
-        /* 2020-06-02 */
-        final String pattern_ard = "(?:https?:)?//hlsodswr-vh\\.akamaihd\\.net/i/(.*?/\\d+),[A-Za-z,\\.]+\\.mp4\\.csmil/master\\.m3u8";
-        final String pattern_hr = "//hrardmediathek-vh\\.akamaihd.net/i/(.*?),.+\\.mp4\\.csmil/master\\.m3u8$";
+        /* 2020-06-02: Do NOT yet try to make a generic RegEx for all types of HLS URLs!! */
+        final String pattern_ard = ".*//hlsodswr-vh\\.akamaihd\\.net/i/(.*?),.*?\\.mp4\\.csmil/master\\.m3u8";
+        final String pattern_hr = ".*//hrardmediathek-vh\\.akamaihd.net/i/(.*?),.+\\.mp4\\.csmil/master\\.m3u8$";
         /* Daserste */
         if (hls_master.contains("dasersteuni-vh.akamaihd.net")) {
             if (urlpart2 != null) {
@@ -585,6 +585,7 @@ public class Ardmediathek extends PluginForDecrypt {
             http_url_format = "http://hrardmediathek-a.akamaihd.net/" + urlpart + "%skbit.mp4";
         } else {
             /* Unsupported URL */
+            logger.warning("Warning: Unsupported HLS pattern, cannot create HTTP URL!");
         }
         return http_url_format;
     }
@@ -597,6 +598,7 @@ public class Ardmediathek extends PluginForDecrypt {
         if (ardDocumentID != null) {
             requiresOldContentIDHandling = true;
             this.title = ardDocumentID;
+            this.contentID = ardDocumentID;
         } else {
             requiresOldContentIDHandling = false;
             String ardBase64;
@@ -642,6 +644,10 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             this.title = showname + " - " + ardtitle;
             this.date_timestamp = getDateMilliseconds(broadcastedOn);
+            if (ardDocumentID != null) {
+                /* Required for linkid / dupe check */
+                this.contentID = ardDocumentID;
+            }
         }
         if (requiresOldContentIDHandling) {
             if (StringUtils.isEmpty(ardDocumentID)) {
@@ -1176,11 +1182,12 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         link.setFinalFileName(MediathekHelper.getMediathekFilename(link, data, true, true));
         link.setContentUrl(this.parameter);
-        final String itemID = contentID;
-        if (itemID == null) {
+        if (this.contentID == null) {
             logger.log(new Exception("FixMe!"));
+        } else {
+            /* Needed for linkid / dupe check! */
+            link.setProperty("itemId", this.contentID);
         }
-        link.setProperty("itemId", itemID);
         if (filesize > 0) {
             link.setDownloadSize(filesize);
             link.setAvailable(true);
