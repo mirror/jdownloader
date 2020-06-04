@@ -557,6 +557,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         if (!StringUtils.isEmpty(description)) {
             dl.setComment(description);
+            /* For custom packagizer filenames */
+            dl.setProperty("description", orderid);
         }
         if (!StringUtils.isEmpty(orderid)) {
             /* For custom packagizer filenames */
