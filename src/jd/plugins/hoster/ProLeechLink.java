@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -45,7 +47,8 @@ public class ProLeechLink extends antiDDoSForHost {
         super(wrapper);
         this.enablePremium("https://proleech.link/signup");
         /* 2020-05-29: Try to avoid <div class="alert danger"><b>Too many requests! Please try again in a few seconds.</b></div> */
-        this.setStartIntervall(5000l);
+        /* TODO: Check if this is required in API-only mode too! */
+        // this.setStartIntervall(5000l);
     }
 
     private static MultiHosterManagement        mhm                                    = new MultiHosterManagement("proleech.link");
@@ -173,25 +176,6 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         prepBrAPI(this.br);
         final AccountInfo ai = new AccountInfo();
-        /* Using this request to login is just a workaround! */
-        final UrlQuery query = new UrlQuery();
-        query.add("apiusername", Encoding.urlEncode(account.getUser()));
-        query.add("apikey", Encoding.urlEncode(account.getPass()));
-        query.add("link", "null");
-        /* TODO: Add errorhandling, add API only handling once it is serverside possible */
-        this.getPage("https://" + this.getHost() + "/dl/debrid/deb_api.php?" + query.toString());
-        /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
-        final String errorcodeStr = PluginJSonUtils.getJson(br, "error");
-        // String errorMsg = PluginJSonUtils.getJson(br, "message");
-        if (!errorcodeStr.equals("1")) {
-            accountInvalidAPI();
-        }
-        /* 2020-06-04: Accept all accounts as premium for now */
-        ai.setStatus("Premium API BETA mode active");
-        /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
-        account.setType(AccountType.PREMIUM);
-        /* Grab premium hosts from WEBSITE */
-        /* TODO: Add API call for this once available */
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         List<String> old_list_of_supported_hosts = null;
         try {
@@ -200,16 +184,81 @@ public class ProLeechLink extends antiDDoSForHost {
             logger.log(e);
         }
         String traffic_max_dailyStr = null;
-        try {
-            getPage("/page/hostlist");
-            filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite();
-            traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
-        } catch (final Throwable e) {
-            logger.log(e);
-            logger.info("Failed to fetch list of supported hosts from website");
+        long trafficleft = -1;
+        final boolean useLoginWorkaround = false;
+        if (useLoginWorkaround) {
+            final UrlQuery query = new UrlQuery();
+            query.add("apiusername", Encoding.urlEncode(account.getUser()));
+            query.add("apikey", Encoding.urlEncode(account.getPass()));
+            query.add("link", "null");
+            this.getPage(API_BASE + "?" + query.toString());
+            /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
+            final String errorcodeStr = PluginJSonUtils.getJson(br, "error");
+            if (!errorcodeStr.equals("1")) {
+                accountInvalidAPI();
+            }
+            /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
+            account.setType(AccountType.PREMIUM);
+            /* Get list of supported hosts from website */
+            try {
+                getPage("/page/hostlist");
+                filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite();
+                traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("Failed to fetch list of supported hosts from website");
+            }
+        } else {
+            final UrlQuery query = new UrlQuery();
+            query.add("apiusername", Encoding.urlEncode(account.getUser()));
+            query.add("apikey", Encoding.urlEncode(account.getPass()));
+            query.add("account", "");
+            this.getPage(API_BASE + "?" + query.toString());
+            this.checkErrorsAPI(null, account);
+            ai.setStatus("Premium API BETA mode active");
+            final String premiumStatus = PluginJSonUtils.getJson(br, "premium");
+            String expiredate = PluginJSonUtils.getJson(br, "subscriptions_date");
+            if ("true".equalsIgnoreCase(premiumStatus) || "yes".equalsIgnoreCase(premiumStatus)) {
+                account.setType(AccountType.PREMIUM);
+                /* TODO: Use this once API mode is "not in BETA" anymore. */
+                // ai.setStatus("Premium User");
+                if (!StringUtils.isEmpty(expiredate) && expiredate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                    /* 2020-06-04: Should expire at the end of the last day */
+                    expiredate += " 23:59:59";
+                    final long aLittleBitLess = 60000l;
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH) - aLittleBitLess, br);
+                }
+            } else {
+                /* 2020-06-04: Only premium users can see their apikey so if this happens, we probably have an expired premium account. */
+                account.setType(AccountType.FREE);
+                /* TODO: Use this once API mode is "not in BETA" anymore. */
+                // ai.setStatus("Free User");
+                /* Free account downloads are impossible via API */
+                trafficleft = 0;
+            }
+            /* 2020-06-04: Static value taken from: https://proleech.link/page/hostlist */
+            traffic_max_dailyStr = "80 GB";
         }
+        this.getPage(API_BASE + "?hosts");
+        final String[] supportedhostsAPI = JSonStorage.restoreFromString(br.toString(), TypeRef.STRING_ARRAY);
+        for (final String filehost_premium_online : supportedhostsAPI) {
+            if (filehost_premium_online.contains("/")) {
+                /* 2019-11-11: WTF They sometimes display multiple domains of one filehost in one entry, separated by ' / ' */
+                logger.info("Special case: Multiple domains of one filehost given: " + filehost_premium_online);
+                final String[] filehost_domains = filehost_premium_online.split("/");
+                for (String filehost_domain : filehost_domains) {
+                    filehost_domain = filehost_domain.trim();
+                    filehosts_premium_onlineArray.add(filehost_domain);
+                }
+            } else {
+                filehosts_premium_onlineArray.add(filehost_premium_online);
+            }
+        }
+        /* Grab premium hosts from WEBSITE */
         if (traffic_max_dailyStr != null) {
-            ai.setTrafficLeft(traffic_max_dailyStr);
+            if (trafficleft == -1) {
+                ai.setTrafficLeft(traffic_max_dailyStr);
+            }
             ai.setTrafficMax(traffic_max_dailyStr);
         } else {
             ai.setUnlimitedTraffic();
@@ -841,7 +890,7 @@ public class ProLeechLink extends antiDDoSForHost {
         query.add("apikey", Encoding.urlEncode(apikey));
         query.add("link", Encoding.urlEncode(url));
         /* TODO: Add errorhandling, add API only handling once it is serverside possible */
-        this.getPage("https://" + this.getHost() + "/dl/debrid/deb_api.php?" + query.toString());
+        this.getPage(API_BASE + "?" + query.toString());
         checkErrorsAPI(link, account);
         /*
          * 2020-06-04: E.g. success response: {"error":0,"message":"OK","hoster":"http:CENSORED","link":"http:CENSORED","size":"10.15 MB"}
