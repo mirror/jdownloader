@@ -118,7 +118,8 @@ public class NicoVideoJp extends PluginForHost {
             loggedin = true;
         }
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getURL().contains("account.nicovideo")) {
+        /* 2020-06-04: Redirect to login page = account required, response 403 = private video */
+        if (br.getURL().contains("account.nicovideo") || br.getHttpConnection().getResponseCode() == 403) {
             /* Account required */
             link.setName(fid);
             if (account != null) {
