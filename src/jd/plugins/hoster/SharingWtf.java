@@ -140,8 +140,7 @@ public class SharingWtf extends YetiShareCore {
     @Override
     protected String getContinueLink() throws Exception {
         /* 2020-01-18: Special */
-        /* Their html contains a commented-out line of code which is what our template code would normally pick up --> Endless loop */
-        String continue_link = br.getRegex("\\$\\(\\'\\.download-timer\\'\\)\\.html.+\\$\\(\\'\\.download-timer\\'\\)\\.html\\(\"[^\\)]+\\'(https://[^\\']+)").getMatch(0);
+        String continue_link = null;
         if (continue_link == null) {
             /* 2020-02-17: For premium mode */
             continue_link = br.getRegex("(https?://transfer[a-z0-9]*?\\.[^/]+/jdb\\?url=[^\"]+)").getMatch(0);
@@ -152,6 +151,21 @@ public class SharingWtf extends YetiShareCore {
                     continue_link = urls[urls.length - 1];
                 }
             }
+        }
+        /* Free mode */
+        if (continue_link == null) {
+            /* Special: Find downloadurl first, then continue_url */
+            continue_link = this.getDllink(br);
+            if (continue_link != null) {
+                /* 2020-06-04: Important! */
+                continue_link = continue_link.replace("/jdb", "/");
+            }
+        }
+        if (continue_link == null) {
+            /*
+             * Their html contains a commented-out line of code which is what our template code would normally pick up --> Endless loop
+             */
+            continue_link = br.getRegex("\\$\\(\\'\\.download-timer\\'\\)\\.html.+\\$\\(\\'\\.download-timer\\'\\)\\.html\\(\"[^\\)]+\\'(https://[^\\']+)").getMatch(0);
         }
         if (continue_link == null) {
             continue_link = super.getContinueLink();
@@ -183,8 +197,10 @@ public class SharingWtf extends YetiShareCore {
 
     @Override
     public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        /* 2020-02-24: Hack/Workaround */
-        if (link.getName().contains(".mp3") || link.getName().contains(".m4a") || link.getName().contains(".mp4") | link.getName().contains(".mkv")) {
+        /* 2020-02-24: Hack/Workaround --> Can skip waittimes but will eventually download items in lower quality. */
+        /* 2020-06-04: Disabled for now as normal download has been fixed! */
+        final boolean attemptEmbedWorkaround = false;
+        if (attemptEmbedWorkaround && (link.getName().contains(".mp3") || link.getName().contains(".m4a") || link.getName().contains(".mp4") | link.getName().contains(".mkv"))) {
             logger.info("Attempting embed workaround");
             final String fuid = getFUIDFromURL(link);
             final Browser brc = br.cloneBrowser();
