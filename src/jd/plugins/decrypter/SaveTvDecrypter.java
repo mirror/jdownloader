@@ -26,6 +26,11 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -43,11 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.SaveTv;
-
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:Horizontal)?VideoArchive\\.cfm" })
 public class SaveTvDecrypter extends PluginForDecrypt {
@@ -123,6 +123,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         this.br.setLoadLimit(this.br.getLoadLimit() * 3);
         if (!cfg.getBooleanProperty(CRAWLER_ACTIVATE, false)) {
             logger.info("save.tv: Decrypting save.tv archives is disabled, doing nothing...");
+            decryptedLinks.add(this.createOfflinelink(parameter, "Archiv_Crawler_in_Plugin_Einstellungen_deaktiviert", "Archiv_Crawler_in_Plugin_Einstellungen_deaktiviert"));
             return decryptedLinks;
         }
         try {
@@ -130,6 +131,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             totalAccountsNum = all_stv_accounts != null ? all_stv_accounts.size() : 0;
             if (totalAccountsNum == 0) {
                 logger.info("At least one account needed to use this crawler");
+                decryptedLinks.add(this.createOfflinelink(parameter, "Account_fuer_save_tv_benoetigt", "Account_fuer_save_tv_benoetigt"));
                 return decryptedLinks;
             }
             for (final Account stvacc : all_stv_accounts) {
