@@ -8,21 +8,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.ProleechLinkConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -34,13 +37,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(?:/.*)?" })
 public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://proleech.link/signup");
-        setConfigElements();
         /* 2020-05-29: Try to avoid <div class="alert danger"><b>Too many requests! Please try again in a few seconds.</b></div> */
         this.setStartIntervall(5000l);
     }
@@ -55,6 +58,19 @@ public class ProLeechLink extends antiDDoSForHost {
         return "https://proleech.link/page/terms";
     }
 
+    /** TODO: Add setting to switch between API/website */
+    private boolean useAPIOnly() {
+        return PluginJsonConfig.get(this.getConfigInterface()).isEnableBetaAPIOnly();
+    }
+
+    /**
+     * Allow to try to use API to generate downloadlinks in WEBSITE mode if accountcheck finds api username and apikey? Handling will
+     * fallback to website on failure!
+     */
+    private boolean tryAPIForDownloadingInWebsiteMode() {
+        return true;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         final String fileName = new Regex(parameter.getPluginPatternMatcher(), "download/[a-zA-Z0-9]+/([^/\\?]+)").getMatch(0);
@@ -65,13 +81,20 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (this.useAPIOnly()) {
+            return this.fetchAccountInfoAPI(account);
+        } else {
+            return fetchAccountInfoWebsite(account);
+        }
+    }
+
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, ai, true);
+        loginWebsite(account, ai, true);
         /* Contains all filehosts available for free account users regardless of their status */
         String[] filehosts_free = null;
         /* Contains all filehosts available for premium users and listed as online/working */
-        String[] filehosts_premium_online = null;
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         /* Contains all filehosts available for premium users and listed as online/working */
         List<String> filehosts_free_onlineArray = new ArrayList<String>();
@@ -87,26 +110,8 @@ public class ProLeechLink extends antiDDoSForHost {
         {
             /* Grab premium hosts */
             getPage("/page/hostlist");
-            filehosts_premium_online = br.getRegex("<td>\\s*\\d+\\s*</td>\\s*<td>\\s*<img[^<]+/?>\\s*([^<]*?)\\s*</td>\\s*<td>\\s*<span\\s*class\\s*=\\s*\"label\\s*label-success\"\\s*>\\s*Online").getColumn(0);
-            if (filehosts_premium_online == null || filehosts_premium_online.length == 0) {
-                logger.warning("Failed to find list of supported hosts");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (final String filehost_premium_online : filehosts_premium_online) {
-                if (filehost_premium_online.contains("/")) {
-                    /* 2019-11-11: WTF They sometimes display multiple domains of one filehost in one entry, separated by ' / ' */
-                    logger.info("Special case: Multiple domains of one filehost given: " + filehost_premium_online);
-                    final String[] filehost_domains = filehost_premium_online.split("/");
-                    for (String filehost_domain : filehost_domains) {
-                        filehost_domain = filehost_domain.trim();
-                        filehosts_premium_onlineArray.add(filehost_domain);
-                    }
-                } else {
-                    filehosts_premium_onlineArray.add(filehost_premium_online);
-                }
-            }
-            /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
-            traffic_max_dailyStr = br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
+            filehosts_premium_onlineArray = this.regexPremiumHostsOnlineWebsite();
+            traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
         }
         /* Set supported hosts depending on account type */
         if (account.getType() == AccountType.PREMIUM && !ai.isExpired()) {
@@ -133,7 +138,108 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         /* Clear download history on every accountcheck (if selected by user) */
         clearDownloadHistory(account, true);
+        /* 2020-06-04: Workaround: Save apikey to try to use API for downloading */
+        this.getPage("/jdownloader");
+        final String apiuser = br.getRegex("<h4>API Username:</h4>\\s*<p>([^<>\"]+)</p>").getMatch(0);
+        final String apikey = br.getRegex("class=\"apipass\"[^>]*>([a-z0-9]+)<").getMatch(0);
+        String accstatus = ai.getStatus();
+        if (accstatus == null) {
+            accstatus = "";
+        }
+        if (apiuser != null && this.isAPIKey(apikey)) {
+            logger.info(String.format("Successfully found apikey and user: %s:%s", apiuser, apikey));
+            account.setProperty("apikey", apikey);
+            account.setProperty("apiuser", apiuser);
+            accstatus += " (Using API for download requests)";
+        } else {
+            logger.info("Failed to find apikey");
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                accstatus += " (Using Website only)";
+            }
+        }
+        ai.setStatus(accstatus);
         return ai;
+    }
+
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        if (!this.isAPIKey(account.getPass())) {
+            this.accountInvalidAPI();
+        }
+        final AccountInfo ai = new AccountInfo();
+        /* Using this request to login is just a workaround! */
+        final UrlQuery query = new UrlQuery();
+        query.add("apiusername", Encoding.urlEncode(account.getUser()));
+        query.add("apikey", Encoding.urlEncode(account.getPass()));
+        query.add("link", "null");
+        /* TODO: Add errorhandling, add API only handling once it is serverside possible */
+        this.getPage("https://" + this.getHost() + "/dl/debrid/deb_api.php?" + query.toString());
+        /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
+        final String errorcodeStr = PluginJSonUtils.getJson(br, "error");
+        // String errorMsg = PluginJSonUtils.getJson(br, "message");
+        if (!errorcodeStr.equals("1")) {
+            accountInvalidAPI();
+        }
+        /* 2020-06-04: Accept all accounts as premium for now */
+        ai.setStatus("Premium API BETA mode active");
+        /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
+        account.setType(AccountType.PREMIUM);
+        /* Grab premium hosts from WEBSITE */
+        /* TODO: Add API call for this once available */
+        List<String> filehosts_premium_onlineArray = new ArrayList<String>();
+        List<String> old_list_of_supported_hosts = null;
+        try {
+            old_list_of_supported_hosts = account.getAccountInfo().getMultiHostSupport();
+        } catch (final Throwable e) {
+            /* Catcha NPE */
+        }
+        String traffic_max_dailyStr = null;
+        try {
+            getPage("/page/hostlist");
+            filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite();
+            traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
+        } catch (final Throwable e) {
+            logger.info("Failed to fetch list of supported hosts from website");
+        }
+        if (traffic_max_dailyStr != null) {
+            ai.setTrafficLeft(traffic_max_dailyStr);
+            ai.setTrafficMax(traffic_max_dailyStr);
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        if (filehosts_premium_onlineArray.isEmpty() && old_list_of_supported_hosts != null && !old_list_of_supported_hosts.isEmpty()) {
+            /* 2020-06-04: Workaround: Keep old list of supported hosts if fetching the list via website e.g. fails because of Cloudflare */
+            filehosts_premium_onlineArray = old_list_of_supported_hosts;
+        }
+        ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
+        return ai;
+    }
+
+    private List<String> regexPremiumHostsOnlineWebsite() throws PluginException {
+        List<String> filehosts_premium_onlineArray = new ArrayList<String>();
+        final String[] filehosts_premium_online = br.getRegex("<td>\\s*\\d+\\s*</td>\\s*<td>\\s*<img[^<]+/?>\\s*([^<]*?)\\s*</td>\\s*<td>\\s*<span\\s*class\\s*=\\s*\"label\\s*label-success\"\\s*>\\s*Online").getColumn(0);
+        if (filehosts_premium_online == null || filehosts_premium_online.length == 0) {
+            logger.warning("Failed to find list of supported hosts");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (final String filehost_premium_online : filehosts_premium_online) {
+            if (filehost_premium_online.contains("/")) {
+                /* 2019-11-11: WTF They sometimes display multiple domains of one filehost in one entry, separated by ' / ' */
+                logger.info("Special case: Multiple domains of one filehost given: " + filehost_premium_online);
+                final String[] filehost_domains = filehost_premium_online.split("/");
+                for (String filehost_domain : filehost_domains) {
+                    filehost_domain = filehost_domain.trim();
+                    filehosts_premium_onlineArray.add(filehost_domain);
+                }
+            } else {
+                filehosts_premium_onlineArray.add(filehost_premium_online);
+            }
+        }
+        return filehosts_premium_onlineArray;
+    }
+
+    /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
+    private String regexMaxDailyTrafficWebsite() {
+        return br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
     }
 
     private boolean isLoggedin(final Browser br) throws PluginException {
@@ -158,7 +264,7 @@ public class ProLeechLink extends antiDDoSForHost {
      *            false = Set stored cookies and trust them if they're not older than 300000l
      *
      */
-    private boolean login(Account account, AccountInfo ai, final boolean validateCookies) throws Exception {
+    private boolean loginWebsite(final Account account, final AccountInfo ai, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 final Cookies cookies = account.loadCookies("");
@@ -346,45 +452,73 @@ public class ProLeechLink extends antiDDoSForHost {
         // boolean found_downloadurl_in_cloud_downloads = false;
         if (dllink == null) {
             logger.info("Trying to generate/find final downloadurl");
-            /* First, try to get downloadlinks for previously started cloud-downloads as this does not create new directurls */
-            /* TODO: Try to grab previously generated direct-downloadurls for non-forced-cloud-downloads too */
-            dllink = getDllinkCloud(link, account);
-            if (dllink != null) {
-                // found_downloadurl_in_cloud_downloads = true;
+            if (this.useAPIOnly()) {
+                dllink = this.getDllinkAPI(account.getUser(), account.getPass(), link, account);
+                if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
+                    mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50);
+                }
             } else {
-                final long userDefinedWaitHours = this.getPluginConfig().getLongProperty("DOWNLOADLINK_GENERATION_LIMIT", 0);
-                final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
-                if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
-                    final long waittime_until_next_downloadlink_generation_is_allowed = timestamp_next_downloadlink_generation_allowed - System.currentTimeMillis();
-                    final String waittime_until_next_downloadlink_generation_is_allowed_Str = TimeFormatter.formatSeconds(waittime_until_next_downloadlink_generation_is_allowed / 1000, 0);
-                    logger.info("Next downloadlink generation is allowed in: " + waittime_until_next_downloadlink_generation_is_allowed_Str);
-                    /*
-                     * 2019-08-14: Set a small waittime here so links can be tried earlier again - so not set the long waittime
-                     * waittime_until_next_downloadlink_generation_is_allowed!
-                     */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
-                }
-                /* Login - first try without validating cookies! */
-                final boolean validatedCookies = login(account, null, false);
-                final PostRequest post = new PostRequest("https://" + this.getHost() + "/dl/debrid/deb_process.php");
-                post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-                post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-                post.put("urllist", URLEncoder.encode(url, "UTF-8"));
-                final String pass = link.getDownloadPassword();
-                if (StringUtils.isEmpty(pass)) {
-                    post.put("pass", "");
+                /* First, try to get downloadlinks for previously started cloud-downloads as this does not create new directurls */
+                /* TODO: Try to grab previously generated direct-downloadurls for non-forced-cloud-downloads too */
+                dllink = getDllinkWebsiteCloud(link, account);
+                if (dllink != null) {
+                    // found_downloadurl_in_cloud_downloads = true;
                 } else {
-                    post.put("pass", URLEncoder.encode(pass, "UTF-8"));
-                }
-                post.put("boxlinklist", "0");
-                sendRequest(post);
-                dllink = getDllink(link, account);
-                if (StringUtils.isEmpty(dllink) && !validatedCookies && !this.isLoggedin(this.br)) {
-                    /* Bad login - try again with fresh / validated cookies! */
-                    login(account, null, true);
-                    sendRequest(post);
-                    dllink = getDllink(link, account);
+                    final long userDefinedWaitHours = PluginJsonConfig.get(this.getConfigInterface()).getAllowDownloadlinkGenerationOnlyEveryXHours();
+                    final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
+                    if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
+                        final long waittime_until_next_downloadlink_generation_is_allowed = timestamp_next_downloadlink_generation_allowed - System.currentTimeMillis();
+                        final String waittime_until_next_downloadlink_generation_is_allowed_Str = TimeFormatter.formatSeconds(waittime_until_next_downloadlink_generation_is_allowed / 1000, 0);
+                        logger.info("Next downloadlink generation is allowed in: " + waittime_until_next_downloadlink_generation_is_allowed_Str);
+                        /*
+                         * 2019-08-14: Set a small waittime here so links can be tried earlier again - so not set the long waittime
+                         * waittime_until_next_downloadlink_generation_is_allowed!
+                         */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
+                    }
+                    logger.info("Generating fresh downloadurl");
+                    final String apikey = account.getStringProperty("apikey");
+                    final String apiuser = account.getStringProperty("apiuser");
+                    boolean triedAPI = false;
+                    if (tryAPIForDownloadingInWebsiteMode() && apiuser != null && apikey != null) {
+                        logger.info("Trying to use API in website for downloading mode");
+                        triedAPI = true;
+                        try {
+                            dllink = getDllinkAPI(apiuser, apikey, link, account);
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                            logger.info("API in website mode failed");
+                        }
+                    }
+                    if (StringUtils.isEmpty(dllink)) {
+                        if (triedAPI) {
+                            logger.info("Fallback to website");
+                        } else {
+                            logger.info("Using website");
+                        }
+                        final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+                        /* Login - first try without validating cookies! */
+                        final boolean validatedCookies = loginWebsite(account, null, false);
+                        final PostRequest post = new PostRequest("https://" + this.getHost() + "/dl/debrid/deb_process.php");
+                        post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+                        post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        post.put("urllist", URLEncoder.encode(url, "UTF-8"));
+                        final String pass = link.getDownloadPassword();
+                        if (StringUtils.isEmpty(pass)) {
+                            post.put("pass", "");
+                        } else {
+                            post.put("pass", URLEncoder.encode(pass, "UTF-8"));
+                        }
+                        post.put("boxlinklist", "0");
+                        sendRequest(post);
+                        dllink = getDllinkWebsite(link, account);
+                        if (StringUtils.isEmpty(dllink) && !validatedCookies && !this.isLoggedin(this.br)) {
+                            /* Bad login - try again with fresh / validated cookies! */
+                            loginWebsite(account, null, true);
+                            sendRequest(post);
+                            dllink = getDllinkWebsite(link, account);
+                        }
+                    }
                 }
             }
             link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
@@ -420,8 +554,12 @@ public class ProLeechLink extends antiDDoSForHost {
         synchronized (account) {
             try {
                 /* Only clear download history if user wants it AND if we're logged-in! */
-                if (this.getPluginConfig().getBooleanProperty("CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", false) && isLoggedIN) {
-                    logger.info("Trying to delete download history");
+                if (PluginJsonConfig.get(this.getConfigInterface()).isClearDownloadHistoryAfterEachDownload()) {
+                    logger.info("Trying to clear download history");
+                    if (this.useAPIOnly()) {
+                        logger.info("Cannot clear download history in API only mode!");
+                        return;
+                    }
                     /*
                      * Do not use Cloudflare browser here - we do not want to get any captchas here! Rather fail than having to enter a
                      * captcha!
@@ -543,7 +681,7 @@ public class ProLeechLink extends antiDDoSForHost {
         return br.getRegex("<tr>\\s*<td><input[^>]*name=\"checkbox\\[\\]\"[^>]+>.*?</tr>").getColumn(-1);
     }
 
-    private String getDllink(final DownloadLink link, final Account account) throws Exception {
+    private String getDllinkWebsite(final DownloadLink link, final Account account) throws Exception {
         String dllink = br.getRegex("class=\"[^\"]*success\".*<a href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
         /*
          * We can only identify our cloud-download-item by filename so let's get the filename they display as it may differ from the
@@ -561,7 +699,7 @@ public class ProLeechLink extends antiDDoSForHost {
             /* Mark as cloud download so that getDllinkCloud can be used! */
             link.setProperty("is_cloud_download", true);
             try {
-                dllink = getDllinkCloud(link, account);
+                dllink = getDllinkWebsiteCloud(link, account);
             } catch (final PluginException e) {
             }
             if (dllink == null) {
@@ -613,7 +751,7 @@ public class ProLeechLink extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    private String getDllinkCloud(final DownloadLink link, final Account account) throws Exception {
+    private String getDllinkWebsiteCloud(final DownloadLink link, final Account account) throws Exception {
         if (link == null) {
             return null;
         }
@@ -628,7 +766,7 @@ public class ProLeechLink extends antiDDoSForHost {
             getPage("https://" + this.getHost() + "/mydownloads");
             if (!this.isLoggedin(this.br)) {
                 /* Ensure that we're logged-in */
-                login(account, null, true);
+                loginWebsite(account, null, true);
                 getPage("/mydownloads");
             }
             final String errortext_basic = "Proleech.link Cloud-downloader:";
@@ -686,6 +824,72 @@ public class ProLeechLink extends antiDDoSForHost {
         return null;
     }
 
+    private String getDllinkAPI(final String apiuser, final String apikey, final DownloadLink link, final Account account) throws Exception {
+        /* TODO: Check what happens when a user adds a "cloud download" URL in API mode */
+        final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+        final UrlQuery query = new UrlQuery();
+        query.add("apiusername", Encoding.urlEncode(apiuser));
+        query.add("apikey", Encoding.urlEncode(apikey));
+        query.add("link", Encoding.urlEncode(url));
+        /* TODO: Add errorhandling, add API only handling once it is serverside possible */
+        this.getPage("https://" + this.getHost() + "/dl/debrid/deb_api.php?" + query.toString());
+        checkErrorsAPI(link, account);
+        /*
+         * 2020-06-04: E.g. success response: {"error":0,"message":"OK","hoster":"http:CENSORED","link":"http:CENSORED","size":"10.15 MB"}
+         */
+        return PluginJSonUtils.getJson(br, "link");
+    }
+
+    private void checkErrorsAPI(final DownloadLink link, final Account account) throws Exception {
+        final String errorcodeStr = PluginJSonUtils.getJson(br, "error");
+        String errorMsg = PluginJSonUtils.getJson(br, "message");
+        if (StringUtils.isEmpty(errorMsg)) {
+            errorMsg = "Unknown error";
+        }
+        if (errorcodeStr != null && errorcodeStr.matches("-?\\d+")) {
+            final int errorcode = Integer.parseInt(errorcodeStr);
+            switch (errorcode) {
+            case -8:
+                /* {"error":-8,"message":"API key is invalid."} */
+                apikeyInvalidAPI();
+            case -1:
+                /* {"error":-1,"message":"API key is invalid."} */
+                accountInvalidAPI();
+            case 1:
+                /* 2020-06-04: Rare error I guess? */
+                /* {"error":1,"message":"Link not supported or empty link."} */
+                mhm.handleErrorGeneric(account, link, errorMsg, 5);
+            default:
+                /* TODO: Add handling for unknown errors */
+                logger.info("Unknown error happened: " + errorMsg);
+                break;
+            }
+        }
+    }
+
+    private boolean isAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        }
+        return str.matches("[a-z0-9]{16,}");
+    }
+
+    private void accountInvalidAPI() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Username/API Key ungültig!\r\n Siehe proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Username/API Key invalid!\r\n See proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    private void apikeyInvalidAPI() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API API Key ungültig!\r\n Siehe proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Key invalid!\r\n See proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
     private boolean isForcedCloudDownload(final DownloadLink link) {
         return link.getBooleanProperty("is_cloud_download", false);
     }
@@ -706,7 +910,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, null, true);
+        loginWebsite(account, null, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         final boolean isOkay = isDownloadConnection(dl.getConnection());
         if (!isOkay) {
@@ -724,10 +928,9 @@ public class ProLeechLink extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private void setConfigElements() {
-        /* Crawler settings */
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "DOWNLOADLINK_GENERATION_LIMIT", "Allow new downloadlink generation every X hours (default = 0 = unlimited/disabled)\r\nThis can save traffic but this can also slow down the download process", 0, 72, 1).setDefaultValue(0));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "CLEAR_DOWNLOAD_HISTORY_AFTER_EACH_SUCCESSFUL_DOWNLOAD_AND_ON_ACCOUNTCHECK", "Delete download history after every successful download and on every account check (all successfully downloaded entries & all older than 24 hours)?").setDefaultValue(false));
+    @Override
+    public Class<? extends ProleechLinkConfig> getConfigInterface() {
+        return ProleechLinkConfig.class;
     }
 
     @Override
