@@ -27,6 +27,16 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,16 +62,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|archive/VideoArchiveStreaming|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[0-9])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
@@ -1074,10 +1074,7 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialogCrawler();
             checkFeatureDialogNew();
         }
-        final AvailableStatus status = requestFileInformation(link);
-        if (status == AvailableStatus.FALSE) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        requestFileInformation(link);
         setConstants(account, link);
         /* Check whether content has been recorded already or not! */
         final long runtime_end = link.getLongProperty(PROPERTY_originaldate_end, System.currentTimeMillis() + 1);
