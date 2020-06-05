@@ -373,6 +373,7 @@ public class VKontakteRu extends PluginForDecrypt {
             if (e.getMessage() != null) {
                 if (e.getMessage().equals(EXCEPTION_ACCOUNT_REQUIRED)) {
                     logger.info("Existing account is invalid or no account available, cannot process link: " + CRYPTEDLINK_FUNCTIONAL);
+                    decryptedLinks.add(this.createOfflinelink(this.CRYPTEDLINK_ORIGINAL, "Account_Required", "Account_Required"));
                     return decryptedLinks;
                 } else if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
                     logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
@@ -709,7 +710,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             final String author = PluginJSonUtils.getJsonValue(br, "md_author");
-            filename = PluginJSonUtils.getJsonValue(br, "md_title");
+            /* 2020-06-05: Do not use PluginJSonUtils here! */
+            // filename = PluginJSonUtils.getJsonValue(br, "md_title");
+            filename = br.getRegex("\"md_title\":\"([^\"]+)\"").getMatch(0);
             if (filename == null) {
                 if (author != null) {
                     filename = author + "_" + oid_and_id;
@@ -1925,8 +1928,18 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         /* Videos */
         if (grabVideo) {
-            final String[] video_ids = new Regex(html, "showVideo\\('((?:-)?\\d+_\\d+)'").getColumn(0);
-            for (final String videoContentStr : video_ids) {
+            final String[] videoHTMLs = br.getRegex("showVideo\\(([^\\)]+)\\)").getColumn(0);
+            for (String videoHTML : videoHTMLs) {
+                if (Encoding.isHtmlEntityCoded(videoHTML)) {
+                    videoHTML = Encoding.htmlDecode(videoHTML);
+                }
+                videoHTML = videoHTML.replace("\"", "");
+                videoHTML = videoHTML.replace("'", "");
+                final String videoContentStr = new Regex(videoHTML, "^((?:-)?\\d+_\\d+)").getMatch(0);
+                if (videoContentStr == null) {
+                    /* Skip invalid items */
+                    continue;
+                }
                 if (!global_dupes.add(videoContentStr)) {
                     /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */
                     logger.info("Skipping dupe: ");
