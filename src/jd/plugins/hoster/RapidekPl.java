@@ -17,11 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -38,18 +38,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidek.pl" }, urls = { "" })
 public class RapidekPl extends PluginForHost {
-    private static final String  WEBSITE_BASE                 = "https://rapidek.pl";
-    private static final boolean account_PREMIUM_resume       = true;
+    private static final String          API_BASE                     = "https://rapidek.pl/api";
+    private static MultiHosterManagement mhm                          = new MultiHosterManagement("rapidek.pl");
+    private static final boolean         account_PREMIUM_resume       = true;
     /** 2020-03-21: phg: In my tests, it is OK for the chunkload with the value of 5 */
-    private static final int     account_PREMIUM_maxchunks    = 0;
-    private static final int     account_PREMIUM_maxdownloads = -1;
-    private static final boolean account_FREE_resume          = true;
-    private static final int     account_FREE_maxchunks       = 1;
-    private static final int     account_FREE_maxdownloads    = 1;
+    private static final int             account_PREMIUM_maxchunks    = 0;
+    private static final int             account_PREMIUM_maxdownloads = -1;
 
     @SuppressWarnings("deprecation")
     public RapidekPl(PluginWrapper wrapper) {
@@ -62,8 +61,7 @@ public class RapidekPl extends PluginForHost {
         return "https://rapidek.pl/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
@@ -91,38 +89,31 @@ public class RapidekPl extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        prepBR(this.br);
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
-            this.loginWebsite(account);
-            br.postPageRaw(WEBSITE_BASE + "/api/file-download/url-check", String.format("{\"SessionId\":null,\"Urls\":\"%s\"}", link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            String internalid = br.toString();
-            if (StringUtils.isEmpty(internalid) || !internalid.matches("\"?[a-f0-9\\-]+\"?")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad ID", 5 * 60 * 1000l);
+            this.loginAPI(account, false);
+            br.postPageRaw(API_BASE + "/file-download/init", String.format("{\"Url\":\"%s\"}", link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final String internalID = PluginJSonUtils.getJson(br, "DownloadId");
+            if (StringUtils.isEmpty(internalID) || !internalID.matches("\"?[a-f0-9\\-]+\"?")) {
+                mhm.handleErrorGeneric(account, link, "Bad DownloadId", 20);
             }
-            internalid = internalid.replace("\"", "");
-            internalid = internalid.replace("-", "");
-            /* 2020-04-21: Serverside, downloads do not seem to work at all (?) */
-            dllink = WEBSITE_BASE + "/file?id=" + internalid;
+            br.postPageRaw(API_BASE + "/file-download/download-info", String.format("{\"downloadId\":\"%s\"}", internalID));
+            /* TODO: Add serverside download handling */
+            // dllink = API_BASE + "/file?id=" + internalID;
             // if (dllink == null) {
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "dllinknull", 5 * 60 * 1000l);
             // }
+            if (StringUtils.isEmpty(dllink)) {
+                mhm.handleErrorGeneric(account, link, "Failed o find final downloadurl", 20);
+            }
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        final boolean resume;
-        final int maxchunks;
-        if (account.getType() == AccountType.PREMIUM) {
-            resume = account_PREMIUM_resume;
-            maxchunks = account_PREMIUM_maxchunks;
-        } else {
-            resume = account_FREE_resume;
-            maxchunks = account_FREE_maxchunks;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_resume, account_PREMIUM_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error", 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "Unknown download error", 20);
         }
         this.dl.startDownload();
     }
@@ -154,116 +145,93 @@ public class RapidekPl extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
+        prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
-        loginWebsite(account);
-        final String expireDate = br.getRegex("TODO(.+)TODOFIXME").getMatch(0);
-        // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-        // final Browser webbr = new Browser();
-        // webbr.getHeaders().put("Origin", "https://rapidek.pl");
-        // webbr.getHeaders().put("Sec-WebSocket-Extensions", "permessage-deflate; client_max_window_bits");
-        // webbr.getHeaders().put("Sec-WebSocket-Key", "TODO");
-        // webbr.getHeaders().put("Sec-WebSocket-Version", "13");
-        // webbr.getHeaders().put("Upgrade", "websocket");
-        // final WebSocketClient wsc = new WebSocketClient(webbr, new URL("https://rapidek.pl/userHub?id=TODO"));
-        // try {
-        // wsc.connect();
-        // ReadWebSocketFrame frame = wsc.readNextFrame();// sid
-        // frame = wsc.readNextFrame();// session
-        // frame = wsc.readNextFrame();// subscription
-        // /* TODO: Extract account data from this */
-        // if (WebSocketFrameHeader.OP_CODE.UTF8_TEXT.equals(frame.getOpCode()) && frame.isFin()) {
-        // String string = new String(frame.getPayload(), "UTF-8");
-        // // string = string.replaceFirst("^\\d+", "");
-        // } else {
-        // logger.severe("Unsupported:" + frame);
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // } finally {
-        // wsc.close();
-        // }
-        // }
-        if (expireDate == null) {
-            /* Free or plugin failure */
-            /*
-             * account.setType(AccountType.FREE); ai.setTrafficMax("10 GB"); ai.setStatus("Free Account");
-             * account.setMaxSimultanDownloads(account_FREE_maxdownloads); account.setValid(true);
-             */
+        loginAPI(account, true);
+        if (br.getURL() == null || !br.getURL().contains("/account/info")) {
+            br.getPage(API_BASE + "/account/info");
+        }
+        final String expireDate = PluginJSonUtils.getJson(br, "AccountExpiry");
+        final String trafficLeft = PluginJSonUtils.getJson(br, "AvailableTransferBytes");
+        if (expireDate == null && trafficLeft == null) {
+            /* Free account --> Cannot download anything */
             account.setType(AccountType.FREE);
-            /* 2020-04-24: Set unlimited traffic on all accounts for testing */
-            // ai.setTrafficLeft(0);
+            ai.setTrafficLeft(0);
         } else {
-            /* Premium */
+            /* Premium account */
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(account_PREMIUM_maxdownloads);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-            ai.setUnlimitedTraffic();
-        }
-        // account.setType(AccountType.UNKNOWN);
-        /*
-         * 2020-04-21: TODO website is broken? https://rapidek.pl/lista-serwisow
-         */
-        /* 2020-04-24: The most WTF way to distribute a list of supported hosts */
-        br.getPage("https://rapidekforum.pl/all.php");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hosts = br.getRegex("([^;]+);").getColumn(0);
-        for (final String host : hosts) {
-            /* Do not add domain of this multihost plugin */
-            if (host.equalsIgnoreCase(this.getHost())) {
-                continue;
+            if (expireDate != null && expireDate.matches("\\d+")) {
+                ai.setValidUntil(Long.parseLong(expireDate));
             }
-            supportedHosts.add(host);
+            /* 2020-06-05: So far, my test account is only traffic based without an expiredate given (psp) */
+            if (trafficLeft != null && trafficLeft.matches("\\d+")) {
+                ai.setTrafficLeft(trafficLeft);
+            } else {
+                ai.setUnlimitedTraffic();
+            }
+        }
+        /*
+         * 2020-06-05: API only returns the following this I've enabled this workaround for now:
+         * {"Services":["premiumize.com","rapidu.net"]}
+         */
+        final boolean useForumWorkaround = true;
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        if (useForumWorkaround) {
+            /* 2020-06-05: Possible workaround */
+            br.getPage("https://rapidekforum.pl/all.php");
+            final String[] hosts = br.getRegex("([^;]+);").getColumn(0);
+            for (final String host : hosts) {
+                /* Do not add domain of this multihost plugin */
+                if (host.equalsIgnoreCase(this.getHost())) {
+                    continue;
+                }
+                supportedHosts.add(host);
+            }
+        } else {
+            br.getPage(API_BASE + "/services/list");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final ArrayList<Object> hostsO = (ArrayList<Object>) entries.get("Services");
+            for (final Object hostO : hostsO) {
+                supportedHosts.add((String) hostO);
+            }
         }
         ai.setMultiHostSupport(this, supportedHosts);
-        /* Debug test */
-        // ai.setUnlimitedTraffic();
-        account.setConcurrentUsePossible(true);
         return ai;
     }
 
-    private void loginWebsite(final Account account) throws IOException, PluginException, InterruptedException {
+    private void loginAPI(final Account account, final boolean force) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 String token = account.getStringProperty("token");
-                if (cookies != null) {
-                    logger.info("Trying to login via cookies");
-                    br.setCookies(WEBSITE_BASE, cookies);
-                    br.getPage(WEBSITE_BASE + "/");
-                    if (this.isLoggedIN()) {
-                        logger.info("Cookie login successful");
+                if (cookies != null && token != null) {
+                    logger.info("Trying to login via token");
+                    br.setCookies(API_BASE, cookies);
+                    br.getHeaders().put("Authorization", "Bearer " + token);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l && !force) {
+                        logger.info("Not checking token at all as it's still fresh");
+                        return;
+                    }
+                    br.getPage(API_BASE + "/account/info");
+                    if (br.getHttpConnection().getResponseCode() == 200) {
+                        logger.info("Token login successful");
+                        /* Save new cookie timestamp */
                         account.saveCookies(br.getCookies(br.getHost()), "");
-                        br.getHeaders().put("Authorization", "Bearer " + token);
                         return;
                     } else {
-                        logger.info("Cookie login failed");
+                        logger.info("Token login failed");
+                        br.clearAll();
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage(WEBSITE_BASE);
-                String captchaResponse = "null";
-                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br.toString())) {
-                    /* 2020-03-19: reCaptchaV2 is always required but they may make it optional in the future. */
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    try {
-                        final DownloadLink dl_dummy;
-                        if (dlinkbefore != null) {
-                            dl_dummy = dlinkbefore;
-                        } else {
-                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster() + "/dashboard.php", true);
-                            this.setDownloadLink(dl_dummy);
-                        }
-                        captchaResponse = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    } finally {
-                        this.setDownloadLink(dlinkbefore);
-                    }
-                }
-                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                br.postPageRaw(WEBSITE_BASE + "/account/login", String.format("{\"Username\":\"%s\",\"Password\":\"%s\",\"CaptchaResponse\":%s}", account.getUser(), account.getPass(), captchaResponse));
+                br.getHeaders().put("accept", "application/json");
+                br.postPageRaw(API_BASE + "/account/sign-in", String.format("{\"Username\":\"%s\",\"Password\":\"%s\"}", account.getUser(), account.getPass()));
                 token = PluginJSonUtils.getJson(br, "Token");
-                if (!isLoggedIN() || StringUtils.isEmpty(token)) {
+                if (StringUtils.isEmpty(token)) {
+                    /* 2020-06-05: E.g. "nullified" response: {"Result":"Unknown","AvailableTransferBytes":0} */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
