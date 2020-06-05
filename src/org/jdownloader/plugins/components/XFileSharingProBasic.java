@@ -3657,12 +3657,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             } else {
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
                 /*
                  * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too
                  * many connections) --> Should work fine after the next try.
                  */
-                storeDirecturl(link, account, dllink);
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+                storeDirecturl(link, account, dl.getConnection().getURL().toString());
                 handleDownloadErrors(link, account);
                 try {
                     fixFilename(link);

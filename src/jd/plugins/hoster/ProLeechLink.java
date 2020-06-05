@@ -10,12 +10,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.ProleechLinkConfig;
@@ -46,16 +51,26 @@ public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://proleech.link/signup");
-        /* 2020-05-29: Try to avoid <div class="alert danger"><b>Too many requests! Please try again in a few seconds.</b></div> */
-        /* TODO: Check if this is required in API-only mode too! */
-        this.setStartIntervall(5000l);
+        if (!useAPIOnly()) {
+            /* 2020-06-04: API allows more requests in a short time than website does */
+            /* 2020-06-05: API does not have rate limits at all (RE: admin) */
+            // this.setStartIntervall(1000l);
+        } else {
+            /* 2020-05-29: Try to avoid <div class="alert danger"><b>Too many requests! Please try again in a few seconds.</b></div> */
+            this.setStartIntervall(5000l);
+        }
     }
 
-    private static MultiHosterManagement        mhm                                    = new MultiHosterManagement("proleech.link");
+    private static MultiHosterManagement        mhm                                       = new MultiHosterManagement("proleech.link");
     /** Contains all filenames of files we attempted to download or downloaded via this account. */
-    private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist = new CopyOnWriteArrayList<String>();
+    private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist    = new CopyOnWriteArrayList<String>();
     // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
-    private static final String                 API_BASE                               = "https://proleech.link/dl/debrid/deb_api.php";
+    private static final String                 API_BASE                                  = "https://proleech.link/dl/debrid/deb_api.php";
+    private static final String                 PROPERTY_ACCOUNT_apiuser                  = "apiuser";
+    private static final String                 PROPERTY_ACCOUNT_apikey                   = "apikey";
+    private static final String                 PROPERTY_ACCOUNT_api_login_dialog_shown   = "api_login_dialog_shown";
+    private static final String                 PROPERTY_ACCOUNT_api_migration_successful = "api_migration_successful";
+    // private static final String PROPERTY_ACCOUNT_api_converted = "api_converted";
 
     @Override
     public String getAGBLink() {
@@ -65,6 +80,10 @@ public class ProLeechLink extends antiDDoSForHost {
     /** TODO: Add setting to switch between API/website */
     private boolean useAPIOnly() {
         return PluginJsonConfig.get(this.getConfigInterface()).isEnableBetaAPIOnly();
+    }
+
+    private boolean useAPILoginWorkaround() {
+        return false;
     }
 
     private Browser prepBrAPI(final Browser br) {
@@ -99,6 +118,9 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        /* This will also remove timestamp so auto-switch again from website to API will be possible without issues! */
+        account.clearCookies("api");
+        account.removeProperty(PROPERTY_ACCOUNT_api_migration_successful);
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, ai, true);
         /* Contains all filehosts available for free account users regardless of their status */
@@ -157,8 +179,8 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         if (apiuser != null && this.isAPIKey(apikey)) {
             logger.info(String.format("Successfully found apikey and user: %s:%s", apiuser, apikey));
-            account.setProperty("apikey", apikey);
-            account.setProperty("apiuser", apiuser);
+            account.setProperty(PROPERTY_ACCOUNT_apiuser, apiuser);
+            account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
             accstatus += " (Using API for download requests)";
         } else {
             logger.info("Failed to find apikey");
@@ -170,11 +192,8 @@ public class ProLeechLink extends antiDDoSForHost {
         return ai;
     }
 
-    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
-        if (!this.isAPIKey(account.getPass())) {
-            this.accountInvalidAPI();
-        }
-        prepBrAPI(this.br);
+    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        loginAPI(account, true);
         final AccountInfo ai = new AccountInfo();
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         List<String> old_list_of_supported_hosts = null;
@@ -183,39 +202,26 @@ public class ProLeechLink extends antiDDoSForHost {
         } catch (final NullPointerException e) {
             logger.log(e);
         }
-        String traffic_max_dailyStr = null;
-        long trafficleft = -1;
-        final boolean useLoginWorkaround = false;
-        if (useLoginWorkaround) {
-            final UrlQuery query = new UrlQuery();
-            query.add("apiusername", Encoding.urlEncode(account.getUser()));
-            query.add("apikey", Encoding.urlEncode(account.getPass()));
-            query.add("link", "null");
-            this.getPage(API_BASE + "?" + query.toString());
-            /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
-            final String errorcodeStr = PluginJSonUtils.getJson(br, "error");
-            if (!errorcodeStr.equals("1")) {
-                accountInvalidAPI();
-            }
+        String trafficmaxDailyStr = null;
+        String trafficusedTodayStr = null;
+        if (useAPILoginWorkaround()) {
             /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
             account.setType(AccountType.PREMIUM);
             /* Get list of supported hosts from website */
             try {
                 getPage("/page/hostlist");
                 filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite();
-                traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
+                trafficmaxDailyStr = this.regexMaxDailyTrafficWebsite();
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("Failed to fetch list of supported hosts from website");
             }
+            ai.setUnlimitedTraffic();
         } else {
-            final UrlQuery query = new UrlQuery();
-            query.add("apiusername", Encoding.urlEncode(account.getUser()));
-            query.add("apikey", Encoding.urlEncode(account.getPass()));
-            query.add("account", "");
-            this.getPage(API_BASE + "?" + query.toString());
-            this.checkErrorsAPI(null, account);
             ai.setStatus("Premium API BETA mode active");
+            trafficusedTodayStr = PluginJSonUtils.getJson(br, "used_today");
+            /* 2020-06-04: Fallback: Static value taken from: https://proleech.link/page/hostlist */
+            trafficmaxDailyStr = "80 GB";
             final String premiumStatus = PluginJSonUtils.getJson(br, "premium");
             String expiredate = PluginJSonUtils.getJson(br, "subscriptions_date");
             if ("true".equalsIgnoreCase(premiumStatus) || "yes".equalsIgnoreCase(premiumStatus)) {
@@ -225,20 +231,26 @@ public class ProLeechLink extends antiDDoSForHost {
                 if (!StringUtils.isEmpty(expiredate) && expiredate.matches("\\d{4}-\\d{2}-\\d{2}")) {
                     /* 2020-06-04: Should expire at the end of the last day */
                     expiredate += " 23:59:59";
+                    /* Use some less milliseconds to avoid displaying "one day too much". */
                     final long aLittleBitLess = 60000l;
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH) - aLittleBitLess, br);
                 }
+                final long trafficmaxDaily = SizeFormatter.getSize(trafficmaxDailyStr);
+                if (!StringUtils.isEmpty(trafficusedTodayStr)) {
+                    ai.setTrafficLeft(trafficmaxDaily - SizeFormatter.getSize(trafficusedTodayStr));
+                }
+                ai.setTrafficMax(trafficmaxDaily);
             } else {
                 /* 2020-06-04: Only premium users can see their apikey so if this happens, we probably have an expired premium account. */
                 account.setType(AccountType.FREE);
                 /* TODO: Use this once API mode is "not in BETA" anymore. */
                 // ai.setStatus("Free User");
                 /* Free account downloads are impossible via API */
-                trafficleft = 0;
+                ai.setTrafficLeft(0);
+                ai.setTrafficMax(trafficmaxDailyStr);
             }
-            /* 2020-06-04: Static value taken from: https://proleech.link/page/hostlist */
-            traffic_max_dailyStr = "80 GB";
         }
+        /* Host specific traffic limits would be here: http://proleech.link/dl/debrid/deb_api.php?limits */
         this.getPage(API_BASE + "?hosts");
         final String[] supportedhostsAPI = JSonStorage.restoreFromString(br.toString(), TypeRef.STRING_ARRAY);
         for (final String filehost_premium_online : supportedhostsAPI) {
@@ -254,21 +266,107 @@ public class ProLeechLink extends antiDDoSForHost {
                 filehosts_premium_onlineArray.add(filehost_premium_online);
             }
         }
-        /* Grab premium hosts from WEBSITE */
-        if (traffic_max_dailyStr != null) {
-            if (trafficleft == -1) {
-                ai.setTrafficLeft(traffic_max_dailyStr);
-            }
-            ai.setTrafficMax(traffic_max_dailyStr);
-        } else {
-            ai.setUnlimitedTraffic();
-        }
         if (filehosts_premium_onlineArray.isEmpty() && old_list_of_supported_hosts != null && !old_list_of_supported_hosts.isEmpty()) {
             /* Fallback - try to re-use old list of supported hosts if available */
             filehosts_premium_onlineArray = old_list_of_supported_hosts;
         }
         ai.setMultiHostSupport(this, filehosts_premium_onlineArray);
         return ai;
+    }
+
+    private void loginAPI(final Account account, final boolean validate) throws Exception {
+        boolean apiMigrationSuccessful = account.getBooleanProperty(PROPERTY_ACCOUNT_api_migration_successful, false);
+        final String saved_apiuser = account.getStringProperty(PROPERTY_ACCOUNT_apiuser);
+        final String saved_apikey = account.getStringProperty(PROPERTY_ACCOUNT_apikey);
+        boolean triedWebsiteToAPIConversion = false;
+        String apiuser = null;
+        String apikey = null;
+        if (!this.isAPIKey(account.getPass()) && !this.isAPIKey(saved_apikey) || apiMigrationSuccessful && !this.isAPIKey(account.getPass())) {
+            this.apiInvalidApikey(account);
+        } else if (this.isAPIKey(account.getPass())) {
+            apiuser = account.getUser();
+            apikey = account.getPass();
+        } else {
+            logger.info("Attempting website to API migration");
+            triedWebsiteToAPIConversion = true;
+            apiuser = saved_apiuser;
+            apikey = saved_apikey;
+        }
+        prepBrAPI(this.br);
+        /* Especially needed so apikey gets checked when users e.g. get auto switched from website to API. */
+        if (!validate && System.currentTimeMillis() - account.getCookiesTimeStamp("api") <= 10 * 60 * 1000l) {
+            logger.info("Trust apikey without checking");
+            return;
+        }
+        logger.info("Performing full API login");
+        if (useAPILoginWorkaround()) {
+            final UrlQuery query = new UrlQuery();
+            query.add("apiusername", Encoding.urlEncode(apiuser));
+            query.add("apikey", Encoding.urlEncode(apikey));
+            query.add("link", "null");
+            this.getPage(API_BASE + "?" + query.toString());
+            /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
+            final String errorcodeStr = PluginJSonUtils.getJson(br, "error");
+            if (!errorcodeStr.equals("1")) {
+                apiAccountInvalid(account);
+            }
+            /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
+            account.setType(AccountType.PREMIUM);
+        } else {
+            final UrlQuery query = new UrlQuery();
+            query.add("apiusername", Encoding.urlEncode(apiuser));
+            query.add("apikey", Encoding.urlEncode(apikey));
+            query.add("account", "");
+            this.getPage(API_BASE + "?" + query.toString());
+            this.checkErrorsAPI(null, account);
+        }
+        if (triedWebsiteToAPIConversion) {
+            logger.info("Successfully auto converted website account to API account");
+            account.setUser(saved_apiuser);
+            account.setPass(saved_apikey);
+            account.setProperty(PROPERTY_ACCOUNT_api_migration_successful, true);
+        }
+        /* Just to save last login timestamp, we don't need these cookies! */
+        account.saveCookies(br.getCookies(br.getHost()), "api");
+    }
+
+    private Thread showAPILoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    final String loginurl = "https://proleech.link/jdownloader";
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Proleech.link - Login";
+                        message += "Hallo liebe(r) proleech NutzerIn\r\n";
+                        message += "Um deinen Proleech Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + loginurl + "'\t\r\n";
+                        message += "2. Suche dir auf der Seite deinen API Username und API Key heraus und gebe diese Informationen in JDownloader ein.\r\n";
+                        message += "Du kannst deinen Account dann wie gewohnt in JDownloader verwenden.\r\n";
+                    } else {
+                        title = "Proleech.link - Login";
+                        message += "Hello dear proleech user\r\n";
+                        message += "In order to use your proleech account in JDownloader you will have to follow these instructions:\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + loginurl + "'\t\r\n";
+                        message += "2. Get your API Username and API Key displayed on this website and use this as your account login credentials.\r\n";
+                        message += "Your account should now be accepted in JDownloader.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(1 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(loginurl);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private List<String> regexPremiumHostsOnlineWebsite() throws PluginException {
@@ -510,6 +608,7 @@ public class ProLeechLink extends antiDDoSForHost {
         if (dllink == null) {
             logger.info("Trying to generate/find final downloadurl");
             if (this.useAPIOnly()) {
+                loginAPI(account, false);
                 dllink = this.getDllinkAPI(account.getUser(), account.getPass(), link, account);
                 if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                     mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50);
@@ -534,8 +633,8 @@ public class ProLeechLink extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Next downloadlink generation is allowed in " + waittime_until_next_downloadlink_generation_is_allowed_Str, 5 * 60 * 1000l);
                     }
                     logger.info("Generating fresh downloadurl");
-                    final String apikey = account.getStringProperty("apikey");
-                    final String apiuser = account.getStringProperty("apiuser");
+                    final String apiuser = account.getStringProperty(PROPERTY_ACCOUNT_apiuser);
+                    final String apikey = account.getStringProperty(PROPERTY_ACCOUNT_apikey);
                     boolean triedAPI = false;
                     if (tryAPIForDownloadingInWebsiteMode() && apiuser != null && apikey != null) {
                         logger.info("Trying to use API in website for downloading mode");
@@ -907,20 +1006,42 @@ public class ProLeechLink extends antiDDoSForHost {
         if (errorcodeStr != null && errorcodeStr.matches("-?\\d+")) {
             final int errorcode = Integer.parseInt(errorcodeStr);
             switch (errorcode) {
+            case 0:
+                /* No error */
+                break;
+            case -10:
+                /* 2020-05-06: According to admin: -10 Account is invalid. */
+                apiAccountInvalid(account);
+            case -9:
+                /* 2020-05-06: According to admin: -9 Your account is locked due to sharing account. */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case -8:
-                /* {"error":-8,"message":"API key is invalid."} */
-                apikeyInvalidAPI();
+                /* 2020-05-06: According to admin: -8 Your account has problem. Please contact to admin. */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case -6:
+                apiAccountInvalid(account);
+            case -5:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case -1:
-                /* {"error":-1,"message":"API key is invalid."} */
-                accountInvalidAPI();
+                /* {"error":-1,"message":"API key is invalid. Please update new API key https:\/\/proleech.link\/jdownloader."} */
+                apiAccountInvalid(account);
             case 1:
                 /* 2020-06-04: Rare error I guess? */
                 /* {"error":1,"message":"Link not supported or empty link."} */
                 mhm.handleErrorGeneric(account, link, errorMsg, 5);
             default:
-                /* TODO: Add handling for unknown errors */
-                logger.info("Unknown error happened: " + errorMsg);
-                break;
+                /* Handle all other errors */
+                /**
+                 * 0 Get details of account or Generated link1 Link not introduced or Link not supported or empty link.2 Please include
+                 * 'http//:' in your link3 Link not supported4 Another error (Filehost out of traffic, can't generate file ...)7 Error: Link
+                 * Dead or Host Temporarily Down8 Message reached the limits for host9 Your file is big
+                 */
+                if (link == null) {
+                    /* Account error */
+                    throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, errorMsg, 50);
+                }
             }
         }
     }
@@ -929,10 +1050,21 @@ public class ProLeechLink extends antiDDoSForHost {
         if (str == null) {
             return false;
         }
-        return str.matches("[a-z0-9]{16,}");
+        return str.matches("[a-z0-9]{21}");
     }
 
-    private void accountInvalidAPI() throws PluginException {
+    /** Invalid API Username and/or API Key. */
+    private void apiAccountInvalid(final Account account) throws PluginException {
+        try {
+            final boolean loginDialogDisplayedAlreadyForThisAccount = account.getBooleanProperty(PROPERTY_ACCOUNT_api_login_dialog_shown, false);
+            if (!loginDialogDisplayedAlreadyForThisAccount) {
+                showAPILoginInformation();
+                account.setProperty(PROPERTY_ACCOUNT_api_login_dialog_shown, true);
+            }
+        } catch (final NullPointerException npe) {
+            /* This should never happen, account should always exist! */
+            logger.log(npe);
+        }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Username/API Key ungültig!\r\n Siehe proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
@@ -940,7 +1072,18 @@ public class ProLeechLink extends antiDDoSForHost {
         }
     }
 
-    private void apikeyInvalidAPI() throws PluginException {
+    /** Invalid API Key (API User may be valid). */
+    private void apiInvalidApikey(final Account account) throws PluginException {
+        try {
+            final boolean loginDialogDisplayedAlreadyForThisAccount = account.getBooleanProperty(PROPERTY_ACCOUNT_api_login_dialog_shown, false);
+            if (!loginDialogDisplayedAlreadyForThisAccount) {
+                showAPILoginInformation();
+                account.setProperty(PROPERTY_ACCOUNT_api_login_dialog_shown, true);
+            }
+        } catch (final NullPointerException npe) {
+            /* This should never happen, account should always exist! */
+            logger.log(npe);
+        }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "API API Key ungültig!\r\n Siehe proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
