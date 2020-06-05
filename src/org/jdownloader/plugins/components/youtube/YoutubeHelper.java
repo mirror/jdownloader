@@ -1172,40 +1172,10 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.description)) {
-            if (ytInitialPlayerResponse != null) {
-                vid.description = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/shortDescription");
-            }
-            if (StringUtils.isEmpty(vid.description)) {
-                if (ytInitialData != null) {
-                    // this one is super long and more complicated!
-                    final ArrayList<Object> tmp = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/description/runs");
-                    if (tmp != null) {
-                        // Construct the "text"
-                        final StringBuilder sb = new StringBuilder();
-                        for (final Object t : tmp) {
-                            final LinkedHashMap<String, Object> o = (LinkedHashMap<String, Object>) t;
-                            final String url = (String) JavaScriptEngineFactory.walkJson(o, "navigationEndpoint/urlEndpoint/url");
-                            final String text = (String) o.get("text");
-                            if (text != null) {
-                                if (sb.length() > 0) {
-                                    sb.append(" ");
-                                }
-                                if (url != null) {
-                                    sb.append(url);
-                                } else {
-                                    sb.append(text);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            vid.description = getVidDescriptionFromMaps();
         }
-        if (vid.date <= 0 && ytInitialData != null) {
-            String string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/dateText/simpleText");
-            if (string == null) {
-                string = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
-            }
+        if (vid.date <= 0) {
+            String string = getVidDateFromMaps();
             if (string != null) {
                 // time. just parse for the date pattern(s).
                 String date = new Regex(string, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
@@ -1214,6 +1184,15 @@ public class YoutubeHelper {
                     final SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy", Locale.ENGLISH);
                     try {
                         vid.date = formatter.parse(date).getTime();
+                        logger.info("Date result " + vid.date + " " + new Date(vid.date));
+                    } catch (final Exception e) {
+                        final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
+                        log.log(e);
+                    }
+                } else if (new Regex(string, "\\d{4}-\\d{2}-\\d{2}").matches()) {
+                    final SimpleDateFormat formatter = new SimpleDateFormat("yyyy'-'dd'-'MM", Locale.ENGLISH);
+                    try {
+                        vid.date = formatter.parse(string).getTime();
                         logger.info("Date result " + vid.date + " " + new Date(vid.date));
                     } catch (final Exception e) {
                         final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
@@ -1250,7 +1229,7 @@ public class YoutubeHelper {
                     c.set(Calendar.SECOND, 0);
                     vid.date = c.getTimeInMillis();
                 } else {
-                    System.out.println("error");
+                    logger.info("Unknown date format:" + string);
                 }
             }
         }
@@ -1258,12 +1237,7 @@ public class YoutubeHelper {
             vid.channelID = getChannelIdFromMaps();
         }
         if (vid.duration <= 0) {
-            if (ytInitialPlayerResponse != null) {
-                final String tmp = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/lengthSeconds");
-                if (tmp != null) {
-                    vid.duration = Integer.parseInt(tmp);
-                }
-            }
+            vid.duration = getVidDurationFromMaps();
             if (vid.duration <= 0) {
                 final String match = br.getRegex("\"length_seconds\"\\s*:\\s*(\\d+)").getMatch(0);
                 if (StringUtils.isNotEmpty(match)) {
@@ -1301,6 +1275,50 @@ public class YoutubeHelper {
         }
     }
 
+    public String getVidDescriptionFromMaps() {
+        String result = null;
+        if (ytInitialPlayerResponse != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/shortDescription");
+        }
+        if (StringUtils.isEmpty(result) && ytInitialData != null) {
+            // this one is super long and more complicated!
+            final ArrayList<Object> tmp = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/description/runs");
+            if (tmp != null) {
+                // Construct the "text"
+                final StringBuilder sb = new StringBuilder();
+                for (final Object t : tmp) {
+                    final LinkedHashMap<String, Object> o = (LinkedHashMap<String, Object>) t;
+                    final String url = (String) JavaScriptEngineFactory.walkJson(o, "navigationEndpoint/urlEndpoint/url");
+                    final String text = (String) o.get("text");
+                    if (text != null) {
+                        if (sb.length() > 0) {
+                            sb.append(" ");
+                        }
+                        if (url != null) {
+                            sb.append(url);
+                        } else {
+                            sb.append(text);
+                        }
+                    }
+                }
+                if (sb.length() > 0) {
+                    result = sb.toString();
+                }
+            }
+        }
+        return result;
+    }
+
+    public int getVidDurationFromMaps() {
+        if (ytInitialPlayerResponse != null) {
+            final String tmp = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/lengthSeconds");
+            if (tmp != null) {
+                return Integer.parseInt(tmp);
+            }
+        }
+        return -1;
+    }
+
     public String getChannelTitleFromMaps() {
         String result = null;
         if (ytInitialPlayerResponse != null) {
@@ -1308,6 +1326,20 @@ public class YoutubeHelper {
         }
         if (StringUtils.isEmpty(result) && ytPlayerConfig != null) {
             result = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/author");
+        }
+        return result;
+    }
+
+    public String getVidDateFromMaps() {
+        String result = null;
+        if (ytInitialPlayerResponse != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "microformat/playerMicroformatRenderer/uploadDate");
+        }
+        if (StringUtils.isEmpty(result) && ytInitialData != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/dateText/simpleText");
+            if (StringUtils.isEmpty(result)) {
+                result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
+            }
         }
         return result;
     }
