@@ -1,15 +1,16 @@
 package jd.plugins;
 
-import org.appwork.storage.Storable;
-
 import jd.http.Cookie;
+
+import org.appwork.storage.Storable;
 
 public class CookieStorable implements Storable {
     public String getPath() {
         if (this.cookie != null) {
             return this.cookie.getPath();
+        } else {
+            return this.path;
         }
-        return this.path;
     }
 
     public void setPath(String path) {
@@ -19,8 +20,9 @@ public class CookieStorable implements Storable {
     public String getHost() {
         if (this.cookie != null) {
             return this.cookie.getHost();
+        } else {
+            return this.host;
         }
-        return this.host;
     }
 
     public void setHost(String host) {
@@ -30,8 +32,9 @@ public class CookieStorable implements Storable {
     public String getValue() {
         if (this.cookie != null) {
             return this.cookie.getValue();
+        } else {
+            return this.value;
         }
-        return this.value;
     }
 
     public void setValue(String value) {
@@ -41,8 +44,9 @@ public class CookieStorable implements Storable {
     public String getKey() {
         if (this.cookie != null) {
             return this.cookie.getKey();
+        } else {
+            return this.key;
         }
-        return this.key;
     }
 
     public void setKey(String key) {
@@ -52,8 +56,9 @@ public class CookieStorable implements Storable {
     public String getDomain() {
         if (this.cookie != null) {
             return this.cookie.getDomain();
+        } else {
+            return this.domain;
         }
-        return this.domain;
     }
 
     public void setDomain(String domain) {
@@ -63,8 +68,9 @@ public class CookieStorable implements Storable {
     public long getHostTime() {
         if (this.cookie != null) {
             return this.cookie.getHostTime();
+        } else {
+            return this.hostTime;
         }
-        return this.hostTime;
     }
 
     public void setHostTime(long hostTime) {
@@ -74,8 +80,9 @@ public class CookieStorable implements Storable {
     public long getCreationTime() {
         if (this.cookie != null) {
             return this.cookie.getCreationTime();
+        } else {
+            return this.creationTime;
         }
-        return this.creationTime;
     }
 
     public void setCreationTime(long creationTime) {
@@ -85,8 +92,9 @@ public class CookieStorable implements Storable {
     public long getExpireTime() {
         if (this.cookie != null) {
             return this.cookie.getExpireDate();
+        } else {
+            return this.expireTime;
         }
-        return this.expireTime;
     }
 
     public void setExpireTime(long expireTime) {

@@ -84,7 +84,7 @@ public class XHamsterGallery extends PluginForDecrypt {
                 pattern.append("|");
             }
             if ("xhamster.com".equals(domain)) {
-                pattern.append("xhamster\\d*\\.(com|xxx|desi|one)");
+                pattern.append("xhamster\\d*\\.(?:com|xxx|desi|one)");
             } else {
                 pattern.append(Pattern.quote(domain));
             }

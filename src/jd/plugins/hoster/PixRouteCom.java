@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
@@ -28,6 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixRouteCom extends XFileSharingProBasic {
@@ -112,8 +112,8 @@ public class PixRouteCom extends XFileSharingProBasic {
         super.handleDownloadErrors(con, link, account);
         boolean specialOffline = false;
         try {
-            final long final_filesize = dl.getConnection().getLongContentLength();
-            final String response_last_modified = dl.getConnection().getRequest().getResponseHeader("Last-Modified").toString();
+            final long final_filesize = con.getCompleteContentLength();
+            final String response_last_modified = con.getRequest().getResponseHeader("Last-Modified").toString();
             specialOffline = final_filesize == 40275 && response_last_modified.equalsIgnoreCase("Sun, 10 Mar 2019 14:07:34 GMT");
         } catch (final Throwable e) {
         }
