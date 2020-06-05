@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,10 +41,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?(facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+|facebook\\.com/download/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?facebook\\.com/(?:.*?video\\.php\\?v=|photo\\.php\\?fbid=|video/embed\\?video_id=|.*?/videos/|watch/\\?v=|watch/live/\\?v=)(\\d+)|https?://(?:www\\.)?facebook\\.com/download/(\\d+)" })
 public class FaceBookComVideos extends PluginForHost {
     private String              FACEBOOKMAINPAGE      = "http://www.facebook.com";
     private String              PREFERHD              = "PREFERHD";
+    /* 2020-06-05: TODO: This linktype can (also) lead to video content! */
     private static final String TYPE_SINGLE_PHOTO     = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD         = "https?://(www\\.)?facebook\\.com/download/\\d+";
@@ -70,15 +72,30 @@ public class FaceBookComVideos extends PluginForHost {
         setStartIntervall(200l);
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("facebookdecrypted.com/", "facebook.com/"));
-        String thislink = link.getDownloadURL();
-        String videoID = new Regex(thislink, "facebook\\.com/video\\.php\\?v=(\\d+)").getMatch(0);
-        if (videoID != null) {
-            thislink = "https://facebook.com/video.php?v=" + videoID;
+    public void correctDownloadLink(final DownloadLink link) {
+        final String videoid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (videoid != null) {
+            /* Use current format for all URLs! */
+            link.setPluginPatternMatcher("https://www.facebook.com/watch/?v=" + videoid);
         }
-        link.setUrlDownload(thislink);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String fuid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (fuid == null) {
+            fuid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        }
+        return fuid;
     }
 
     /**
@@ -88,14 +105,14 @@ public class FaceBookComVideos extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "deprecation" })
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
         is_private = link.getBooleanProperty("is_private", false);
         dllink = link.getStringProperty("directlink", null);
-        final String lid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(lid);
+            link.setName(fid);
         }
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
@@ -113,7 +130,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
             br.getPage(FACEBOOKMAINPAGE);
             final String user = getUser(br);
-            final String image_id = getPICID(link);
+            final String image_id = this.getFID(link);
             if (user == null || image_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -159,36 +176,34 @@ public class FaceBookComVideos extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-        } else { // Video and TYPE_SINGLE_PHOTO !is_private go here
-            br.getPage(link.getDownloadURL());
-            /* 2016-05-31: Removed this errorhandling as it caused false-positive-offline urls again and again! */
-            // if (!br.containsHTML("class=\"uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator") && !loggedIN) {
-            // accountNeeded = true;
-            // /*
-            // * Actually we cannot know whether the video is online or not but even when we're logged in we can get the message similar
-            // * to this: "This video is offline or you cannot view it due to someone elses privacy settings" --> Basically we can guess
-            // * that most of such URLs added by our users are offline and it is NOT a privacy settings / rights issue!
-            // */
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // }
-            String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
-            if (getThisPage != null) {
-                br.getPage(getThisPage.replace("\\", ""));
-            }
-            if (this.br.getHttpConnection().getResponseCode() == 404 || isOffline(this.br)) {
-                link.setFinalFileName(link.getDownloadURL());
+        } else {
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            final String videoID = this.getFID(link);
+            /* Embed = no filenames given */
+            final boolean usingEmbed = true;
+            br.getPage("https://www.facebook.com/video/embed?video_id=" + videoID);
+            /*
+             * 2020-06-05: <div class="pam uiBoxRed"><div class="fsl fwb fcb">Video nicht verfügbar</div>Dieses Video wurde entweder
+             * entfernt oder ist aufgrund der ‎Privatsphäre-Einstellungen nicht sichtbar.</div>
+             */
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pam uiBoxRed\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (loggedIN) {
-                filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
-                }
-            } else {
-                filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
-                if (filename == null) {
+            if (!usingEmbed) {
+                if (loggedIN) {
                     filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
+                    }
+                } else {
+                    filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+                    }
                 }
+            }
+            if (filename == null) {
+                filename = videoID;
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -203,111 +218,28 @@ public class FaceBookComVideos extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
             }
-            if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) { // /photo.php?fbid=\\d+
-                // Try if a downloadlink is available
-                dllink = br.getRegex("href=\"(https?://[^<>\"]*?(\\?|\\&amp;)dl=1)\"").getMatch(0);
-                // Try to find original quality link
-                String setID = br.getRegex("\"set\":\"([^<>\"]*?)\"").getMatch(0);
-                if (setID == null) {
-                    // with loggedIN it's not presented... all setids are the same with this page -raztoki20160119
-                    setID = br.getRegex("set=([a-z\\.0-9]+)").getMatch(0);
-                }
-                final String user = getUser(this.br);
-                final String ajaxpipe_token = getajaxpipeToken();
-                /*
-                 * If no downloadlink is there, simply try to find the fullscreen link to the picture which is located on the "theatre view"
-                 * page
-                 */
-                final String fbid = getPICID(link);
-                if (setID != null && user != null && ajaxpipe_token != null && dllink == null) {
-                    try {
-                        logger.info("Trying to get original quality image");
-                        final String data = "{\"type\":\"1\",\"fbid\":\"" + fbid + "\",\"set\":\"" + setID + "\",\"firstLoad\":true,\"ssid\":0,\"av\":\"0\"}";
-                        final Browser br2 = br.cloneBrowser();
-                        final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7n8ajEyl2qm9udDgDxyF4EihUtCxO4p9GgSmEZ9LFwxBxCuUWdDx2ubhHximmey8OdUS8w&__req=jsonp_3&__rev=" + REV_2 + "&__adt=3";
-                        br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                        br2.getPage(theaterView);
-                        // NOTE: lid isn't always within the url, thus is now bad way to determine dllink! -raztoki20160119
-                        final String filter = br2.getRegex("\"image\":\\{\"" + lid + "\".*?\\}{3}").getMatch(-1);
-                        if (filter == null) {
-                            logger.warning("Filter could not be found.");
-                        } else {
-                            dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_o" + regexFileExtension + "[^\"]*)\"").getMatch(0);
-                            if (dllink == null) {
-                                dllink = new Regex(filter, "\"url\":\"(http[^<>\"]*?_n" + regexFileExtension + "[^\"]*)\"").getMatch(0);
-                            }
-                            dllink = dllink.replace("\\", "");
-                            checkDllink(dllink);
-                            if (dllink == null) {
-                                // dllink = new Regex(filter, "\"smallurl\":\"(.*?)\"").getMatch(0);
-                                dllink = PluginJSonUtils.getJsonValue(filter, "smallurl");
-                            }
-                        }
-                    } catch (final Throwable e) {
-                    }
-                }
-                if (setID == null && user != null && ajaxpipe_token != null && dllink == null) {
-                    // another way -raztoki20160122
-                    try {
-                        logger.info("Trying to get original quality image");
-                        final String data = "{\"type\":\"1\",\"fbid\":\"" + fbid + "\",\"firstLoad\":true,\"ssid\":" + System.currentTimeMillis() + ",\"av\":\"" + user + "\"}";
-                        final Browser br2 = br.cloneBrowser();
-                        final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?__pc=EXP1%3ADEFAULT&ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7AmajEzUGBym5Q9UrEwlg9pEbEKAdy9VQC-C26m6oKezob4q68K5UcU-2CEau48vEwy3eEjzUyVWxeUlwzx2bwYDDBBwDK4VqCgS2O7E&__req=jsonp_2&__rev=" + REV_3 + "&__adt=2";
-                        br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                        br2.getPage(theaterView);
-                        // NOTE: lid isn't always within the url, thus is now bad way to determine dllink! -raztoki20160119
-                        final String filter = br2.getRegex("\"image\":\\{\"" + lid + "\".*?\\}{3}").getMatch(-1);
-                        if (filter == null) {
-                            logger.warning("Filter could not be found.");
-                        } else {
-                            dllink = new Regex(filter, "\"url\":\"(http[^\"]+_o" + regexFileExtension + "[^\"]*)\"").getMatch(0);
-                            if (dllink == null) {
-                                dllink = new Regex(filter, "\"url\":\"(http[^\"]+_n" + regexFileExtension + "[^\"]*)\"").getMatch(0);
-                            }
-                        }
-                    } catch (final Throwable e) {
-                    }
-                }
-                // not sure what this is used for... -raztoki
-                if (dllink == null) {
-                    dllink = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-                }
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = dllink.replace("\\", "");
-                dllink = Encoding.htmlDecode(dllink);
-                // Try to change it to HD
-                final Regex urlSplit = new Regex(dllink, "(https?://[a-z0-9\\-\\.]+/hphotos\\-ak\\-[a-z0-9]+)/(q\\d+/)?s\\d+x\\d+(/.+)");
-                final String partOne = urlSplit.getMatch(0);
-                final String partTwo = urlSplit.getMatch(2);
-                if (partOne != null && partTwo != null) {
-                    // Usual part
-                    dllink = partOne + partTwo;
-                }
-                try {
-                    con = br.openGetConnection(dllink);
-                    if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
-                        link.setDownloadSize(con.getLongContentLength());
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (this.getPluginConfig().getBooleanProperty(USE_ALBUM_NAME_IN_FILENAME, false)) {
-                        filename = filename + "_" + lid + getFileNameExtensionFromString(dllink);
-                    } else {
-                        filename = Encoding.htmlDecode(getFileNameFromHeader(con)).trim();
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
-            } else { // Video link is handled by handleVideo
-                filename = filename + "_" + lid + ".mp4";
+            if (!filename.contains(fid)) {
+                filename = filename + "_" + fid;
             }
+            filename += ".mp4";
+            this.dllink = getDllinkVideo();
         }
         link.setFinalFileName(filename);
+        if (this.dllink != null && this.dllink.startsWith("http")) {
+            try {
+                con = br.openHeadConnection(this.dllink);
+                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -343,24 +275,16 @@ public class FaceBookComVideos extends PluginForHost {
         return br.containsHTML(">The link you followed may have expired|>Leider ist dieser Inhalt derzeit nicht");
     }
 
-    @SuppressWarnings("deprecation")
-    private String getPICID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, br);
         } catch (final PluginException e) {
-            account.setValid(false);
             throw e;
         }
         ai.setStatus("Valid Facebook account is active");
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         return ai;
     }
 
@@ -423,7 +347,8 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    public void handleVideo(final DownloadLink downloadLink) throws Exception {
+    public String getDllinkVideo() {
+        String dllink = null;
         boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD, true);
         if (preferHD) {
             dllink = getHigh();
@@ -435,6 +360,13 @@ public class FaceBookComVideos extends PluginForHost {
             if (dllink == null || "null".equals(dllink)) {
                 dllink = getHigh();
             }
+        }
+        return dllink;
+    }
+
+    public void handleVideo(final DownloadLink downloadLink) throws Exception {
+        if (this.dllink == null || !this.dllink.startsWith("http")) {
+            getDllinkVideo();
         }
         if (dllink == null || "null".equals(dllink)) {
             logger.warning("Final downloadlink \"dllink\" is null");
