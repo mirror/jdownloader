@@ -100,8 +100,14 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         /* TODO: Fix thumbnail support */
         final String url_thumbnail = br.getRegex("class=\"album-art\"\\s*?src=\"(http[^<>\"\\']+)\"").getMatch(0);
         final Regex urlregex = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)/?");
-        final String username = urlregex.getMatch(0);
-        final String slug = urlregex.getMatch(1);
+        String username = urlregex.getMatch(0);
+        String slug = urlregex.getMatch(1);
+        if (Encoding.isUrlCoded(username)) {
+            username = Encoding.urlDecode(username, false);
+        }
+        if (Encoding.isUrlCoded(slug)) {
+            slug = Encoding.urlDecode(slug, false);
+        }
         String theName = slug;
         final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
         if (csrftoken == null || username == null || slug == null) {
