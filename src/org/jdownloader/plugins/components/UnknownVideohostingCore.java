@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -10,23 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -44,6 +28,23 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownVideohostingCore extends PluginForHost {
@@ -84,15 +85,14 @@ public class UnknownVideohostingCore extends PluginForHost {
     // return super.rewriteHost(host);
     // }
     /* Extension which will be used if no correct extension is found */
-    private static final String        default_extension = ".mp4";
+    private static final String    default_extension = ".mp4";
     /* Connection stuff */
-    private static final boolean       free_resume       = true;
-    private static final int           free_maxchunks    = 0;
-    private static final int           free_maxdownloads = -1;
-    protected String                   dllink            = null;
-    protected boolean                  server_issues     = false;
-    private static Object              LOCK              = new Object();
-    private static final AtomicBoolean isPairing         = new AtomicBoolean(true);
+    private static final boolean   free_resume       = true;
+    private static final int       free_maxchunks    = 0;
+    private static final int       free_maxdownloads = -1;
+    protected String               dllink            = null;
+    protected boolean              server_issues     = false;
+    protected static AtomicBoolean PAIRING           = new AtomicBoolean(true);
 
     @Override
     public String getAGBLink() {
@@ -101,7 +101,6 @@ public class UnknownVideohostingCore extends PluginForHost {
 
     @Override
     public void init() {
-        isPairing.set(true);
     }
 
     @Override
@@ -288,8 +287,9 @@ public class UnknownVideohostingCore extends PluginForHost {
             // logger.info("Waiting for pairing to finish");
             // this.sleep(1000, link);
             // }
-            synchronized (LOCK) {
+            synchronized (PAIRING) {
                 if (allowPairingAPILinkcheck() && !isPaired()) {
+                    PAIRING.set(true);
                     /*
                      * We could have waited several minutes because of synchronization so we need to access the page again to refresh the
                      * status! If we don't do that, user may receive two pairing-dialogs if he e.g. tries to start a lof of vev.io downloads
@@ -312,6 +312,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                  * {"code":400,"message":"IP is not currently paired. Please visit https://vidup.io/pair for more information.","errors":[]}
                  */
                 if (!isPaired()) {
+                    PAIRING.set(true);
                     logger.info("New pairing session required");
                     if (!isDownload) {
                         /* Avoid captchas during linkcheck */
@@ -344,7 +345,7 @@ public class UnknownVideohostingCore extends PluginForHost {
                     }
                     displayPairingSuccessDialog();
                 }
-                isPairing.set(false);
+                PAIRING.set(false);
             }
             if (br.getURL() == null || !br.getURL().contains(this.getFID(link))) {
                 /* Only perform this API call if it hasn't been done already! */
@@ -703,16 +704,16 @@ public class UnknownVideohostingCore extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -721,7 +722,7 @@ public class UnknownVideohostingCore extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        if (isPairing.get() && usePairingMode()) {
+        if (PAIRING.get() && usePairingMode()) {
             return 1;
         } else {
             return free_maxdownloads;
