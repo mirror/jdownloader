@@ -18,9 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -37,6 +35,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterGallery extends PluginForDecrypt {
@@ -72,6 +73,24 @@ public class XHamsterGallery extends PluginForDecrypt {
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);
+    }
+
+    public static String buildHostsPatternPart(String[] domains) {
+        final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
+        for (int i = 0; i < domains.length; i++) {
+            final String domain = domains[i];
+            if (i > 0) {
+                pattern.append("|");
+            }
+            if ("xhamster.com".equals(domain)) {
+                pattern.append("xhamster\\d*\\.(com|xxx|desi|one)");
+            } else {
+                pattern.append(Pattern.quote(domain));
+            }
+        }
+        pattern.append(")");
+        return pattern.toString();
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

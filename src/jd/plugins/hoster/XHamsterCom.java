@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -105,6 +106,24 @@ public class XHamsterCom extends PluginForHost {
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);
+    }
+
+    public static String buildHostsPatternPart(String[] domains) {
+        final StringBuilder pattern = new StringBuilder();
+        pattern.append("(?:");
+        for (int i = 0; i < domains.length; i++) {
+            final String domain = domains[i];
+            if (i > 0) {
+                pattern.append("|");
+            }
+            if ("xhamster.com".equals(domain)) {
+                pattern.append("xhamster\\d*\\.(com|xxx|desi|one)");
+            } else {
+                pattern.append(Pattern.quote(domain));
+            }
+        }
+        pattern.append(")");
+        return pattern.toString();
     }
 
     /* DEV NOTES */
