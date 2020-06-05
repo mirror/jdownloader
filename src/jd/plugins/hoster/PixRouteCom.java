@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -106,9 +107,9 @@ public class PixRouteCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void handleDownloadErrors(final DownloadLink link, final Account account) throws Exception {
+    protected void handleDownloadErrors(URLConnectionAdapter con, final DownloadLink link, final Account account) throws Exception {
         /* 2019-07-03: Special */
-        super.handleDownloadErrors(link, account);
+        super.handleDownloadErrors(con, link, account);
         boolean specialOffline = false;
         try {
             final long final_filesize = dl.getConnection().getLongContentLength();
