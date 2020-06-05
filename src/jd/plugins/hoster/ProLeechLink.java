@@ -343,13 +343,15 @@ public class ProLeechLink extends antiDDoSForHost {
                         message += "Um deinen Proleech Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + loginurl + "'\t\r\n";
                         message += "2. Suche dir auf der Seite deinen API Username und API Key heraus und gebe diese Informationen in JDownloader ein.\r\n";
-                        message += "Du kannst deinen Account dann wie gewohnt in JDownloader verwenden.\r\n";
+                        message += "Achtung: Dein API Benutzername muss evtl. kleingeschrieben werden, unabhängig von der normalen Schreibweise deines Benutzername!\r\n";
+                        message += "Du kannst deinen Account jetzt wie gewohnt in JDownloader verwenden.\r\n";
                     } else {
                         title = "Proleech.link - Login";
                         message += "Hello dear proleech user\r\n";
                         message += "In order to use your proleech account in JDownloader you will have to follow these instructions:\r\n";
                         message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + loginurl + "'\t\r\n";
                         message += "2. Get your API Username and API Key displayed on this website and use this as your account login credentials.\r\n";
+                        message += "Attention: Your API Username might need to be lowercase even if your original username contains uppercase characters!\r\n";
                         message += "Your account should now be accepted in JDownloader.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
