@@ -71,14 +71,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationUrls() {
-        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SINGLE_PHOTO + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_PHOTOS_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK + "|" + TYPE_PHOTOS_LINK_2 + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
+        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_PHOTOS_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK + "|" + TYPE_PHOTOS_LINK_2 + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
     }
 
     // can be url encoded
     private static final String         COMPONENT_USERNAME              = "(?:[\\%a-zA-Z0-9\\-]+)";
     private static final String         TYPE_FBSHORTLINK                = "https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String         TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
-    private static final String         TYPE_SINGLE_PHOTO               = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
+    // private static final String TYPE_SINGLE_PHOTO = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
     private static final String         TYPE_SET_LINK_PHOTO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
     private static final String         TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
     private static final String         TYPE_PHOTOS_ALBUMS_LINK         = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
@@ -131,13 +131,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
         parameter = param.toString().replace("#!/", "");
         // fastLinkcheckPictures = getPluginConfig().getBooleanProperty(jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES,
         // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT);
-        if (parameter.matches(TYPE_SINGLE_PHOTO)) {
-            final String id = new Regex(parameter, "fbid=(\\d+)").getMatch(0);
-            final DownloadLink dl = createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id);
-            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        } else if (parameter.matches(TYPE_FB_REDIRECT_TO_EXTERN_SITE)) {
+        /* 2020-06-05: Handle this in hoster plugin right away */
+        // if (parameter.matches(TYPE_SINGLE_PHOTO)) {
+        // final String id = new Regex(parameter, "fbid=(\\d+)").getMatch(0);
+        // final DownloadLink dl = createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id);
+        // dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+        // decryptedLinks.add(dl);
+        // return decryptedLinks;
+        // }
+        if (parameter.matches(TYPE_FB_REDIRECT_TO_EXTERN_SITE)) {
             decryptedLinks.add(createDownloadlink(getRedirectToExternalSite(parameter)));
             return decryptedLinks;
         }
