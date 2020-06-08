@@ -717,7 +717,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("text") || !con.isOK() || !con.isContentDisposition() || con.getLongContentLength() == -1) {
                     link.setProperty(property, Property.NULL);
                     dllink = null;
                 }

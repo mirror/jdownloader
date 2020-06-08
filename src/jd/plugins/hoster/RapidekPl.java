@@ -17,18 +17,26 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -38,6 +46,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -95,18 +104,19 @@ public class RapidekPl extends PluginForHost {
         if (dllink == null) {
             this.loginAPI(account, false);
             br.postPageRaw(API_BASE + "/file-download/init", String.format("{\"Url\":\"%s\"}", link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            final String internalID = PluginJSonUtils.getJson(br, "DownloadId");
-            if (StringUtils.isEmpty(internalID) || !internalID.matches("\"?[a-f0-9\\-]+\"?")) {
+            final String downloadID = PluginJSonUtils.getJson(br, "DownloadId");
+            if (StringUtils.isEmpty(downloadID) || !downloadID.matches("\"?[a-f0-9\\-]+\"?")) {
                 mhm.handleErrorGeneric(account, link, "Bad DownloadId", 20);
             }
-            br.postPageRaw(API_BASE + "/file-download/download-info", String.format("{\"downloadId\":\"%s\"}", internalID));
-            /* TODO: Add serverside download handling */
-            // dllink = API_BASE + "/file?id=" + internalID;
-            // if (dllink == null) {
-            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "dllinknull", 5 * 60 * 1000l);
-            // }
-            if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "Failed o find final downloadurl", 20);
+            final boolean success = cacheDLChecker(downloadID);
+            if (!success) {
+                logger.info("Serverside download failed!");
+                mhm.handleErrorGeneric(account, link, "Cloud download failure", 20);
+            } else {
+                dllink = PluginJSonUtils.getJson(br, "DownloadUrl");
+                if (StringUtils.isEmpty(dllink)) {
+                    mhm.handleErrorGeneric(account, link, "Failed o find final downloadurl", 20);
+                }
             }
         }
         link.setProperty(this.getHost() + "directlink", dllink);
@@ -116,6 +126,99 @@ public class RapidekPl extends PluginForHost {
             mhm.handleErrorGeneric(account, link, "Unknown download error", 20);
         }
         this.dl.startDownload();
+    }
+
+    /* Stolen from LinkSnappyCom */
+    private boolean cacheDLChecker(final String downloadID) throws Exception {
+        final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+            protected long lastCurrent    = -1;
+            protected long lastTotal      = -1;
+            protected long startTimeStamp = -1;
+
+            @Override
+            public PluginTaskID getID() {
+                return PluginTaskID.WAIT;
+            }
+
+            @Override
+            public String getMessage(Object requestor) {
+                if (requestor instanceof ETAColumn) {
+                    final long eta = getETA();
+                    if (eta >= 0) {
+                        return TimeFormatter.formatMilliSeconds(eta, 0);
+                    }
+                    return "";
+                }
+                return "Preparing your delayed file";
+            }
+
+            @Override
+            public void updateValues(long current, long total) {
+                super.updateValues(current, total);
+                if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                    lastTotal = total;
+                    lastCurrent = current;
+                    startTimeStamp = System.currentTimeMillis();
+                    // this.setETA(-1);
+                    return;
+                }
+                long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                if (currentTimeDifference <= 0) {
+                    return;
+                }
+                long speed = (current * 10000) / currentTimeDifference;
+                if (speed == 0) {
+                    return;
+                }
+                long eta = ((total - current) * 10000) / speed;
+                this.setETA(eta);
+            }
+        };
+        waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+        waitProgress.setProgressSource(this);
+        int lastProgress = -1;
+        try {
+            final int maxWaitSeconds = 300;
+            final int waitSecondsPerLoop = 5;
+            int waitSecondsLeft = maxWaitSeconds;
+            Integer currentProgress = 0;
+            do {
+                logger.info(String.format("Waiting for file to get loaded onto server - seconds left %d / %d", waitSecondsLeft, maxWaitSeconds));
+                this.getDownloadLink().addPluginProgress(waitProgress);
+                waitProgress.updateValues(currentProgress.intValue(), 100);
+                for (int sleepRound = 0; sleepRound < waitSecondsPerLoop; sleepRound++) {
+                    if (isAbort()) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else {
+                        Thread.sleep(1000);
+                    }
+                }
+                if (currentProgress.intValue() != lastProgress) {
+                    // lastProgressChange = System.currentTimeMillis();
+                    lastProgress = currentProgress.intValue();
+                }
+                br.getPage(API_BASE + "/file-download/download-info?downloadId=" + Encoding.urlEncode(downloadID));
+                try {
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    final int tmpCurrentProgress = (int) ((Number) entries.get("DownloadProgressPercentage")).longValue();
+                    if (tmpCurrentProgress > currentProgress) {
+                        /* Do not allow the progress to "go back". */
+                        currentProgress = tmpCurrentProgress;
+                    }
+                } catch (final Throwable e) {
+                    logger.info("Error parsing json response");
+                    break;
+                }
+                waitSecondsLeft -= waitSecondsPerLoop;
+            } while (waitSecondsLeft > 0 && currentProgress < 100);
+            if (currentProgress >= 100) {
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            this.getDownloadLink().removePluginProgress(waitProgress);
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
