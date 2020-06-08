@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,9 +34,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
+/** 2020-06-08: Current main domain is: isrbx.net */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html" })
 public class SrBoxLife extends antiDDoSForDecrypt {
     public SrBoxLife(PluginWrapper wrapper) {

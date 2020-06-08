@@ -54,7 +54,6 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String REV_3                 = jd.plugins.decrypter.FaceBookComGallery.REV_3;
     // five minutes, not 30seconds! -raztoki20160309
     private static final long   trust_cookie_age      = 300000l;
-    private static Object       LOCK                  = new Object();
     private String              dllink                = null;
     private boolean             loggedIN              = false;
     private boolean             accountNeeded         = false;
@@ -394,9 +393,8 @@ public class FaceBookComVideos extends PluginForHost {
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
     }
 
-    @SuppressWarnings("unchecked")
     public void login(final Account account, Browser br) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 setHeaders(br);
                 // Load cookies

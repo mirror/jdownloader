@@ -23,10 +23,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -38,12 +39,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://((www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/album/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
     public BandCampComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,49 +59,59 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (!br.getURL().contains("bandcamp.com")) {
+        }
+        final String json = br.getRegex("trackinfo\\s*:\\s*(\\[.*?\\])").getMatch(0);
+        if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
             decryptedLinks.add(this.createDownloadlink(br.getURL()));
             return decryptedLinks;
         }
-        final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"\\s*>\\s*<span[^<]*itemprop\\s*=\\s*\"name\"\\s*>\\s*([^<>\"]*?)\\s*</span>.*?<meta\\s*itemprop\\s*=\\s*\"duration\"\\s*content=\"(.*?)\"").getMatches();
         String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
         String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
         if (album == null) {
             album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
         }
         final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
-        if (links == null || links.length == 0 || artist == null || album == null || date == null) {
-            if (br.getURL().endsWith("bandcamp.com/")) {
-                return decryptedLinks;
-            }
-            if (br.containsHTML("class='download-link buy-link'")) {
-                logger.info("Seems like this album can't be downloaded: " + parameter);
-                return decryptedLinks;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        // if (links == null || links.length == 0 || artist == null || album == null || date == null) {
+        // if (br.getURL().endsWith("bandcamp.com/")) {
+        // return decryptedLinks;
+        // }
+        // if (br.containsHTML("class='download-link buy-link'")) {
+        // logger.info("Seems like this album can't be downloaded: " + parameter);
+        // return decryptedLinks;
+        // }
+        // logger.warning("Decrypter broken for link: " + parameter);
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         artist = Encoding.htmlDecode(artist.trim());
         album = Encoding.htmlDecode(album.trim());
         final DecimalFormat df;
-        if (links.length > 999) {
+        if (ressourcelist.size() > 999) {
             df = new DecimalFormat("0000");
-        } else if (links.length > 99) {
+        } else if (ressourcelist.size() > 99) {
             df = new DecimalFormat("000");
         } else {
             df = new DecimalFormat("00");
         }
         int trackcounter = 1;
-        for (final String linkinfo[] : links) {
-            final String dllink = br.getURL(linkinfo[0]).toString().replaceFirst("bandcamp\\.com", "bandcampdecrypted.com");
-            final String fname = Encoding.htmlDecode(linkinfo[1].trim());
+        for (final Object audioO : ressourcelist) {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) audioO;
+            String dllink = (String) entries.get("title_link");
+            final String title = (String) entries.get("title");
+            if (StringUtils.isEmpty(dllink) || StringUtils.isEmpty(title)) {
+                /* Skip invalid objects */
+                continue;
+            }
+            if (dllink.startsWith("/")) {
+                dllink = "https://" + Browser.getHost(parameter, true) + dllink;
+            }
             final DownloadLink dl = createDownloadlink(dllink);
             dl.setProperty("fromdecrypter", true);
             dl.setProperty("directdate", date);
             dl.setProperty("directartist", artist);
             dl.setProperty("directalbum", album);
-            dl.setProperty("directname", fname);
+            dl.setProperty("directname", title);
             dl.setProperty("type", "mp3");
             dl.setProperty("directtracknumber", df.format(trackcounter));
             final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(dl);
@@ -110,12 +119,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
                 dl.setAvailable(true);
             }
-            final String duration[] = new Regex(linkinfo[2], "P(\\d+)H(\\d+)M(\\d+)S").getRow(0);
-            if (duration != null && duration.length == 3) {
-                final long length = 128 * 1024l / 8 * ((Integer.parseInt(duration[0]) * 60 * 60) + (Integer.parseInt(duration[1]) * 60) + (Integer.parseInt(duration[2])));
-                dl.setDownloadSize(length);
-                dl.setAvailable(true);
-            }
+            // final String duration[] = new Regex(linkinfo[2], "P(\\d+)H(\\d+)M(\\d+)S").getRow(0);
+            // if (duration != null && duration.length == 3) {
+            // final long length = 128 * 1024l / 8 * ((Integer.parseInt(duration[0]) * 60 * 60) + (Integer.parseInt(duration[1]) * 60) +
+            // (Integer.parseInt(duration[2])));
+            // dl.setDownloadSize(length);
+            // dl.setAvailable(true);
+            // }
             decryptedLinks.add(dl);
             trackcounter++;
         }
