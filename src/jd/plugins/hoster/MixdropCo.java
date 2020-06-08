@@ -55,7 +55,7 @@ public class MixdropCo extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mixdrop.co", "mixdrop.to" });
+        ret.add(new String[] { "mixdrop.co", "mixdrop.to", "mixdrop.club" });
         return ret;
     }
 
@@ -171,6 +171,8 @@ public class MixdropCo extends antiDDoSForHost {
             if (USE_API_FOR_LINKCHECK) {
                 getPage(link.getPluginPatternMatcher());
             }
+            /* 2020-06-08: reCaptchaV3 only works for domain mixdrop.co and not any other domains but some URLs are kinda domain-bound. */
+            final String forced_xhr_domain = "mixdrop.co";
             final String fid = getFID(link);
             String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
             if (csrftoken == null) {
@@ -178,13 +180,15 @@ public class MixdropCo extends antiDDoSForHost {
                 csrftoken = "";
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            final String url = "/f/" + fid + "?download";
+            final String url = "https://" + forced_xhr_domain + "/f/" + fid + "?download";
             getPage(url);
             String postData = "a=genticket&csrf=" + csrftoken;
             /* 2019-12-13: Invisible reCaptcha */
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
                 // final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
+                // final Browser brc = br.cloneBrowser();
+                // brc.getPage("https://mixdrop.co/");
                 final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 postData += "&token=" + Encoding.urlEncode(recaptchaV2Response);
             }
@@ -197,6 +201,9 @@ public class MixdropCo extends antiDDoSForHost {
                      * {"type":"error","msg":"Failed captcha verification. Please try again. #errcode: 2"}
                      */
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (br.containsHTML("File not found")) {
+                    /* 2020-06-08: {"type":"error","msg":"File not found"} */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

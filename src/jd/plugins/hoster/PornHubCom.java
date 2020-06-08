@@ -239,6 +239,7 @@ public class PornHubCom extends PluginForHost {
         /* User-chosen quality, set in decrypter */
         String html_filename = null;
         String server_filename = null;
+        boolean isVideo = false;
         final String quality = link.getStringProperty("quality", null);
         /*
          * TODO account handling: Prefer account from handlePremium to be sure not to use ANY account for downloading but the account the
@@ -302,6 +303,8 @@ public class PornHubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
+            /* Required later if e.g. directurl has to be refreshed! */
+            isVideo = true;
             /* Offline links should also have nice filenames */
             link.setName(viewKey + ".mp4");
             html_filename = link.getStringProperty("decryptedfilename", null);
@@ -345,7 +348,7 @@ public class PornHubCom extends PluginForHost {
             link.setFinalFileName(html_filename);
         }
         if (!verifyFinalURL(link, this.dlUrl)) {
-            if (format == null || !format.contains("mp4")) {
+            if (!isVideo) {
                 /* We cannot refresh directurls of e.g. photo content - final downloadurls should be static --> WTF */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }

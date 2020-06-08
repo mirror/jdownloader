@@ -24,6 +24,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -96,16 +97,22 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                 final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
                 for (final Object itemO : items) {
                     final String html = (String) itemO;
-                    final String title = new Regex(html, "title=\"([^<>\"]+)\"").getMatch(0);
-                    String url = new Regex(html, "((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/(?:(?:art|portal)/view|audio/listen)/\\d+)").getMatch(0);
-                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(title)) {
+                    String title = new Regex(html, "title=\"([^<>\"]+)\"").getMatch(0);
+                    if (title == null) {
+                        title = new Regex(html, "alt=\"([^<>\"]+)\"").getMatch(0);
+                    }
+                    String url = new Regex(html, "((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/(?:(?:art|portal)/view|audio/listen)/[^<>\"\\']+)").getMatch(0);
+                    if (StringUtils.isEmpty(url)) {
                         continue;
                     }
                     if (url.startsWith("//")) {
                         url = "https:" + url;
                     }
                     final DownloadLink dl = createDownloadlink(url);
-                    dl.setName(title);
+                    if (title != null) {
+                        title = Encoding.htmlDecode(title);
+                        dl.setName(title);
+                    }
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     if (url.matches(TYPE_AUDIO)) {

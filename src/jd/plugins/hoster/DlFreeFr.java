@@ -13,13 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,11 +37,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" })
 public class DlFreeFr extends PluginForHost {
-
     @Override
     public String rewriteHost(String host) {
         if (host == null || "dl.free.fr".equals(host) || "free.fr".equals(host)) {
@@ -83,7 +81,6 @@ public class DlFreeFr extends PluginForHost {
         if (c == null || c.size() == 0) {
             return false;
         }
-
         /* create challenge url */
         final Browser ayl = br.cloneBrowser();
         ayl.getPage("http://api-ayl.appspot.com/challenge?key=" + c.get("key") + "&env=" + c.get("env") + "&callback=Adyoulike.g._jsonp_" + (int) (Math.random() * (99999 - 10000) + 10000));
@@ -94,12 +91,10 @@ public class DlFreeFr extends PluginForHost {
         for (String[] s : allValues) {
             c.put(s[0], s[1]);
         }
-
         String cType = c.get("medium_type");
         cType = cType == null ? "notDetected" : cType;
         cType = cType.split("/")[0];
         String instructions = null, cCode = null;
-
         if (ayl.getRegex("adyoulike\":\\{\"disabled\":(true)").matches()) {
             br.submitForm(form);
             return true;
@@ -108,7 +103,6 @@ public class DlFreeFr extends PluginForHost {
         if ("notDetected".equals(cType) && c.containsKey("disabled") && "true".equals(c.get("disabled"))) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only available in France. Please use a french proxy!");
         }
-
         switch (CaptchaTyp.valueOf(cType)) {
         case image:
             ayl.setFollowRedirects(true);
@@ -155,8 +149,8 @@ public class DlFreeFr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (HTML) {
             logger.info("InDirect download");
             br.setFollowRedirects(false);
@@ -166,7 +160,6 @@ public class DlFreeFr extends PluginForHost {
             // These are not used, so why throw exception?
             // final Form captchaForm = br.getForm(1);
             // if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
             // Old
             // /* special captcha handling */
             // boolean isCaptchaResolved = false;
@@ -175,7 +168,6 @@ public class DlFreeFr extends PluginForHost {
             // if (isCaptchaResolved) break;
             // }
             // if (!isCaptchaResolved) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
             // Really old
             // PluginForHost recplug =
             // JDUtilities.getPluginForHost("DirectHTTP");
@@ -207,7 +199,7 @@ public class DlFreeFr extends PluginForHost {
             final int repeat = 3;
             for (int i = 0; i != repeat; i++) {
                 // small sleep?
-                sleep((new Random().nextInt(10) + 1) * 1000, downloadLink);
+                sleep((new Random().nextInt(10) + 1) * 1000, link);
                 final String file = br.getRegex("type=\"hidden\" name=\"file\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (file == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -218,39 +210,56 @@ public class DlFreeFr extends PluginForHost {
                     break;
                 } else if (dlLink == null && (i + 1 != repeat)) {
                     // lets put a small wait in here
-                    downloadLink.wait(2563l * new Random().nextInt(4));
+                    link.wait(2563l * new Random().nextInt(4));
                     continue;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, true, 1);
         } else {
             logger.info("Direct download");
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
+        }
+        String passCode = link.getDownloadPassword();
+        if (!dl.getConnection().isContentDisposition() && br.getHttpConnection().getResponseCode() == 401) {
+            logger.info("Password required");
+            if (passCode == null) {
+                passCode = getUserInput("Password?", link);
+            }
+            final String passB64 = Encoding.Base64Encode(":" + passCode);
+            br.getHeaders().put("Authorization", "Basic " + passB64);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl.getConnection().getURL().toString(), true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
+            if (br.getHttpConnection().getResponseCode() == 401) {
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            }
             br.followConnection();
             if (br.getURL().contains("overload")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (passCode != null) {
+            link.setDownloadPassword(passCode);
+        }
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
+            con = br.openGetConnection(link.getDownloadURL());
             if (con.isContentDisposition()) {
-                downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                link.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
             } else {
                 br.followConnection();
@@ -272,8 +281,8 @@ public class DlFreeFr extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("o", "byte").replaceAll("Ko", "Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("o", "byte").replaceAll("Ko", "Kb").replaceAll("Mo", "Mb").replaceAll("Go", "Gb")));
         return AvailableStatus.TRUE;
     }
 

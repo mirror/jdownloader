@@ -87,6 +87,7 @@ public class Ardmediathek extends PluginForDecrypt {
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
     private final List<String>                  all_known_qualities                        = Arrays.asList("http_6666000_1080", "hls_6666000_1080", "http_3773000_720", "hls_3773000_720", "http_1989000_540", "hls_1989000_540", "http_1213000_360", "hls_1213000_360", "http_605000_280", "hls_605000_280", "http_448000_270", "hls_448000_270", "http_317000_270", "hls_317000_270", "http_189000_180", "hls_189000_180", "http_0_0");
     private final Map<String, Long>             heigth_to_bitrate                          = new HashMap<String, Long>();
+    private String                              packagename                                = null;
     {
         heigth_to_bitrate.put("180", 189000l);
         /* keep in mind that sometimes there are two versions for 270! This is the higher one (default)! */
@@ -637,7 +638,7 @@ public class Ardmediathek extends PluginForDecrypt {
             if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String date_formatted = new Regex(broadcastedOn, "(\\d\\d{4}-\\d\\d{2}-\\d{2})").getMatch(0);
+            String date_formatted = new Regex(broadcastedOn, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             if (date_formatted == null) {
                 /* Fallback */
                 date_formatted = broadcastedOn;
@@ -648,6 +649,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Required for linkid / dupe check */
                 this.contentID = ardDocumentID;
             }
+            packagename = date_formatted + "_ardmediathek_de_" + this.title;
         }
         if (requiresOldContentIDHandling) {
             if (StringUtils.isEmpty(ardDocumentID)) {
@@ -1279,7 +1281,11 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (decryptedLinks.size() > 1) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
+            if (this.packagename != null) {
+                fp.setName(this.packagename);
+            } else {
+                fp.setName(title);
+            }
             fp.addLinks(decryptedLinks);
         }
     }

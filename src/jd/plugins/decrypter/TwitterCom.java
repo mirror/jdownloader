@@ -332,7 +332,9 @@ public class TwitterCom extends PornEmbedParser {
             dl = this.createDownloadlink("directhttp://" + url);
         }
         if (filename != null) {
-            dl.setFinalFileName(filename);
+            // dl.setFinalFileName(filename);
+            /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
+            dl.setForcedFileName(filename);
         }
         dl.setAvailable(true);
         decryptedLinks.add(dl);
