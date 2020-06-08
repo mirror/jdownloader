@@ -30,6 +30,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -288,7 +289,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         if (expire != null) {
             if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "You have reached limit of premium downloads", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("You have reached limit of premium downloads", 30 * 60 * 1000l);
             }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
             ai.setStatus("Premium Account");
@@ -710,12 +711,11 @@ public class TurbobitCore extends antiDDoSForHost {
             final String[] mirrors = br.getRegex("('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
             if (mirrors == null || mirrors.length == 0) {
                 if (br.containsHTML("You have reached the.*? limit of premium downloads")) {
-                    logger.info("You have reached the.*? limit of premium downloads");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("Downloadlimit reached", 30 * 60 * 1000l);
                 }
                 if (br.containsHTML("'>Premium access is blocked<")) {
-                    logger.info("No traffic available");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    logger.info("Premium access is blocked --> No traffic available?");
+                    throw new AccountUnavailableException("Premium access is blocked --> No traffic available?", 30 * 60 * 1000l);
                 }
                 this.handleGeneralErrors();
                 logger.warning("dllink equals null, plugin seems to be broken!");
@@ -738,7 +738,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     getPage(currentlink);
                     if (br.getHttpConnection().getResponseCode() == 503) {
                         logger.info("Too many connections on current account via current IP");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new AccountUnavailableException("Too many connections on current account via current IP", 2 * 60 * 1000l);
                     }
                     if (br.getRedirectLocation() != null) {
                         dllink = br.getRedirectLocation();
@@ -807,7 +807,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 // response code 403 && <p>You have reached the limit of downloads from this IP address, please contact our
                 if (downloadType == DownloadType.ACCOUNT_PREMIUM) {
                     logger.info("No traffic available");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountUnavailableException("403: You have reached the limit of downloads from this IP address", 30 * 60 * 1000l);
                 }
                 // some reason we have different error handling for free.
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);

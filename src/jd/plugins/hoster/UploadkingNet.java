@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -26,25 +26,47 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision $", interfaceVersion = 2, names = {}, urls = {})
-public class BayFilesCom extends UnknownHostingScriptCore {
-    public BayFilesCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class UploadkingNet extends XFileSharingProBasic {
+    public UploadkingNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
+     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: null<br />
+     * limit-info: 2020-06-08: No limits at all <br />
+     * captchatype-info: 2020-06-08: null<br />
      * other:<br />
      */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "uploadking.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -55,10 +77,11 @@ public class BayFilesCom extends UnknownHostingScriptCore {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
@@ -68,7 +91,7 @@ public class BayFilesCom extends UnknownHostingScriptCore {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
 
@@ -83,33 +106,8 @@ public class BayFilesCom extends UnknownHostingScriptCore {
     }
 
     @Override
-    public boolean supports_availablecheck_via_api() {
-        return super.supports_availablecheck_via_api();
-    }
-
-    public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bayfiles.com", "letsupload.cc" });
-        return ret;
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        /* 2020-06-08: letsupload.cc is now bayfiles.com */
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        return UnknownHostingScriptCore.buildAnnotationUrls(getPluginDomains());
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-06-08: Special */
+        return false;
     }
 }

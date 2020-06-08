@@ -42,7 +42,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/album/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/(?:album|track)/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
     public BandCampComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -99,6 +99,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) audioO;
             String dllink = (String) entries.get("title_link");
             final String title = (String) entries.get("title");
+            final long duration = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
             if (StringUtils.isEmpty(dllink) || StringUtils.isEmpty(title)) {
                 /* Skip invalid objects */
                 continue;
@@ -116,16 +117,14 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dl.setProperty("directtracknumber", df.format(trackcounter));
             final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(dl);
             dl.setName(formattedFilename);
-            if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
+            if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, true)) {
                 dl.setAvailable(true);
             }
-            // final String duration[] = new Regex(linkinfo[2], "P(\\d+)H(\\d+)M(\\d+)S").getRow(0);
-            // if (duration != null && duration.length == 3) {
-            // final long length = 128 * 1024l / 8 * ((Integer.parseInt(duration[0]) * 60 * 60) + (Integer.parseInt(duration[1]) * 60) +
-            // (Integer.parseInt(duration[2])));
-            // dl.setDownloadSize(length);
-            // dl.setAvailable(true);
-            // }
+            if (duration > 0) {
+                final long length = 128 * 1024l / 8 * duration;
+                dl.setDownloadSize(length);
+                dl.setAvailable(true);
+            }
             decryptedLinks.add(dl);
             trackcounter++;
         }
@@ -166,7 +165,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                         if (nameResult != null) {
                             dl.setFinalFileName(nameResult + "_" + format + Plugin.getFileNameExtensionFromURL(url));
                         }
-                        if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, false)) {
+                        if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, true)) {
                             dl.setAvailable(true);
                             decryptedLinks.add(dl);
                         } else {
