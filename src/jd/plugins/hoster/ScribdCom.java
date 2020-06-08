@@ -416,22 +416,33 @@ public class ScribdCom extends PluginForHost {
                 prepBRGeneral(br);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean isLoggedin = false;
                 String authenticity_token = null;
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
                     authenticity_token = getauthenticity_token(account);
                     br.getPage("https://www." + account.getHoster() + "/");
-                    isLoggedin = isLoggedin(br);
-                }
-                if (!isLoggedin) {
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    authenticity_token = createCSRFTOKEN(br, account.getHoster());
-                    br.postPage("/login", "authenticity_token=" + authenticity_token + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                    final String loginstatus = PluginJSonUtils.getJson(br, "login");
-                    if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (isLoggedin(br)) {
+                        /* Cookie login successful --> Save cookie timestamp */
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
                     }
+                    br.clearAll();
+                }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                /* 2020-06-08: No required anymore(?) */
+                authenticity_token = createCSRFTOKEN(br, account.getHoster());
+                if (authenticity_token != null) {
+                    br.getHeaders().put("x-csrf-token", authenticity_token);
+                }
+                br.getHeaders().put("content-type", "application/json");
+                // br.getHeaders().put("origin", "https://de.scribd.com");
+                // br.getHeaders().put("referer", "https://de.scribd.com/");
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                final String postData = String.format("{\"login_or_email\":\"%s\",\"login_password\":\"%s\",\"rememberme\":\"\",\"signup_location\":\"https://de.scribd.com/\",\"login_params\":{}}", account.getUser(), account.getPass());
+                br.postPageRaw("/login", postData);
+                final String loginstatus = PluginJSonUtils.getJson(br, "login");
+                if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
                 account.setProperty("authenticity_token", authenticity_token);
