@@ -46,12 +46,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "https?://proleech\\.link/download/[a-zA-Z0-9]+(?:/.*)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "" })
 public class ProLeechLink extends antiDDoSForHost {
     public ProLeechLink(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://proleech.link/signup");
-        if (!useAPIOnly()) {
+        if (useAPIOnly()) {
             /* 2020-06-04: API allows more requests in a short time than website does */
             /* 2020-06-05: API does not have rate limits at all (RE: admin) */
             // this.setStartIntervall(1000l);
@@ -77,9 +77,8 @@ public class ProLeechLink extends antiDDoSForHost {
         return "https://proleech.link/page/terms";
     }
 
-    /** TODO: Add setting to switch between API/website */
     private boolean useAPIOnly() {
-        return PluginJsonConfig.get(this.getConfigInterface()).isEnableBetaAPIOnly();
+        return PluginJsonConfig.get(this.getConfigInterface()).isEnableAPI();
     }
 
     private boolean useAPILoginWorkaround() {
@@ -100,11 +99,7 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        final String fileName = new Regex(parameter.getPluginPatternMatcher(), "download/[a-zA-Z0-9]+/([^/\\?]+)").getMatch(0);
-        if (fileName != null && !parameter.isNameSet()) {
-            parameter.setName(fileName);
-        }
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
 
@@ -168,7 +163,7 @@ public class ProLeechLink extends antiDDoSForHost {
             }
         }
         /* Clear download history on every accountcheck (if selected by user) */
-        clearDownloadHistory(account, true);
+        clearDownloadHistoryWebsite(account, true);
         /* 2020-06-04: Workaround: Save apikey to try to use API for downloading */
         this.getPage("/jdownloader");
         final String apiuser = br.getRegex("<h4>API Username:</h4>\\s*<p>([^<>\"]+)</p>").getMatch(0);
@@ -218,7 +213,6 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             ai.setUnlimitedTraffic();
         } else {
-            ai.setStatus("Premium API BETA mode active");
             trafficusedTodayStr = PluginJSonUtils.getJson(br, "used_today");
             /* 2020-06-04: Fallback: Static value taken from: https://proleech.link/page/hostlist */
             trafficmaxDailyStr = "80 GB";
@@ -226,8 +220,7 @@ public class ProLeechLink extends antiDDoSForHost {
             String expiredate = PluginJSonUtils.getJson(br, "subscriptions_date");
             if ("true".equalsIgnoreCase(premiumStatus) || "yes".equalsIgnoreCase(premiumStatus)) {
                 account.setType(AccountType.PREMIUM);
-                /* TODO: Use this once API mode is "not in BETA" anymore. */
-                // ai.setStatus("Premium User");
+                ai.setStatus("Premium User");
                 if (!StringUtils.isEmpty(expiredate) && expiredate.matches("\\d{4}-\\d{2}-\\d{2}")) {
                     /* 2020-06-04: Should expire at the end of the last day */
                     expiredate += " 23:59:59";
@@ -243,9 +236,8 @@ public class ProLeechLink extends antiDDoSForHost {
             } else {
                 /* 2020-06-04: Only premium users can see their apikey so if this happens, we probably have an expired premium account. */
                 account.setType(AccountType.FREE);
-                /* TODO: Use this once API mode is "not in BETA" anymore. */
-                // ai.setStatus("Free User");
-                /* Free account downloads are impossible via API */
+                ai.setStatus("Free User");
+                /* 2020-06-08: Free account downloads are impossible via API, some are possible via website */
                 ai.setTrafficLeft(0);
                 ai.setTrafficMax(trafficmaxDailyStr);
             }
@@ -343,7 +335,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         message += "Um deinen Proleech Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + loginurl + "'\t\r\n";
                         message += "2. Suche dir auf der Seite deinen API Username und API Key heraus und gebe diese Informationen in JDownloader ein.\r\n";
-                        message += "Achtung: Dein API Benutzername muss evtl. kleingeschrieben werden, unabhängig von der normalen Schreibweise deines Benutzername!\r\n";
+                        message += "Achtung: Dein API Benutzername muss evtl. kleingeschrieben werden, unabhängig von der normalen Schreibweise deines Benutzernamens!\r\n";
                         message += "Du kannst deinen Account jetzt wie gewohnt in JDownloader verwenden.\r\n";
                     } else {
                         title = "Proleech.link - Login";
@@ -355,7 +347,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         message += "Your account should now be accepted in JDownloader.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(1 * 60 * 1000);
+                    dialog.setTimeout(2 * 60 * 1000);
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
                         CrossSystem.openURL(loginurl);
                     }
@@ -501,13 +493,13 @@ public class ProLeechLink extends antiDDoSForHost {
                         }
                         account.setType(AccountType.PREMIUM);
                         /* 2019-11-19: Set premium account status in fetchAccountInfo */
-                        accountStatus = "Premium user";
+                        accountStatus = "Premium User";
                         account.setConcurrentUsePossible(true);
                         account.setMaxSimultanDownloads(-1);
                     }
                 } else {
                     account.setType(AccountType.FREE);
-                    accountStatus = "Free user";
+                    accountStatus = "Free User";
                     account.setConcurrentUsePossible(true);
                     if (ai != null) {
                         /* Only get/set hostlist if we're not currently trying to download a file (quick login) */
@@ -703,12 +695,12 @@ public class ProLeechLink extends antiDDoSForHost {
                 /* Try this as fallback */
                 deleteDownloadHistoryFilenameWhitelist.add(server_filename);
             }
-            clearDownloadHistory(account, isLoggedIN);
+            clearDownloadHistoryWebsite(account, isLoggedIN);
         }
     }
 
     /** Deletes entries from serverside download history if: File is successfully downloaded, file is olde than X days */
-    private void clearDownloadHistory(final Account account, final boolean isLoggedIN) {
+    private void clearDownloadHistoryWebsite(final Account account, final boolean isLoggedIN) {
         synchronized (account) {
             try {
                 /* Only clear download history if user wants it AND if we're logged-in! */
@@ -726,7 +718,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         /* Only access this URL if it has not been accessed before! */
                         getPage("https://" + this.getHost() + "/mydownloads");
                     }
-                    final String[] cloudDownloadRows = getDownloadHistoryRows();
+                    final String[] cloudDownloadRows = getDownloadHistoryRowsWebsite();
                     final ArrayList<String> filename_entries_to_delete = new ArrayList<String>();
                     /* First, let's check for old/dead entries and add them to our list of items we will remove later. */
                     for (final String filenameToCheck : deleteDownloadHistoryFilenameWhitelist) {
@@ -835,7 +827,7 @@ public class ProLeechLink extends antiDDoSForHost {
         return serverTime;
     }
 
-    private String[] getDownloadHistoryRows() {
+    private String[] getDownloadHistoryRowsWebsite() {
         return br.getRegex("<tr>\\s*<td><input[^>]*name=\"checkbox\\[\\]\"[^>]+>.*?</tr>").getColumn(-1);
     }
 
@@ -931,7 +923,7 @@ public class ProLeechLink extends antiDDoSForHost {
             boolean foundDownloadHistoryRow = false;
             String cloud_download_progress = null;
             String dllink = null;
-            final String[] downloadHistoryRows = getDownloadHistoryRows();
+            final String[] downloadHistoryRows = getDownloadHistoryRowsWebsite();
             if (downloadHistoryRows == null || downloadHistoryRows.length == 0) {
                 logger.warning("Failed to find any download history objects --> Possible plugin failure");
                 if (is_forced_cloud_download) {
@@ -990,7 +982,6 @@ public class ProLeechLink extends antiDDoSForHost {
         query.add("apiusername", Encoding.urlEncode(apiuser));
         query.add("apikey", Encoding.urlEncode(apikey));
         query.add("link", Encoding.urlEncode(url));
-        /* TODO: Add errorhandling, add API only handling once it is serverside possible */
         this.getPage(API_BASE + "?" + query.toString());
         checkErrorsAPI(link, account);
         /*
@@ -1113,22 +1104,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        loginWebsite(account, null, true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        final boolean isOkay = isDownloadConnection(dl.getConnection());
-        if (!isOkay) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/downloader")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
-        }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
