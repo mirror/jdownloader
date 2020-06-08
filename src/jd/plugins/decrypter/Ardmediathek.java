@@ -727,9 +727,13 @@ public class Ardmediathek extends PluginForDecrypt {
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
         try {
-            final Map<String, Object> map;
+            Map<String, Object> map;
             if (mediaCollection instanceof Map) {
                 map = (Map<String, Object>) mediaCollection;
+                if (!map.containsKey("_mediaArray")) {
+                    /* 2020-06-08: For new ARD URLs */
+                    map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "widgets/{0}/mediaCollection/embedded");
+                }
             } else {
                 map = null;
             }
