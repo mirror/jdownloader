@@ -1190,7 +1190,7 @@ public class YoutubeHelper {
                         log.log(e);
                     }
                 } else if (new Regex(string, "\\d{4}-\\d{2}-\\d{2}").matches()) {
-                    final SimpleDateFormat formatter = new SimpleDateFormat("yyyy'-'dd'-'MM", Locale.ENGLISH);
+                    final SimpleDateFormat formatter = new SimpleDateFormat("yyyy'-'MM'-'dd", Locale.ENGLISH);
                     try {
                         vid.date = formatter.parse(string).getTime();
                         logger.info("Date result " + vid.date + " " + new Date(vid.date));
