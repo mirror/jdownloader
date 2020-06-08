@@ -14,12 +14,12 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "proleech.link", type = Type.HOSTER)
 public interface ProleechLinkConfig extends PluginConfigInterface {
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Enable API only mode [Disabled = use website only mode] (2020-06-04: Warning! Still under development!)")
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Enable API only mode [Recommended!] (Disable this to force plugin to use website, NOT recommended!)")
     @Order(30)
-    boolean isEnableBetaAPIOnly();
+    boolean isEnableAPI();
 
-    void setEnableBetaAPIOnly(boolean b);
+    void setEnableAPI(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
