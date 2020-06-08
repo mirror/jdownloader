@@ -22,6 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,6 +32,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -39,9 +42,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcampdecrypted\\.com/track/[a-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?bandcamp\\.com/track/([a-z0-9\\-_]+)" })
 public class BandCampCom extends PluginForHost {
     private String DLLINK    = null;
     private String userAgent = null;
@@ -51,7 +52,7 @@ public class BandCampCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    public static final String FASTLINKCHECK        = "FASTLINKCHECK";
+    public static final String FASTLINKCHECK        = "FASTLINKCHECK_2020_06_02";
     public static final String CUSTOM_DATE          = "CUSTOM_DATE";
     public static final String CUSTOM_FILENAME      = "CUSTOM_FILENAME";
     public static final String GRABTHUMB            = "GRABTHUMB";
@@ -73,13 +74,6 @@ public class BandCampCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        final String url = link.getPluginPatternMatcher().replaceFirst("bandcampdecrypted.com", "bandcamp.com");
-        link.setPluginPatternMatcher(url);
-        link.setLinkID(url);
-    }
-
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
@@ -91,7 +85,7 @@ public class BandCampCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
         br = new Browser();
         this.setBrowserExclusive();
         if (userAgent == null) {
@@ -104,11 +98,11 @@ public class BandCampCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
+            con = br.openGetConnection(link.getDownloadURL());
             if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
-                DLLINK = downloadLink.getDownloadURL();
-                downloadLink.setVerifiedFileSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                DLLINK = link.getDownloadURL();
+                link.setVerifiedFileSize(con.getLongContentLength());
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 return AvailableStatus.TRUE;
             } else {
                 br.followConnection();
@@ -128,7 +122,7 @@ public class BandCampCom extends PluginForHost {
         if (file == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if ("null".equals(file)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "No free listening available!");
+            throw new AccountRequiredException();
         }
         DLLINK = new Regex(file, "((https?:)?//[^\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
@@ -137,7 +131,7 @@ public class BandCampCom extends PluginForHost {
             logger.info("DLLINK = " + DLLINK);
         }
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        if (!downloadLink.getBooleanProperty("fromdecrypter", false)) {
+        if (!link.getBooleanProperty("fromdecrypter", false)) {
             String tracknumber = br.getRegex("\"track_number\":(\\d+)").getMatch(0);
             if (tracknumber == null) {
                 tracknumber = "1";
@@ -165,16 +159,16 @@ public class BandCampCom extends PluginForHost {
             if (artist == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setProperty("fromdecrypter", true);
-            downloadLink.setProperty("directdate", Encoding.htmlDecode(date.trim()));
-            downloadLink.setProperty("directartist", Encoding.htmlDecode(artist.trim()));
-            downloadLink.setProperty("directalbum", Encoding.htmlDecode(albumname.trim()));
-            downloadLink.setProperty("directname", Encoding.htmlDecode(filename.trim()));
-            downloadLink.setProperty("type", "mp3");
-            downloadLink.setProperty("directtracknumber", df.format(trackNum));
+            link.setProperty("fromdecrypter", true);
+            link.setProperty("directdate", Encoding.htmlDecode(date.trim()));
+            link.setProperty("directartist", Encoding.htmlDecode(artist.trim()));
+            link.setProperty("directalbum", Encoding.htmlDecode(albumname.trim()));
+            link.setProperty("directname", Encoding.htmlDecode(filename.trim()));
+            link.setProperty("type", "mp3");
+            link.setProperty("directtracknumber", df.format(trackNum));
         }
-        final String filename = getFormattedFilename(downloadLink);
-        downloadLink.setFinalFileName(filename);
+        final String filename = getFormattedFilename(link);
+        link.setFinalFileName(filename);
         // In case the link redirects to the finallink
         br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
@@ -182,14 +176,14 @@ public class BandCampCom extends PluginForHost {
             /* Server does NOT like HEAD requests! */
             con = br2.openGetConnection(DLLINK);
             if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
-                downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                link.setVerifiedFileSize(con.getLongContentLength());
             } else {
                 br.followConnection(true);
                 /*
                  * 2020-04-23: Chances are high that the track cannot be downloaded because user needs to purchase it first. There is no
                  * errormessage or anything on their website.
                  */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "No free listening available!");
+                throw new AccountRequiredException();
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -278,7 +272,7 @@ public class BandCampCom extends PluginForHost {
     private final static String defaultCustomPackagename = "*artist* - *album*";
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.bandcampcom.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.bandcampcom.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, JDL.L("plugins.hoster.bandcampcom.grabthumb", "Grab thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

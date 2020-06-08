@@ -187,8 +187,6 @@ public class MixdropCo extends antiDDoSForHost {
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
                 // final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
-                // final Browser brc = br.cloneBrowser();
-                // brc.getPage("https://mixdrop.co/");
                 final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 postData += "&token=" + Encoding.urlEncode(recaptchaV2Response);
             }
