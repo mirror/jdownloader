@@ -108,6 +108,10 @@ public class StreamzCc extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, 0);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, int recursed) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -120,6 +124,9 @@ public class StreamzCc extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {
+            if (recursed >= 5) {
+                return AvailableStatus.FALSE;
+            }
             final String redirectLink = link.getStringProperty("redirect_link");
             if (StringUtils.isEmpty(redirectLink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
@@ -128,7 +135,7 @@ public class StreamzCc extends antiDDoSForHost {
             br.getPage(redirectLink);
             if (br.getRedirectLocation() != null) {
                 link.setPluginPatternMatcher(br.getRedirectLocation());
-                return requestFileInformation(link);
+                return requestFileInformation(link, recursed + 1);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
