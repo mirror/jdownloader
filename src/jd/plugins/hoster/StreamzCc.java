@@ -57,7 +57,7 @@ public class StreamzCc extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamz.cc", "streamz.bz" });
+        ret.add(new String[] { "streamz.cc", "streamz.bz", "streamz.vg" });
         return ret;
     }
 
