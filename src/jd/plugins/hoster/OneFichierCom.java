@@ -28,9 +28,12 @@ import javax.swing.JLabel;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
@@ -749,18 +752,9 @@ public class OneFichierCom extends PluginForHost {
                  * 2019-07-18: This may even happen on the first login attempt. When this happens we cannot know whether the account is
                  * valid or not!
                  */
-                if (account != null) {
-                    throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "API flood detection has been triggered", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
+                throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
             } else if (message.matches("Flood detected: User Locked #\\d+")) {
-                /* 2019-04-04: Not sure what the difference to #38 is ... */
-                if (account != null) {
-                    throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API flood detection has been triggered", 5 * 60 * 1000l);
-                }
+                throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
             } else if (message.matches("Not authenticated #\\d+")) {
                 /* Login required but not logged in (this should never happen) */
                 if (account != null) {
@@ -777,16 +771,65 @@ public class OneFichierCom extends PluginForHost {
                 } else {
                     throw new AccountRequiredException();
                 }
+            } else if (message.matches(".*Must be a customer.*")) {
+                /* 2020-06-09: E.g. {"message":"Must be a customer (Premium, Access) #200","status":"KO"} */
+                /* Free account (most likely expired premium) apikey entered by user --> API can only be used by premium users */
+                showAPIFreeAccountLoginFailureInformation();
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Only premium users can use the 1fichier API", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 /* Unknown/unhandled error */
-                /** TODO: Maybe replace PLUGIN_DEFECT with retry handling */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (this.getDownloadLink() == null) {
+                    /* Account error */
+                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+                } else {
+                    /* Error during download/linkcheck */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
+                }
             }
         }
     }
 
     private String getAPIErrormessage() {
         return PluginJSonUtils.getJson(br, "message");
+    }
+
+    private Thread showAPIFreeAccountLoginFailureInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "1fichier.com - Free Account Login";
+                        message += "Hallo liebe(r) 1fichier NutzerIn\r\n";
+                        message += "Du hast gerade versucht, einen kostenlosen 1fichier Account im API Modus zu verwenden oder dein Account war bis vor kurzem ein Premium Account und ist nun abgelaufen.\r\n";
+                        message += "Im API Modus ist die Verwendung eines kostenlosen 1fichier Accounts nicht möglich.\r\n";
+                        message += "Falls du dennoch einen solchen Account in JDownloader verwenden möchtest, beachte bitte die folgende Anleitung:\r\n";
+                        message += "1. Deaktiviere die 2-Faktor-Authentifizierung deines 1fichier Accounts - diese wird von JD nicht unterstützt!\r\n";
+                        message += "2. DEAKTIVIERE die folgende Einstellung: Einstellungen --> Plugins --> 1fichier.com --> \"Use premium API?\"\r\n";
+                        message += "3. Jetzt kannst du deinen kostenlosen 1fichier Account mit E-Mail und Passwort eingeben.\r\n";
+                    } else {
+                        title = "1fichier.com - Free Account Login";
+                        message += "Hello dear 1fichier user\r\n";
+                        message += "You've just tried to add a free 1fichier account to JDownloader in API mode or your former premikum account has expired and is now a free account.\r\n";
+                        message += "Using a 1fichier free account in API mode is impossible.\r\n";
+                        message += "If you're planning to use your free 1fichier account in JDownloader nonetheless, please follow these instructions:\r\n";
+                        message += "1. If enabled, deactivate the 2-factor-authentication in your 1fichier account - JD does not support this.\r\n";
+                        message += "2. DEACTIVATE the following setting: Settings --> Plugins --> 1fichier.com --> \"Use premium API?\"\r\n";
+                        message += "3. Now you can add your 1fichier free account via E-Mail and password.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private void checkConnection(final Browser br) throws PluginException {
@@ -1338,7 +1381,7 @@ public class OneFichierCom extends PluginForHost {
 
         public OnefichierAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key:"));
+            add(new JLabel("Click here to find your API Key (premium users only):"));
             add(new JLink("https://1fichier.com/console/params.pl"));
             this.add(this.idLabel = new JLabel("Enter your API Key:"));
             add(this.pass = new ExtPasswordField() {
