@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -29,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ZofileCom extends XFileSharingProBasic {
-    public ZofileCom(final PluginWrapper wrapper) {
+public class LoadstarClub extends XFileSharingProBasic {
+    public LoadstarClub(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -38,14 +36,14 @@ public class ZofileCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-06-10: No limits at all <br />
-     * captchatype-info: 2020-06-10: null<br />
+     * limit-info:<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "zofile.com" });
+        ret.add(new String[] { "loadstar.club" });
         return ret;
     }
 
@@ -67,13 +65,13 @@ public class ZofileCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return true;
+            return false;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -82,39 +80,34 @@ public class ZofileCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
-    protected boolean supports_https() {
-        final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
-        if (cfgO != null) {
-            return !PluginJsonConfig.get(cfgO).isPreferHTTP();
-        } else {
-            /* 2020-06-10: Special */
-            return false;
-        }
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-06-10: Special */
+        return false;
     }
 }

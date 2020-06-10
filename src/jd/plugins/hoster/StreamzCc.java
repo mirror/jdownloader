@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -26,16 +31,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamzCc extends antiDDoSForHost {
@@ -120,7 +121,7 @@ public class StreamzCc extends antiDDoSForHost {
         // if (StringUtils.isNotEmpty(shareLink)) {
         // link.setPluginPatternMatcher(shareLink);
         // }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<center><b>\\s*File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {
@@ -179,6 +180,8 @@ public class StreamzCc extends antiDDoSForHost {
             br.getPage(url_continue);
             if (br.containsHTML(">Too many downloads? in the last few minutes")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many download in the last few minutes", 5 * 60 * 1000l);
+            } else if (br.containsHTML("color=\"red\">\\s*Please|before you try to download this movie")) {
+                throw new AccountRequiredException();
             }
             final Form continueForm = br.getFormbyActionRegex(".*dodownload\\.dll");
             if (continueForm == null) {
