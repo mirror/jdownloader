@@ -34,7 +34,6 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -139,14 +138,16 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
             final Map<String, Object> thumbnailInfo = (Map<String, Object>) entries.get("thumbnails");
             final String username = (String) userInfo.get("name");
             final String tracking_id = (String) entries.get("tracking_id");
-            final String broadcast_id = (String) entries.get("broadcast_id");
+            // final String broadcast_id = (String) entries.get("broadcast_id");
             if (StringUtils.isEmpty(username) || StringUtils.isEmpty(tracking_id)) {
                 logger.warning("Failed to find tracking_id");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String thumbnail = (String) thumbnailInfo.get("medium");
-            final String vod_and_offset = new Regex(thumbnail, "(vod\\-\\d+\\-offset\\-\\d+)").getMatch(0);
-            String offset = new Regex(thumbnail, "-offset-(\\d+)").getMatch(0);
+            // final String vod_and_offset = new Regex(thumbnail,
+            // "media-assets2\\.twitch\\.tv/((?:vod-)?\\d+\\-offset\\-[0-9\\.\\-]+)\\-preview").getMatch(0);
+            final String vod_and_offset = new Regex(thumbnail, "media-assets2\\.twitch\\.tv/(.*?)\\-preview").getMatch(0);
+            // String offset = new Regex(thumbnail, "-offset-([0-9\\.]+)").getMatch(0);
             String title = (String) entries.get("title");
             if (StringUtils.isEmpty(title)) {
                 /* Fallback */
@@ -158,37 +159,17 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 date_formatted = created_at;
             }
             final String filename = date_formatted + "_" + username + "_" + slug + "_" + title + ".mp4";
+            /*
+             * 2020-06-10: See revision 42475 and older for other attempts on how to create valid final downloadurls for this video content.
+             */
             /* https://discuss.dev.twitch.tv/t/clips-api-does-not-expose-video-url/15763/2 */
             long filesize = 0;
             String finallink = null;
             if (vod_and_offset != null) {
                 finallink = "directhttp://https://clips-media-assets2.twitch.tv/" + vod_and_offset + ".mp4";
-            } else if (offset != null) {
-                /* Sometimes required but there is also newer content which is only available via segment-streaming! */
-                /* 2020-06-09: Using broadcast_id increases the chances of getting working URLs(?) */
-                if (!StringUtils.isEmpty(broadcast_id)) {
-                    final String temp_dllink = "https://clips-media-assets2.twitch.tv/" + broadcast_id + "-offset-" + offset + ".mp4";
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = br.openHeadConnection(temp_dllink);
-                        if (con.isOK()) {
-                            filesize = con.getCompleteContentLength();
-                            finallink = "directhttp://" + temp_dllink;
-                        } else {
-                            logger.info("Failed to find finallink on first try");
-                        }
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                }
-                if (finallink == null) {
-                    finallink = "directhttp://https://clips-media-assets2.twitch.tv/vod-" + tracking_id + "-offset-" + offset + ".mp4";
-                }
             } else {
-                finallink = "directhttp://https://clips-media-assets2.twitch.tv/AT-cm%7C" + tracking_id + ".mp4";
+                /* Bad, simple fallback */
+                finallink = "directhttp://https://clips-media-assets2.twitch.tv/" + tracking_id + ".mp4";
             }
             final DownloadLink dl = this.createDownloadlink(finallink);
             dl.setFinalFileName(filename);
