@@ -125,9 +125,11 @@ public class YouJizzCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (q instanceof Boolean && d != null && !d.contains(".m3u8")) {
                     dllink = d;
-                } else if (q instanceof String && Integer.parseInt((String) q) > quality && !d.contains(".m3u8")) {
+                } else if (q instanceof String && ((String) q).matches("\\d+") && Integer.parseInt((String) q) > quality && !d.contains(".m3u8")) {
                     quality = Integer.parseInt((String) q);
                     dllink = d;
+                } else {
+                    /* Skip unsupported items */
                 }
             }
         }
