@@ -774,8 +774,11 @@ public class OneFichierCom extends PluginForHost {
             } else if (message.matches(".*Must be a customer.*")) {
                 /* 2020-06-09: E.g. {"message":"Must be a customer (Premium, Access) #200","status":"KO"} */
                 /* Free account (most likely expired premium) apikey entered by user --> API can only be used by premium users */
-                showAPIFreeAccountLoginFailureInformation();
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Only premium users can use the 1fichier API", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // showAPIFreeAccountLoginFailureInformation();
+                final AccountInfo ai = new AccountInfo();
+                ai.setExpired(true);
+                account.setAccountInfo(ai);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium expired: Only premium users can use the 1fichier API)", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 /* Unknown/unhandled error */
                 if (this.getDownloadLink() == null) {
@@ -793,6 +796,11 @@ public class OneFichierCom extends PluginForHost {
         return PluginJSonUtils.getJson(br, "message");
     }
 
+    /**
+     * 2020-06-10: This message was designed ti be displayed whenever a premium account which was used in API mode is not premium anymore.
+     * Because free accounts of this host are pretty much useless and we do not want to encourage users to use the website mode, this has
+     * only been used in one revision for a short time.
+     */
     private Thread showAPIFreeAccountLoginFailureInformation() {
         final Thread thread = new Thread() {
             public void run() {

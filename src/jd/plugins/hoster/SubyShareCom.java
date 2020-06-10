@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -28,9 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -145,9 +145,14 @@ public class SubyShareCom extends XFileSharingProBasic {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String code = getCaptchaCode("xfilesharingprobasic_subysharecom_special", captchaurl, link);
+            String code = getCaptchaCode("xfilesharingprobasic_subysharecom_special", captchaurl, link);
+            if (code.contains("0")) {
+                logger.info("Replacing captcha result zero with lowercase o");
+                code = code.replace("0", "o");
+            }
             captchaForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+            link.setProperty("password_requested_by_website", true);
         } else {
             super.handleCaptcha(link, captchaForm);
         }
