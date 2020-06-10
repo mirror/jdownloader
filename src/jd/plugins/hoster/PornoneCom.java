@@ -162,6 +162,7 @@ public class PornoneCom extends PluginForHost {
                     if (!con.getContentType().contains("html")) {
                         failed = false;
                         link.setDownloadSize(con.getLongContentLength());
+                        return AvailableStatus.TRUE;
                     }
                 } finally {
                     try {
