@@ -152,7 +152,7 @@ public class SubyShareCom extends XFileSharingProBasic {
             }
             captchaForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-            link.setProperty("captcha_requested_by_website", true);
+            link.setProperty(PROPERTY_captcha_required, true);
         } else {
             super.handleCaptcha(link, captchaForm);
         }

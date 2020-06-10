@@ -132,18 +132,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /* Used variables */
-    public String                correctedBR                              = "";
-    protected String             fuid                                     = null;
+    public String                 correctedBR                              = "";
+    protected String              fuid                                     = null;
     /*
      * Note:Final value will be set later in init(). CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
      */
-    private static AtomicInteger totalMaxSimultanFreeDownload             = new AtomicInteger(1);
+    private static AtomicInteger  totalMaxSimultanFreeDownload             = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                                  = new AtomicInteger(1);
-    private static final String  PROPERTY_pw_required                     = "password_requested_by_website";
-    private static final String  PROPERTY_captcha_required                = "captcha_requested_by_website";
-    private static final String  PROPERTY_ACCOUNT_apikey                  = "apikey";
-    private static final String  PROPERTY_PLUGIN_api_domain_with_protocol = "apidomain";
+    private static AtomicInteger  maxFree                                  = new AtomicInteger(1);
+    private static final String   PROPERTY_pw_required                     = "password_requested_by_website";
+    protected static final String PROPERTY_captcha_required                = "captcha_requested_by_website";
+    private static final String   PROPERTY_ACCOUNT_apikey                  = "apikey";
+    private static final String   PROPERTY_PLUGIN_api_domain_with_protocol = "apidomain";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.3.8<br />
@@ -2606,6 +2606,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             if (correctedBR.contains("Wrong captcha")) {
                 logger.warning("Wrong captcha (or wrong password as well)!");
+                /*
+                 * TODO: Find a way to avoid using a property for this or add the property in very plugin which overrides handleCaptcha e.g.
+                 * subyshare.com. If a dev forgets to set this, it will cause invalid errormessages on wrong captcha!
+                 */
                 final boolean websiteDidAskForCaptcha = link.getBooleanProperty(PROPERTY_captcha_required, false);
                 if (websiteDidAskForCaptcha) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
