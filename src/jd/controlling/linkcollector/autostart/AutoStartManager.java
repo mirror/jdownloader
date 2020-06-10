@@ -154,7 +154,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                 final JobLinkCrawler linkCrawler = collectingInfo.getLinkCrawler();
                 synchronized (resetMap) {
                     resetMap.put(linkCrawler, Boolean.TRUE);
-                    if (delayer.getMaximumDelay() == -1 && collectingInfo.getLinkCrawler().isCollecting()) {
+                    if (delayer.getMaximumDelay() == -1 && linkCrawler.isCollecting()) {
                         resetAndStart(true);
                         return;
                     } else {
