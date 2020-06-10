@@ -67,7 +67,10 @@ public class OdriveCom extends PluginForDecrypt {
             }
             if (errorCode != null && errorCode.equals("404")) {
                 passwordFailure = true;
-                passCode = getUserInput("Password?", param);
+                /* Try "stored" password on first attempt iv available --> Ask used if no PW available or first try failed. */
+                if (passCode == null || tries > 0) {
+                    passCode = getUserInput("Password?", param);
+                }
             } else {
                 passwordFailure = false;
             }
@@ -105,7 +108,7 @@ public class OdriveCom extends PluginForDecrypt {
             if (fileType.equalsIgnoreCase("folder")) {
                 /* Subfolder --> Goes back into decrypter */
                 if (!StringUtils.isEmpty(passCode)) {
-                    linkUri += "?" + query.toString();
+                    linkUri += "?" + querypw.toString();
                 }
                 final DownloadLink dl = this.createDownloadlink("https://odrive.com/folder" + linkUri);
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder + "/" + title);

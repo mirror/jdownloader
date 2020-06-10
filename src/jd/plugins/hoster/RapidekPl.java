@@ -198,8 +198,18 @@ public class RapidekPl extends PluginForHost {
                     lastProgress = currentProgress.intValue();
                 }
                 br.getPage(API_BASE + "/file-download/download-info?downloadId=" + Encoding.urlEncode(downloadID));
+                /*
+                 * Example response: {"DownloadId":"example","DownloadProgressPercentage":0,"FileSizeBytes":5253880,"Filename":
+                 * "testuploadSampleVideo1280x7205mb.mp4","DownloadUrl":"","Status":"Failure"}
+                 */
+                /* Possible "Status" values: Failure, Succeeded, (?? more?) */
                 try {
                     final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    final String status = (String) entries.get("Status");
+                    if ("Failure".equalsIgnoreCase(status)) {
+                        /* Stop immediately on failure. */
+                        break;
+                    }
                     final int tmpCurrentProgress = (int) ((Number) entries.get("DownloadProgressPercentage")).longValue();
                     if (tmpCurrentProgress > currentProgress) {
                         /* Do not allow the progress to "go back". */
@@ -279,7 +289,7 @@ public class RapidekPl extends PluginForHost {
          * 2020-06-05: API only returns the following this I've enabled this workaround for now:
          * {"Services":["premiumize.com","rapidu.net"]}
          */
-        final boolean useForumWorkaround = true;
+        final boolean useForumWorkaround = false;
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         if (useForumWorkaround) {
             /* 2020-06-05: Possible workaround */
