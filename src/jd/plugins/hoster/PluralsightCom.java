@@ -607,7 +607,7 @@ public class PluralsightCom extends antiDDoSForHost {
          * "videoservices_clip","version":"1.0.450","latency":44,"fn":"viewClipV3"}]}
          */
         if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+            throw new AccountUnavailableException("Session expired or premium required to download content?", 5 * 60 * 1000l);
         }
     }
 

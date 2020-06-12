@@ -233,9 +233,10 @@ public class FaceBookComVideos extends PluginForHost {
                     filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 }
                 /*
-                 * 2020-06-12: Get downloadurl from embedded URL --> Better quality --> Use this one only as a fallback e.g. for content
-                 * which is not available embedded because it is officially only available via MDP streaming:
-                 * https://svn.jdownloader.org/issues/88438
+                 * 2020-06-12: Get downloadurl from embedded URL --> Best possible http quality --> Use this one only as a fallback e.g. for
+                 * content which is not available embedded because it is officially only available via MDP streaming:
+                 * https://svn.jdownloader.org/issues/88438 </br> fallback_downloadurl is generally lower quality than e.g. possible via MDP
+                 * streaming!
                  */
                 if (StringUtils.isEmpty(fallback_downloadurl)) {
                     fallback_downloadurl = br.getRegex("property=\"og:video\" content=\"(https?://[^<>\"]+)\"").getMatch(0);
@@ -308,27 +309,26 @@ public class FaceBookComVideos extends PluginForHost {
         this.dllink = getDllinkVideo();
     }
 
-    private String checkDllink(final String flink) throws Exception {
-        URLConnectionAdapter con = null;
-        final Browser br3 = br.cloneBrowser();
-        br3.setFollowRedirects(true);
-        try {
-            con = br3.openHeadConnection(flink);
-            if (!con.getContentType().contains("text")) {
-                dllink = flink;
-            } else {
-                dllink = null;
-            }
-        } catch (final Exception e) {
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Exception e) {
-            }
-        }
-        return dllink;
-    }
-
+    // private String checkDllink(final String flink) throws Exception {
+    // URLConnectionAdapter con = null;
+    // final Browser br3 = br.cloneBrowser();
+    // br3.setFollowRedirects(true);
+    // try {
+    // con = br3.openHeadConnection(flink);
+    // if (!con.getContentType().contains("text")) {
+    // dllink = flink;
+    // } else {
+    // dllink = null;
+    // }
+    // } catch (final Exception e) {
+    // } finally {
+    // try {
+    // con.disconnect();
+    // } catch (final Exception e) {
+    // }
+    // }
+    // return dllink;
+    // }
     /**
      * Checks for offline html in all kinds of supported urls. Keep in mind that these "offline" message can also mean that access is
      * restricted only for certain users. Basically user would at least need an account and even when he has one but not the rights to view

@@ -55,6 +55,7 @@ public class SpankBangCom extends antiDDoSForHost {
     private final static String ALLOW_480p    = "ALLOW_480p";
     private final static String ALLOW_720p    = "ALLOW_720p";
     private final static String ALLOW_1080p   = "ALLOW_1080p";
+    private static final String ALLOW_4k      = "ALLOW_4k";
     private String              dllink        = null;
     private boolean             server_issues = false;
 
@@ -185,6 +186,7 @@ public class SpankBangCom extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_480p", "Grab 480p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_720p", "Grab 720p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_1080p", "Grab 1080p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_4k, "Grab 4k?").setDefaultValue(true));
     }
 
     @Override
