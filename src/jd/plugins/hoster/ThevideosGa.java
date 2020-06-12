@@ -69,6 +69,10 @@ public class ThevideosGa extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, 0);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, int recursed) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
@@ -99,9 +103,26 @@ public class ThevideosGa extends antiDDoSForHost {
             br.setAllowedResponseCodes(new int[] { 502 });
             br.setFollowRedirects(false);
             br.getPage(dllink);
-            /* 2020-05-24: 502 is typical for timed-out URLs here */
-            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 502) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* 2020-05-24: 502 is typical for timed-out URLs here */
+            if (br.getHttpConnection().getResponseCode() == 502) {
+                if (recursed >= 5) {
+                    return AvailableStatus.FALSE;
+                }
+                final String redirectLink = link.getStringProperty("redirect_link");
+                if (StringUtils.isEmpty(redirectLink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
+                }
+                br.setFollowRedirects(false);
+                br.getPage(redirectLink);
+                if (br.getRedirectLocation() != null) {
+                    link.setPluginPatternMatcher(br.getRedirectLocation());
+                    return requestFileInformation(link, recursed + 1);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
