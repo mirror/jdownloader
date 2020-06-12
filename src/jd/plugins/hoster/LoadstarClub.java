@@ -65,10 +65,10 @@ public class LoadstarClub extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return false;
+            return true;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
             return false;
@@ -80,10 +80,10 @@ public class LoadstarClub extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -97,12 +97,12 @@ public class LoadstarClub extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
