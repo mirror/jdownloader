@@ -22,18 +22,22 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workers.dev" }, urls = { "https?://(?:[a-z0-9\\-\\.]+\\.)?workers\\.dev/.+" })
 public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
-
     @Override
     public String[] siteSupportedNames() {
         return new String[] { getHost() };
@@ -51,9 +55,24 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             parameter = parameter.substring(0, parameter.lastIndexOf("?"));
         }
         br.setAllowedResponseCodes(new int[] { 500 });
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        if (acc != null) {
+            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+            plg.setBrowser(this.br);
+            ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
+            this.br = plg.getBrowser();
+        }
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
         br.postPageRaw(parameter, "{\"password\":\"null\"}");
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        if (br.getHttpConnection().getResponseCode() == 401) {
+            if (acc != null) {
+                /* We cannot check accounts so the only way we can find issues is by just trying with the login credentials here ... */
+                logger.info("Existing account is invalid (?)");
+                acc.setError(AccountError.INVALID, 5 * 60, null);
+            }
+            decryptedLinks.add(this.createOfflinelink(parameter, "account_required", "account_required"));
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -62,6 +81,7 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
     }
 
     private void doThis(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
+        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         final boolean isParameterFile = !parameter.endsWith("/");
         String subFolder = getAdoptedCloudFolderStructure();
         if (subFolder == null) {
@@ -122,7 +142,7 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
                 final String thisfolder = subFolder + "/" + name;
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
             } else {
-                dl = this.createDownloadlink("directhttp://" + url);
+                dl = new DownloadLink(plg, name, this.getHost(), url, true);
                 dl.setAvailable(true);
                 dl.setFinalFileName(name);
                 if (filesize > 0) {

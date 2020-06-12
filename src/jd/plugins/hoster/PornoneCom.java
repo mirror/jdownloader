@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.PornoneComConfig;
+import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -66,7 +69,9 @@ public class PornoneCom extends PluginForHost {
         if (link.getDownloadURL().contains("/embed/")) {
             link.setUrlDownload("https://" + this.getHost() + "/mature/x/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         }
-        link.setUrlDownload(link.getDownloadURL() + "/");
+        if (!link.getDownloadURL().endsWith("/")) {
+            link.setUrlDownload(link.getDownloadURL() + "/");
+        }
     }
 
     @Override
@@ -108,8 +113,8 @@ public class PornoneCom extends PluginForHost {
         }
         final String fid = this.getFID(link);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (!br.getURL().contains(fid) || br.containsHTML("This video (is|has been) deleted|>404 not found") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (!br.getURL().contains(fid) || br.containsHTML("This video (is|has been) deleted") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("videoname = '([^']*?)'").getMatch(0);
@@ -151,8 +156,21 @@ public class PornoneCom extends PluginForHost {
                 }
             }
         }
-        if (foundlinks == 0) { // 20170617
-            dllink = br.getRegex("<source src=\"(http[^\"]+)\"").getMatch(0);
+        final String preferredQuality = getPreferredStreamQuality();
+        if (foundlinks == 0) { // 2020-06-12
+            if (preferredQuality != null) {
+                logger.info("Trying to find user selected quality: " + preferredQuality);
+                dllink = br.getRegex("src=\"(https://[^<>\"]+\\.mp4)\"[^>]+label=\"" + preferredQuality + "\"").getMatch(0);
+                if (dllink != null) {
+                    logger.info("Successfully found user selected quality");
+                } else {
+                    logger.info("Failed to find user selected quality");
+                }
+            }
+            /* Grab ANY- or the BEST quality. */
+            if (dllink == null) {
+                dllink = br.getRegex("<source src=\"(http[^\"]+)\"").getMatch(0);
+            }
             logger.info("dllink: " + dllink);
             if (dllink != null) {
                 foundlinks++;
@@ -257,6 +275,34 @@ public class PornoneCom extends PluginForHost {
         requestFileInformation(link);
         /* We're already logged in! */
         doFree(link);
+    }
+
+    private String getPreferredStreamQuality() {
+        final PornoneComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        default:
+            return null;
+        case BEST:
+            return null;
+        case Q2160P:
+            return "2160p";
+        case Q1080P:
+            return "1080p";
+        case Q720P:
+            return "720p";
+        case Q480P:
+            return "480p";
+        case Q360P:
+            return "360p";
+        case Q240P:
+            return "240p";
+        }
+    }
+
+    @Override
+    public Class<? extends PornoneComConfig> getConfigInterface() {
+        return PornoneComConfig.class;
     }
 
     @Override

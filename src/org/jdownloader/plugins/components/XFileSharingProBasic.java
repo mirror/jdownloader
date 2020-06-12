@@ -1316,8 +1316,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } while (download1counter <= download1max && dllink == null);
         }
         if (StringUtils.isEmpty(dllink)) {
-            Form dlForm = findFormDownload2Free();
-            if (dlForm == null) {
+            Form download2 = findFormDownload2Free();
+            if (download2 == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(link, account, false);
                 /* Okay we finally have no idea what happened ... */
@@ -1344,10 +1344,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             final int download2max = 2;
             for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
                 logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
-                dlForm.remove(null);
+                download2.remove(null);
                 final long timeBefore = System.currentTimeMillis();
-                handlePassword(dlForm, link);
-                handleCaptcha(link, dlForm);
+                handlePassword(download2, link);
+                handleCaptcha(link, download2);
                 /* 2019-02-08: MD5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (link.getMD5Hash() == null) {
                     final String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -1356,7 +1356,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 waitTime(link, timeBefore);
-                final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(dlForm));
+                final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
                 if (isDownloadableContent(formCon)) {
                     /* Very rare case - e.g. tiny-files.com */
                     handleDownload(link, account, dllink, formCon.getRequest());
@@ -1373,15 +1373,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     } catch (final Throwable e) {
                     }
                 }
-                logger.info("Submitted DLForm");
+                logger.info("Submitted Form download2");
                 checkErrors(link, account, true);
                 /* 2020-03-02: E.g. akvideo.stream */
                 dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 if (dllink == null) {
                     dllink = getDllink(link, account);
                 }
-                dlForm = findFormDownload2Free();
-                if (StringUtils.isEmpty(dllink) && (dlForm != null || download2counter == download2max)) {
+                download2 = findFormDownload2Free();
+                if (StringUtils.isEmpty(dllink) && (download2 != null || download2counter == download2max)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     /* Check if maybe an error happened before stepping in download2 loop --> Throw that */
                     if (download2counter == download2start + 1 && exceptionBeforeDownload2Submit != null) {
@@ -1389,7 +1389,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         throw exceptionBeforeDownload2Submit;
                     }
                     checkErrorsLastResort(account);
-                } else if (StringUtils.isEmpty(dllink) && dlForm != null) {
+                } else if (StringUtils.isEmpty(dllink) && download2 != null) {
                     invalidateLastChallengeResponse();
                     continue;
                 } else {
