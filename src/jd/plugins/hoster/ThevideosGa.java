@@ -113,7 +113,7 @@ public class ThevideosGa extends antiDDoSForHost {
                 }
                 final String redirectLink = link.getStringProperty("redirect_link");
                 if (StringUtils.isEmpty(redirectLink)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "page expired and no redirect_link found");
                 }
                 br.setFollowRedirects(false);
                 br.getPage(redirectLink);

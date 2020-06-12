@@ -39,9 +39,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadfiles.io" }, urls = { "https?://(?:www\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
-public class UploadfilesIo extends antiDDoSForHost {
-    public UploadfilesIo(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ufile.io" }, urls = { "https?://(?:www\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
+public class UfileIo extends antiDDoSForHost {
+    public UfileIo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://uploadfiles.io/#packages");
     }
@@ -58,6 +58,15 @@ public class UploadfilesIo extends antiDDoSForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("uploadfiles.io")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     /* Connection stuff */
@@ -94,9 +103,9 @@ public class UploadfilesIo extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -168,18 +177,29 @@ public class UploadfilesIo extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                        logger.info("Trust cookies without check");
+                    }
+                    getPage("https://" + this.getHost() + "/");
+                    if (isLoggedIN()) {
+                        logger.info("Cookie login successful");
+                        /* Save new cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        br.clearAll();
+                    }
                     return;
                 }
+                logger.info("Performing full login");
                 getPage("https://" + this.getHost() + "/login");
                 final Form loginform = br.getFormbyKey("password");
                 if (loginform == null) {
@@ -187,8 +207,25 @@ public class UploadfilesIo extends antiDDoSForHost {
                 }
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                if (loginform.containsHTML("g-recaptcha")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        final String recaptchaV2Response = rc2.getToken();
+                        loginform.put("g-recaptcha-response", recaptchaV2Response);
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                }
                 this.submitForm(loginform);
-                if (!br.containsHTML("/logout")) {
+                if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -197,6 +234,10 @@ public class UploadfilesIo extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isLoggedIN() {
+        return br.containsHTML("/logout");
     }
 
     @Override
