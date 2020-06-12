@@ -52,6 +52,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -1705,7 +1706,13 @@ public class SaveTv extends PluginForHost {
                     // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /** TODO: Collect errors at this stage */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (this.getDownloadLink() == null) {
+                        /* Account error */
+                        throw new AccountUnavailableException(humanReadableErrormessage, 5 * 60 * 1000l);
+                    } else {
+                        /* Error during download */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, humanReadableErrormessage, 5 * 60 * 1000l);
+                    }
                 }
             }
         }

@@ -395,6 +395,13 @@ public class UpToBoxCom extends antiDDoSForHost {
                     logger.warning("Failed to find final downloadurl");
                     if (counter == countermax) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download currently not possible (?)", 10 * 60 * 1000l);
+                    } else if (br.containsHTML("id='ban'")) {
+                        /*
+                         * 2020-06-12: E.g. "<h1>This page is not allowed in the US</h1>",
+                         * "We're sorry but it appears your IP comes from the US so you're not allowed to download or stream.",
+                         * "If you have a premium account, please login to remove the limitation."
+                         */
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
