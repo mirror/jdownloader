@@ -63,6 +63,7 @@ public class SpankBangCom extends PluginForDecrypt {
     private static final String           ALLOW_480p     = "ALLOW_480p";
     private static final String           ALLOW_720p     = "ALLOW_720p";
     private static final String           ALLOW_1080p    = "ALLOW_1080p";
+    private static final String           ALLOW_4k       = "ALLOW_4k";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -126,6 +127,7 @@ public class SpankBangCom extends PluginForDecrypt {
         boolean q480p = cfg.getBooleanProperty(ALLOW_480p, true);
         boolean q720p = cfg.getBooleanProperty(ALLOW_720p, true);
         boolean q1080p = cfg.getBooleanProperty(ALLOW_1080p, true);
+        boolean q4k = cfg.getBooleanProperty(ALLOW_4k, true);
         if (!q240p && !q320p && !q480p && !q720p && !q1080p) {
             // user has made error and disabled them all, so we will treat as all enabled.
             q240p = true;
@@ -133,9 +135,13 @@ public class SpankBangCom extends PluginForDecrypt {
             q480p = true;
             q720p = true;
             q1080p = true;
+            q4k = true;
         }
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, true);
         // needs to be in reverse order
+        if (q4k) {
+            selectedQualities.add("4k");
+        }
         if (q1080p) {
             selectedQualities.add("1080p");
         }
@@ -199,12 +205,11 @@ public class SpankBangCom extends PluginForDecrypt {
             request.getHeaders().put("x-csrftoken", x_csrftoken);
         }
         final String page = br.getPage(request);
-        final String[] qualities = new String[] { "1080p", "720p", "480p", "320p", "240p" };
+        final String[] qualities = new String[] { "4k", "1080p", "720p", "480p", "320p", "240p" };
         if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
             final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
             final String stream_url_m3u8 = String.valueOf(map.get("m3u8"));
             for (final String quality : qualities) {
-                System.out.println("quality: " + quality);
                 final String qualityID = getQuality(quality);
                 final Object entry = map.get(quality);
                 String value = null;
@@ -288,7 +293,9 @@ public class SpankBangCom extends PluginForDecrypt {
      * @throws DecrypterException
      */
     public static String getQuality(final String q) throws PluginException {
-        if ("super".equalsIgnoreCase(q) || "1080p".equalsIgnoreCase(q)) {
+        if ("4k".equalsIgnoreCase(q)) {
+            return "4k";
+        } else if ("super".equalsIgnoreCase(q) || "1080p".equalsIgnoreCase(q)) {
             return "1080p";
         } else if ("high".equalsIgnoreCase(q) || "720p".equalsIgnoreCase(q)) {
             return "720p";
