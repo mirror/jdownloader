@@ -202,7 +202,7 @@ public class RapidekPl extends PluginForHost {
                  * Example response: {"DownloadId":"example","DownloadProgressPercentage":0,"FileSizeBytes":5253880,"Filename":
                  * "testuploadSampleVideo1280x7205mb.mp4","DownloadUrl":"","Status":"Failure"}
                  */
-                /* Possible "Status" values: Failure, Succeeded, (?? more?) */
+                /* Possible "Status" values: Initialization, Failure, Succeeded, (?? more?) */
                 try {
                     final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final String status = (String) entries.get("Status");

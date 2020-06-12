@@ -16,13 +16,19 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.FacebookConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,31 +45,27 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?facebook\\.com/(?:.*?video\\.php\\?v=|photo\\.php\\?fbid=|video/embed\\?video_id=|.*?/videos/|watch/\\?v=|watch/live/\\?v=)(\\d+)|https?://(?:www\\.)?facebook\\.com/download/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.|m\\.)?facebook\\.com/(?:.*?video\\.php\\?v=|photo\\.php\\?fbid=|video/embed\\?video_id=|.*?/videos/|watch/\\?v=|watch/live/\\?v=)(\\d+)|https?://(?:www\\.)?facebook\\.com/download/(\\d+)" })
 public class FaceBookComVideos extends PluginForHost {
-    private String              FACEBOOKMAINPAGE      = "http://www.facebook.com";
-    private String              PREFERHD              = "PREFERHD";
+    private String              FACEBOOKMAINPAGE  = "http://www.facebook.com";
     /* 2020-06-05: TODO: This linktype can (also) lead to video content! */
-    private static final String TYPE_SINGLE_PHOTO     = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
-    private static final String TYPE_DOWNLOAD         = "https?://(www\\.)?facebook\\.com/download/\\d+";
-    private final String        regexFileExtension    = "\\.[a-z0-9]{3}";
-    private static final String REV_2                 = jd.plugins.decrypter.FaceBookComGallery.REV_2;
-    private static final String REV_3                 = jd.plugins.decrypter.FaceBookComGallery.REV_3;
+    private static final String TYPE_SINGLE_PHOTO = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    // private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
+    private static final String TYPE_DOWNLOAD     = "https?://(www\\.)?facebook\\.com/download/\\d+";
+    private static final String REV_2             = jd.plugins.decrypter.FaceBookComGallery.REV_2;
+    private static final String REV_3             = jd.plugins.decrypter.FaceBookComGallery.REV_3;
     // five minutes, not 30seconds! -raztoki20160309
-    private static final long   trust_cookie_age      = 300000l;
-    private String              dllink                = null;
-    private boolean             loggedIN              = false;
-    private boolean             accountNeeded         = false;
-    private int                 maxChunks             = 0;
-    private boolean             is_private            = false;
+    private static final long   trust_cookie_age  = 300000l;
+    private String              dllink            = null;
+    private boolean             loggedIN          = false;
+    private boolean             accountNeeded     = false;
+    private int                 maxChunks         = 0;
+    private boolean             is_private        = false;
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.facebook.com/r.php");
-        setConfigElements();
         /*
          * to prevent all downloads starting and finishing together (quite common with small image downloads), login, http request and json
          * task all happen at same time and cause small hangups and slower download speeds. raztoki20160309
@@ -104,9 +106,11 @@ public class FaceBookComVideos extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings({ "deprecation" })
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = new Browser();
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         is_private = link.getBooleanProperty("is_private", false);
         dllink = link.getStringProperty("directlink", null);
         final String fid = this.getFID(link);
@@ -120,6 +124,7 @@ public class FaceBookComVideos extends PluginForHost {
             login(aa, br);
             loggedIN = true;
         }
+        final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
         String filename = null;
         URLConnectionAdapter con = null;
         if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO) && is_private) {
@@ -179,29 +184,76 @@ public class FaceBookComVideos extends PluginForHost {
             link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             final String videoID = this.getFID(link);
             /* Embed = no filenames given */
-            final boolean usingEmbed = true;
-            br.getPage("https://www.facebook.com/video/embed?video_id=" + videoID);
-            /*
-             * 2020-06-05: <div class="pam uiBoxRed"><div class="fsl fwb fcb">Video nicht verfügbar</div>Dieses Video wurde entweder
-             * entfernt oder ist aufgrund der ‎Privatsphäre-Einstellungen nicht sichtbar.</div>
-             */
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pam uiBoxRed\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!usingEmbed) {
-                if (loggedIN) {
-                    filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
+            final boolean useEmbedOnly = false;
+            if (useEmbedOnly) {
+                accessVideoEmbed(videoID, true);
+            } else {
+                /* Use mobile website */
+                br.getPage("https://m.facebook.com/video.php?v=" + videoID);
+                /* 2020-06-12: Website does never return appropriate 404 code so we have to check for strings in html :/ */
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>\\s*Content not found\\s*</title>")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
+                String fallback_downloadurl = null;
+                /* Get standardized json object "VideoObject" */
+                final String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
+                try {
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                    final String title = (String) entries.get("name");
+                    final String uploadDate = (String) entries.get("uploadDate");
+                    final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
+                    if (StringUtils.isAllNotEmpty(title, uploadDate, uploader)) {
+                        String date_formatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                        if (date_formatted == null) {
+                            date_formatted = uploadDate;
+                        }
+                        filename = date_formatted + "_";
+                        /* 2020-06-12: Uploader is not always given in json */
+                        if (uploader != null) {
+                            filename += uploader + "_";
+                        }
+                        filename += title;
                     }
-                } else {
-                    filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+                    /*
+                     * 2020-06-12: We avoid using this as final downloadurl [use only as fallback] as it is lower quality than via the
+                     * "embed" way. Also the given filesize is usually much higher than any stream we get --> That might be the original
+                     * filesize of the uploaded content ...
+                     */
+                    fallback_downloadurl = (String) entries.get("contentUrl");
+                    // final String contentSize = (String) entries.get("contentSize");
+                    // if (contentSize != null) {
+                    // link.setDownloadSize(SizeFormatter.getSize(contentSize));
+                    // }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+                if (filename == null) {
+                    /* Fallback - json is not always given */
+                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                }
+                /*
+                 * 2020-06-12: Get downloadurl from embedded URL --> Better quality --> Use this one only as a fallback e.g. for content
+                 * which is not available embedded because it is officially only available via MDP streaming:
+                 * https://svn.jdownloader.org/issues/88438
+                 */
+                if (StringUtils.isEmpty(fallback_downloadurl)) {
+                    fallback_downloadurl = br.getRegex("property=\"og:video\" content=\"(https?://[^<>\"]+)\"").getMatch(0);
+                    if (fallback_downloadurl != null) {
+                        fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
                     }
+                }
+                /* Find downloadurl */
+                if (!fastLinkcheck && !isDownload) {
+                    accessVideoEmbed(videoID, false);
+                }
+                if (StringUtils.isEmpty(this.dllink) && !StringUtils.isEmpty(fallback_downloadurl)) {
+                    logger.info("Using fallback downloadurl --> This video is probably usually only streamable via MDP streaming!");
+                    this.dllink = fallback_downloadurl;
                 }
             }
             if (filename == null) {
+                /* Fallback */
                 filename = videoID;
             }
             if (filename == null) {
@@ -221,10 +273,9 @@ public class FaceBookComVideos extends PluginForHost {
                 filename = filename + "_" + fid;
             }
             filename += ".mp4";
-            this.dllink = getDllinkVideo();
         }
         link.setFinalFileName(filename);
-        if (this.dllink != null && this.dllink.startsWith("http")) {
+        if (this.dllink != null && this.dllink.startsWith("http") && !isDownload && !fastLinkcheck) {
             try {
                 con = br.openHeadConnection(this.dllink);
                 if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
@@ -240,6 +291,21 @@ public class FaceBookComVideos extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void accessVideoEmbed(final String videoID, final boolean checkForOffline) throws PluginException, IOException {
+        if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://www.facebook.com/video/embed?video_id=" + videoID);
+        /*
+         * 2020-06-05: <div class="pam uiBoxRed"><div class="fsl fwb fcb">Video nicht verfügbar</div>Dieses Video wurde entweder entfernt
+         * oder ist aufgrund der ‎Privatsphäre-Einstellungen nicht sichtbar.</div>
+         */
+        if (checkForOffline && (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pam uiBoxRed\""))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        this.dllink = getDllinkVideo();
     }
 
     private String checkDllink(final String flink) throws Exception {
@@ -303,10 +369,10 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, true);
         if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -316,7 +382,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (accountNeeded && !this.loggedIN) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
-                handleVideo(downloadLink);
+                handleVideo(link);
             }
         }
     }
@@ -332,23 +398,23 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, true);
         if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         } else {
-            handleVideo(downloadLink);
+            handleVideo(link);
         }
     }
 
     public String getDllinkVideo() {
         String dllink = null;
-        boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD, true);
+        final boolean preferHD = PluginJsonConfig.get(this.getConfigInterface()).isPreferHD();
         if (preferHD) {
             dllink = getHigh();
             if (dllink == null || "null".equals(dllink)) {
@@ -606,22 +672,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     @Override
-    public String getDescription() {
-        return "JDownloader's Facebook Plugin helps downloading videoclips and photo galleries. Facebook provides two different video qualities.";
-    }
-
-    public static final String  FASTLINKCHECK_PICTURES         = "FASTLINKCHECK_PICTURES";
-    public static final boolean FASTLINKCHECK_PICTURES_DEFAULT = true;
-    private static final String USE_ALBUM_NAME_IN_FILENAME     = "USE_ALBUM_NAME_IN_FILENAME";
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Videos: Prefer HD quality")).setDefaultValue(true));
-        // fast add all the time! Due to volume of decrypting and distributed results, it becomes multithreaded and hundreds of not
-        // thousands of results can return...
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_PICTURES,
-        // JDL.L("plugins.hoster.facebookcomvideos.fastlinkcheckpictures", "Photos: Enable fast linkcheck (filesize won't be shown in
-        // linkgrabber)?")).setDefaultValue(FASTLINKCHECK_PICTURES_DEFAULT));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ALBUM_NAME_IN_FILENAME, JDL.L("plugins.hoster.facebookcomvideos.usealbumnameinfilename", "Photos: Use album name in filename [note that filenames change once the download starts]?")).setDefaultValue(true));
+    public Class<? extends FacebookConfig> getConfigInterface() {
+        return FacebookConfig.class;
     }
 
     private static String getUser(final Browser br) {
