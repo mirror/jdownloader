@@ -89,7 +89,11 @@ public class AndroidFileHostCom extends antiDDoSForHost {
             postPage("/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
             final String[] mirrors = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getColumn(0);
             if (mirrors == null || mirrors.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * 2020-06-15: Website wouild display "oops! No mirrors found" --> json response would be:
+                 * {"STATUS":"1","CODE":"200","MESSAGE":"success, #winning","AUTO_START":"FALSE","MIRRORS":[]}
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No mirrors found", 5 * 60 * 1000l);
             }
             URLConnectionAdapter con = null;
             boolean success = false;
