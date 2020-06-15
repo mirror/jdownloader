@@ -519,7 +519,7 @@ public class OffCloudCom extends UseNet {
 
     /** Log into users' account and set login cookie */
     private void login() throws IOException, PluginException {
-        postAPISafe(DOMAIN + "login/classic", "username=" + JSonUtils.escape(currAcc.getUser()) + "&password=" + JSonUtils.escape(currAcc.getPass()));
+        postAPISafe(DOMAIN + "login/classic", "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass()));
         final String logincookie = br.getCookie(NICE_HOST, "connect.sid");
         if (logincookie == null) {
             /* This should never happen as we got errorhandling for invalid logindata */
