@@ -17,9 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,6 +31,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
@@ -51,11 +53,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "" })
-public class OffCloudCom extends PluginForHost {
+public class OffCloudCom extends UseNet {
     /** Using API: https://github.com/offcloud/offcloud-api */
     private static final String                            CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK        = "CLEAR_DOWNLOAD_HISTORY_SINGLE_LINK";
     private static final String                            CLEAR_DOWNLOAD_HISTORY_COMPLETE_INSTANT   = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
@@ -98,7 +99,9 @@ public class OffCloudCom extends PluginForHost {
     private static AtomicInteger                           maxPrem                                   = new AtomicInteger(1);
     private long                                           deletedDownloadHistoryEntriesNum          = 0;
 
-    @SuppressWarnings("deprecation")
+    public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
+    };
+
     public OffCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://offcloud.com/");
@@ -168,91 +171,99 @@ public class OffCloudCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+        } else {
+            /* handle premium should never be called */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override
     public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.MULTIHOST };
+        return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        String status = null;
-        String filename = null;
-        String requestID = null;
-        this.br = newBrowser();
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+        } else {
+            String status = null;
+            String filename = null;
+            String requestID = null;
+            this.br = newBrowser();
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        final long wait = lastUnavailable - System.currentTimeMillis();
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    } else if (lastUnavailable != null) {
+                        unavailableMap.remove(link.getHost());
+                        if (unavailableMap.size() == 0) {
+                            hostUnavailableMap.remove(account);
+                        }
                     }
                 }
             }
-        }
-        /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-         * needed to get the individual host limits.
-         */
-        synchronized (CTRLLOCK) {
-            if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
-                logger.info("Performing full login to set individual host limits");
-                this.fetchAccountInfo(account);
-            }
-        }
-        setConstants(account, link);
-        loginCheck();
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            if (cloudOnlyHosts.contains(link.getHost())) {
-                final long timeStarted = System.currentTimeMillis();
-                link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_cloud);
-                this.postRawAPISafe("https://offcloud.com/cloud/request", "{\"url\":\"" + link.getDownloadURL() + "\",\"conversion\":\"\"}");
-                requestID = PluginJSonUtils.getJsonValue(br, "requestId");
-                if (requestID == null) {
-                    /* Should never happen */
-                    handleErrorRetries("cloud_requestIdnull", 50, 2 * 60 * 1000l);
-                }
-                do {
-                    this.sleep(5000l, link);
-                    this.postRawAPISafe("https://offcloud.com/cloud/status", "{\"requestIds\":[\"" + requestID + "\"]}");
-                    status = PluginJSonUtils.getJsonValue(br, "status");
-                } while (System.currentTimeMillis() - timeStarted < CLOUD_MAX_WAITTIME && "downloading".equals(status));
-                filename = PluginJSonUtils.getJsonValue(br, "fileName");
-                if (!"downloaded".equals(status)) {
-                    logger.warning("Cloud failed");
-                    /* Should never happen but will happen */
-                    handleErrorRetries("cloud_download_failed_reason_unknown", 20, 5 * 60 * 1000l);
-                }
-                /* Filename needed in URL or server will return bad filenames! */
-                dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
-            } else {
-                link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
-                this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(this.currDownloadLink.getDownloadURL()));
-                requestID = PluginJSonUtils.getJsonValue(br, "requestId");
-                if (requestID == null) {
-                    /* Should never happen */
-                    handleErrorRetries("instant_requestIdnull", 50, 2 * 60 * 1000l);
-                }
-                dllink = PluginJSonUtils.getJsonValue(br, "url");
-                if (dllink == null) {
-                    /* Should never happen */
-                    handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
+            /*
+             * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it
+             * is needed to get the individual host limits.
+             */
+            synchronized (CTRLLOCK) {
+                if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
+                    logger.info("Performing full login to set individual host limits");
+                    this.fetchAccountInfo(account);
                 }
             }
-            dllink = dllink.replaceAll("\\\\/", "/");
+            setConstants(account, link);
+            loginCheck();
+            String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+            if (dllink == null) {
+                if (cloudOnlyHosts.contains(link.getHost())) {
+                    final long timeStarted = System.currentTimeMillis();
+                    link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_cloud);
+                    this.postRawAPISafe("https://offcloud.com/cloud/request", "{\"url\":\"" + link.getDownloadURL() + "\",\"conversion\":\"\"}");
+                    requestID = PluginJSonUtils.getJsonValue(br, "requestId");
+                    if (requestID == null) {
+                        /* Should never happen */
+                        handleErrorRetries("cloud_requestIdnull", 50, 2 * 60 * 1000l);
+                    }
+                    do {
+                        this.sleep(5000l, link);
+                        this.postRawAPISafe("https://offcloud.com/cloud/status", "{\"requestIds\":[\"" + requestID + "\"]}");
+                        status = PluginJSonUtils.getJsonValue(br, "status");
+                    } while (System.currentTimeMillis() - timeStarted < CLOUD_MAX_WAITTIME && "downloading".equals(status));
+                    filename = PluginJSonUtils.getJsonValue(br, "fileName");
+                    if (!"downloaded".equals(status)) {
+                        logger.warning("Cloud failed");
+                        /* Should never happen but will happen */
+                        handleErrorRetries("cloud_download_failed_reason_unknown", 20, 5 * 60 * 1000l);
+                    }
+                    /* Filename needed in URL or server will return bad filenames! */
+                    dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
+                } else {
+                    link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
+                    this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(this.currDownloadLink.getDownloadURL()));
+                    requestID = PluginJSonUtils.getJsonValue(br, "requestId");
+                    if (requestID == null) {
+                        /* Should never happen */
+                        handleErrorRetries("instant_requestIdnull", 50, 2 * 60 * 1000l);
+                    }
+                    dllink = PluginJSonUtils.getJsonValue(br, "url");
+                    if (dllink == null) {
+                        /* Should never happen */
+                        handleErrorRetries("dllinknull", 50, 2 * 60 * 1000l);
+                    }
+                }
+                dllink = dllink.replaceAll("\\\\/", "/");
+            }
+            link.setProperty("offcloudrequestId", requestID);
+            handleDL(account, link, dllink);
         }
-        link.setProperty("offcloudrequestId", requestID);
-        handleDL(account, link, dllink);
     }
 
     @SuppressWarnings("deprecation")
@@ -470,7 +481,6 @@ public class OffCloudCom extends PluginForHost {
             }
             status = status.toLowerCase();
             realhost = realhost.toLowerCase();
-            Arrays.asList(supportedHosts);
             final boolean addToArrayOfSupportedHosts = supportedHostStates.contains(status);
             logger.info("offcloud.com status of host " + realhost + ": " + status);
             if (addToArrayOfSupportedHosts) {
@@ -482,7 +492,6 @@ public class OffCloudCom extends PluginForHost {
                 logger.info("NOT adding this host as it is inactive at the moment: " + realhost);
             }
         }
-        supportedHosts.remove("usenet");// reported but not handled by plugin -> breaks filenames
         ai.setMultiHostSupport(this, supportedHosts);
         getAndSetChunklimits();
         /* Let's handle some settings stuff. */
@@ -1223,7 +1232,12 @@ public class OffCloudCom extends PluginForHost {
     // }
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
+        if (account != null && (isUsenetLink(link) || link == null)) {
+            /* 2020-06-15: Limit according to admin. See also: https://offcloud.com/api/sites/chunks */
+            return 3;
+        } else {
+            return maxPrem.get();
+        }
     }
 
     @SuppressWarnings("unused")
@@ -1307,5 +1321,14 @@ public class OffCloudCom extends PluginForHost {
          */
         link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
         link.setProperty("offcloudrequestId", Property.NULL);
+    }
+
+    /** Usenet is available as of 2020-06-15 */
+    @Override
+    public List<UsenetServer> getAvailableUsenetServer() {
+        final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        // ret.addAll(UsenetServer.createServerList("usenet.offcloud.com", false, 119));
+        ret.addAll(UsenetServer.createServerList("usenet.offcloud.com", true, 563));
+        return ret;
     }
 }
