@@ -47,7 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/[A-Za-z0-9%\\.\\-_]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
     @Override
     protected long getStartIntervall(DownloadLink downloadLink, Account account) {
@@ -60,6 +60,20 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     public UploadgigCom(PluginWrapper wrapper) {
@@ -107,10 +121,17 @@ public class UploadgigCom extends antiDDoSForHost {
     private String  directlinkproperty = null;
     private String  acctype            = null;
 
+    private Browser prepBR(final Browser br) {
+        /* 2020-06-15: Use old website (?) */
+        br.getHeaders().put("Direct", "1");
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         this.setBrowserExclusive();
+        prepBR(br);
         final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)$").getMatch(0);
         if (!link.isNameSet() && url_filename != null) {
             /* Set temp name */
@@ -142,10 +163,10 @@ public class UploadgigCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         setConstants(null);
-        doFree(downloadLink);
+        doFree(link);
     }
 
     private void doFree(final DownloadLink link) throws Exception, PluginException {
@@ -294,10 +315,6 @@ public class UploadgigCom extends antiDDoSForHost {
         }
     }
 
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "/download/([^/]+)").getMatch(0);
-    }
-
     private String checkDirectLink(final DownloadLink link, final String property) throws Exception {
         String dllink = link.getStringProperty(property);
         if (dllink != null) {
@@ -334,6 +351,7 @@ public class UploadgigCom extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
+                prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* Avoid login-captcha whenever possible */
