@@ -1969,7 +1969,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    private final String getDllink(final DownloadLink link, final Account account) {
+    protected final String getDllink(final DownloadLink link, final Account account) {
         return getDllink(link, account, this.br, correctedBR);
     }
 
@@ -4375,7 +4375,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Example: uqload.com</br>
      * Do not override!
      */
-    private final boolean internal_isVideohosterEmbed() {
+    protected final boolean internal_isVideohosterEmbed() {
         return isVideohosterEmbed() || isVideohosterEmbedHTML();
     }
 

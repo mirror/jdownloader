@@ -1796,7 +1796,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         if (grabPhoto) {
-            final String[] photo_ids = new Regex(html, "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)").getColumn(0);
+            final String[] photo_ids = new Regex(html, "showPhoto\\(\\'(-?\\d+_\\d+)").getColumn(0);
             for (final String photoContentStr : photo_ids) {
                 if (!global_dupes.add(photoContentStr)) {
                     /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */

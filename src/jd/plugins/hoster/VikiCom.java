@@ -136,6 +136,7 @@ public class VikiCom extends PluginForHost {
             link.setName(filename + default_Extension);
             return AvailableStatus.TRUE;
         }
+        final boolean allow_idpart_workaround = false;
         String idpart = this.br.getMatch("oster=\"https?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
         if (true || idpart == null) {
             final Browser cbr = br.cloneBrowser();
@@ -171,7 +172,7 @@ public class VikiCom extends PluginForHost {
             // dllink = url480;
             // }
         }
-        if (false && idpart != null) {
+        if (allow_idpart_workaround && idpart != null) {
             /* Thx: https://github.com/dknlght/dkodi/blob/master/plugin.video.viki/plugin.video.viki-1.1.44.zip */
             /* 2017-09-27: Check this: https://forum.kodi.tv/showthread.php?tid=148429 */
             /* 2017-03-11 - also possible for: 360p, 480p */
