@@ -1260,7 +1260,7 @@ public class SaveTv extends PluginForHost {
             logger.warning("Received HTML code instead of the file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
-        } else if (dl.getConnection().getLongContentLength() <= 1048576) {
+        } else if (dl.getConnection().getCompleteContentLength() <= 1048576l) {
             /* Avoid downloading (too small) trash data */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein", 60 * 60 * 1000l);
         }
