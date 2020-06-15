@@ -15,8 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Locale;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -115,7 +118,10 @@ public class UfileIo extends antiDDoSForHost {
                 throw new AccountRequiredException();
             }
             final String fileID = this.getFID(link);
-            final String csrftest = br.getRegex("name=\"csrf_test_name\" value=\"([a-f0-9]+)\"").getMatch(0);
+            String csrftest = br.getRegex("name=\"csrf_test_name\" value=\"([a-f0-9]+)\"").getMatch(0);
+            if (csrftest == null) {
+                csrftest = br.getCookie(br.getURL(), "csrf_cookie_name");
+            }
             if (csrftest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -153,7 +159,7 @@ public class UfileIo extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                 } else {
@@ -275,6 +281,13 @@ public class UfileIo extends antiDDoSForHost {
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
+            this.getPage("/dashboard/settings/billing");
+            final Regex expireinfo = br.getRegex("Your next billing date is (\\d+)[a-z]* ([A-Za-z]+ \\d{4})<");
+            final String expireDay = expireinfo.getMatch(0);
+            final String expireRest = expireinfo.getMatch(1);
+            if (expireDay != null && expireRest != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDay + " " + expireRest, "dd MMM yyyy", Locale.ENGLISH));
+            }
         }
         return ai;
     }
@@ -287,27 +300,8 @@ public class UfileIo extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
+            /* 2020-06-15: WTF premium users will have to enter captchas too */
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
         }
     }
 
