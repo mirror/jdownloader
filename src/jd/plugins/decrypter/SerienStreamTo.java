@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "s.to" }, urls = { "https?://(?:www\\.)?s\\.to/[^/]+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "s.to" }, urls = { "https?://(?:www\\.)?(?:s\\.to|serienstream\\.sx)/[^/]+/.*" })
 public class SerienStreamTo extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public SerienStreamTo(final PluginWrapper wrapper) {
@@ -44,11 +44,10 @@ public class SerienStreamTo extends PluginForDecrypt {
         final String parameter = param.toString().replace("http:", "https:").replaceAll("[/]+$", "");
         br.setFollowRedirects(true);
         final String page = br.getPage(parameter);
-        final String[][] titleDetail = br.getRegex("<meta property=\"og:title\" content=\"(Episode \\d+\\s|Staffel \\d+\\s|von+\\s)+([^\"]+)\"/>").getMatches();
-        final String title = (titleDetail.length > 0) ? (titleDetail[0][titleDetail[0].length - 1]) : null;
-        final String itemTitle = new Regex(parameter, "https?://(?:www\\.)?s\\.to/[^/]+/[^/]+/(.*)").getMatch(0);
+        final String title = br.getRegex("<meta property=\"og:title\" content=\"(?:Episode \\d+\\s|Staffel \\d+\\s|von+\\s)+([^\"]+)\"/>").getMatch(0);
+        final String itemTitle = new Regex(parameter, Regex.escape(br.getHost()) + "/[^/]+/[^/]+/(.*)").getMatch(0);
         // If we're on a show site, add the seasons, if we're on a season page, add the episodes and so on ...
-        String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Regex.escape(itemTitle) + "[^\"]+)\"").getMatches();
+        String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Regex.escape(itemTitle) + "/[^\"]+)\"").getMatches();
         for (String[] itemLink : itemLinks) {
             decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
         }
