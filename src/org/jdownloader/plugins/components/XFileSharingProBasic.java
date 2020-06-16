@@ -2052,7 +2052,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected String getDllinkVideohost(final String src) {
         String dllink = null;
         /* RegExes for videohosts */
-        String jssource = new Regex(src, "sources\\s*:\\s*(\\[[^\\]]+\\])").getMatch(0);
+        String jssource = new Regex(src, "\"?sources\"?\\s*:\\s*(\\[[^\\]]+\\])").getMatch(0);
         if (StringUtils.isEmpty(jssource)) {
             /* 2019-07-04: Wider attempt - find sources via pattern of their video-URLs. */
             jssource = new Regex(src, "[A-Za-z0-9]+\\s*:\\s*(\\[[^\\]]+[a-z0-9]{60}/v\\.mp4[^\\]]+\\])").getMatch(0);
@@ -2196,7 +2196,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns user selected stream quality. -1 = BEST/no selection */
-    private int getPreferredStreamQuality() {
+    private final int getPreferredStreamQuality() {
         final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
         if (cfgO != null) {
             final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
