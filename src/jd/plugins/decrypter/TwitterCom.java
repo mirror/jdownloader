@@ -306,6 +306,7 @@ public class TwitterCom extends PornEmbedParser {
     /** Crawls single media objects obtained via API. */
     private void crawlMediaObjectAPI(final String tweet_id, final LinkedHashMap<String, Object> entries) {
         String url = (String) entries.get("media_url_https");
+        final String expanded_url = (String) entries.get("expanded_url");
         if (StringUtils.isEmpty(url)) {
             /* Ignore invalid items */
             return;
@@ -313,7 +314,7 @@ public class TwitterCom extends PornEmbedParser {
         String filename = null;
         final DownloadLink dl;
         /* 2020-02-10: Recognize videos by this URL. If it is a thumbnail --< It is a video */
-        if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/")) {
+        if (url.contains("/tweet_video_thumb/") || url.contains("/amplify_video_thumb/") || url.contains("/ext_tw_video_thumb/") || StringUtils.contains(expanded_url, "/video/")) {
             /* Video thumbnail --> Download video */
             dl = this.createDownloadlink(this.createVideourl(tweet_id));
             dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -341,6 +342,7 @@ public class TwitterCom extends PornEmbedParser {
         distribute(dl);
     }
 
+    @Deprecated
     private void crawlTweetViaMobileWebsite(final String parameter, final FilePackage fp) throws IOException {
         logger.info("Crawling mobile website tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
