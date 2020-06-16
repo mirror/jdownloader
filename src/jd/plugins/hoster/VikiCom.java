@@ -18,17 +18,26 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,10 +47,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(www\\.)?viki\\.(com|mx|jp)/videos/\\d+v" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(?:www\\.)?viki\\.(?:com|mx|jp)/videos/(\\d+v)" })
 public class VikiCom extends PluginForHost {
     public VikiCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.viki.com/sign_up");
     }
 
     /* Extension which will be used if no correct extension is found */
@@ -51,10 +61,12 @@ public class VikiCom extends PluginForHost {
     private static final int     free_maxchunks          = 0;
     private static final int     free_maxdownloads       = -1;
     private String               dllink                  = null;
+    private String               hls_master              = null;
     private boolean              server_issues           = false;
     private boolean              blocking_geoblocked     = false;
     private boolean              blocking_paywall        = false;
     private boolean              blocking_notyetreleased = false;
+    private boolean              blocking_drm            = false;
     private static final String  APP_ID                  = "100005a";
     private static final String  APP_SECRET              = "MM_d*yP@`&1@]@!AVrXf_o-HVEnoTnm$O-ti4[G~$JDI/Dc-&piU&z&5.;:}95=Iad";
     private static final String  API_BASE                = "https://www.viki.com/api";
@@ -71,7 +83,7 @@ public class VikiCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
     /** Thanks for the html5 idea guys: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/viki.py */
@@ -83,12 +95,11 @@ public class VikiCom extends PluginForHost {
      *
      * @throws Exception
      */
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         blocking_geoblocked = false;
         final String vid = getVID(link);
         link.setName(vid);
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
         // final UrlQuery query = new UrlQuery();
@@ -96,12 +107,18 @@ public class VikiCom extends PluginForHost {
         // query.append("t", System.currentTimeMillis() + "", true);
         // query.append("site", "www.viki.com", true);
         /* 2020-05-04: This header is required from now on. */
-        br.getHeaders().put("x-viki-app-ver", "4.0.42-7323421");
+        br.getHeaders().put("x-viki-app-ver", "4.0.52-175e743");
         br.getPage(API_BASE + "/videos/" + this.getVID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        /* 2020-06-16: E.g. no DRM = Int9Ig== */
+        final String drm_base64 = (String) entries.get("drm");
+        if (drm_base64 != null && drm_base64.length() > 20) {
+            this.blocking_drm = true;
+        }
+        hls_master = (String) JavaScriptEngineFactory.walkJson(entries, "streams/hls/url");
         entries = (LinkedHashMap<String, Object>) entries.get("video");
         // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
         String filename = (String) JavaScriptEngineFactory.walkJson(entries, "container/i18n_title");
@@ -160,9 +177,8 @@ public class VikiCom extends PluginForHost {
                     break;
                 }
             }
-            if (url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
+            if (url != null) {
+                logger.info("Found http downloadurl");
                 dllink = url;
             }
             // 480p_1709221204.mp4 pattern. 720p is OK.
@@ -190,7 +206,7 @@ public class VikiCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (dllink != null) {
+        if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             if (!isDownload) {
@@ -234,29 +250,190 @@ public class VikiCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
-        if (blocking_geoblocked || blocking_paywall || blocking_notyetreleased) {
-            throw new AccountRequiredException();
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        doFree(link, null);
     }
 
-    private String getVID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+v)$").getMatch(0);
+    public void doFree(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account, true);
+        if (blocking_paywall) {
+            logger.info("Paid content");
+            throw new AccountRequiredException();
+        } else if (blocking_geoblocked) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked content");
+        } else if (blocking_notyetreleased) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content has not yet been released");
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        } else if (dllink == null && hls_master == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        boolean preferHLS = false;
+        try {
+            final UrlQuery query = new UrlQuery().parse(hls_master);
+            final String stream = query.get("stream");
+            final String stream_decrypted = Encoding.Base64Decode(stream);
+            /*
+             * Only download HLS streams if: HLS is available AND [Account is available (= higher quality possible) OR http downloadURL is
+             * NOT available (= use HLS as fallback)]
+             */
+            if (stream_decrypted != null && (account != null || this.dllink == null)) {
+                preferHLS = true;
+                hls_master = stream_decrypted;
+            }
+        } catch (final Throwable e) {
+        }
+        /*
+         * 2020-06-16: Some content is DRM protected via HLS but not via http. Prefer lower quality http download in this case as DRM
+         * protected HLS download is not possible.
+         */
+        if (preferHLS && !this.blocking_drm) {
+            br.getPage(hls_master);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                logger.info("HLS stream broken/restricted");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS stream broken");
+            }
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            /* Download http stream */
+            if (dllink == null) {
+                if (this.blocking_drm) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected content");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    private String getVID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* Try to avoid login captchas at all cost! */
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearAll();
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/sign_in");
+                final String reCaptchaKey = br.getRegex("RECAPTCHA_PUBLIC_KEY\\s*:\\s*'([^<>\"\\']+)\\'").getMatch(0);
+                final Form loginform = br.getFormbyProperty("id", "loginForm");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (reCaptchaKey == null) {
+                    logger.warning("Failed to find reCaptchaKey");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("login_id", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                try {
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } finally {
+                    this.setDownloadLink(dlinkbefore);
+                }
+                br.submitForm(loginform);
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, final String key) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, key) {
+            @Override
+            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                return TYPE.INVISIBLE;
+            }
+        };
+    }
+
+    private boolean isLoggedin() {
+        return br.containsHTML("class=\"navbar-dropdown-link\"");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        /* free accounts can still have captcha */
+        account.setConcurrentUsePossible(false);
+        ai.setStatus("Registered (free) user");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, true);
+        // requestFileInformation(link);
+        this.doFree(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        /* 2020-06-16: No captchas at all */
+        return false;
     }
 
     // private String checkDirectLink(final DownloadLink downloadLink, final String property) {

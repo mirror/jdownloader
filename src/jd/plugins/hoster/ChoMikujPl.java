@@ -17,12 +17,14 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -405,90 +407,115 @@ public class ChoMikujPl extends antiDDoSForHost {
             dllink = getDllinkMP3(link);
         } else {
             /* Premium users can always download the original file */
-            final String requestVerificationToken = br.getRegex("<div id=\"content\">\\s*?<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (requestVerificationToken == null) {
-                logger.warning("Failed to find requestVerificationToken");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* First, kind of a linkcheck - if we haven't found the filesize before we'll probably find it now. */
-            getPageWithCleanup(br, "https://chomikuj.pl/action/fileDetails/Index/" + fid);
-            final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-            if (filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-            }
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Users can override traffic check. For this case we'll check if we have enough traffic for this file here. */
-            if (!account.getAccountInfo().isUnlimitedTraffic() && account.getAccountInfo().getTrafficLeft() < link.getView().getBytesTotal()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic to download this file", 30 * 60 * 1000l);
-            }
-            br.setCookie("http://chomikuj.pl/", "__RequestVerificationToken_Lw__", requestVerificationToken);
-            br.getHeaders().put("Referer", link.getDownloadURL());
-            postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadContext", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-            if (cbr.containsHTML(ACCESSDENIED)) {
-                return false;
-            }
-            /* Low traffic warning(?) */
-            if (cbr.containsHTML("action=\"/action/License/DownloadWarningAccept\"")) {
-                final String serializedUserSelection = cbr.getRegex("name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-                final String serializedOrgFile = cbr.getRegex("name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (serializedUserSelection == null || serializedOrgFile == null) {
-                    logger.warning("Failed to pass low traffic warning!");
+            final boolean accountHasLessTrafficThanRequiredForThisFile = account.getAccountInfo().getTrafficLeft() < link.getView().getBytesTotal();
+            try {
+                final String requestVerificationToken = br.getRegex("<div id=\"content\">\\s*?<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (requestVerificationToken == null) {
+                    logger.warning("Failed to find requestVerificationToken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* First, kind of a linkcheck - if we haven't found the filesize before we'll probably find it now. */
+                getPageWithCleanup(br, "https://chomikuj.pl/action/fileDetails/Index/" + fid);
+                final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+                }
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* Users can override traffic check. For this case we'll check if we have enough traffic for this file here. */
+                if (!account.getAccountInfo().isSpecialTraffic() && accountHasLessTrafficThanRequiredForThisFile) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic to download this file", 30 * 60 * 1000l);
+                }
+                br.setCookie("http://chomikuj.pl/", "__RequestVerificationToken_Lw__", requestVerificationToken);
+                br.getHeaders().put("Referer", link.getDownloadURL());
+                postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadContext", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                if (cbr.containsHTML(ACCESSDENIED)) {
                     return false;
                 }
-                postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-            }
-            if (cbr.containsHTML("dontShowBoxInSession")) {
-                /* 2020-04-29: https://www.picflash.org/viewer.php?img=chomikuj_disable_box_download2X2RRQ.png */
-                postPageWithCleanup(br, "/action/chomikbox/DontDownloadWithBox", "__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-                postPageWithCleanup(br, "/action/License/Download", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-            }
-            if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
-                // this can happen also
-                // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
-                cleanupBrowser(br, PluginJSonUtils.unescape(br.toString()));
-                // so we can get output in logger for debug purposes.
-                logger.info(cbr.toString());
-                final Form f = cbr.getFormbyAction("/action/License/acceptLargeTransfer");
-                if (f == null) {
+                /* Low traffic warning(?) */
+                if (cbr.containsHTML("action=\"/action/License/DownloadWarningAccept\"")) {
+                    final String serializedUserSelection = cbr.getRegex("name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    final String serializedOrgFile = cbr.getRegex("name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    if (serializedUserSelection == null || serializedOrgFile == null) {
+                        logger.warning("Failed to pass low traffic warning!");
+                        return false;
+                    }
+                    postPageWithCleanup(br, "https://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                }
+                if (cbr.containsHTML("dontShowBoxInSession")) {
+                    /* 2020-04-29: https://www.picflash.org/viewer.php?img=chomikuj_disable_box_download2X2RRQ.png */
+                    postPageWithCleanup(br, "/action/chomikbox/DontDownloadWithBox", "__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                    postPageWithCleanup(br, "/action/License/Download", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                }
+                if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
+                    // this can happen also
+                    // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
+                    cleanupBrowser(br, PluginJSonUtils.unescape(br.toString()));
+                    // so we can get output in logger for debug purposes.
+                    logger.info(cbr.toString());
+                    final Form f = cbr.getFormbyAction("/action/License/acceptLargeTransfer");
+                    if (f == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    submitFormWithCleanup(br, f);
+                } else if (cbr.containsHTML("/action/License/AcceptOwnTransfer")) {
+                    /*
+                     * Some files on chomikuj hoster are available to download using transfer from file owner. When there's no owner
+                     * transfer left then transfer is reduced from downloader account (downloader is asked if he wants to use his own
+                     * transfer). We have to confirm this here.
+                     */
+                    // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
+                    cleanupBrowser(cbr, PluginJSonUtils.unescape(br.toString()));
+                    // so we can get output in logger for debug purposes.
+                    logger.info(cbr.toString());
+                    final Form f = cbr.getFormbyAction("/action/License/AcceptOwnTransfer");
+                    if (f == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    f.remove(null);
+                    f.remove(null);
+                    f.put("__RequestVerificationToken", Encoding.urlEncode(requestVerificationToken));
+                    submitFormWithCleanup(br, f);
+                }
+                dllink = br.getRegex("redirectUrl\":\"(https?://.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
+                }
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(https?://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
+                }
+                if (dllink == null) {
+                    if (cbr.containsHTML("\"BuyAdditionalTransfer")) {
+                        logger.info("Disabling chomikuj.pl account: Not enough traffic available");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    logger.warning("Failed to find final downloadurl");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                submitFormWithCleanup(br, f);
-            } else if (cbr.containsHTML("/action/License/AcceptOwnTransfer")) {
-                /*
-                 * Some files on chomikuj hoster are available to download using transfer from file owner. When there's no owner transfer
-                 * left then transfer is reduced from downloader account (downloader is asked if he wants to use his own transfer). We have
-                 * to confirm this here.
-                 */
-                // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
-                cleanupBrowser(cbr, PluginJSonUtils.unescape(br.toString()));
-                // so we can get output in logger for debug purposes.
-                logger.info(cbr.toString());
-                final Form f = cbr.getFormbyAction("/action/License/AcceptOwnTransfer");
-                if (f == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                f.remove(null);
-                f.remove(null);
-                f.put("__RequestVerificationToken", Encoding.urlEncode(requestVerificationToken));
-                submitFormWithCleanup(br, f);
-            }
-            dllink = br.getRegex("redirectUrl\":\"(https?://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
-            }
-            if (dllink != null) {
                 dllink = Encoding.unicodeDecode(dllink);
                 dllink = Encoding.htmlDecode(dllink);
                 if (dllink.contains("#SliderTransfer")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
+                br.setFollowRedirects(redirectsSetting);
+            } catch (final PluginException e) {
+                String msg = null;
+                try {
+                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    msg = (String) entries.get("Content");
+                    msg = msg.trim();
+                } catch (final Throwable e2) {
+                }
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && accountHasLessTrafficThanRequiredForThisFile) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic to download this file", 30 * 60 * 1000l);
+                } else if (!StringUtils.isEmpty(msg)) {
+                    /* Try to display more precise errormessage, avoid plugin defect. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
+                } else {
+                    throw e;
+                }
             }
-            br.setFollowRedirects(redirectsSetting);
         }
         return true;
     }
@@ -548,35 +575,6 @@ public class ChoMikujPl extends antiDDoSForHost {
             /* Login will happen inside requestFileInformation */
             requestFileInformation(link, account, true);
             getDllink_premium(link, account, br, true);
-            if (cbr.containsHTML("\"BuyAdditionalTransfer")) {
-                logger.info("Disabling chomikuj.pl account: Not enough traffic available");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (dllink == null) {
-                String argh1 = br.getRegex("orgFile\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
-                String argh2 = br.getRegex("userSelection\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
-                if (argh1 == null || argh2 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // For some files they ask
-                // "Do you really want to download this file", so we have to confirm
-                // it with "YES" here ;)
-                if (cbr.containsHTML("Właściciel tego chomika udostępnia darmowy transfer, ale jego ilość jest obecnie zbyt mała, aby można było pobrać plik")) {
-                    postPage("https://chomikuj.pl/action/License/AcceptOwnTransfer?fileId=" + getFID(link), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
-                } else {
-                    postPage("https://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + getFID(link), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
-                }
-                dllink = br.getRegex("redirectUrl\":\"(https?://.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
-                }
-                if (dllink != null) {
-                    dllink = Encoding.htmlDecode(dllink);
-                }
-                if (dllink == null) {
-                    getDllink(link, br, true);
-                }
-            }
         }
         handleDownload(link, account, account_resume, account_maxchunks);
     }
@@ -654,53 +652,55 @@ public class ChoMikujPl extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
-                boolean loggedinViaCookies = false;
                 if (setLoginCookies(this.br, account)) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                        logger.info("Trust cookies without checking");
+                        return;
+                    }
                     getPageWithCleanup(this.br, MAINPAGE);
                     if (this.isLoggedIn(this.br)) {
                         logger.info("Successfully loggedin via cookies");
-                        loggedinViaCookies = true;
+                        /* Save new cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
                     } else {
                         logger.info("Failed to login via cookies");
-                        loggedinViaCookies = false;
                     }
                 }
-                if (!loggedinViaCookies) {
-                    logger.info("Performing full login");
-                    br.clearCookies(account.getHoster());
-                    prepBrowser(br, account.getHoster());
-                    br.setCookiesExclusive(true);
-                    br.setFollowRedirects(true);
-                    getPageWithCleanup(this.br, MAINPAGE);
-                    String postData = "ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass());
-                    final String[] requestVerificationTokens = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getColumn(0);
-                    if (requestVerificationTokens.length > 0) {
-                        logger.info("Found " + requestVerificationTokens.length + "x '__RequestVerificationToken' values");
-                        /*
-                         * 2019-10-17: Strange - website contains this value twice (well different values, same key) and uses them in login
-                         * POST data. According to my tests, login works even without these tokens or with them set to "".
-                         */
-                        for (final String requestVerificationToken : requestVerificationTokens) {
-                            postData += "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
-                        }
-                    } else {
-                        logger.info("Failed to find any '__RequestVerificationToken' - trying to login without it");
+                logger.info("Performing full login");
+                br.clearCookies(account.getHoster());
+                prepBrowser(br, account.getHoster());
+                br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
+                getPageWithCleanup(this.br, MAINPAGE);
+                String postData = "ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass());
+                final String[] requestVerificationTokens = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getColumn(0);
+                if (requestVerificationTokens.length > 0) {
+                    logger.info("Found " + requestVerificationTokens.length + "x '__RequestVerificationToken' values");
+                    /*
+                     * 2019-10-17: Strange - website contains this value twice (well different values, same key) and uses them in login POST
+                     * data. According to my tests, login works even without these tokens or with them set to "".
+                     */
+                    for (final String requestVerificationToken : requestVerificationTokens) {
+                        postData += "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
                     }
-                    PostRequest postRequest = br.createPostRequest("/action/Login/TopBarLogin", postData);
-                    postRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    // postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin",
-                    // "rememberLogin=true&rememberLogin=false&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" +
-                    // Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" +
-                    // Encoding.urlEncode(requestVerificationToken));
-                    postRequestWithCleanup(this.br, postRequest);
-                    if (!isLoggedIn(this.br)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    br.setCookie(br.getHost(), "cookiesAccepted", "1");
-                    br.setCookie(br.getHost(), "spt", "0");
-                    br.setCookie(br.getHost(), "rcid", "1");
-                    getPageWithCleanup(this.br, "/" + Encoding.urlEncode(account.getUser()));
+                } else {
+                    logger.info("Failed to find any '__RequestVerificationToken' - trying to login without it");
                 }
+                PostRequest postRequest = br.createPostRequest("/action/Login/TopBarLogin", postData);
+                postRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                // postPageRawWithCleanup(this.br, "/action/Login/TopBarLogin",
+                // "rememberLogin=true&rememberLogin=false&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" +
+                // Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" +
+                // Encoding.urlEncode(requestVerificationToken));
+                postRequestWithCleanup(this.br, postRequest);
+                if (!isLoggedIn(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.setCookie(br.getHost(), "cookiesAccepted", "1");
+                br.setCookie(br.getHost(), "spt", "0");
+                br.setCookie(br.getHost(), "rcid", "1");
+                getPageWithCleanup(this.br, "/" + Encoding.urlEncode(account.getUser()));
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
