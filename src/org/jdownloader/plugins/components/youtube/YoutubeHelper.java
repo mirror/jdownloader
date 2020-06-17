@@ -155,6 +155,7 @@ public class YoutubeHelper {
     public static final String  YT_DURATION                             = "YT_DURATION";
     public static final String  YT_DATE_UPDATE                          = "YT_DATE_UPDATE";
     public static final String  YT_GOOGLE_PLUS_ID                       = "YT_GOOGLE_PLUS_ID";
+    public static final String  YT_VIEWS                                = "YT_VIEWS";
     private Browser             br;
 
     public Browser getBr() {
@@ -754,6 +755,21 @@ public class YoutubeHelper {
                 return playlistNumber >= 0 ? df.format(playlistNumber) : "";
             }
         });
+        REPLACER.add(new YoutubeReplacer("VIEWS") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_views();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_VIEWS, "");
+            }
+        });
     }
     public static final String                YT_TITLE                         = "YT_TITLE";
     public static final String                YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
@@ -1271,6 +1287,11 @@ public class YoutubeHelper {
                 } else if (StringUtils.isNotEmpty(vidWorkAround)) {
                     vid.user = vidWorkAround;
                 }
+            }
+        }
+        if (StringUtils.isEmpty(vid.views)) {
+            if (ytInitialPlayerResponse != null) {
+                vid.views = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/viewCount/videoViewCountRenderer/shortViewCount/simpleText");
             }
         }
     }

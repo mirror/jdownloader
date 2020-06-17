@@ -1169,6 +1169,7 @@ YoutubeHelper_getDescription_title=Tytuł Video
 YoutubeHelper_getDescription_user=Uploader
 YoutubeHelper_getDescription_videoCodec=Kodek Video (np. H264)
 YoutubeHelper_getDescription_videonumber=Numer playlisty. *videonumber* lub np. *videonumber[000]*
+YoutubeHelper_getDescription_views=Liczba wyświetleń
 YoutubeVariant_filenametag_AAC_128=128kbit
 YoutubeVariant_filenametag_AAC_152=152kbit
 YoutubeVariant_filenametag_AAC_192=192kbit
