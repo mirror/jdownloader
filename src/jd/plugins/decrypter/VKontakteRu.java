@@ -962,10 +962,10 @@ public class VKontakteRu extends PluginForDecrypt {
             numberOfEntriesStr = br.getRegex("class=\"summary\">(\\d+)").getMatch(0);
         }
         if (numberOfEntriesStr == null) {
-            /* 2019-10-04 */
-            numberOfEntriesStr = br.getRegex("id=\"photos_all_block\">.*?class=\"ui_crumb_count\">([0-9,]+)</span>").getMatch(0);
+            /* 2020-06-17 */
+            numberOfEntriesStr = br.getRegex("Show all (\\d+) albums").getMatch(0);
         }
-        final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
+        final String startOffset = br.getRegex("var preload\\s*=\\s*\\[(\\d+),\"").getMatch(0);
         if (numberOfEntriesStr == null) {
             logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
             decryptedLinks = null;
@@ -973,10 +973,6 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
         final int numberOfEntries = (int) StrictMath.ceil((Double.parseDouble(numberOfEntriesStr)));
-        // /** Photos are placed in different locations, find them all */
-        // final String[] regexesPage1 = { "class=\"photo_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
-        // final String[] regexesAllOthers = { "class=\"photo(?:_album)?_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
-        final ArrayList<String> decryptedData = new ArrayList<String>();
         final int entries_per_page = 26;
         final int entries_alreadyOnPage = 0;
         logger.info("Decrypting " + numberOfEntriesStr + " entries for linktype: " + type);
@@ -1011,7 +1007,8 @@ public class VKontakteRu extends PluginForDecrypt {
             if (startOffset == null || i > 0) {
                 realOffset += addedLinks;
             }
-            if (addedLinks < entries_per_page || addedLinksTotal >= numberOfEntries) {
+            logger.info("Added items from this page: " + addedLinks);
+            if (addedLinks == 0 || addedLinksTotal >= numberOfEntries) {
                 logger.info("Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1) + ", returning " + addedLinksTotal + " results");
                 break;
             }
