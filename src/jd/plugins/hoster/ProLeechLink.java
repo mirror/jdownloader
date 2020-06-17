@@ -322,6 +322,43 @@ public class ProLeechLink extends antiDDoSForHost {
         account.saveCookies(br.getCookies(br.getHost()), "api");
     }
 
+    private Thread showAPIUsageRecommended() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Proleech.link - Webseiten Modus aktiv";
+                        message += "Hallo liebe(r) proleech NutzerIn\r\n";
+                        message += "Du verwendest proleech.link aktuell im Webseiten-Modus!\r\n";
+                        message += "Wir empfehlen, den API Modus zu verwenden.\r\n";
+                        message += "Diesen findest du unter: Einstellungen - Plugins - proleech.link - Enable API\r\n";
+                        message += "Sobald der API Modus aktiviert ist, findest du deine speziellen JD Zugangsdaten unter: proleech.link/jdownloader\r\n";
+                        message += "Falls du eben bereits deine API Zugangsdaten eingegeben hast wirst du gleich eine Fehlermeldung erhalten und musst es nach dem Ändern der Einstellung erneut versuchen.\r\n";
+                    } else {
+                        title = "Proleech.link - Website mode active";
+                        message += "Hello dear proleech user\r\n";
+                        message += "You are currently using proleech in website mode.\r\n";
+                        message += "It is recommended to use the API mode instead.\r\n";
+                        message += "You can enable it under Settings - Plugins - proleech.link - Enable API\r\n";
+                        message += "Once enabled, you can find your special JD login credentials here: proleech.link/jdownloader\r\n";
+                        message += "If you've already filled in your API login credentials just now, you will see an error soon and will have to enter your login credentials again after changing the above mentioned setting.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
     private Thread showAPILoginInformation() {
         final Thread thread = new Thread() {
             public void run() {
@@ -474,6 +511,8 @@ public class ProLeechLink extends antiDDoSForHost {
                         getPage("/member");
                     }
                     if (!isLoggedin(this.br)) {
+                        /* On failure, recommend user to use API mode instead of website mode! */
+                        showAPIUsageRecommended();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
