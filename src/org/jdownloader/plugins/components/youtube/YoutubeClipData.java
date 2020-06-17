@@ -46,6 +46,7 @@ public class YoutubeClipData {
     public HashMap<String, String>            keywords3D;
     public HashSet<String>                    keywords;
     public String                             approxThreedLayout;
+    public String                             views;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
@@ -175,6 +176,7 @@ public class YoutubeClipData {
         thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
         thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
         thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
+        thislink.setProperty(YoutubeHelper.YT_VIEWS, views);
     }
 
     public StreamCollection getStreams(YoutubeITAG itag) {

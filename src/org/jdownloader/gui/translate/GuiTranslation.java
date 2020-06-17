@@ -4941,6 +4941,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Audio Bitrate  (e.g. 128kbit)" })
     String YoutubeHelper_getDescription_audioQuality();
 
+    @Default(lngs = { "en" }, values = { "No. of views" })
+    String YoutubeHelper_getDescription_views();
+
     @Default(lngs = { "en" }, values = { "Error Code" })
     String UploadSessionLogDialog_layoutDialogContent_errorid();
 
