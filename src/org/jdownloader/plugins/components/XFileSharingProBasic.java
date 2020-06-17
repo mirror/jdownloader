@@ -1279,8 +1279,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Do we have an imagehost? */
                 if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
                     checkErrors(link, account, false);
+                    int counter = 0;
+                    final int countermax = 3;
                     Form imghost_next_form = null;
                     do {
+                        logger.info(String.format("imghost_next_form loop %d / %d", counter + 1, countermax));
                         imghost_next_form = findImageForm(this.br);
                         if (imghost_next_form != null) {
                             /* end of backward compatibility */
@@ -1293,7 +1296,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 link.setName(Encoding.htmlOnlyDecode(image_filename));
                             }
                         }
-                    } while (imghost_next_form != null);
+                        counter++;
+                    } while (imghost_next_form != null && counter < countermax);
                 }
                 /* Check for errors and download1 Form. Only execute this once! */
                 if (StringUtils.isEmpty(dllink) && download1counter == 0) {
