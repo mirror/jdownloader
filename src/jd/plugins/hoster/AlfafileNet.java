@@ -17,9 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
@@ -32,7 +30,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -41,6 +38,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -117,7 +115,7 @@ public class AlfafileNet extends PluginForHost {
             api_token = getLoginToken(aa);
         }
         if (api_token != null && prefer_api_linkcheck) {
-            this.br.getPage("https://alfafile.net/api/v1/file/info?file_id=" + getFileID(link) + "&token=" + api_token);
+            this.br.getPage(API_BASE + "/file/info?file_id=" + getFileID(link) + "&token=" + api_token);
             final String status = PluginJSonUtils.getJsonValue(br, "status");
             if (!"401".equals(status)) {
                 api_works = true;
@@ -315,51 +313,40 @@ public class AlfafileNet extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://alfafile.net";
-    private static Object       LOCK     = new Object();
+    /** https://alfafile.net/api/doc */
+    private static final String API_BASE = "https://alfafile.net/api/v1";
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean validateLoginToken) throws Exception {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 prepBR();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                String token = getLoginToken(account);
+                if (cookies != null && token != null) {
+                    /* We do not really need the cookies but we need the timstamp! */
+                    br.setCookies(this.getHost(), cookies);
+                    if (!validateLoginToken && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Trust token without check");
                         return;
                     }
-                }
-                br.setFollowRedirects(false);
-                br.getPage("https://alfafile.net/api/v1/user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String token = PluginJSonUtils.getJsonValue(br, "token");
-                if (token == null || !"200".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    logger.info("Checking token");
+                    br.postPage(API_BASE + "/user/info", "token=" + Encoding.urlEncode(token));
+                    if (this.isLoggedIN()) {
+                        logger.info("Token login successful");
+                        return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        logger.info("Token login failed");
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                logger.info("Performing full login");
+                br.getPage(API_BASE + "/user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                token = PluginJSonUtils.getJsonValue(br, "token");
+                if (token == null || !isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getURL()), "");
                 account.setProperty("token", token);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
@@ -368,15 +355,15 @@ public class AlfafileNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    private boolean isLoggedIN() {
+        return "200".equals(PluginJSonUtils.getJsonValue(br, "status"));
+    }
+
+    @SuppressWarnings({ "unchecked" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(account, true);
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final long traffic_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/total"), -1);
         final long traffic_left = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left"), -1);
@@ -399,7 +386,6 @@ public class AlfafileNet extends PluginForHost {
         }
         ai.setTrafficLeft(traffic_left);
         ai.setTrafficMax(traffic_total);
-        account.setValid(true);
         return ai;
     }
 
@@ -420,8 +406,8 @@ public class AlfafileNet extends PluginForHost {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
                 final String fid = getFileID(link);
-                this.br.getPage("/api/v1/file/download?file_id=" + fid + "&token=" + getLoginToken(account));
-                handleErrorsGeneral();
+                this.br.getPage(API_BASE + "/file/download?file_id=" + fid + "&token=" + getLoginToken(account));
+                handleErrorsGeneral(account);
                 dllink = PluginJSonUtils.getJsonValue(br, "download_url");
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -444,14 +430,18 @@ public class AlfafileNet extends PluginForHost {
         }
     }
 
-    private void handleErrorsGeneral() throws PluginException {
+    private void handleErrorsGeneral(final Account account) throws PluginException {
         final String errorcode = PluginJSonUtils.getJsonValue(br, "status");
         String errormessage = PluginJSonUtils.getJsonValue(br, "details");
         if (errorcode != null) {
             if (errorcode.equals("401")) {
                 /* This can sometimes happen in premium mode */
                 /* {"response":null,"status":401,"details":"Unauthorized. Token doesn't exist"} */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401 - unauthorized", 5 * 60 * 1000l);
+                if (account == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 5 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException(errormessage, 5 * 60 * 1000l);
+                }
             } else if (errorcode.equals("404")) {
                 /*
                  * E.g. detailed errormessages: "details":"File with file_id: '1234567' doesn't exist"

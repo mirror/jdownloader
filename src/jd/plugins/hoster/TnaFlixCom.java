@@ -224,16 +224,22 @@ public class TnaFlixCom extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Config file is not correct'", 30 * 60 * 1000l);
             }
-            final String[] qualities = { "720p", "480p", "360p", "240p", "144p" };
+            final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "144p" };
             for (final String quality : qualities) {
-                dllink = br.getRegex("" + quality + "</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
+                dllink = br.getRegex(quality + "</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
+                if (dllink == null) {
+                    dllink = this.br.getRegex(quality + "</res>\\s*<videoLink>(?:<\\!\\[CDATA\\[)?([^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
+                }
                 if (dllink != null) {
                     break;
                 }
             }
             if (dllink == null) {
                 /* Fallback for videos with only one quality */
-                dllink = this.br.getRegex("<videoLink>(?:<\\!\\[CDATA\\[)?(http[^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
+                dllink = this.br.getRegex("<videoLink>(?:<\\!\\[CDATA\\[)?([^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
+            }
+            if (dllink != null && dllink.startsWith("//")) {
+                dllink = "https:" + dllink;
             }
         } else if (download != null) {
             /* Official download */
