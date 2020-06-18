@@ -30,19 +30,6 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -71,6 +58,19 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
@@ -237,12 +237,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Bezeichnung des Downloads
      * @param host
      *            Anbieter, von dem dieser Download gestartet wird
-     * @param urlDownload
+     * @param pluginPatternMatcher
      *            Die Download URL (Entschluesselt)
      * @param isEnabled
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
-    public DownloadLink(PluginForHost plugin, String name, String host, String pluginPattern, boolean isEnabled) {
+    public DownloadLink(PluginForHost plugin, String name, String host, String pluginPatternMatcher, boolean isEnabled) {
         setDefaultPlugin(plugin);
         setView(new DefaultDownloadLinkViewImpl());
         if (name != null) {
@@ -252,7 +252,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         downloadMax = -1;
         setHost(host);
         created = System.currentTimeMillis();
-        this.setPluginPatternMatcher(pluginPattern);
+        this.setPluginPatternMatcher(pluginPatternMatcher);
     }
 
     public long getFinishedDate() {
@@ -964,7 +964,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
