@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -50,20 +51,19 @@ public class CloudMailRu extends PluginForHost {
         this.enablePremium("https://cloud.mail.ru/");
     }
 
-    private static final String  TYPE_FROM_DECRYPTER          = "http://clouddecrypted\\.mail\\.ru/\\d+";
-    private static final String  TYPE_HOTLINK                 = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
-    private static final String  NOCHUNKS                     = "NOCHUNKS";
-    private static final String  DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
+    private static final String  TYPE_FROM_DECRYPTER       = "http://clouddecrypted\\.mail\\.ru/\\d+";
+    private static final String  TYPE_HOTLINK              = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
+    private static final String  NOCHUNKS                  = "NOCHUNKS";
+    private static final String  DOWNLOAD_ZIP              = "DOWNLOAD_ZIP_2";
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME               = true;
+    private static final int     FREE_MAXCHUNKS            = 0;
+    private static final int     FREE_MAXDOWNLOADS         = -1;
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = -1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
 
     @Override
     public String getAGBLink() {
@@ -113,11 +113,10 @@ public class CloudMailRu extends PluginForHost {
             }
             final String filename = link.getStringProperty("plain_name", null);
             final String filesize = link.getStringProperty("plain_size", null);
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename != null && filesize != null) {
+                link.setFinalFileName(filename);
+                link.setDownloadSize(Long.parseLong(filesize));
             }
-            link.setFinalFileName(filename);
-            link.setDownloadSize(Long.parseLong(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -240,38 +239,48 @@ public class CloudMailRu extends PluginForHost {
                     // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("");
                 }
                 if (pageid == null) {
-                    pageid = this.br.getRegex("\"x-page-id\"[\n\r\t ]*?:[\n\r\t ]*?\"([^<>\"]*?)\"").getMatch(0);
+                    pageid = PluginJSonUtils.getJson(br, "x-page-id");
                 }
-                if (pageid == null) {
+                if (StringUtils.isEmpty(pageid)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                /*
+                 * 2020-06-18: Seems like this API does not work anymore as it would always return 403 but we can download without token
+                 * parameter ...
+                 */
                 br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid);
-                if (br.getHttpConnection().getResponseCode() != 200) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + br.getHttpConnection().getResponseCode());
-                }
                 final String token = PluginJSonUtils.getJsonValue(br, "token");
-                if (token == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (StringUtils.isEmpty(token)) {
+                    logger.warning("Failed to find token");
                 }
                 if (dataserver == null) {
                     /* Usually this should not be needed! */
+                    logger.info("Trying to find dataserver");
                     br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
-                    dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/)view/\"").getMatch(0);
+                    dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.[^/]+/weblink/)view/\"").getMatch(0);
                 }
                 if (dataserver != null) {
                     /* TODO: Check for encoding problems here! */
                     String encoded_unique_id = Encoding.urlEncode(unique_id);
                     /* We need the "/" so let's encode them back. */
+                    // if(Encoding.isHtmlEntityCoded(encoded_unique_id)) {
+                    // encoded_unique_id = Encoding.htmlDecode(encoded_unique_id);
+                    // }
+                    /* 2020-06-18: Don't touch this - it magically works! */
                     encoded_unique_id = encoded_unique_id.replace("%2F", "/");
                     encoded_unique_id = encoded_unique_id.replace("+", "%20");
-                    dllink = dataserver + "get/" + encoded_unique_id + "?key=" + token;
+                    dllink = dataserver + "get/" + encoded_unique_id;
+                    if (!StringUtils.isEmpty(token)) {
+                        dllink += "?key=" + token;
+                    }
                 } else {
                     logger.warning("Failed to find dataserver for finallink");
                 }
             }
         }
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2020-06-18: We're using an API - no need to throw a PLUGIN_DEFECT error in this case! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
         }
         return dllink;
     }
@@ -314,12 +323,9 @@ public class CloudMailRu extends PluginForHost {
         return dllink;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
@@ -340,7 +346,9 @@ public class CloudMailRu extends PluginForHost {
                 br.getPage("https://cloud.mail.ru/?from=authpopup");
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -356,18 +364,12 @@ public class CloudMailRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         account.setType(AccountType.FREE);
         ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 
@@ -407,7 +409,7 @@ public class CloudMailRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override

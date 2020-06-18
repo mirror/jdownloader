@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com|gifdeliverynetwork\\.com|redgifs\\.com/watch)/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
     public GfyCatCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,12 +44,36 @@ public class GfyCatCom extends PluginForHost {
         return "http://gfycat.com/terms";
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+        final String fid = this.getFID(link);
+        if (Browser.getHost(link.getPluginPatternMatcher()).equalsIgnoreCase("gifdeliverynetwork.com") && fid != null) {
+            /*
+             * 2020-06-18: Special: gfycat.com would redirect to gifdeliverynetwork.con in this case but redgifs.com will work fine and
+             * return the expected json!
+             */
+            link.setPluginPatternMatcher("https://www.redgifs.com/watch/" + fid);
+        }
     }
 
-    /* Using API: http://gfycat.com/api */
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    /*
+     * Using API: http://gfycat.com/api 2020-06-18: Not using the API - wtf does this comment mean?? Maybe website uses the same json as API
+     * ... but API needs authorization!
+     */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -60,35 +84,45 @@ public class GfyCatCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)\\s*</script").getMatch(0);
-        if (StringUtils.isEmpty(json) || br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHost().equalsIgnoreCase("gifdeliverynetwork.com")) {
+            /* 2020-06-18: New and should not be needed! */
+            link.setName(this.getFID(link) + ".webm");
+        } else {
+            final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)\\s*</script").getMatch(0);
+            if (StringUtils.isEmpty(json) || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String username = PluginJSonUtils.getJsonValue(json, "userName");
+            final String filename = PluginJSonUtils.getJsonValue(json, "gfyName");
+            final String filesize = PluginJSonUtils.getJsonValue(json, "webmSize");
+            if (StringUtils.isEmpty(username) || StringUtils.isEmpty(filename)) {
+                /* Most likely content is not downloadable e.g. gyfcat.com/upload */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setFinalFileName(username + " - " + filename + ".webm");
+            if (!StringUtils.isEmpty(filesize)) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
-        final String username = PluginJSonUtils.getJsonValue(json, "userName");
-        final String filename = PluginJSonUtils.getJsonValue(json, "gfyName");
-        final String filesize = PluginJSonUtils.getJsonValue(json, "webmSize");
-        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(filename) || StringUtils.isEmpty(filesize)) {
-            /* Most likely content is not downloadable e.g. gyfcat.com/upload */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setFinalFileName(username + " - " + filename + ".webm");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)</script").getMatch(0);
             dllink = PluginJSonUtils.getJsonValue(json, "webmUrl");
         }
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
+            /* Fallback and e.g. for gifdeliverynetwork.com */
+            dllink = br.getRegex("\"(https?://[^<>\"]+\\.webm)\"").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -99,7 +133,7 @@ public class GfyCatCom extends PluginForHost {
             /* We use their API so nothing can really go wrong! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
@@ -127,29 +161,9 @@ public class GfyCatCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
-    private String getFID(final DownloadLink dl) {
-        final String fid = new Regex(dl.getDownloadURL(), "gfycat\\.com/([A-Za-z0-9]+)").getMatch(0);
-        try {
-            dl.setLinkID(fid);
-        } catch (final Throwable e) {
-            /* Not available for 0.9.581 Stable */
-        }
-        return fid;
-    }
-
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
+        final URLConnectionAdapter con = br.openHeadConnection(directlink);
         return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

@@ -591,6 +591,9 @@ public class ProLeechLink extends antiDDoSForHost {
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                } else if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                    /* 2020-06-18: Recommend API usage on e.g. Cloudflare failure or any other unexpected failure! */
+                    showAPIUsageRecommended();
                 }
                 throw e;
             }

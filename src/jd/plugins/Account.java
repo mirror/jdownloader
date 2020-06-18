@@ -42,19 +42,17 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 
 public class Account extends Property {
-    private static final String VALID_UNTIL                    = "VALID_UNTIL";
-    private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
-    private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
-    public static final String  IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
-    private static final long   serialVersionUID               = -7578649066389032068L;
+    private static final String VALID_UNTIL              = "VALID_UNTIL";
+    private static final String ACCOUNT_TYPE             = "ACCOUNT_TYPE";
+    private static final String LATEST_VALID_TIMESTAMP   = "LATEST_VALID_TIMESTAMP";
+    public static final String  IS_MULTI_HOSTER_ACCOUNT  = "IS_MULTI_HOSTER_ACCOUNT";
+    private static final long   serialVersionUID         = -7578649066389032068L;
     private String              user;
     private String              pass;
-    private boolean             enabled                        = true;
-    private boolean             concurrentUsePossible          = true;
-    public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
-    private static final String COOKIE_STORAGE                 = "COOKIE_STORAGE";
-    private static final String COOKIES_STORAGE_COOKIES_OBJECT = "COOKIES_STORAGE_COOKIES_OBJECT";
-    private static final String BROWSER_COOKIES_STORAGE        = "BROWSER_COOKIES_STORAGE";
+    private boolean             enabled                  = true;
+    private boolean             concurrentUsePossible    = true;
+    public static final String  PROPERTY_REFRESH_TIMEOUT = "PROPERTY_REFRESH_TIMEOUT";
+    private static final String COOKIE_STORAGE           = "COOKIE_STORAGE";
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
@@ -121,22 +119,6 @@ public class Account extends Property {
         return ret;
     }
 
-    /* * TODO: Merge this with "saveCookies" --> We do not need two methods for this. This one exists just for testing! */
-    public synchronized long saveCookiesObject(final Cookies cookies, final String ID) {
-        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
-        setProperty(COOKIES_STORAGE_COOKIES_OBJECT, validation);
-        /*
-         * TODO: Do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts! Attention:
-         * This would save Cloudflare cookies atm.!
-         */
-        final CookiesStorable cookiesStorable = new CookiesStorable(cookies);
-        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIES_STORAGE_COOKIES_OBJECT + ":TS:" + ID;
-        final long ret = System.currentTimeMillis();
-        setProperty(COOKIE_STORAGE_TIMESTAMP_ID, ret);
-        setProperty(COOKIES_STORAGE_COOKIES_OBJECT + ":" + ID, JSonStorage.toString(cookiesStorable));
-        return ret;
-    }
-
     /** TODO: This might not be the right place for this satatic method! */
     public static List<CookieStorable> getListOfCookieStorables(final Cookies cookies) {
         if (cookies == null) {
@@ -184,12 +166,6 @@ public class Account extends Property {
         return getLongProperty(COOKIE_STORAGE_TIMESTAMP_ID, -1);
     }
 
-    /* * TODO: Merge this with "getCookiesTimeStamp" --> We do not need two methods for this. This one exists just for testing! */
-    public synchronized long getCookiesObjectTimeStamp(final String ID) {
-        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIES_STORAGE_COOKIES_OBJECT + ":TS:" + ID;
-        return getLongProperty(COOKIE_STORAGE_TIMESTAMP_ID, -1);
-    }
-
     /** Returns list of stored cookies WITHOUT additional information such as User-Agent header. */
     public synchronized Cookies loadCookies(final String ID) {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
@@ -210,33 +186,6 @@ public class Account extends Property {
                     return ret;
                 } catch (Throwable e) {
                     LogController.CL().log(e);
-                }
-            }
-        }
-        clearCookies(ID);
-        return null;
-    }
-
-    /**
-     * Loads Cookies object with can contain additional information e.g. User-Agent header. </br>
-     * TODO: Merge this with "loadCookies" --> We do not need two methods for this. This one exists just for testing!
-     */
-    public synchronized Cookies loadCookiesObject(final String ID) {
-        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
-        if (StringUtils.equals(getStringProperty(COOKIES_STORAGE_COOKIES_OBJECT), validation)) {
-            final String COOKIE_STORAGE_ID = COOKIES_STORAGE_COOKIES_OBJECT + ":" + ID;
-            final String cookieStorables = getStringProperty(COOKIE_STORAGE_ID);
-            if (StringUtils.isNotEmpty(cookieStorables)) {
-                try {
-                    final String COOKIE_STORAGE_ID_TEST = COOKIES_STORAGE_COOKIES_OBJECT + ":" + ID;
-                    final String cookiesStorableStr = getStringProperty(COOKIE_STORAGE_ID_TEST);
-                    final CookiesStorable cookiesStorable = JSonStorage.restoreFromString(cookiesStorableStr, new TypeRef<CookiesStorable>() {
-                    }, null);
-                    final Cookies ret = cookiesStorable._restore();
-                    return ret;
-                } catch (Throwable e) {
-                    LogController.CL().log(e);
-                    e.printStackTrace();
                 }
             }
         }
@@ -821,14 +770,7 @@ public class Account extends Property {
             isMulti = value != null && Boolean.TRUE.equals(value);
         } else {
             if (Property.NULL != value) {
-                if ("nopremium".equalsIgnoreCase(key)) {
-                    // convert.. some day we will use the setType only. The earlier we start to the correct fields, the better
-                    if (Boolean.TRUE.equals(value)) {
-                        setType(AccountType.FREE);
-                    } else {
-                        setType(AccountType.PREMIUM);
-                    }
-                } else if ("free".equalsIgnoreCase(key)) {
+                if ("free".equalsIgnoreCase(key)) {
                     if (Boolean.TRUE.equals(value)) {
                         setType(AccountType.FREE);
                     } else {
@@ -869,18 +811,12 @@ public class Account extends Property {
                 e.printStackTrace();
             }
         }
-        if (getBooleanProperty("nopremium", false)) {
-            // nopremium z.b. 4shared.com
-            return AccountType.FREE;
-        } else if (getBooleanProperty("free", false)) {
+        if (getBooleanProperty("free", false)) {
             return AccountType.FREE;
         } else if (getBooleanProperty("premium", false)) {
             return AccountType.PREMIUM;
         } else if (getBooleanProperty("PREMIUM", false)) {
             return AccountType.PREMIUM;
-        } else if (getStringProperty("session_type", null) != null && !StringUtils.equals("premium", getStringProperty("session_type", null))) {
-            // session_type rapidgator
-            return AccountType.FREE;
         } else {
             return AccountType.PREMIUM;
         }
