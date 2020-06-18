@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -424,9 +423,10 @@ public class TwitterCom extends PluginForHost {
                     }
                     /* Force full login (or login with user given cookies) */
                 }
-                final boolean use_cookie_workaround = setCookiesFromString(br, account.getPass());
-                if (use_cookie_workaround) {
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                if (userCookies != null) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
+                    br.setCookies(userCookies);
                     jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
                     br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
                     if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
@@ -454,28 +454,6 @@ public class TwitterCom extends PluginForHost {
                 }
                 throw e;
             }
-        }
-    }
-
-    public static boolean setCookiesFromString(final Browser br, final String str) {
-        try {
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(str);
-            LinkedHashMap<String, Object> entries;
-            for (final Object cookieO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) cookieO;
-                final String cookiename = (String) entries.get("name");
-                final String cookievalue = (String) entries.get("value");
-                final String domain = (String) entries.get("domain");
-                if (StringUtils.isEmpty(cookiename) || cookievalue == null || StringUtils.isEmpty(domain)) {
-                    continue;
-                }
-                br.setCookie(domain, cookiename, cookievalue);
-            }
-            return true;
-        } catch (final Throwable e) {
-            // logger.log(e);
-            /* Given String was not the expected json String */
-            return false;
         }
     }
 

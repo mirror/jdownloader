@@ -38,6 +38,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -454,26 +455,26 @@ public class FourSharedCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
         login(account, false);
-        if (account.getStringProperty("nopremium") != null) {
-            br.getPage(downloadLink.getDownloadURL());
-            doFree(downloadLink, account);
+        if (account.getType() == AccountType.FREE) {
+            br.getPage(link.getDownloadURL());
+            doFree(link, account);
         } else {
             String pass = null;
             br.setFollowRedirects(false);
             if (!isDownloadURLSet(DLLINK)) {
-                br.getPage(downloadLink.getDownloadURL());
+                br.getPage(link.getDownloadURL());
                 DLLINK = br.getRedirectLocation();
                 if (!isDownloadURLSet(DLLINK)) {
                     br.followRedirect();
-                    pass = handlePassword(downloadLink);
+                    pass = handlePassword(link);
                     // direct download or not?
                     DLLINK = br.getRedirectLocation();
                     if (!isDownloadURLSet(DLLINK)) {
                         br.followRedirect();
-                        handleErrors(account, downloadLink);
+                        handleErrors(account, link);
                         DLLINK = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                         if (DLLINK == null) {
                             DLLINK = br.getRegex("\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]*?)\"").getMatch(0);
@@ -484,7 +485,7 @@ public class FourSharedCom extends PluginForHost {
                     }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
             final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
             if (error != null) {
                 dl.getConnection().disconnect();
@@ -498,7 +499,7 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (pass != null) {
-                downloadLink.setProperty("pass", pass);
+                link.setProperty("pass", pass);
             }
             dl.startDownload();
         }
@@ -623,12 +624,10 @@ public class FourSharedCom extends PluginForHost {
         }
         if (!"Premium".equalsIgnoreCase(accType)) {
             ai.setStatus("Registered (free) User");
-            account.setValid(true);
-            account.setProperty("nopremium", true);
+            account.setType(AccountType.FREE);
         } else {
             ai.setStatus(accType);
-            account.setValid(true);
-            account.setProperty("nopremium", Property.NULL);
+            account.setType(AccountType.PREMIUM);
         }
         return ai;
     }

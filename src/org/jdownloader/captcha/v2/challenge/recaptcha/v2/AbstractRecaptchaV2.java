@@ -129,7 +129,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
     }
 
     protected String getSiteUrl() {
-        /* TODO: Ensure that thus returns a valid URL with protocol. */
+        /* TODO: Ensure that this returns a valid URL with protocol - if not possible, throw Exception! */
+        /*
+         * TODO: Maybe call this before actually opening the browser solver so in case of an Exceotion, this would fail before, save time
+         * and have the ability to display a meaningful errormessage to the user!
+         */
         final String siteDomain = getSiteDomain();
         String url = null;
         final Request request = br != null ? br.getRequest() : null;

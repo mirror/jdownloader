@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class SendMyWayCom extends XFileSharingProBasic {
-    public SendMyWayCom(final PluginWrapper wrapper) {
+public class FileRioIn extends XFileSharingProBasic {
+    public FileRioIn(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,14 +36,14 @@ public class SendMyWayCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-06-19: Untested because website is broken <br />
-     * captchatype-info: 2020-06-19: Untested because website is broken <br />
+     * limit-info:<br />
+     * captchatype-info: 2020-06-19: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sendmyway.com" });
+        ret.add(new String[] { "filerio.in", "filerio.com", "filekeen.com" });
         return ret;
     }
 
@@ -65,13 +65,13 @@ public class SendMyWayCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return true;
+            return false;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -80,24 +80,24 @@ public class SendMyWayCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
