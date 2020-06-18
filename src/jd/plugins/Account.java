@@ -107,7 +107,6 @@ public class Account extends Property {
         /*
          * Do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
          */
-        // final CookiesStorable cookiesStorable = new CookiesStorable(cookies);
         /* TODO: Maybe always save ALL cookies but add ability to NOT load Cloudflare cookies - this might be the easier way ... */
         final List<CookieStorable> cookieStorables = getListOfCookieStorablesWithoutAntiDdosCookies(cookies);
         setProperty(COOKIE_STORAGE, validation);
