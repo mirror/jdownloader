@@ -324,15 +324,6 @@ public class SiteType {
          */
         PricopAlexandru_URLShorterner2,
         /**
-         * <b>Product:</b> <a href="https://codecanyon.net/item/simple-file-sharer/4562987">Simple Fire Sharer @ codecanyon.net market place
-         * by 'The Mac'</a> <br/>
-         * <b>Coder:</b> <a href="https://codecanyon.net/user/themac">The Mac</a> <br/>
-         * <b>Demo:</b> No demo available (2019-05-22) <br/>
-         * <b>Example 1:</b> <a href="https://rghost.fun/">rghost.fun</a><br/>
-         * <b>Example 2:</b> <a href="https://peredayka.com/">peredayka.com</a><br/>
-         */
-        SimpleFileSharer,
-        /**
          * @keywords hex, 'var link', 'var _0xdc0b' <br />
          *           note: the above keywords are shown within /file/ output page and not detect on homepage.
          */

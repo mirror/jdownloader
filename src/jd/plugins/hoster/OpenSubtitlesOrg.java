@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "https?://(www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "https?://(?:www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/(\\d+)" })
 public class OpenSubtitlesOrg extends PluginForHost {
     public OpenSubtitlesOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,32 +41,51 @@ public class OpenSubtitlesOrg extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://www.opensubtitles.org/en/subtitles/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("https://www.opensubtitles.org/en/subtitles/" + getFID(link));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://opensubtitles.org/", "weblang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.opensubtitles.org/en") || br.getURL().equals("https://www.opensubtitles.org/en") || br.containsHTML(">These subtitles were <b>disabled</b>")) {
+        br.setCookie(this.getHost(), "weblang", "en");
+        br.getPage(link.getPluginPatternMatcher());
+        if (!br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("/en/download/sub/\\d+\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("/en/download/sub/\\d+\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        if (filename != null) {
+            filename = this.getFID(link) + "_" + Encoding.htmlDecode(filename.trim()).replace("\"", "'");
+        } else if (filename == null) {
+            filename = this.getFID(link);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'") + ".zip");
+        filename += ".zip";
+        /* 2020-06-18: Do not set final filename here! Use content-disposition final-filename! */
+        link.setName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         // Resume and chunks disabled, not needed for such small files & can't
         // test
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "https://dl.opensubtitles.org/en/download/sub/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, "https://dl.opensubtitles.org/en/download/sub/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
