@@ -18,9 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -37,7 +41,7 @@ public class AbcvideoCc extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2020-03-17: null<br />
+     * captchatype-info: 2020-06-19: reCaptchaV2<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -110,8 +114,54 @@ public class AbcvideoCc extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
-        /* 2020-03-17: Special */
-        return false;
+    protected boolean isVideohosterEmbed() {
+        return true;
+    }
+
+    @Override
+    protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+        String dllink = getDllink(link, account, br, correctedBR);
+        final Browser brc = this.br.cloneBrowser();
+        if (StringUtils.isEmpty(dllink)) {
+            if (findFilesize) {
+                /* Do not ask for captchas in during availablecheck! */
+                return null;
+            }
+            /* 2020-06-19: Special */
+            final String getvideo = br.getRegex("(/dl\\?op=video_src\\&file_code=" + this.fuid + "&g-recaptcha-response=)").getMatch(0);
+            if (getvideo == null) {
+                return null;
+            }
+            final CaptchaHelperHostPluginRecaptchaV2 rc2 = getCaptchaHelperHostPluginRecaptchaV2(this, br);
+            final String token = rc2.getToken();
+            this.getPage(brc, getvideo + Encoding.urlEncode(token));
+            // if (brc.getURL() != null && !brc.getURL().contains("/embed")) {
+            // final String embed_access = getMainPage() + "/embed-" + fuid + ".html";
+            // getPage(brc, embed_access);
+            // /**
+            // * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
+            // * code" OR "Video embed restricted for this user"
+            // */
+            // }
+            // /*
+            // * Important: Do NOT use 404 as offline-indicator here as the website-owner could have simply disabled embedding while it was
+            // * enabled before --> This would return 404 for all '/embed' URLs! Only rely on precise errormessages!
+            // */
+            // if (brc.toString().equalsIgnoreCase("File was deleted")) {
+            // /* Should be valid for all XFS hosts e.g. speedvideo.net, uqload.com */
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            dllink = getDllink(link, account, brc, brc.toString());
+            // final String url_thumbnail = getVideoThumbnailURL(br.toString());
+        }
+        if (findFilesize && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
+            /* Get- and set filesize from directurl */
+            final boolean dllink_is_valid = checkDirectLinkAndSetFilesize(link, dllink, true) != null;
+            /* Store directurl if it is valid */
+            if (dllink_is_valid) {
+                storeDirecturl(link, account, dllink);
+            }
+        }
+        return dllink;
     }
 }

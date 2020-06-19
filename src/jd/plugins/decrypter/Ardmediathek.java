@@ -678,19 +678,19 @@ public class Ardmediathek extends PluginForDecrypt {
             // brJSON = br.cloneBrowser();
             /* Do nothing */
         } else {
-            final String[] embeddedVideos = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
-            if (embeddedVideos.length > 1) {
+            final String[] embeddedVideosType1 = br.getRegex("(?:\\'|\")mediaObj(?:\\'|\"):\\s*?\\{\\s*?(?:\\'|\")url(?:\\'|\"):\\s*?(?:\\'|\")(https?://[^<>\"]+\\.js)(?:\\'|\")").getColumn(0);
+            if (embeddedVideosType1.length > 1) {
                 /* Embedded items --> Go back into decrypter */
                 logger.info("Found multiple embedded items");
-                for (final String embeddedVideo : embeddedVideos) {
+                for (final String embeddedVideo : embeddedVideosType1) {
                     decryptedLinks.add(this.createDownloadlink(embeddedVideo));
                 }
                 return;
             }
             br.setFollowRedirects(true);
             final String url_json;
-            if (embeddedVideos.length == 1) {
-                url_json = embeddedVideos[0];
+            if (embeddedVideosType1.length == 1) {
+                url_json = embeddedVideosType1[0];
             } else {
                 url_json = getVideoJsonURL();
             }
@@ -1018,6 +1018,9 @@ public class Ardmediathek extends PluginForDecrypt {
             final String bitrate_audio = getXML(stream, "bitrateAudio");
             final String width_str = getXML(stream, "frameWidth");
             final String height_str = getXML(stream, "frameHeight");
+            /* This sometimes contains resolution: e.g. <profileName>Video 2018 | MP4 720p25 | Web XL| 16:9 | 1280x720</profileName> */
+            final String profileName = getXML(stream, "profileName");
+            final String resolutionInProfileName = new Regex(profileName, "(\\d+x\\d+)").getMatch(0);
             int width = 0;
             int height = 0;
             if (width_str != null && width_str.matches("\\d+")) {
@@ -1025,6 +1028,11 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             if (height_str != null && height_str.matches("\\d+")) {
                 height = Integer.parseInt(height_str);
+            }
+            if (width == 0 && height == 0 && resolutionInProfileName != null) {
+                final String[] resInfo = resolutionInProfileName.split("x");
+                width = Integer.parseInt(resInfo[0]);
+                height = Integer.parseInt(resInfo[1]);
             }
             if (StringUtils.isEmpty(http_url) || isUnsupportedProtocolDasersteVideo(http_url) || !http_url.startsWith("http")) {
                 continue;
@@ -1045,11 +1053,14 @@ public class Ardmediathek extends PluginForDecrypt {
             if (!StringUtils.isEmpty(http_url)) {
                 /* http */
                 long bitrate;
+                final String bitrateFromURLStr = new Regex(http_url, "(\\d+)k").getMatch(0);
                 if (!StringUtils.isEmpty(bitrate_video) && !StringUtils.isEmpty(bitrate_audio)) {
                     bitrate = Long.parseLong(bitrate_video) + Long.parseLong(bitrate_audio);
                     if (bitrate < 10000) {
                         bitrate = bitrate * 1000;
                     }
+                } else if (bitrateFromURLStr != null) {
+                    bitrate = Long.parseLong(bitrateFromURLStr);
                 } else {
                     bitrate = 0;
                 }
@@ -1086,7 +1097,7 @@ public class Ardmediathek extends PluginForDecrypt {
 
     /* Especially for video.daserste.de */
     private void addQualityDasersteVideo(final String directurl, final String filesize_str, long bitrate, int width, int height) {
-        /* Get/Fix correct width/height values. */
+        /* Try to get/Fix correct width/height values. */
         /* Type 1 */
         String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
         if (width_URL == null) {
@@ -1129,7 +1140,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private DownloadLink addQuality(final String directurl, final String filesize_str, long bitrate, int width, int height, final HashMap<String, DownloadLink> qualitiesMap) {
         /* Errorhandling */
         final String ext;
-        if (directurl == null || ((width == 0 || height == 0) && !directurl.contains(".mp3"))) {
+        if (directurl == null) {
             /* Skip items with bad data. */
             return null;
         } else if (directurl.contains(".mp3")) {
