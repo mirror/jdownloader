@@ -18,13 +18,15 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.dialogs.NewPasswordDialog;
@@ -182,11 +184,52 @@ public class GoogleHelper {
         final String cfgUserAgent = PluginJsonConfig.get(GoogleConfig.class).getUserAgent();
         if (StringUtils.isEmpty(cfgUserAgent) || cfgUserAgent.equalsIgnoreCase("JDDEFAULT")) {
             /* Return default */
-            return "JDownloader2";
+            /*
+             * 2020-06-19: Firefox Users will get their User-Agent via "Flag Cookies" addon on cookie import but Opera & Chrome users won't
+             * which is why we'll use a Chrome User-Agent as default
+             */
+            /* Last updated: 2020-06-19 */
+            return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36";
         } else {
             /* Return user selection */
             return cfgUserAgent;
         }
+    }
+
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Google - Login";
+                        message += "Hallo liebe(r) Google NutzerIn\r\n";
+                        message += "Um deinen Google Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im folgenden Hilfe-Artikel - navigiere vor dem Exportieren der Cookies auf google.COM:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Google - Login";
+                        message += "Hello dear Google user\r\n";
+                        message += "In order to use this service in JDownloader, you need to follow these steps - go to google.COM before exposting your cookies:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     public boolean login(final Account account, final boolean forceLoginValidation) throws Exception {
@@ -200,10 +243,16 @@ public class GoogleHelper {
             this.br.setCookiesExclusive(true);
             /* TODO: Do we still need this? */
             this.br.setCookie("https://google.com", "PREF", "hl=en-GB");
+            /* 2020-06-19: Enable this if login is only possible via exported cookies and NOT via username & password! */
+            /* 2020-06-19: Enabled cookie-only-login! */
+            final boolean cookieLoginOnly = true;
             final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
             final Cookies lastSavedCookies = account.loadCookies("");
+            if (cookieLoginOnly && userCookies == null) {
+                showCookieLoginInformation();
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter exported cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             /* Check stored cookies */
-            /* TODO: Save- and load cookies of all domains? */
             if (lastSavedCookies != null || userCookies != null) {
                 if (lastSavedCookies != null) {
                     logger.info("Attempting to login with stored cookies");
@@ -223,10 +272,6 @@ public class GoogleHelper {
                 } else {
                     /* E.g. first login with user-given cookies */
                     logger.info("Attempting to perform first login with user cookies");
-                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        /* 2020-01-10: Devs only */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
                     br.setCookies(userCookies);
                     /* No User-Agent given in users' cookies? Add User selected User-Agent */
                     if (!StringUtils.isEmpty(userCookies.getUserAgent())) {
@@ -246,11 +291,21 @@ public class GoogleHelper {
                 }
                 logger.info("Validating cookies");
                 br.setAllowedResponseCodes(new int[] { 400 });
-                /* TODO: Remove one check - rely on a single check only! */
-                /* TODO: Check why the first check would always fail with cookies imported via EditThisCookie */
-                getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                boolean loggedIN = validateSuccess();
-                if (!loggedIN) {
+                boolean loggedIN = false;
+                final boolean useTwoLoginValidations = false;
+                if (useTwoLoginValidations) {
+                    /* Old check */
+                    getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
+                    loggedIN = validateSuccessOLD();
+                    if (!loggedIN) {
+                        logger.info("First cookie validation failed --> 2nd validation ...");
+                        getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
+                        if (br.containsHTML("accounts\\.google\\.com/logout")) {
+                            loggedIN = true;
+                        }
+                    }
+                } else {
+                    /* New check */
                     getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
                     if (br.containsHTML("accounts\\.google\\.com/logout")) {
                         loggedIN = true;
@@ -267,6 +322,7 @@ public class GoogleHelper {
                         /* Give up. We only got these cookies so login via username and password is not possible! */
                         logger.info("Login failed --> No password available but only cookies --> Give up");
                         account.removeProperty(PROPERTY_ACCOUNT_user_agent);
+                        showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -410,8 +466,8 @@ public class GoogleHelper {
             // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             //
             // }
-            if (validateSuccess()) {
-                saveCookiesOnAccount(account);
+            if (validateSuccessOLD()) {
+                account.saveCookies(br.getCookies(br.getURL()), "");
                 validate(account);
                 return true;
             } else {
@@ -424,18 +480,12 @@ public class GoogleHelper {
         }
     }
 
-    /** TODO: Update- or remove this! */
-    private void saveCookiesOnAccount(final Account account) {
-        account.saveCookies(br.getCookies(br.getURL()), "");
-        // account.saveCookiesObject(br.getCookiesWithUserAgent(br.getURL()), "");
-    }
-
     /**
      * Validates login via e.g.
      * https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg
      * =1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA
      */
-    protected boolean validateSuccess() {
+    protected boolean validateSuccessOLD() {
         return br.containsHTML("accounts/SetSID");
     }
 
