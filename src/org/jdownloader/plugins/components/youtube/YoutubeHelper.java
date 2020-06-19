@@ -2502,7 +2502,7 @@ public class YoutubeHelper {
             br.setFollowRedirects(true);
             GoogleHelper helper = new GoogleHelper(br) {
                 @Override
-                protected boolean validateSuccess() {
+                protected boolean validateSuccessOLD() {
                     return br.getCookie("http://youtube.com", "SID") != null;
                 }
 
