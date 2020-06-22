@@ -129,6 +129,13 @@ public class NicoVideoJp extends PluginForHost {
                 // return AvailableStatus.TRUE;
                 throw new AccountRequiredException();
             }
+        } else if (br.containsHTML("class=\"channel-invitation-box-title-text\"")) {
+            /* Channel membership required to watch this content */
+            if (account != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Expired session or channel membership required?", 5 * 60 * 1000l);
+            } else {
+                throw new AccountRequiredException();
+            }
         }
         String fallback_filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fallback_filename == null) {

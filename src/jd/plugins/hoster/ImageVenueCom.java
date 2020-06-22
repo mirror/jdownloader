@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,8 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}" })
 public class ImageVenueCom extends PluginForHost {
@@ -69,14 +69,22 @@ public class ImageVenueCom extends PluginForHost {
             dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
-            if (br.containsHTML("tempval\\.focus\\(\\)")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* 2020-06-22 */
+            dllink = br.getRegex("data-toggle=\"full\">\\s*<img src=\"(https?://[^<>\"]+)\"").getMatch(0);
+        } else {
+            if (dllink == null) {
+                if (br.containsHTML("tempval\\.focus\\(\\)")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                logger.warning("Could not find finallink reference");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("Could not find finallink reference");
+            String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
+            dllink = "http://" + server + dllink;
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
-        dllink = "http://" + server + dllink;
         String ending = new Regex(dllink, "imagevenue\\.com.*?\\.(.{3,4}$)").getMatch(0);
         String filename0 = new Regex(dllink, "imagevenue\\.com/.*?/.*?/\\d+.*?_(.*?)($|\\..{2,4}$)").getMatch(0);
         if (ending != null && filename0 != null) {

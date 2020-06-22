@@ -56,7 +56,7 @@ public class SourceForgeNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         URLConnectionAdapter con = null;
         dllink = checkDirectLink(downloadLink, "directlink");
         this.setBrowserExclusive();
@@ -122,6 +122,8 @@ public class SourceForgeNet extends PluginForHost {
                     if (con.getContentType().contains("html")) {
                         logger.info("finallink is no file, continuing...");
                         brc.followConnection();
+                        /* 2020-06-22: Wait for a short amount of time otherwise we might get a blank page --> Offline */
+                        Thread.sleep(3000l);
                         continue;
                     } else if (con.getResponseCode() == 200) {
                         dllink = finallink;
@@ -138,8 +140,7 @@ public class SourceForgeNet extends PluginForHost {
                 }
             }
             if (dllink == null) {
-                logger.warning("The finallink is no file!!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 5 * 60 * 1000l);
             }
             downloadLink.setProperty("finallink", dllink);
         }
@@ -159,12 +160,13 @@ public class SourceForgeNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 5 * 60 * 1000l);
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

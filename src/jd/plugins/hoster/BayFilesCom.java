@@ -90,13 +90,13 @@ public class BayFilesCom extends UnknownHostingScriptCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bayfiles.com", "letsupload.cc" });
+        ret.add(new String[] { "bayfiles.com", "letsupload.cc", "megaupload.is" });
         return ret;
     }
 
     @Override
     public String rewriteHost(String host) {
-        /* 2020-06-08: letsupload.cc is now bayfiles.com */
+        /* 2020-06-08: letsupload.cc is now bayfiles.com, 2020-06-22: megaupload.is is now bayfiles.com */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 

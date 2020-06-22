@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,11 +48,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
@@ -270,7 +270,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 requestFileInformationWeb(link);
             }
             handleErrors(br, false);
-            randomHash(link);
+            randomHash(br, link);
             ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
             {
                 int i = 0;
@@ -279,7 +279,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     sleep((new Random().nextInt(5) + 8) * 1000l, link);
                     // first post registers time value
                     postPage(br.getURL(), "goToFreePage=");
-                    randomHash(link);
+                    randomHash(br, link);
                     ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
                     if (br.getURL().endsWith("/free")) {
                         break;
@@ -399,8 +399,8 @@ public class NitroFlareCom extends antiDDoSForHost {
      *
      * @throws Exception
      **/
-    private final void randomHash(final DownloadLink downloadLink) throws Exception {
-        final String randomHash = JDHash.getMD5(downloadLink.getDownloadURL() + System.currentTimeMillis());
+    private final void randomHash(final Browser br, final DownloadLink link) throws Exception {
+        final String randomHash = JDHash.getMD5(link.getDownloadURL() + System.currentTimeMillis());
         // same cookie is set within as a cookie prior to registering
         br.setCookie(getHost(), "randHash", randomHash);
         ajaxPost(br, "/ajax/randHash.php", "randHash=" + randomHash);
@@ -686,18 +686,26 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
         // could be directlink
         dllink = link.getDownloadURL();
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-        if (dl.getConnection().isContentDisposition()) {
-            link.setProperty(directlinkproperty, dllink);
-            dl.startDownload();
-            return;
-        }
-        br.followConnection();
-        // not directlink
-        randomHash(link);
-        handlePremiumVPNWarningCaptcha(link);
-        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
+        int counter = 0;
+        final int maxtries = 2;
+        do {
+            logger.info(String.format("Downloadloop %d / %d", counter + 1, maxtries));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+            if (dl.getConnection().isContentDisposition()) {
+                /* Directurl */
+                link.setProperty(directlinkproperty, dllink);
+                dl.startDownload();
+                return;
+            }
+            br.followConnection();
+            // not directlink
+            randomHash(br, link);
+            ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
+            handlePremiumVPNWarningCaptcha(link);
+            counter++;
+        } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
         handleDownloadErrors(account, link, false);
+        /* TODO: Test if this is still working! */
         dllink = br.getRegex("<a id=\"download\" href=\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
@@ -711,11 +719,16 @@ public class NitroFlareCom extends antiDDoSForHost {
         handleDownloadErrors(account, link, true);
     }
 
-    /** Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN. */
-    private void handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
+    /**
+     * Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN. </br>
+     *
+     * @return: true: Captcha required and successfully solved by user </br>
+     *          false: Captcha not required </br>
+     *          exception: Wrong captcha
+     */
+    private boolean handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
         if (br.containsHTML("To get rid of the captcha, please avoid using a dedicated server")) {
             logger.info("Premium VPN captcha required");
-            final String urlBefore = br.getURL();
             /* 2020-02-20: Here is their reCaptchaV2 site-key for testing: 6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy */
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
@@ -724,10 +737,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             logger.info("Premium captcha success");
-            logger.info("Reloading urlBefore: " + urlBefore);
-            this.getPage(urlBefore);
+            return true;
         } else {
             logger.info("Premium VPN captcha NOT required!");
+            return false;
         }
     }
 
