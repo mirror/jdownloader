@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru", "myzcloud.me" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Song/(\\d+)", "https?://(?:www\\.)?myzcloud\\.me/Song/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru", "myzcloud.me" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Song/(\\d+)", "https?://(?:www\\.)?myzcloud\\.me/(?:[a-z]{2}/)?Song/(\\d+)" })
 public class MyzcloudMe extends antiDDoSForHost {
     public MyzcloudMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,7 @@ public class MyzcloudMe extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /* Forced https */
         if ("myzuka.ru".equals(getHost())) {
-            final String newURL = "https://myzuka.me/Song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+            final String newURL = "https://myzuka.me/song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
             link.setUrlDownload(newURL);
             link.setPluginPatternMatcher(newURL);
         }

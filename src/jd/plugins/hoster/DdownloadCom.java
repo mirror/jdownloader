@@ -40,8 +40,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DdlTo extends XFileSharingProBasic {
-    public DdlTo(final PluginWrapper wrapper) {
+public class DdownloadCom extends XFileSharingProBasic {
+    public DdownloadCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
