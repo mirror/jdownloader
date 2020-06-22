@@ -22,6 +22,19 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.RequestHistory.TYPE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -42,19 +55,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.RequestHistory.TYPE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -524,110 +524,83 @@ public abstract class antiDDoSForHost extends PluginForHost {
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
         if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
-            if (responseCode == 200) {
-                // this has to be run here.. as if you put it down with the 200 mode below task can get confused.
-                if (request != null) {
-                    // used soley by openAntiDDoSRequestConnection, when open connection is used.
-                    if (request instanceof HeadRequest) {
-                        final GetRequest getRequest = new GetRequest(request);
-                        openAntiDDoSRequestConnection(ibr, getRequest);
-                        return;
-                    }
-                }
-            } else {
-                if (request != null) {
-                    // used soley by openAntiDDoSRequestConnection, when open connection is used.
-                    if (request instanceof HeadRequest && isCloudFlareProtectionMode(responseCode)) {
-                        final GetRequest getRequest = new GetRequest(request);
-                        openAntiDDoSRequestConnection(ibr, getRequest);
-                        return;
-                    }
-                    followCloudflareRequest(lockObject, ibr, request, cookies);
-                }
-                // start
-                if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
-                    // website address could be www. or what ever prefixes, need to make sure
-                    // eg. within 403 response code,
-                    // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
-                    // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
-                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
-                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
-                    logger.warning(message);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
-                } else if (responseCode == 521) {
-                    // this basically indicates that the site is down, no need to retry.
-                    // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
-                    a_responseCode5xx++;
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"521 Origin Server\" is down!", 5 * 60 * 1000l);
-                } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 524 || responseCode == 525) {
-                    // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
-                    // additional request could work via additional IP
-                    /**
-                     * @see clouldflare_504_snippet.html
-                     */
-                    // HTTP/1.1 504 Gateway Time-out
-                    // HTTP/1.1 520 Origin Error
-                    // HTTP/1.1 522 Origin Connection Time-out
-                    /**
-                     * @see cloudflare_523_snippet.html
-                     */
-                    // HTTP/1.1 523 Origin Unreachable
-                    // 524: A timeout occurred, https://support.cloudflare.com/hc/en-us/articles/200171926-Error-524-A-timeout-occurred
-                    // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
-                    // server.<
-                    // cache system with possible origin dependency... we will wait and retry
-                    if (a_responseCode5xx == 4) {
-                        // this only shows the last error in request, not the previous retries.
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"" + responseCode + " " + ibr.getHttpConnection().getResponseMessage() + "\"", 5 * 60 * 1000l);
-                    }
-                    a_responseCode5xx++;
-                    // this html based cookie, set by <meta (for responseCode 522)
-                    // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
-                    String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
-                    if (metaCookies != null && metaCookies.length != 0) {
-                        final List<String> cookieHeaders = Arrays.asList(metaCookies);
-                        final String date = ibr.getHeaders().get("Date");
-                        final String host = Browser.getHost(ibr.getURL());
-                        // get current cookies
-                        final Cookies ckies = ibr.getCookies(host);
-                        // add meta cookies to current previous request cookies
-                        for (int i = 0; i < cookieHeaders.size(); i++) {
-                            final String header = cookieHeaders.get(i);
-                            ckies.add(Cookies.parseCookies(header, host, date));
+            try {
+                if (responseCode == 200) {
+                    // this has to be run here.. as if you put it down with the 200 mode below task can get confused.
+                    if (request != null) {
+                        // used soley by openAntiDDoSRequestConnection, when open connection is used.
+                        if (request instanceof HeadRequest) {
+                            final GetRequest getRequest = new GetRequest(request);
+                            openAntiDDoSRequestConnection(ibr, getRequest);
+                            return;
                         }
-                        // set ckies as current cookies
-                        ibr.getHttpConnection().getRequest().setCookies(ckies);
                     }
-                    Thread.sleep(2500);
-                    // effectively refresh page!
-                    try {
-                        final Request currentRequest = ibr.getRequest();
-                        final Request nextRequest = currentRequest.cloneRequest();
-                        if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
-                            openAntiDDoSRequestConnection(ibr, nextRequest);
-                        } else {
-                            sendRequest(ibr, nextRequest);
+                } else {
+                    if (request != null) {
+                        // used soley by openAntiDDoSRequestConnection, when open connection is used.
+                        if (request instanceof HeadRequest && isCloudFlareProtectionMode(responseCode)) {
+                            final GetRequest getRequest = new GetRequest(request);
+                            openAntiDDoSRequestConnection(ibr, getRequest);
+                            return;
                         }
-                    } catch (InterruptedException e) {
-                        throw e;
-                    } catch (PluginException e) {
-                        throw e;
-                    } catch (final Exception e) {
-                        // we want to preserve proper exceptions!
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
+                        followCloudflareRequest(lockObject, ibr, request, cookies);
                     }
-                    // new sendRequest saves cookie session
-                    return;
-                } else if (responseCode == 429 && ibr.containsHTML("<title>Access denied \\| \\S*" + Pattern.quote(ibr.getHost()) + " used Cloudflare to restrict access</title>")) {
-                    // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
-                    if (acquireLock(lockObject)) {
-                        if (a_responseCode429 == 4) {
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    // start
+                    if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
+                        // website address could be www. or what ever prefixes, need to make sure
+                        // eg. within 403 response code,
+                        // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
+                        // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
+                        String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
+                        String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
+                        logger.warning(message);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, message);
+                    } else if (responseCode == 521) {
+                        // this basically indicates that the site is down, no need to retry.
+                        // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
+                        a_responseCode5xx++;
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"521 Origin Server\" is down!", 5 * 60 * 1000l);
+                    } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 524 || responseCode == 525) {
+                        // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
+                        // additional request could work via additional IP
+                        /**
+                         * @see clouldflare_504_snippet.html
+                         */
+                        // HTTP/1.1 504 Gateway Time-out
+                        // HTTP/1.1 520 Origin Error
+                        // HTTP/1.1 522 Origin Connection Time-out
+                        /**
+                         * @see cloudflare_523_snippet.html
+                         */
+                        // HTTP/1.1 523 Origin Unreachable
+                        // 524: A timeout occurred, https://support.cloudflare.com/hc/en-us/articles/200171926-Error-524-A-timeout-occurred
+                        // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
+                        // server.<
+                        // cache system with possible origin dependency... we will wait and retry
+                        if (a_responseCode5xx == 4) {
+                            // this only shows the last error in request, not the previous retries.
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"" + responseCode + " " + ibr.getHttpConnection().getResponseMessage() + "\"", 5 * 60 * 1000l);
                         }
-                        a_responseCode429++;
-                        // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
-                        Thread.sleep(61000);
-                        // try again! -NOTE: this isn't stable compliant-
+                        a_responseCode5xx++;
+                        // this html based cookie, set by <meta (for responseCode 522)
+                        // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
+                        String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
+                        if (metaCookies != null && metaCookies.length != 0) {
+                            final List<String> cookieHeaders = Arrays.asList(metaCookies);
+                            final String date = ibr.getHeaders().get("Date");
+                            final String host = Browser.getHost(ibr.getURL());
+                            // get current cookies
+                            final Cookies ckies = ibr.getCookies(host);
+                            // add meta cookies to current previous request cookies
+                            for (int i = 0; i < cookieHeaders.size(); i++) {
+                                final String header = cookieHeaders.get(i);
+                                ckies.add(Cookies.parseCookies(header, host, date));
+                            }
+                            // set ckies as current cookies
+                            ibr.getHttpConnection().getRequest().setCookies(ckies);
+                        }
+                        Thread.sleep(2500);
+                        // effectively refresh page!
                         try {
                             final Request currentRequest = ibr.getRequest();
                             final Request nextRequest = currentRequest.cloneRequest();
@@ -641,243 +614,282 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         } catch (PluginException e) {
                             throw e;
                         } catch (final Exception e) {
+                            // we want to preserve proper exceptions!
                             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                         }
                         // new sendRequest saves cookie session
                         return;
-                    } else {
-                        // we need togo back and re-request!
-                        throw new ConcurrentLockException();
-                    }
-                    // new code here...
-                    // <script type="text/javascript">
-                    // //<![CDATA[
-                    // try{if (!window.CloudFlare) {var
-                    // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
-                    // //]]>
-                    // </script>
-                } else {
-                    final Form cloudflareForm = getCloudflareChallengeForm(ibr);
-                    final Request originalRequest = ibr.getRequest();
-                    if (responseCode == 403 && cloudflareForm != null) {
+                    } else if (responseCode == 429 && ibr.containsHTML("<title>Access denied \\| \\S*" + Pattern.quote(ibr.getHost()) + " used Cloudflare to restrict access</title>")) {
                         // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
                         if (acquireLock(lockObject)) {
-                            // set boolean value
-                            a_captchaRequirement = true;
-                            // recapthcha v2
-                            if (containsRecaptchaV2Class(cloudflareForm)) {
-                                final String recaptchaV2Response;
-                                final DownloadLink existingDownloadLink = getDownloadLink();
-                                try {
-                                    final DownloadLink dllink = new DownloadLink(this, (existingDownloadLink != null ? existingDownloadLink.getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                                    this.setDownloadLink(dllink);
-                                    final Form cf = cloudflareForm;
-                                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-                                        @Override
-                                        public String getSiteKey() {
-                                            return getSiteKey(cf.getHtmlCode());
-                                        }
-
-                                        @Override
-                                        public String getSecureToken() {
-                                            return getSecureToken(cf.getHtmlCode());
-                                        }
-                                    }.getToken();
-                                } finally {
-                                    setDownloadLink(existingDownloadLink);
-                                }
-                                // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html components
-                                final String rayId = getRayID(ibr);
-                                if (inValidate(rayId)) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                cloudflareForm.put("id", Encoding.urlEncode(rayId));
-                                cloudflareForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            if (a_responseCode429 == 4) {
+                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                             }
-                            // recapthca v1
-                            else if (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
-                                // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                                // we will manually remove all those
-                                while (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
-                                    cloudflareForm.remove("recaptcha_response_field");
+                            a_responseCode429++;
+                            // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured
+                            // differently)
+                            Thread.sleep(61000);
+                            // try again! -NOTE: this isn't stable compliant-
+                            try {
+                                final Request currentRequest = ibr.getRequest();
+                                final Request nextRequest = currentRequest.cloneRequest();
+                                if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
+                                    openAntiDDoSRequestConnection(ibr, nextRequest);
+                                } else {
+                                    sendRequest(ibr, nextRequest);
                                 }
-                                while (cloudflareForm.hasInputFieldByName("recaptcha_challenge_field")) {
-                                    cloudflareForm.remove("recaptcha_challenge_field");
-                                }
-                                // this one is null, needs to be ""
-                                if (cloudflareForm.hasInputFieldByName("message")) {
-                                    cloudflareForm.remove("message");
-                                    cloudflareForm.put("messsage", "\"\"");
-                                }
-                                // recaptcha bullshit,
-                                String apiKey = cloudflareForm.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                                if (apiKey == null) {
-                                    apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                                    if (apiKey == null) {
+                            } catch (InterruptedException e) {
+                                throw e;
+                            } catch (PluginException e) {
+                                throw e;
+                            } catch (final Exception e) {
+                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
+                            }
+                            // new sendRequest saves cookie session
+                            return;
+                        } else {
+                            // we need togo back and re-request!
+                            throw new ConcurrentLockException();
+                        }
+                        // new code here...
+                        // <script type="text/javascript">
+                        // //<![CDATA[
+                        // try{if (!window.CloudFlare) {var
+                        // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
+                        // //]]>
+                        // </script>
+                    } else {
+                        final Form cloudflareForm = getCloudflareChallengeForm(ibr);
+                        final Request originalRequest = ibr.getRequest();
+                        if (responseCode == 403 && cloudflareForm != null) {
+                            // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
+                            if (acquireLock(lockObject)) {
+                                // set boolean value
+                                a_captchaRequirement = true;
+                                // recapthcha v2
+                                if (containsRecaptchaV2Class(cloudflareForm)) {
+                                    final String recaptchaV2Response;
+                                    final DownloadLink existingDownloadLink = getDownloadLink();
+                                    try {
+                                        final DownloadLink dllink = new DownloadLink(this, (existingDownloadLink != null ? existingDownloadLink.getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                                        this.setDownloadLink(dllink);
+                                        final Form cf = cloudflareForm;
+                                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+                                            @Override
+                                            public String getSiteKey() {
+                                                return getSiteKey(cf.getHtmlCode());
+                                            }
+
+                                            @Override
+                                            public String getSecureToken() {
+                                                return getSecureToken(cf.getHtmlCode());
+                                            }
+                                        }.getToken();
+                                    } finally {
+                                        setDownloadLink(existingDownloadLink);
+                                    }
+                                    // Wed 1 Mar 2017 11:29:43 UTC, now additional inputfield constructed via javascript from html
+                                    // components
+                                    final String rayId = getRayID(ibr);
+                                    if (inValidate(rayId)) {
                                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                     }
+                                    cloudflareForm.put("id", Encoding.urlEncode(rayId));
+                                    cloudflareForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                                 }
-                                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                                final Recaptcha rc = new Recaptcha(ibr, this);
-                                rc.setId(apiKey);
-                                rc.load();
-                                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                                final String response = getCaptchaCode("recaptcha", cf, dllink);
-                                if (inValidate(response)) {
-                                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
-                                }
-                                cloudflareForm.put("recaptcha_challenge_field", rc.getChallenge());
-                                cloudflareForm.put("recaptcha_response_field", Encoding.urlEncode(response));
-                            }
-                            if (request != null) {
-                                ibr.openFormConnection(cloudflareForm);
-                            } else {
-                                ibr.submitForm(cloudflareForm);
-                            }
-                            if (getCloudflareChallengeForm(ibr) != null) {
-                                logger.warning("Wrong captcha");
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
-                            }
-                            // on success cf_clearance cookie is set and a redirect will be present!
-                            // we have a problem here when site expects POST request and redirects are always are GETS
-                            if (originalRequest instanceof PostRequest) {
-                                try {
-                                    // resend originalRequest
-                                    originalRequest.resetConnection();
-                                    if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
-                                        openAntiDDoSRequestConnection(ibr, originalRequest);
-                                    } else {
-                                        sendRequest(ibr, originalRequest);
+                                // recapthca v1
+                                else if (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
+                                    // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                                    // we will manually remove all those
+                                    while (cloudflareForm.hasInputFieldByName("recaptcha_response_field")) {
+                                        cloudflareForm.remove("recaptcha_response_field");
                                     }
-                                } catch (InterruptedException e) {
-                                    throw e;
-                                } catch (PluginException e) {
-                                    throw e;
-                                } catch (final Exception e) {
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
-                                }
-                                // because next round could be 200 response code, you need to nullify this value here.
-                                a_captchaRequirement = false;
-                                // new sendRequest saves cookie session
-                                return;
-                            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                                ibr.getPage(ibr.getRedirectLocation());
-                            }
-                            a_captchaRequirement = false;
-                        } else {
-                            // we need togo back and re-request!
-                            throw new ConcurrentLockException();
-                        }
-                    } else if (responseCode == 503 && cloudflareForm != null) {
-                        // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
-                        if (acquireLock(lockObject)) {
-                            // 503 response code with javascript math section && with 5 second pause
-                            final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-                            if (line1 == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
-                            if (line2 == null) {
-                                // new 14.03.2019
-                                line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length.*?;)").getMatch(0);
-                                if (line2 == null) {
-                                    // new 29.03.2019
-                                    line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?\\.toFixed\\(.*?;)").getMatch(0);
-                                    final String k = ibr.getRegex("[a-z]\\s*=\\s*'(cf-.*?)'").getMatch(0);
-                                    if (k != null) {
-                                        final String kValue = ibr.getRegex("id\\s*=\\s*\"" + Pattern.quote(k) + "\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
-                                        if (kValue == null) {
+                                    while (cloudflareForm.hasInputFieldByName("recaptcha_challenge_field")) {
+                                        cloudflareForm.remove("recaptcha_challenge_field");
+                                    }
+                                    // this one is null, needs to be ""
+                                    if (cloudflareForm.hasInputFieldByName("message")) {
+                                        cloudflareForm.remove("message");
+                                        cloudflareForm.put("messsage", "\"\"");
+                                    }
+                                    // recaptcha bullshit,
+                                    String apiKey = cloudflareForm.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                    if (apiKey == null) {
+                                        apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                                        if (apiKey == null) {
                                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                         }
-                                        // replace document.elementById(k)... with direct value
-                                        line2 = line2.replaceFirst("=(\\s*function.*?\\(\\));", "=" + Matcher.quoteReplacement(kValue + ";"));
                                     }
-                                    // replace with t.charCodeAt
-                                    line2 = line2.replaceFirst("(function\\(.*?\\})", "function(p){return t.charCodeAt(p);}");
+                                    final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                                    final Recaptcha rc = new Recaptcha(ibr, this);
+                                    rc.setId(apiKey);
+                                    rc.load();
+                                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                                    final String response = getCaptchaCode("recaptcha", cf, dllink);
+                                    if (inValidate(response)) {
+                                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
+                                    }
+                                    cloudflareForm.put("recaptcha_challenge_field", rc.getChallenge());
+                                    cloudflareForm.put("recaptcha_response_field", Encoding.urlEncode(response));
                                 }
-                            }
-                            if (line2 == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            final StringBuilder sb = new StringBuilder();
-                            sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
-                            sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
-                            sb.append(line2);
-                            final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                            final ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                            final Object result = engine.eval(sb.toString());
-                            if (result == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            final String answer = result.toString();
-                            cloudflareForm.getInputFieldByName("jschl_answer").setValue(answer + "");
-                            Thread.sleep(5500);
-                            // if it works, there should be a redirect.
-                            if (request != null) {
-                                ibr.openFormConnection(cloudflareForm);
-                            } else {
-                                ibr.submitForm(cloudflareForm);
-                            }
-                            /*
-                             * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post > gets
-                             * > need to resubmit original request.
-                             */
-                            if (originalRequest instanceof PostRequest) {
-                                try {
-                                    // resend originalRequest
-                                    originalRequest.resetConnection();
-                                    if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
-                                        openAntiDDoSRequestConnection(ibr, originalRequest);
-                                    } else {
-                                        sendRequest(ibr, originalRequest);
+                                if (request != null) {
+                                    ibr.openFormConnection(cloudflareForm);
+                                } else {
+                                    ibr.submitForm(cloudflareForm);
+                                }
+                                if (getCloudflareChallengeForm(ibr) != null) {
+                                    logger.warning("Wrong captcha");
+                                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
+                                }
+                                // on success cf_clearance cookie is set and a redirect will be present!
+                                // we have a problem here when site expects POST request and redirects are always are GETS
+                                if (originalRequest instanceof PostRequest) {
+                                    try {
+                                        // resend originalRequest
+                                        originalRequest.resetConnection();
+                                        if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
+                                            openAntiDDoSRequestConnection(ibr, originalRequest);
+                                        } else {
+                                            sendRequest(ibr, originalRequest);
+                                        }
+                                    } catch (InterruptedException e) {
+                                        throw e;
+                                    } catch (PluginException e) {
+                                        throw e;
+                                    } catch (final Exception e) {
+                                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
                                     }
+                                    // because next round could be 200 response code, you need to nullify this value here.
+                                    a_captchaRequirement = false;
+                                    // new sendRequest saves cookie session
                                     return;
-                                } catch (InterruptedException e) {
-                                    throw e;
-                                } catch (PluginException e) {
-                                    throw e;
-                                } catch (final Exception e) {
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
+                                } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                                    ibr.getPage(ibr.getRedirectLocation());
                                 }
-                                // new sendRequest saves cookie session
-                            } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                                // since we might not be following redirect, we need to get this one so we have correct html!
-                                ibr.getPage(ibr.getRedirectLocation());
+                                a_captchaRequirement = false;
+                            } else {
+                                // we need togo back and re-request!
+                                throw new ConcurrentLockException();
+                            }
+                        } else if (responseCode == 503 && cloudflareForm != null) {
+                            // lock to prevent multiple queued events, other threads will need to listen to event and resumbit
+                            if (acquireLock(lockObject)) {
+                                // 503 response code with javascript math section && with 5 second pause
+                                final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                                if (line1 == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+                                if (line2 == null) {
+                                    // new 14.03.2019
+                                    line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length.*?;)").getMatch(0);
+                                    if (line2 == null) {
+                                        // new 29.03.2019
+                                        line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?\\.toFixed\\(.*?;)").getMatch(0);
+                                        final String k = ibr.getRegex("[a-z]\\s*=\\s*'(cf-.*?)'").getMatch(0);
+                                        if (k != null) {
+                                            final String kValue = ibr.getRegex("id\\s*=\\s*\"" + Pattern.quote(k) + "\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
+                                            if (kValue == null) {
+                                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                            }
+                                            // replace document.elementById(k)... with direct value
+                                            line2 = line2.replaceFirst("=(\\s*function.*?\\(\\));", "=" + Matcher.quoteReplacement(kValue + ";"));
+                                        }
+                                        // replace with t.charCodeAt
+                                        line2 = line2.replaceFirst("(function\\(.*?\\})", "function(p){return t.charCodeAt(p);}");
+                                    }
+                                }
+                                if (line2 == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                final StringBuilder sb = new StringBuilder();
+                                sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
+                                sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
+                                sb.append(line2);
+                                final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                                final ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                                final Object result = engine.eval(sb.toString());
+                                if (result == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                final String answer = result.toString();
+                                cloudflareForm.getInputFieldByName("jschl_answer").setValue(answer + "");
+                                Thread.sleep(5500);
+                                // if it works, there should be a redirect.
+                                if (request != null) {
+                                    ibr.openFormConnection(cloudflareForm);
+                                } else {
+                                    ibr.submitForm(cloudflareForm);
+                                }
+                                /*
+                                 * ok we have issue here like below.. when request post redirect isn't the same as what came in! ie post >
+                                 * gets > need to resubmit original request.
+                                 */
+                                if (originalRequest instanceof PostRequest) {
+                                    try {
+                                        // resend originalRequest
+                                        originalRequest.resetConnection();
+                                        if (TYPE.OPEN.equals(RequestHistory.getCurrentThread(false).get(0).getType())) {
+                                            openAntiDDoSRequestConnection(ibr, originalRequest);
+                                        } else {
+                                            sendRequest(ibr, originalRequest);
+                                        }
+                                        return;
+                                    } catch (InterruptedException e) {
+                                        throw e;
+                                    } catch (PluginException e) {
+                                        throw e;
+                                    } catch (final Exception e) {
+                                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l, e);
+                                    }
+                                    // new sendRequest saves cookie session
+                                } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                                    // since we might not be following redirect, we need to get this one so we have correct html!
+                                    ibr.getPage(ibr.getRedirectLocation());
+                                }
+                            } else {
+                                // we need togo back and re-request!
+                                throw new ConcurrentLockException();
                             }
                         } else {
-                            // we need togo back and re-request!
-                            throw new ConcurrentLockException();
+                            // unsupported mode? or just provider throwing weird codes
                         }
-                    } else {
-                        // unsupported mode? or just provider throwing weird codes
-                    }
-                }
-            }
-            /*
-             * since we can call standard browser requests above, we need to match full conditions!
-             */
-            if (ibr.getHttpConnection().getResponseCode() == 200 && StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
-                // active browser wont be a head request at this time. but request might not be followed yet due to open connections above.
-                if (request != null) {
-                    followCloudflareRequest(lockObject, ibr, request, cookies);
-                }
-                if (ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
-                    final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
-                    if (phishing == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (request != null) {
-                        ibr.openFormConnection(phishing);
-                    } else {
-                        ibr.submitForm(phishing);
                     }
                 }
                 /*
-                 * cleanup stupid cloudflare email protections, done centrally as it messes with every site! And run this is because,
-                 * filenames can contain @ char and this will mask them and break plugins.
+                 * since we can call standard browser requests above, we need to match full conditions!
                  */
-                // note: must be LAST!
-                cleanupCloudFlareEmailProtection(ibr, null);
+                if (ibr.getHttpConnection().getResponseCode() == 200 && StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {
+                    // active browser wont be a head request at this time. but request might not be followed yet due to open connections
+                    // above.
+                    if (request != null) {
+                        followCloudflareRequest(lockObject, ibr, request, cookies);
+                    }
+                    if (ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
+                        final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
+                        if (phishing == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (request != null) {
+                            ibr.openFormConnection(phishing);
+                        } else {
+                            ibr.submitForm(phishing);
+                        }
+                    }
+                    /*
+                     * cleanup stupid cloudflare email protections, done centrally as it messes with every site! And run this is because,
+                     * filenames can contain @ char and this will mask them and break plugins.
+                     */
+                    // note: must be LAST!
+                    cleanupCloudFlareEmailProtection(ibr, null);
+                }
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                    /* TODO: Update this, don't use bit.ly - use something like "jdownloader.org/cf" */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare failure - see bit.ly/cloudflareJD", 10 * 60 * 60 * 1000l);
+                } else {
+                    throw e;
+                }
             }
         }
         // get cookies we want/need.
