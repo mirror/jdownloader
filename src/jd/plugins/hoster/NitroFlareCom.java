@@ -684,6 +684,9 @@ public class NitroFlareCom extends antiDDoSForHost {
             link.setProperty(directlinkproperty, Property.NULL);
             handleDownloadErrors(account, link, false);
         }
+        /* TODO: Check if this is still required */
+        randomHash(br, link);
+        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
         // could be directlink
         dllink = link.getDownloadURL();
         int counter = 0;
@@ -699,8 +702,8 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
             br.followConnection();
             // not directlink
-            randomHash(br, link);
-            ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
+            // randomHash(br, link);
+            // ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
             handlePremiumVPNWarningCaptcha(link);
             counter++;
         } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
