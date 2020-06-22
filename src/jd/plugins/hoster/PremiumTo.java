@@ -641,11 +641,18 @@ public class PremiumTo extends UseNet {
             /* Everything ok */
             break;
         case 400:
-            /* Invalid parameter - this should never happen! */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API response 400: " + errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            /*
+             * Invalid parameter - this should never happen! 2020-06-22: Thiy can happen when the user e.g. uses wrong characters in login
+             * credentials --> Display account invalid message if this didn't happen during download!
+             */
+            if (this.getDownloadLink() == null) {
+                invalidLogin();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API response 400: " + errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         case 401:
             /* Invalid apikey --> Invalid logindata */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            invalidLogin();
         case 402:
             /*
              * Unsupported filehost - rare case but will happen if admin e.g. forgets to remove currently non-working hosts from array of
@@ -682,6 +689,14 @@ public class PremiumTo extends UseNet {
             if (status.equalsIgnoreCase("In queue")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download pending", 3 * 60 * 1000);
             }
+        }
+    }
+
+    private void invalidLogin() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Zugangsdaten ungültig!\r\nBitte bedenke, dass dieser Anbieter extra Zugangsdaten für JD zur Verfügung stellt, die von denen der Webseite abweichen!\r\nSiehe premium.to Hauptseite --> Account", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Invalid login credentials!\r\nPlease keep in mind that this service is providing extra login credentials for JD which are different than the ones used to lgin via website!\r\nSee premium.to mainpage --> Account", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
