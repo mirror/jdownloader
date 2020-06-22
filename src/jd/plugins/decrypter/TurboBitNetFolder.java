@@ -40,9 +40,8 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
         /* Different Hostplugins which all extend one class - this crawler can handle all of their folder-links */
         final String[] supportedNamesTurbobit = jd.plugins.hoster.TurboBitNet.domains;
         final String[] supportedNamesHitfile = jd.plugins.hoster.HitFileNet.domains;
-        final String[] supportedNamesWayupload = jd.plugins.hoster.WayuploadCom.domains;
-        final String[][] supportedNamesArrays = { jd.plugins.hoster.TurboBitNet.domains, jd.plugins.hoster.HitFileNet.domains, jd.plugins.hoster.WayuploadCom.domains };
-        final String[] supportedNamesAll = new String[supportedNamesTurbobit.length + supportedNamesHitfile.length + supportedNamesWayupload.length];
+        final String[][] supportedNamesArrays = { jd.plugins.hoster.TurboBitNet.domains, jd.plugins.hoster.HitFileNet.domains };
+        final String[] supportedNamesAll = new String[supportedNamesTurbobit.length + supportedNamesHitfile.length];
         int position = 0;
         for (final String[] supportedNamesOfOneHost : supportedNamesArrays) {
             for (final String supportedName : supportedNamesOfOneHost) {
