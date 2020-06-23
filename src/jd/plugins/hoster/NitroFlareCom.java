@@ -49,7 +49,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/([A-Z0-9]+)" })
 public class NitroFlareCom extends antiDDoSForHost {
     private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
@@ -223,7 +223,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private AvailableStatus requestFileInformationWeb(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">\\s*This file has been removed|>\\s*File doesn't exist<|This file has been removed due|>\\s*This file has been removed by its owner")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*This file has been removed|>\\s*File doesn't exist<|This file has been removed due|>\\s*This file has been removed by its owner")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<b>File Name: </b><span title=\"([^<>\"]*?)\"").getMatch(0);
@@ -235,11 +235,12 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (br.containsHTML(">Your ip is been blocked, if you think it is mistake contact us")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your ip is been blocked", 30 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getBooleanProperty("apiInfo", Boolean.FALSE) == Boolean.FALSE) {
             /* no apiInfos available, set unverified name/size here */
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename.trim()));
+            }
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
@@ -248,12 +249,12 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         setConstants(null);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        requestFileInformationApi(downloadLink);
-        doFree(null, downloadLink);
+        requestFileInformationApi(link);
+        doFree(null, link);
     }
 
     private final void doFree(final Account account, final DownloadLink link) throws Exception {
