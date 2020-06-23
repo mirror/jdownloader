@@ -53,6 +53,7 @@ import jd.plugins.components.PluginJSonUtils;
 public class NitroFlareCom extends antiDDoSForHost {
     private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
+    /* TODO: Implement API for account mode: https://nitroflare.com/member?s=api */
     private final String         apiURL   = "http://nitroflare.com/api/v2";
     /* don't touch the following! */
     private static AtomicInteger maxFree  = new AtomicInteger(1);
@@ -696,10 +697,12 @@ public class NitroFlareCom extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (dl.getConnection().isContentDisposition()) {
                 /* Directurl */
+                logger.info("Seems like user has direct downloads enabled");
                 link.setProperty(directlinkproperty, dllink);
                 dl.startDownload();
                 return;
             }
+            logger.info("Seems like user has direct downloads disabled or VPN captcha required");
             br.followConnection();
             // not directlink
             // randomHash(br, link);
@@ -709,7 +712,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
         handleDownloadErrors(account, link, false);
         /* TODO: Test if this is still working! */
-        dllink = br.getRegex("<a id=\"download\" href=\"([^\"]+)\"").getMatch(0);
+        dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href=\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
         }

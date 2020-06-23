@@ -17,9 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,11 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/view/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "coub.com" }, urls = { "https?://(?:www\\.)?coub\\.com/(?:view|embed)/([A-Za-z0-9]+)" })
 public class CoubCom extends PluginForHost {
     public CoubCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,6 +42,20 @@ public class CoubCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://coub.com/tos";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     /* Connection stuff */
@@ -59,53 +72,68 @@ public class CoubCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     /** Using API: http://coub.com/dev/docs */
-    /**Example for profile decrypter: http://coub.com/api/v2/timeline/channel/22e53751f21ebf9707d4707fc452cb72?per_page=9&permalink=22e53751f21ebf9707d4707fc452cb72&order_by=newest&page=3*/
+    /**
+     * Example for profile decrypter:
+     * http://coub.com/api/v2/timeline/channel/22e53751f21ebf9707d4707fc452cb72?per_page=9&permalink=22e53751f21ebf9707d4707fc452cb72&order_by=newest&page=3
+     */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         DLLINK = null;
         this.setBrowserExclusive();
         final String fid = getFID(link);
-        this.br.getPage("https://coub.com/api/v2/coubs/" + fid);
-        if (this.br.getHttpConnection().getResponseCode() == 403) {
-            /* {"error":"You are not authorized to access this page.","exc":"CanCan::AccessDenied"} */
-            logger.info("Possible private content --> Not sure but probably offline");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* 2020-06-23: Some items only have downloadlinks available in the website-json (??) */
+        final boolean use_api = true;
+        final LinkedHashMap<String, Object> entries;
+        if (use_api) {
+            this.br.getPage("https://" + this.getHost() + "/api/v2/coubs/" + fid);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                /* {"error":"You are not authorized to access this page.","exc":"CanCan::AccessDenied"} */
+                logger.info("Possible private content --> Not sure but probably offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        } else {
+            this.br.getPage("https://" + this.getHost() + "/view/" + fid);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String json = br.getRegex("<script [^>]*coubPageCoubJson[^>]*>(.*?)</script>").getMatch(0);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final String filename = getFilename(this, entries, fid);
-        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "file_versions/web/template");
-        if (filename == null || DLLINK == null) {
+        final String created_at = (String) entries.get("created_at");
+        String filename = getFilename(this, entries, fid);
+        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "file_versions/share/default");
+        if (filename == null || StringUtils.isEmpty(created_at)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String date_formatted = new Regex(created_at, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        if (date_formatted == null) {
+            /* Fallback */
+            date_formatted = created_at;
+        }
+        link.setFinalFileName(date_formatted + "_" + filename);
         /* Format URL so that it is valid */
-        DLLINK = DLLINK.replace("%{type}", "mp4").replace("%{version}", "big");
-        link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (!StringUtils.isEmpty(DLLINK)) {
+            DLLINK = DLLINK.replace("%{type}", "mp4").replace("%{version}", "big");
+            URLConnectionAdapter con = null;
             try {
                 /* Do NOT use HEAD requests here! */
-                con = br2.openGetConnection(DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openGetConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     public static String getFilename(final Plugin plugin, final LinkedHashMap<String, Object> entries, final String fid) {
@@ -125,13 +153,29 @@ public class CoubCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (StringUtils.isEmpty(this.DLLINK)) {
+            logger.info("Seems like this video has never been downloaded before --> Generating downloadurl");
+            br.getPage("/api/v2/coubs/" + this.getFID(link) + "/share_video_status");
+            this.DLLINK = PluginJSonUtils.getJson(br, "url");
+            final String status = PluginJSonUtils.getJson(br, "status");
+            if (!StringUtils.isEmpty(this.DLLINK)) {
+                /* E.g. {"status":"ready","url":"https://coubsecure-s.akamaihd.net/get/bla.mp4"} */
+                logger.info("Successfully found downloadurl after first API call");
+            } else if (!StringUtils.isEmpty(status) && (status.equalsIgnoreCase("queued") || status.equalsIgnoreCase("working"))) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waiting for downloadlink generation", 1 * 60 * 1000l);
+            } else if (!StringUtils.isEmpty(status)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API status: " + status, 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -139,9 +183,8 @@ public class CoubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        downloadLink.setProperty(directlinkproperty, DLLINK);
         dl.startDownload();
     }
 
@@ -170,11 +213,13 @@ public class CoubCom extends PluginForHost {
     // if (br.getCookie(MAINPAGE, "") == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
+    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
+    // password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -212,11 +257,13 @@ public class CoubCom extends PluginForHost {
     // if (expire == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein
+    // eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered
+    // are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // } else {
@@ -270,11 +317,6 @@ public class CoubCom extends PluginForHost {
     // /* workaround for free/premium issue on stable 09581 */
     // return maxPrem.get();
     // }
-    @SuppressWarnings("deprecation")
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-    }
-
     @Override
     public void reset() {
     }

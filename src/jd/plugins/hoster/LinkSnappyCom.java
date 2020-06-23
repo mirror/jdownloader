@@ -556,7 +556,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                         // if no server available for the filehost
                         mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "hoster offline");
                     } else if (new Regex(err, "Couldn't (re-)?start download in system").matches()) {
-                        mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Can't start cache. Possibly daily limit reached");
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), "Can't start cache. Possibly daily limit reached", 50);
                     } else if (new Regex(err, "You have reached max download request").matches()) {
                         mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
                     } else if (new Regex(err, "You have reached max download limit of").matches()) {
