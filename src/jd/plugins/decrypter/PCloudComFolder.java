@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -32,11 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|my\\.pcloud\\.com/publink/show\\?code=|pc\\.cd/)[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(?:[a-z0-9]+\\.pcloud\\.(?:com|link)/#page=publink\\&code=|[a-z0-9]+\\.pcloud\\.(?:com|link)/publink/show\\?code=|pc\\.cd/)([A-Za-z0-9]+)" })
 public class PCloudComFolder extends PluginForDecrypt {
-
     public PCloudComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -54,9 +52,8 @@ public class PCloudComFolder extends PluginForDecrypt {
         final DownloadLink main = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         main.setProperty("plain_code", foldercode);
         main.setProperty("mainlink", parameter);
-
         prepBR();
-        br.getPage("http://api.pcloud.com/showpublink?code=" + getFID(parameter));
+        br.getPage("https://api.pcloud.com/showpublink?code=" + getFID(parameter));
         final String result = PluginJSonUtils.getJsonValue(this.br, "result");
         /* 7002 = deleted by the owner, 7003 = abused */
         if (br.containsHTML("\"error\": \"Invalid link") || "7002".equals(result) || "7003".equals(result)) {
@@ -67,12 +64,10 @@ public class PCloudComFolder extends PluginForDecrypt {
             decryptedLinks.add(main);
             return decryptedLinks;
         }
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("metadata");
         final String folderNameMain = (String) entries.get("name");
         addFolder(entries, null);
-
         if (decryptedLinks.size() > 1 && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final String main_name = folderNameMain + ".zip";
@@ -83,7 +78,6 @@ public class PCloudComFolder extends PluginForDecrypt {
             main.setProperty("plain_code", foldercode);
             decryptedLinks.add(main);
         }
-
         return decryptedLinks;
     }
 
@@ -134,7 +128,7 @@ public class PCloudComFolder extends PluginForDecrypt {
     }
 
     private String getFID(final String link) {
-        return new Regex(link, "([A-Za-z0-9]+)$").getMatch(0);
+        return new Regex(link, this.getSupportedLinks()).getMatch(0);
     }
 
     private void prepBR() {
@@ -145,5 +139,4 @@ public class PCloudComFolder extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept-Charset", null);
     }
-
 }
