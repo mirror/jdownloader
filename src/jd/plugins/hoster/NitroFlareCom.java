@@ -18,22 +18,25 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.NitroflareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -42,6 +45,8 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -53,16 +58,25 @@ import jd.plugins.components.PluginJSonUtils;
 public class NitroFlareCom extends antiDDoSForHost {
     private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
-    /* TODO: Implement API for account mode: https://nitroflare.com/member?s=api */
-    private final String         apiURL   = "http://nitroflare.com/api/v2";
+    /* Documentation: https://nitroflare.com/member?s=api */
+    private final String         API_BASE = "http://nitroflare.com/api/v2";
     /* don't touch the following! */
     private static AtomicInteger maxFree  = new AtomicInteger(1);
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(null);
-        setConfigElement();
         Browser.setRequestIntervalLimitGlobal("nitroflare.com", 500);
+    }
+
+    /**
+     * Use website or API: https://nitroflare.com/member?s=api </br>
+     *
+     * @return true: Use API for account login and premium downloading </br>
+     *         false: Use website for everything (except linkcheck)
+     */
+    private boolean useAPI() {
+        return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
     }
 
     @Override
@@ -72,7 +86,21 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace(".com/watch/", ".com/view/"));
+        link.setUrlDownload("https://nitroflare.com/view/" + this.getFID(link));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     private void setConstants(final Account account) {
@@ -121,10 +149,10 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (downloadLink != null) {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (link != null) {
             if (account == null || account.getType() == AccountType.FREE) {
-                return !(downloadLink.getBooleanProperty("premiumRequired", false));
+                return !(link.getBooleanProperty("premiumRequired", false));
             }
         }
         return true;
@@ -156,7 +184,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     sb.append(getFUID(dl));
                     atLeastOneDL = true;
                 }
-                getPage(br, apiURL + "/getFileInfo?" + sb);
+                getPage(br, API_BASE + "/getFileInfo?" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later");
@@ -191,7 +219,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     if (md5 != null) {
                         dl.setMD5Hash(md5);
                     }
-                    if (getPluginConfig().getBooleanProperty(trustAPIPremiumOnly, true)) {
+                    if (PluginJsonConfig.get(NitroflareConfig.class).isTrustAPIAboutPremiumOnlyFlag()) {
                         if (prem != null) {
                             dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
                         } else {
@@ -258,6 +286,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private final void doFree(final Account account, final DownloadLink link) throws Exception {
+        /* TODO: Implement free download via API: https://nitroflare.com/member?s=general-api */
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -360,8 +389,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            link.setProperty(directlinkproperty, Property.NULL);
+        if (!isDownloadableContent(dl.getConnection())) {
             handleDownloadErrors(account, link, true);
         }
         link.setProperty(directlinkproperty, dllink);
@@ -390,7 +418,7 @@ public class NitroFlareCom extends antiDDoSForHost {
      *            (+1|-1)
      */
     private synchronized void controlFree(final int num) {
-        int totalMaxSimultanFreeDownload = this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false) ? 20 : 1;
+        final int totalMaxSimultanFreeDownload = PluginJsonConfig.get(NitroflareConfig.class).isAllowMultipleFreeDownloads() ? 20 : 1;
         logger.info("maxFree was = " + maxFree.get() + " total is = " + totalMaxSimultanFreeDownload + " change " + num);
         maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload));
         logger.info("maxFree now = " + maxFree.get());
@@ -405,7 +433,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         final String randomHash = JDHash.getMD5(link.getDownloadURL() + System.currentTimeMillis());
         // same cookie is set within as a cookie prior to registering
         br.setCookie(getHost(), "randHash", randomHash);
-        ajaxPost(br, "/ajax/randHash.php", "randHash=" + randomHash);
+        ajaxPost(br, "https://" + this.getHost() + "/ajax/randHash.php", "randHash=" + randomHash);
     }
 
     private void handleErrors(final Browser br, final boolean postCaptcha) throws PluginException {
@@ -421,7 +449,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             throwPremiumRequiredException(this.getDownloadLink(), false);
         }
         if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
-            if (this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false)) {
+            if (PluginJsonConfig.get(NitroflareConfig.class).isAllowMultipleFreeDownloads()) {
                 /* We do not know exactly when the next free download is possible so let's try every 20 minutes. */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l);
             } else {
@@ -484,17 +512,13 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private static String trustAPIPremiumOnly        = "trustAPIPremiumOnly";
-    private static String allowMultipleFreeDownloads = "allowMultipleFreeDownloads";
-
-    private void setConfigElement() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), allowMultipleFreeDownloads, "Allow multiple free downloads?\r\nThis might result in fatal errors!").setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), trustAPIPremiumOnly, "Trust API about Premium Only flag?").setDefaultValue(true));
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        return fetchAccountInfoWeb(account, false, true);
+        if (useAPI()) {
+            return fetchAccountInfoAPI(account);
+        } else {
+            return fetchAccountInfoWeb(account, false, true);
+        }
     }
 
     private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullLogin, boolean fullInfo) throws Exception {
@@ -502,25 +526,12 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (!account.getUser().matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (inValidate(account.getPass())) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPassword can't be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
             try {
-                /** Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !fullLogin) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !fullLogin) {
                     if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(this.getHost(), key, value);
-                        }
+                        br.setCookies(cookies);
                         // lets do a test
                         final Browser br2 = br.cloneBrowser();
                         getPage(br2, "https://www.nitroflare.com/");
@@ -645,19 +656,79 @@ public class NitroFlareCom extends antiDDoSForHost {
                 account.setAccountInfo(ai);
                 if (account.isValid()) {
                     /** Save cookies */
-                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                    account.setProperty("cookies", fetchCookies(getHost()));
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return ai;
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Non Valid Account", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("name", Property.NULL);
-                    account.setProperty("pass", Property.NULL);
-                    account.setProperty("cookies", Property.NULL);
+                    account.clearCookies("");
                 }
                 throw e;
+            }
+        }
+    }
+
+    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        synchronized (account) {
+            if (!account.getUser().matches(".+@.+")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            br.setCookiesExclusive(true);
+            getPage(API_BASE + "/getKeyInfo?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
+            checkErrorsAPI(null, account);
+            final AccountInfo ai = new AccountInfo();
+            final String trafficLeftStr = PluginJSonUtils.getJson(br, "trafficLeft");
+            final String trafficMaxStr = PluginJSonUtils.getJson(br, "trafficMax");
+            final String expiryDate = PluginJSonUtils.getJson(br, "expiryDate");
+            final String accountStatus = PluginJSonUtils.getJson(br, "status");
+            if (!StringUtils.isEmpty(trafficLeftStr) && !StringUtils.isEmpty(trafficMaxStr)) {
+                ai.setTrafficLeft(trafficLeftStr);
+                ai.setTrafficMax(trafficMaxStr);
+            }
+            if (!"active".equalsIgnoreCase(accountStatus) || "0".equals(expiryDate)) {
+                account.setType(AccountType.FREE);
+                ai.setStatus("Free Account");
+            } else {
+                account.setType(AccountType.PREMIUM);
+                ai.setStatus("Premium Account");
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expiryDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+            }
+            return ai;
+        }
+    }
+
+    private void checkErrorsAPI(final DownloadLink link, final Account account) throws Exception {
+        int errorcode = -1;
+        String msg = null;
+        try {
+            /* E.g. {"type":"error","message":"Wrong login","code":8} */
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            msg = (String) entries.get("message");
+            errorcode = ((Number) entries.get("code")).intValue();
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        switch (errorcode) {
+        case -1:
+            /* No error */
+            break;
+        case 4:
+            /* {"type":"error","message":"File doesn't exist","code":4} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 8:
+            /* Invalid logindata */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        case 12:
+            /* API captcha required to continue using their API! */
+            /* TODO: Add handling for this captcha */
+            // this.getPage(this.API_BASE + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser()));
+        default:
+            /* Handle unknown errors */
+            if (link == null) {
+                throw new AccountUnavailableException("API error: " + msg, 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error: " + msg, 5 * 60 * 1000l);
             }
         }
     }
@@ -665,60 +736,91 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
-        // when they turn off additional captchas within api vs website, we will go back to website
-        requestFileInformationWeb(link);
-        fetchAccountInfoWeb(account, false, false);
-        // is free user?
+        /* is free user? */
         if (account.getType() == AccountType.FREE) {
+            requestFileInformationWeb(link);
+            fetchAccountInfoWeb(account, false, false);
             requestFileInformationApi(link); // Required, to do checkLinks to check premiumOnly
             doFree(account, link);
-            return;
-        }
-        // check cached download
-        dllink = link.getStringProperty(directlinkproperty);
-        if (!inValidate(dllink)) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-            if (dl.getConnection().isContentDisposition()) {
-                link.setProperty(directlinkproperty, dllink);
-                dl.startDownload();
-                return;
+        } else {
+            /* Premium download */
+            /* check cached download */
+            dllink = link.getStringProperty(directlinkproperty);
+            if (!inValidate(dllink)) {
+                logger.info("Trying to re-use stored generated directurl");
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+                if (isDownloadableContent(dl.getConnection())) {
+                    logger.info("Successfully re-used stored generated directurl");
+                    link.setProperty(directlinkproperty, dllink);
+                    dl.startDownload();
+                    return;
+                } else {
+                    logger.info("Failed to re-use stored generated directurl");
+                    link.setProperty(directlinkproperty, Property.NULL);
+                    handleDownloadErrors(account, link, false);
+                }
             }
-            link.setProperty(directlinkproperty, Property.NULL);
-            handleDownloadErrors(account, link, false);
-        }
-        /* TODO: Check if this is still required */
-        randomHash(br, link);
-        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
-        // could be directlink
-        dllink = link.getDownloadURL();
-        int counter = 0;
-        final int maxtries = 2;
-        do {
-            logger.info(String.format("Downloadloop %d / %d", counter + 1, maxtries));
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-            if (dl.getConnection().isContentDisposition()) {
-                /* Directurl */
-                logger.info("Seems like user has direct downloads enabled");
-                link.setProperty(directlinkproperty, dllink);
-                dl.startDownload();
-                return;
+            logger.info("Generating new directurl");
+            if (this.useAPI()) {
+                /* 2020-06-24: According to API docs, we should check the file before performing premium-download-API-call! */
+                requestFileInformationApi(link);
+                /* Additional login is not required. */
+                handlePremiumDownloadAPI(link, account);
+            } else {
+                // requestFileInformationWeb(link);
+                fetchAccountInfoWeb(account, false, false);
+                requestFileInformationApi(link);
+                /* 2020-06-24: Not required anymore (?) */
+                // randomHash(br, link);
+                // ajaxPost(br, "https://" + this.getHost() + "/ajax/setCookie.php", "fileId=" + getFUID(link));
+                /* / could be directlink */
+                dllink = link.getDownloadURL();
+                int counter = 0;
+                final int maxtries = 2;
+                do {
+                    logger.info(String.format("Downloadloop %d / %d", counter + 1, maxtries));
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+                    if (isDownloadableContent(dl.getConnection())) {
+                        /* Directurl */
+                        logger.info("Seems like user has direct downloads enabled");
+                        link.setProperty(directlinkproperty, dllink);
+                        dl.startDownload();
+                        return;
+                    }
+                    logger.info("Seems like user has direct downloads disabled or VPN captcha required");
+                    br.followConnection();
+                    handlePremiumVPNWarningCaptcha(link);
+                    counter++;
+                } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
+                handleDownloadErrors(account, link, false);
+                dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href=\"([^\"]+)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
+                }
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+                if (isDownloadableContent(dl.getConnection())) {
+                    link.setProperty(directlinkproperty, dllink);
+                    dl.startDownload();
+                    return;
+                }
+                handleDownloadErrors(account, link, true);
             }
-            logger.info("Seems like user has direct downloads disabled or VPN captcha required");
-            br.followConnection();
-            // not directlink
-            // randomHash(br, link);
-            // ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
-            handlePremiumVPNWarningCaptcha(link);
-            counter++;
-        } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
-        handleDownloadErrors(account, link, false);
-        /* TODO: Test if this is still working! */
-        dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href=\"([^\"]+)\"").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
+        }
+    }
+
+    protected boolean isDownloadableContent(final URLConnectionAdapter con) throws IOException {
+        return con != null && con.isContentDisposition();
+    }
+
+    private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
+        this.getPage(API_BASE + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
+        this.checkErrorsAPI(link, account);
+        this.dllink = PluginJSonUtils.getJson(br, "url");
+        if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-        if (dl.getConnection().isContentDisposition()) {
+        if (isDownloadableContent(dl.getConnection())) {
             link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
             return;
@@ -761,15 +863,9 @@ public class NitroFlareCom extends antiDDoSForHost {
             // I don't see why this would happening logs contain no proxy!
             throw new PluginException(LinkStatus.ERROR_FATAL, err1);
         } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("<p id=\"error\"[^>]+>Your premium has reached the maximum volume for today|>This download exceeds the daily download limit"))) {
-            synchronized (account) {
-                final AccountInfo ai = account.getAccountInfo();
-                ai.setTrafficLeft(0);
-                account.setAccountInfo(ai);
-                account.setTempDisabled(true);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            throw new AccountUnavailableException("Daily downloadlimit reached", 5 * 60 * 1000l);
         } else if (br.containsHTML(">This download exceeds the daily download limit\\. You can purchase")) {
-            // not enough traffic to download THIS file, doesn't mean 0 traffic left.
+            // not enough traffic to download THIS file, doesn't mean zero traffic left.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You do not have enough traffic left to start this download.");
         }
         if (lastChance) {
@@ -783,29 +879,29 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private void throwPremiumRequiredException(DownloadLink link, boolean setProperty) throws PluginException {
+    private void throwPremiumRequiredException(final DownloadLink link, final boolean setProperty) throws PluginException {
         if (setProperty && link != null) {
             link.setProperty("premiumRequired", Boolean.TRUE);
         }
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+    private String checkDirectLink(final DownloadLink link, final String property) {
         if (property != null) {
-            final String dllink = downloadLink.getStringProperty(property);
+            final String dllink = link.getStringProperty(property);
             if (dllink != null) {
                 URLConnectionAdapter con = null;
                 try {
                     final Browser br2 = br.cloneBrowser();
                     br2.setFollowRedirects(true);
                     con = br2.openHeadConnection(dllink);
-                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                        downloadLink.setProperty(property, Property.NULL);
+                    if (!isDownloadableContent(dl.getConnection())) {
+                        link.setProperty(property, Property.NULL);
                     } else {
                         return dllink;
                     }
                 } catch (final Exception e) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                 } finally {
                     try {
                         con.disconnect();
@@ -859,14 +955,15 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        if (link != null) {
-            link.setProperty("apiInfo", Property.NULL);
-            link.setProperty("freelink2", Property.NULL);
-            link.setProperty("freelink", Property.NULL);
-            link.setProperty("premlink", Property.NULL);
-            link.setProperty("premiumRequired", Property.NULL);
-            link.setProperty("passwordRequired", Property.NULL);
-        }
+        /* 2020-06-24: Do NOT reset these properties anymore! */
+        // if (link != null) {
+        // link.setProperty("apiInfo", Property.NULL);
+        // link.setProperty("freelink2", Property.NULL);
+        // link.setProperty("freelink", Property.NULL);
+        // link.setProperty("premlink", Property.NULL);
+        // link.setProperty("premiumRequired", Property.NULL);
+        // link.setProperty("passwordRequired", Property.NULL);
+        // }
     }
 
     private String  dllink             = null;
@@ -881,15 +978,12 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
+        if (acc == null || acc.getType() == AccountType.FREE) {
+            /* no account and free account, yes we can expect captcha */
             return true;
+        } else {
+            return false;
         }
-        if (acc.getType() == AccountType.FREE) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 
     public boolean hasAutoCaptcha() {
@@ -897,9 +991,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     @Override
-    protected void runPostRequestTask(final Browser ibr) throws PluginException {
-        if (ibr.containsHTML(">OUR WEBSITE IS UNDER CONSTRUCTION</strong>")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
-        }
+    public Class<NitroflareConfig> getConfigInterface() {
+        return NitroflareConfig.class;
     }
 }
