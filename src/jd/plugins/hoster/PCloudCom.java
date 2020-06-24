@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -22,6 +21,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -45,11 +46,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public PCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,25 +60,19 @@ public class PCloudCom extends PluginForHost {
         return "https://my.pcloud.com/#page=policies&tab=terms-of-service";
     }
 
-    /* Linktypes */
-    private static final String  TYPE_OLD                                        = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
-
     private static final String  MAINPAGE                                        = "http://pcloud.com";
     private static final String  NICE_HOST                                       = "pcloud.com";
     private static final String  NICE_HOSTproperty                               = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String  NOCHUNKS                                        = NICE_HOSTproperty + "NOCHUNKS";
-
     /* Plugin Settings */
     private static final String  DOWNLOAD_ZIP                                    = "DOWNLOAD_ZIP_2";
     private static final String  MOVE_FILES_TO_ACCOUNT                           = "MOVE_FILES_TO_ACCOUNT";
     private static final String  DELETE_FILE_AFTER_DOWNLOADLINK_CREATION         = "DELETE_FILE_AFTER_DOWNLOADLINK_CREATION";
     private static final String  DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION = "DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION";
     private static final String  EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION         = "EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION";
-
     /* Errorcodes */
     private static final long    ERROR_OKAY                                      = 0;
     private static final long    ERROR_PREMIUMONLY                               = 7005;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                                     = true;
     private static final int     FREE_MAXCHUNKS                                  = 0;
@@ -88,11 +80,8 @@ public class PCloudCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME                             = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS                          = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS                       = 20;
-
     private int                  statuscode                                      = 0;
-
     /* don't touch the following! */
-
     private static Object        LOCK                                            = new Object();
     private String               account_auth                                    = null;
 
@@ -102,23 +91,21 @@ public class PCloudCom extends PluginForHost {
         final String code = getCODE(link);
         final String fileid = getFID(link);
         /* Links before big change */
-        if (link.getDownloadURL().matches(TYPE_OLD)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (link.getBooleanProperty("offline", false)) {
+        if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         prepBR();
         if (isCompleteFolder(link)) {
-            br.getPage("http://api.pcloud.com/showpublink?code=" + code);
+            br.getPage("https://api.pcloud.com/showpublink?code=" + code);
             this.updatestatuscode();
-            if (this.statuscode == 7002) {
+            if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
             br.getPage("https://api.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
             this.updatestatuscode();
-            if (this.statuscode == 7002) {
+            if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
@@ -136,8 +123,8 @@ public class PCloudCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (this.statuscode == ERROR_PREMIUMONLY) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -148,7 +135,7 @@ public class PCloudCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
         }
-        doFree(downloadLink);
+        doFree(link);
     }
 
     public void doFree(final DownloadLink link) throws Exception, PluginException {
@@ -544,7 +531,6 @@ public class PCloudCom extends PluginForHost {
     // handleAPIErrors(this.br);
     // return this.br.toString();
     // }
-
     /**
      * 0 = everything ok, 2000-??? = Normal "result" API errorcodes, 666 = hell
      */
@@ -579,5 +565,4 @@ public class PCloudCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
