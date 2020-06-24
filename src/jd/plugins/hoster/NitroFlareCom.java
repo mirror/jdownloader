@@ -447,8 +447,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
         if (br.containsHTML("This file is available with premium key only|This file is available with Premium only")) {
             throwPremiumRequiredException(this.getDownloadLink(), false);
-        }
-        if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
+        } else if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
             if (PluginJsonConfig.get(NitroflareConfig.class).isAllowMultipleFreeDownloads()) {
                 /* We do not know exactly when the next free download is possible so let's try every 20 minutes. */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l);
@@ -462,8 +461,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-        }
-        if (StringUtils.startsWithCaseInsensitive(br.toString(), "﻿Free download is currently unavailable due to overloading in the server. <br>Please try again later")) {
+        } else if (StringUtils.startsWithCaseInsensitive(br.toString(), "﻿Free download is currently unavailable due to overloading in the server")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Free download Overloaded, will try again later", 5 * 60 * 1000l);
         }
     }
@@ -956,14 +954,14 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         /* 2020-06-24: Do NOT reset these properties anymore! */
-        // if (link != null) {
-        // link.setProperty("apiInfo", Property.NULL);
-        // link.setProperty("freelink2", Property.NULL);
-        // link.setProperty("freelink", Property.NULL);
-        // link.setProperty("premlink", Property.NULL);
-        // link.setProperty("premiumRequired", Property.NULL);
-        // link.setProperty("passwordRequired", Property.NULL);
-        // }
+        if (link != null) {
+            // link.setProperty("apiInfo", Property.NULL);
+            // link.setProperty("freelink2", Property.NULL);
+            // link.setProperty("freelink", Property.NULL);
+            // link.setProperty("premlink", Property.NULL);
+            link.setProperty("premiumRequired", Property.NULL);
+            // link.setProperty("passwordRequired", Property.NULL);
+        }
     }
 
     private String  dllink             = null;
