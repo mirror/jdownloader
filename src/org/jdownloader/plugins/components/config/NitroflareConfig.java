@@ -31,9 +31,17 @@ public interface NitroflareConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Use API for account check and premium downloading [recommended]?")
+    @DescriptionForConfigEntry("Use API for account check and premium account downloading [recommended]?")
     @Order(30)
     boolean isUsePremiumAPIEnabled();
 
     void setUsePremiumAPIEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Use API for free- and free account downloading?")
+    @Order(40)
+    boolean isUseFreeAPIEnabled();
+
+    void setUseFreeAPIEnabled(boolean b);
 }

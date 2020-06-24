@@ -56,7 +56,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/([A-Z0-9]+)" })
 public class NitroFlareCom extends antiDDoSForHost {
-    private final String         language = System.getProperty("user.language");
     private final String         baseURL  = "https://nitroflare.com";
     /* Documentation: https://nitroflare.com/member?s=api */
     private final String         API_BASE = "http://nitroflare.com/api/v2";
@@ -75,8 +74,12 @@ public class NitroFlareCom extends antiDDoSForHost {
      * @return true: Use API for account login and premium downloading </br>
      *         false: Use website for everything (except linkcheck)
      */
-    private boolean useAPI() {
+    private boolean useAPIAccountMode() {
         return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
+    }
+
+    private boolean useAPIFreeMode() {
+        return PluginJsonConfig.get(NitroflareConfig.class).isUseFreeAPIEnabled();
     }
 
     @Override
@@ -181,7 +184,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     if (atLeastOneDL) {
                         sb.append(",");
                     }
-                    sb.append(getFUID(dl));
+                    sb.append(getFID(dl));
                     atLeastOneDL = true;
                 }
                 getPage(br, API_BASE + "/getFileInfo?" + sb);
@@ -193,7 +196,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     return true;
                 }
                 for (final DownloadLink dl : links) {
-                    final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?\\})").getMatch(0);
+                    final String filter = br.getRegex("(\"" + getFID(dl) + "\":\\{.*?\\})").getMatch(0);
                     if (filter == null) {
                         dl.setProperty("apiInfo", Property.NULL);
                         okay = false;
@@ -286,7 +289,6 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private final void doFree(final Account account, final DownloadLink link) throws Exception {
-        /* TODO: Implement free download via API: https://nitroflare.com/member?s=general-api */
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -297,95 +299,140 @@ public class NitroFlareCom extends antiDDoSForHost {
         br = new Browser();
         dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            if (br.getURL() == null) {
-                requestFileInformationWeb(link);
-            }
-            handleErrors(br, false);
-            randomHash(br, link);
-            ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
-            {
-                int i = 0;
-                while (true) {
-                    // lets add some randomisation between submitting gotofreepage
-                    sleep((new Random().nextInt(5) + 8) * 1000l, link);
-                    // first post registers time value
-                    postPage(br.getURL(), "goToFreePage=");
-                    randomHash(br, link);
-                    ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(link));
-                    if (br.getURL().endsWith("/free")) {
-                        break;
-                    } else if (++i > 3) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        continue;
+            if (useAPIFreeMode()) {
+                /* API mode */
+                this.getPage(this.API_BASE + "/getDownloadLink?file=" + Encoding.urlEncode(this.getFID(link)));
+                this.checkErrorsAPI(link, account);
+                final String waittime = PluginJSonUtils.getJson(br, "delay");
+                final String reCaptchaKey = PluginJSonUtils.getJson(br, "recaptchaPublic");
+                String accessLink = PluginJSonUtils.getJson(br, "accessLink");
+                if (StringUtils.isEmpty(waittime) || StringUtils.isEmpty(reCaptchaKey)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error in free download step 1");
+                }
+                long wait = Long.parseLong(waittime) * 1000l;
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey);
+                final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
+                final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
+                if (wait > reCaptchaV2Timeout) {
+                    final long prePrePreDownloadWait = wait - reCaptchaV2Timeout;
+                    logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                    logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+                    this.sleep(prePrePreDownloadWait, link);
+                }
+                final String c = rc2.getToken();
+                if (inValidate(c)) {
+                    // fixes timeout issues or client refresh, we have no idea at this stage
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                // remove one second from past, to prevent returning too quickly.
+                final long passedTime = (System.currentTimeMillis() - timestampBeforeCaptchaSolving) - 1500;
+                wait -= passedTime;
+                if (wait > 0) {
+                    logger.info("Pre- download waittime seconds: " + (wait / 1000));
+                    sleep(wait, link);
+                } else {
+                    logger.info("Congratulation: Captcha solving took so long that we do not have to wait at all");
+                }
+                accessLink += "&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c);
+                /* 2020-06-24: TODO: This would always return "Invalid captcha"?! */
+                this.getPage(accessLink);
+                this.checkErrorsAPI(link, account);
+                this.dllink = PluginJSonUtils.getJson(br, "url");
+                if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error in free download step 2");
+                }
+            } else {
+                /* Website mode */
+                if (br.getURL() == null) {
+                    requestFileInformationWeb(link);
+                }
+                handleErrors(br, false);
+                randomHash(br, link);
+                ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFID(link));
+                {
+                    int i = 0;
+                    while (true) {
+                        // lets add some randomisation between submitting gotofreepage
+                        sleep((new Random().nextInt(5) + 8) * 1001l, link);
+                        // first post registers time value
+                        postPage(br.getURL(), "goToFreePage=");
+                        randomHash(br, link);
+                        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFID(link));
+                        if (br.getURL().endsWith("/free")) {
+                            break;
+                        } else if (++i > 3) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            continue;
+                        }
                     }
                 }
-            }
-            ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(link));
-            handleErrors(ajax, false);
-            final long t = System.currentTimeMillis();
-            final String waitStr = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
-            // register wait i guess, it should return 1
-            final int repeat = 5;
-            for (int i = 1; i <= repeat; i++) {
-                if (br.containsHTML("plugins/cool-captcha/captcha.php")) {
-                    final String captchaCode = getCaptchaCode(br.getURL("/plugins/cool-captcha/captcha.php").toString(), link);
-                    if (i == 1) {
+                ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFID(link));
+                handleErrors(ajax, false);
+                final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
+                final String waitStr = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
+                // register wait i guess, it should return 1
+                final int repeat = 5;
+                for (int i = 1; i <= repeat; i++) {
+                    if (br.containsHTML("plugins/cool-captcha/captcha.php")) {
+                        final String captchaCode = getCaptchaCode(br.getURL("/plugins/cool-captcha/captcha.php").toString(), link);
+                        if (i == 1) {
+                            long wait = 60;
+                            if (waitStr != null) {
+                                // remove one second from past, to prevent returning too quickly.
+                                final long passedTime = ((System.currentTimeMillis() - timestampBeforeCaptchaSolving) / 1000) - 1;
+                                wait = Long.parseLong(waitStr) - passedTime;
+                            }
+                            if (wait > 0) {
+                                sleep(wait * 1000l, link);
+                            }
+                        }
+                        ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
+                    } else {
+                        final int firstLoop = 1;
                         long wait = 60;
                         if (waitStr != null) {
+                            wait = Long.parseLong(waitStr) * 1000l;
+                        }
+                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
+                        if (i == firstLoop && wait > reCaptchaV2Timeout) {
+                            final int prePrePreDownloadWait = (int) (wait - reCaptchaV2Timeout);
+                            logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                            logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+                            this.sleep(prePrePreDownloadWait, link);
+                        }
+                        final String c = rc2.getToken();
+                        if (inValidate(c)) {
+                            // fixes timeout issues or client refresh, we have no idea at this stage
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        if (i == firstLoop) {
                             // remove one second from past, to prevent returning too quickly.
-                            final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
-                            wait = Long.parseLong(waitStr) - passedTime;
+                            final long passedTime = (System.currentTimeMillis() - timestampBeforeCaptchaSolving) - 1500;
+                            wait -= passedTime;
+                            if (wait > 0) {
+                                sleep(wait, link);
+                            } else {
+                                logger.info("Congratulation: Captcha solving took so long that we do not have to wait at all");
+                            }
                         }
-                        if (wait > 0) {
-                            sleep(wait * 1000l, link);
+                        ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c));
+                    }
+                    if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
+                        if (i + 1 == repeat) {
+                            logger.info("Exhausted captcha attempts");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
+                        continue;
                     }
-                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(captchaCode));
-                } else {
-                    final int firstLoop = 1;
-                    long wait = 60;
-                    if (waitStr != null) {
-                        wait = Long.parseLong(waitStr) * 1001l;
-                    }
-                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                    final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
-                    if (i == firstLoop && wait > reCaptchaV2Timeout) {
-                        final int prePrePreDownloadWait = (int) (wait - reCaptchaV2Timeout);
-                        logger.info("Waittime is higher than reCaptchaV2 timeout --> Waiting a part of it before solving captcha to avoid timeouts");
-                        logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
-                        this.sleep(prePrePreDownloadWait, link);
-                    }
-                    final String c = rc2.getToken();
-                    if (inValidate(c)) {
-                        // fixes timeout issues or client refresh, we have no idea at this stage
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    if (i == firstLoop) {
-                        // remove one second from past, to prevent returning too quickly.
-                        final long passedTime = (System.currentTimeMillis() - t) - 1500;
-                        wait -= passedTime;
-                        if (wait > 0) {
-                            sleep(wait, link);
-                        } else {
-                            logger.info("Congratulation: Captcha solving took so long that we do not have to wait at all");
-                        }
-                    }
-                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c));
+                    break;
                 }
-                if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
-                    if (i + 1 == repeat) {
-                        logger.info("Exhausted captcha attempts");
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    continue;
+                dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    handleErrors(ajax, true);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                break;
-            }
-            dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                handleErrors(ajax, true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
@@ -483,6 +530,7 @@ public class NitroFlareCom extends antiDDoSForHost {
      * @return
      * @throws PluginException
      */
+    @Deprecated
     private String validateAccount(final Account account) throws PluginException {
         synchronized (account) {
             final String user = account.getUser().toLowerCase(Locale.ENGLISH);
@@ -512,7 +560,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (useAPI()) {
+        if (useAPIAccountMode()) {
             return fetchAccountInfoAPI(account);
         } else {
             return fetchAccountInfoWeb(account, false, true);
@@ -532,7 +580,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         br.setCookies(cookies);
                         // lets do a test
                         final Browser br2 = br.cloneBrowser();
-                        getPage(br2, "https://www.nitroflare.com/");
+                        getPage(br2, "https://www." + this.getHost());
                         if (br2.containsHTML(">\\s*Your password has expired") || br2.containsHTML(">\\s*Change Password\\s*<")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
@@ -553,7 +601,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     fullLogin = true;
                 }
                 if (fullLogin) {
-                    getPage("https://nitroflare.com/login");
+                    getPage("https://" + this.getHost() + "/login");
                     Form f = null;
                     for (int retry = 0; retry < 3; retry++) {
                         f = br.getFormbyProperty("id", "login");
@@ -592,7 +640,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                 }
                 final AccountInfo ai = new AccountInfo();
-                getPage("https://nitroflare.com/member?s=premium");
+                getPage("https://" + this.getHost() + "/member?s=premium");
                 // status
                 final String status = br.getRegex("<label>Status</label><strong[^>]+>\\s*([^<]+)\\s*</strong>").getMatch(0);
                 if (!inValidate(status)) {
@@ -705,15 +753,23 @@ public class NitroFlareCom extends antiDDoSForHost {
             msg = (String) entries.get("message");
             errorcode = ((Number) entries.get("code")).intValue();
         } catch (final Throwable e) {
-            logger.log(e);
+            // logger.log(e);
         }
         switch (errorcode) {
         case -1:
             /* No error */
             break;
+        case 1:
+            /* {"type":"error","message":"Access denied","code":1} */
+            /* File is premiumonly */
+            throw new AccountRequiredException();
         case 4:
             /* {"type":"error","message":"File doesn't exist","code":4} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case 6:
+            /* {"type":"error","message":"Invalid captcha","code":6} */
+            /* This should rarely/never happen!! */
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         case 8:
             /* Invalid logindata */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -759,7 +815,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
             }
             logger.info("Generating new directurl");
-            if (this.useAPI()) {
+            if (this.useAPIAccountMode()) {
                 /* 2020-06-24: According to API docs, we should check the file before performing premium-download-API-call! */
                 requestFileInformationApi(link);
                 /* Additional login is not required. */
@@ -969,11 +1025,6 @@ public class NitroFlareCom extends antiDDoSForHost {
     private int     chunks             = 0;
     private boolean resumes            = true;
     private boolean isFree             = true;
-
-    private String getFUID(DownloadLink downloadLink) {
-        final String fuid = new Regex(downloadLink.getDownloadURL(), "nitroflare\\.com/view/([A-Z0-9]+)").getMatch(0);
-        return fuid;
-    }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null || acc.getType() == AccountType.FREE) {
