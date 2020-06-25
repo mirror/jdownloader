@@ -49,6 +49,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
@@ -100,17 +101,32 @@ public class ChoMikujPl extends antiDDoSForHost {
         return requestFileInformation(link, null, false);
     }
 
+    private String getMainlink(final DownloadLink link) {
+        String mainlink = link.getStringProperty("mainlink", null);
+        if (mainlink == null) {
+            /* 2020-02-27 */
+            mainlink = link.getContentUrl();
+        }
+        return mainlink;
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
+        final String mainlink = getMainlink(link);
+        if (mainlink != null) {
+            return mainlink;
+        } else {
+            return super.buildExternalDownloadURL(link, buildForThisPlugin);
+        }
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         serverIssue = false;
         premiumonly = false;
         plus18 = false;
         br.setFollowRedirects(true);
         final String fid = getFID(link);
-        String mainlink = link.getStringProperty("mainlink", null);
-        if (mainlink == null) {
-            /* 2020-02-27 */
-            mainlink = link.getContentUrl();
-        }
+        final String mainlink = getMainlink(link);
         if (fid == null) {
             /* This should never happen! */
             logger.info("Failed to find fileid");

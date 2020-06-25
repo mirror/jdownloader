@@ -147,13 +147,12 @@ public class SeedrCc extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
@@ -161,16 +160,34 @@ public class SeedrCc extends PluginForHost {
                     br.postPage("https://www." + this.getHost() + "/content.php?action=get_settings", "");
                     if (isLoggedIn(br)) {
                         /* Save new cookie timestamp */
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
-                    br = new Browser();
+                    br.clearAll();
+                }
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    br.setCookies(userCookies);
+                    br.postPage("https://www." + this.getHost() + "/content.php?action=get_settings", "");
+                    if (isLoggedIn(br)) {
+                        /* Save new cookie timestamp */
+                        logger.info("User Cookie login successful");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    } else {
+                        logger.info("User Cookie login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 if (dlinkbefore == null) {
                     this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                 }
                 br.getPage("https://www." + this.getHost());
+                if (br.containsHTML("hcaptcha\\.com/") || br.containsHTML("class=\"h-captcha\"")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported captcha type 'hcaptcha', see: board.jdownloader.org/showthread.php?t=83712", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 String reCaptchaKey;
                 /*
                  * 2019-06-06: Use static key because website contains two keys - one for registration and one for login! Using the wrong

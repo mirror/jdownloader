@@ -23,11 +23,13 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -40,14 +42,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     private static List<String[]> getPluginDomains() {
@@ -72,30 +72,6 @@ public class XvideosCom extends PluginForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video\\d+/.*|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)");
         }
         return ret.toArray(new String[0]);
-    }
-
-    private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
-    private static final boolean default_allow_multihoster_usage = false;
-
-    private void setConfigElements() {
-        String user_text;
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            user_text = "Erlaube den Download von Links dieses Anbieters über Multihoster (nicht empfohlen)?\r\n<html><b>Kann die Anonymität erhöhen, aber auch die Fehleranfälligkeit!</b>\r\nAktualisiere deine(n) Multihoster Account(s) nach dem Aktivieren dieser Einstellung um diesen Hoster in der Liste der unterstützten Hoster deines/r Multihoster Accounts zu sehen (sofern diese/r ihn unterstützen).</html>";
-        } else {
-            user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
-        }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Prefer HLS", "Prefer HLS?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_FAST_LINKCHECK", "Enable fast linkcheck for profile crawler?").setDefaultValue(true));
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
-            return true;
-        } else {
-            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-        }
     }
 
     @Override
@@ -232,21 +208,35 @@ public class XvideosCom extends PluginForHost {
         } else {
             filename = videoID + "_" + filename;
         }
-        if (getPluginConfig().getBooleanProperty("Prefer HLS", true)) {
+        if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
             final String hlsURL = getVideoHLS();
             if (StringUtils.isNotEmpty(hlsURL)) {
                 final Browser m3u8 = br.cloneBrowser();
                 m3u8.getPage(hlsURL);
-                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(m3u8));
-                if (hlsbest != null) {
-                    if (Thread.currentThread() instanceof SingleDownloadController) {
-                        hlsContainer = hlsbest;
+                final int preferredHLSQuality = getPreferredHLSQuality();
+                HlsContainer selectedQuality = null;
+                final List<HlsContainer> hlsqualities = HlsContainer.getHlsQualities(m3u8);
+                for (final HlsContainer currentQuality : hlsqualities) {
+                    final int width = currentQuality.getHeight();
+                    if (width == preferredHLSQuality) {
+                        logger.info("Found user selected HLS quality: " + preferredHLSQuality);
+                        selectedQuality = currentQuality;
+                        break;
                     }
-                    final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), m3u8);
+                }
+                if (selectedQuality == null) {
+                    logger.info("Failed to find user-selected HLS quality --> Fallback to BEST");
+                    selectedQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
+                }
+                if (selectedQuality != null) {
+                    if (Thread.currentThread() instanceof SingleDownloadController) {
+                        this.hlsContainer = selectedQuality;
+                    }
+                    final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(selectedQuality.getDownloadurl(), m3u8);
                     long estimatedSize = -1;
                     for (M3U8Playlist playList : playLists) {
-                        if (hlsbest.getBandwidth() > 0) {
-                            playList.setAverageBandwidth(hlsbest.getBandwidth());
+                        if (selectedQuality.getBandwidth() > 0) {
+                            playList.setAverageBandwidth(selectedQuality.getBandwidth());
                             estimatedSize += playList.getEstimatedSize();
                         }
                     }
@@ -259,13 +249,24 @@ public class XvideosCom extends PluginForHost {
                 }
             }
         }
-        String videoURL = getVideoHigh();
-        if (!isValidVideoURL(link, videoURL)) {
+        String videoURL = null;
+        final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
+        if (qualityhttp == PreferredHTTPQuality.HIGH) {
+            videoURL = getVideoHigh();
+        } else {
             videoURL = getVideoLow();
+        }
+        if (videoURL == null) {
+            /* Fallback / try to find BEST */
+            logger.info("Failed to find selected http quality");
+            videoURL = getVideoHigh();
             if (!isValidVideoURL(link, videoURL)) {
-                videoURL = getVideoFlv();
+                videoURL = getVideoLow();
                 if (!isValidVideoURL(link, videoURL)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    videoURL = getVideoFlv();
+                    if (!isValidVideoURL(link, videoURL)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
             }
         }
@@ -367,6 +368,33 @@ public class XvideosCom extends PluginForHost {
             i++;
         }
         return calculated;
+    }
+
+    private PreferredHTTPQuality getPreferredHTTPQuality() {
+        return PluginJsonConfig.get(XvideosComConfig.class).getPreferredHTTPQuality();
+    }
+
+    private int getPreferredHLSQuality() {
+        PreferredHLSQuality preferredHLSQuality = PluginJsonConfig.get(XvideosComConfig.class).getPreferredHLSQuality();
+        switch (preferredHLSQuality) {
+        default:
+            return -1;
+        case Q360P:
+            return 360;
+        case Q480P:
+            return 480;
+        case Q720P:
+            return 720;
+        case Q1080P:
+            return 1080;
+        case Q2160P:
+            return 2160;
+        }
+    }
+
+    @Override
+    public Class<XvideosComConfig> getConfigInterface() {
+        return XvideosComConfig.class;
     }
 
     @Override

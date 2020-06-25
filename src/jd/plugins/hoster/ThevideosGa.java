@@ -43,7 +43,8 @@ public class ThevideosGa extends antiDDoSForHost {
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    /* 2020-06-25: Using multiple chunks can cause broken files according to some forum bugreports. */
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;

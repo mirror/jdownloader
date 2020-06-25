@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -96,7 +98,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         short pageNum = 0;
         int decryptedLinksNum;
-        final boolean fast_linkcheck = getPluginConfig().getBooleanProperty("ENABLE_FAST_LINKCHECK", true);
+        final boolean fast_linkcheck = PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForProfileCrawler();
         do {
             logger.info(String.format("Decrypting page %d", pageNum));
             decryptedLinksNum = 0;
