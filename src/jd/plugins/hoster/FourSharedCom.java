@@ -56,7 +56,6 @@ public class FourSharedCom extends PluginForHost {
     public final String                    PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
     private final String                   PASSWORDTEXT                              = "enter a password to access";
     private final String                   COOKIE_HOST                               = "http://4shared.com";
-    private static Object                  LOCK                                      = new Object();
     private static final boolean           TRY_FAST_FREE                             = true;
     private static final String            type_api_direct                           = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+";
     private static AtomicReference<String> agent                                     = new AtomicReference<String>();
@@ -506,8 +505,8 @@ public class FourSharedCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 /** Load everything required login and fetchAccountInfo also! */
                 br.setCookiesExclusive(true);
@@ -577,11 +576,7 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         if (true) {
             // they are not respecting the english cookie, they revert to account preferences once logged in!. plugin will fail if not
             // English!

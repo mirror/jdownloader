@@ -29,6 +29,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -54,14 +62,6 @@ import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((/config\\?|\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -356,8 +356,19 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     final String json = getJsonFromHTML(this.br);
                     final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                    if (entries.containsKey("vimeo_esi")) {
-                        /* E.g. 'review' URLs */
+                    if (!StringUtils.isEmpty(PluginJSonUtils.getJson(json, "reviewHash"))) {
+                        /* E.g. 'review' URLs (new handling 2020-06-25) */
+                        final LinkedHashMap<String, Object> root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                        final LinkedHashMap<String, Object> clipData = (LinkedHashMap<String, Object>) root.get("clipData");
+                        title = (String) clipData.get("title");
+                        if (StringUtils.isEmpty(unlistedHash)) {
+                            unlistedHash = (String) clipData.get("unlistedHash");
+                        }
+                        if (StringUtils.isEmpty(reviewHash)) {
+                            reviewHash = (String) clipData.get("reviewHash");
+                        }
+                    } else if (entries.containsKey("vimeo_esi")) {
+                        /* E.g. 'review' URLs (old handling) */
                         final LinkedHashMap<String, Object> clipData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
                         final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clipData.get("user");
                         title = (String) clipData.get("title");
