@@ -50,7 +50,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(120)
-    @SpinnerValidator(min = 1, max = 1200, step = 1)
+    @SpinnerValidator(min = 1, max = 300, step = 1)
     @Order(50)
     @DescriptionForConfigEntry("Define custom browser read-timeout (seconds)")
     int getReadTimeout();

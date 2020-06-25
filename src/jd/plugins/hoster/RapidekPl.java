@@ -50,7 +50,7 @@ import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidek.pl" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidek.pl", "rapidekshare.com" }, urls = { "", "" })
 public class RapidekPl extends PluginForHost {
     private static final String          API_BASE                     = "https://rapidek.pl/api";
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("rapidek.pl");
