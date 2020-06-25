@@ -76,7 +76,7 @@ public class FilesFmFolder extends PluginForDecrypt {
             }
         }
         String[] links = br.getRegex("id=\"report_[^\"]+\".*?class=\"OrderID\"").getColumn(-1);
-        if (links == null || links.length == 0 || true) {
+        if (links == null || links.length == 0) {
             if (folders != null && folders.length > 0) {
                 return decryptedLinks;
             }
