@@ -17,6 +17,12 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,8 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  *
@@ -43,17 +48,37 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-06-25: Too many requests can lead to failures */
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         getPage(parameter);
-        final String title = br.getRegex("id\\s*=\\s*\"info\"\\s*>\\s*<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
-        final String fpName;
-        if (title == null) {
-            fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
-        } else {
-            fpName = title;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String title = null;
+        try {
+            String json = br.getRegex("JSON\\.parse\\(\"(\\{.*?)\"\\);").getMatch(0);
+            json = PluginJSonUtils.unescape(json);
+            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> titles = (Map<String, Object>) entries.get("title");
+            title = br.getRegex("id\\s*=\\s*\"info\"\\s*>\\s*<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
+            title = (String) titles.get("english");
+            if (StringUtils.isEmpty(title)) {
+                title = (String) titles.get("english");
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        if (StringUtils.isEmpty(title)) {
+            /* Fallback */
+            title = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
+        }
+        title = Encoding.htmlDecode(title);
         // images
         final String[] imgs = br.getRegex("class\\s*=\\s*\"gallerythumb\"\\s*href\\s*=\\s*\"/g/\\d+/\\d+/?\"[^<]*?<img\\s*(?:is=\"[^\"]*lazyload-image[^\"]*\")?\\s*class\\s*=\\s*\"[^\"]*lazyload[^\"]*\"[^>]+data-src\\s*=\\s*\"(.*?)\"").getColumn(0);
         if (imgs == null || imgs.length == 0) {
@@ -70,7 +95,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.setName(title);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

@@ -33,13 +33,17 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,7 +54,7 @@ import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidek.pl", "rapidekshare.com" }, urls = { "", "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidek.pl", "rapidekshare.com" }, urls = { "https?://rapidek\\.pl/file\\?id=([a-f0-9]{32})", "https?://rapidekshare\\.com/file\\?id=([a-f0-9]{32})" })
 public class RapidekPl extends PluginForHost {
     private static final String          API_BASE                     = "https://rapidek.pl/api";
     private static MultiHosterManagement mhm                          = new MultiHosterManagement("rapidek.pl");
@@ -77,18 +81,63 @@ public class RapidekPl extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        // return AvailableStatus.UNCHECKABLE;
+        /*
+         * 2020-06-25: Login required to check/download pre-generated directurls --> Return all as TRUE --> They will get checked in
+         * handlePremium
+         */
+        final String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        link.setName(fid);
+        link.setLinkID(this.getHost() + fid);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account == null) {
+            logger.info("Cannot check links without account");
+            return AvailableStatus.TRUE;
+        }
+        this.loginAPI(account, false);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (con.isContentDisposition()) {
+                link.setFinalFileName(getFileNameFromDispositionHeader(con));
+                link.setDownloadSize(con.getCompleteContentLength());
+            } else {
+                br.followConnection();
+                if (br.getURL().contains("downloadRequestInvalidKey")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (br.getURL().contains("authDownloadRequest")) {
+                    throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        this.loginAPI(account, false);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), account_PREMIUM_resume, account_PREMIUM_maxchunks);
+        if (!dl.getConnection().isContentDisposition()) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+        }
+        dl.startDownload();
     }
 
     @Override
