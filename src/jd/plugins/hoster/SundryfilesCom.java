@@ -113,4 +113,10 @@ public class SundryfilesCom extends YetiShareCore {
         }
         return continueurl;
     }
+
+    @Override
+    public boolean requires_WWW() {
+        /* 2020-06-25 */
+        return false;
+    }
 }

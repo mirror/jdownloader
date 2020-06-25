@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -26,11 +28,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:\\w+\\.)?files\\.fm/u/[a-z0-9]+" })
 public class FilesFmFolder extends PluginForDecrypt {
@@ -53,6 +55,10 @@ public class FilesFmFolder extends PluginForDecrypt {
             /* 2017-01-30: Empty folder */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML("list_private_upload_msg")) {
+            /* 2020-06-25: Private file which only the owner can access */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         } else if (this.br.containsHTML("name=\"upl_passw\"")) {
             /* 2017-01-30: Password protected */
             logger.info("Password protected urls are not yet supported");
@@ -69,13 +75,11 @@ public class FilesFmFolder extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(contentUrl));
             }
         }
-        String[] links = br.getRegex("class=\"overlay\\-bg\"(.*?)class=\"OrderID\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        String[] links = br.getRegex("id=\"report_[^\"]+\".*?class=\"OrderID\"").getColumn(-1);
+        if (links == null || links.length == 0 || true) {
             if (folders != null && folders.length > 0) {
                 return decryptedLinks;
             }
-            // this picks up folders... and incorrectly as files
-            links = br.getRegex("class=\"file\\-icon\"(.*?)class=\"OrderID\"").getColumn(0);
         }
         if (links == null || links.length == 0) {
             if (new Regex(br.getURL(), hostplg.getSupportedLinks()).matches()) {
@@ -87,11 +91,16 @@ public class FilesFmFolder extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            final String filename = new Regex(singleLink, "\\&n=([^<>\"']+)").getMatch(0);
+            String filename = new Regex(singleLink, "class=\"full-file-name\">([^<>\"]+)<").getMatch(0);
+            final String ext = new Regex(singleLink, "class=\"filename-extension\"[^>]*>([^<>\"]+)<").getMatch(0);
             final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)<").getMatch(0);
             final String fileid = new Regex(singleLink, "(?:\\?|&)i=([a-z0-9]+)").getMatch(0);
             if (filename == null || filesize == null || fileid == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename);
+            if (!filename.endsWith(ext)) {
+                filename += ext;
             }
             final String contentUrl = Request.getLocation("/down.php?i=" + fileid + "&n=" + filename, br.getRequest());
             final DownloadLink dl = createDownloadlink(contentUrl);

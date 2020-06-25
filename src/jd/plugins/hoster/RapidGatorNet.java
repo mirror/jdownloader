@@ -32,9 +32,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -53,30 +62,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://rapidgator.net/article/premium");
-        this.setConfigElements();
     }
 
     private static final String            MAINPAGE                                   = "https://rapidgator.net/";
     private static final String            PREMIUMONLYTEXT                            = "This file can be downloaded by premium only</div>";
-    private final String                   EXPERIMENTALHANDLING                       = "EXPERIMENTALHANDLING";
-    private final String                   EXPERIMENTAL_ENFORCE_SSL                   = "EXPERIMENTAL_ENFORCE_SSL";
-    private final String                   DISABLE_API_PREMIUM                        = "DISABLE_API_PREMIUM_23_03_2020";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
@@ -203,7 +198,8 @@ public class RapidGatorNet extends antiDDoSForHost {
              * 2020-04-09: According to user he has timeout issues which do not happen in browser thus let's test a higher readtimeout:
              * https://board.jdownloader.org/showthread.php?t=83764
              */
-            prepBr.setReadTimeout(2 * 60 * 1000);
+            final int customReadTimeoutSeconds = PluginJsonConfig.get(RapidGatorConfig.class).getReadTimeout();
+            prepBr.setReadTimeout(customReadTimeoutSeconds * 60 * 1000);
             prepBr.setConnectTimeout(1 * 60 * 1000);
             // for the api
             prepBr.addAllowedResponseCodes(401, 402, 501, 423);
@@ -231,7 +227,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         correctDownloadLink(link);
         setBrowserExclusive();
         br.setFollowRedirects(false);
-        final String custom_referer = this.getPluginConfig().getStringProperty("CUSTOM_REFERER", null);
+        final String custom_referer = PluginJsonConfig.get(RapidGatorConfig.class).getReferer();
         if (!StringUtils.isEmpty(custom_referer)) {
             /*
              * 2019-12-14: According to users, some special Referer will remove the captcha in free mode (I was unable to confirm) and lower
@@ -332,7 +328,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         } else {
             finalDownloadURL = checkDirectLink(link, account);
             if (StringUtils.isEmpty(finalDownloadURL)) {
-                final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
+                final boolean useExperimentalHandling = PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling();
                 if (useExperimentalHandling) {
                     logger.info("New Download: currentIP = " + currentIP);
                     if (ipChanged(currentIP, link) == false) {
@@ -518,7 +514,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
+            if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
                 finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
             }
             // 27.05.2020, rapidgator now advertises that it doesn't support resume for free accounts
@@ -691,10 +687,10 @@ public class RapidGatorNet extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         synchronized (account) {
-            if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
-                return fetchAccountInfo_web(account, ai);
-            } else {
+            if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
                 return fetchAccountInfo_api(account, ai);
+            } else {
+                return fetchAccountInfo_web(account, ai);
             }
         }
     }
@@ -1036,14 +1032,8 @@ public class RapidGatorNet extends antiDDoSForHost {
          * 2019-12-17: Their traffic calculation seems to work really good. No need to save- and re-use directurls in order to
          * "save traffic".
          */
-        if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
-            requestFileInformation(link);
-            if (hotLinkURL != null) {
-                doFree(link, account);
-            } else {
-                handlePremium_web(link, account);
-            }
-        } else {
+        if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
+            /* API */
             if (link.getBooleanProperty(HOTLINK, false)) {
                 /* Check availablestatus via website if we have a hotlink */
                 requestFileInformation(link);
@@ -1055,6 +1045,14 @@ public class RapidGatorNet extends antiDDoSForHost {
                 doFree(link, account);
             } else {
                 handlePremium_api(link, account);
+            }
+        } else {
+            /* Website */
+            requestFileInformation(link);
+            if (hotLinkURL != null) {
+                doFree(link, account);
+            } else {
+                handlePremium_web(link, account);
             }
         }
     }
@@ -1261,7 +1259,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
+        if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
             url = url.replaceFirst("^http://", "https://");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, getMaxChunks(account));
@@ -1465,7 +1463,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 logger.warning("Could not find 'dllink'. Please report to JDownloader Development Team");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTAL_ENFORCE_SSL, false)) {
+            if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
                 dllink = dllink.replaceFirst("^http://", "https://");
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(account));
@@ -1622,12 +1620,9 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling to prevent 24-hours IP ban from rapidgator?")).setDefaultValue(false));
-        // Some users always get server error 500 via API
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), DISABLE_API_PREMIUM, JDL.L("plugins.hoster.rapidgatornet.disableAPIPremium", "Disable API for premium downloads (use web download)?")).setDefaultValue(false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTAL_ENFORCE_SSL, JDL.L("plugins.hoster.rapidgatornet.useExperimentalEnforceSSL", "Activate experimental forced SSL for downloads?")).setDefaultValue(false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), "CUSTOM_REFERER", "Set custom Referer here").setDefaultValue(null));
+    @Override
+    public Class<RapidGatorConfig> getConfigInterface() {
+        return RapidGatorConfig.class;
     }
 
     @Override
