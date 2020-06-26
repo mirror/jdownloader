@@ -16,8 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}|https?://(?:www\\.)?imagevenue\\.com/view/o/\\?i=[^\\&]+\\&h=[^\\&]+" })
 public class ImageVenueCom extends PluginForHost {
     public ImageVenueCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,6 +48,15 @@ public class ImageVenueCom extends PluginForHost {
         return -1;
     }
 
+    private String getFilenameURL(final DownloadLink link) throws MalformedURLException {
+        final UrlQuery query = new UrlQuery().parse(link.getPluginPatternMatcher());
+        String name = query.get("image");
+        if (name == null) {
+            name = query.get("i");
+        }
+        return name;
+    }
+
     private String dllink = null;
 
     @SuppressWarnings("deprecation")
@@ -53,7 +64,7 @@ public class ImageVenueCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         // Offline links should also have nice filenames
-        link.setName(new Regex(link.getDownloadURL(), "imagevenue\\.com/img\\.php\\?(.+)").getMatch(0));
+        link.setName(getFilenameURL(link));
         this.br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());

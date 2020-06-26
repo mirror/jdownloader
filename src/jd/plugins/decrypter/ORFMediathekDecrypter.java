@@ -99,7 +99,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         final String nicehost = new Regex(data, "https?://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         String date_formatted = null;
-        final String date = PluginJSonUtils.getJsonValue(this.br, "date");
+        String date = PluginJSonUtils.getJsonValue(this.br, "date");
+        if (date == null) {
+            /* 2020-06-26: Fallback */
+            date = PluginJSonUtils.getJson(Encoding.htmlDecode(br.toString()), "date");
+        }
         if (date != null) {
             date_formatted = formatDate(date);
         }
