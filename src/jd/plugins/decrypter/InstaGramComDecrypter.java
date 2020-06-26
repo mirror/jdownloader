@@ -156,7 +156,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
+        br.clearAll();
         br.addAllowedResponseCodes(new int[] { 502 });
         prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
         fp = FilePackage.getInstance();

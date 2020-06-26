@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import jd.PluginWrapper;
@@ -34,13 +35,16 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -77,12 +81,22 @@ public class InstaGramCom extends PluginForHost {
     public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER   = 25;
     private boolean              is_private_url                    = false;
 
+    public void correctDownloadLink(final DownloadLink link) {
+        String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
+        if (!newurl.endsWith("/")) {
+            /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
+            newurl += "/";
+        }
+        link.setPluginPatternMatcher(newurl);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.correctDownloadLink(link);
         dllink = null;
         server_issues = false;
-        is_private_url = downloadLink.getBooleanProperty("private_url", false);
+        is_private_url = link.getBooleanProperty("private_url", false);
         this.setBrowserExclusive();
         /*
          * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
@@ -99,10 +113,10 @@ public class InstaGramCom extends PluginForHost {
             }
         }
         if (this.is_private_url && !is_logged_in) {
-            downloadLink.getLinkStatus().setStatusText("Login required to download this content");
+            link.getLinkStatus().setStatusText("Login required to download this content");
             return AvailableStatus.UNCHECKABLE;
         }
-        dllink = downloadLink.getStringProperty("directurl", null);
+        dllink = link.getStringProperty("directurl", null);
         /*
          * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
          * higher than before then but it can also get smaller - which is okay as it is the original content.
@@ -118,60 +132,33 @@ public class InstaGramCom extends PluginForHost {
             dllink = checkLink(dllink);
         }
         if (dllink == null) {
-            String getlink = downloadLink.getDownloadURL().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
-            if (!getlink.endsWith("/")) {
-                /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
-                getlink += "/";
+            this.dllink = getFreshDirecturl(link);
+            if (this.dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
             }
-            br.getPage(getlink);
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
-                /*
-                 * This will also happen if a user tries to access private urls without being logged in --> Which is why we need to know the
-                 * private_url status from the crawler!
-                 */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Set releasedate as property */
-            String date = PluginJSonUtils.getJson(this.br, "date");
-            if (date == null || !date.matches("\\d+")) {
-                date = PluginJSonUtils.getJson(this.br, "taken_at_timestamp");
-            }
-            if (date != null && date.matches("\\d+")) {
-                setReleaseDate(downloadLink, Long.parseLong(date));
-            }
-            String ext = ".mp4";
-            dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
-            if (dllink == null) {
-                // Maybe we have a picture
-                ext = null;
-                dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-                String remove = new Regex(dllink, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
-                if (remove != null) {
-                    String flink = dllink.replace(remove, "/");
-                    flink = checkLink(flink);
-                    if (flink != null) {
-                        dllink = flink;
-                    }
-                }
-                downloadLink.setContentUrl(dllink);
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
+            logger.info("Successfully found fresh directurl");
+            // /* Set releasedate as property */
+            // String date = PluginJSonUtils.getJson(this.br, "date");
+            // if (date == null || !date.matches("\\d+")) {
+            // date = PluginJSonUtils.getJson(this.br, "taken_at_timestamp");
+            // }
+            // if (date != null && date.matches("\\d+")) {
+            // setReleaseDate(link, Long.parseLong(date));
+            // }
+            String ext = null;
             if (ext == null) {
                 ext = getFileNameExtensionFromString(dllink, ".jpg");
             }
             String server_filename = getFileNameFromURL(new URL(dllink));
             if (this.getPluginConfig().getBooleanProperty(PREFER_SERVER_FILENAMES, defaultPREFER_SERVER_FILENAMES) && server_filename != null) {
                 server_filename = fixServerFilename(server_filename, ext);
-                downloadLink.setFinalFileName(server_filename);
+                link.setFinalFileName(server_filename);
             } else {
                 // decrypter has set the proper name!
                 // if the user toggles PREFER_SERVER_FILENAMES setting many times the name can change.
-                final String name = downloadLink.getStringProperty("decypter_filename", null);
+                final String name = link.getStringProperty("decypter_filename", null);
                 if (name != null) {
-                    downloadLink.setFinalFileName(name);
+                    link.setFinalFileName(name);
                 } else {
                     // do not change.
                     logger.warning("missing storable, filename will not be renamed");
@@ -180,10 +167,15 @@ public class InstaGramCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(dllink);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+            } else if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
+                link.setDownloadSize(con.getLongContentLength());
+                /* Save it to have it in case it was re-freshed! */
+                link.setProperty("directurl", this.dllink);
             } else {
+                /* Will get displayed as unknown error later on */
                 server_issues = true;
             }
         } finally {
@@ -195,14 +187,55 @@ public class InstaGramCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String checkLink(String flink) throws IOException, PluginException {
+    private String getFreshDirecturl(final DownloadLink link) throws IOException, PluginException {
+        String dllink = null;
+        logger.info("Trying to refresh directurl");
+        final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
+        decrypter.setBrowser(this.br);
+        try {
+            final CryptedLink forDecrypter = new CryptedLink(link.getContainerUrl());
+            final ArrayList<DownloadLink> items = decrypter.decryptIt(forDecrypter, null);
+            DownloadLink foundLink = null;
+            if (items.size() == 1) {
+                foundLink = items.get(0);
+            } else {
+                String orderID = link.getStringProperty("orderid");
+                if (orderID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (final DownloadLink linkTmp : items) {
+                    final String orderidTmp = linkTmp.getStringProperty("orderid");
+                    if (orderID.equals(orderidTmp)) {
+                        foundLink = linkTmp;
+                        break;
+                    }
+                }
+            }
+            dllink = foundLink.getStringProperty("directurl");
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        if (dllink == null) {
+            /* On failure, check for offline. */
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
+                /*
+                 * This will also happen if a user tries to access private urls without being logged in --> Which is why we need to know the
+                 * private_url status from the crawler!
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        return dllink;
+    }
+
+    private String checkLink(final String flink) throws IOException, PluginException {
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         try {
             con = br2.openHeadConnection(flink);
             if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
-                flink = null;
+                return null;
             }
         } catch (final Exception e) {
             logger.log(e);
@@ -236,8 +269,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (this.is_private_url) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (server_issues) {
@@ -245,15 +278,15 @@ public class InstaGramCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        handleDownload(downloadLink);
+        handleDownload(link);
     }
 
-    public void handleDownload(final DownloadLink downloadLink) throws Exception {
+    public void handleDownload(final DownloadLink link) throws Exception {
         int maxchunks = MAXCHUNKS_pictures;
-        if (downloadLink.getFinalFileName() != null && downloadLink.getFinalFileName().contains(".mp4") || downloadLink.getName() != null && downloadLink.getName().contains(".mp4")) {
+        if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
             maxchunks = MAXCHUNKS_videos;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
