@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "https?://(?:beta\\.)?(?:members|tour|www)\\.naughtyamerica\\.com/scene/[a-z0-9\\-]+\\-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "https?://(?:members|tour|www)\\.naughtyamerica\\.com/scene/[a-z0-9\\-]+\\-\\d+" })
 public class NaughtyamericaCom extends PluginForDecrypt {
     public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -217,6 +217,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
 
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
+        hostPlugin.setBrowser(this.br);
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
@@ -225,7 +226,6 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.NaughtyamericaCom) hostPlugin).login(br, aa, force);
         } catch (final PluginException e) {
-            aa.setValid(false);
             return false;
         }
         return true;

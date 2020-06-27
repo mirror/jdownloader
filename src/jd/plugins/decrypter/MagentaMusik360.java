@@ -4,6 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MagentaMusik360Config;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -16,15 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MagentaMusik360Config;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magenta-musik-360.de" }, urls = { "https?://(www\\.)?magenta-musik-360\\.de/(?:[^/]+/)?[a-zA-Z0-9\\-%_]+-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magenta-musik-360.de" }, urls = { "https?://(www\\.)?magenta-musik-360\\.de/(?:[^/]+/)?[a-zA-Z0-9\\-%_]+-\\d+(?:-\\d+)?" })
 public class MagentaMusik360 extends PluginForDecrypt {
     public MagentaMusik360(final PluginWrapper wrapper) {
         super(wrapper);
@@ -37,18 +37,22 @@ public class MagentaMusik360 extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        final String itemId = new Regex(parameter.getCryptedUrl(), "-(\\d+)$").getMatch(0);
+        final String itemId = new Regex(parameter.getCryptedUrl(), "-(\\d+)(-\\d+)?$").getMatch(0);
         final String playerVersion = "58935";
         br.getPage("https://wcss.t-online.de/cvss/magentamusic/vodplayer/v3/player/" + playerVersion + "/" + itemId + "/Main%20Movie?referrer=https%3A%2F%2Fwcss.t-online.de%2Fcvss%2Fmagentamusic%2Fvodplayer%2Fv3%2Fdetails%2F" + playerVersion + "%2F" + itemId + "%3F%24whiteLabelId%3DMM3&%24whiteLabelId=MM3&_c=aHR0cHM6d3d3Lm1hZ2VudGEtbXVzaWstMzYwLmRl");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            ret.add(this.createOfflinelink(parameter.toString()));
+            return ret;
+        }
         final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> content = (Map<String, Object>) map.get("content");
         final Map<String, Object> feature = (Map<String, Object>) content.get("feature");
         final Map<String, Object> metadata = (Map<String, Object>) feature.get("metadata");
         final String title = (String) metadata.get("title");
         final String originalTitle = (String) metadata.get("originalTitle");
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<Map<String, Object>> representations = (List<Map<String, Object>>) feature.get("representations");
         for (final Map<String, Object> representation : representations) {
             final String type = (String) representation.get("type");
