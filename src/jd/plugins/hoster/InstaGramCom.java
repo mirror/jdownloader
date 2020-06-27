@@ -136,7 +136,6 @@ public class InstaGramCom extends PluginForHost {
             if (this.dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
             }
-            logger.info("Successfully found fresh directurl");
             // /* Set releasedate as property */
             // String date = PluginJSonUtils.getJson(this.br, "date");
             // if (date == null || !date.matches("\\d+")) {
@@ -217,13 +216,19 @@ public class InstaGramCom extends PluginForHost {
         }
         if (dllink == null) {
             /* On failure, check for offline. */
+            logger.info("Failed to find fresh directurl --> Checking for offline");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
                 /*
                  * This will also happen if a user tries to access private urls without being logged in --> Which is why we need to know the
                  * private_url status from the crawler!
                  */
+                logger.info("Seems like main URL is offline / post got deleted");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.info("MainURL seems to be online --> Possible plugin error");
             }
+        } else {
+            logger.info("Successfully found fresh directurl");
         }
         return dllink;
     }
