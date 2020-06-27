@@ -175,12 +175,12 @@ public class CamwhoresTv extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doDownload(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink LINK) throws Exception, PluginException {
+        requestFileInformation(LINK);
+        doDownload(null, LINK, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doDownload(final Account account, final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doDownload(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (is_private_video && account == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (server_issues) {
@@ -192,7 +192,7 @@ public class CamwhoresTv extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -259,7 +259,6 @@ public class CamwhoresTv extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -271,7 +270,6 @@ public class CamwhoresTv extends antiDDoSForHost {
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(false);
         ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 

@@ -211,28 +211,44 @@ public class NaughtyamericaCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
+                final boolean allowLoginWithUserPW = false;
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /*
                      * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
                      * when the user logs in via browser.
                      */
-                    br.setCookies(account.getHoster(), cookies);
+                    br.setCookies(cookies);
                     br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
-                    if (br.containsHTML(html_loggedin)) {
+                    if (isLoggedIN()) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearAll();
+                        prepBR(br);
+                    }
+                } else if (userCookies != null) {
+                    br.setCookies(userCookies);
+                    br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
+                    if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
-                    logger.info("Cookie login failed --> Performing full login");
-                    br = prepBR(new Browser());
+                }
+                logger.info("Performing full login");
+                if (userCookies != null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid cookies or session expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (!allowLoginWithUserPW) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // p={} now OK. but It may be taken countermeasures in the future
                 // br.postPage("https://members.naughtyamerica.com/ntmrcdstl.js?PID=8FD0A593-9AE8-3213-AFB8-118379C6E433", new
@@ -306,28 +322,19 @@ public class NaughtyamericaCom extends PluginForHost {
         }
     }
 
+    private boolean isLoggedIN() {
+        return br.containsHTML("/logout\"");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String user_type = br.getRegex("var\\s*?user_type\\s*?=\\s*?\\'([^<>\"\\']+)'\\s*?;").getMatch(0);
-        final boolean isExpired = user_type != null && user_type.equalsIgnoreCase("Expired Paid");
-        if (isExpired) {
-            /* Small failover - login is correct but account is expired! */
-            ai.setExpired(true);
-            return ai;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium Account");
-        account.setValid(true);
         return ai;
     }
 

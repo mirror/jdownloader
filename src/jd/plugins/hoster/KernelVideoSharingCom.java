@@ -438,8 +438,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             }
         }
         if (inValidate(dllink, plugin)) {
-            /* Last change: 2017-08-03, regarding txxx.com */
-            // dllink = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getMatch(0);
             dllink = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getMatch(0); // 2018-06-20
             if (StringUtils.endsWithCaseInsensitive(dllink, "jpg/")) {
                 dllink = null;
@@ -774,9 +772,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             }
         }
         /* Now decide which filename we want to use */
-        final boolean filename_url_is_better_than_filename_from_html = (filename_url != null && filename != null && filename_url.length() > filename.length());
         final boolean filename_url_is_forced = domains_force_url_filename.contains(current_host);
-        if (StringUtils.isEmpty(filename) || filename_url_is_better_than_filename_from_html || filename_url_is_forced) {
+        if (StringUtils.isEmpty(filename) || filename_url_is_forced) {
             filename = filename_url;
         } else {
             /* Remove html crap and spaces at the beginning and end. */
@@ -898,6 +895,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else if (br.getHost().equalsIgnoreCase("sleazyneasy.com")) {
             /* 2020-05-04: Special: Enforce fallback to URL filename */
             filename = regexURLFilename(br.getURL());
+        } else if (br.getHost().equalsIgnoreCase("porngo.com")) {
+            /* 2020-06-27: Special */
+            filename = br.getRegex("class=\"headline__title\">([^<>\"]+)<").getMatch(0);
         } else {
             filename = null;
         }
