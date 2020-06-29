@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,13 +59,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -710,7 +710,7 @@ public class MediafireCom extends PluginForHost {
                     api.setAllowedResponseCodes(new int[] { 400, 403 });
                     api.getHeaders().put("Accept", "*/*");
                     api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    api.getPage("https://www.mediafire.com/api/1.4/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
+                    api.getPage("https://www.mediafire.com/api/1.5/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
                     handleApiError(account);
                 }
                 final Map<String, Object> apiResponse = JSonStorage.restoreFromString(api.toString(), TypeRef.HASHMAP);
@@ -747,13 +747,13 @@ public class MediafireCom extends PluginForHost {
                     for (final Map<String, Object> file_info : file_infos) {
                         final DownloadLink item = linkMap.remove(file_info.get("quickkey"));
                         if (item != null) {
-                            item.setAvailableStatus(AvailableStatus.TRUE);
                             final String name = (String) file_info.get("filename");
                             final Long size = JavaScriptEngineFactory.toLong(file_info.get("size"), -1);
                             final String hash = (String) file_info.get("hash");
                             final String privacy = (String) file_info.get("privacy");
                             final String pass = (String) file_info.get("password_protected");
                             final String content_url = (String) JavaScriptEngineFactory.walkJson(file_info, "links/normal_download");
+                            final String delete_date = (String) file_info.get("delete_date");
                             if (!StringUtils.isEmpty(name)) {
                                 item.setFinalFileName(name);
                             }
@@ -775,6 +775,12 @@ public class MediafireCom extends PluginForHost {
                                  */
                                 item.setContentUrl(content_url);
                                 item.setUrlDownload(content_url);
+                            }
+                            /* 2020-06-29: Some files will have all information given bur are deleted if delete_date exists! */
+                            if (delete_date != null && delete_date.matches("\\d{4}-\\d{2}-\\d{2}.*")) {
+                                item.setAvailableStatus(AvailableStatus.FALSE);
+                            } else {
+                                item.setAvailableStatus(AvailableStatus.TRUE);
                             }
                         }
                     }

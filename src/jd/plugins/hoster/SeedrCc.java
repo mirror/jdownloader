@@ -17,8 +17,13 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -152,6 +157,7 @@ public class SeedrCc extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                final boolean cookieLoginOnly = true;
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -177,8 +183,14 @@ public class SeedrCc extends PluginForHost {
                         return;
                     } else {
                         logger.info("User Cookie login failed");
+                        showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                }
+                logger.info("Performing full login");
+                if (cookieLoginOnly) {
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 if (dlinkbefore == null) {
@@ -186,7 +198,7 @@ public class SeedrCc extends PluginForHost {
                 }
                 br.getPage("https://www." + this.getHost());
                 if (br.containsHTML("hcaptcha\\.com/") || br.containsHTML("class=\"h-captcha\"")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported captcha type 'hcaptcha', see: board.jdownloader.org/showthread.php?t=83712", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported captcha type 'hcaptcha', use cookie login or read: board.jdownloader.org/showthread.php?t=83712", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 String reCaptchaKey;
                 /*
@@ -228,6 +240,42 @@ public class SeedrCc extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Seedr.cc - Login";
+                        message += "Hallo liebe(r) Google NutzerIn\r\n";
+                        message += "Um deinen seedr.cc Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Seedr.cc - Login";
+                        message += "Hello dear seedr.cc user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private static boolean isLoggedIn(final Browser br) {
