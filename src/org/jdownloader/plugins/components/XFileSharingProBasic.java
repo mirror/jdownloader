@@ -2299,7 +2299,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
-    private String getDllinkHostPattern() {
+    protected final String getDllinkHostPattern() {
         return "[A-Za-z0-9\\-\\.]*";
     }
 
@@ -2324,7 +2324,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected List<Pattern> getDownloadurlRegexes() {
         final List<Pattern> patterns = new ArrayList<Pattern>();
         /* 2020-04-01: TODO: Maybe add this part to the end: (\\s+|\\s*>|\\s*\\)|\\s*;) (?) */
-        patterns.add(Pattern.compile(String.format("https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*", this.getDllinkHostPattern())));
+        patterns.add(Pattern.compile(String.format("https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*", this.getDllinkHostPattern())));
         return patterns;
     }
 
