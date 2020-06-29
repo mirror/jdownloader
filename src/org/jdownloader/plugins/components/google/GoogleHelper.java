@@ -212,7 +212,7 @@ public class GoogleHelper {
                     } else {
                         title = "Google - Login";
                         message += "Hello dear Google user\r\n";
-                        message += "In order to use this service in JDownloader, you need to follow these steps - go to google.COM before exposting your cookies:\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions - go to google.COM before exporting your cookies:\r\n";
                         message += help_article_url;
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
