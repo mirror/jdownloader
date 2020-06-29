@@ -251,7 +251,7 @@ public class SeedrCc extends PluginForHost {
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = "Seedr.cc - Login";
-                        message += "Hallo liebe(r) Google NutzerIn\r\n";
+                        message += "Hallo liebe(r) Seedr.cc NutzerIn\r\n";
                         message += "Um deinen seedr.cc Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
                         message += help_article_url;
