@@ -708,7 +708,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
             if (this.internal_isVideohoster_enforce_video_filename()) {
                 /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
-                fileInfo[0] = this.removeDoubleExtensions(fileInfo[0], "mp4");
+                fileInfo[0] = this.removeDoubleVideoExtensions(fileInfo[0], "mp4");
             }
             link.setName(fileInfo[0]);
         }
@@ -1180,7 +1180,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *            Extension which is supposed to replace the (multiple) wrong extension(s). <br />
      *            If defaultExtension is null,this function will only remove existing extensions.
      */
-    public String removeDoubleExtensions(String filename, final String desiredExtension) {
+    private String removeDoubleVideoExtensions(String filename, final String desiredExtension) {
         if (filename == null || desiredExtension == null) {
             return filename;
         }
@@ -2020,34 +2020,46 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dllink == null && this.isImagehoster()) {
             /* Used for imagehosts */
-            /*
-             * 2019-07-24: This is basically a small workaround because if a file has a "bad filename" the filename inside our URL may just
-             * look like it is a thumbnail although it is not. If we find several URLs and all are the same we may still just take one of
-             * them although it could be a thumbnail.
-             */
-            String lastDllink = null;
-            boolean allResultsAreTheSame = true;
-            final String[] possibleDllinks = new Regex(src, String.format(getGenericDownloadlinkRegExImage(), getDllinkHostPattern())).getColumn(-1);
-            for (final String possibleDllink : possibleDllinks) {
-                if (possibleDllinks.length > 1 && lastDllink != null && !possibleDllink.equalsIgnoreCase(lastDllink)) {
-                    allResultsAreTheSame = false;
-                }
-                /* Avoid downloading thumbnails */
-                /* 2019-07-24: Improve recognization of thumbnails e.g. https://img67.imagetwist.com/th/123456/[a-z0-9]{12}.jpg */
-                if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                    dllink = possibleDllink;
-                    break;
-                }
-                lastDllink = possibleDllink;
-            }
-            if (dllink == null && possibleDllinks.length > 1 && allResultsAreTheSame) {
-                logger.info("image download-candidates were all identified as thumbnails --> Using first result anyways as it is likely that it is not a thumbnail!");
-                dllink = possibleDllinks[0];
-            }
+            dllink = getDllinkImagehost(src);
         }
         if (Encoding.isHtmlEntityCoded(dllink)) {
             /* 2020-02-10: E.g. files.im */
             dllink = Encoding.htmlOnlyDecode(dllink);
+        }
+        return dllink;
+    }
+
+    protected String getDllinkImagehost(final String src) {
+        /*
+         * 2019-07-24: This is basically a small workaround because if a file has a "bad filename" the filename inside our URL may just look
+         * like it is a thumbnail although it is not. If we find several URLs and all are the same we may still just take one of them
+         * although it could be a thumbnail.
+         */
+        String dllink = null;
+        String lastDllink = null;
+        boolean allResultsAreTheSame = true;
+        final ArrayList<String> possibleDllinks = new ArrayList<String>();
+        for (final Pattern regex : getImageDownloadurlRegexes()) {
+            final String[] dllinksTmp = new Regex(src, regex).getColumn(0);
+            for (final String url : dllinksTmp) {
+                possibleDllinks.add(url);
+            }
+        }
+        for (final String possibleDllink : possibleDllinks) {
+            if (possibleDllinks.size() > 1 && lastDllink != null && !possibleDllink.equalsIgnoreCase(lastDllink)) {
+                allResultsAreTheSame = false;
+            }
+            /* Avoid downloading thumbnails */
+            /* 2019-07-24: Improve recognization of thumbnails e.g. https://img67.imagetwist.com/th/123456/[a-z0-9]{12}.jpg */
+            if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                dllink = possibleDllink;
+                break;
+            }
+            lastDllink = possibleDllink;
+        }
+        if (dllink == null && possibleDllinks.size() > 1 && allResultsAreTheSame) {
+            logger.info("image download-candidates were all identified as thumbnails --> Using first result anyways as it is likely that it is not a thumbnail!");
+            dllink = possibleDllinks.get(0);
         }
         return dllink;
     }
@@ -2278,11 +2290,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return url != null && new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
     }
 
-    public boolean isDllinkImage(final String url) {
-        // TODO: update to support list of pattern, see getGenericDownloadlinkRegExImage
-        return url != null && new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExImage(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
-    }
-
     private String getDllinkHostPattern() {
         return "[A-Za-z0-9\\-\\.]*";
     }
@@ -2304,15 +2311,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return waitStr;
     }
 
-    public String getGenericDownloadlinkRegExFile() {
+    /** TODO: Finish- and use this */
+    // protected List<Pattern> getDownloadurlRegexes() {
+    // final List<Pattern> patterns = new ArrayList<Pattern>();
+    // /* 2020-04-01: TODO: Maybe add this part to the end: (\\s+|\\s*>|\\s*\\)|\\s*;) (?) */
+    // patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?)(?:\"|\\')",
+    // this.getDllinkHostPattern())));
+    // return patterns;
+    // }
+    protected List<Pattern> getImageDownloadurlRegexes() {
+        final List<Pattern> patterns = new ArrayList<Pattern>();
+        patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4})))", this.getDllinkHostPattern())));
+        return patterns;
+    }
+
+    private String getGenericDownloadlinkRegExFile() {
         // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
         /* TODO: Remove "premium" pattern into rapidrar.com plugin class as that is only used by them! */
         return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
-    }
-
-    public String getGenericDownloadlinkRegExImage() {
-        // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))";
     }
 
     /**
@@ -4336,10 +4352,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     return;
                 }
             } else {
-                if (!isDllinkImage(redirect)) {
-                    super.getPage(ibr, redirect);
-                    return;
-                }
+                super.getPage(ibr, redirect);
+                return;
             }
         }
     }

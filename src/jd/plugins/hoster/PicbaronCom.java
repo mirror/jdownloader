@@ -123,4 +123,13 @@ public class PicbaronCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean supports_mass_linkcheck_over_website() {
+        /*
+         * 2020-06-29: Use mass linkchecker as their URLs will nearly always contain filenames --> It is okay to only find filesizes during
+         * availablecheck!
+         */
+        return true;
+    }
 }
