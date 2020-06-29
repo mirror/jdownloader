@@ -229,7 +229,7 @@ public class DdownloadCom extends XFileSharingProBasic {
          * 2020-02-17: Their API has a bug where it randomly returns wrong values for some users and they did not fix it within 2 weeks:
          * https://board.jdownloader.org/showthread.php?t=82525&page=2
          */
-        /* 2020-05-22: This bug is fixed now according to their support --> We can trust this API value again! */
+        /* 2020-06-29: API returns wrong trafficlaft values --> Don't trust it - obtain trafficleft value from website instead! */
         final boolean trustAPITrafficLeft = false;
         if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
             long traffic_left = SizeFormatter.getSize(trafficleftStr + "MB");

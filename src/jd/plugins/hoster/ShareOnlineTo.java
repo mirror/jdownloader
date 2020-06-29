@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -136,6 +137,7 @@ public class ShareOnlineTo extends XFileSharingProBasic {
         final String premium_extra_trafficStr = PluginJSonUtils.getJson(brc, "premium_traffic_left");
         final String trafficleftStr = PluginJSonUtils.getJson(brc, "traffic_left");
         // final String trafficusedStr = PluginJSonUtils.getJson(brc, "traffic_used");
+        final boolean trustAPITrafficLeft = true;
         if (account.getType() != null && account.getType() == AccountType.PREMIUM && trafficleftStr != null && trafficleftStr.matches("\\d+")) {
             long traffic_left = Long.parseLong(trafficleftStr) * 1000 * 1000;
             if (premium_extra_trafficStr != null && premium_extra_trafficStr.matches("\\d+")) {
@@ -150,6 +152,13 @@ public class ShareOnlineTo extends XFileSharingProBasic {
                 }
             }
             ai.setTrafficLeft(traffic_left);
+            if (trustAPITrafficLeft) {
+                logger.info("Trust API trafficleft value: " + traffic_left);
+                ai.setTrafficLeft(traffic_left);
+            } else {
+                logger.info("Setting unlimited traffic instead of API trafficleft value " + traffic_left + " to prefer website value");
+                ai.setUnlimitedTraffic();
+            }
         } else {
             /*
              * They will return "traffic_left":"0" for free accounts which is wrong. It is unlimited on their website. By setting it to
@@ -158,5 +167,24 @@ public class ShareOnlineTo extends XFileSharingProBasic {
             ai.setUnlimitedTraffic();
         }
         return ai;
+    }
+
+    @Override
+    protected boolean supports_mass_linkcheck_over_api() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    protected boolean supports_single_linkcheck_over_api() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "class=\"download-file-title\"[^>]*>File\\s*:?\\s*</span>([^<>\"]+)<").getMatch(0);
+        }
+        return fileInfo;
     }
 }

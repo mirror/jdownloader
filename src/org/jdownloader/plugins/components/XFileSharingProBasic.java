@@ -1990,9 +1990,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             // dllink = new Regex(src, "(" + String.format(dllinkRegexFile, getHostsPatternPart()) + ")(\"|')").getMatch(0);
             // }
             if (dllink == null) {
-                /* Finally try without hardcoded domains */
-                dllink = new Regex(src, "(" + String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()) + ")(\"|\\')").getMatch(0);
-                /* 2020-04-01: TODO: Maybe add this part to the end: (\\s+|\\s*>|\\s*\\)|\\s*;) */
+                for (final Pattern pattern : getDownloadurlRegexes()) {
+                    dllink = new Regex(src, pattern).getMatch(-1);
+                    if (dllink != null) {
+                        break;
+                    }
+                }
             }
             // if (dllink == null) {
             // /* Try short version */
@@ -2075,7 +2078,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (!StringUtils.isEmpty(jssource)) {
             logger.info("Found video json source");
-            /** TODO: 2019-10-03: Add quality selection */
             /*
              * Different services store the values we want under different names. E.g. vidoza.net uses 'res', most providers use 'label'.
              */
@@ -2285,9 +2287,16 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return dllink;
     }
 
-    public boolean isDllinkFile(final String url) {
-        // TODO: update to support list of pattern, see getGenericDownloadlinkRegExFile
-        return url != null && new Regex(url, Pattern.compile(String.format(getGenericDownloadlinkRegExFile(), getDllinkHostPattern()), Pattern.CASE_INSENSITIVE)).matches();
+    protected boolean isDllinkFile(final String url) {
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        for (final Pattern pattern : this.getDownloadurlRegexes()) {
+            if (new Regex(url, pattern).matches()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String getDllinkHostPattern() {
@@ -2311,24 +2320,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return waitStr;
     }
 
-    /** TODO: Finish- and use this */
-    // protected List<Pattern> getDownloadurlRegexes() {
-    // final List<Pattern> patterns = new ArrayList<Pattern>();
-    // /* 2020-04-01: TODO: Maybe add this part to the end: (\\s+|\\s*>|\\s*\\)|\\s*;) (?) */
-    // patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?)(?:\"|\\')",
-    // this.getDllinkHostPattern())));
-    // return patterns;
-    // }
+    /** Returns list of possible final downloadurl patterns. Match -1 will be used to find downloadurls in html source! */
+    protected List<Pattern> getDownloadurlRegexes() {
+        final List<Pattern> patterns = new ArrayList<Pattern>();
+        /* 2020-04-01: TODO: Maybe add this part to the end: (\\s+|\\s*>|\\s*\\)|\\s*;) (?) */
+        patterns.add(Pattern.compile(String.format("https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*", this.getDllinkHostPattern())));
+        return patterns;
+    }
+
+    /** Returns list of possible final image-host-downloadurl patterns. Match 0 will be used to find downloadurls in html source! */
     protected List<Pattern> getImageDownloadurlRegexes() {
         final List<Pattern> patterns = new ArrayList<Pattern>();
         patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?(?:/img/\\d+/[^<>\"'\\[\\]]+|/img/[a-z0-9]+/[^<>\"'\\[\\]]+|/img/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+|/i/\\d+/[^<>\"'\\[\\]]+(?!_t\\.[A-Za-z]{3,4})))", this.getDllinkHostPattern())));
         return patterns;
-    }
-
-    private String getGenericDownloadlinkRegExFile() {
-        // TODO: do not return a single, hard to maintain pattern but a list of pattern that can be easily extended(added) by plugin itself
-        /* TODO: Remove "premium" pattern into rapidrar.com plugin class as that is only used by them! */
-        return "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl|premium)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*?";
     }
 
     /**
@@ -2603,7 +2607,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503. <br />
      * checkAll: If enabled, ,this will also check for wrong password, wrong captcha and 'Skipped countdown' errors. <br/>
-     * TODO: If account != null: Consider setting account traffic to 0 on reached downloadlimit
      */
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
@@ -4100,6 +4103,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             /*
                              * At least for videohosts, filenames from json would often not contain a file extension!
                              */
+                            if (Encoding.isHtmlEntityCoded(filename)) {
+                                filename = Encoding.htmlDecode(filename);
+                            }
                             if (isVideohost && !filename.endsWith(".mp4")) {
                                 filename += ".mp4";
                             }
