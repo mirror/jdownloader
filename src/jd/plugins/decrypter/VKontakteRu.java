@@ -680,7 +680,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 // webui, youtube stuff within -raztoki20160817
                 VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
                 handleVideoErrors(br);
-                String ajax_json = br.getRegex("ajax\\.preload\\(\\'al_video\\.php\\', \\{[^\\}]+\\}, (\\[.*?\\])\\);\\s+").getMatch(0);
+                String ajax_json = br.getRegex("ajax\\.preload\\(\\'al_video\\.php\\',\\s*\\{[^\\}]+\\},\\s*(\\[.*?\\])\\);\\s+").getMatch(0);
                 if (ajax_json != null) {
                     final String embeddedVideo = new Regex(PluginJSonUtils.unescape(ajax_json), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
                     if (embeddedVideo != null) {
@@ -1116,7 +1116,15 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } catch (final Throwable e) {
         }
+        foundQualities.clear();
         if (foundQualities.isEmpty()) {
+            /* First try to do the same as in above json handling --> Fallback */
+            final String http_url = PluginJSonUtils.getJson(source, "postlive_mp4");
+            final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
+            if (http_url != null && http_quality != null) {
+                foundQualities.put(http_quality + "p", http_url);
+            }
+            /* Now try more fallbacks */
             /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
             final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
             for (final String[] qualityInfo : qualities) {
