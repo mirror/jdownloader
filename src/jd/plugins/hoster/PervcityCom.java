@@ -13,22 +13,22 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,12 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pervcity.com" }, urls = { "https?://(?:www\\.)?members\\.pervcity\\.com/scenes/[^<>\"/]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pervcity.com" }, urls = { "https?://(?:members\\.|www\\.)?pervcity\\.com/scenes/([^<>\"/]+)\\.html" })
 public class PervcityCom extends PluginForHost {
-
     public PervcityCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://members.pervcity.com/login.php");
@@ -49,137 +45,219 @@ public class PervcityCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://members.pervcity.com/";
+        return "https://pervcity.com/pages.php?id=toc";
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 0;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = -1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     private boolean              download_not_yet_possible    = false;
+    private String               dllink                       = null;
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private Browser prepBR(final Browser br) {
+        br.setCookie(this.getHost(), "warn", "false");
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         download_not_yet_possible = false;
         this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            /* Account needed! */
-            return AvailableStatus.UNCHECKABLE;
+        prepBR(this.br);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account == null) {
+            /* No account given --> Trailer download */
+            br.getPage(String.format("https://%s/scenes/%s.html", this.getHost(), this.getFID(link)));
+            this.dllink = br.getRegex("(/trailers/[^<>\"\\']+\\.mp4)").getMatch(0);
+            final String filename = this.getFID(link).replace("-", " ") + ".mp4";
+            link.setFinalFileName(filename);
+            if (this.dllink != null) {
+                /* Find filesize */
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(dllink);
+                    if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    } else {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        } else {
+            /* Account given */
+            this.login(account);
+            br.getPage(String.format("https://members.%s/scenes/%s.html", this.getHost(), this.getFID(link)));
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            if (filename == null) {
+                /* Fallback */
+                filename = this.getFID(link);
+            }
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+            /* Old handling */
+            // final String setid = this.br.getRegex("\"setId=(\\d+)\"").getMatch(0);
+            // if (setid == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // this.br.postPage("/showsetdata.php", "SetId=" + setid);
+            // if (!this.br.containsHTML("class=\"downloadoption\\-container\"")) {
+            // download_not_yet_possible = true;
+            // return AvailableStatus.TRUE;
+            // }
+            /* Find best quality */
+            final String downloadHTML = br.getRegex("<select[^>]*>\\s+<option value=\"\" selected=\"selected\">Choose Format</option>(.*?)</select>").getMatch(0);
+            final String[] downloadHTMLs = new Regex(downloadHTML, "(<option.*?)</option>").getColumn(0);
+            long filesizeMax = 0;
+            for (final String html : downloadHTMLs) {
+                String url = new Regex(html, "\"(https?://[^\"]+\\.mp4[^\"]*)\"").getMatch(0);
+                final String filesizeStr = new Regex(html, "\\((\\d+\\.\\d{1,2} (MB|GB))\\)").getMatch(0);
+                if (url == null || filesizeStr == null) {
+                    /* Skip invalid items e.g. non-MP4 items */
+                    continue;
+                }
+                final long filesizeTmp = SizeFormatter.getSize(filesizeStr);
+                if (filesizeTmp > filesizeMax) {
+                    filesizeMax = filesizeTmp;
+                    this.dllink = url;
+                }
+            }
+            if (filesizeMax > 0) {
+                link.setDownloadSize(filesizeMax);
+            }
         }
-        this.login(aa);
-        br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(link.getDownloadURL(), "/scenes/(.+)\\.html$").getMatch(0);
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-        final String setid = this.br.getRegex("\"setId=(\\d+)\"").getMatch(0);
-        if (setid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.br.postPage("/showsetdata.php", "SetId=" + setid);
-        if (!this.br.containsHTML("class=\"downloadoption\\-container\"")) {
-            download_not_yet_possible = true;
-            return AvailableStatus.TRUE;
-        }
-        String filesize = br.getRegex("id=\"one_vid\">[^<>\"/]+ \\(([^<>\"]*?)\\)</span>").getMatch(0);
-        if (filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        /* Premiumonly */
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        /* Not every item has trailers available --> No downloadurl found --> Assume content is only available for premium users */
+        if (this.dllink == null) {
+            throw new AccountRequiredException();
         }
-        return dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            br.followConnection();
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        }
+        dl.startDownload();
     }
 
+    // private String checkDirectLink(final DownloadLink link, final String property) {
+    // String dllink = link.getStringProperty(property);
+    // if (dllink != null) {
+    // URLConnectionAdapter con = null;
+    // try {
+    // final Browser br2 = br.cloneBrowser();
+    // con = br2.openHeadConnection(dllink);
+    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+    // link.setProperty(property, Property.NULL);
+    // dllink = null;
+    // }
+    // } catch (final Exception e) {
+    // link.setProperty(property, Property.NULL);
+    // dllink = null;
+    // } finally {
+    // try {
+    // con.disconnect();
+    // } catch (final Throwable e) {
+    // }
+    // }
+    // }
+    // return dllink;
+    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE         = "http://members.pervcity.com";
-    private static Object       LOCK             = new Object();
+    private static final String MAINPAGE         = "https://members.pervcity.com";
     public static final long    trust_cookie_age = 300000l;
 
     private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
+                prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                         /* We trust these cookies --> Do not check them */
+                        logger.info("Trust login cookies as they're not that old");
                         return;
                     }
-                    this.br.postPage("https://members.pervcity.com/sessionexpire.php", "");
-                    if (this.br.containsHTML("\\{\"loggedin\":null\\}")) {
+                    br.getPage(MAINPAGE);
+                    if (isLoggedIN()) {
+                        logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        this.br.clearAll();
                     }
-                    this.br = new Browser();
                 }
-                br.setFollowRedirects(false);
+                logger.info("Performing full login");
                 br.getPage("https://members.pervcity.com/login.php");
+                final Form loginform = br.getFormbyActionRegex(".*auth\\.form");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("uid", Encoding.urlEncode(account.getUser()));
+                loginform.put("pwd", Encoding.urlEncode(account.getPass()));
                 final DownloadLink dummy = new DownloadLink(this, "Account", "members.pervcity.com", "http://members.pervcity.com", true);
                 if (this.getDownloadLink() == null) {
                     this.setDownloadLink(dummy);
                 }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                final String postData = "action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&loging=loging&sumbit=Daten+absenden&forgetemail=";
-                br.postPage("/securelogin.php", postData);
-                if (br.getCookie(MAINPAGE, "cookpass") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (br.containsHTML("/img\\.cptcha")) {
+                    final String code = this.getCaptchaCode("/img.cptcha", this.getDownloadLink());
+                    loginform.put("img", Encoding.urlEncode(code));
+                }
+                /* Check "Remember Me" checkbox to get long-lasting cookies */
+                loginform.put("rmb", "y");
+                br.submitForm(loginform);
+                if (!isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -189,23 +267,19 @@ public class PervcityCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean isLoggedIN() {
+        return br.containsHTML("class=\"fa fa-user\"");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        login(account);
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        /* 2020-07-01: Assume that all valid accounts of this website are premium accounts ... */
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(maxPrem.get());
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium account");
-        account.setValid(true);
         return ai;
     }
 
@@ -214,16 +288,8 @@ public class PervcityCom extends PluginForHost {
         requestFileInformation(link);
         if (download_not_yet_possible) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not yet possible - content is not yet released!", 3 * 60 * 60 * 1000l);
-        }
-        String dllink = this.checkDirectLink(link, "premium_directlink");
-        if (dllink == null) {
-            final String url_base = br.getRegex("window\\.location\\.href = \\'(http[^<>\"]*?/)\\'").getMatch(0);
-            final String videoid = br.getRegex("id=\"video_\\d+\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String token = this.br.getRegex("id=\"downloadToken\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (url_base == null || videoid == null || token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = url_base + videoid + "?" + token;
+        } else if (this.dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -242,8 +308,7 @@ public class PervcityCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
@@ -253,5 +318,4 @@ public class PervcityCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
