@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -36,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pervcity.com" }, urls = { "https?://(?:members\\.|www\\.)?pervcity\\.com/scenes/([^<>\"/]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PervcityCom extends PluginForHost {
     public PervcityCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,6 +49,39 @@ public class PervcityCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://pervcity.com/pages.php?id=toc";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "analoverdose.com" });
+        ret.add(new String[] { "bangingbeauties.com" });
+        ret.add(new String[] { "chocolatebjs.com" });
+        ret.add(new String[] { "oraloverdose.com" });
+        ret.add(new String[] { "pervcity.com" });
+        ret.add(new String[] { "upherasshole.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:members\\.|www\\.)?" + buildHostsPatternPart(domains) + "/(?:scenes|trailers)/([^<>\"/]+)\\.html");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
@@ -82,10 +118,13 @@ public class PervcityCom extends PluginForHost {
         download_not_yet_possible = false;
         this.setBrowserExclusive();
         prepBR(this.br);
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        if (account == null) {
-            /* No account given --> Trailer download */
-            br.getPage(String.format("https://%s/scenes/%s.html", this.getHost(), this.getFID(link)));
+        /* Trailers are only downloadable for free users */
+        if (link.getPluginPatternMatcher().contains("/trailers/")) {
+            /* Trailer download */
+            br.getPage(String.format("https://%s/trailers/%s.html", this.getHost(), this.getFID(link)));
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             this.dllink = br.getRegex("(/trailers/[^<>\"\\']+\\.mp4)").getMatch(0);
             final String filename = this.getFID(link).replace("-", " ") + ".mp4";
             link.setFinalFileName(filename);
@@ -107,7 +146,11 @@ public class PervcityCom extends PluginForHost {
                 }
             }
         } else {
-            /* Account given */
+            /* Account required */
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            if (account == null) {
+                throw new AccountRequiredException();
+            }
             this.login(account);
             br.getPage(String.format("https://members.%s/scenes/%s.html", this.getHost(), this.getFID(link)));
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -209,8 +252,7 @@ public class PervcityCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE         = "https://members.pervcity.com";
-    public static final long    trust_cookie_age = 300000l;
+    public static final long trust_cookie_age = 300000l;
 
     private void login(final Account account) throws Exception {
         synchronized (account) {
@@ -227,7 +269,7 @@ public class PervcityCom extends PluginForHost {
                         logger.info("Trust login cookies as they're not that old");
                         return;
                     }
-                    br.getPage(MAINPAGE);
+                    br.getPage("https://members." + this.getHost() + "/");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -238,18 +280,20 @@ public class PervcityCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage("https://members.pervcity.com/login.php");
+                br.getPage("https://members." + this.getHost() + "/login.php");
                 final Form loginform = br.getFormbyActionRegex(".*auth\\.form");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("uid", Encoding.urlEncode(account.getUser()));
                 loginform.put("pwd", Encoding.urlEncode(account.getPass()));
-                final DownloadLink dummy = new DownloadLink(this, "Account", "members.pervcity.com", "http://members.pervcity.com", true);
-                if (this.getDownloadLink() == null) {
-                    this.setDownloadLink(dummy);
-                }
+                /* 2020-07-01: Login captcha is probably always required */
                 if (br.containsHTML("/img\\.cptcha")) {
+                    logger.info("Login captcha required");
+                    final DownloadLink dummy = new DownloadLink(this, "Account", "members." + this.getHost(), "http://members." + this.getHost(), true);
+                    if (this.getDownloadLink() == null) {
+                        this.setDownloadLink(dummy);
+                    }
                     final String code = this.getCaptchaCode("/img.cptcha", this.getDownloadLink());
                     loginform.put("img", Encoding.urlEncode(code));
                 }
