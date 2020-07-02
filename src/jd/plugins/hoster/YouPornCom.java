@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,10 +24,13 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.YoupornConfig;
+import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,70 +40,111 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YouPornCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
-    String          dllink             = null;
-    private boolean server_issues      = false;
-    private boolean temporarilyBlocked = false;
+    String          dllink        = null;
+    private boolean server_issues = false;
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
-    }
-
-    private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
-    private static final boolean default_allow_multihoster_usage = false;
-
-    private void setConfigElements() {
-        String user_text;
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            user_text = "Erlaube den Download von Links dieses Anbieters über Multihoster (nicht empfohlen)?\r\n<html><b>Kann die Anonymität erhöhen, aber auch die Fehleranfälligkeit!</b>\r\nAktualisiere deine(n) Multihoster Account(s) nach dem Aktivieren dieser Einstellung um diesen Hoster in der Liste der unterstützten Hoster deines/r Multihoster Accounts zu sehen (sofern diese/r ihn unterstützen).</html>";
-        } else {
-            user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
-        }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
-    }
-
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
-            return true;
-        } else {
-            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-        }
     }
 
     public String getAGBLink() {
         return "http://youporn.com/terms";
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "youporn.com", "youpornru.com", "youporngay.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z]{2}\\.|www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|embed)/(\\d+)(/([a-z0-9\\-]+)/?)?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String fid = getFID(link.getDownloadURL());
+        final String fid = getFID(link);
+        final String url_name = getURLTitle(link);
         link.setLinkID(fid);
-        link.setUrlDownload("https://www.youporn.com/watch/" + fid + "/" + System.currentTimeMillis() + "/");
+        final String host_url = Browser.getHost(link.getPluginPatternMatcher());
+        final String final_host;
+        /*
+         * 2020-07-02: youporngay content is esssentially also youporn content but it will always redirect to youporngay.com --> Save some
+         * milliseconds by avoiding having to follow this redirect ;)
+         */
+        if (host_url.equals("youporngay.com")) {
+            final_host = "youporngay.com";
+        } else {
+            final_host = this.getHost();
+        }
+        if (url_name == null) {
+            link.setPluginPatternMatcher("https://www." + final_host + "/watch/" + fid + "/" + System.currentTimeMillis() + "/");
+        } else {
+            link.setPluginPatternMatcher("https://www." + final_host + "/watch/" + fid + "/" + url_name + "/");
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private String getFallbackTitle(final DownloadLink link) {
+        final String fid = getFID(link);
+        final String url_name = getURLTitle(link);
+        if (url_name == null) {
+            return fid;
+        } else {
+            return url_name;
+        }
+    }
+
+    private String getURLTitle(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
     }
 
     private static final String defaultEXT = ".mp4";
 
-    @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getFallbackTitle(link) + defaultEXT);
+        }
         this.dllink = null;
         this.server_issues = false;
-        this.temporarilyBlocked = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://youporn.com/", "age_verified", "1");
-        br.setCookie("http://youporn.com/", "is_pc", "1");
+        br.setCookie("http://youporn.com/", "yp-device", "1");
         br.setCookie("http://youporn.com/", "language", "en");
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
@@ -109,11 +154,12 @@ public class YouPornCom extends PluginForHost {
         } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             /* Invalid link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("class='geo-blocked-content'")) {
+            /* 2020-07-02: New: E.g. if you go to youpornru.com with a german IP and add specific URLs (not all content is GEO-blocked!). */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blockd", 3 * 60 * 60 * 1000l);
         } else if (this.br.containsHTML("onload=\"go\\(\\)\"")) {
             /* 2017-07-26: TODO: Maybe follow that js redirect */
-            logger.info("Temporarily blocked because of too many requests");
-            this.temporarilyBlocked = true;
-            return AvailableStatus.UNCHECKABLE;
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Temporarily blocked because of too many requests", 5 * 60 * 1000l);
         }
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
         if (filename == null) {
@@ -129,36 +175,23 @@ public class YouPornCom extends PluginForHost {
             filename = br.getRegex("videoTitle: \'([^<>\']*?)\'").getMatch(0);
         }
         if (filename == null) {
+            filename = this.getFID(link);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim().replaceAll("   ", "-");
         if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
-            parameter.getLinkStatus().setStatusText("Password protected links are not yet supported, contact our support!");
-            parameter.setName(filename + defaultEXT);
-            return AvailableStatus.TRUE;
+            link.getLinkStatus().setStatusText("Password protected links are not yet supported, contact our support!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
         }
         /* Find highest quality */
         int qualityMax = 0;
-        /* Must not be present */
+        /* 2020-07-02: Try to obey users' selected quality in this block only */
         String filesize = null;
-        final String[] htmls = br.getRegex("class='callBox downloadOption[^~]*?downloadVideoLink clearfix'([^~]*?)</span>").getColumn(0);
-        for (final String html : htmls) {
-            final String quality = new Regex(html, "(\\d+)p_\\d+k").getMatch(0);
-            if (quality == null) {
-                continue;
-            }
-            final int qualityTemp = Integer.parseInt(quality);
-            if (qualityTemp > qualityMax) {
-                qualityMax = qualityTemp;
-                dllink = new Regex(html, "(https?://[^'\"]+\\d+p[^'\"]+\\.mp4[^\\'\"\\|]+)").getMatch(0);
-                if (dllink != null) {
-                    /* Only attempt to grab filesize if it corresponds to the current videoquality! */
-                    filesize = new Regex(html, "class=\\'downloadsize\\'>\\((\\d+[^<>\"]+)\\)").getMatch(0);
-                }
-            }
-        }
         final String mediaDefinition = br.getRegex("video\\.mediaDefinition\\s*=\\s*(\\[.*?\\]);").getMatch(0);
         if (mediaDefinition != null) {
+            final String userPreferredQuality = getPreferredStreamQuality();
             qualityMax = 0;
             final List<Object> list = JSonStorage.restoreFromString(mediaDefinition, TypeRef.LIST);
             if (list != null) {
@@ -169,13 +202,39 @@ public class YouPornCom extends PluginForHost {
                         continue;
                     }
                     final String videoUrl = (String) video.get("videoUrl");
-                    if (videoUrl == null) {
+                    if (StringUtils.isEmpty(videoUrl)) {
                         continue;
                     }
-                    final int qualityTemp = Integer.parseInt(quality.toString());
+                    final String qualityTempStr = (String) quality;
+                    if (StringUtils.equals(qualityTempStr, userPreferredQuality)) {
+                        logger.info("Found user preferred quality: " + userPreferredQuality);
+                        dllink = videoUrl;
+                        break;
+                    }
+                    final int qualityTemp = Integer.parseInt(qualityTempStr);
                     if (qualityTemp > qualityMax) {
                         qualityMax = qualityTemp;
                         dllink = videoUrl;
+                    }
+                }
+            }
+        }
+        /* Use fallback if needed - don't care about users' selected quality! */
+        if (StringUtils.isEmpty(this.dllink)) {
+            /* Old handling: Must not be present */
+            final String[] htmls = br.getRegex("class='callBox downloadOption[^~]*?downloadVideoLink clearfix'([^~]*?)</span>").getColumn(0);
+            for (final String html : htmls) {
+                final String quality = new Regex(html, "(\\d+)p_\\d+k").getMatch(0);
+                if (quality == null) {
+                    continue;
+                }
+                final int qualityTemp = Integer.parseInt(quality);
+                if (qualityTemp > qualityMax) {
+                    qualityMax = qualityTemp;
+                    this.dllink = new Regex(html, "(https?://[^'\"]+\\d+p[^'\"]+\\.mp4[^\\'\"\\|]+)").getMatch(0);
+                    if (this.dllink != null) {
+                        /* Only attempt to grab filesize if it corresponds to the current videoquality! */
+                        filesize = new Regex(html, "class=\\'downloadsize\\'>\\((\\d+[^<>\"]+)\\)").getMatch(0);
                     }
                 }
             }
@@ -204,15 +263,15 @@ public class YouPornCom extends PluginForHost {
             /* Do NOT htmldecode! */
             dllink = dllink.replace("&amp;", "&");
         }
-        parameter.setFinalFileName(filename + defaultEXT);
+        link.setFinalFileName(filename + defaultEXT);
         if (filesize != null) {
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         } else if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    parameter.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
                 }
@@ -226,14 +285,11 @@ public class YouPornCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
-        } else if (server_issues) {
+        if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (this.temporarilyBlocked) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Temporarily blocked because of too many requests", 5 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -245,8 +301,32 @@ public class YouPornCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getFID(final String downloadurl) {
-        return new Regex(downloadurl, "/watch/(\\d+)").getMatch(0);
+    private String getPreferredStreamQuality() {
+        final YoupornConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        default:
+            return null;
+        case BEST:
+            return null;
+        case Q2160P:
+            return "2160";
+        case Q1080P:
+            return "1080";
+        case Q720P:
+            return "720";
+        case Q480P:
+            return "480";
+        case Q360P:
+            return "360";
+        case Q240P:
+            return "240";
+        }
+    }
+
+    @Override
+    public Class<? extends YoupornConfig> getConfigInterface() {
+        return YoupornConfig.class;
     }
 
     public void reset() {
