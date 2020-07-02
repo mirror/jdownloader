@@ -309,7 +309,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             });
         }
         // there is no GUI for this - set externally
-        EnableDisableUnchanged ac = getAutoConfirm();
+        final EnableDisableUnchanged ac = getAutoConfirm();
         if (ac != null && ac != EnableDisableUnchanged.UNCHANGED) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
@@ -319,13 +319,13 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
-                    link.setAutoConfirmEnabled(true);
+                    link.setAutoConfirmEnabled(ac == EnableDisableUnchanged.ENABLED);
                     return true;
                 }
             });
         }
         // there is no GUI for this - set externally
-        EnableDisableUnchanged as = getAutoStart();
+        final EnableDisableUnchanged as = getAutoStart();
         if (as != null && as != EnableDisableUnchanged.UNCHANGED) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
@@ -335,7 +335,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
-                    link.setAutoStartEnabled(true);
+                    link.setAutoStartEnabled(as == EnableDisableUnchanged.ENABLED);
                     return true;
                 }
             });
