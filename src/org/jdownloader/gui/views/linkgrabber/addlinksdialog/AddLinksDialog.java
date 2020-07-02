@@ -31,25 +31,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkModifiers;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.DownloadLink;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -84,6 +65,7 @@ import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction.EnableDisableUnchanged;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.logging.LogController;
@@ -91,6 +73,25 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.DownloadLink;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private ExtTextArea                         input;
@@ -100,14 +101,47 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private LinkgrabberSettings                 config;
     private ExtTextField                        password;
     private ExtCheckBox                         extractToggle;
-    private JButton                             confirmOptions;
-    private boolean                             deepAnalyse   = false;
-    private DelayedRunnable                     delayedValidate;
-    private ExtTextField                        downloadPassword;
-    private JComboBox                           priority;
-    private final HashSet<String>               autoPasswords = new HashSet<String>();
-    private ExtTextField                        comment;
-    private JCheckBox                           overwritePackagizer;                   ;
+    private EnableDisableUnchanged              autoStart = EnableDisableUnchanged.UNCHANGED;
+
+    /**
+     * @return the autoStart
+     */
+    public EnableDisableUnchanged getAutoStart() {
+        return autoStart;
+    }
+
+    /**
+     * @param autoStart
+     *            the autoStart to set
+     */
+    public void setAutoStart(EnableDisableUnchanged autoStart) {
+        this.autoStart = autoStart;
+    }
+
+    /**
+     * @return the autoConfirm
+     */
+    public EnableDisableUnchanged getAutoConfirm() {
+        return autoConfirm;
+    }
+
+    /**
+     * @param autoConfirm
+     *            the autoConfirm to set
+     */
+    public void setAutoConfirm(EnableDisableUnchanged autoConfirm) {
+        this.autoConfirm = autoConfirm;
+    }
+
+    private EnableDisableUnchanged autoConfirm   = EnableDisableUnchanged.UNCHANGED;
+    private JButton                confirmOptions;
+    private boolean                deepAnalyse   = false;
+    private DelayedRunnable        delayedValidate;
+    private ExtTextField           downloadPassword;
+    private JComboBox              priority;
+    private final HashSet<String>  autoPasswords = new HashSet<String>();
+    private ExtTextField           comment;
+    private JCheckBox              overwritePackagizer;;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -270,6 +304,38 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.setPriority(finalPriority);
+                    return true;
+                }
+            });
+        }
+        // there is no GUI for this - set externally
+        EnableDisableUnchanged ac = getAutoConfirm();
+        if (ac != null && ac != EnableDisableUnchanged.UNCHANGED) {
+            modifiers.add(new CrawledLinkModifier() {
+                @Override
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
+                    link.setAutoConfirmEnabled(true);
+                    return true;
+                }
+            });
+        }
+        // there is no GUI for this - set externally
+        EnableDisableUnchanged as = getAutoStart();
+        if (as != null && as != EnableDisableUnchanged.UNCHANGED) {
+            modifiers.add(new CrawledLinkModifier() {
+                @Override
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
+                    link.setAutoStartEnabled(true);
                     return true;
                 }
             });
