@@ -6738,4 +6738,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader needs your help with solving a captcha" })
     String recaptchav2_head_description();
+
+    @Default(lngs = { "en" }, values = { "Do not set - use global/auto settings" })
+    String do_not_change_use_global_settings();
 }
