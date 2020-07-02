@@ -19,7 +19,12 @@ import java.util.LinkedHashMap;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -423,16 +428,23 @@ public class TwitterCom extends PluginForHost {
                     }
                     /* Force full login (or login with user given cookies) */
                 }
+                /* 2020-07-02: Only cookie login is supported! */
+                final boolean allowCookieLoginOnly = true;
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
-                if (userCookies != null) {
+                if (userCookies != null && !userCookies.isEmpty()) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
                     br.setCookies(userCookies);
                     jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
                     br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
                     if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
+                        showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else {
+                    if (allowCookieLoginOnly) {
+                        showCookieLoginInformation();
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     br.getPage("https://" + account.getHoster() + "/login");
                     String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
                     if (authenticytoken == null) {
@@ -455,6 +467,42 @@ public class TwitterCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private static Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Twitter - Login";
+                        message += "Hallo liebe(r) Twitter NutzerIn\r\n";
+                        message += "Um deinen Twitter Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Twitter - Login";
+                        message += "Hello dear Twitter user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    // getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     @Override
