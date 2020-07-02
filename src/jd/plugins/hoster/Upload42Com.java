@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -37,7 +39,7 @@ public class Upload42Com extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info: 2019-10-25: Premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-10-25: reCaptchaV2<br />
+     * captchatype-info: 2020-07-02: null <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -101,5 +103,15 @@ public class Upload42Com extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            /* 2020-07-02: Special */
+            fileInfo[0] = new Regex(correctedBR, "<h2>File\\s*:?\\s*<font[^>]*>([^<>\"]+)<").getMatch(0);
+        }
+        return fileInfo;
     }
 }
