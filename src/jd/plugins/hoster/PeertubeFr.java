@@ -15,13 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,13 +32,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa\\.com/([a-z0-9\\-]+)/?" })
-public class KamababaCom extends antiDDoSForHost {
-    public KamababaCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "peertube.fr" }, urls = { "https?://(?:www\\.)?peertube\\.fr/videos/watch/([a-f0-9\\-]+)" })
+public class PeertubeFr extends antiDDoSForHost {
+    public PeertubeFr(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags: Porn plugin
+    // Tags:
     // other:
 
     /* Extension which will be used if no correct extension is found */
@@ -49,7 +52,7 @@ public class KamababaCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.kamababa.com/";
+        return "https://peertube.fr/";
     }
 
     @Override
@@ -73,71 +76,39 @@ public class KamababaCom extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        getPage("https://" + this.getHost() + "/api/v1/videos/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("schema\\.org/VideoObject") && !br.containsHTML("class=\"video-player\"")) {
-            /* Content is no downloadable (video) content */
+            /* 2020-07-03: E.g. {"error":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]+)\" />").getMatch(0);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        String filename = (String) entries.get("name");
+        final String description = (String) entries.get("description");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(description);
+        }
+        /* Grab highest quality downloadurl + filesize */
+        this.dllink = (String) JavaScriptEngineFactory.walkJson(entries, "files/{0}/fileDownloadUrl");
+        final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "files/{0}/size"), 0);
+        if (filesize > 0) {
+            link.setDownloadSize(filesize);
+        }
         if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
+            filename = this.getFID(link);
         }
-        /* RegExes sometimes used for streaming */
-        dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        if (dllink == null) {
-            /* 2020-07-03 */
-            dllink = br.getRegex("itemprop=\"contentURL\"[^>]*content=\"(https?://[^<>\"]+)\"").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
-                ext = default_extension;
-            }
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
+        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -149,7 +120,7 @@ public class KamababaCom extends antiDDoSForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
     }
