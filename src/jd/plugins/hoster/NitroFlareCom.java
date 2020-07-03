@@ -79,7 +79,9 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private boolean useAPIFreeMode() {
-        return PluginJsonConfig.get(NitroflareConfig.class).isUseFreeAPIEnabled();
+        /** 2020-07-03: Doesn't work (yet) thus I've removed this setting RE: psp */
+        // return PluginJsonConfig.get(NitroflareConfig.class).isUseFreeAPIEnabled();
+        return false;
     }
 
     @Override

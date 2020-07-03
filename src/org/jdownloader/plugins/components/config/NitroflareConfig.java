@@ -36,12 +36,12 @@ public interface NitroflareConfig extends PluginConfigInterface {
     boolean isUsePremiumAPIEnabled();
 
     void setUsePremiumAPIEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Use API for free- and free account downloading?")
-    @Order(40)
-    boolean isUseFreeAPIEnabled();
-
-    void setUseFreeAPIEnabled(boolean b);
+    /** 2020-07-03: Doesn't work (yet) thus I've removed this setting RE: psp */
+    // @AboutConfig
+    // @DefaultBooleanValue(false)
+    // @DescriptionForConfigEntry("Use API for free- and free account downloading?")
+    // @Order(40)
+    // boolean isUseFreeAPIEnabled();
+    //
+    // void setUseFreeAPIEnabled(boolean b);
 }
