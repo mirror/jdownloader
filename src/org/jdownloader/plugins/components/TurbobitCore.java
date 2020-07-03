@@ -84,6 +84,10 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
+    protected boolean isFastLinkcheckEnabled() {
+        return true;
+    }
+
     /**
      * 2019-05-11: There is also an API-version of this but it seems like it only returns online/offline - no filename/filesize:
      * https://hitfile.net/linkchecker/api
@@ -94,12 +98,12 @@ public class TurbobitCore extends antiDDoSForHost {
             return false;
         }
         /**
-         * Disabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
+         * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
          * filesize is not known already. This will speedup the linkcheck! </br>
-         * Enabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will slow
-         * down the linkcheck and cause more http requests in a short amount of time!
+         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
+         * slow down the linkcheck and cause more http requests in a short amount of time!
          */
-        final boolean forceDeepCheckOnMissingFilesize = false;
+        final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
         try {
             final Browser br_linkcheck = new Browser();
@@ -151,7 +155,7 @@ public class TurbobitCore extends antiDDoSForHost {
                             dllink.setAvailable(true);
                             dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
                             final boolean checkedBeforeAlready = dllink.getBooleanProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, false);
-                            if (dllink.getKnownDownloadSize() < 0 && (checkedBeforeAlready || forceDeepCheckOnMissingFilesize)) {
+                            if (dllink.getKnownDownloadSize() < 0 && (checkedBeforeAlready || !fastLinkcheck)) {
                                 deepChecks.add(dllink);
                             }
                             /* Allows it to look for the filesize on 2nd linkcheck. */
@@ -219,7 +223,7 @@ public class TurbobitCore extends antiDDoSForHost {
         String fileSize = br.getRegex(filenameSize).getMatch(1);
         if (fileSize == null) {
             /* E.g. for hitfile.net, filesize is in brakets '(")(")' */
-            fileSize = br.getRegex("class=\"file-size\">(?:\\()?([^<>\"]*?)(?:\\))?<").getMatch(0);
+            fileSize = br.getRegex("class=\"file-size\">\\(([^<>\"]*?\\))<").getMatch(0);
         }
         if (filename != null) {
             link.setName(filename);

@@ -38,103 +38,78 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhoresdecrypted\\.tv/.+|https?://(?:www\\.)?camwhores(tv)?\\.(?:tv|video|biz|sc|io|adult|cc|co|org)/embed/\\d+" })
-public class CamwhoresTv extends antiDDoSForHost {
-    public CamwhoresTv(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhoresbay.com" }, urls = { "https?://(?:www\\.)?camwhoresbay\\.com/(embed/\\d+|videos/\\d+/[a-z0-9\\-]+/)" })
+public class CamwhoresbayCom extends antiDDoSForHost {
+    public CamwhoresbayCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.camwhores.tv/");
+        this.enablePremium("https://www.camwhoresbay.com/");
     }
 
     /* DEV NOTES */
-    // Tags:
+    // Tags: porn host
     // protocol: no https
     // other:
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension            = ".mp4";
+    private static final String default_Extension         = ".mp4";
     /* Connection stuff */
-    private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = 0;
-    private final int           FREE_MAXDOWNLOADS            = 20;
-    private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private final boolean       FREE_RESUME               = true;
+    private final int           FREE_MAXCHUNKS            = 0;
+    private final int           FREE_MAXDOWNLOADS         = -1;
+    private final boolean       ACCOUNT_FREE_RESUME       = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS = -1;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String              dllink                       = null;
-    private boolean             server_issues                = false;
-    private boolean             is_private_video             = false;
-
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("camwhoresdecrypted.tv/", this.getHost() + "/").replace("camwhores.tv/", this.getHost() + "/"));
-        final String id = getVideoID(link.getDownloadURL());
-        if (id != null) {
-            link.setLinkID(getHost() + "://" + id);
-        }
-    }
-
-    @Override
-    public String getMirrorID(final DownloadLink link) {
-        if (link != null) {
-            final String id = new Regex(link.getDownloadURL(), "/(?:videos|embed)/(\\d+)").getMatch(0);
-            if (id != null) {
-                return getHost() + "://" + id;
-            }
-        }
-        return super.getMirrorID(link);
-    }
+    private String              dllink                    = null;
+    private boolean             server_issues             = false;
+    private boolean             is_private_video          = false;
 
     @Override
     public String getAGBLink() {
-        return "http://www.camwhores.tv/terms/";
+        return "https://www.camwhoresbay.com/terms/";
     }
 
-    private static String getVideoID(final String url) {
-        return new Regex(url, "/(?:videos|embed)/(\\d+)").getMatch(0);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(?:videos|embed)/(\\d+)").getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
-        br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "kt_tcookie", "1");
-        br.setCookie(this.getHost(), "kt_is_visited", "1");
-        final String videoID = getVideoID(link.getPluginPatternMatcher());
-        if (videoID != null && StringUtils.equals(videoID, getVideoID(link.getContentUrl()))) {
-            getPage(link.getContentUrl());
-        } else if (videoID != null) {
-            getPage("http://www." + this.getHost() + "/videos/" + videoID + "/video/");
-        } else {
-            getPage(link.getDownloadURL());
+        String filename = jd.plugins.hoster.KernelVideoSharingCom.regexURLFilename(link.getPluginPatternMatcher());
+        if (filename == null) {
+            /* For embeddded videos */
+            filename = this.getFID(link);
         }
-        if (isOffline(this.br)) {
-            /* 2017-01-21: For now, we do not support private videos --> Offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        is_private_video = this.br.containsHTML("This video is a private");
-        String filename = getTitle(this.br, link.getPluginPatternMatcher());
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext = default_Extension;
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
+        link.setFinalFileName(filename);
+        br.setFollowRedirects(true);
+        br.setCookie(this.getHost(), "kt_tcookie", "1");
+        br.setCookie(this.getHost(), "kt_is_visited", "1");
+        getPage(link.getPluginPatternMatcher());
+        if (isOffline(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        is_private_video = this.br.containsHTML("This video is a private");
         if (is_private_video && br.containsHTML("login-required")) {
-            link.setName(filename);
             return AvailableStatus.TRUE;
         }
         getDllink(link);
-        if (dllink != null && link.getFinalFileName() == null) {
-            final String urlExt = getFileNameExtensionFromURL(dllink, default_Extension);
-            if (!StringUtils.endsWithCaseInsensitive(dllink, urlExt)) {
-                filename += urlExt;
-            }
-            link.setFinalFileName(filename);
-        }
         if (dllink != null && !(Thread.currentThread() instanceof SingleDownloadController)) {
             final Browser br2 = br.cloneBrowser();
             br.setFollowRedirects(true);
@@ -179,10 +154,10 @@ public class CamwhoresTv extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink LINK) throws Exception, PluginException {
         requestFileInformation(LINK);
-        doDownload(null, LINK, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(null, LINK, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doDownload(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (is_private_video && account == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (server_issues) {
@@ -216,6 +191,7 @@ public class CamwhoresTv extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    /** TODO: Consider integrating this into KernelVideoSharingCom --> Update it so we can do an "extends KernelVideoSharingCom". */
     private void login(final Account account, final boolean force, final boolean test) throws Exception {
         synchronized (account) {
             try {
@@ -226,7 +202,7 @@ public class CamwhoresTv extends antiDDoSForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     if (!test) {
                     }
-                    getPage("http://www." + this.getHost() + "/");
+                    getPage("https://www." + this.getHost() + "/");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -236,7 +212,7 @@ public class CamwhoresTv extends antiDDoSForHost {
                     }
                 }
                 br.clearCookies(this.getHost());
-                getPage("http://www." + this.getHost() + "/login/");
+                getPage("https://www." + this.getHost() + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
                  * premium accounts available at all.
@@ -262,7 +238,6 @@ public class CamwhoresTv extends antiDDoSForHost {
         /* Registered users can watch private videos when they follow/subscribe to the uploaders. */
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(false);
         ai.setStatus("Registered (free) user");
         return ai;
@@ -273,7 +248,7 @@ public class CamwhoresTv extends antiDDoSForHost {
         login(account, false, false);
         requestFileInformation(link);
         getDllink(link);
-        doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        doFree(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
     private boolean isLoggedIN() {
@@ -282,10 +257,10 @@ public class CamwhoresTv extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
-    public static String getTitle(final Browser br, final String url_source) {
+    private String getTitle(final Browser br, final String url_source) {
         // String title = br.getRegex("<title>(?:Watch Free )?([^<>\"]*?)( / Embed Player| Webcam Porn Video \\-
         // CamWhores\\.TV)?</title>").getMatch(0);
         // if (title == null) {
@@ -305,14 +280,13 @@ public class CamwhoresTv extends antiDDoSForHost {
         }
         if (filename == null) {
             /* Final fallback */
-            filename = getVideoID(url_source);
+            filename = getFID(this.getDownloadLink());
         }
         return filename;
     }
 
     public static boolean isOffline(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 404) {
-            /* 2017-01-21: For now, we do not support private videos --> Offline */
             return true;
         } else {
             return false;
