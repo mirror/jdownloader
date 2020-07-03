@@ -106,6 +106,9 @@ public class TiktokCom extends antiDDoSForHost {
         br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"unavailable\"")) {
+            /* 2020-07-03: E.g. <div class="unavailable"><h3>Oops! That video doesn’t exist</h3></div> */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String createDate = null;
         final boolean use_new_way = true;
@@ -142,7 +145,7 @@ public class TiktokCom extends antiDDoSForHost {
                         filename = dateFormatted + "_" + filename;
                     }
                     link.setFinalFileName(filename);
-                    link.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {

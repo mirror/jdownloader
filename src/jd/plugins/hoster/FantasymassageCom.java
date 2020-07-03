@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -39,7 +38,6 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fantasymassage.com" }, urls = { "https?://fantasymassagedecrypted.+" })
 public class FantasymassageCom extends PluginForHost {
-
     public FantasymassageCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.fantasymassage.com/en/createaccount");
@@ -58,12 +56,9 @@ public class FantasymassageCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private final String         type_premium_pic             = ".+\\.jpg.*?";
     private final String         type_premium_pic_zip         = ".+\\.zip.*?";
-
     public static final String   html_loggedin                = "class=\"collectionPlaylist\"";
-
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -160,13 +155,12 @@ public class FantasymassageCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
-    public static void login(Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(Browser br, final Account account, final boolean verifyCookies) throws Exception {
         prepBR(br);
-        synchronized (LOCK) {
+        synchronized (account) {
             final PluginForHost hostplugin = JDUtilities.getPluginForHost("evilangel.com");
-            ((jd.plugins.hoster.EvilAngelCom) hostplugin).loginEvilAngelNetwork(br, account, "http://www." + account.getHoster() + "/en/login", html_loggedin);
+            hostplugin.setBrowser(br);
+            ((jd.plugins.hoster.EvilAngelCom) hostplugin).loginEvilAngelNetwork(account, verifyCookies, "http://www." + account.getHoster() + "/en/login", html_loggedin);
         }
     }
 
@@ -238,5 +232,4 @@ public class FantasymassageCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

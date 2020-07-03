@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.TurbobitCore;
-import org.jdownloader.plugins.components.config.TurbobitConfig;
-import org.jdownloader.plugins.components.config.TurbobitConfig.PreferredDomain;
+import org.jdownloader.plugins.components.config.TurbobitCoreConfigTurbobitNet;
+import org.jdownloader.plugins.components.config.TurbobitCoreConfigTurbobitNet.PreferredDomain;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -49,7 +49,7 @@ public class TurboBitNet extends TurbobitCore {
     @Override
     protected String getConfiguredDomain() {
         /* Returns user-set value which can be used to circumvent government based GEO-block. */
-        PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitConfig.class).getPreferredDomain();
+        PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getPreferredDomain();
         if (cfgdomain == null) {
             cfgdomain = PreferredDomain.DEFAULT;
         }
@@ -122,7 +122,12 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     @Override
+    protected boolean isFastLinkcheckEnabled() {
+        return PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).isEnableFastLinkcheck();
+    }
+
+    @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return TurbobitConfig.class;
+        return TurbobitCoreConfigTurbobitNet.class;
     }
 }

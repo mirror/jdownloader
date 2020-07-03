@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -37,7 +36,6 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "analacrobats.com" }, urls = { "https?://members\\.analacrobats\\.com/(?:en/)?[^/]+/scene/\\d+" })
 public class AnalacrobatsCom extends antiDDoSForHost {
-
     public AnalacrobatsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://members.analacrobats.com/");
@@ -49,7 +47,6 @@ public class AnalacrobatsCom extends antiDDoSForHost {
     }
 
     private static final String  type_normal                  = "https?://members\\.analacrobats\\.com/(?:en/)?([^/]+)/scene/(\\d+)";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -57,7 +54,6 @@ public class AnalacrobatsCom extends antiDDoSForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               dllink                       = null;
     public static final long     trust_cookie_age             = 300000l;
     private static final String  HTML_LOGGEDIN                = "\"headerToolbarlinkLogout\"";
@@ -74,7 +70,7 @@ public class AnalacrobatsCom extends antiDDoSForHost {
             /* Account needed! */
             return AvailableStatus.UNCHECKABLE;
         }
-        this.login(aa);
+        this.login(aa, false);
         this.br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -85,13 +81,11 @@ public class AnalacrobatsCom extends antiDDoSForHost {
             link.setName(filename_url + ".mp4");
             return AvailableStatus.TRUE;
         }
-
         String filename = br.getRegex("<h3 class=\"sceneTitle\">([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) {
             filename = new Regex(link.getDownloadURL(), type_normal).getMatch(0) + "_" + new Regex(link.getDownloadURL(), type_normal).getMatch(1);
         }
         filename = Encoding.htmlDecode(filename).trim();
-
         dllink = jd.plugins.hoster.EvilAngelCom.getDllink(this.br);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -103,9 +97,7 @@ public class AnalacrobatsCom extends antiDDoSForHost {
         } else {
             filename = filename + "-" + quality + ".mp4";
         }
-
         link.setFinalFileName(filename);
-
         URLConnectionAdapter con = null;
         try {
             try {
@@ -125,7 +117,6 @@ public class AnalacrobatsCom extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
-
         return AvailableStatus.TRUE;
     }
 
@@ -145,31 +136,23 @@ public class AnalacrobatsCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
-    private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean verifyCookies) throws Exception {
+        synchronized (account) {
             final PluginForHost hostplugin = JDUtilities.getPluginForHost("evilangel.com");
-            ((jd.plugins.hoster.EvilAngelCom) hostplugin).loginEvilAngelNetwork(this.br, account, LOGIN_PAGE, HTML_LOGGEDIN);
+            hostplugin.setBrowser(this.br);
+            ((jd.plugins.hoster.EvilAngelCom) hostplugin).loginEvilAngelNetwork(account, verifyCookies, LOGIN_PAGE, HTML_LOGGEDIN);
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium Account");
-        account.setValid(true);
         return ai;
     }
 
@@ -201,5 +184,4 @@ public class AnalacrobatsCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
