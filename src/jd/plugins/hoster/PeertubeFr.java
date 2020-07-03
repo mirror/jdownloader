@@ -41,8 +41,6 @@ public class PeertubeFr extends antiDDoSForHost {
     // Tags:
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
