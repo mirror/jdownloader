@@ -45,6 +45,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
@@ -973,12 +975,32 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                     } else {
                         // secondary pages are pure json
-                        final Map<String, Object> asdf = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
-                        if (asdf != null) {
-                            final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(asdf, "{}/response/continuationContents/playlistVideoListContinuation/contents");
+                        final Object object = JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
+                        final Map<String, Object> map;
+                        if (object instanceof Map) {
+                            map = (Map<String, Object>) object;
+                        } else if (object instanceof List) {
+                            final List<Object> list = (List<Object>) object;
+                            Map<String, Object> found = null;
+                            for (final Object entry : list) {
+                                if (entry instanceof Map && ((Map) entry).containsKey("response")) {
+                                    found = (Map<String, Object>) entry;
+                                    break;
+                                }
+                            }
+                            if (found != null) {
+                                map = found;
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (map != null) {
+                            final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/contents");
                             if (pl != null) {
                                 for (final Object p : pl) {
-                                    final LinkedHashMap<String, Object> vid = (LinkedHashMap<String, Object>) p;
+                                    final Map<String, Object> vid = (Map<String, Object>) p;
                                     final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
                                     if (id != null) {
                                         if (dupeCheckSet.add(id)) {
@@ -989,13 +1011,9 @@ public class TbCmV2 extends PluginForDecrypt {
                                     }
                                 }
                                 // continuation
-                                final LinkedHashMap<String, Object> c = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(asdf, "{}/response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData");
-                                if (c != null) {
-                                    final String ctoken = (String) c.get("continuation");
-                                    final String itct = (String) c.get("clickTrackingParams");
-                                    if (ctoken != null && itct != null) {
-                                        jsonPage = "/browse_ajax?ctoken=" + Encoding.urlEncode(ctoken) + "&itct=" + Encoding.urlEncode(itct);
-                                    }
+                                final String url = (String) JavaScriptEngineFactory.walkJson(map, "endpoint/urlEndpoint/url");
+                                if (url != null) {
+                                    jsonPage = url;
                                 }
                             }
                         }
