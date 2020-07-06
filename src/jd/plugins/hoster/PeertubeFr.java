@@ -29,6 +29,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -61,7 +62,7 @@ public class PeertubeFr extends antiDDoSForHost {
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
         if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+            return Browser.getHost(link.getPluginPatternMatcher(), true) + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
@@ -71,513 +72,25 @@ public class PeertubeFr extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    // public static String[] getAnnotationNames() {
+    // return Plugin.buildAnnotationNames(getPluginDomains());
+    // }
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "peertube.fr" });
-        ret.add(new String[] { "peertube.maxweiss.io" });
-        ret.add(new String[] { "tube.iddqd.press" });
-        ret.add(new String[] { "tube.privacytools.io" });
-        ret.add(new String[] { "videos.lukesmith.xyz" });
-        ret.add(new String[] { "tube.22decembre.eu" });
-        ret.add(new String[] { "tilvids.com" });
-        ret.add(new String[] { "peertube.azkware.net" });
-        ret.add(new String[] { "tubee.fr" });
-        ret.add(new String[] { "tuvideo.encanarias.info" });
-        ret.add(new String[] { "tube.kenfm.de" });
-        ret.add(new String[] { "p2ptv.ru" });
-        ret.add(new String[] { "hostyour.tv" });
-        ret.add(new String[] { "justtelly.com" });
-        ret.add(new String[] { "controverse.tube" });
-        ret.add(new String[] { "video.datsemultimedia.com" });
-        ret.add(new String[] { "peertube.devloprog.org" });
-        ret.add(new String[] { "peertube.crypto-libertarian.com" });
-        ret.add(new String[] { "peertube.designersethiques.org" });
-        ret.add(new String[] { "hope.tube" });
-        ret.add(new String[] { "testtube.florimond.eu" });
-        ret.add(new String[] { "v.sevvie.ltd" });
-        ret.add(new String[] { "open.tube" });
-        ret.add(new String[] { "tube.1001solutions.net" });
-        ret.add(new String[] { "peertube.wivodaim.net" });
-        ret.add(new String[] { "video.gafamfree.party" });
-        ret.add(new String[] { "watch.haddock.cc" });
-        ret.add(new String[] { "tube.gnous.eu" });
-        ret.add(new String[] { "videos.casually.cat" });
-        ret.add(new String[] { "stream.okin.cloud" });
-        ret.add(new String[] { "video.taboulisme.com" });
-        ret.add(new String[] { "peertube.acab.io" });
-        ret.add(new String[] { "tube-lille.beta.education.fr" });
-        ret.add(new String[] { "peertube.monlycee.net" });
-        ret.add(new String[] { "tube.plomlompom.com" });
-        ret.add(new String[] { "peertube1.zeteo.me" });
-        ret.add(new String[] { "v.mkp.ca" });
-        ret.add(new String[] { "tube-outremer.beta.education.fr" });
-        ret.add(new String[] { "tube-lyon.beta.education.fr" });
-        ret.add(new String[] { "tube-dijon.beta.education.fr" });
-        ret.add(new String[] { "peertube.public.cat" });
-        ret.add(new String[] { "videos.fromouter.space" });
-        ret.add(new String[] { "tube-reims.beta.education.fr" });
-        ret.add(new String[] { "peertube.de1.sknode.com" });
-        ret.add(new String[] { "video.marcorennmaus.tk" });
-        ret.add(new String[] { "tube-limoges.beta.education.fr" });
-        ret.add(new String[] { "tube-versailles.beta.education.fr" });
-        ret.add(new String[] { "pt.steffo.eu" });
-        ret.add(new String[] { "stoptrackingus.tv" });
-        ret.add(new String[] { "peertube.r2.enst.fr" });
-        ret.add(new String[] { "peertube.metalbanana.net" });
-        ret.add(new String[] { "peertube.b38.rural-it.org" });
-        ret.add(new String[] { "tube-orleans-tours.beta.education.fr" });
-        ret.add(new String[] { "spacepub.space" });
-        ret.add(new String[] { "tube-rennes.beta.education.fr" });
-        ret.add(new String[] { "peertube.devol.it" });
-        ret.add(new String[] { "tube-clermont-ferrand.beta.education.fr" });
-        ret.add(new String[] { "video.nimag.net" });
-        ret.add(new String[] { "peertube.nogafa.org" });
-        ret.add(new String[] { "tube-corse.beta.education.fr" });
-        ret.add(new String[] { "film.node9.org" });
-        ret.add(new String[] { "tube-nice.beta.education.fr" });
-        ret.add(new String[] { "peertube.tangentfox.com" });
-        ret.add(new String[] { "notretube.asselma.eu" });
-        ret.add(new String[] { "tube-montpellier.beta.education.fr" });
-        ret.add(new String[] { "haytv.blueline.mg" });
-        ret.add(new String[] { "vidcommons.org" });
-        ret.add(new String[] { "tube.afix.space" });
-        ret.add(new String[] { "videos.ac-nancy-metz.fr" });
-        ret.add(new String[] { "tube-nancy.beta.education.fr" });
-        ret.add(new String[] { "videos.aadtp.be" });
-        ret.add(new String[] { "videosdulib.re" });
-        ret.add(new String[] { "tube-aix-marseille.beta.education.fr" });
-        ret.add(new String[] { "tube-nantes.beta.education.fr" });
-        ret.add(new String[] { "tube-grenoble.beta.education.fr" });
-        ret.add(new String[] { "tube-paris.beta.education.fr" });
-        ret.add(new String[] { "cinematheque.tube" });
-        ret.add(new String[] { "tube-amiens.beta.education.fr" });
-        ret.add(new String[] { "peertube.gardeludwig.fr" });
-        ret.add(new String[] { "peertube.foxfam.club" });
-        ret.add(new String[] { "docker.videos.lecygnenoir.info" });
-        ret.add(new String[] { "media.privacyinternational.org" });
-        ret.add(new String[] { "tube-normandie.beta.education.fr" });
-        ret.add(new String[] { "tube.port0.xyz" });
-        ret.add(new String[] { "tube-creteil.beta.education.fr" });
-        ret.add(new String[] { "tube1.it.tuwien.ac.at" });
-        ret.add(new String[] { "peertube.travnewmatic.com" });
-        ret.add(new String[] { "tube.aquilenet.fr" });
-        ret.add(new String[] { "video.hylianux.com" });
-        ret.add(new String[] { "peertube.chiccou.net" });
-        ret.add(new String[] { "peertube.lyceeconnecte.fr" });
-        ret.add(new String[] { "tube-education.beta.education.fr" });
-        ret.add(new String[] { "tube.darfweb.eu" });
-        ret.add(new String[] { "video.phyrone.de" });
-        ret.add(new String[] { "vids.roshless.me" });
-        ret.add(new String[] { "peertube.s2s.video" });
-        ret.add(new String[] { "peertube.agneraya.com" });
-        ret.add(new String[] { "tube-toulouse.beta.education.fr" });
-        ret.add(new String[] { "peertube.netzbegruenung.de" });
-        ret.add(new String[] { "flim.ml" });
-        ret.add(new String[] { "plextube.nl" });
-        ret.add(new String[] { "queermotion.org" });
-        ret.add(new String[] { "peertube.atilla.org" });
-        ret.add(new String[] { "tube.opportunis.me" });
-        ret.add(new String[] { "nanawel-peertube.dyndns.org" });
-        ret.add(new String[] { "tube-strasbourg.beta.education.fr" });
-        ret.add(new String[] { "tube.graz.social" });
-        ret.add(new String[] { "tube-besancon.beta.education.fr" });
-        ret.add(new String[] { "vid.garwood.io" });
-        ret.add(new String[] { "kolektiva.media" });
-        ret.add(new String[] { "peertube.lefaut.fr" });
-        ret.add(new String[] { "peertube.ichigo.everydayimshuflin.com" });
-        ret.add(new String[] { "petitlutinartube.fr" });
-        ret.add(new String[] { "videos.martyn.berlin" });
-        ret.add(new String[] { "video.lundi.am" });
-        ret.add(new String[] { "tube.pawelko.net" });
-        ret.add(new String[] { "video.unkipamunich.fr" });
-        ret.add(new String[] { "tube.chatelet.ovh" });
-        ret.add(new String[] { "peertube.xwiki.com" });
-        ret.add(new String[] { "tube.florimond.eu" });
-        ret.add(new String[] { "peertube.it" });
-        ret.add(new String[] { "peertube.taxinachtegel.de" });
-        ret.add(new String[] { "peertube.marud.fr" });
-        ret.add(new String[] { "peertube.mastodon.host" });
-        ret.add(new String[] { "vid.wizards.zone" });
-        ret.add(new String[] { "video.mindsforge.com" });
-        ret.add(new String[] { "peertube.scic-tetris.org" });
-        ret.add(new String[] { "peertube.semipvt.com" });
-        ret.add(new String[] { "peertube.lagvoid.com" });
-        ret.add(new String[] { "peertube.ireis.site" });
-        ret.add(new String[] { "peertube.hardwarehookups.com.au" });
-        ret.add(new String[] { "pt.diaspodon.fr" });
-        ret.add(new String[] { "video.mugoreve.fr" });
-        ret.add(new String[] { "nocensoring.net" });
-        ret.add(new String[] { "tube.portes-imaginaire.org" });
-        ret.add(new String[] { "peertube.robonomics.network" });
-        ret.add(new String[] { "video.data-expertise.com" });
-        ret.add(new String[] { "peertubenorge.com" });
-        ret.add(new String[] { "meta-tube.de" });
-        ret.add(new String[] { "video.minzord.eu.org" });
-        ret.add(new String[] { "peertube.mazzonetto.eu" });
-        ret.add(new String[] { "videos.ahp-numerique.fr" });
-        ret.add(new String[] { "algorithmic.tv" });
-        ret.add(new String[] { "peertube.gnumeria.fr" });
-        ret.add(new String[] { "troo.tube" });
-        ret.add(new String[] { "lanceur-alerte.tv" });
-        ret.add(new String[] { "gwadloup.tv" });
-        ret.add(new String[] { "matinik.tv" });
-        ret.add(new String[] { "peertube.stemy.me" });
-        ret.add(new String[] { "ptube.horsentiers.fr" });
-        ret.add(new String[] { "videos.lavoixdessansvoix.org" });
-        ret.add(new String[] { "peervideo.ru" });
-        ret.add(new String[] { "peertube.at" });
-        ret.add(new String[] { "p.eertu.be" });
-        ret.add(new String[] { "video.marcorennmaus.de" });
-        ret.add(new String[] { "doby.io" });
-        ret.add(new String[] { "videos.gerdemann.me" });
-        ret.add(new String[] { "video.hardlimit.com" });
-        ret.add(new String[] { "peertube.debian.social" });
-        ret.add(new String[] { "infotik.fr" });
-        ret.add(new String[] { "tube.piweb.be" });
-        ret.add(new String[] { "video.lewd.host" });
-        ret.add(new String[] { "peertube.su" });
-        ret.add(new String[] { "freespeech.tube" });
-        ret.add(new String[] { "video.connor.money" });
-        ret.add(new String[] { "video.linc.systems" });
-        ret.add(new String[] { "manicphase.me" });
-        ret.add(new String[] { "tube.nx12.net" });
-        ret.add(new String[] { "video.hackers.town" });
-        ret.add(new String[] { "video.iphodase.fr" });
-        ret.add(new String[] { "tube.nox-rhea.org" });
-        ret.add(new String[] { "peertube.fedilab.app" });
-        ret.add(new String[] { "peertube.volaras.net" });
-        ret.add(new String[] { "peertube.terranout.mine.nu" });
-        ret.add(new String[] { "tube.fdn.fr" });
-        ret.add(new String[] { "tv.datamol.org" });
-        ret.add(new String[] { "peertube.demonix.fr" });
-        ret.add(new String[] { "videos.hauspie.fr" });
-        ret.add(new String[] { "peertube.social.my-wan.de" });
-        ret.add(new String[] { "media.zat.im" });
-        ret.add(new String[] { "peertube.club" });
-        ret.add(new String[] { "peertube.bierzilla.fr" });
-        ret.add(new String[] { "tube.maliweb.at" });
-        ret.add(new String[] { "lexx.impa.me" });
-        ret.add(new String[] { "peertube.ventresmous.fr" });
-        ret.add(new String[] { "tube.linc.systems" });
-        ret.add(new String[] { "mplayer.demouliere.eu" });
-        ret.add(new String[] { "video.liberta.vip" });
-        ret.add(new String[] { "banneddata.me" });
-        ret.add(new String[] { "peertube.anduin.net" });
-        ret.add(new String[] { "peertube.gcfamily.fr" });
-        ret.add(new String[] { "video.ploud.fr" });
-        ret.add(new String[] { "tube.plaf.fr" });
-        ret.add(new String[] { "peertube.tech" });
-        ret.add(new String[] { "video.lono.space" });
-        ret.add(new String[] { "tube.bn4t.me" });
-        ret.add(new String[] { "highvoltage.tv" });
-        ret.add(new String[] { "tube.valinor.fr" });
-        ret.add(new String[] { "tube.interhacker.space" });
-        ret.add(new String[] { "peertube.simounet.net" });
-        ret.add(new String[] { "tube.nah.re" });
-        ret.add(new String[] { "dreiecksnebel.alex-detsch.de" });
-        ret.add(new String[] { "stage.peertube.ch" });
-        ret.add(new String[] { "peertube.ti-fr.com" });
-        ret.add(new String[] { "video.turbo.chat" });
-        ret.add(new String[] { "tube.hoga.fr" });
-        ret.add(new String[] { "bittube.video" });
-        ret.add(new String[] { "videos.globenet.org" });
-        ret.add(new String[] { "merci-la-police.fr" });
-        ret.add(new String[] { "tv.lapesto.fr" });
-        ret.add(new String[] { "tube.nuagelibre.fr" });
-        ret.add(new String[] { "videos.festivalparminous.org" });
-        ret.add(new String[] { "juggling.digital" });
-        ret.add(new String[] { "peertube.underworld.fr" });
-        ret.add(new String[] { "peertube.anzui.de" });
-        ret.add(new String[] { "video.ihatebeinga.live" });
-        ret.add(new String[] { "pt.neko.bar" });
-        ret.add(new String[] { "video.greenmycity.eu" });
-        ret.add(new String[] { "tube.troopers.agency" });
-        ret.add(new String[] { "tube.thechangebook.org" });
-        ret.add(new String[] { "tube.rita.moe" });
-        ret.add(new String[] { "wetube.ojamajo.moe" });
-        ret.add(new String[] { "lepetitmayennais.fr.nf" });
-        ret.add(new String[] { "tube.blob.cat" });
-        ret.add(new String[] { "medias.pingbase.net" });
-        ret.add(new String[] { "video.oh14.de" });
-        ret.add(new String[] { "mytube.madzel.de" });
-        ret.add(new String[] { "monplaisirtube.ddns.net" });
-        ret.add(new String[] { "mytape.org" });
-        ret.add(new String[] { "peertube.iselfhost.com" });
-        ret.add(new String[] { "video.okaris.de" });
-        ret.add(new String[] { "peertube.alpharius.io" });
-        ret.add(new String[] { "p0.pm" });
-        ret.add(new String[] { "peertube.video" });
-        ret.add(new String[] { "video.isurf.ca" });
-        ret.add(new String[] { "replay.jres.org" });
-        ret.add(new String[] { "video.blender.org" });
-        ret.add(new String[] { "peertube.020.pl" });
-        ret.add(new String[] { "peertube.xoddark.com" });
-        ret.add(new String[] { "peertube.mxinfo.fr" });
-        ret.add(new String[] { "csictv.csic.es" });
-        ret.add(new String[] { "peertube.alcalyn.app" });
-        ret.add(new String[] { "video.imagotv.fr" });
-        ret.add(new String[] { "ptube.rousset.nom.fr" });
-        ret.add(new String[] { "tube.lesamarien.fr" });
-        ret.add(new String[] { "peertube.cipherbliss.com" });
-        ret.add(new String[] { "tube.azbyka.ru" });
-        ret.add(new String[] { "greatview.video" });
-        ret.add(new String[] { "runtube.re" });
-        ret.add(new String[] { "tube.ac-amiens.fr" });
-        ret.add(new String[] { "peertube.euskarabildua.eus" });
-        ret.add(new String[] { "peertube.schaeferit.de" });
-        ret.add(new String[] { "media.krashboyz.org" });
-        ret.add(new String[] { "toobnix.org" });
-        ret.add(new String[] { "video.emergeheart.info" });
-        ret.add(new String[] { "videos.numerique-en-commun.fr" });
-        ret.add(new String[] { "vault.mle.party" });
-        ret.add(new String[] { "peertube.education-forum.com" });
-        ret.add(new String[] { "tube.kdy.ch" });
-        ret.add(new String[] { "peertube.linuxrocks.online" });
-        ret.add(new String[] { "evertron.tv" });
-        ret.add(new String[] { "yt.is.nota.live" });
-        ret.add(new String[] { "videos.upr.fr" });
-        ret.add(new String[] { "widemus.de" });
-        ret.add(new String[] { "video.glassbeadcollective.org" });
-        ret.add(new String[] { "peertube.kangoulya.org" });
-        ret.add(new String[] { "flix.librenet.co.za" });
-        ret.add(new String[] { "video.nesven.eu" });
-        ret.add(new String[] { "vidz.dou.bet" });
-        ret.add(new String[] { "tube.rebellion.global" });
-        ret.add(new String[] { "videos.koumoul.com" });
-        ret.add(new String[] { "tube.undernet.uy" });
-        ret.add(new String[] { "peertube.cojo.uno" });
-        ret.add(new String[] { "peertube.opencloud.lu" });
-        ret.add(new String[] { "video.hdys.band" });
-        ret.add(new String[] { "cattube.org" });
-        ret.add(new String[] { "peertube.ch" });
-        ret.add(new String[] { "tube.tappret.fr" });
-        ret.add(new String[] { "peertube.hatthieves.es" });
-        ret.add(new String[] { "peertube.la-famille-muller.fr" });
-        ret.add(new String[] { "video.sftblw.moe" });
-        ret.add(new String[] { "watch.snoot.tube" });
-        ret.add(new String[] { "video.gcfam.net" });
-        ret.add(new String[] { "peertube.pontostroy.gq" });
-        ret.add(new String[] { "video.splat.soy" });
-        ret.add(new String[] { "peerwatch.xyz" });
-        ret.add(new String[] { "peertube.snargol.com" });
-        ret.add(new String[] { "peertube.desmu.fr" });
-        ret.add(new String[] { "ppstube.portageps.org" });
-        ret.add(new String[] { "peertube.live" });
-        ret.add(new String[] { "peertube.pl" });
-        ret.add(new String[] { "xxxporn.co.uk" });
-        ret.add(new String[] { "peertube.dk" });
-        ret.add(new String[] { "vid.lubar.me" });
-        ret.add(new String[] { "tube.benzo.online" });
-        ret.add(new String[] { "tube.kapussinettes.ovh" });
-        ret.add(new String[] { "peertube.rainbowswingers.net" });
-        ret.add(new String[] { "videomensoif.ynh.fr" });
-        ret.add(new String[] { "peertube.montecsys.fr" });
-        ret.add(new String[] { "peer.tube" });
-        ret.add(new String[] { "tube.nx-pod.de" });
-        ret.add(new String[] { "video.monsieurbidouille.fr" });
-        ret.add(new String[] { "tube.openalgeria.org" });
-        ret.add(new String[] { "vid.lelux.fi" });
-        ret.add(new String[] { "video.anormallostpod.ovh" });
-        ret.add(new String[] { "tube.crapaud-fou.org" });
-        ret.add(new String[] { "lostpod.space" });
-        ret.add(new String[] { "exode.me" });
-        ret.add(new String[] { "vis.ion.ovh" });
-        ret.add(new String[] { "video.qoto.org" });
-        ret.add(new String[] { "video.vny.fr" });
-        ret.add(new String[] { "peervideo.club" });
-        ret.add(new String[] { "tube.taker.fr" });
-        ret.add(new String[] { "peertube.chantierlibre.org" });
-        ret.add(new String[] { "tube.kicou.info" });
-        ret.add(new String[] { "video.yukari.moe" });
-        ret.add(new String[] { "peertube.co.uk" });
-        ret.add(new String[] { "vod.mochi.academy" });
-        ret.add(new String[] { "video.fitchfamily.org" });
-        ret.add(new String[] { "video.fdlibre.eu" });
-        ret.add(new String[] { "tube.fabrigli.fr" });
-        ret.add(new String[] { "video.bruitbruit.com" });
-        ret.add(new String[] { "peer.philoxweb.be" });
-        ret.add(new String[] { "peertube.bilange.ca" });
-        ret.add(new String[] { "libretube.net" });
-        ret.add(new String[] { "libre.video" });
-        ret.add(new String[] { "us.tv" });
-        ret.add(new String[] { "peertube.sl-network.fr" });
-        ret.add(new String[] { "peertube.dynlinux.io" });
-        ret.add(new String[] { "peertube.david.durieux.family" });
-        ret.add(new String[] { "v.kretschmann.social" });
-        ret.add(new String[] { "tube.otter.sh" });
-        ret.add(new String[] { "videos.funkwhale.audio" });
-        ret.add(new String[] { "watch.44con.com" });
-        ret.add(new String[] { "pony.tube" });
-        ret.add(new String[] { "tube.danq.me" });
-        ret.add(new String[] { "tube.fab-l3.org" });
-        ret.add(new String[] { "tube.calculate.social" });
-        ret.add(new String[] { "tube.netzspielplatz.de" });
-        ret.add(new String[] { "peertube.laas.fr" });
-        ret.add(new String[] { "tube.govital.net" });
-        ret.add(new String[] { "video.ploud.jp" });
-        ret.add(new String[] { "video.omniatv.com" });
-        ret.add(new String[] { "peertube.ffs2play.fr" });
-        ret.add(new String[] { "video.1000i100.fr" });
-        ret.add(new String[] { "tube.worldofhauru.xyz" });
-        ret.add(new String[] { "conf.tube" });
-        ret.add(new String[] { "peertube.jackbot.fr" });
-        ret.add(new String[] { "tube.extinctionrebellion.fr" });
-        ret.add(new String[] { "peertube.f-si.org" });
-        ret.add(new String[] { "video.subak.ovh" });
-        ret.add(new String[] { "videos.koweb.fr" });
-        ret.add(new String[] { "peertube.roflcopter.fr" });
-        ret.add(new String[] { "peertube.floss-marketing-school.com" });
-        ret.add(new String[] { "peertube.iriseden.eu" });
-        ret.add(new String[] { "videos.ubuntu-paris.org" });
-        ret.add(new String[] { "armstube.com" });
-        ret.add(new String[] { "peertube.lol" });
-        ret.add(new String[] { "peertube.normandie-libre.fr" });
-        ret.add(new String[] { "peertube.slat.org" });
-        ret.add(new String[] { "peertube.uno" });
-        ret.add(new String[] { "peertube.servebeer.com" });
-        ret.add(new String[] { "peertube.fedi.quebec" });
-        ret.add(new String[] { "tube.h3z.jp" });
-        ret.add(new String[] { "tube.plus200.com" });
-        ret.add(new String[] { "gouttedeau.space" });
-        ret.add(new String[] { "video.antirep.net" });
-        ret.add(new String[] { "tube.ksl-bmx.de" });
-        ret.add(new String[] { "tube.tchncs.de" });
-        ret.add(new String[] { "video.devinberg.com" });
-        ret.add(new String[] { "hitchtube.fr" });
-        ret.add(new String[] { "peertube.kosebamse.com" });
-        ret.add(new String[] { "yunopeertube.myddns.me" });
-        ret.add(new String[] { "peertube.anon-kenkai.com" });
-        ret.add(new String[] { "tube.maiti.info" });
-        ret.add(new String[] { "videos.dinofly.com" });
-        ret.add(new String[] { "videotape.me" });
-        ret.add(new String[] { "video.lemediatv.fr" });
-        ret.add(new String[] { "thickrips.cloud" });
-        ret.add(new String[] { "pt.laurentkruger.fr" });
-        ret.add(new String[] { "video.monarch-pass.net" });
-        ret.add(new String[] { "peertube.artica.center" });
-        ret.add(new String[] { "indymotion.fr" });
-        ret.add(new String[] { "fanvid.stopthatimp.net" });
-        ret.add(new String[] { "video.farci.org" });
-        ret.add(new String[] { "v.lesterpig.com" });
-        ret.add(new String[] { "tube.fede.re" });
-        ret.add(new String[] { "pytu.be" });
-        ret.add(new String[] { "devtube.dev-wiki.de" });
-        ret.add(new String[] { "raptube.antipub.org" });
-        ret.add(new String[] { "video.selea.se" });
-        ret.add(new String[] { "peertube.mygaia.org" });
-        ret.add(new String[] { "peertube.livingutopia.org" });
-        ret.add(new String[] { "peertube.the-penguin.de" });
-        ret.add(new String[] { "tube.anjara.eu" });
-        ret.add(new String[] { "pt.pube.tk" });
-        ret.add(new String[] { "peertube.me" });
-        ret.add(new String[] { "video.latavernedejohnjohn.fr" });
-        ret.add(new String[] { "peertube.pcservice46.fr" });
-        ret.add(new String[] { "video.irem.univ-paris-diderot.fr" });
-        ret.add(new String[] { "alttube.fr" });
-        ret.add(new String[] { "video.coop.tools" });
-        ret.add(new String[] { "video.cabane-libre.org" });
-        ret.add(new String[] { "peertube.openstreetmap.fr" });
-        ret.add(new String[] { "videos.alolise.org" });
-        ret.add(new String[] { "irrsinn.video" });
-        ret.add(new String[] { "video.antopie.org" });
-        ret.add(new String[] { "scitech.video" });
-        ret.add(new String[] { "video.amic37.fr" });
-        ret.add(new String[] { "peertube.freeforge.eu" });
-        ret.add(new String[] { "peertube.togart.de" });
-        ret.add(new String[] { "tube.postblue.info" });
-        ret.add(new String[] { "videos.domainepublic.net" });
-        ret.add(new String[] { "peertube.cyber-tribal.com" });
-        ret.add(new String[] { "video.gresille.org" });
-        ret.add(new String[] { "cinema.yunohost.support" });
-        ret.add(new String[] { "repro.video" });
-        ret.add(new String[] { "videos.wakapo.com" });
-        ret.add(new String[] { "pt.kircheneuenburg.de" });
-        ret.add(new String[] { "peertube.asrun.eu" });
-        ret.add(new String[] { "videos.side-ways.net" });
-        ret.add(new String[] { "91video.online" });
-        ret.add(new String[] { "videos-libr.es" });
-        ret.add(new String[] { "tv.mooh.fr" });
-        ret.add(new String[] { "nuage.acostey.fr" });
-        ret.add(new String[] { "videos.pair2jeux.tube" });
-        ret.add(new String[] { "videos.pueseso.club" });
-        ret.add(new String[] { "media.assassinate-you.net" });
-        ret.add(new String[] { "videos.squat.net" });
-        ret.add(new String[] { "peertube.makotoworkshop.org" });
-        ret.add(new String[] { "peertube.serveur.slv-valbonne.fr" });
-        ret.add(new String[] { "videos.hack2g2.fr" });
-        ret.add(new String[] { "pire.artisanlogiciel.net" });
-        ret.add(new String[] { "video.netsyms.com" });
-        ret.add(new String[] { "video.die-partei.social" });
-        ret.add(new String[] { "video.writeas.org" });
-        ret.add(new String[] { "videos.adhocmusic.com" });
-        ret.add(new String[] { "tube.rfc1149.net" });
-        ret.add(new String[] { "peertube.librelabucm.org" });
-        ret.add(new String[] { "peertube.koehn.com" });
-        ret.add(new String[] { "peertube.anarchmusicall.net" });
-        ret.add(new String[] { "vid.y-y.li" });
-        ret.add(new String[] { "diode.zone" });
-        ret.add(new String[] { "peertube.nomagic.uk" });
-        ret.add(new String[] { "video.rastapuls.com" });
-        ret.add(new String[] { "video.mantlepro.com" });
-        ret.add(new String[] { "video.deadsuperhero.com" });
-        ret.add(new String[] { "peertube.musicstudio.pro" });
-        ret.add(new String[] { "peertube.we-keys.fr" });
-        ret.add(new String[] { "artitube.artifaille.fr" });
-        ret.add(new String[] { "tube.midov.pl" });
-        ret.add(new String[] { "tube.nemsia.org" });
-        ret.add(new String[] { "tube.bruniau.net" });
-        ret.add(new String[] { "tube.traydent.info" });
-        ret.add(new String[] { "peertube.nayya.org" });
-        ret.add(new String[] { "video.lequerrec.eu" });
-        ret.add(new String[] { "peertube.amicale.net" });
-        ret.add(new String[] { "aperi.tube" });
-        ret.add(new String[] { "tube.ac-lyon.fr" });
-        ret.add(new String[] { "video.lw1.at" });
-        ret.add(new String[] { "yiny.org" });
-        ret.add(new String[] { "videos.pofilo.fr" });
-        ret.add(new String[] { "tube.lou.lt" });
-        ret.add(new String[] { "betamax.video" });
-        ret.add(new String[] { "video.typica.us" });
-        ret.add(new String[] { "videos.lescommuns.org" });
-        ret.add(new String[] { "videonaute.fr" });
-        ret.add(new String[] { "dialup.express" });
-        ret.add(new String[] { "megatube.lilomoino.fr" });
-        ret.add(new String[] { "peertube.1312.media" });
-        ret.add(new String[] { "skeptikon.fr" });
-        ret.add(new String[] { "video.blueline.mg" });
-        ret.add(new String[] { "tube.homecomputing.fr" });
-        ret.add(new String[] { "tube.ouahpiti.info" });
-        ret.add(new String[] { "video.tedomum.net" });
-        ret.add(new String[] { "video.g3l.org" });
-        ret.add(new String[] { "fontube.fr" });
-        ret.add(new String[] { "peertube.gaialabs.ch" });
-        ret.add(new String[] { "tube.kher.nl" });
-        ret.add(new String[] { "peertube.qtg.fr" });
-        ret.add(new String[] { "video.migennes.net" });
-        ret.add(new String[] { "tube.p2p.legal" });
-        ret.add(new String[] { "troll.tv" });
-        ret.add(new String[] { "videos.iut-orsay.fr" });
-        ret.add(new String[] { "peertube.solidev.net" });
-        ret.add(new String[] { "videos.cemea.org" });
-        ret.add(new String[] { "video.passageenseine.fr" });
-        ret.add(new String[] { "peertube.touhoppai.moe" });
-        ret.add(new String[] { "peer.hostux.social" });
-        ret.add(new String[] { "share.tube" });
-        ret.add(new String[] { "videos.benpro.fr" });
-        ret.add(new String[] { "peertube.parleur.net" });
-        ret.add(new String[] { "peertube.heraut.eu" });
-        ret.add(new String[] { "peertube.gegeweb.eu" });
-        ret.add(new String[] { "framatube.org" });
-        ret.add(new String[] { "thinkerview.video" });
-        ret.add(new String[] { "tube.conferences-gesticulees.net" });
-        ret.add(new String[] { "peertube.datagueule.tv" });
-        ret.add(new String[] { "video.lqdn.fr" });
-        ret.add(new String[] { "tube.mochi.academy" });
-        ret.add(new String[] { "video.colibris-outilslibres.org" });
-        ret.add(new String[] { "peertube3.cpy.re" });
-        ret.add(new String[] { "peertube2.cpy.re" });
-        ret.add(new String[] { "peertube.cpy.re" });
+        ret.add(new String[] { "peertube.fr", "justtelly.com", "peertube.maxweiss.io", "tube.iddqd.press", "tube.privacytools.io", "videos.lukesmith.xyz", "tube.22decembre.eu", "tilvids.com", "peertube.azkware.net", "tubee.fr", "tuvideo.encanarias.info", "tube.kenfm.de", "p2ptv.ru", "hostyour.tv", "justtelly.com", "controverse.tube", "video.datsemultimedia.com", "peertube.devloprog.org", "peertube.crypto-libertarian.com", "peertube.designersethiques.org", "hope.tube", "testtube.florimond.eu", "v.sevvie.ltd", "open.tube", "tube.1001solutions.net", "peertube.wivodaim.net", "video.gafamfree.party", "watch.haddock.cc", "tube.gnous.eu", "videos.casually.cat", "stream.okin.cloud", "video.taboulisme.com", "peertube.acab.io", "tube-lille.beta.education.fr", "peertube.monlycee.net", "tube.plomlompom.com", "peertube1.zeteo.me", "v.mkp.ca", "tube-outremer.beta.education.fr",
+                "tube-lyon.beta.education.fr", "tube-dijon.beta.education.fr", "peertube.public.cat", "videos.fromouter.space", "tube-reims.beta.education.fr", "peertube.de1.sknode.com", "video.marcorennmaus.tk", "tube-limoges.beta.education.fr", "tube-versailles.beta.education.fr", "pt.steffo.eu", "stoptrackingus.tv", "peertube.r2.enst.fr", "peertube.metalbanana.net", "peertube.b38.rural-it.org", "tube-orleans-tours.beta.education.fr", "spacepub.space", "tube-rennes.beta.education.fr", "peertube.devol.it", "tube-clermont-ferrand.beta.education.fr", "video.nimag.net", "peertube.nogafa.org", "tube-corse.beta.education.fr", "film.node9.org", "tube-nice.beta.education.fr", "peertube.tangentfox.com", "notretube.asselma.eu", "tube-montpellier.beta.education.fr", "haytv.blueline.mg", "vidcommons.org", "tube.afix.space", "videos.ac-nancy-metz.fr", "tube-nancy.beta.education.fr",
+                "videos.aadtp.be", "videosdulib.re", "tube-aix-marseille.beta.education.fr", "tube-nantes.beta.education.fr", "tube-grenoble.beta.education.fr", "tube-paris.beta.education.fr", "cinematheque.tube", "tube-amiens.beta.education.fr", "peertube.gardeludwig.fr", "peertube.foxfam.club", "docker.videos.lecygnenoir.info", "media.privacyinternational.org", "tube-normandie.beta.education.fr", "tube.port0.xyz", "tube-creteil.beta.education.fr", "tube1.it.tuwien.ac.at", "peertube.travnewmatic.com", "tube.aquilenet.fr", "video.hylianux.com", "peertube.chiccou.net", "peertube.lyceeconnecte.fr", "tube-education.beta.education.fr", "tube.darfweb.eu", "video.phyrone.de", "vids.roshless.me", "peertube.s2s.video", "peertube.agneraya.com", "tube-toulouse.beta.education.fr", "peertube.netzbegruenung.de", "flim.ml", "plextube.nl", "queermotion.org", "peertube.atilla.org", "tube.opportunis.me",
+                "nanawel-peertube.dyndns.org", "tube-strasbourg.beta.education.fr", "tube.graz.social", "tube-besancon.beta.education.fr", "vid.garwood.io", "kolektiva.media", "peertube.lefaut.fr", "peertube.ichigo.everydayimshuflin.com", "petitlutinartube.fr", "videos.martyn.berlin", "video.lundi.am", "tube.pawelko.net", "video.unkipamunich.fr", "tube.chatelet.ovh", "peertube.xwiki.com", "tube.florimond.eu", "peertube.it", "peertube.taxinachtegel.de", "peertube.marud.fr", "peertube.mastodon.host", "vid.wizards.zone", "video.mindsforge.com", "peertube.scic-tetris.org", "peertube.semipvt.com", "peertube.lagvoid.com", "peertube.ireis.site", "peertube.hardwarehookups.com.au", "pt.diaspodon.fr", "video.mugoreve.fr", "nocensoring.net", "tube.portes-imaginaire.org", "peertube.robonomics.network", "video.data-expertise.com", "peertubenorge.com", "meta-tube.de", "video.minzord.eu.org",
+                "peertube.mazzonetto.eu", "videos.ahp-numerique.fr", "algorithmic.tv", "peertube.gnumeria.fr", "troo.tube", "lanceur-alerte.tv", "gwadloup.tv", "matinik.tv", "peertube.stemy.me", "ptube.horsentiers.fr", "videos.lavoixdessansvoix.org", "peervideo.ru", "peertube.at", "p.eertu.be", "video.marcorennmaus.de", "doby.io", "videos.gerdemann.me", "video.hardlimit.com", "peertube.debian.social", "infotik.fr", "tube.piweb.be", "video.lewd.host", "peertube.su", "freespeech.tube", "video.connor.money", "video.linc.systems", "manicphase.me", "tube.nx12.net", "video.hackers.town", "video.iphodase.fr", "tube.nox-rhea.org", "peertube.fedilab.app", "peertube.volaras.net", "peertube.terranout.mine.nu", "tube.fdn.fr", "tv.datamol.org", "peertube.demonix.fr", "videos.hauspie.fr", "peertube.social.my-wan.de", "media.zat.im", "peertube.club", "peertube.bierzilla.fr", "tube.maliweb.at",
+                "lexx.impa.me", "peertube.ventresmous.fr", "tube.linc.systems", "mplayer.demouliere.eu", "video.liberta.vip", "banneddata.me", "peertube.anduin.net", "peertube.gcfamily.fr", "video.ploud.fr", "tube.plaf.fr", "peertube.tech", "video.lono.space", "tube.bn4t.me", "highvoltage.tv", "tube.valinor.fr", "tube.interhacker.space", "peertube.simounet.net", "tube.nah.re", "dreiecksnebel.alex-detsch.de", "stage.peertube.ch", "peertube.ti-fr.com", "video.turbo.chat", "tube.hoga.fr", "bittube.video", "videos.globenet.org", "merci-la-police.fr", "tv.lapesto.fr", "tube.nuagelibre.fr", "videos.festivalparminous.org", "juggling.digital", "peertube.underworld.fr", "peertube.anzui.de", "video.ihatebeinga.live", "pt.neko.bar", "video.greenmycity.eu", "tube.troopers.agency", "tube.thechangebook.org", "tube.rita.moe", "wetube.ojamajo.moe", "lepetitmayennais.fr.nf", "tube.blob.cat",
+                "medias.pingbase.net", "video.oh14.de", "mytube.madzel.de", "monplaisirtube.ddns.net", "mytape.org", "peertube.iselfhost.com", "video.okaris.de", "peertube.alpharius.io", "p0.pm", "peertube.video", "video.isurf.ca", "replay.jres.org", "video.blender.org", "peertube.020.pl", "peertube.xoddark.com", "peertube.mxinfo.fr", "csictv.csic.es", "peertube.alcalyn.app", "video.imagotv.fr", "ptube.rousset.nom.fr", "tube.lesamarien.fr", "peertube.cipherbliss.com", "tube.azbyka.ru", "greatview.video", "runtube.re", "tube.ac-amiens.fr", "peertube.euskarabildua.eus", "peertube.schaeferit.de", "media.krashboyz.org", "toobnix.org", "video.emergeheart.info", "videos.numerique-en-commun.fr", "vault.mle.party", "peertube.education-forum.com", "tube.kdy.ch", "peertube.linuxrocks.online", "evertron.tv", "yt.is.nota.live", "videos.upr.fr", "widemus.de", "video.glassbeadcollective.org",
+                "peertube.kangoulya.org", "flix.librenet.co.za", "video.nesven.eu", "vidz.dou.bet", "tube.rebellion.global", "videos.koumoul.com", "tube.undernet.uy", "peertube.cojo.uno", "peertube.opencloud.lu", "video.hdys.band", "cattube.org", "peertube.ch", "tube.tappret.fr", "peertube.hatthieves.es", "peertube.la-famille-muller.fr", "video.sftblw.moe", "watch.snoot.tube", "video.gcfam.net", "peertube.pontostroy.gq", "video.splat.soy", "peerwatch.xyz", "peertube.snargol.com", "peertube.desmu.fr", "ppstube.portageps.org", "peertube.live", "peertube.pl", "xxxporn.co.uk", "peertube.dk", "vid.lubar.me", "tube.benzo.online", "tube.kapussinettes.ovh", "peertube.rainbowswingers.net", "videomensoif.ynh.fr", "peertube.montecsys.fr", "peer.tube", "tube.nx-pod.de", "video.monsieurbidouille.fr", "tube.openalgeria.org", "vid.lelux.fi", "video.anormallostpod.ovh", "tube.crapaud-fou.org",
+                "lostpod.space", "exode.me", "vis.ion.ovh", "videos-libr.es", "video.qoto.org", "video.vny.fr", "peervideo.club", "tube.taker.fr", "peertube.chantierlibre.org", "tube.kicou.info", "video.yukari.moe", "peertube.co.uk", "vod.mochi.academy", "video.fitchfamily.org", "video.fdlibre.eu", "tube.fabrigli.fr", "video.bruitbruit.com", "peer.philoxweb.be", "peertube.bilange.ca", "libretube.net", "libre.video", "us.tv", "peertube.sl-network.fr", "peertube.dynlinux.io", "peertube.david.durieux.family", "v.kretschmann.social", "tube.otter.sh", "videos.funkwhale.audio", "watch.44con.com", "pony.tube", "tube.danq.me", "tube.fab-l3.org", "tube.calculate.social", "tube.netzspielplatz.de", "peertube.laas.fr", "tube.govital.net", "video.ploud.jp", "video.omniatv.com", "peertube.ffs2play.fr", "video.1000i100.fr", "tube.worldofhauru.xyz", "conf.tube", "peertube.jackbot.fr",
+                "tube.extinctionrebellion.fr", "peertube.f-si.org", "video.subak.ovh", "videos.koweb.fr", "peertube.roflcopter.fr", "peertube.floss-marketing-school.com", "peertube.iriseden.eu", "videos.ubuntu-paris.org", "armstube.com", "peertube.lol", "peertube.normandie-libre.fr", "peertube.slat.org", "peertube.uno", "peertube.servebeer.com", "peertube.fedi.quebec", "tube.h3z.jp", "tube.plus200.com", "gouttedeau.space", "video.antirep.net", "tube.ksl-bmx.de", "tube.tchncs.de", "video.devinberg.com", "hitchtube.fr", "peertube.kosebamse.com", "yunopeertube.myddns.me", "peertube.anon-kenkai.com", "tube.maiti.info", "videos.dinofly.com", "videotape.me", "video.lemediatv.fr", "thickrips.cloud", "pt.laurentkruger.fr", "video.monarch-pass.net", "peertube.artica.center", "indymotion.fr", "fanvid.stopthatimp.net", "video.farci.org", "v.lesterpig.com", "tube.fede.re", "pytu.be",
+                "devtube.dev-wiki.de", "raptube.antipub.org", "video.selea.se", "peertube.mygaia.org", "peertube.livingutopia.org", "peertube.the-penguin.de", "tube.anjara.eu", "pt.pube.tk", "peertube.me", "video.latavernedejohnjohn.fr", "peertube.pcservice46.fr", "video.irem.univ-paris-diderot.fr", "alttube.fr", "video.coop.tools", "video.cabane-libre.org", "peertube.openstreetmap.fr", "videos.alolise.org", "irrsinn.video", "video.antopie.org", "scitech.video", "video.amic37.fr", "peertube.freeforge.eu", "peertube.togart.de", "tube.postblue.info", "videos.domainepublic.net", "peertube.cyber-tribal.com", "video.gresille.org", "cinema.yunohost.support", "repro.video", "videos.wakapo.com", "pt.kircheneuenburg.de", "peertube.asrun.eu", "videos.side-ways.net", "91video.online", "videos-libr.es", "tv.mooh.fr", "nuage.acostey.fr", "videos.pair2jeux.tube", "videos.pueseso.club",
+                "media.assassinate-you.net", "videos.squat.net", "peertube.makotoworkshop.org", "peertube.serveur.slv-valbonne.fr", "videos.hack2g2.fr", "pire.artisanlogiciel.net", "video.netsyms.com", "video.die-partei.social", "video.writeas.org", "videos.adhocmusic.com", "tube.rfc1149.net", "peertube.librelabucm.org", "peertube.koehn.com", "peertube.anarchmusicall.net", "vid.y-y.li", "diode.zone", "peertube.nomagic.uk", "video.rastapuls.com", "video.mantlepro.com", "video.deadsuperhero.com", "peertube.musicstudio.pro", "peertube.we-keys.fr", "artitube.artifaille.fr", "tube.midov.pl", "tube.nemsia.org", "tube.bruniau.net", "tube.traydent.info", "peertube.nayya.org", "video.lequerrec.eu", "peertube.amicale.net", "aperi.tube", "tube.ac-lyon.fr", "video.lw1.at", "yiny.org", "videos.pofilo.fr", "tube.lou.lt", "betamax.video", "video.typica.us", "videos.lescommuns.org", "videonaute.fr",
+                "dialup.express", "megatube.lilomoino.fr", "peertube.1312.media", "skeptikon.fr", "video.blueline.mg", "tube.homecomputing.fr", "tube.ouahpiti.info", "video.tedomum.net", "video.g3l.org", "fontube.fr", "peertube.gaialabs.ch", "tube.kher.nl", "peertube.qtg.fr", "video.migennes.net", "tube.p2p.legal", "troll.tv", "videos.iut-orsay.fr", "peertube.solidev.net", "videos.cemea.org", "video.passageenseine.fr", "peertube.touhoppai.moe", "peer.hostux.social", "share.tube", "videos.benpro.fr", "peertube.parleur.net", "peertube.heraut.eu", "peertube.gegeweb.eu", "framatube.org", "thinkerview.video", "tube.conferences-gesticulees.net", "peertube.datagueule.tv", "video.lqdn.fr", "tube.mochi.academy", "video.colibris-outilslibres.org", "peertube3.cpy.re", "peertube2.cpy.re", "peertube.cpy.re" });
         return ret;
     }
 
@@ -593,7 +106,7 @@ public class PeertubeFr extends antiDDoSForHost {
     }
 
     public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
+        return new String[] { "PeerTube" };
     }
 
     @Override
@@ -652,12 +165,13 @@ public class PeertubeFr extends antiDDoSForHost {
             }
             index += itemsPerRequest;
         } while (ressourcelist != null && ressourcelist.size() == itemsPerRequest);
-        String hostsStr = "";
+        String hostsStr = "ret.add(new String[] { ";
         for (final String newHost : newInstances) {
             /* Outputs Java code to easily add new instances */
-            System.out.println(String.format("ret.add(new String[] { \"%s\" });", newHost));
-            hostsStr += newHost + ",";
+            // System.out.println(newHost + ",");
+            hostsStr += "\"" + newHost + "\", ";
         }
+        hostsStr += " });";
         System.out.println(hostsStr);
         /* TODO: Maybe add a check for missing/offline instances too */
         return newInstances;
@@ -671,7 +185,8 @@ public class PeertubeFr extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage("https://" + this.getHost() + "/api/v1/videos/" + this.getFID(link));
+        final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
+        getPage("https://" + host + "/api/v1/videos/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 2020-07-03: E.g. {"error":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -702,7 +217,7 @@ public class PeertubeFr extends antiDDoSForHost {
         if (!StringUtils.isEmpty(formattedDate)) {
             filename += formattedDate + "_";
         }
-        filename += this.getHost().replace(".", "_") + "_";
+        filename += host.replace(".", "_") + "_";
         if (!StringUtils.isEmpty(uploader)) {
             filename += uploader + "_";
         }
@@ -769,5 +284,16 @@ public class PeertubeFr extends antiDDoSForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.PeerTube;
+    }
+
+    @Override
+    public String getHost(final DownloadLink link, final Account account) {
+        if (link != null) {
+            return Browser.getHost(link.getPluginPatternMatcher(), true);
+        } else if (account != null) {
+            return account.getHoster();
+        } else {
+            return null;
+        }
     }
 }

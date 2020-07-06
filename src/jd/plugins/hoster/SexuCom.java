@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "https?://(?:www\\.)?sexu\\.com/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "https?://(?:www\\.)?sexu\\.com/(\\d+)/" })
 public class SexuCom extends PluginForHost {
     public SexuCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,18 +58,32 @@ public class SexuCom extends PluginForHost {
         return "http://sexu.com/terms";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     /* Official downloadlink is available but it only leads to the worst quality possible e.g. 240p. */
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
-        final String lid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
-        downloadLink.setLinkID(lid);
-        downloadLink.setName(lid);
+        final String lid = new Regex(link.getDownloadURL(), "(\\d+)/$").getMatch(0);
+        link.setLinkID(lid);
+        link.setName(lid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML("class=\"container page404\"|>This video was deleted<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -84,23 +98,38 @@ public class SexuCom extends PluginForHost {
         }
         final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
         final ArrayList<Object> sources = (ArrayList) entries.get("sources");
-        boolean done = false;
-        for (final String quality : qualities) {
-            for (final Object qualinfo : sources) {
-                final HashMap<String, Object> qual_info = (HashMap<String, Object>) qualinfo;
-                final String currquality = (String) qual_info.get("quality");
-                if (currquality.contains(quality)) {
-                    dllink = (String) qual_info.get("src");
-                    done = true;
+        if (sources != null) {
+            /* Find best quality */
+            boolean done = false;
+            for (final String quality : qualities) {
+                for (final Object qualinfo : sources) {
+                    final HashMap<String, Object> qual_info = (HashMap<String, Object>) qualinfo;
+                    final String currquality = (String) qual_info.get("quality");
+                    if (currquality.contains(quality)) {
+                        dllink = (String) qual_info.get("src");
+                        done = true;
+                        break;
+                    }
+                }
+                if (done) {
                     break;
                 }
             }
-            if (done) {
-                break;
-            }
+        }
+        if (dllink == null) {
+            /* 2020-07-06 */
+            dllink = br.getRegex("<meta property=\"og:video:url\" content=\"([^<>\"]+)\" />").getMatch(0);
+        }
+        if (dllink == null) {
+            /* 2020-07-06 */
+            dllink = br.getRegex("<source src=\"([^\"]+)\"[^>]*type=\"video/mp4\">").getMatch(0);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null || dllink == null) {
+        if (filename == null) {
+            /* Fallback */
+            filename = this.getFID(link);
+        }
+        if (dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -110,7 +139,7 @@ public class SexuCom extends PluginForHost {
         if (!filename.endsWith(default_extension)) {
             filename += default_extension;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(dllink)) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -119,11 +148,11 @@ public class SexuCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("text")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
                 }
-                downloadLink.setProperty("directlink", dllink);
+                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();

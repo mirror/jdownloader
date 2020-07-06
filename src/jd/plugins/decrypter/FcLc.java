@@ -39,15 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-/**
- *
- * @author raztoki
- * @tags: similar to OuoIo
- * @examples: Without captcha: met.bz <br />
- *            With reCaptchaV2 (like most): geistlink.com <br />
- *            With solvemedia: clik.pw
- *
- */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FcLc extends antiDDoSForDecrypt {
     private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.articlix.com" };
