@@ -52,7 +52,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final SubConfiguration CFG = SubConfiguration.getConfig("bandcamp.com");
+        final SubConfiguration CFG = SubConfiguration.getConfig(this.getHost());
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, that something isn\\'t here\\.<|trackinfo\\s*:\\s*\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -60,7 +60,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String json = br.getRegex("trackinfo\\s*:\\s*(\\[.*?\\])").getMatch(0);
+        final String json = br.getRegex("trackinfo\\s*:\\s*(\\[.*\\])").getMatch(0);
         if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
             decryptedLinks.add(this.createDownloadlink(br.getURL()));

@@ -676,6 +676,7 @@ public class PeertubeFr extends antiDDoSForHost {
             /* 2020-07-03: E.g. {"error":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        checkErrorsAPI();
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String title = (String) entries.get("name");
         final String createdAt = (String) entries.get("createdAt");
@@ -708,6 +709,19 @@ public class PeertubeFr extends antiDDoSForHost {
         filename += title + ".mp4";
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
+    }
+
+    protected void checkErrorsAPI() throws PluginException {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String errorMsg = (String) entries.get("error");
+        if (!StringUtils.isEmpty(errorMsg)) {
+            if (errorMsg.equalsIgnoreCase("Video not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* Unknown error */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
+            }
+        }
     }
 
     @Override
