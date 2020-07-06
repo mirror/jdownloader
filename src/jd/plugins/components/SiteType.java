@@ -113,6 +113,11 @@ public class SiteType {
          */
         OuoIoCryptor,
         /**
+         * <a href="https://joinpeertube.org/#what-is-peertube">PeerTube</a> open source video script/template.
+         * <a href="https://joinpeertube.org/instances#instances-list">PeerTube Instances list</a>
+         */
+        PeerTube,
+        /**
          * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by
          * <a href="http://pimproll.com/">pimproll.com</a>
          */
