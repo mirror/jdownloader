@@ -274,6 +274,9 @@ public class VimeoCom extends PluginForHost {
                         if (con.getLongContentLength() > 0) {
                             downloadLink.setVerifiedFileSize(con.getLongContentLength());
                         }
+                    } else if (con.getResponseCode() == 500) {
+                        /* 2020-07-06: E.g. "Original" version of video is officially available but download is broken serverside. */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
