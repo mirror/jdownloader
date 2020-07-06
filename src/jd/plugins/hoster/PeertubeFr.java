@@ -383,7 +383,6 @@ public class PeertubeFr extends antiDDoSForHost {
         ret.add(new String[] { "lostpod.space" });
         ret.add(new String[] { "exode.me" });
         ret.add(new String[] { "vis.ion.ovh" });
-        ret.add(new String[] { "www.videos-libr.es" });
         ret.add(new String[] { "video.qoto.org" });
         ret.add(new String[] { "video.vny.fr" });
         ret.add(new String[] { "peervideo.club" });
@@ -535,7 +534,7 @@ public class PeertubeFr extends antiDDoSForHost {
         ret.add(new String[] { "aperi.tube" });
         ret.add(new String[] { "tube.ac-lyon.fr" });
         ret.add(new String[] { "video.lw1.at" });
-        ret.add(new String[] { "www.yiny.org" });
+        ret.add(new String[] { "yiny.org" });
         ret.add(new String[] { "videos.pofilo.fr" });
         ret.add(new String[] { "tube.lou.lt" });
         ret.add(new String[] { "betamax.video" });
@@ -614,7 +613,10 @@ public class PeertubeFr extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
-    /** Debug function which can find new instances compatible with this code/plugin/template */
+    /**
+     * Debug function which can find new instances compatible with this code/plugin/template from:
+     * https://instances.joinpeertube.org/instances
+     */
     private static ArrayList<String> findNewScriptInstances() {
         final ArrayList<String> existingInstances = getAllSupportedPluginDomainsFlat();
         final ArrayList<String> newInstances = new ArrayList<String>();
@@ -633,11 +635,12 @@ public class PeertubeFr extends antiDDoSForHost {
                 ressourcelist = (ArrayList<Object>) entries.get("data");
                 for (final Object siteO : ressourcelist) {
                     entries = (Map<String, Object>) siteO;
-                    final String host = (String) entries.get("host");
-                    final String siteVersion = (String) entries.get("version");
+                    String host = (String) entries.get("host");
+                    // final String siteVersion = (String) entries.get("version");
                     if (StringUtils.isEmpty(host)) {
                         continue;
                     }
+                    host = host.replace("www.", "");
                     if (!existingInstances.contains(host)) {
                         newInstances.add(host);
                     }
