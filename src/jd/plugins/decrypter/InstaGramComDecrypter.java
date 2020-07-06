@@ -30,6 +30,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -53,6 +54,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
+
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -76,6 +78,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return null;
     }
 
+    @SuppressWarnings({ "deprecation", "unused" })
     private void getPage(CryptedLink link, final Browser br, String url, final String rhxGis, final String variables) throws Exception {
         int retry = 0;
         final int maxtries = 30;
@@ -125,31 +128,36 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private static Map<String, String> QUERY_HASH = new HashMap<String, String>();
+    private String                  fbAppId    = null;
+    private String                  qHash      = null;
+    // hash changes? but the value within is NEVER cleared. if map > resources || resources == null) remove storable
+    private static Map<String, Qdb> QUERY_HASH = new HashMap<String, Qdb>();
 
     // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
-    private static String getByUserIDQueryHash(Browser br) throws Exception {
+    private void getByUserIDQueryHash(Browser br) throws Exception {
         synchronized (QUERY_HASH) {
-            final String profilePageContainer = br.getRegex("(/static/bundles/(?:metro|base)/ProfilePageContainer.js/[a-f0-9]+.js)").getMatch(0);
+            final String profilePageContainer = br.getRegex("(/static/bundles/([^/]+/)?ConsumerLibCommons\\.js/[a-f0-9]+.js)").getMatch(0);
             if (profilePageContainer != null) {
-                final String ret = QUERY_HASH.get(profilePageContainer);
-                if (ret != null) {
-                    return ret;
+                {
+                    final Qdb qdb = QUERY_HASH.get(profilePageContainer);
+                    if (qdb != null) {
+                        fbAppId = qdb.getFbAppId();
+                        qHash = qdb.getQueryHash();
+                    }
                 }
                 final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Accept", "*/*");
                 brc.getPage(profilePageContainer);
-                String queryHash = brc.getRegex("profilePosts\\.byUserId.get\\(t\\)\\)\\?[a-z]\\.pagination:[a-z]\\},queryI(?:d|D)\\s*:\\s*\"([0-9A-z]{32,32})\"").getMatch(0);
-                if (queryHash == null) {
-                    queryHash = brc.getRegex("profilePosts\\.byUserId.get\\([a-z]\\)\\)[^}]*?[a-z]\\.pagination(?::[a-z])?\\},queryI(?:d|D)\\s*:\\s*\"([0-9A-z]{32,32})\"").getMatch(0);
-                }
+                fbAppId = brc.getRegex("e\\.instagramWebDesktopFBAppId\\s*=\\s*'(\\d+)'").getMatch(0);
+                final String queryHash = brc.getRegex("queryId\\s*:\\s*\"([0-9a-f]{32})\"").getMatch(0);
                 if (queryHash != null) {
-                    QUERY_HASH.put(profilePageContainer, queryHash);
-                    return queryHash;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    final Qdb qdb = new Qdb();
+                    if (fbAppId != null) {
+                        qdb.setFbAppId(fbAppId);
+                    }
+                    qdb.setQueryHash(queryHash);
+                    QUERY_HASH.put(profilePageContainer, qdb);
                 }
-            } else {
-                return null;
             }
         }
     }
@@ -157,6 +165,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.clearAll();
+        fbAppId = null;
+        qHash = null;
         br.addAllowedResponseCodes(new int[] { 502 });
         prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
         fp = FilePackage.getInstance();
@@ -199,7 +209,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String rhxGis = br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
-        final String queryHash = getByUserIDQueryHash(br);
+        getByUserIDQueryHash(br);
         final String json = br.getRegex(">window\\._sharedData\\s*?=\\s*?(\\{.*?);</script>").getMatch(0);
         if (json == null) {
             /* E.g. if you add URL instagram.com/developer */
@@ -276,19 +286,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             do {
                 if (page > 0) {
                     final Browser br = this.br.cloneBrowser();
-                    /* Access next page - 403 error may happen once for logged in users - reason unknown - will work fine on 2nd request! */
-                    // prepBRAjax(br, username_url, maxid);
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getHeaders().put("Accept", "*/*");
-                    final Map<String, Object> vars = new HashMap<String, Object>();
+                    prepBrAjax(br);
+                    final Map<String, Object> vars = new LinkedHashMap<String, Object>();
                     vars.put("id", id_owner);
                     vars.put("first", 12);
                     vars.put("after", nextid);
-                    if (queryHash == null) {
+                    if (qHash == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
-                    getPage(param, br, "/graphql/query/?query_hash=" + queryHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                    getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
                     final int responsecode = br.getHttpConnection().getResponseCode();
                     if (responsecode == 404) {
                         logger.warning("Error occurred: 404");
@@ -333,6 +340,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void crawlStory(LinkedHashMap<String, Object> entries, final CryptedLink param) throws Exception {
         final boolean pluginNotYetDone = true;
         if (pluginNotYetDone) {
@@ -342,12 +350,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br.getHeaders().put("Accept", "*/*");
         username_url = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
         final String story_user_id = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/StoriesPage/{0}/user/id");
-        final String queryHash = getByUserIDQueryHash(br);
-        if (username_url == null || StringUtils.isEmpty(story_user_id) || StringUtils.isEmpty(queryHash)) {
+        getByUserIDQueryHash(br);
+        if (username_url == null || StringUtils.isEmpty(story_user_id) || StringUtils.isEmpty(qHash)) {
             /* This should never happen! */
             return;
         }
-        final String url = "/graphql/query/?query_hash=" + queryHash + "&variables=%7B%22reel_ids%22%3A%5B%22" + story_user_id + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
+        final String url = "/graphql/query/?query_hash=" + qHash + "&variables=%7B%22reel_ids%22%3A%5B%22" + story_user_id + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
         br.getPage(url);
         getPage(param, br, url, null, null);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -400,6 +408,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void crawlAlbum(LinkedHashMap<String, Object> entries) {
         long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
         if (date == 0) {
@@ -579,19 +588,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return String.format("https://www.instagram.com/p/%s", p_id);
     }
 
-    private void prepBRAjax(final Browser br, final String username_url, final String maxid) {
+    private void prepBrAjax(final Browser br) {
+        br.getHeaders().put("Accept", "*/*");
         final String csrftoken = br.getCookie("instagram.com", "csrftoken");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("X-Instagram-AJAX", "1");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         if (csrftoken != null) {
             br.getHeaders().put("X-CSRFToken", csrftoken);
         }
-        if (maxid != null) {
-            br.getHeaders().put("Referer", "https://www.instagram.com/" + username_url + "/?max_id=" + maxid);
+        if (fbAppId != null) {
+            br.getHeaders().put("X-IG-App-ID", fbAppId);
         }
-        br.setCookie(this.getHost(), "ig_vw", "1680");
+        br.getHeaders().put("X-IG-WWW-Claim", "0"); // only ever seen this as 0
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
     }
 
     @Override
