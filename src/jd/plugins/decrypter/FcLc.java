@@ -49,92 +49,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
  *
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
-    private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com",
-            "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
-            /** 2020-04-20: shrinkhere.xyz domains */
-            "shrinkhere.xyz",
-            /** 2020-04-01: za.gl domains */
-            "za.gl", "zee.gl",
-            /** 2020-02-16: payskip.org domains */
-            "payskip.org",
-            /** 2020-02-10: adlinkcash.com domains */
-            "adlinkcash.com",
-            /** 2019-12-04: shortmony.com domains */
-            "shortmony.com", "shortmony.me", "gamez-ar.com",
-            /** samaa-pro.com domains */
-            "samaa-pro.com",
-            /** 2019-11-06: skip4all.com */
-            "skip4all.com",
-            /** 2019-10-30: glory-link.com domains */
-            "glory-link.com",
-            /** 2020-01-07: cashurl.win domains */
-            "cashurl.win", "todaynewspk.win",
-            /** 2019-10-30: exe.io domains */
-            "exe.io", "exee.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz", "cu6.io",
-            /** 2019-08-29: 4snip.pw domains, handles by FoursnipPw plugin */
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                /*
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 * "4snip.pw",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 */
-            /** 2019-11-13: linkjust.com domains */
-            "linkjust.com", "thegreatfuture.com", "siha.xyz", "akltu.com", "rahlatt.com", "ekhtr.com",
-            /** 2020-01-21: encurta.net domains */
-            "encurta.net", "enrt.eu",
-            /** 2020-01-20: 7r6.com domains */
-            "7r6.com",
-            /** 2019-11-13: linkshorty */
-            "linkshorty.com", "americansvsarabs.com", "mat3sports.com", "shortyup.com",
-            /** 2019-11-13: ex-foary.com */
-            "ex-foary.com",
-            /** 2019-11-13: Zoom Link */
-            "zoom-link.com", "empir33.com",
-            /** 2019-08-24: shortzon.com domains */
-            "shortzon.com", "infothon.com",
-            /** 2019-08-24: ilinkshort.com domains */
-            "ilinkshort.com", "loopdiet.com", "xpshort.com",
-            /** 2019-07-24: 2click.us domains */
-            "2click.us", "2ck.cc", "earticale.xyz",
-            /** 2019-07-24: 2shorten.com domains */
-            "2shorten.com", "nashr.online", "almrf.com",
-            /** shrinkearn.com domains */
-            "shrinkearn.com", "wishes2.com", "shortearn.eu",
-            /** clk.sh domains */
-            "clk.sh", "oko.sh", "iir.ai",
-            /** bt4link.com domains */
-            "bt4link.com", "ur4link.com",
-            /** shorted4us.com domains */
-            "shorted4us.com", "thefreech.com", "sewrn.com",
-            /** asrar-alrb7.com domains */
-            "asrar-alrb7.com", "savircity.com",
-            /** cut1.ga domains */
-            "cut1.ga", "shortit.ca",
-            /** safelinku.com domains */
-            "safelinku.com", "idsly.bid", "idsly.net", "updatetribun.org",
-            /** cepmuzikindir.me domains - NOTE: safelinku.NET != safelinku.COM */
-            "cepmuzikindir.me", "safelinku.net", "miui.space",
-            /** uii.io domains */
-            "uii.io", "szs.pw",
-            /** short.pe domains */
-            "short.pe", "chrt.pw",
-            /** urlcero.us domains */
-            "urlcero.us", "urlcero.com",
-            /** clicksfly.com domains */
-            "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in", "yesmoviesapp.info", "newskart.xyz", "funnyquiz.blog", "fabsdeals.com", "utimetableresult.in", "geki.tech", "govtsmartjob.com", "clkfly.pw", "technodia.xyz", "ourtechnoew.xyz", "mutharammss.xyz", "viralcollect.info", "govtsmartjob.com",
-            /** eglink.info domains */
-            "eglink.info", "egyptiangy.net", "egypt-mix.com",
-            /** cut-urls.com domains */
-            "cut-urls.com", "curs.io", "cuon.io", "cuus.io", "cuto.io", "cu5.io",
-            /** wicr.me domains */
-            "wicr.me", "wi.cr",
-            /** cutwin.com domains */
-            "cutwin.com", "cutwin.us",
-            /** adshort.co domains */
-            "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im" };
+public class FcLc extends antiDDoSForDecrypt {
+    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.articlix.com" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
     /** TODO: Find a way to automatically detect this edge-case */
-    private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] { "safelinku.com", "idsly.bid", "idsly.net" });
+    private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] {});
 
     /**
      * returns the annotation pattern array
@@ -143,9 +64,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        /* [a-zA-Z0-9]{2,} will work for 99% but site shortit.ca is not compatible. */
-        /* 2019-04-25: Added special pattern for direct-redirects of clicksfly.com domains('/entrar/...') */
-        return new String[] { host + "/(entrar/[A-Za-z0-9\\-]+|[a-zA-Z0-9]{2,})" };
+        return new String[] { host + "/[a-zA-Z0-9]{2,}" };
     }
 
     private static String getHostsPattern() {
@@ -168,7 +87,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "cut-urls.com" };
+        return new String[] { "fc.lc" };
     }
 
     public enum CaptchaType {
@@ -178,7 +97,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         WTF
     };
 
-    public MightyScriptAdLinkFly(PluginWrapper wrapper) {
+    public FcLc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -260,6 +179,17 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             logger.info("Found pre-captcha Form");
             this.submitForm(beforeCaptcha);
         }
+        /* 2020-07-06: E.g. fc.lc, fcc.lc */
+        Form beforeCaptcha2 = br.getFormbyKey("ad_form_data");
+        if (br.getHost().equals("fc.lc") && beforeCaptcha2 != null) {
+            logger.info("Sending Form beforeCaptcha2");
+            this.submitForm(beforeCaptcha2);
+            beforeCaptcha2 = br.getFormbyKey("ad_form_data");
+            if (beforeCaptcha2 != null && beforeCaptcha2.getAction() != null && beforeCaptcha2.getAction().contains("fcc.lc")) {
+                logger.info("Submitting second beforeCaptcha2");
+                this.submitForm(beforeCaptcha2);
+            }
+        }
         appVars = br.getRegex("var (app_vars.*?)</script>").getMatch(0);
         Form form = getCaptchaForm();
         if (form == null) {
@@ -302,8 +232,8 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            /* 2018-07-18: Not all sites require a captcha to be solved */
-            final CaptchaType captchaType = getCaptchaType();
+            /* 2020-07-06: Static attempt */
+            final CaptchaType captchaType = CaptchaType.reCaptchaV2;
             if (evalulateCaptcha(captchaType, parameter)) {
                 logger.info("Captcha required");
                 boolean requiresCaptchaWhichCanFail = false;
@@ -325,19 +255,30 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         if (StringUtils.isEmpty(key)) {
                             logger.warning("Failed to find reCaptchaV2 key");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
-                            @Override
-                            public TYPE getType() {
-                                if (captchaType == CaptchaType.reCaptchaV2_invisible) {
-                                    return TYPE.INVISIBLE;
-                                } else {
-                                    return TYPE.NORMAL;
+                            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                                @Override
+                                public TYPE getType() {
+                                    if (captchaType == CaptchaType.reCaptchaV2_invisible) {
+                                        return TYPE.INVISIBLE;
+                                    } else {
+                                        return TYPE.NORMAL;
+                                    }
                                 }
-                            }
-                        }.getToken();
-                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            }.getToken();
+                            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        } else {
+                            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
+                                @Override
+                                public TYPE getType() {
+                                    if (captchaType == CaptchaType.reCaptchaV2_invisible) {
+                                        return TYPE.INVISIBLE;
+                                    } else {
+                                        return TYPE.NORMAL;
+                                    }
+                                }
+                            }.getToken();
+                            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        }
                     } else if (captchaType == CaptchaType.solvemedia) {
                         final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
                         if (StringUtils.isEmpty(solvemediaChallengeKey)) {
@@ -423,6 +364,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         logger.info("Skipping waittime");
                     }
                 }
+                /** TODO: 2020-07-06: Descramble js vars to fix this */
                 submitForm(f2);
             }
             final String finallink = getFinallink();
