@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -41,11 +46,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
 public class PixivNet extends PluginForHost {
@@ -268,6 +268,11 @@ public class PixivNet extends PluginForHost {
                                 ret.put("action", "login");
                                 return ret;
                             }
+
+                            @Override
+                            public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                                return TYPE.INVISIBLE;
+                            }
                         };
                         loginform.put("recaptcha_v3_token", Encoding.urlEncode(v3Captcha.getToken()));
                         final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, "6Lf-skYUAAAAABjeBwIS8LhyQ7v1hwYnOsW3DoNA") {
@@ -295,6 +300,11 @@ public class PixivNet extends PluginForHost {
                             final Map<String, Object> ret = new HashMap<String, Object>();
                             ret.put("action", "login");
                             return ret;
+                        }
+
+                        @Override
+                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                            return TYPE.INVISIBLE;
                         }
                     };
                     loginform.put("recaptcha_v3_token", Encoding.urlEncode(v3Captcha.getToken()));
