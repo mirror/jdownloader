@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import jd.http.Request;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -56,7 +57,8 @@ public class DownsterNet extends antiDDoSForHost {
 
     private static final String          API_BASE                      = "https://downster.net/api";
     private static MultiHosterManagement mhm                           = new MultiHosterManagement("downster.net");
-    private static final String          DLLINK_PROP_NAME              = "downsterdirectlink";
+    private static final String          DLLINK_PROP_NAME              = "downsterdllink";
+    private static final String          DLLINK_EXPIRE_PROP_NAME       = "downsterdllinkexpiration";
     private static final String          NOCHUNKS                      = "NOCHUNKS";
     private static final String          MAX_RETRIES_DL_ERROR_PROPERTY = "MAX_RETRIES_DL_ERROR";
     private static final int             DEFAULT_MAX_RETRIES_DL_ERROR  = 50;
@@ -87,9 +89,14 @@ public class DownsterNet extends antiDDoSForHost {
             prepBr.setHeader("Content-Type", "application/json");
             prepBr.addAllowedResponseCodes(new int[] { 401, 403, 412, 422, 503, 512 });
             prepBr.getHeaders().put("User-Agent", "JDownloader " + getVersion());
-            prepBr.getHeaders().put("X-Flow-ID", "JDL_" + userFlowId + "_" + randomFlowId());
         }
         return prepBr;
+    }
+
+    @Override
+    protected void sendRequest(Browser ibr, Request request) throws Exception {
+        ibr.getHeaders().put("X-Flow-ID", "JDL_" + userFlowId + "_" + randomFlowId());
+        super.sendRequest(ibr, request);
     }
 
     private void loadUserFlowId(final Account account) {
@@ -226,11 +233,12 @@ public class DownsterNet extends antiDDoSForHost {
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "No download link could be generated", 20, 5 * 60 * 1000l);
             }
-            // link.setFinalFileName(PluginJSonUtils.getJsonValue(br, "name"));
-            // Don't set size as it does not match exact byte amount
-            // link.setVerifiedFileSize(Long.parseLong(PluginJSonUtils.getJsonValue(br, "size")));
+
+            final String expiresAt = PluginJSonUtils.getJsonValue(br, "expires");
+            final Long expiresAtTs = TimeFormatter.getMilliSeconds(expiresAt, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.US);
             // Direct download links can be used for up to 30 minutes
             link.setProperty(DLLINK_PROP_NAME, dllink);
+            link.setProperty(DLLINK_EXPIRE_PROP_NAME, expiresAtTs);
         }
         handleDl(link, account);
     }
@@ -267,6 +275,12 @@ public class DownsterNet extends antiDDoSForHost {
                 }
             }
         } catch (final PluginException e) {
+            switch (dl.getConnection().getResponseCode()) {
+                // To many parallel requests
+                case 429: throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, dl.getConnection().getResponseMessage(), 1 * 1000l);
+                // Bad request
+                case 400: throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 1000l);
+            }
             // New V2 chunk error handling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DownsterNet.NOCHUNKS, false) == false) {
@@ -284,23 +298,10 @@ public class DownsterNet extends antiDDoSForHost {
 
     private String checkDirectLink(final DownloadLink downloadLink) {
         final String dllink = downloadLink.getStringProperty(DLLINK_PROP_NAME);
+        final Long expiresAt = downloadLink.getLongProperty(DLLINK_EXPIRE_PROP_NAME, 0);
         if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                final URLConnectionAdapter con = br2.openGetConnection(dllink);
-                try {
-                    if (con.getResponseCode() >= 400 || !con.isOK() || con.getLongContentLength() == -1) {
-                        downloadLink.setProperty(DLLINK_PROP_NAME, Property.NULL);
-                        return null;
-                    } else {
-                        return dllink;
-                    }
-                } finally {
-                    con.disconnect();
-                }
-            } catch (Exception e) {
-                logger.log(e);
-                downloadLink.setProperty(DLLINK_PROP_NAME, Property.NULL);
+            if (expiresAt != 0 && expiresAt > System.currentTimeMillis()) {
+                return dllink;
             }
         }
         return null;
