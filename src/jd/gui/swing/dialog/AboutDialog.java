@@ -201,7 +201,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             }
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
-            stats.add(disable("#" + map.get("JDownloaderRevision")));
+            stats.add(disable("#" + map.get("JDownloaderRevision"), "https://svn.jdownloader.org/build.php?revision=" + map.get("JDownloaderRevision")));
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderUpdaterRevision")));
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
