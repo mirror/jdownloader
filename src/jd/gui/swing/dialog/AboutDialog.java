@@ -212,11 +212,12 @@ public class AboutDialog extends AbstractDialog<Integer> {
             stats.add(disable("#" + map.get("UpdateClientV2Revision")));
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_installdir()), "gapleft 10");
             ExtButton bt;
-            stats.add(bt = disable(Application.getResource(".")));
+            final File directory = Application.getResource(".");
+            stats.add(bt = disable("<html><u>" + directory + "</u></html>"));
             bt.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    CrossSystem.openFile(Application.getResource("."));
+                    CrossSystem.openFile(directory);
                 }
             });
         } catch (Throwable t) {
@@ -267,7 +268,11 @@ public class AboutDialog extends AbstractDialog<Integer> {
              */
             private static final long serialVersionUID = 1L;
             {
-                setName(object + "");
+                if (StringUtils.startsWithCaseInsensitive(url, "http") && CrossSystem.isOpenBrowserSupported()) {
+                    setName("<html><u>" + object + "</u></html>");
+                } else {
+                    setName(String.valueOf(object));
+                }
             }
 
             @Override
