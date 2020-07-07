@@ -15,15 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,6 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
@@ -258,7 +259,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 // br.setCookie(br.getURL(), "DG_UID", "");
                 br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
                 br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
-                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(/[^<>\"]+)\"").getMatch(0);
+                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(/[^<>\"]+)\"").getMatch(0);
                 if (redirect != null) {
                     /* 2019-01-21: Hmm leads to HTTP/1.1 405 Not Allowed */
                     /*
@@ -293,7 +294,9 @@ public class NaughtyamericaCom extends PluginForHost {
                     }
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                br.submitForm(loginform);
+                final Request request = br.createFormRequest(loginform);
+                request.getHeaders().put("Origin", "https://members.naughtyamerica.com");
+                br.getPage(request);
                 final String loginCookie = br.getCookie("nrc", account.getHoster());
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {

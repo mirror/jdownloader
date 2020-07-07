@@ -133,50 +133,55 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
      * https://instances.joinpeertube.org/instances
      */
     private static ArrayList<String> findNewScriptInstances() {
-        final ArrayList<String> existingInstances = getAllSupportedPluginDomainsFlat();
-        final ArrayList<String> newInstances = new ArrayList<String>();
-        final Browser br = new Browser();
-        final int itemsPerRequest = 50;
-        int index = 0;
-        int totalNumberofItems = 0;
-        ArrayList<Object> ressourcelist = null;
-        do {
-            try {
-                br.getPage("https://instances.joinpeertube.org/api/v1/instances?start=" + index + "&count=" + itemsPerRequest + "&sort=-createdAt");
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                if (index == 0) {
-                    totalNumberofItems = ((Number) entries.get("total")).intValue();
-                }
-                ressourcelist = (ArrayList<Object>) entries.get("data");
-                for (final Object siteO : ressourcelist) {
-                    entries = (Map<String, Object>) siteO;
-                    String host = (String) entries.get("host");
-                    // final String siteVersion = (String) entries.get("version");
-                    if (StringUtils.isEmpty(host)) {
-                        continue;
+        if (false) {
+            // don't compile into class file
+            final ArrayList<String> existingInstances = getAllSupportedPluginDomainsFlat();
+            final ArrayList<String> newInstances = new ArrayList<String>();
+            final Browser br = new Browser();
+            final int itemsPerRequest = 50;
+            int index = 0;
+            int totalNumberofItems = 0;
+            ArrayList<Object> ressourcelist = null;
+            do {
+                try {
+                    br.getPage("https://instances.joinpeertube.org/api/v1/instances?start=" + index + "&count=" + itemsPerRequest + "&sort=-createdAt");
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    if (index == 0) {
+                        totalNumberofItems = ((Number) entries.get("total")).intValue();
                     }
-                    host = host.replace("www.", "");
-                    if (!existingInstances.contains(host)) {
-                        newInstances.add(host);
+                    ressourcelist = (ArrayList<Object>) entries.get("data");
+                    for (final Object siteO : ressourcelist) {
+                        entries = (Map<String, Object>) siteO;
+                        String host = (String) entries.get("host");
+                        // final String siteVersion = (String) entries.get("version");
+                        if (StringUtils.isEmpty(host)) {
+                            continue;
+                        }
+                        host = host.replace("www.", "");
+                        if (!existingInstances.contains(host)) {
+                            newInstances.add(host);
+                        }
                     }
+                } catch (final Throwable e) {
+                    /* Stop on unknown errors */
+                    e.printStackTrace();
+                    break;
                 }
-            } catch (final Throwable e) {
-                /* Stop on unknown errors */
-                e.printStackTrace();
-                break;
+                index += itemsPerRequest;
+            } while (ressourcelist != null && ressourcelist.size() == itemsPerRequest);
+            String hostsStr = "ret.add(new String[] { ";
+            for (final String newHost : newInstances) {
+                /* Outputs Java code to easily add new instances */
+                // System.out.println(newHost + ",");
+                hostsStr += "\"" + newHost + "\", ";
             }
-            index += itemsPerRequest;
-        } while (ressourcelist != null && ressourcelist.size() == itemsPerRequest);
-        String hostsStr = "ret.add(new String[] { ";
-        for (final String newHost : newInstances) {
-            /* Outputs Java code to easily add new instances */
-            // System.out.println(newHost + ",");
-            hostsStr += "\"" + newHost + "\", ";
+            hostsStr += " });";
+            System.out.println(hostsStr);
+            /* TODO: Maybe add a check for missing/offline instances too */
+            return newInstances;
+        } else {
+            return null;
         }
-        hostsStr += " });";
-        System.out.println(hostsStr);
-        /* TODO: Maybe add a check for missing/offline instances too */
-        return newInstances;
     }
 
     /** Using API: https://docs.joinpeertube.org/api-rest-reference.html */

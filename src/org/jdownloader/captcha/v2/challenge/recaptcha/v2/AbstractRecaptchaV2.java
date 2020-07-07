@@ -4,12 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.logging.LogController;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Request;
@@ -18,6 +12,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.logging.LogController;
 
 public abstract class AbstractRecaptchaV2<T extends Plugin> {
     public static enum TYPE {
@@ -58,8 +58,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
      * errormessage and the user will have to solve it again! This value is especially important for rare EDGE cases such as long
      * waiting-times + captcha. Example: User has to wait 180 seconds before he can confirm such a captcha. If he solves it directly, the
      * captcha will be invalid once the 180 seconds are over. Also see documentation in XFileSharingProBasic.java class in method
-     * 'handleCaptcha'. </br>
-     * TRY TO KEEP THIS VALUE UP-TO-DATE!!
+     * 'handleCaptcha'. </br> TRY TO KEEP THIS VALUE UP-TO-DATE!!
      */
     public int getSolutionTimeout() {
         return 1 * 60 * 1000;
@@ -129,11 +128,6 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
     }
 
     protected String getSiteUrl() {
-        /* TODO: Ensure that this returns a valid URL with protocol - if not possible, throw Exception! */
-        /*
-         * TODO: Maybe call this before actually opening the browser solver so in case of an Exceotion, this would fail before, save time
-         * and have the ability to display a meaningful errormessage to the user!
-         */
         final String siteDomain = getSiteDomain();
         String url = null;
         final Request request = br != null ? br.getRequest() : null;

@@ -16,6 +16,14 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -47,14 +55,6 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
@@ -237,7 +237,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         containerSel.keyHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
             @Override
             public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                System.out.println();
             }
 
             @Override

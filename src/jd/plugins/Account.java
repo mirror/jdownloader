@@ -24,6 +24,12 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -34,12 +40,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 public class Account extends Property {
     private static final String VALID_UNTIL              = "VALID_UNTIL";
@@ -769,14 +769,14 @@ public class Account extends Property {
             isMulti = value != null && Boolean.TRUE.equals(value);
         } else {
             if (Property.NULL != value) {
-                if ("free".equalsIgnoreCase(key)) {
-                    if (Boolean.TRUE.equals(value)) {
+                if (StringUtils.equalsIgnoreCase(key, "free")) {
+                    if (Boolean.TRUE.equals(value) || StringUtils.equalsIgnoreCase("true", String.valueOf(value))) {
                         setType(AccountType.FREE);
                     } else {
                         setType(AccountType.PREMIUM);
                     }
-                } else if ("premium".equalsIgnoreCase(key)) {
-                    if (Boolean.TRUE.equals(value)) {
+                } else if (StringUtils.equalsIgnoreCase(key, "premium")) {
+                    if (Boolean.TRUE.equals(value) || StringUtils.equalsIgnoreCase("true", String.valueOf(value))) {
                         setType(AccountType.PREMIUM);
                     } else {
                         setType(AccountType.FREE);
