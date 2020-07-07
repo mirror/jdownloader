@@ -133,7 +133,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         final Request request = br != null ? br.getRequest() : null;
         final boolean canUseRequestURL = request != null && request.getHttpConnection() != null && RequestMethod.GET.equals(request.getRequestMethod()) && StringUtils.containsIgnoreCase(request.getHttpConnection().getContentType(), "html");
         boolean rewriteHost = true;
+        String defaultProtocol = "http://";
         if (plugin != null) {
+            if (plugin.getMatcher().pattern().pattern().matches(".*(https?).*")) {
+                defaultProtocol = "https://";
+            }
             if (plugin instanceof PluginForHost) {
                 final DownloadLink downloadLink = ((PluginForHost) plugin).getDownloadLink();
                 if (downloadLink != null) {
@@ -158,7 +162,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                 if (request != null) {
                     url = request.getURL().getProtocol() + "://" + url;
                 } else {
-                    url = "http://" + url;
+                    url = defaultProtocol + url;
                 }
             }
         }
@@ -177,7 +181,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             if (request != null) {
                 return request.getURL().getProtocol() + "://" + siteDomain;
             } else {
-                return "http://" + siteDomain;
+                return defaultProtocol + siteDomain;
             }
         }
     }
