@@ -104,11 +104,22 @@ public class BeegCom extends PluginForHost {
         }
         /* 2019-01-16: Salt is not always given/required */
         String salt = null;
+        beegVersion = br.getRegex("var beeg_version\\s*=\\s*(\\d+);").getMatch(0);
         if (beegVersion == null) {
-            beegVersion = br.getRegex("var beeg_version = (\\d+);").getMatch(0);
+            /* 2020-07-07 */
+            String jsURL = br.getRegex("(/js/app\\.[a-z0-9]+\\.js)").getMatch(0);
+            if (jsURL == null) {
+                /* 2020-07-07: Static fallback */
+                jsURL = "/js/app.ade4860b.js";
+            }
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(jsURL);
+            beegVersion = brc.getRegex("service-worker\\.js\\?version=\"\\)\\.concat\\(\"(\\d+)\"\\),").getMatch(0);
         }
         if (beegVersion == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2020-07-07: Static fallback */
+            beegVersion = "1593627308202";
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (jsurl != null) {
             final Browser cbr = br.cloneBrowser();
