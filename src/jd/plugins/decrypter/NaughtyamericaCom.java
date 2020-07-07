@@ -222,13 +222,15 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
             return false;
+        } else {
+            try {
+                ((jd.plugins.hoster.NaughtyamericaCom) hostPlugin).login(br, aa, force);
+                return true;
+            } catch (final PluginException e) {
+                hostPlugin.handleAccountException(aa, logger, e);
+                return false;
+            }
         }
-        try {
-            ((jd.plugins.hoster.NaughtyamericaCom) hostPlugin).login(br, aa, force);
-        } catch (final PluginException e) {
-            return false;
-        }
-        return true;
     }
 
     /* NO OVERRIDE!! */

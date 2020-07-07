@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -37,9 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boyztube.com" }, urls = { "http://(www\\.)?boyztube\\.com/[a-z0-9\\-]+/watch/[a-z0-9\\-_]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boyztube.com" }, urls = { "https?://(www\\.)?boyztube\\.com/[a-z0-9\\-]+/watch/[a-z0-9\\-_]+\\.html" })
 public class BoyzTubeCom extends PluginForHost {
-
     public BoyzTubeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.boyztube.com/members/signup.html");
@@ -51,7 +49,6 @@ public class BoyzTubeCom extends PluginForHost {
     }
 
     private static final String  app                          = "vod/";
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -62,7 +59,6 @@ public class BoyzTubeCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = false;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -96,7 +92,7 @@ public class BoyzTubeCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String appStreamUrl = br.getRegex("var appStreamUrl = \\'(rtmp[^<>\"]*?)\\'").getMatch(0);
-        final String appPlayerUrl = br.getRegex("var appPlayerUrl = \\'(http[^<>\"]*?/)\\'").getMatch(0);
+        final String appPlayerUrl = br.getRegex("var appPlayerUrl = \\'(https?[^<>\"]*?/)\\'").getMatch(0);
         String playpath = br.getRegex("\"(mp4:[^<>\"]*?)\"").getMatch(0);
         if (playpath == null || appStreamUrl == null || appPlayerUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -236,5 +232,4 @@ public class BoyzTubeCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

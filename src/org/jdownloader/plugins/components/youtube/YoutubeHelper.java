@@ -1290,9 +1290,17 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.views)) {
-            if (ytInitialPlayerResponse != null) {
-                vid.views = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/viewCount/videoViewCountRenderer/shortViewCount/simpleText");
-            }
+            parseViewsFromMaps(vid);
+        }
+    }
+
+    public void parseViewsFromMaps(YoutubeClipData vid) {
+        String result = null;
+        if (ytInitialData != null) {
+            result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/viewCount/videoViewCountRenderer/shortViewCount/simpleText");
+        }
+        if (!StringUtils.isEmpty(result)) {
+            vid.views = result;
         }
     }
 
@@ -1398,7 +1406,7 @@ public class YoutubeHelper {
         if (ytInitialPlayerResponse != null) {
             result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "videoDetails/channelId");
         }
-        if (StringUtils.isEmpty(result) && ytInitialPlayerResponse != null) {
+        if (StringUtils.isEmpty(result) && ytPlayerConfig != null) {
             result = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/ucid");
         }
         return result;

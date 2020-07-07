@@ -155,8 +155,15 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (RAWTOKEN.equals(format)) {
             final RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
             ret.setSiteKey(getSiteKey());
-            ret.setContextUrl("http://" + getSiteDomain());
-            ret.setSiteUrl(getSiteUrl());
+            final String siteUrl = getSiteUrl();
+            final String protocol;
+            if (StringUtils.startsWithCaseInsensitive("https://", siteUrl)) {
+                protocol = "https://";
+            } else {
+                protocol = "http://";
+            }
+            ret.setContextUrl(protocol + getSiteDomain());
+            ret.setSiteUrl(siteUrl);
             ret.setStoken(getSecureToken());
             ret.setBoundToDomain(isBoundToDomain());
             ret.setSameOrigin(isSameOrigin());

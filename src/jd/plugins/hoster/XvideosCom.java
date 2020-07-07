@@ -19,16 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -42,6 +32,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -377,18 +377,18 @@ public class XvideosCom extends PluginForHost {
     private int getPreferredHLSQuality() {
         PreferredHLSQuality preferredHLSQuality = PluginJsonConfig.get(XvideosComConfig.class).getPreferredHLSQuality();
         switch (preferredHLSQuality) {
-        default:
-            return -1;
-        case Q360P:
-            return 360;
-        case Q480P:
-            return 480;
-        case Q720P:
-            return 720;
-        case Q1080P:
-            return 1080;
         case Q2160P:
             return 2160;
+        case Q1080P:
+            return 1080;
+        case Q720P:
+            return 720;
+        case Q480P:
+            return 480;
+        case Q360P:
+            return 360;
+        default:
+            return -1;
         }
     }
 

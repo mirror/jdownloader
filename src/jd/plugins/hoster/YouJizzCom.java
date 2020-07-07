@@ -15,14 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.YouJizzComConfig;
-import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,6 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.YouJizzComConfig;
+import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(?:www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
@@ -165,11 +166,16 @@ public class YouJizzCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (con.isOK() && !con.getContentType().contains("html")) {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
                 link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
                 link.setDownloadSize(con.getLongContentLength());
             } else {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
@@ -185,8 +191,12 @@ public class YouJizzCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -196,10 +206,6 @@ public class YouJizzCom extends PluginForHost {
         final YouJizzComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
         switch (quality) {
-        default:
-            return null;
-        case BEST:
-            return null;
         case Q2160P:
             return "2160";
         case Q1080P:
@@ -212,6 +218,9 @@ public class YouJizzCom extends PluginForHost {
             return "360";
         case Q240P:
             return "240";
+        case BEST:
+        default:
+            return null;
         }
     }
 

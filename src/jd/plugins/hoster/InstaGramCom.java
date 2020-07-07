@@ -48,7 +48,6 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -111,6 +110,7 @@ public class InstaGramCom extends PluginForHost {
                 login(this.br, aa, false);
                 is_logged_in = true;
             } catch (final Throwable e) {
+                logger.log(e);
             }
         }
         if (this.is_private_url && !is_logged_in) {
@@ -170,7 +170,7 @@ public class InstaGramCom extends PluginForHost {
             con = br.openHeadConnection(dllink);
             if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-            } else if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
+            } else if (con.isOK() && !con.getContentType().contains("html") && !con.getContentType().contains("text")) {
                 link.setDownloadSize(con.getLongContentLength());
                 /* Save it to have it in case it was re-freshed! */
                 link.setProperty("directurl", this.dllink);
@@ -240,7 +240,7 @@ public class InstaGramCom extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openHeadConnection(flink);
-            if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
+            if (!con.isOK() || con.getContentType().contains("html") || con.getContentType().contains("text")) {
                 return null;
             }
         } catch (final Exception e) {
@@ -294,7 +294,11 @@ public class InstaGramCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text")) {
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
