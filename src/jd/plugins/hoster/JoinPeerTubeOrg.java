@@ -15,16 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,15 +31,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PeertubeFr extends antiDDoSForHost {
-    public PeertubeFr(PluginWrapper wrapper) {
+public class JoinPeerTubeOrg extends antiDDoSForHost {
+    public JoinPeerTubeOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -68,7 +70,7 @@ public class PeertubeFr extends antiDDoSForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    protected String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
@@ -80,15 +82,15 @@ public class PeertubeFr extends antiDDoSForHost {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "peertube.fr", "justtelly.com", "peertube.maxweiss.io", "tube.iddqd.press", "tube.privacytools.io", "videos.lukesmith.xyz", "tube.22decembre.eu", "tilvids.com", "peertube.azkware.net", "tubee.fr", "tuvideo.encanarias.info", "tube.kenfm.de", "p2ptv.ru", "hostyour.tv", "justtelly.com", "controverse.tube", "video.datsemultimedia.com", "peertube.devloprog.org", "peertube.crypto-libertarian.com", "peertube.designersethiques.org", "hope.tube", "testtube.florimond.eu", "v.sevvie.ltd", "open.tube", "tube.1001solutions.net", "peertube.wivodaim.net", "video.gafamfree.party", "watch.haddock.cc", "tube.gnous.eu", "videos.casually.cat", "stream.okin.cloud", "video.taboulisme.com", "peertube.acab.io", "tube-lille.beta.education.fr", "peertube.monlycee.net", "tube.plomlompom.com", "peertube1.zeteo.me", "v.mkp.ca", "tube-outremer.beta.education.fr",
                 "tube-lyon.beta.education.fr", "tube-dijon.beta.education.fr", "peertube.public.cat", "videos.fromouter.space", "tube-reims.beta.education.fr", "peertube.de1.sknode.com", "video.marcorennmaus.tk", "tube-limoges.beta.education.fr", "tube-versailles.beta.education.fr", "pt.steffo.eu", "stoptrackingus.tv", "peertube.r2.enst.fr", "peertube.metalbanana.net", "peertube.b38.rural-it.org", "tube-orleans-tours.beta.education.fr", "spacepub.space", "tube-rennes.beta.education.fr", "peertube.devol.it", "tube-clermont-ferrand.beta.education.fr", "video.nimag.net", "peertube.nogafa.org", "tube-corse.beta.education.fr", "film.node9.org", "tube-nice.beta.education.fr", "peertube.tangentfox.com", "notretube.asselma.eu", "tube-montpellier.beta.education.fr", "haytv.blueline.mg", "vidcommons.org", "tube.afix.space", "videos.ac-nancy-metz.fr", "tube-nancy.beta.education.fr",
-                "videos.aadtp.be", "videosdulib.re", "tube-aix-marseille.beta.education.fr", "tube-nantes.beta.education.fr", "tube-grenoble.beta.education.fr", "tube-paris.beta.education.fr", "cinematheque.tube", "tube-amiens.beta.education.fr", "peertube.gardeludwig.fr", "peertube.foxfam.club", "docker.videos.lecygnenoir.info", "media.privacyinternational.org", "tube-normandie.beta.education.fr", "tube.port0.xyz", "tube-creteil.beta.education.fr", "tube1.it.tuwien.ac.at", "peertube.travnewmatic.com", "tube.aquilenet.fr", "video.hylianux.com", "peertube.chiccou.net", "peertube.lyceeconnecte.fr", "tube-education.beta.education.fr", "tube.darfweb.eu", "video.phyrone.de", "vids.roshless.me", "peertube.s2s.video", "peertube.agneraya.com", "tube-toulouse.beta.education.fr", "peertube.netzbegruenung.de", "flim.ml", "plextube.nl", "queermotion.org", "peertube.atilla.org", "tube.opportunis.me",
-                "nanawel-peertube.dyndns.org", "tube-strasbourg.beta.education.fr", "tube.graz.social", "tube-besancon.beta.education.fr", "vid.garwood.io", "kolektiva.media", "peertube.lefaut.fr", "peertube.ichigo.everydayimshuflin.com", "petitlutinartube.fr", "videos.martyn.berlin", "video.lundi.am", "tube.pawelko.net", "video.unkipamunich.fr", "tube.chatelet.ovh", "peertube.xwiki.com", "tube.florimond.eu", "peertube.it", "peertube.taxinachtegel.de", "peertube.marud.fr", "peertube.mastodon.host", "vid.wizards.zone", "video.mindsforge.com", "peertube.scic-tetris.org", "peertube.semipvt.com", "peertube.lagvoid.com", "peertube.ireis.site", "peertube.hardwarehookups.com.au", "pt.diaspodon.fr", "video.mugoreve.fr", "nocensoring.net", "tube.portes-imaginaire.org", "peertube.robonomics.network", "video.data-expertise.com", "peertubenorge.com", "meta-tube.de", "video.minzord.eu.org",
-                "peertube.mazzonetto.eu", "videos.ahp-numerique.fr", "algorithmic.tv", "peertube.gnumeria.fr", "troo.tube", "lanceur-alerte.tv", "gwadloup.tv", "matinik.tv", "peertube.stemy.me", "ptube.horsentiers.fr", "videos.lavoixdessansvoix.org", "peervideo.ru", "peertube.at", "p.eertu.be", "video.marcorennmaus.de", "doby.io", "videos.gerdemann.me", "video.hardlimit.com", "peertube.debian.social", "infotik.fr", "tube.piweb.be", "video.lewd.host", "peertube.su", "freespeech.tube", "video.connor.money", "video.linc.systems", "manicphase.me", "tube.nx12.net", "video.hackers.town", "video.iphodase.fr", "tube.nox-rhea.org", "peertube.fedilab.app", "peertube.volaras.net", "peertube.terranout.mine.nu", "tube.fdn.fr", "tv.datamol.org", "peertube.demonix.fr", "videos.hauspie.fr", "peertube.social.my-wan.de", "media.zat.im", "peertube.club", "peertube.bierzilla.fr", "tube.maliweb.at",
-                "lexx.impa.me", "peertube.ventresmous.fr", "tube.linc.systems", "mplayer.demouliere.eu", "video.liberta.vip", "banneddata.me", "peertube.anduin.net", "peertube.gcfamily.fr", "video.ploud.fr", "tube.plaf.fr", "peertube.tech", "video.lono.space", "tube.bn4t.me", "highvoltage.tv", "tube.valinor.fr", "tube.interhacker.space", "peertube.simounet.net", "tube.nah.re", "dreiecksnebel.alex-detsch.de", "stage.peertube.ch", "peertube.ti-fr.com", "video.turbo.chat", "tube.hoga.fr", "bittube.video", "videos.globenet.org", "merci-la-police.fr", "tv.lapesto.fr", "tube.nuagelibre.fr", "videos.festivalparminous.org", "juggling.digital", "peertube.underworld.fr", "peertube.anzui.de", "video.ihatebeinga.live", "pt.neko.bar", "video.greenmycity.eu", "tube.troopers.agency", "tube.thechangebook.org", "tube.rita.moe", "wetube.ojamajo.moe", "lepetitmayennais.fr.nf", "tube.blob.cat",
-                "medias.pingbase.net", "video.oh14.de", "mytube.madzel.de", "monplaisirtube.ddns.net", "mytape.org", "peertube.iselfhost.com", "video.okaris.de", "peertube.alpharius.io", "p0.pm", "peertube.video", "video.isurf.ca", "replay.jres.org", "video.blender.org", "peertube.020.pl", "peertube.xoddark.com", "peertube.mxinfo.fr", "csictv.csic.es", "peertube.alcalyn.app", "video.imagotv.fr", "ptube.rousset.nom.fr", "tube.lesamarien.fr", "peertube.cipherbliss.com", "tube.azbyka.ru", "greatview.video", "runtube.re", "tube.ac-amiens.fr", "peertube.euskarabildua.eus", "peertube.schaeferit.de", "media.krashboyz.org", "toobnix.org", "video.emergeheart.info", "videos.numerique-en-commun.fr", "vault.mle.party", "peertube.education-forum.com", "tube.kdy.ch", "peertube.linuxrocks.online", "evertron.tv", "yt.is.nota.live", "videos.upr.fr", "widemus.de", "video.glassbeadcollective.org",
-                "peertube.kangoulya.org", "flix.librenet.co.za", "video.nesven.eu", "vidz.dou.bet", "tube.rebellion.global", "videos.koumoul.com", "tube.undernet.uy", "peertube.cojo.uno", "peertube.opencloud.lu", "video.hdys.band", "cattube.org", "peertube.ch", "tube.tappret.fr", "peertube.hatthieves.es", "peertube.la-famille-muller.fr", "video.sftblw.moe", "watch.snoot.tube", "video.gcfam.net", "peertube.pontostroy.gq", "video.splat.soy", "peerwatch.xyz", "peertube.snargol.com", "peertube.desmu.fr", "ppstube.portageps.org", "peertube.live", "peertube.pl", "xxxporn.co.uk", "peertube.dk", "vid.lubar.me", "tube.benzo.online", "tube.kapussinettes.ovh", "peertube.rainbowswingers.net", "videomensoif.ynh.fr", "peertube.montecsys.fr", "peer.tube", "tube.nx-pod.de", "video.monsieurbidouille.fr", "tube.openalgeria.org", "vid.lelux.fi", "video.anormallostpod.ovh", "tube.crapaud-fou.org",
-                "lostpod.space", "exode.me", "vis.ion.ovh", "videos-libr.es", "video.qoto.org", "video.vny.fr", "peervideo.club", "tube.taker.fr", "peertube.chantierlibre.org", "tube.kicou.info", "video.yukari.moe", "peertube.co.uk", "vod.mochi.academy", "video.fitchfamily.org", "video.fdlibre.eu", "tube.fabrigli.fr", "video.bruitbruit.com", "peer.philoxweb.be", "peertube.bilange.ca", "libretube.net", "libre.video", "us.tv", "peertube.sl-network.fr", "peertube.dynlinux.io", "peertube.david.durieux.family", "v.kretschmann.social", "tube.otter.sh", "videos.funkwhale.audio", "watch.44con.com", "pony.tube", "tube.danq.me", "tube.fab-l3.org", "tube.calculate.social", "tube.netzspielplatz.de", "peertube.laas.fr", "tube.govital.net", "video.ploud.jp", "video.omniatv.com", "peertube.ffs2play.fr", "video.1000i100.fr", "tube.worldofhauru.xyz", "conf.tube", "peertube.jackbot.fr",
-                "tube.extinctionrebellion.fr", "peertube.f-si.org", "video.subak.ovh", "videos.koweb.fr", "peertube.roflcopter.fr", "peertube.floss-marketing-school.com", "peertube.iriseden.eu", "videos.ubuntu-paris.org", "armstube.com", "peertube.lol", "peertube.normandie-libre.fr", "peertube.slat.org", "peertube.uno", "peertube.servebeer.com", "peertube.fedi.quebec", "tube.h3z.jp", "tube.plus200.com", "gouttedeau.space", "video.antirep.net", "tube.ksl-bmx.de", "tube.tchncs.de", "video.devinberg.com", "hitchtube.fr", "peertube.kosebamse.com", "yunopeertube.myddns.me", "peertube.anon-kenkai.com", "tube.maiti.info", "videos.dinofly.com", "videotape.me", "video.lemediatv.fr", "thickrips.cloud", "pt.laurentkruger.fr", "video.monarch-pass.net", "peertube.artica.center", "indymotion.fr", "fanvid.stopthatimp.net", "video.farci.org", "v.lesterpig.com", "tube.fede.re", "pytu.be",
-                "devtube.dev-wiki.de", "raptube.antipub.org", "video.selea.se", "peertube.mygaia.org", "peertube.livingutopia.org", "peertube.the-penguin.de", "tube.anjara.eu", "pt.pube.tk", "peertube.me", "video.latavernedejohnjohn.fr", "peertube.pcservice46.fr", "video.irem.univ-paris-diderot.fr", "alttube.fr", "video.coop.tools", "video.cabane-libre.org", "peertube.openstreetmap.fr", "videos.alolise.org", "irrsinn.video", "video.antopie.org", "scitech.video", "video.amic37.fr", "peertube.freeforge.eu", "peertube.togart.de", "tube.postblue.info", "videos.domainepublic.net", "peertube.cyber-tribal.com", "video.gresille.org", "cinema.yunohost.support", "repro.video", "videos.wakapo.com", "pt.kircheneuenburg.de", "peertube.asrun.eu", "videos.side-ways.net", "91video.online", "videos-libr.es", "tv.mooh.fr", "nuage.acostey.fr", "videos.pair2jeux.tube", "videos.pueseso.club",
+                "videos.aadtp.be", "videosdulib.re", "tube-aix-marseille.beta.education.fr", "tube-nantes.beta.education.fr", "tube-grenoble.beta.education.fr", "tube-paris.beta.education.fr", "cinematheque.tube", "tube-amiens.beta.education.fr", "peertube.gardeludwig.fr", "peertube.foxfam.club", "docker.videos.lecygnenoir.info", "media.privacyinternational.org", "tube-normandie.beta.education.fr", "tube.port0.xyz", "tube-creteil.beta.education.fr", "tube1.it.tuwien.ac.at", "peertube.travnewmatic.com", "tube.aquilenet.fr", "video.hylianux.com", "peertube.chiccou.net", "peertube.lyceeconnecte.fr", "tube-education.beta.education.fr", "tube.darfweb.eu", "video.phyrone.de", "vids.roshless.me", "peertube.s2s.video", "peertube.agneraya.com", "tube-toulouse.beta.education.fr", "peertube.netzbegruenung.de", "flim.ml", "plextube.nl", "queermotion.org", "peertube.atilla.org",
+                "tube.opportunis.me", "nanawel-peertube.dyndns.org", "tube-strasbourg.beta.education.fr", "tube.graz.social", "tube-besancon.beta.education.fr", "vid.garwood.io", "kolektiva.media", "peertube.lefaut.fr", "peertube.ichigo.everydayimshuflin.com", "petitlutinartube.fr", "videos.martyn.berlin", "video.lundi.am", "tube.pawelko.net", "video.unkipamunich.fr", "tube.chatelet.ovh", "peertube.xwiki.com", "tube.florimond.eu", "peertube.it", "peertube.taxinachtegel.de", "peertube.marud.fr", "peertube.mastodon.host", "vid.wizards.zone", "video.mindsforge.com", "peertube.scic-tetris.org", "peertube.semipvt.com", "peertube.lagvoid.com", "peertube.ireis.site", "peertube.hardwarehookups.com.au", "pt.diaspodon.fr", "video.mugoreve.fr", "nocensoring.net", "tube.portes-imaginaire.org", "peertube.robonomics.network", "video.data-expertise.com", "peertubenorge.com", "meta-tube.de",
+                "video.minzord.eu.org", "peertube.mazzonetto.eu", "videos.ahp-numerique.fr", "algorithmic.tv", "peertube.gnumeria.fr", "troo.tube", "lanceur-alerte.tv", "gwadloup.tv", "matinik.tv", "peertube.stemy.me", "ptube.horsentiers.fr", "videos.lavoixdessansvoix.org", "peervideo.ru", "peertube.at", "p.eertu.be", "video.marcorennmaus.de", "doby.io", "videos.gerdemann.me", "video.hardlimit.com", "peertube.debian.social", "infotik.fr", "tube.piweb.be", "video.lewd.host", "peertube.su", "freespeech.tube", "video.connor.money", "video.linc.systems", "manicphase.me", "tube.nx12.net", "video.hackers.town", "video.iphodase.fr", "tube.nox-rhea.org", "peertube.fedilab.app", "peertube.volaras.net", "peertube.terranout.mine.nu", "tube.fdn.fr", "tv.datamol.org", "peertube.demonix.fr", "videos.hauspie.fr", "peertube.social.my-wan.de", "media.zat.im", "peertube.club", "peertube.bierzilla.fr",
+                "tube.maliweb.at", "lexx.impa.me", "peertube.ventresmous.fr", "tube.linc.systems", "mplayer.demouliere.eu", "video.liberta.vip", "banneddata.me", "peertube.anduin.net", "peertube.gcfamily.fr", "video.ploud.fr", "tube.plaf.fr", "peertube.tech", "video.lono.space", "tube.bn4t.me", "highvoltage.tv", "tube.valinor.fr", "tube.interhacker.space", "peertube.simounet.net", "tube.nah.re", "dreiecksnebel.alex-detsch.de", "stage.peertube.ch", "peertube.ti-fr.com", "video.turbo.chat", "tube.hoga.fr", "bittube.video", "videos.globenet.org", "merci-la-police.fr", "tv.lapesto.fr", "tube.nuagelibre.fr", "videos.festivalparminous.org", "juggling.digital", "peertube.underworld.fr", "peertube.anzui.de", "video.ihatebeinga.live", "pt.neko.bar", "video.greenmycity.eu", "tube.troopers.agency", "tube.thechangebook.org", "tube.rita.moe", "wetube.ojamajo.moe", "lepetitmayennais.fr.nf",
+                "tube.blob.cat", "medias.pingbase.net", "video.oh14.de", "mytube.madzel.de", "monplaisirtube.ddns.net", "mytape.org", "peertube.iselfhost.com", "video.okaris.de", "peertube.alpharius.io", "p0.pm", "peertube.video", "video.isurf.ca", "replay.jres.org", "video.blender.org", "peertube.020.pl", "peertube.xoddark.com", "peertube.mxinfo.fr", "csictv.csic.es", "peertube.alcalyn.app", "video.imagotv.fr", "ptube.rousset.nom.fr", "tube.lesamarien.fr", "peertube.cipherbliss.com", "tube.azbyka.ru", "greatview.video", "runtube.re", "tube.ac-amiens.fr", "peertube.euskarabildua.eus", "peertube.schaeferit.de", "media.krashboyz.org", "toobnix.org", "video.emergeheart.info", "videos.numerique-en-commun.fr", "vault.mle.party", "peertube.education-forum.com", "tube.kdy.ch", "peertube.linuxrocks.online", "evertron.tv", "yt.is.nota.live", "videos.upr.fr", "widemus.de",
+                "video.glassbeadcollective.org", "peertube.kangoulya.org", "flix.librenet.co.za", "video.nesven.eu", "vidz.dou.bet", "tube.rebellion.global", "videos.koumoul.com", "tube.undernet.uy", "peertube.cojo.uno", "peertube.opencloud.lu", "video.hdys.band", "cattube.org", "peertube.ch", "tube.tappret.fr", "peertube.hatthieves.es", "peertube.la-famille-muller.fr", "video.sftblw.moe", "watch.snoot.tube", "video.gcfam.net", "peertube.pontostroy.gq", "video.splat.soy", "peerwatch.xyz", "peertube.snargol.com", "peertube.desmu.fr", "ppstube.portageps.org", "peertube.live", "peertube.pl", "xxxporn.co.uk", "peertube.dk", "vid.lubar.me", "tube.benzo.online", "tube.kapussinettes.ovh", "peertube.rainbowswingers.net", "videomensoif.ynh.fr", "peertube.montecsys.fr", "peer.tube", "tube.nx-pod.de", "video.monsieurbidouille.fr", "tube.openalgeria.org", "vid.lelux.fi", "video.anormallostpod.ovh",
+                "tube.crapaud-fou.org", "lostpod.space", "exode.me", "vis.ion.ovh", "videos-libr.es", "video.qoto.org", "video.vny.fr", "peervideo.club", "tube.taker.fr", "peertube.chantierlibre.org", "tube.kicou.info", "video.yukari.moe", "peertube.co.uk", "vod.mochi.academy", "video.fitchfamily.org", "video.fdlibre.eu", "tube.fabrigli.fr", "video.bruitbruit.com", "peer.philoxweb.be", "peertube.bilange.ca", "libretube.net", "libre.video", "us.tv", "peertube.sl-network.fr", "peertube.dynlinux.io", "peertube.david.durieux.family", "v.kretschmann.social", "tube.otter.sh", "videos.funkwhale.audio", "watch.44con.com", "pony.tube", "tube.danq.me", "tube.fab-l3.org", "tube.calculate.social", "tube.netzspielplatz.de", "peertube.laas.fr", "tube.govital.net", "video.ploud.jp", "video.omniatv.com", "peertube.ffs2play.fr", "video.1000i100.fr", "tube.worldofhauru.xyz", "conf.tube",
+                "peertube.jackbot.fr", "tube.extinctionrebellion.fr", "peertube.f-si.org", "video.subak.ovh", "videos.koweb.fr", "peertube.roflcopter.fr", "peertube.floss-marketing-school.com", "peertube.iriseden.eu", "videos.ubuntu-paris.org", "armstube.com", "peertube.lol", "peertube.normandie-libre.fr", "peertube.slat.org", "peertube.uno", "peertube.servebeer.com", "peertube.fedi.quebec", "tube.h3z.jp", "tube.plus200.com", "gouttedeau.space", "video.antirep.net", "tube.ksl-bmx.de", "tube.tchncs.de", "video.devinberg.com", "hitchtube.fr", "peertube.kosebamse.com", "yunopeertube.myddns.me", "peertube.anon-kenkai.com", "tube.maiti.info", "videos.dinofly.com", "videotape.me", "video.lemediatv.fr", "thickrips.cloud", "pt.laurentkruger.fr", "video.monarch-pass.net", "peertube.artica.center", "indymotion.fr", "fanvid.stopthatimp.net", "video.farci.org", "v.lesterpig.com", "tube.fede.re",
+                "pytu.be", "devtube.dev-wiki.de", "raptube.antipub.org", "video.selea.se", "peertube.mygaia.org", "peertube.livingutopia.org", "peertube.the-penguin.de", "tube.anjara.eu", "pt.pube.tk", "peertube.me", "video.latavernedejohnjohn.fr", "peertube.pcservice46.fr", "video.irem.univ-paris-diderot.fr", "alttube.fr", "video.coop.tools", "video.cabane-libre.org", "peertube.openstreetmap.fr", "videos.alolise.org", "irrsinn.video", "video.antopie.org", "scitech.video", "video.amic37.fr", "peertube.freeforge.eu", "peertube.togart.de", "tube.postblue.info", "videos.domainepublic.net", "peertube.cyber-tribal.com", "video.gresille.org", "cinema.yunohost.support", "repro.video", "videos.wakapo.com", "pt.kircheneuenburg.de", "peertube.asrun.eu", "videos.side-ways.net", "91video.online", "videos-libr.es", "tv.mooh.fr", "nuage.acostey.fr", "videos.pair2jeux.tube", "videos.pueseso.club",
                 "media.assassinate-you.net", "videos.squat.net", "peertube.makotoworkshop.org", "peertube.serveur.slv-valbonne.fr", "videos.hack2g2.fr", "pire.artisanlogiciel.net", "video.netsyms.com", "video.die-partei.social", "video.writeas.org", "videos.adhocmusic.com", "tube.rfc1149.net", "peertube.librelabucm.org", "peertube.koehn.com", "peertube.anarchmusicall.net", "vid.y-y.li", "diode.zone", "peertube.nomagic.uk", "video.rastapuls.com", "video.mantlepro.com", "video.deadsuperhero.com", "peertube.musicstudio.pro", "peertube.we-keys.fr", "artitube.artifaille.fr", "tube.midov.pl", "tube.nemsia.org", "tube.bruniau.net", "tube.traydent.info", "peertube.nayya.org", "video.lequerrec.eu", "peertube.amicale.net", "aperi.tube", "tube.ac-lyon.fr", "video.lw1.at", "yiny.org", "videos.pofilo.fr", "tube.lou.lt", "betamax.video", "video.typica.us", "videos.lescommuns.org", "videonaute.fr",
                 "dialup.express", "megatube.lilomoino.fr", "peertube.1312.media", "skeptikon.fr", "video.blueline.mg", "tube.homecomputing.fr", "tube.ouahpiti.info", "video.tedomum.net", "video.g3l.org", "fontube.fr", "peertube.gaialabs.ch", "tube.kher.nl", "peertube.qtg.fr", "video.migennes.net", "tube.p2p.legal", "troll.tv", "videos.iut-orsay.fr", "peertube.solidev.net", "videos.cemea.org", "video.passageenseine.fr", "peertube.touhoppai.moe", "peer.hostux.social", "share.tube", "videos.benpro.fr", "peertube.parleur.net", "peertube.heraut.eu", "peertube.gegeweb.eu", "framatube.org", "thinkerview.video", "tube.conferences-gesticulees.net", "peertube.datagueule.tv", "video.lqdn.fr", "tube.mochi.academy", "video.colibris-outilslibres.org", "peertube3.cpy.re", "peertube2.cpy.re", "peertube.cpy.re" });
         return ret;
@@ -106,7 +108,7 @@ public class PeertubeFr extends antiDDoSForHost {
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { "PeerTube" };
+        return new String[] { "joinpeertube.org" };
     }
 
     @Override
@@ -248,18 +250,19 @@ public class PeertubeFr extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
     }
@@ -284,6 +287,11 @@ public class PeertubeFr extends antiDDoSForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.PeerTube;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
     }
 
     @Override

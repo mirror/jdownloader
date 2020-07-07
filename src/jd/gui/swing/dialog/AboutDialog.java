@@ -34,6 +34,15 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -41,6 +50,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -56,15 +66,6 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
-import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
     private int labelHeight;
@@ -109,9 +110,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
             });
             btn.setBorder(null);
             links.add(btn);
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("http://www.jdownloader.org/home?lng=en")));
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://board.jdownloader.org")));
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("https://jdownloader.org/home")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://board.jdownloader.org/")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_ticket(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://support.jdownloader.org/")));
+            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("https://svn.jdownloader.org/projects/jd")));
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
@@ -230,27 +232,27 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
         stats.add(disable("Copyright \u00A9 2009-2020 JDownloader Community"));
         stats.add(new JLabel("JSON Support:"), "");
-        stats.add(disable("Jackson JSON Processor 2.7.9 (https://github.com/FasterXML/jackson/)"));
+        stats.add(disable("Jackson JSON Processor 2.7.9", "https://github.com/FasterXML/jackson/"));
         stats.add(new JLabel("RTMP Support:"), "");
-        stats.add(disable("RtmpDump (http://rtmpdump.mplayerhq.hu)"));
+        stats.add(disable("RtmpDump", "http://rtmpdump.mplayerhq.hu"));
         stats.add(new JLabel("UPNP:"), "");
-        stats.add(disable("Cling (http://4thline.org/projects/cling)"));
+        stats.add(disable("Cling", "https://github.com/4thline/cling"));
         stats.add(new JLabel("Extraction:"), "");
-        stats.add(disable("7ZipJBindings (https://github.com/borisbrodski/sevenzipjbinding)"));
-        stats.add(disable("Zip4J (http://www.lingala.net/zip4j/)"), "skip");
+        stats.add(disable("7ZipJBindings", "https://github.com/borisbrodski/sevenzipjbinding"));
+        stats.add(disable("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
-        stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
+        stats.add(disable("Synthetica", "http://www.jyloo.com/synthetica/"));
         stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2("(#112044)")), "skip");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
         stats.add(disable("See /themes/* folder for Icon Licenses"), "");
-        stats.add(disable("Icons8 (https://icons8.com/)"), "skip");
-        stats.add(disable("Tango Icons (http://tango.freedesktop.org/)"), "skip");
-        stats.add(disable("FatCow-Farm Fresh Icons (http://www.fatcow.com/free-icons)"), "skip");
-        stats.add(disable("Mimi Glyphs Set (http://salleedesign.com)"), "skip");
-        stats.add(disable("Bright Mix Set (http://www.brightmix.com)"), "skip");
-        stats.add(disable("Picol Icon Set (http://www.picol.org)"), "skip");
-        stats.add(disable("Aha Soft Icon Set (www.aha-soft.com)"), "skip");
-        stats.add(disable("Oxygen Team (https://techbase.kde.org/Projects/Oxygen/Licensing)"), "skip");
+        stats.add(disable("Icons8", "https://icons8.com"), "skip");
+        stats.add(disable("Tango Icons", "https://en.wikipedia.org/wiki/Tango_Desktop_Project"), "skip");
+        stats.add(disable("FatCow-Farm Fresh Icons", "https://www.fatcow.com/free-icons"), "skip");
+        stats.add(disable("Mimi Glyphs Set", "http://salleedesign.com/blog/mimi-glyphs/"), "skip");
+        stats.add(disable("Bright Mix Set", "http://brightmix.com/blog/brightmix-icon-set-free-for-all/"), "skip");
+        stats.add(disable("Picol Icon Set", "http://www.picol.org/"), "skip");
+        stats.add(disable("Aha Soft Icon Set", "http://www.aha-soft.com"), "skip");
+        stats.add(disable("Oxygen Team", "https://techbase.kde.org/Projects/Oxygen/Licensing"), "skip");
         stats.add(disable("further icons by AppWork GmbH"), "skip");
         stats.add(disable("& the JDownloader Community"), "skip");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
@@ -258,7 +260,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         return contentpane;
     }
 
-    private ExtButton disable(final Object object) {
+    private ExtButton disable(final Object object, final String url) {
         ExtButton ret = new ExtButton(new AppAction() {
             /**
              *
@@ -271,12 +273,16 @@ public class AboutDialog extends AbstractDialog<Integer> {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ClipboardMonitoring.getINSTANCE().setCurrentContent(getName());
-                BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-                    @Override
-                    public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                        return new BasicNotify(_GUI.T.lit_clipboard(), _GUI.T.AboutDialog_actionPerformed_clipboard_(getName()), new AbstractIcon(IconKey.ICON_CLIPBOARD, 20));
-                    }
-                });
+                if (StringUtils.startsWithCaseInsensitive(url, "http") && CrossSystem.isOpenBrowserSupported()) {
+                    CrossSystem.openURL(url);
+                } else {
+                    BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+                        @Override
+                        public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                            return new BasicNotify(_GUI.T.lit_clipboard(), _GUI.T.AboutDialog_actionPerformed_clipboard_(getName()), new AbstractIcon(IconKey.ICON_CLIPBOARD, 20));
+                        }
+                    });
+                }
             }
         });
         ret.setBorderPainted(false);
@@ -284,5 +290,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
         ret.setEnabled(true);
         ret.setMaximumSize(new Dimension(1000, labelHeight));
         return ret;
+    }
+
+    private ExtButton disable(final Object object) {
+        return disable(object, null);
     }
 }

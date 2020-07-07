@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,6 +31,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[a-z][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
@@ -276,6 +276,7 @@ public class BbcCom extends PluginForHost {
         }
         final String quality_string;
         if (hls_master != null) {
+            checkFFmpeg(link, "Download a HLS Stream");
             /* 2020-03-16: This is a mess */
             /* HLS download and try to obey users' selection */
             final String final_hls_url;
@@ -312,7 +313,6 @@ public class BbcCom extends PluginForHost {
                 link.setFinalFileName(title + "_" + quality_string + ".mp4");
                 /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
                 link.setComment(hlscontainer_chosen.getDownloadurl());
-                checkFFmpeg(link, "Download a HLS Stream");
                 final_hls_url = hlscontainer_chosen.getDownloadurl();
             }
             dl = new HLSDownloader(link, br, final_hls_url);
