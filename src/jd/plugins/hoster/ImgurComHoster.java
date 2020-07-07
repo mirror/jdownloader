@@ -805,16 +805,16 @@ public class ImgurComHoster extends PluginForHost {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = "Imgur.com - Login";
                         message += "Hallo liebe(r) Imgur NutzerIn\r\n";
-                        message += "Um deinen Imgur Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Um deinen Imgur Account in JD verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + autURL + "'\t\r\n";
-                        message += "2. Autorisiere JD auf der Imgur Webseite sofern du nicht sofort von imgur auf die myjdownloader Webseite weitergeleitet wirst.\r\nDu wirst weitergeleitet auf 'my.jdownloader.org/#access_token=...'.\r\nKopiere diesen Link aus der Adresszeile und gib ihn ins 'Passwort' Feld der imgur Loginmaske in JD ein.\r\n";
+                        message += "2. Autorisiere JD auf der Imgur Webseite sofern du nicht sofort von imgur auf die jdownloader Webseite weitergeleitet wirst.\r\nDu wirst weitergeleitet auf 'my.jdownloader.org/#access_token=...'.\r\nKopiere diesen Link aus der Adresszeile und gib ihn ins 'Passwort' Feld der imgur Loginmaske in JD ein.\r\n";
                         message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
                     } else {
                         title = "Imgur.com - Login";
                         message += "Hello dear Imgur user\r\n";
-                        message += "In order to use imgur with JDownloader, you need to follow these steps:\r\n";
+                        message += "In order to use imgur with JD, you need to follow these steps:\r\n";
                         message += "1. Open the following URL in your browser if it is not opened automatically:\r\n\t'" + autURL + "'\t\r\n";
-                        message += "2. Authorize JD on the Imgur website in case you are not automatically redirected from imgur to the myjdownloader website immediately.\r\nYou will be redirected to 'my.jdownloader.org/#access_token=...'.\r\nCopy this complete URL from the address bar of your browser and enter it into the password field of the imgur login mask in JD. \r\n";
+                        message += "2. Authorize JD on the Imgur website in case you are not automatically redirected from imgur to the jdownloader website immediately.\r\nYou will be redirected to 'my.jdownloader.org/#access_token=...'.\r\nCopy this complete URL from the address bar of your browser and enter it into the password field of the imgur login mask in JD. \r\n";
                         message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
