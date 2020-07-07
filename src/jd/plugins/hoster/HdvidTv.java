@@ -43,7 +43,7 @@ public class HdvidTv extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "hdvid.tv" });
+        ret.add(new String[] { "hdvid.tv", "hdvid.fun" });
         return ret;
     }
 
@@ -103,5 +103,17 @@ public class HdvidTv extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    @Override
+    protected boolean isVideohosterEmbed() {
+        /* 2020-07-07 */
+        return true;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        /* 2020-07-07 */
+        return true;
     }
 }
