@@ -8,8 +8,6 @@ import java.util.List;
 
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.BasicJDTable;
-
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.uio.UIOManager;
@@ -23,6 +21,8 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.BasicJDTable;
 
 public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
     public CollectionsTable(CollectionsTableModel model) {
@@ -57,10 +57,12 @@ public class CollectionsTable extends BasicJDTable<YoutubeVariantCollection> {
                 setSmallIcon(new AbstractIcon(IconKey.ICON_REMOVE, 20));
                 setName(_GUI.T.lit_delete());
                 setEnabled(false);
-                for (YoutubeVariantCollection l : selection) {
-                    if (l.getGroupingID() == null) {
-                        setEnabled(true);
-                        break;
+                if (selection != null) {
+                    for (YoutubeVariantCollection l : selection) {
+                        if (l.getGroupingID() == null) {
+                            setEnabled(true);
+                            break;
+                        }
                     }
                 }
             }

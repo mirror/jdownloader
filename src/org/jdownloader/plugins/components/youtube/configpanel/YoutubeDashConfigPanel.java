@@ -1,5 +1,8 @@
 package org.jdownloader.plugins.components.youtube.configpanel;
 
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,19 +11,15 @@ import java.util.List;
 
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
@@ -48,6 +47,14 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
@@ -227,6 +234,16 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         List<AudioBitrate> bitrates = Arrays.asList(AudioBitrate.values());
         Collections.sort(bitrates, IntegerInterface.COMPARATOR_DESC);
         EnumMultiComboBox<AudioBitrate> aBitrate = new EnumMultiComboBox<AudioBitrate>(bitrates, CFG_YOUTUBE.BLACKLISTED_AUDIO_BITRATES, true);
+        containerSel.keyHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
+            @Override
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                System.out.println();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+            }
+        });
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_TYPE(), null, typeSel);
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_FILETYPE(), null, containerSel);
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_PROJECTION(), null, projectionSelect);
@@ -237,8 +254,18 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YOUTUBE_CONFIG_PANEL_TABLE_AUDIO_BITRATE(), null, aBitrate);
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_allowedtypoes_table());
         JScrollPane sp;
-        add(new PerfectHeightScrollPane(allowed), "pushx,growx,spanx");
-        // sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        add(sp = new JScrollPane(allowed) {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension ret = super.getPreferredSize();
+                Insets borderInsets = getBorder().getBorderInsets(this);
+                Component view = getViewport().getView();
+                JViewport ch = getColumnHeader();
+                ret.height = Math.min(ret.height, view.getPreferredSize().height + 20 + borderInsets.top + borderInsets.bottom + (ch == null ? 0 : ch.getPreferredSize().height));
+                return ret;
+            }
+        }, "pushx,growx,spanx,height n:n:300");
+        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         addHeader(_GUI.T.YoutubeDashConfigPanel_collections_header(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
         addDescriptionPlain(_GUI.T.YoutubeDashConfigPanel_links_description());
         add(new PerfectHeightScrollPane(collections), "pushx,growx,spanx");
