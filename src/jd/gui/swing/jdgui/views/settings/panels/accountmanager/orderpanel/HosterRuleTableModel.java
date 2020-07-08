@@ -13,8 +13,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.gui.swing.jdgui.TriStateSorterTableModel;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -30,8 +28,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
-public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implements TriStateSorterTableModel {
-
+public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> {
     public HosterRuleTableModel() {
         super("HosterRuleTableModel");
     }
@@ -48,7 +45,6 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
             newdata.addAll(transferData);
             newdata.addAll(after);
             HosterRuleController.getInstance().setList(newdata);
-
             return true;
         } catch (final Throwable t) {
             t.printStackTrace();
@@ -59,18 +55,14 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
     @Override
     protected void _replaceTableData(List<AccountUsageRule> newtableData, boolean checkEditing) {
         super._replaceTableData(newtableData, checkEditing);
-
     }
 
     @Override
     protected void initColumns() {
-
         this.addColumn(new ExtCheckColumn<AccountUsageRule>(_GUI.T.premiumaccounttablemodel_column_enabled()) {
-
             private final JComponent empty = new RendererMigPanel("ins 0", "[]", "[]");
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
                     private final Icon ok = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
 
@@ -82,23 +74,18 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
                         setText(null);
                         return this;
                     }
-
                 };
-
                 return ret;
             }
 
             @Override
             public int getMaxWidth() {
-
                 return 30;
             }
 
             @Override
             public JComponent getRendererComponent(AccountUsageRule value, boolean isSelected, boolean hasFocus, int row, int column) {
-
                 JComponent ret = super.getRendererComponent(value, isSelected, hasFocus, row, column);
-
                 return ret;
             }
 
@@ -125,12 +112,9 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
             @Override
             protected void setBooleanValue(boolean value, final AccountUsageRule object) {
                 object.setEnabled(value);
-
             }
         });
-
         this.addColumn(new ExtTextColumn<AccountUsageRule>(_GUI.T.HosterRuleTableModel_initColumns_hoster_()) {
-
             private static final long serialVersionUID = -8070328156326837828L;
 
             @Override
@@ -145,7 +129,6 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
 
             @Override
             public boolean isSortable(final AccountUsageRule obj) {
-
                 return true;
             }
 
@@ -166,7 +149,6 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
 
             @Override
             protected void setStringValue(String value, AccountUsageRule object) {
-
             }
 
             @Override
@@ -179,43 +161,33 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
                 return value.getHoster();
             }
         });
-
         this.addColumn(new ExtComponentColumn<AccountUsageRule>(_GUI.T.HosterRuleTableModel_initColumns_edit_()) {
             private JButton          button;
             private MigPanel         panel;
             private JButton          rbutton;
             private MigPanel         rpanel;
             private AccountUsageRule editing;
-
             {
                 button = new JButton(_GUI.T.HosterRuleTableModel_initColumns_edit_());
-
                 panel = new RendererMigPanel("ins 2", "[]", "[16!]");
                 panel.add(button);
                 button.setOpaque(false);
-
                 rbutton = new JButton(_GUI.T.HosterRuleTableModel_initColumns_edit_());
-
                 rbutton.addActionListener(new ActionListener() {
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
                             HosterRuleController.getInstance().showEditPanel(editing);
-
                         }
                     }
                 });
-
                 rpanel = new MigPanel("ins 2", "[]", "[16!]");
                 rpanel.add(rbutton);
                 rbutton.setOpaque(false);
             }
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -224,9 +196,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
                         setText(null);
                         return this;
                     }
-
                 };
-
                 return ret;
             }
 
@@ -272,7 +242,6 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
 
             @Override
             protected JComponent getInternalRendererComponent(AccountUsageRule value, boolean isSelected, boolean hasFocus, int row, int column) {
-
                 return panel;
             }
 
@@ -299,13 +268,10 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implem
                 panel.setBackground(null);
                 panel.setOpaque(false);
             }
-
         });
-
     }
 
     public void resetData() {
         _fireTableStructureChanged(new ArrayList<AccountUsageRule>(HosterRuleController.getInstance().list()), true);
     }
-
 }
