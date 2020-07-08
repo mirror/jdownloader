@@ -41,8 +41,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "calabox.com" }, urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "https?://(\\w+\\.)?go4up\\.com/{1,}(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?(?:shrta|calabox)\\.com/files/[0-9A-Z]{8}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "qooy.com", "uploader.ro", "megaupper.com", "calabox.com" }, urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "https?://(\\w+\\.)?go4up\\.com/{1,}(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?(?:shrta|calabox)\\.com/files/[0-9A-Z]{8}" })
 public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,10 +77,8 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
         final LinkedHashSet<String> dupeList = new LinkedHashSet<String>();
         Browser brc;
         String parameter = param.toString();
-        // Only uploadmirrors.com has those "/download/" links so we need to correct them
         if (parameter.contains("go4up.com")) {
             parameter = parameter.replace("link.php?id=", "dl/").replace("http://", "https://");
-        } else if (parameter.contains("uploadmirrors.com/")) {
         } else if (parameter.matches("http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}")) {
             parameter = "http://exoshare.com/download.php?uid=" + new Regex(parameter, "([A-Z0-9]{8})$").getMatch(0);
         } else {
@@ -101,16 +99,7 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             return null;
         }
         String customFileName = null;
-        if (parameter.contains("uploadmirrors.com")) {
-            getPage(br, parameter);
-            String status = br.getRegex("ajaxRequest\\.open\\(\"GET\", \"(/[A-Za-z0-9]+\\.php\\?uid=" + id + "&name=[^<>\"/]*?)\"").getMatch(0);
-            if (status == null) {
-                logger.warning("Couldn't find status : " + param.toString());
-                return null;
-            }
-            brc = br.cloneBrowser();
-            getPage(brc, status);
-        } else if (parameter.contains("go4up.com/")) {
+        if (parameter.contains("go4up.com/")) {
             getPage(br, parameter);
             if (br.containsHTML(">File not Found<")) {
                 decryptedLinks.add(createOfflinelink(parameter));
@@ -173,11 +162,6 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             }
             // exoshare have just advertising crapola for dead/offline links
             if ("exoshare.com".equals(getHost())) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            /* 2018-11-06: Uploadmirrors.com is just buggy */
-            if ("uploadmirrors.com".equals(getHost())) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
