@@ -43,6 +43,7 @@ public class SourceForgeNet extends PluginForDecrypt {
         String target_filename = null;
         final String list_url;
         String parameter = param.toString().replace("https://", "http://");
+        final String url_title = new Regex(parameter, "/([^/]+)/?$").getMatch(0);
         /* We get downloadlinks depending on our useragent Update 07.04.2015: Really? Do we? Who added this comment? Me? */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setLoadLimit(br.getLoadLimit() * 5);
@@ -54,11 +55,15 @@ public class SourceForgeNet extends PluginForDecrypt {
         }
         if (br.containsHTML("File may contain malware|Your download will start shortly")) {
             final DownloadLink dl = (createDownloadlink(parameter.replace("sourceforge.net/", "sourceforgedecrypted.net/")));
-            dl.setFinalFileName(new Regex(parameter.replace("/download", "/"), "/([^/]+)/?$").getMatch(0));
+            /* No need to re-check in host plugin */
+            dl.setAvailable(true);
+            if (url_title != null) {
+                dl.setName(url_title);
+            }
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (!br.getURL().contains("sourceforge.net/")) {
+        if (!br.getURL().contains(this.getHost() + "/")) {
             /* Redirect to external website (extremely rare case) */
             final DownloadLink dl = createDownloadlink(br.getURL());
             decryptedLinks.add(dl);

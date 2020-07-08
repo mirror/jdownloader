@@ -34,11 +34,13 @@ import jd.plugins.PluginForHost;
 public class SourceForgeNet extends PluginForHost {
     public SourceForgeNet(PluginWrapper wrapper) {
         super(wrapper);
+        /* 2020-07-08: Required to reduce error-responses due to opening too many connections in a short time. */
+        this.setStartIntervall(2000l);
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("sourceforgedecrypted.net/", "sourceforge.net/"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("sourceforgedecrypted.net/", "sourceforge.net/"));
     }
 
     /* DEV NOTES */
@@ -51,37 +53,45 @@ public class SourceForgeNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://slashdotmedia.com/terms-of-use/";
+        return "https://slashdotmedia.com/terms-of-use/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
+        /* 2020-07-08: Don't do that! */
+        // final String urlname = new Regex(link.getPluginPatternMatcher(), "/projects/(.*?)/?$").getMatch(0);
+        // if (!link.isNameSet() && urlname != null) {
+        // link.setName(urlname);
+        // }
         URLConnectionAdapter con = null;
-        dllink = checkDirectLink(downloadLink, "directlink");
+        dllink = checkDirectLink(link, "directlink");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (dllink == null) {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String altDlink = br.getRegex("<b>Download</b>[\t\n\r ]+<small title=\"(/[^<>\"]*?)\"").getMatch(0);
-            String link = null;
+            final String altDlink = br.getRegex("<b>Download</b>\\s*<small title=\"(/[^<>\"]*?)\"").getMatch(0);
+            String dlurl = null;
             if (br.getURL().contains("/files/extras/") || br.getURL().contains("prdownloads.sourceforge.net") || br.getURL().contains("/download")) {
-                link = getDllink(this.br);
+                dlurl = getDllink(this.br);
             } else {
-                String project = new Regex(downloadLink.getDownloadURL(), "sourceforge\\.net/projects/(.*?)/").getMatch(0);
+                String project = new Regex(link.getPluginPatternMatcher(), "sourceforge\\.net/projects/(.*?)/").getMatch(0);
                 if (project == null) {
                     project = new Regex(br.getURL(), "sourceforge\\.net/projects/(.*?)/").getMatch(0);
                 }
                 if (altDlink != null) {
                     // Avoid ad-installers, see here: http://userscripts.org/scripts/show/174951
-                    link = "http://master.dl.sourceforge.net/project/" + project + altDlink;
+                    dlurl = "http://master.dl.sourceforge.net/project/" + project + altDlink;
                 } else {
                     final String continuelink = br.getRegex("\"(/projects/" + project + "/files/latest/download[^<>\"/]*?)\"").getMatch(0);
                     if (continuelink == null) {
-                        logger.info("Found no downloadable link for: " + downloadLink.getDownloadURL());
+                        logger.info("Found no downloadable link for: " + link.getPluginPatternMatcher());
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     br.getPage(continuelink);
@@ -89,60 +99,61 @@ public class SourceForgeNet extends PluginForHost {
                     if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/download") || br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(https?://.*?)\"").getMatch(1);
+                    dlurl = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(https?://.*?)\"").getMatch(1);
                 }
             }
-            if (link == null) {
-                logger.warning("Decrypter broken, link: " + downloadLink.getDownloadURL());
-                return null;
+            if (dlurl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link = Encoding.htmlDecode(link);
-            final String urlPart = new Regex(link, "(https?://downloads\\.sourceforge\\.net/project/.*?)(https?://sourceforge\\.net/|\\?r=)").getMatch(0);
-            final String secondUrlPart = new Regex(link, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
-            /* Either we already got the final link or we have to build it */
-            if (urlPart != null && secondUrlPart != null) {
-                link = urlPart + "?r=" + secondUrlPart;
-            }
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(false);
-            String finallink = null;
-            try {
-                for (int i = 0; i <= 5; i++) {
-                    if (i == 0) {
-                        finallink = link;
-                    } else if (brc.getRedirectLocation() != null) {
-                        finallink = brc.getRedirectLocation();
-                    } else {
-                        finallink = getDllink(brc);
-                    }
-                    if (finallink == null) {
-                        return null;
-                    }
-                    con = brc.openHeadConnection(finallink);
-                    if (con.getContentType().contains("html")) {
-                        logger.info("finallink is no file, continuing...");
-                        brc.followConnection();
-                        /* 2020-06-22: Wait for a short amount of time otherwise we might get a blank page --> Offline */
-                        Thread.sleep(3000l);
-                        continue;
-                    } else if (con.getResponseCode() == 200) {
-                        dllink = finallink;
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                        break;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
+            if (isDownload) {
+                dlurl = Encoding.htmlDecode(dlurl);
+                final String urlPart = new Regex(dlurl, "(https?://downloads\\.sourceforge\\.net/project/.*?)(https?://sourceforge\\.net/|\\?r=)").getMatch(0);
+                final String secondUrlPart = new Regex(dlurl, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
+                /* Either we already got the final link or we have to build it */
+                if (urlPart != null && secondUrlPart != null) {
+                    dlurl = urlPart + "?r=" + secondUrlPart;
                 }
-            } finally {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(false);
+                String finallink = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    for (int i = 0; i <= 5; i++) {
+                        if (i == 0) {
+                            /* 2020-07-08: Hardcoded pre-download-waittime */
+                            this.sleep(5 * 1001l, link);
+                            finallink = dlurl;
+                        } else if (brc.getRedirectLocation() != null) {
+                            finallink = brc.getRedirectLocation();
+                        } else {
+                            finallink = getDllink(brc);
+                        }
+                        if (finallink == null) {
+                            return null;
+                        }
+                        con = brc.openHeadConnection(finallink);
+                        if (con.getContentType().contains("html")) {
+                            logger.info("finallink is no file, continuing...");
+                            brc.followConnection();
+                            continue;
+                        } else if (con.getResponseCode() == 200) {
+                            dllink = finallink;
+                            link.setDownloadSize(con.getCompleteContentLength());
+                            break;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 5 * 60 * 1000l);
+                }
+                link.setProperty("finallink", dllink);
             }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 5 * 60 * 1000l);
-            }
-            downloadLink.setProperty("finallink", dllink);
         }
         return AvailableStatus.TRUE;
     }
@@ -161,7 +172,10 @@ public class SourceForgeNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        this.dllink = checkDirectLink(link, "finallink");
+        if (this.dllink == null) {
+            requestFileInformation(link, true);
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 5 * 60 * 1000l);
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -173,25 +187,29 @@ public class SourceForgeNet extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
