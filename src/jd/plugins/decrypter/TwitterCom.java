@@ -301,8 +301,9 @@ public class TwitterCom extends PornEmbedParser {
                 Date theDate = new Date(date);
                 final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
                 formattedDate = formatter.format(theDate);
-            } catch (Exception e) {
+            } catch (final Throwable e) {
                 /* Fallback */
+                logger.log(e);
                 formattedDate = created_at;
             }
         }
