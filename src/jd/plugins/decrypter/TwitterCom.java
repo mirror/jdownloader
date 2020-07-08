@@ -17,12 +17,16 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -287,6 +291,21 @@ public class TwitterCom extends PornEmbedParser {
     /** Crawls single media objects obtained via API. */
     private void crawlTweetMediaObjectsAPI(LinkedHashMap<String, Object> entries) {
         final String tweet_id = (String) entries.get("id_str");
+        String created_at = (String) entries.get("created_at");
+        String formattedDate = null;
+        if (!StringUtils.isEmpty(created_at)) {
+            try {
+                created_at = created_at.substring(created_at.indexOf(" ") + 1, created_at.length());
+                final String targetFormat = "yyyy-MM-dd";
+                final long date = TimeFormatter.getMilliSeconds(created_at, "MMM dd HH:mm:ss Z yyyy", Locale.GERMAN);
+                Date theDate = new Date(date);
+                final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+                formattedDate = formatter.format(theDate);
+            } catch (Exception e) {
+                /* Fallback */
+                formattedDate = created_at;
+            }
+        }
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entities/media");
         if (ressourcelist == null) {
             logger.info("Current tweet does not contain any media objects");
@@ -299,12 +318,12 @@ public class TwitterCom extends PornEmbedParser {
         for (final Object mediaO : ressourcelist) {
             /* TODO: Check what happens when there is more than one video in a single tweet. */
             entries = (LinkedHashMap<String, Object>) mediaO;
-            crawlMediaObjectAPI(tweet_id, entries);
+            crawlMediaObjectAPI(tweet_id, formattedDate, entries);
         }
     }
 
     /** Crawls single media objects obtained via API. */
-    private void crawlMediaObjectAPI(final String tweet_id, final LinkedHashMap<String, Object> entries) {
+    private void crawlMediaObjectAPI(final String tweet_id, final String formattedDate, final LinkedHashMap<String, Object> entries) {
         String url = (String) entries.get("media_url_https");
         final String expanded_url = (String) entries.get("expanded_url");
         if (StringUtils.isEmpty(url)) {
@@ -337,6 +356,8 @@ public class TwitterCom extends PornEmbedParser {
             /* 2020-06-08: Let it survive users' reset especially for items which are handled by directhttp plugin. */
             dl.setForcedFileName(filename);
         }
+        /* Set possible Packagizer properties */
+        dl.setProperty("date", formattedDate);
         dl.setAvailable(true);
         decryptedLinks.add(dl);
         distribute(dl);
