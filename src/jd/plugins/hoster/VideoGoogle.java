@@ -5,8 +5,16 @@ import java.util.Collection;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.RefreshSessionLink;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
@@ -20,15 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.RefreshSessionLink;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://(?!translate\\.)\\w+\\.googleusercontent\\.com/.+|https?://[\\w\\-\\.]+drive\\.google\\.com/videoplayback\\?.+" })
 public class VideoGoogle extends PluginForHost {
@@ -62,9 +61,9 @@ public class VideoGoogle extends PluginForHost {
         }
     }
 
-    public void correctDownloadLink(final DownloadLink downloadLink) {
-        if (!downloadLink.getDownloadURL().matches(embed)) {
-            downloadLink.setUrlDownload("http://video.google.com/videoplay?docid=" + new Regex(downloadLink.getDownloadURL(), "((\\-)?\\d+)$").getMatch(0));
+    public void correctDownloadLink(final DownloadLink link) {
+        if (!link.getDownloadURL().matches(embed)) {
+            link.setUrlDownload("http://video.google.com/videoplay?docid=" + new Regex(link.getDownloadURL(), "((\\-)?\\d+)$").getMatch(0));
         }
     }
 
@@ -83,22 +82,22 @@ public class VideoGoogle extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        if (downloadLink.getDownloadURL().matches(embed)) {
-            dllink = downloadLink.getDownloadURL();
+        if (link.getDownloadURL().matches(embed)) {
+            dllink = link.getDownloadURL();
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             // Check this way because language of site is different for everyone
             if (!br.containsHTML("googleplayer\\.swf")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String videoID = new Regex(downloadLink.getDownloadURL(), "((\\-)?\\d+)$").getMatch(0);
+            final String videoID = new Regex(link.getDownloadURL(), "((\\-)?\\d+)$").getMatch(0);
             String name = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (name == null || "301 Moved".equals(name)) {
                 name = videoID;
             }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(name) + ".flv");
+            link.setFinalFileName(Encoding.htmlDecode(name) + ".flv");
             dllink = br.getRegex("videoUrl\\\\x3d(http://.*?\\.googlevideo\\.com/videoplayback.*?)\\\\x26thumbnailUrl").getMatch(0);
             if (dllink == null) {
                 br.getPage("http://video.google.com/videofeed?fgvns=1&fai=1&docid=" + videoID);
@@ -110,15 +109,16 @@ public class VideoGoogle extends PluginForHost {
             dllink = Encoding.htmlDecode(dllink);
             dllink = Encoding.urlDecode(dllink, true);
         }
-        Browser br2 = br.cloneBrowser();
+        /* 2020-07-08: Google doesn't like users using old User-Agents and might return 403 if done so. */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
+        br.setFollowRedirects(true);
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(Encoding.unicodeDecode(dllink));
+            con = br.openHeadConnection(Encoding.unicodeDecode(dllink));
             if (!con.getContentType().contains("video")) {
                 logger.info("Directurl seems to have expired - trying to refresh it");
-                dllink = refreshDirectlink(downloadLink);
+                dllink = refreshDirectlink(link);
                 if (dllink == null) {
                     /* Plugin broken or offline --> Most likely offline */
                     logger.info("Failed to refresh directurl");
@@ -126,19 +126,19 @@ public class VideoGoogle extends PluginForHost {
                 }
                 logger.info("Successfully refreshed directurl");
                 // you must save this refresh! if the user stops download, it will keep trying trying original.. and its expired
-                downloadLink.setPluginPatternMatcher(dllink);
-                con = br2.openGetConnection(dllink);
+                link.setPluginPatternMatcher(dllink);
+                con = br.openGetConnection(dllink);
             }
             String fileName = null;
             if (con.getContentType().contains("video")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                if (downloadLink.isNameSet()) {
+                link.setDownloadSize(con.getLongContentLength());
+                if (link.isNameSet()) {
                     // maybe we set a filename but doesn't have extension yet!
-                    fileName = downloadLink.getName();
+                    fileName = link.getName();
                     final String ext = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getContentType());
                     if (ext != null && !fileName.contains("." + ext)) {
                         fileName = fileName + "." + ext;
-                        downloadLink.setName(fileName);
+                        link.setName(fileName);
                     }
                 }
                 if (fileName == null) {
@@ -160,11 +160,11 @@ public class VideoGoogle extends PluginForHost {
                     }
                     fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
                     if (fileName != null) {
-                        if (downloadLink.getFinalFileName() == null) {
+                        if (link.getFinalFileName() == null) {
                             // filenames can be set by other plugins.. ie. decrypters, dont fuck with this.
-                            downloadLink.setFinalFileName(fileName);
+                            link.setFinalFileName(fileName);
                         } else {
-                            downloadLink.setName(fileName);
+                            link.setName(fileName);
                         }
                     }
                 }
