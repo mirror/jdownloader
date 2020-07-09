@@ -109,14 +109,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 try {
                     updateCache = loadFromCache(lastModification);
                 } catch (Throwable e) {
-                    if (lastModification != null) {
-                        lastModification.set(-1l);
-                    }
+                    lastModification.set(-1l);
                     logger.log(e);
                     logger.severe("@CrawlerPluginController: cache failed!");
                 } finally {
                     if (updateCache != null && updateCache.size() > 0) {
-                        logger.info("@CrawlerPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + updateCache.size());
+                        logger.info("@CrawlerPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + updateCache.size() + "|LastModified:" + lastModification.get());
                     }
                 }
                 List<LazyCrawlerPlugin> plugins = null;
@@ -125,14 +123,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     /* do a fresh scan */
                     plugins = update(logger, updateCache, lastModification);
                 } catch (Throwable e) {
-                    if (lastModification != null) {
-                        lastModification.set(-1l);
-                    }
+                    lastModification.set(-1l);
                     logger.log(e);
                     logger.severe("@CrawlerPluginController: update failed!");
                 } finally {
                     if (plugins != null && plugins.size() > 0) {
-                        logger.info("@CrawlerPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
+                        logger.info("@CrawlerPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
                     }
                 }
                 if (plugins == null || plugins.size() == 0) {
@@ -315,7 +311,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     *
+     * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {

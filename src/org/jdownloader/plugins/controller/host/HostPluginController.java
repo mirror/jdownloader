@@ -109,14 +109,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 try {
                     lastKnownPlugins = loadFromCache(lastModification);
                 } catch (Throwable e) {
-                    if (lastModification != null) {
-                        lastModification.set(-1l);
-                    }
+                    lastModification.set(-1l);
                     logger.log(e);
                     logger.severe("@HostPluginController: cache failed!");
                 } finally {
                     if (lastKnownPlugins != null && lastKnownPlugins.size() > 0) {
-                        logger.info("@HostPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + lastKnownPlugins.size());
+                        logger.info("@HostPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + lastKnownPlugins.size() + "|LastModified:" + lastModification.get());
                     }
                 }
             }
@@ -126,14 +124,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 /* do a fresh scan */
                 plugins = update(logger, lastKnownPlugins, lastModification);
             } catch (Throwable e) {
-                if (lastModification != null) {
-                    lastModification.set(-1l);
-                }
+                lastModification.set(-1l);
                 logger.log(e);
                 logger.severe("@HostPluginController: update failed!");
             } finally {
                 if (plugins != null && plugins.size() > 0) {
-                    logger.info("@HostPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
+                    logger.info("@HostPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
                 }
             }
             if (plugins == null || plugins.size() == 0) {
