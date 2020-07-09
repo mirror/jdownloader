@@ -189,9 +189,10 @@ public class FaceBookComVideos extends PluginForHost {
                 accessVideoEmbed(videoID, true);
             } else {
                 /* Use mobile website */
+                br.setAllowedResponseCodes(new int[] { 500 });
                 br.getPage("https://m.facebook.com/video.php?v=" + videoID);
                 /* 2020-06-12: Website does never return appropriate 404 code so we have to check for strings in html :/ */
-                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>\\s*Content not found\\s*</title>")) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || br.containsHTML("<title>\\s*Content not found\\s*</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
