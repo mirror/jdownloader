@@ -26,6 +26,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -45,15 +52,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
+
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -135,29 +136,38 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
     private void getByUserIDQueryHash(Browser br) throws Exception {
         synchronized (QUERY_HASH) {
-            final String profilePageContainer = br.getRegex("(/static/bundles/([^/]+/)?ConsumerLibCommons\\.js/[a-f0-9]+.js)").getMatch(0);
+            final String profilePageContainer = br.getRegex("(/static/bundles/([^/]+/)?ProfilePageContainer\\.js/[a-f0-9]+.js)").getMatch(0);
             if (profilePageContainer != null) {
                 {
                     final Qdb qdb = QUERY_HASH.get(profilePageContainer);
                     if (qdb != null) {
                         fbAppId = qdb.getFbAppId();
                         qHash = qdb.getQueryHash();
+                        return;
                     }
                 }
-                final Browser brc = br.cloneBrowser();
+                Browser brc = br.cloneBrowser();
                 brc.getHeaders().put("Accept", "*/*");
                 brc.getPage(profilePageContainer);
-                fbAppId = brc.getRegex("e\\.instagramWebDesktopFBAppId\\s*=\\s*'(\\d+)'").getMatch(0);
-                if (StringUtils.isEmpty(fbAppId)) {
-                    logger.info("no fbAppId found!?:" + profilePageContainer);
+                qHash = brc.getRegex("queryId\\s*:\\s*\"([0-9a-f]{32})\"").getMatch(0);
+                {
+                    final String clc = br.getRegex("(/static/bundles/([^/]+/)?ConsumerLibCommons\\.js/[a-f0-9]+.js)").getMatch(0);
+                    if (clc != null) {
+                        brc = br.cloneBrowser();
+                        brc.getHeaders().put("Accept", "*/*");
+                        brc.getPage(profilePageContainer);
+                        fbAppId = brc.getRegex("e\\.instagramWebDesktopFBAppId\\s*=\\s*'(\\d+)'").getMatch(0);
+                        if (StringUtils.isEmpty(fbAppId)) {
+                            logger.info("no fbAppId found!?:" + profilePageContainer);
+                        }
+                    }
                 }
-                final String queryHash = brc.getRegex("queryId\\s*:\\s*\"([0-9a-f]{32})\"").getMatch(0);
-                if (queryHash != null) {
+                if (StringUtils.isNotEmpty(qHash)) {
                     final Qdb qdb = new Qdb();
-                    if (fbAppId != null) {
+                    if (StringUtils.isNotEmpty(fbAppId)) {
                         qdb.setFbAppId(fbAppId);
                     }
-                    qdb.setQueryHash(queryHash);
+                    qdb.setQueryHash(qHash);
                     QUERY_HASH.put(profilePageContainer, qdb);
                 } else {
                     logger.info("no queryHash found!?:" + profilePageContainer);
