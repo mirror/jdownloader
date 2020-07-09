@@ -18,11 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,6 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}|https?://(?:www\\.)?imagevenue\\.com/view/o/\\?i=[^\\&]+\\&h=[^\\&]+" })
 public class ImageVenueCom extends PluginForHost {
@@ -75,7 +74,7 @@ public class ImageVenueCom extends PluginForHost {
         }
         String filename = null;
         dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
-        if (dllink == null && br.containsHTML("Continue to your image")) {
+        if (dllink == null && (br.containsHTML("Continue to your image") || br.containsHTML("Continue to ImageVenue"))) {
             br.getPage(link.getDownloadURL());
             dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
         }
@@ -106,18 +105,20 @@ public class ImageVenueCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         try {
-            con = openConnection(this.br, dllink);
-            if (!con.isOK()) {
+            con = br.openHeadConnection(dllink);
+            if (!con.isOK() || StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                final long size = con.getLongContentLength();
+                final long size = con.getCompleteContentLength();
                 if (size > 0) {
                     link.setDownloadSize(size);
                 }
             }
         } finally {
             try {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (final Throwable e) {
             }
         }
@@ -131,21 +132,15 @@ public class ImageVenueCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        final URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
+        if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        dl.startDownload();
     }
 
     @Override
