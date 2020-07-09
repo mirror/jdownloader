@@ -37,12 +37,19 @@ public class PluginScannerFiles<T extends Plugin> {
             final long lastFolderModifiedCheck = lastFolderModification != null ? lastFolderModification.get() : -1;
             final File folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
             final long lastFolderModifiedScanStart = folder.lastModified();
-            if (lastFolderModifiedCheck > 0 && lastFolderModifiedScanStart == lastFolderModifiedCheck && pluginCache != null && pluginCache.size() > 0) {
-                for (final LazyPlugin<T> lazyPlugin : pluginCache) {
-                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
-                    ret.add(pluginInfo);
+            if (pluginCache == null || pluginCache.size() == 0 || lastFolderModifiedCheck <= 0) {
+                logger.info("@PluginController(Files): no plugin cache available|LastModified:" + lastFolderModifiedCheck);
+            } else {
+                if (lastFolderModifiedScanStart == lastFolderModifiedCheck) {
+                    for (final LazyPlugin<T> lazyPlugin : pluginCache) {
+                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
+                        ret.add(pluginInfo);
+                    }
+                    logger.info("@PluginController(Files): plugin cache valid|Size:" + pluginCache.size() + "|LastModified:" + lastFolderModifiedScanStart);
+                    return ret;
+                } else {
+                    logger.info("@PluginController(Files): plugin cache invalid|Size:" + pluginCache.size() + "|LastModified:" + lastFolderModifiedScanStart);
                 }
-                return ret;
             }
             final String pkg = hosterpath.replace("/", ".");
             final HashMap<String, List<LazyPlugin<T>>> lazyPluginClassMap;
@@ -133,7 +140,7 @@ public class PluginScannerFiles<T extends Plugin> {
             }
             final long lastFolderModifiedScanStop = folder.lastModified();
             if (lastFolderModifiedScanStart != lastFolderModifiedScanStop) {
-                logger.info("@PluginController(Files): folder modification during scan detected!");
+                logger.info("@PluginController(Files): folder modification during scan detected!LastModified:" + lastFolderModifiedScanStart + "!=" + lastFolderModifiedScanStop);
                 Thread.sleep(1000);
                 return scan(logger, hosterpath, pluginCache, lastFolderModification);
             } else {

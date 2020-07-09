@@ -41,12 +41,19 @@ public class PluginScannerNIO<T extends Plugin> {
             final long lastFolderModifiedCheck = lastFolderModification != null ? lastFolderModification.get() : -1;
             final Path folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath).toPath();
             final long lastFolderModifiedScanStart = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
-            if (lastFolderModifiedCheck > 0 && lastFolderModifiedScanStart == lastFolderModifiedCheck && pluginCache != null && pluginCache.size() > 0) {
-                for (final LazyPlugin<T> lazyPlugin : pluginCache) {
-                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
-                    ret.add(pluginInfo);
+            if (pluginCache == null || pluginCache.size() == 0 || lastFolderModifiedCheck <= 0) {
+                logger.info("@PluginController(NIO): no plugin cache available|LastModified:" + lastFolderModifiedCheck);
+            } else {
+                if (lastFolderModifiedScanStart == lastFolderModifiedCheck) {
+                    for (final LazyPlugin<T> lazyPlugin : pluginCache) {
+                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
+                        ret.add(pluginInfo);
+                    }
+                    logger.info("@PluginController(NIO): plugin cache valid|Size:" + pluginCache.size() + "|LastModified:" + lastFolderModifiedScanStart);
+                    return ret;
+                } else {
+                    logger.info("@PluginController(NIO): plugin cache invalid|Size:" + pluginCache.size() + "|LastModified:" + lastFolderModifiedScanStart);
                 }
-                return ret;
             }
             final String pkg = hosterpath.replace("/", ".");
             final HashMap<String, List<LazyPlugin<T>>> lazyPluginClassMap;
@@ -140,7 +147,7 @@ public class PluginScannerNIO<T extends Plugin> {
             }
             final long lastFolderModifiedScanStop = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
             if (lastFolderModifiedScanStart != lastFolderModifiedScanStop) {
-                logger.info("@PluginController(NIO): folder modification during scan detected!");
+                logger.info("@PluginController(NIO): folder modification during scan detected!LastModified:" + lastFolderModifiedScanStart + "!=" + lastFolderModifiedScanStop);
                 Thread.sleep(1000);
                 return scan(logger, hosterpath, pluginCache, lastFolderModification);
             } else {
