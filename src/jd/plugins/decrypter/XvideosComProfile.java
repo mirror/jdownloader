@@ -93,6 +93,12 @@ public class XvideosComProfile extends PluginForDecrypt {
         final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/(.+)");
         final String type = urlinfo.getMatch(0);
         final String username = urlinfo.getMatch(1);
+        if (!br.getURL().contains(username)) {
+            /* E.g. redirect to mainpage */
+            logger.info("Profile does not exist anymore");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return;
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(username.trim()));
         fp.addLinks(decryptedLinks);
