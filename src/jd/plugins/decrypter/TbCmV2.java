@@ -58,6 +58,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -1011,9 +1012,18 @@ public class TbCmV2 extends PluginForDecrypt {
                                     }
                                 }
                                 // continuation
-                                final String url = (String) JavaScriptEngineFactory.walkJson(map, "endpoint/urlEndpoint/url");
-                                if (url != null) {
-                                    jsonPage = url;
+                                final String continuation = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/continuation");
+                                if (continuation != null) {
+                                    final String clickTrackingParams = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/clickTrackingParams");
+                                    if (clickTrackingParams != null) {
+                                        jsonPage = "/browse_ajax?ctoken=" + URLEncode.encodeURIComponent(continuation) + "&itct=" + URLEncode.encodeURIComponent(clickTrackingParams);
+                                    }
+                                }
+                                if (jsonPage == null) {
+                                    final String url = (String) JavaScriptEngineFactory.walkJson(map, "endpoint/urlEndpoint/url");
+                                    if (url != null) {
+                                        jsonPage = url;
+                                    }
                                 }
                             }
                         }
