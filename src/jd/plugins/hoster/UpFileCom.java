@@ -116,4 +116,9 @@ public class UpFileCom extends XFileSharingProBasic {
         super.checkErrors(link, account, checkAll);
         checkResponseCodeErrors(br.getHttpConnection());
     }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        return false;
+    }
 }
