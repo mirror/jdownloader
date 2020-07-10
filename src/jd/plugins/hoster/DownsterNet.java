@@ -89,6 +89,7 @@ public class DownsterNet extends antiDDoSForHost {
             prepBr.setHeader("Content-Type", "application/json");
             prepBr.addAllowedResponseCodes(new int[] { 401, 403, 412, 422, 503, 512 });
             prepBr.getHeaders().put("User-Agent", "JDownloader " + getVersion());
+            prepBr.getHeaders().put("X-Jdl-Version", "" + getVersion());
         }
         return prepBr;
     }
@@ -227,7 +228,7 @@ public class DownsterNet extends antiDDoSForHost {
             if (status == 510 || status == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
             } else if (status >= 500 || "false".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
-                mhm.putError(account, link, 10 * 60 * 1000l, error);
+                mhm.putError(account, link, 60 * 1000l, error);
             }
             dllink = PluginJSonUtils.getJsonValue(br, "downloadUrl");
             if (dllink == null) {
@@ -277,7 +278,7 @@ public class DownsterNet extends antiDDoSForHost {
         } catch (final PluginException e) {
             switch (dl.getConnection().getResponseCode()) {
                 // To many parallel requests
-                case 429: throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, dl.getConnection().getResponseMessage(), 1 * 1000l);
+                case 429: mhm.putError(account, link, 60 * 1000l, dl.getConnection().getResponseMessage());
                 // Bad request
                 case 400: throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 1000l);
             }
