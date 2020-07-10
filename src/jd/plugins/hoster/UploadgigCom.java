@@ -175,8 +175,9 @@ public class UploadgigCom extends antiDDoSForHost {
         }
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            /* 2020-07-10: See http://uploadgig.com/static/tpl2/js/f45862367.js?v=0.0.2 */
             // premium only content
-            if (br.containsHTML(">This file can be downloaded by Premium Member only\\.<")) {
+            if (br.containsHTML(">\\s*This file can be downloaded by Premium Member only")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             String csrf_tester = br.getCookie(this.getHost(), "firewall");
@@ -209,10 +210,11 @@ public class UploadgigCom extends antiDDoSForHost {
             if (StringUtils.isEmpty(url) || StringUtils.isEmpty(params) || StringUtils.isEmpty(idStr) || !idStr.matches("\\d+") || StringUtils.isEmpty(waittime_str) || !waittime_str.matches("\\d+")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* 2020-06-03: TODO: Check/fix this */
-            final long id = Long.parseLong(idStr) - 4;
-            this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
+            /* 2020-07-10: Possible cat & mouse game */
+            final long id = Long.parseLong(idStr) - 8;
             final String directurl = url + "id=" + id + "&" + params;
+            // directurl = directurl.replace("/start/", "/s/");
+            this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
             this.testLink(directurl, true);
             // they use javascript to determine finallink...
             // getDllink(br2);
@@ -331,14 +333,16 @@ public class UploadgigCom extends antiDDoSForHost {
         return 1;
     }
 
-    private void errorhandlingFree(final Browser br) throws PluginException {
-        if ("m".equals(br.toString())) {
+    private void errorhandlingFree(final Browser checkBR) throws PluginException {
+        if ("b".equals(checkBR.toString())) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Proxy/VPN blocked", 1 * 60 * 60 * 1000l);
+        } else if ("m".equals(checkBR.toString())) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit for the hour", 1 * 60 * 60 * 1000l);
-        } else if ("0".equals(br.toString())) {
+        } else if ("0".equals(checkBR.toString())) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        } else if ("fl".equalsIgnoreCase(br.toString())) {
+        } else if ("fl".equalsIgnoreCase(checkBR.toString())) {
             throw new AccountRequiredException();
-        } else if ("rfd".equalsIgnoreCase(br.toString())) {
+        } else if ("rfd".equalsIgnoreCase(checkBR.toString())) {
             /* File exceeded max number of free downloads --> Buy premium */
             throw new AccountRequiredException();
         }
