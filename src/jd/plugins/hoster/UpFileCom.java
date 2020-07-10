@@ -23,8 +23,10 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpFileCom extends XFileSharingProBasic {
@@ -103,5 +105,15 @@ public class UpFileCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        if (br.getURL() != null && br.getURL().contains("/login")) {
+            /* 2020-07-10: Special */
+            throw new AccountRequiredException();
+        }
+        super.checkErrors(link, account, checkAll);
+        checkResponseCodeErrors(br.getHttpConnection());
     }
 }
