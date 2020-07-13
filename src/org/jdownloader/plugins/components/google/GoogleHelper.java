@@ -322,7 +322,11 @@ public class GoogleHelper {
                         /* Give up. We only got these cookies so login via username and password is not possible! */
                         logger.info("Login failed --> No password available but only cookies --> Give up");
                         account.removeProperty(PROPERTY_ACCOUNT_user_agent);
-                        showCookieLoginInformation();
+                        /*
+                         * 2020-07-13: Don't display cookie info on failed cookie login - obviously user already added his cookies
+                         * successfully.
+                         */
+                        // showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
