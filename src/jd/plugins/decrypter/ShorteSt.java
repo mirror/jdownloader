@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShorteSt extends antiDDoSForDecrypt {
@@ -61,6 +61,18 @@ public class ShorteSt extends antiDDoSForDecrypt {
         return 1;
     }
 
+    /** 2020-07-13: Not required as the special User-Agent should work for all domains that this crawler can handle. */
+    // private boolean useGoogleUA(final String host) {
+    // final ArrayList<String> googleDomains = new ArrayList<String>();
+    // googleDomains.add("ceesty.com");
+    // googleDomains.add("corneey.com");
+    // googleDomains.add("destyy.com");
+    // googleDomains.add("festyy.com");
+    // googleDomains.add("gestyy.com");
+    // googleDomains.add("sh.st");
+    // googleDomains.add("viid.me");
+    // return googleDomains.contains(host);
+    // }
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("//clkme.in/", "//cllkme.com/");
@@ -71,6 +83,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
             parameter = parameter.replace("*", "u");
             parameter = parameter.replace("!", "a");
         }
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)");
         getPage(parameter);
         String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
         if (containsLoginRedirect(redirect) || br.containsHTML(">link removed<")) {
@@ -78,6 +91,19 @@ public class ShorteSt extends antiDDoSForDecrypt {
             return decryptedLinks;
         } else if (redirect != null) {
             parameter = redirect;
+            boolean redirectsToSupportedDomain = false;
+            final String redirectHost = Browser.getHost(redirect);
+            for (final String supportedDomain : domains) {
+                if (redirectHost.equalsIgnoreCase(supportedDomain)) {
+                    redirectsToSupportedDomain = true;
+                    break;
+                }
+            }
+            if (!redirectsToSupportedDomain) {
+                /* 2020-07-13: Direct redirect to final downloadurl (e.g. when GoogleBot User-Agent is used) */
+                decryptedLinks.add(this.createDownloadlink(redirect));
+                return decryptedLinks;
+            }
             getPage(parameter);
         }
         br.setFollowRedirects(true);

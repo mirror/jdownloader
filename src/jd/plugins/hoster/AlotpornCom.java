@@ -22,6 +22,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -80,6 +81,8 @@ public class AlotpornCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*You are not allowed to watch this video")) {
+            throw new AccountRequiredException();
         }
         url_filename = new Regex(br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
         String filename = br.getRegex("<div class=\"headline\">[\t\n\r ]*?<h1>([^<>\"]*?)</h1>").getMatch(0);

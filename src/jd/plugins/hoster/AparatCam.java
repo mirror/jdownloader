@@ -104,4 +104,14 @@ public class AparatCam extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean isVideohosterEmbed() {
+        return true;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        return true;
+    }
 }

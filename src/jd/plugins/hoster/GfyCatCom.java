@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,14 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -131,7 +131,7 @@ public class GfyCatCom extends PluginForHost {
                 case WEBM:
                     this.dllink = (String) video.get("contentUrl");
                     if (!StringUtils.isEmpty(this.dllink)) {
-                        this.dllink.replace(".mp4", ".webm");
+                        this.dllink = this.dllink.replace(".mp4", ".webm");
                     }
                     ext = ".webm";
                     break;

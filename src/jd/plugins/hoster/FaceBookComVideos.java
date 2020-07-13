@@ -261,9 +261,12 @@ public class FaceBookComVideos extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Some filename corrections */
             filename = Encoding.htmlDecode(filename.trim());
             // ive seen new lines within filename!
             filename = filename.replaceAll("[\r\n]+", " ");
+            /* 2020-07-13 */
+            filename = filename.replace(" | Facebook", "");
             if (br.containsHTML(">You must log in to continue")) {
                 accountNeeded = true;
                 if (!loggedIN) {

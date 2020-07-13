@@ -19,58 +19,40 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "https?://(www\\.)?img\\d+\\.imagevenue\\.com/galshow\\.php\\?gal=gallery_.+" })
-public class ImageVenueComGallery extends PluginForDecrypt {
-    public ImageVenueComGallery(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pruteklyncs.xyz" }, urls = { "https?://(?:www\\.)?pruteklyncs\\.xyz/[A-Za-z0-9]+" })
+public class PruteklyncsXyz extends PluginForDecrypt {
+    public PruteklyncsXyz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final String format = new Regex(parameter, "(format=[A-Za-z0-9]+)").getMatch(0);
-        if (format != null) {
-            parameter = parameter.replace(format, "format=show");
-        }
-        br.setFollowRedirects(false);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.getPage(parameter);
-        String redirect = br.getRedirectLocation();
-        if (redirect != null) {
-            /* 2020-07-13: New */
-            if (redirect.contains("/no_image.jpg")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            br.setFollowRedirects(true);
-            br.getPage(redirect);
-        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("<a href=\"(https?://img\\d+\\.imagevenue\\.com/img\\.php\\?image=[^<>\"]*?)\" target=\"_blank\"><img src=\"").getColumn(0);
+        final String iframeURL = br.getRegex("<iframe src=\"(https?://[^\"]+)\">").getMatch(0);
+        if (iframeURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(iframeURL);
+        final String[] links = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links) {
+        for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "gal=gallery_(.+)").getMatch(0));
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 }

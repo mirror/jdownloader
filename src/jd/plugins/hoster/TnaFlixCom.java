@@ -111,6 +111,17 @@ public class TnaFlixCom extends PluginForHost {
         link.setUrlDownload("https://www." + urlpart);
     }
 
+    private String getURLName(final DownloadLink link) {
+        String urlname = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/.*/([^/]+)/video\\d+$").getMatch(0);
+        if (urlname == null) {
+            /* Fallback */
+            urlname = this.getViewkey(link.getPluginPatternMatcher());
+        } else {
+            urlname = urlname.replace("-", " ");
+        }
+        return urlname;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -155,7 +166,7 @@ public class TnaFlixCom extends PluginForHost {
         }
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */
-            filename = getLinkID(link) + ".mp4";
+            filename = getURLName(link) + ".mp4";
             link.setName(filename);
         } else {
             filename = Encoding.htmlDecode(filename).trim();
