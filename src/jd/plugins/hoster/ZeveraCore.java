@@ -450,7 +450,7 @@ abstract public class ZeveraCore extends UseNet {
         if (supportsUsenet(account)) {
             list.add("usenet");
         }
-        if (account.getType() == AccountType.FREE && supportsFreeMode(account)) {
+        if (account.getType() == AccountType.FREE && supportsFreeAccountDownloadMode(account)) {
             /* Display info-dialog regarding free account usage */
             handleFreeModeLoginDialog(account, "https://www." + account.getHoster() + "/free");
         }
@@ -610,7 +610,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     protected final void setFreeAccountTraffic(final Account account, final AccountInfo ai) {
-        if (this.supportsFreeMode(account)) {
+        if (this.supportsFreeAccountDownloadMode(account)) {
             /** 2019-07-27: TODO: Remove this hardcoded trafficlimit and obtain this value via API (not yet given at the moment)! */
             ai.setTrafficLeft(5000000000l);
         } else {
@@ -855,7 +855,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /** Indicates whether downloads via free accounts are possible or not. */
-    public boolean supportsFreeMode(final Account account) {
+    public boolean supportsFreeAccountDownloadMode(final Account account) {
         return false;
     }
 
@@ -919,7 +919,7 @@ abstract public class ZeveraCore extends UseNet {
                     /* Free */
                     /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
                     message = "Premium required or activate free mode via premiumize.me/free";
-                    if (this.supportsFreeMode(account)) {
+                    if (this.supportsFreeAccountDownloadMode(account)) {
                         /* Ask user to unlock free account downloads via website */
                         handleFreeModeDownloadDialog(account, "https://www." + this.br.getHost() + "/free");
                     } else {
@@ -938,7 +938,7 @@ abstract public class ZeveraCore extends UseNet {
             } else if ("content not in cache".equalsIgnoreCase(message)) {
                 /* 2019-02-19: Not all errors have an errortype given */
                 /* E.g. {"status":"error","message":"content not in cache"} */
-                if (account != null && account.getType() == AccountType.FREE && this.supportsFreeMode(account)) {
+                if (account != null && account.getType() == AccountType.FREE && this.supportsFreeAccountDownloadMode(account)) {
                     /* Case: User tries to download non-cached-file via free account. */
                     message = "Not downloadable via free account because: " + message;
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
