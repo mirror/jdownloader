@@ -3,8 +3,6 @@ package org.jdownloader.plugins.components.google;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Locale;
 
 import javax.swing.JComponent;
@@ -15,6 +13,17 @@ import javax.swing.text.DocumentFilter;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
+
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
 
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
@@ -39,18 +48,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -85,28 +82,6 @@ public class GoogleHelper {
         Thread thread = Thread.currentThread();
         boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
         cacheEnabled = !forceUpdateAndBypassCache;
-    }
-
-    public boolean login(String type) {
-        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(type);
-        if (accounts != null && accounts.size() != 0) {
-            final Iterator<Account> it = accounts.iterator();
-            while (it.hasNext()) {
-                final Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
-                    try {
-                        this.login(n, false);
-                        if (n.isValid()) {
-                            return true;
-                        }
-                    } catch (final Exception e) {
-                        n.setValid(false);
-                        return false;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     private void postPageFollowRedirects(Browser br, String url, UrlQuery post) throws IOException, InterruptedException {
@@ -233,254 +208,257 @@ public class GoogleHelper {
     }
 
     public boolean login(final Account account, final boolean forceLoginValidation) throws Exception {
-        try {
-            /*
-             * User-Agent handling (by priority): Prefer last saved User-Agent given via user cookies --> "Fallback to" User-Agent from user
-             * given cookies --> Fallback to User defined User-Agent via plugin setting
-             */
-            final String userDefinedUserAgent = getUserAgent();
-            this.br.setDebug(true);
-            this.br.setCookiesExclusive(true);
-            /* TODO: Do we still need this? */
-            this.br.setCookie("https://google.com", "PREF", "hl=en-GB");
-            /* 2020-06-19: Enable this if login is only possible via exported cookies and NOT via username & password! */
-            /* 2020-06-19: Enabled cookie-only-login! */
-            final boolean cookieLoginOnly = true;
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
-            final Cookies lastSavedCookies = account.loadCookies("");
-            if (cookieLoginOnly && userCookies == null) {
-                showCookieLoginInformation();
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter exported cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            /* Check stored cookies */
-            if (lastSavedCookies != null || userCookies != null) {
-                if (lastSavedCookies != null) {
-                    logger.info("Attempting to login with stored cookies");
-                    br.setCookies(lastSavedCookies);
-                    /*
-                     * TODO: Handle this similar to loadCookies so that this property will return null if user changes his account
-                     * credentials(?)
-                     */
-                    final String lastSavedUserAgent = account.getStringProperty(PROPERTY_ACCOUNT_user_agent, null);
-                    if (userCookies != null && !StringUtils.isEmpty(lastSavedUserAgent)) {
-                        logger.info("Using last saved User-Agent: " + lastSavedUserAgent);
-                        br.getHeaders().put("User-Agent", lastSavedUserAgent);
-                    } else {
-                        logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
-                        br.getHeaders().put("User-Agent", userDefinedUserAgent);
-                    }
-                } else {
-                    /* E.g. first login with user-given cookies */
-                    logger.info("Attempting to perform first login with user cookies");
-                    br.setCookies(userCookies);
-                    /* No User-Agent given in users' cookies? Add User selected User-Agent */
-                    if (!StringUtils.isEmpty(userCookies.getUserAgent())) {
-                        logger.info("Using User-Agent given in user cookies: " + userCookies.getUserAgent());
-                        /* Save User-Agent so it gets re-used next time */
-                        account.setProperty(PROPERTY_ACCOUNT_user_agent, userCookies.getUserAgent());
-                        /* No need to do this - User-Agent is already set above via setCookies! */
-                        // br.getHeaders().put("User-Agent", userCookies.getUserAgent());
-                    } else {
-                        logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
-                        br.getHeaders().put("User-Agent", userDefinedUserAgent);
-                    }
+        synchronized (account) {
+            try {
+                /*
+                 * User-Agent handling (by priority): Prefer last saved User-Agent given via user cookies --> "Fallback to" User-Agent from
+                 * user given cookies --> Fallback to User defined User-Agent via plugin setting
+                 */
+                final String userDefinedUserAgent = getUserAgent();
+                this.br.setDebug(true);
+                this.br.setCookiesExclusive(true);
+                /* TODO: Do we still need this? */
+                this.br.setCookie("https://google.com", "PREF", "hl=en-GB");
+                /* 2020-06-19: Enable this if login is only possible via exported cookies and NOT via username & password! */
+                /* 2020-06-19: Enabled cookie-only-login! */
+                final boolean cookieLoginOnly = true;
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies lastSavedCookies = account.loadCookies("");
+                if (cookieLoginOnly && userCookies == null) {
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter exported cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (isCacheEnabled() && hasBeenValidatedRecently(account) && !forceLoginValidation) {
-                    logger.info("Trust cookies without check");
-                    return true;
-                }
-                logger.info("Validating cookies");
-                br.setAllowedResponseCodes(new int[] { 400 });
-                boolean loggedIN = false;
-                final boolean useTwoLoginValidations = false;
-                if (useTwoLoginValidations) {
-                    /* Old check */
-                    getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                    loggedIN = validateSuccessOLD();
-                    if (!loggedIN) {
-                        logger.info("First cookie validation failed --> 2nd validation ...");
+                /* Check stored cookies */
+                if (lastSavedCookies != null || userCookies != null) {
+                    if (lastSavedCookies != null) {
+                        logger.info("Attempting to login with stored cookies");
+                        br.setCookies(lastSavedCookies);
+                        /*
+                         * TODO: Handle this similar to loadCookies so that this property will return null if user changes his account
+                         * credentials(?)
+                         */
+                        final String lastSavedUserAgent = account.getStringProperty(PROPERTY_ACCOUNT_user_agent, null);
+                        if (userCookies != null && !StringUtils.isEmpty(lastSavedUserAgent)) {
+                            logger.info("Using last saved User-Agent: " + lastSavedUserAgent);
+                            br.getHeaders().put("User-Agent", lastSavedUserAgent);
+                        } else {
+                            logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
+                            br.getHeaders().put("User-Agent", userDefinedUserAgent);
+                        }
+                    } else {
+                        /* E.g. first login with user-given cookies */
+                        logger.info("Attempting to perform first login with user cookies");
+                        br.setCookies(userCookies);
+                        /* No User-Agent given in users' cookies? Add User selected User-Agent */
+                        if (!StringUtils.isEmpty(userCookies.getUserAgent())) {
+                            logger.info("Using User-Agent given in user cookies: " + userCookies.getUserAgent());
+                            /* Save User-Agent so it gets re-used next time */
+                            account.setProperty(PROPERTY_ACCOUNT_user_agent, userCookies.getUserAgent());
+                            /* No need to do this - User-Agent is already set above via setCookies! */
+                            // br.getHeaders().put("User-Agent", userCookies.getUserAgent());
+                        } else {
+                            logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
+                            br.getHeaders().put("User-Agent", userDefinedUserAgent);
+                        }
+                    }
+                    if (isCacheEnabled() && hasBeenValidatedRecently(account) && !forceLoginValidation) {
+                        logger.info("Trust cookies without check");
+                        return true;
+                    }
+                    logger.info("Validating cookies");
+                    br.setAllowedResponseCodes(new int[] { 400 });
+                    boolean loggedIN = false;
+                    final boolean useTwoLoginValidations = false;
+                    if (useTwoLoginValidations) {
+                        /* Old check */
+                        getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
+                        loggedIN = validateSuccessOLD();
+                        if (!loggedIN) {
+                            logger.info("First cookie validation failed --> 2nd validation ...");
+                            getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
+                            if (br.containsHTML("accounts\\.google\\.com/logout")) {
+                                loggedIN = true;
+                            }
+                        }
+                    } else {
+                        /* New check */
                         getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
                         if (br.containsHTML("accounts\\.google\\.com/logout")) {
                             loggedIN = true;
                         }
                     }
-                } else {
-                    /* New check */
-                    getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
-                    if (br.containsHTML("accounts\\.google\\.com/logout")) {
-                        loggedIN = true;
-                    }
-                }
-                if (loggedIN) {
-                    logger.info("Login with cookies successful");
-                    validate(account);
-                    account.saveCookies(br.getCookies(br.getHost()), "");
-                    return true;
-                } else {
-                    logger.info("Login with stored cookies failed");
-                    if (userCookies != null) {
-                        /* Give up. We only got these cookies so login via username and password is not possible! */
-                        logger.info("Login failed --> No password available but only cookies --> Give up");
-                        account.removeProperty(PROPERTY_ACCOUNT_user_agent);
-                        /*
-                         * 2020-07-13: Don't display cookie info on failed cookie login - obviously user already added his cookies
-                         * successfully.
-                         */
-                        // showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-            }
-            /* Full login */
-            /* TODO: Check if ANY if this code still works */
-            logger.info("Attempting full login via website");
-            /* Clear old cookies & headers */
-            this.br.clearAll();
-            prepBR(this.br);
-            this.br.setFollowRedirects(true);
-            logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
-            br.setHeader("User-Agent", userDefinedUserAgent);
-            /* first call to google */
-            getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
-            // Set-Cookie: GAPS=1:u14pnu_cVhnJlNpZ_xhGBJLeS1FDxA:R-JYyKg6DETne8XP;Path=/;Expires=Fri, 23-Jun-2017 13:04:05
-            // GMT;Secure;HttpOnly;Priority=HIGH
-            UrlQuery post = new UrlQuery();
-            post.appendEncoded("GALX", br.getCookie("http://google.com", "GALX"));
-            post.appendEncoded("continue", getService().continueAfterServiceLoginAuth);
-            post.appendEncoded("service", getService().serviceName);
-            post.appendEncoded("hl", "en");
-            post.appendEncoded("utf8", "☃");
-            post.appendEncoded("pstMsg", "1");
-            post.appendEncoded("dnConn", "");
-            post.appendEncoded("checkConnection", (getService().checkConnectionString));
-            post.appendEncoded("checkedDomains", (getService().serviceName));
-            post.appendEncoded("Email", (account.getUser()));
-            post.appendEncoded("Passwd", (account.getPass()));
-            post.appendEncoded("signIn", "Sign in");
-            post.appendEncoded("PersistentCookie", "yes");
-            post.appendEncoded("rmShown", "1");
-            postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
-            main: while (true) {
-                Form[] forms = br.getForms();
-                String error = br.getRegex("<span color=\"red\">(.*?)</span>").getMatch(0);
-                if (StringUtils.isNotEmpty(error)) {
-                    UIOManager.I().showErrorMessage(_JDT.T.google_error(error));
-                }
-                if (br.containsHTML("Please change your password")) {
-                    Form changePassword = br.getFormbyAction("https://accounts.google.com/ChangePassword");
-                    if (changePassword != null) {
-                        CrossSystem.openURL("http://www.google.com/support/accounts/bin/answer.py?answer=46526");
-                        NewPasswordDialog d = new NewPasswordDialog(UIOManager.LOGIC_COUNTDOWN, _JDT.T.google_password_change_title(), _JDT.T.google_password_change_message(account.getUser()), null, _GUI.T.lit_continue(), null);
-                        d.setTimeout(5 * 60 * 1000);
-                        NewPasswordDialogInterface handler = UIOManager.I().show(NewPasswordDialogInterface.class, d);
-                        try {
-                            handler.throwCloseExceptions();
-                            changePassword.getInputField("Passwd").setValue(Encoding.urlEncode(handler.getPassword()));
-                            changePassword.getInputField("PasswdAgain").setValue(Encoding.urlEncode(handler.getPasswordVerification()));
-                            submitForm(br, changePassword);
-                            if (!br.containsHTML("Please change your password")) {
-                                account.setPass(handler.getPassword());
-                            }
-                            continue;
-                        } catch (DialogNoAnswerException e) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
+                    if (loggedIN) {
+                        logger.info("Login with cookies successful");
+                        validate(account);
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return true;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password change required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    }
-                }
-                Form verifyItsYouByEmail = br.getFormByInputFieldKeyValue("challengetype", "RecoveryEmailChallenge");
-                if (verifyItsYouByEmail != null) {
-                    String example = br.getRegex("<label.*?id=\"RecoveryEmailChallengeLabel\">.*?<span.*?>([^<]+)</span>.*?</label>").getMatch(0);
-                    if (example == null) {
-                        CrossSystem.openURL(br.getURL());
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else {
-                        InputDialog d = new InputDialog(0, _JDT.T.google_email_verification_title(), _JDT.T.google_email_verification_message(example.trim()), null, null, _GUI.T.lit_continue(), null) {
-                            @Override
-                            protected int getPreferredWidth() {
-                                return 400;
-                            }
-                        };
-                        InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
-                        try {
-                            handler.throwCloseExceptions();
-                            String email = handler.getText();
-                            verifyItsYouByEmail.getInputField("emailAnswer").setValue(Encoding.urlEncode(email));
-                            submitForm(br, verifyItsYouByEmail);
-                            continue;
-                        } catch (DialogNoAnswerException e) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        logger.info("Login with stored cookies failed");
+                        if (userCookies != null) {
+                            /* Give up. We only got these cookies so login via username and password is not possible! */
+                            logger.info("Login failed --> No password available but only cookies --> Give up");
+                            account.removeProperty(PROPERTY_ACCOUNT_user_agent);
+                            /*
+                             * 2020-07-13: Don't display cookie info on failed cookie login - obviously user already added his cookies
+                             * successfully.
+                             */
+                            // showCookieLoginInformation();
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
                 }
-                if (br.containsHTML("privacyreminder")) {
-                    // google wants you to accept the new privacy policy
-                    CrossSystem.openURL("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
-                    if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message(account.getUser()), null, _GUI.T.lit_continue(), null)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /* Full login */
+                /* TODO: Check if ANY if this code still works */
+                logger.info("Attempting full login via website");
+                /* Clear old cookies & headers */
+                this.br.clearAll();
+                prepBR(this.br);
+                this.br.setFollowRedirects(true);
+                logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
+                br.setHeader("User-Agent", userDefinedUserAgent);
+                /* first call to google */
+                getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+                // Set-Cookie: GAPS=1:u14pnu_cVhnJlNpZ_xhGBJLeS1FDxA:R-JYyKg6DETne8XP;Path=/;Expires=Fri, 23-Jun-2017 13:04:05
+                // GMT;Secure;HttpOnly;Priority=HIGH
+                UrlQuery post = new UrlQuery();
+                post.appendEncoded("GALX", br.getCookie("http://google.com", "GALX"));
+                post.appendEncoded("continue", getService().continueAfterServiceLoginAuth);
+                post.appendEncoded("service", getService().serviceName);
+                post.appendEncoded("hl", "en");
+                post.appendEncoded("utf8", "☃");
+                post.appendEncoded("pstMsg", "1");
+                post.appendEncoded("dnConn", "");
+                post.appendEncoded("checkConnection", (getService().checkConnectionString));
+                post.appendEncoded("checkedDomains", (getService().serviceName));
+                post.appendEncoded("Email", (account.getUser()));
+                post.appendEncoded("Passwd", (account.getPass()));
+                post.appendEncoded("signIn", "Sign in");
+                post.appendEncoded("PersistentCookie", "yes");
+                post.appendEncoded("rmShown", "1");
+                postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
+                main: while (true) {
+                    Form[] forms = br.getForms();
+                    String error = br.getRegex("<span color=\"red\">(.*?)</span>").getMatch(0);
+                    if (StringUtils.isNotEmpty(error)) {
+                        UIOManager.I().showErrorMessage(_JDT.T.google_error(error));
                     }
-                    while (true) {
-                        postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
-                        if (br.containsHTML("privacyreminder")) {
-                            CrossSystem.openURL("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
-                            if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI.T.lit_continue(), null)) {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    if (br.containsHTML("Please change your password")) {
+                        Form changePassword = br.getFormbyAction("https://accounts.google.com/ChangePassword");
+                        if (changePassword != null) {
+                            CrossSystem.openURL("http://www.google.com/support/accounts/bin/answer.py?answer=46526");
+                            NewPasswordDialog d = new NewPasswordDialog(UIOManager.LOGIC_COUNTDOWN, _JDT.T.google_password_change_title(), _JDT.T.google_password_change_message(account.getUser()), null, _GUI.T.lit_continue(), null);
+                            d.setTimeout(5 * 60 * 1000);
+                            NewPasswordDialogInterface handler = UIOManager.I().show(NewPasswordDialogInterface.class, d);
+                            try {
+                                handler.throwCloseExceptions();
+                                changePassword.getInputField("Passwd").setValue(Encoding.urlEncode(handler.getPassword()));
+                                changePassword.getInputField("PasswdAgain").setValue(Encoding.urlEncode(handler.getPasswordVerification()));
+                                submitForm(br, changePassword);
+                                if (!br.containsHTML("Please change your password")) {
+                                    account.setPass(handler.getPassword());
+                                }
+                                continue;
+                            } catch (DialogNoAnswerException e) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                             }
                         } else {
-                            continue main;
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password change required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                         }
                     }
-                }
-                Form form = this.br.getFormBySubmitvalue("Verify");
-                if (form == null) {
-                    for (Form f : forms) {
-                        if (f.getAction().startsWith("/signin/challenge") && !f.getAction().startsWith("/signin/challenge/skip")) {
-                            form = f;
+                    Form verifyItsYouByEmail = br.getFormByInputFieldKeyValue("challengetype", "RecoveryEmailChallenge");
+                    if (verifyItsYouByEmail != null) {
+                        String example = br.getRegex("<label.*?id=\"RecoveryEmailChallengeLabel\">.*?<span.*?>([^<]+)</span>.*?</label>").getMatch(0);
+                        if (example == null) {
+                            CrossSystem.openURL(br.getURL());
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        } else {
+                            InputDialog d = new InputDialog(0, _JDT.T.google_email_verification_title(), _JDT.T.google_email_verification_message(example.trim()), null, null, _GUI.T.lit_continue(), null) {
+                                @Override
+                                protected int getPreferredWidth() {
+                                    return 400;
+                                }
+                            };
+                            InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+                            try {
+                                handler.throwCloseExceptions();
+                                String email = handler.getText();
+                                verifyItsYouByEmail.getInputField("emailAnswer").setValue(Encoding.urlEncode(email));
+                                submitForm(br, verifyItsYouByEmail);
+                                continue;
+                            } catch (DialogNoAnswerException e) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            }
                         }
                     }
-                }
-                if (form != null) {
-                    if ("SecondFactor".equals(form.getAction())) {
-                        handle2FactorAuthSmsDeprecated(form);
-                        continue;
-                    } else if ("/signin/challenge".equals(form.getAction())) {
-                        handle2FactorAuthSmsNew(form);
-                        continue;
-                    } else if (form.getAction().startsWith("/signin/challenge/")) {
-                        handle2FactorAuthSmsNew2(form);
+                    if (br.containsHTML("privacyreminder")) {
+                        // google wants you to accept the new privacy policy
+                        CrossSystem.openURL("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+                        if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message(account.getUser()), null, _GUI.T.lit_continue(), null)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        while (true) {
+                            postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
+                            if (br.containsHTML("privacyreminder")) {
+                                CrossSystem.openURL("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+                                if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT.T.google_helper_privacy_update_title(), _JDT.T.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI.T.lit_continue(), null)) {
+                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                                }
+                            } else {
+                                continue main;
+                            }
+                        }
+                    }
+                    Form form = this.br.getFormBySubmitvalue("Verify");
+                    if (form == null) {
+                        for (Form f : forms) {
+                            if (f.getAction().startsWith("/signin/challenge") && !f.getAction().startsWith("/signin/challenge/skip")) {
+                                form = f;
+                            }
+                        }
+                    }
+                    if (form != null) {
+                        if ("SecondFactor".equals(form.getAction())) {
+                            handle2FactorAuthSmsDeprecated(form);
+                            continue;
+                        } else if ("/signin/challenge".equals(form.getAction())) {
+                            handle2FactorAuthSmsNew(form);
+                            continue;
+                        } else if (form.getAction().startsWith("/signin/challenge/")) {
+                            handle2FactorAuthSmsNew2(form);
+                            continue;
+                        }
+                    }
+                    form = br.getFormByInputFieldKeyValue("Page", "PasswordSeparationSignIn");
+                    if (form != null) {
+                        form.put("Email", Encoding.urlEncode(account.getUser()));
+                        form.put("Passwd", Encoding.urlEncode(account.getPass()));
+                        form.put("hl", "en");
+                        submitForm(br, form);
                         continue;
                     }
+                    if (StringUtils.isNotEmpty(error)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    break;
                 }
-                form = br.getFormByInputFieldKeyValue("Page", "PasswordSeparationSignIn");
-                if (form != null) {
-                    form.put("Email", Encoding.urlEncode(account.getUser()));
-                    form.put("Passwd", Encoding.urlEncode(account.getPass()));
-                    form.put("hl", "en");
-                    submitForm(br, form);
-                    continue;
+                // if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
+                //
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                //
+                // }
+                if (validateSuccessOLD()) {
+                    account.saveCookies(br.getCookies(br.getURL()), "");
+                    validate(account);
+                    return true;
+                } else {
+                    return false;
                 }
-                if (StringUtils.isNotEmpty(error)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
                 }
-                break;
+                throw e;
             }
-            // if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
-            //
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            //
-            // }
-            if (validateSuccessOLD()) {
-                account.saveCookies(br.getCookies(br.getURL()), "");
-                validate(account);
-                return true;
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            account.clearCookies("");
-            throw e;
         }
     }
 

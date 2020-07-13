@@ -31,10 +31,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GoogleDriveDirectoryIndex extends PluginForHost {
+public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -64,7 +65,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://[a-z0-9\\-\\.]+\\." + buildHostsPatternPart(domains) + "/test_test_test_dummy.+");
+            ret.add("https?://[a-z0-9\\-\\.]+\\." + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
@@ -92,14 +93,19 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getPluginPatternMatcher());
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
             if (con.getResponseCode() == 401) {
                 throw new AccountRequiredException();
             } else if (!con.isContentDisposition()) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setDownloadSize(con.getCompleteContentLength());
@@ -121,6 +127,11 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
         if (!dl.getConnection().isContentDisposition()) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 401) {
                 /* Account required or existant account is missing rights to access that content! */
                 throw new AccountRequiredException();
@@ -128,9 +139,9 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
     }
@@ -151,11 +162,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
