@@ -193,7 +193,7 @@ public class InstaGramCom extends PluginForHost {
         final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
         decrypter.setBrowser(this.br);
         try {
-            final CryptedLink forDecrypter = new CryptedLink(link.getContainerUrl());
+            final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl());
             final ArrayList<DownloadLink> items = decrypter.decryptIt(forDecrypter, null);
             DownloadLink foundLink = null;
             if (items.size() == 1) {
