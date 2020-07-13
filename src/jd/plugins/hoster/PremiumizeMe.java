@@ -214,7 +214,7 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsFreeMode(final Account account) {
+    public boolean supportsFreeAccountDownloadMode(final Account account) {
         return this.getAccountJsonConfig(account).isAllowFreeAccountDownloads();
     }
 

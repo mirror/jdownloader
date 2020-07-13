@@ -118,7 +118,7 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsFreeMode(final Account acc) {
+    public boolean supportsFreeAccountDownloadMode(final Account acc) {
         return false;
     }
 
