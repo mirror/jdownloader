@@ -32,17 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -60,8 +49,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -105,6 +108,8 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final long              FREE_RECONNECTWAIT_DAILYLIMIT              = 3 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_OTHERS                  = 30 * 60 * 1000L;
     private static final long              FREE_CAPTCHA_EXPIRE_TIME                   = 105 * 1000L;
+    // CONTENT-DISPOSITION header is missing encoding
+    private static final boolean           FIX_FILENAMES                              = true;
 
     @Override
     public String getAGBLink() {
@@ -247,7 +252,20 @@ public class RapidGatorNet extends antiDDoSForHost {
                             link.setVerifiedFileSize(con.getLongContentLength());
                         }
                         if (link.getFinalFileName() == null) {
-                            link.setFinalFileName(getFileNameFromDispositionHeader(con));
+                            final DispositionHeader header = Plugin.parseDispositionHeader(con);
+                            if (header != null && StringUtils.isNotEmpty(header.getFilename())) {
+                                if (header.getEncoding() != null) {
+                                    link.setFinalFileName(header.getFilename());
+                                } else {
+                                    final String fileName;
+                                    if (FIX_FILENAMES) {
+                                        fileName = URLEncode.decodeURIComponent(header.getFilename(), "UTF-8", true);
+                                    } else {
+                                        fileName = header.getFilename();
+                                    }
+                                    link.setFinalFileName(fileName);
+                                }
+                            }
                         }
                         link.setProperty(HOTLINK, Boolean.TRUE);
                         hotLinkURL = con.getURL().toString();
@@ -265,9 +283,15 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         link.removeProperty(HOTLINK);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
-            final String filenameFromURL = getURLFilename(link);
+            String filenameFromURL = getURLFilename(link);
             if (filenameFromURL != null) {
-                link.setName(filenameFromURL);
+                final String fileName;
+                if (FIX_FILENAMES) {
+                    fileName = URLEncode.decodeURIComponent(filenameFromURL, "UTF-8", true);
+                } else {
+                    fileName = filenameFromURL;
+                }
+                link.setName(fileName);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -527,7 +551,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
             }
             /* 2020-03-17: Content-Disposition should always be given */
-            if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isContentDisposition()) {
+            if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || !dl.getConnection().isContentDisposition() || !dl.getConnection().isOK()) {
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
@@ -633,7 +657,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             try {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
                 con = dl.getConnection();
-                if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || StringUtils.containsIgnoreCase(con.getContentType(), "text") || con.getLongContentLength() == -1) {
                     link.setProperty(directlinkproperty, Property.NULL);
                     return null;
                 } else {
@@ -1263,7 +1287,8 @@ public class RapidGatorNet extends antiDDoSForHost {
             url = url.replaceFirst("^http://", "https://");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, getMaxChunks(account));
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl.setFilenameFix(FIX_FILENAMES);
+        if (!dl.getConnection().isOK() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
@@ -1467,7 +1492,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 dllink = dllink.replaceFirst("^http://", "https://");
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(account));
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl.setFilenameFix(FIX_FILENAMES);
+            if (!dl.getConnection().isOK() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);

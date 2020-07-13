@@ -2476,74 +2476,78 @@ public class YoutubeHelper {
     }
 
     public void login(final Account account, final boolean refresh, final boolean showDialog) throws Exception {
-        try {
-            br.setDebug(true);
-            br.setCookiesExclusive(true);
-            // delete all cookies
-            br.clearCookies(null);
-            Thread thread = Thread.currentThread();
-            boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
-            br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
-            if (account.getProperty("cookies") != null && !forceUpdateAndBypassCache) {
-                @SuppressWarnings("unchecked")
-                HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
-                // cookies = null;
-                if (cookies != null) {
-                    if (cookies.containsKey("SSID")) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie("youtube.com", key, value);
-                        }
-                        if (!refresh) {
-                            return;
-                        } else {
-                            br.getPage("https://www.youtube.com");
-                            br.followRedirect(true);
-                            if (br.containsHTML("<span.*?>\\s*Sign out\\s*</span>")) {
+        synchronized (account) {
+            try {
+                br.setDebug(true);
+                br.setCookiesExclusive(true);
+                // delete all cookies
+                br.clearCookies(null);
+                Thread thread = Thread.currentThread();
+                boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
+                br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
+                if (account.getProperty("cookies") != null && !forceUpdateAndBypassCache) {
+                    @SuppressWarnings("unchecked")
+                    HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
+                    // cookies = null;
+                    if (cookies != null) {
+                        if (cookies.containsKey("SSID")) {
+                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                                final String key = cookieEntry.getKey();
+                                final String value = cookieEntry.getValue();
+                                br.setCookie("youtube.com", key, value);
+                            }
+                            if (!refresh) {
                                 return;
+                            } else {
+                                br.getPage("https://www.youtube.com");
+                                br.followRedirect(true);
+                                if (br.containsHTML("<span.*?>\\s*Sign out\\s*</span>")) {
+                                    return;
+                                }
                             }
                         }
                     }
                 }
-            }
-            br.setFollowRedirects(true);
-            GoogleHelper helper = new GoogleHelper(br) {
-                @Override
-                protected boolean validateSuccessOLD() {
-                    return br.getCookie("http://youtube.com", "SID") != null;
-                }
+                br.setFollowRedirects(true);
+                GoogleHelper helper = new GoogleHelper(br) {
+                    @Override
+                    protected boolean validateSuccessOLD() {
+                        return br.getCookie("http://youtube.com", "SID") != null;
+                    }
 
-                protected String breakRedirects(String url) throws IOException {
-                    String sidt = new Regex(url, "accounts\\/SetSID\\?ssdc\\=1\\&sidt=([^\\&]+)").getMatch(0);
-                    if (sidt != null) {
-                        String jsonUrl = br.getRegex("uri\\:\\s*\\'(.*?)\\'\\,").getMatch(0);
-                        jsonUrl = Encoding.unicodeDecode(jsonUrl);
-                        br.getPage(jsonUrl);
-                        return null;
+                    protected String breakRedirects(String url) throws IOException {
+                        String sidt = new Regex(url, "accounts\\/SetSID\\?ssdc\\=1\\&sidt=([^\\&]+)").getMatch(0);
+                        if (sidt != null) {
+                            String jsonUrl = br.getRegex("uri\\:\\s*\\'(.*?)\\'\\,").getMatch(0);
+                            jsonUrl = Encoding.unicodeDecode(jsonUrl);
+                            br.getPage(jsonUrl);
+                            return null;
+                        }
+                        if (br.getURL() != null && br.getURL().contains("/accounts/SetSID")) {
+                            return null;
+                        }
+                        return url;
                     }
-                    if (br.getURL() != null && br.getURL().contains("/accounts/SetSID")) {
-                        return null;
+                };
+                helper.setLogger(logger);
+                helper.setCacheEnabled(false);
+                if (helper.login(account, refresh)) {
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies cYT = br.getCookies("youtube.com");
+                    for (final Cookie c : cYT.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
                     }
-                    return url;
+                    // set login cookie of the account.
+                    account.setProperty("cookies", cookies);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            };
-            helper.setLogger(logger);
-            helper.setCacheEnabled(false);
-            if (helper.login(account, refresh)) {
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies cYT = br.getCookies("youtube.com");
-                for (final Cookie c : cYT.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", null);
                 }
-                // set login cookie of the account.
-                account.setProperty("cookies", cookies);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw e;
             }
-        } catch (final PluginException e) {
-            account.setProperty("cookies", null);
-            throw e;
         }
     }
 
