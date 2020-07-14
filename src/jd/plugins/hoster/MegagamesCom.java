@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
@@ -68,7 +69,7 @@ public class MegagamesCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:fixes|mods)/([a-z0-9\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:fixes|mods|trainers|videos)/([a-z0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -144,6 +145,11 @@ public class MegagamesCom extends PluginForHost {
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (dlform.containsHTML("recaptcha")) {
+                /* 2020-07-14: New */
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
             br.submitForm(dlform);
             /* 2020-07-08: Form redirects to this URL */
             // br.getPage(continue_url.replace("/download/", "/t-dl/"));
@@ -177,6 +183,12 @@ public class MegagamesCom extends PluginForHost {
             server_filename = server_filename.replace(badExtension, ".zip");
             link.setFinalFileName(server_filename);
         }
+        /* 2020-07-14: WTF they're also sending wrong video extensions */
+        final String badExtensionVideo = new Regex(server_filename, "(\\.mp4d)$").getMatch(0);
+        if (badExtensionVideo != null) {
+            server_filename = server_filename.replace(badExtensionVideo, ".mp4");
+            link.setFinalFileName(server_filename);
+        }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
@@ -189,7 +201,7 @@ public class MegagamesCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (!con.isContentDisposition()) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }

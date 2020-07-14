@@ -44,6 +44,12 @@ public class ScribdCom extends PluginForDecrypt {
     private static final String type_collections = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/collections/\\d+/[A-Za-z0-9\\-_%]+";
     private static final String type_audiobook   = ".+/(?:audiobook|listen)/(\\d+).*?";
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-07-14: Just being careful - this crawler can cause a lot of http requests in a short time! */
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://", "https://");
@@ -149,22 +155,17 @@ public class ScribdCom extends PluginForDecrypt {
                 return null;
             }
             final String license_id;
-            final boolean grabLicenceIDFromWebsite = false;
-            if (grabLicenceIDFromWebsite) {
-                /* This call will also provide more details about the audiobook e.g. 'drm_free' */
-                br.getPage("https://api.findawayworld.com/v4/accounts/scribd-" + userID + "/audiobooks/" + external_id);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                /* There are multiple licenses available. Use the first one. */
-                license_id = (String) JavaScriptEngineFactory.walkJson(entries, "licenses/{0}/id");
-            } else {
-                /* 2019-08-12 */
-                license_id = "5d51721799c3cd70e3dab9fd";
-            }
             br.getHeaders().put("Sec-Fetch-Mode", "cors");
             br.getHeaders().put("Sec-Fetch-Site", "cross-site");
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Session-Key", session_key);
             br.getHeaders().put("Origin", "https://www." + this.getHost());
+            /* This call will also provide more details about the audiobook e.g. 'drm_free' */
+            // br.getPage("https://dailyplanet.findawayworld.com/v1/keys?session_key=" + session_key);
+            br.getPage("https://api.findawayworld.com/v4/accounts/scribd-" + userID + "/audiobooks/" + external_id);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            /* There are multiple licenses available. Use the first one. */
+            license_id = (String) JavaScriptEngineFactory.walkJson(entries, "licenses/{0}/id");
             /* 2019-08-12: Generated directurls will usually be valid for ~48 hours */
             br.postPageRaw("https://api.findawayworld.com/v4/audiobooks/" + external_id + "/playlists", "{\"license_id\":\"" + license_id + "\"}");
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());

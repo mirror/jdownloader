@@ -23,6 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -46,7 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
@@ -475,37 +476,65 @@ public class ScribdCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400");
         }
-        String[] dlinfo = new String[2];
-        dlinfo[1] = getExtension(is_audiobook);
+        final String userPreferredFormat = getExtension(is_audiobook);
         final String fileId = this.getFID(link);
         if (fileId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
+        final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
         Browser xmlbrowser = br.cloneBrowser();
-        xmlbrowser.setFollowRedirects(false);
+        xmlbrowser.setFollowRedirects(true);
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         xmlbrowser.getHeaders().put("Accept", "*/*");
+        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_session", scribdsession);
+        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
         // This will make it fail...
         // xmlbrowser.postPage("http://www.scribd.com/document_downloads/request_document_for_download", "id=" + fileId);
-        final String correctedXML = xmlbrowser.toString().replace("\\", "");
-        // Check if the selected format is available
-        if (correctedXML.contains("premium: true")) {
-            throw new AccountRequiredException();
-        }
         xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
         xmlbrowser.getHeaders().put("X-CSRF-Token", getauthenticity_token(account));
         /* Seems like this is not needed anymore. */
         // xmlbrowser.postPage("/document_downloads/register_download_attempt", "doc_id=" + fileId +
         // "&next_screen=download_lightbox&source=read");
-        dlinfo[0] = "https://de." + this.getHost() + "/document_downloads/" + fileId + "?extension=" + dlinfo[1];
-        xmlbrowser = new Browser();
-        final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
-        final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
-        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_session", scribdsession);
-        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
-        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
-        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
-        xmlbrowser.getPage(dlinfo[0]);
+        /*
+         * Check which formats are available for download. Try to download user preferred format. If not found, download first available
+         * format in list.
+         */
+        String formatToDownload = null;
+        xmlbrowser.getPage("https://www." + this.getHost() + "/doc-page/download-receipt-modal-props/" + fileId);
+        Map<String, Object> entries = JSonStorage.restoreFromString(xmlbrowser.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("document");
+        String firstAvailableFormat = null;
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("formats");
+        for (final Object typeO : ressourcelist) {
+            entries = (Map<String, Object>) typeO;
+            final String extensionTmp = (String) entries.get("extension");
+            if (StringUtils.isEmpty(extensionTmp)) {
+                continue;
+            }
+            if (firstAvailableFormat == null) {
+                firstAvailableFormat = extensionTmp;
+            }
+            if (firstAvailableFormat.equalsIgnoreCase(userPreferredFormat)) {
+                logger.info("User preferred format is available: " + userPreferredFormat);
+                formatToDownload = userPreferredFormat;
+                break;
+            }
+        }
+        if (firstAvailableFormat == null) {
+            /* E.g. for free accounts, this will return an empty list of items */
+            throw new AccountRequiredException();
+        }
+        if (formatToDownload == null) {
+            logger.info("User preferred format is not available - downloading first in the list: " + formatToDownload);
+            formatToDownload = firstAvailableFormat;
+        }
+        String[] dlinfo = new String[2];
+        dlinfo[1] = formatToDownload;
+        xmlbrowser.setFollowRedirects(false);
+        xmlbrowser.getPage("/document_downloads/" + fileId + "?extension=" + dlinfo[1]);
         if (xmlbrowser.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
         }
@@ -591,6 +620,6 @@ public class ScribdCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, allFormats, JDL.L("plugins.host.ScribdCom.formats", "Download files in this format:")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, allFormats, "Preferably download files in this format:").setDefaultValue(0));
     }
 }

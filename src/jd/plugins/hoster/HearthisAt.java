@@ -17,9 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/([^/]+)/([A-Za-z0-9-]+)/?" })
 public class HearthisAt extends PluginForHost {
@@ -43,23 +43,24 @@ public class HearthisAt extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private boolean          free_resume       = false;
-    private int              free_maxchunks    = 1;
-    private static final int free_maxdownloads = -1;
-    private String           dllink            = null;
+    private boolean          free_resume        = false;
+    private int              free_maxchunks     = 1;
+    private static final int free_maxdownloads  = -1;
+    private String           dllink             = null;
+    private boolean          isOfficialDownload = false;
 
     @Override
     public String getAGBLink() {
         return "https://hearthis.at/nutzungsbedingungen/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, false);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -93,11 +94,18 @@ public class HearthisAt extends PluginForHost {
             if (externalDownloadURL != null) {
                 logger.info("Seems like official download is available");
                 br.getPage(externalDownloadURL);
-                String officialDownloadURL = br.getRegex("(/[^/]+/" + url_title + "/download/[^\"]+)\"").getMatch(0);
+                String officialDownloadURL = br.getRegex("\"((/|http)[^\"]+/" + url_title + "/download/[^\"]+)\"").getMatch(0);
+                if (officialDownloadURL == null) {
+                    /* Wider attempt */
+                    officialDownloadURL = br.getRegex("\"((/|http)[^\"]+/download/[^\"]+)\"").getMatch(0);
+                }
                 if (officialDownloadURL != null) {
                     logger.info("Successfully found official downloadurl");
-                    officialDownloadURL = "https://" + this.getHost() + officialDownloadURL;
+                    if (!officialDownloadURL.startsWith("http")) {
+                        officialDownloadURL = "https://" + this.getHost() + officialDownloadURL;
+                    }
                     this.dllink = officialDownloadURL;
+                    isOfficialDownload = true;
                 } else {
                     logger.warning("Failed to find official downloadurl");
                 }
@@ -123,7 +131,7 @@ public class HearthisAt extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         if (!link.isNameSet()) {
-            link.setFinalFileName(filename);
+            link.setFinalFileName(filename + ".mp3");
         }
         if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
             final Browser br2 = br.cloneBrowser();
@@ -132,12 +140,8 @@ public class HearthisAt extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    /* Do NOT use HEAD request here! */
-                    con = br2.openGetConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                /* Do NOT use HEAD request here! */
+                con = br2.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
@@ -177,6 +181,8 @@ public class HearthisAt extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (isOfficialDownload) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
