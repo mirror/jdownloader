@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,11 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "http://bbcdecrypted/[a-z][a-z0-9]{7}" })
 public class BbcCom extends PluginForHost {
@@ -66,6 +66,7 @@ public class BbcCom extends PluginForHost {
     private String hls_master              = null;
     private String hls_best_and_or_working = null;
     private String title                   = null;
+    int            numberofFoundMedia      = 0;
 
     /** E.g. json instead of xml: http://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/<vpid>/format/json */
     /**
@@ -103,6 +104,7 @@ public class BbcCom extends PluginForHost {
         final boolean allowAudio = !this.br.containsHTML("kind=\"video\"");
         /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
+        numberofFoundMedia = media.length;
         final HashSet<String> testedM3U8 = new HashSet<String>();
         final ArrayList<String> hlsMasters = new ArrayList<String>();
         HlsContainer bestHLSContainer = null;
@@ -318,7 +320,10 @@ public class BbcCom extends PluginForHost {
             dl = new HLSDownloader(link, br, final_hls_url);
             dl.startDownload();
         } else {
-            if (this.rtmp_app == null || this.rtmp_host == null || this.rtmp_playpath == null) {
+            if (numberofFoundMedia > 0) {
+                /* 2020-07-14: Most likely only DASH- or RTMP streams available. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any supported streaming type", 3 * 60 * 60 * 1000l);
+            } else if (this.rtmp_app == null || this.rtmp_host == null || this.rtmp_playpath == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* TODO: Complete quality_string at this place. */

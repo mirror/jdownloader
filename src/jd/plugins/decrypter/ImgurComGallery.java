@@ -148,7 +148,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                             if (is_albumo != null) {
                                 is_album = Boolean.parseBoolean(is_albumo);
                             }
-                            if (parameter.matches(type_gallery) && is_album) {
+                            if (parameter.matches(type_gallery) && !is_album) {
                                 /* We have a single picture and not an album. */
                                 final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
                                 decryptedLinks.add(dl);

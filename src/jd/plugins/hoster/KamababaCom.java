@@ -20,6 +20,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -66,6 +67,10 @@ public class KamababaCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    public static final String getFiletitle(final Browser br) {
+        return br.getRegex("<meta itemprop=\\\"name\\\" content=\\\"([^<>\\\"]+)\\\" />").getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -81,7 +86,7 @@ public class KamababaCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]+)\" />").getMatch(0);
+        String filename = getFiletitle(br);
         if (StringUtils.isEmpty(filename)) {
             filename = url_filename;
         }
