@@ -542,7 +542,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
             }
             // 2020-05-27, rapidgator now advertises that it doesn't support resume for free accounts
-            // 2020-07-14: Resume works in free mode for most of all files. For some,
+            // 2020-07-14: Resume works in free mode for most of all files. For some, server may return an "X-Error" header with the content
+            // "Unexpected range request" - see code below.
             final boolean resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
             /* E.g. when directurl was re-used successfully, download is already ready to be started! */
             if (dl == null) {
