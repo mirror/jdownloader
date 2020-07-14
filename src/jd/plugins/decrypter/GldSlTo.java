@@ -33,7 +33,7 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{2,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "https?://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{2,}" })
 public class GldSlTo extends antiDDoSForDecrypt {
     public GldSlTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -86,7 +86,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
             // br.setCookie("goldesel.to", "__utmc", "222304525");
             /* IMPORTANT */
             br.setCookie("goldesel.to", "__utmt", "1");
-            postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
+            postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
             if (br.containsHTML(HTML_CAPTCHA)) {
                 for (int i = 1; i <= 3; i++) {
                     try {
@@ -103,7 +103,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         return null;
                     }
                     final File file = this.getLocalCaptchaFile();
-                    getCaptchaBrowser(br).getDownload(file, "http://goldesel.to/" + capLink);
+                    getCaptchaBrowser(br).getDownload(file, "https://goldesel.to/" + capLink);
                     String click_on;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         click_on = "Klicke in den gestrichelten Kreis!";
@@ -114,7 +114,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                     if (cp == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
+                    postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
                     if (br.containsHTML(HTML_LIMIT_REACHED)) {
                         logger.info("We have to wait because the user entered too many wrong captchas...");
                         int wait = 60;
@@ -126,7 +126,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                             break;
                         }
                         this.sleep(wait * 1001, param);
-                        br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
+                        br.postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
                         continue;
                     }
                     if (br.containsHTML(HTML_CAPTCHA)) {
@@ -142,13 +142,13 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 }
             } else if (br.containsHTML("\"g\\-recaptcha\"")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
+                postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
             }
             if (br.containsHTML(HTML_LIMIT_REACHED)) {
                 logger.info("Probably hourly limit is reached --> Stopping decryption");
                 return decryptedLinks;
             }
-            final String[] finallinks = br.getRegex("url=\"(http[^<>\"]*?)\"").getColumn(0);
+            final String[] finallinks = br.getRegex("url\\s*=\\s*\"(https?[^<>\"]*?)\"").getColumn(0);
             for (final String finallink : finallinks) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(finallink));
                 fp.add(dl);
