@@ -58,13 +58,13 @@ public class SeedrCc extends PluginForHost {
 
     /* Connection stuff */
     private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = -8;
+    private final int           FREE_MAXCHUNKS               = -2;
     private final int           FREE_MAXDOWNLOADS            = 20;
     private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = -8;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = -2;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -8;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String TYPE_DIRECTLINK              = "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/.+";
     private static final String TYPE_DIRECTLINK_ZIP          = "https?://[^/]+/zip/.+";
@@ -74,32 +74,54 @@ public class SeedrCc extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         server_issues = false;
         String filename = null;
         if (link.getDownloadURL().matches(TYPE_DIRECTLINK)) {
             dllink = link.getDownloadURL();
         } else {
-            final Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null) {
+            if (account == null) {
+                /* Pick random valid account if none is given via parameter. */
+                account = AccountController.getInstance().getValidAccount(this);
+            }
+            if (account == null) {
                 return AvailableStatus.UNCHECKABLE;
             }
-            this.login(this.br, aa, false);
+            this.login(this.br, account, false);
             prepAjaxBr(this.br);
             final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            if (fid == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             this.br.postPage("https://www." + this.getHost() + "/content.php?action=fetch_file", "folder_file_id=" + fid);
-            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 401) {
+                /*
+                 * 2020-07-15: E.g. deleted files --> They do not provide a meaningful errormessage for this case --> First check if we
+                 * really are loggedin --> If no Exception happens we're logged in which means the file is offline --> This is a rare case!
+                 * Most of all URLs the users add will be online and downloadable!
+                 */
+                this.login(this.br, account, true);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            this.dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             filename = PluginJSonUtils.getJsonValue(this.br, "name");
         }
-        if (filename != null) {
+        if (filename != null && !link.isNameSet()) {
             link.setFinalFileName(filename);
         }
-        if (dllink != null) {
+        if (dllink != null && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 br.setFollowRedirects(true);
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (con.isContentDisposition()) {
                     link.setDownloadSize(con.getLongContentLength());
                     if (filename == null) {
                         link.setFinalFileName(getFileNameFromHeader(con));
@@ -118,9 +140,9 @@ public class SeedrCc extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, null, true);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -291,11 +313,14 @@ public class SeedrCc extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
+        login(this.br, account, true);
+        /*
+         * Correct username - e.g. when logging in via cookies, users can enter whatever they want into the username field but we want the
+         * account to be unique!
+         */
+        final String email = PluginJSonUtils.getJson(br, "username");
+        if (!StringUtils.isEmpty(email)) {
+            account.setUser(email);
         }
         ai.setUnlimitedTraffic();
         prepAjaxBr(this.br);
@@ -331,16 +356,14 @@ public class SeedrCc extends PluginForHost {
             ai.setStatus("Premium account");
         }
         account.setConcurrentUsePossible(true);
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(this.br, account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        /* Login is done inside linkcheck */
+        // login(this.br, account, false);
+        requestFileInformation(link, account, true);
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
@@ -352,19 +375,7 @@ public class SeedrCc extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // }
             // }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
+            doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
         }
     }
 

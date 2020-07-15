@@ -36,10 +36,6 @@ public class KamababaComCrawler extends PornEmbedParser {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
         String filename = jd.plugins.hoster.KamababaCom.getFiletitle(br);
         if (filename == null) {
             filename = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
@@ -48,7 +44,11 @@ public class KamababaComCrawler extends PornEmbedParser {
         if (decryptedLinks.size() == 0) {
             /* Probably selfhosted content */
             final DownloadLink dl = this.createDownloadlink(parameter);
-            dl.setAvailable(true);
+            if (jd.plugins.hoster.KamababaCom.isOffline(this.br)) {
+                dl.setAvailable(false);
+            } else {
+                dl.setAvailable(true);
+            }
             dl.setName(filename + ".mp4");
             decryptedLinks.add(dl);
         }
