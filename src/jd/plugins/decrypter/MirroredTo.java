@@ -111,6 +111,10 @@ public class MirroredTo extends PluginForDecrypt {
                 logger.info("The following link should be offline: " + param.toString());
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
+            } else if (br.containsHTML(">\\s*Sorry, no download links available")) {
+                /* 2020-07-15 */
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
             }
             // lots of forms
             Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);

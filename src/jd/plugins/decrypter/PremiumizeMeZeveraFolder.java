@@ -17,6 +17,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -37,7 +38,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (accs == null || accs.size() == 0) {
             logger.info("Cannot add cloud URLs without account");
-            return ret;
+            throw new AccountRequiredException();
         }
         setBrowserExclusive();
         final Account account = accs.get(0);
