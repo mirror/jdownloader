@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import org.appwork.uio.ConfirmDialogInterface;
@@ -36,6 +37,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,7 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/.+|http://seedrdecrypted\\.cc/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/\\d+.+|http://seedrdecrypted\\.cc/\\d+" })
 public class SeedrCc extends PluginForHost {
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,9 +68,9 @@ public class SeedrCc extends PluginForHost {
     private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
     private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String TYPE_DIRECTLINK              = "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/.+";
-    private static final String TYPE_DIRECTLINK_ZIP          = "https?://[^/]+/zip/.+";
-    private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/\\d+";
+    private static final String TYPE_DIRECTLINK              = "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/(\\d+).+";
+    private static final String TYPE_ZIP                     = "https?://[^/]+/zip/(\\d+).+";
+    private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/(\\d+)";
     private boolean             server_issues                = false;
     private String              dllink                       = null;
 
@@ -81,19 +83,43 @@ public class SeedrCc extends PluginForHost {
         this.setBrowserExclusive();
         server_issues = false;
         String filename = null;
-        if (link.getDownloadURL().matches(TYPE_DIRECTLINK)) {
-            dllink = link.getDownloadURL();
-        } else {
-            if (account == null) {
-                /* Pick random valid account if none is given via parameter. */
-                account = AccountController.getInstance().getValidAccount(this);
-            }
+        if (account == null) {
+            /* Pick random valid account if none is given via parameter. */
+            account = AccountController.getInstance().getValidAccount(this);
+        }
+        // if (link.getPluginPatternMatcher().matches(TYPE_ZIP)) {
+        // if (account == null) {
+        // return AvailableStatus.UNCHECKABLE;
+        // }
+        // this.login(this.br, account, false);
+        // prepAjaxBr(this.br);
+        // final String fid = new Regex(link.getPluginPatternMatcher(), TYPE_ZIP).getMatch(0);
+        // if (fid == null) {
+        // /* This should never happen */
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // this.br.postPage("https://www." + this.getHost() + "/content.php?action=fetch_archive",
+        // "%5B%7B%22type%22%3A%22folder%22%2C%22id%22%3A%22" + fid + "%22%7D%5D");
+        // if (br.getHttpConnection().getResponseCode() == 404) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // } else if (br.getHttpConnection().getResponseCode() == 401) {
+        // /*
+        // * 2020-07-15: E.g. deleted files --> They do not provide a meaningful errormessage for this case --> First check if we
+        // * really are loggedin --> If no Exception happens we're logged in which means the file is offline --> This is a rare case!
+        // * Most of all URLs the users add will be online and downloadable!
+        // */
+        // this.login(this.br, account, true);
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // this.dllink = PluginJSonUtils.getJsonValue(this.br, "archive_url");
+        // }
+        if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
             if (account == null) {
                 return AvailableStatus.UNCHECKABLE;
             }
             this.login(this.br, account, false);
             prepAjaxBr(this.br);
-            final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            final String fid = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
             if (fid == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -112,6 +138,8 @@ public class SeedrCc extends PluginForHost {
             }
             this.dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             filename = PluginJSonUtils.getJsonValue(this.br, "name");
+        } else {
+            dllink = link.getPluginPatternMatcher();
         }
         if (filename != null && !link.isNameSet()) {
             link.setFinalFileName(filename);
@@ -123,7 +151,7 @@ public class SeedrCc extends PluginForHost {
                 con = br.openHeadConnection(dllink);
                 if (con.isContentDisposition()) {
                     link.setDownloadSize(con.getLongContentLength());
-                    if (filename == null) {
+                    if (!link.isNameSet()) {
                         link.setFinalFileName(getFileNameFromHeader(con));
                     }
                 } else {
@@ -142,6 +170,10 @@ public class SeedrCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
+        /* Without account, only directurls can be downloaded! */
+        if (!link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
+            throw new AccountRequiredException();
+        }
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
@@ -151,7 +183,7 @@ public class SeedrCc extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK_ZIP)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_ZIP)) {
             /* 2020-03-09: Such URLs are not resumable */
             maxchunks = 1;
         }
@@ -162,7 +194,11 @@ public class SeedrCc extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         link.setProperty(directlinkproperty, dllink);

@@ -136,13 +136,16 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
         }
         if (contentReleaseLinks == null) {
             logger.warning("contentReleaseLinks == null");
-            return null;
+            /* Final fallback --> Scan complete html */
+            contentReleaseLinks = br.toString();
         }
+        /* 2020-07-15: This doesn't work anymore --> Grab all URLs of previously RegExes html snippet! */
         // final String[] links = new Regex(contentReleaseLinks, "<a href=\"(https?://(www\\.)?[^\"]*?)\"").getColumn(0);
-        String[] links = new Regex(contentReleaseLinks, "<a href=(.*?) title").getColumn(0);
-        if (links == null) {
-            links = HTMLParser.getHttpLinks(contentReleaseLinks, null);
-        }
+        // String[] links = new Regex(contentReleaseLinks, "<a href=(.*?) title").getColumn(0);
+        // if (links == null) {
+        // links = HTMLParser.getHttpLinks(contentReleaseLinks, null);
+        // }
+        String[] links = HTMLParser.getHttpLinks(contentReleaseLinks, null);
         if (links == null || links.length == 0) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
