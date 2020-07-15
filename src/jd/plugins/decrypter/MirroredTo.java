@@ -30,6 +30,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
@@ -134,18 +136,25 @@ public class MirroredTo extends PluginForDecrypt {
                 }
                 if (links == null || links.length == 0) {
                     links = br.getRegex("\"(/hosts/" + uid + "[^\"]+)\"").getColumn(0);
-                    if (links == null || links.length == 0) {
-                        logger.warning("A critical error happened! Please inform the support. : " + param.toString());
-                        return null;
-                    }
                 }
-                for (String link : links) {
-                    if (this.isAbort()) {
-                        break;
+                if (links.length > 0) {
+                    for (String link : links) {
+                        Browser br2 = br.cloneBrowser();
+                        br2.getPage(link);
+                        handleLink(br2, filesize);
+                        if (this.isAbort()) {
+                            break;
+                        }
                     }
-                    Browser br2 = br.cloneBrowser();
-                    br2.getPage(link);
-                    handleLink(br2, filesize);
+                } else {
+                    /* 2020-07-15: (Sometimes) they do not "hide" their mirror-URLs behind a redirect. */
+                    final String[] directURLs = br.getRegex("a href=\"(https?://[^<>\"]+)\" target=\"_blank\"").getColumn(0);
+                    if (directURLs.length == 0) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (final String url : directURLs) {
+                        decryptedLinks.add(this.createDownloadlink(url));
+                    }
                 }
             }
             logger.info("Task Complete! : " + parameter);

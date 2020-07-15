@@ -91,12 +91,13 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /* 2020-05-27: anonfile.com is now also anonfiles.com - anonfile.com plugin has been deleted! */
-        ret.add(new String[] { "anonfiles.com", "anonfile.com" });
+        ret.add(new String[] { "anonfiles.com", "anonfile.com", "myfile.is" });
         return ret;
     }
 
     @Override
     public String rewriteHost(String host) {
+        /* 2020-07-15: myfile.is is now anonfiles.com */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 

@@ -71,6 +71,12 @@ public class KamababaCom extends antiDDoSForHost {
         return br.getRegex("<meta itemprop=\\\"name\\\" content=\\\"([^<>\\\"]+)\\\" />").getMatch(0);
     }
 
+    public static final boolean isOffline(final Browser br) {
+        final boolean offline404 = br.getHttpConnection().getResponseCode() == 404;
+        final boolean offlineNoVideoContent = !br.containsHTML("schema\\.org/VideoObject") && !br.containsHTML("class=\"video-player\"");
+        return offline404 || offlineNoVideoContent;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -79,10 +85,7 @@ public class KamababaCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("schema\\.org/VideoObject") && !br.containsHTML("class=\"video-player\"")) {
-            /* Content is no downloadable (video) content */
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
