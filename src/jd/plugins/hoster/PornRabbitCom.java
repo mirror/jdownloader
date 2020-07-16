@@ -17,10 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,9 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/[a-z0-9\\-]+\\-\\d+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/(video/[a-z0-9\\-]+\\-(\\d+)\\.html|embed/(\\d+))" })
 public class PornRabbitCom extends PluginForHost {
-    private String DLLINK = null;
+    private String dllink = null;
 
     public PornRabbitCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,8 +50,37 @@ public class PornRabbitCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (fid == null) {
+            /* E.g. embed URLs */
+            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        }
+        return fid;
+    }
+
+    public static String getTitleFromURL(final Browser br, final String url) {
+        String title = new Regex(br.getURL(), "pornrabbit\\.com/video/(.*?)\\-\\d+\\.html$").getMatch(0);
+        if (title != null) {
+            /* Make title "nicer" */
+            title = title.replace("-", " ");
+        }
+        return title;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        DLLINK = null;
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        dllink = null;
         final Browser br2 = br.cloneBrowser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -61,6 +93,13 @@ public class PornRabbitCom extends PluginForHost {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
         if (filename == null) {
+            /* Fallback */
+            filename = getTitleFromURL(this.br, link.getPluginPatternMatcher());
+            if (filename == null) {
+                filename = this.getFID(link);
+            }
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String path = br.getRegex("path=(VideoFile_\\d+)\\&").getMatch(0);
@@ -70,26 +109,20 @@ public class PornRabbitCom extends PluginForHost {
             path = Encoding.urlEncode(path);
             try {
                 br2.postPage("http://www.pornrabbit.com/getcdnurl/", "jsonRequest=%7B%22playerOnly%22%3A%22true%22%2C%22height%22%3A%22412%22%2C%22file%22%3A%22" + path + "%22%2C%22htmlHostDomain%22%3A%22www%2Epornrabbit%2Ecom%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22path%22%3A%22" + path + "%22%2C%22request%22%3A%22getAllData%22%2C%22cb%22%3A%22" + cb + "%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Epornrabbit%2Ecom%2Fgetcdnurl%2F%22%2C%22width%22%3A%22744%22%2C%22returnType%22%3A%22json%22%7D&cacheBuster=" + System.currentTimeMillis());
-                DLLINK = br2.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
+                dllink = br2.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
             } catch (final Exception e) {
             }
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("class=\"download\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("file: '(http[^']+)',").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("\"(http://cdn\\d+\\.media\\.pornrabbit\\.[^<>\"]*?)\"").getMatch(0);
-                }
-            }
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         String ext = ".mp4";
-        if (DLLINK.contains(".flv")) {
+        if (dllink.contains(".flv")) {
             ext = ".flv";
         }
         link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
@@ -97,7 +130,7 @@ public class PornRabbitCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
@@ -115,7 +148,7 @@ public class PornRabbitCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

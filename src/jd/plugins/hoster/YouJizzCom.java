@@ -115,6 +115,15 @@ public class YouJizzCom extends PluginForHost {
                     /* Skip HLS */
                     continue;
                 }
+                /*
+                 * 2020-07-16: If only one quality is available, "q" can also have other datatypes --> Avoid issues by simply checking for
+                 * this case and returning this one quality right away.
+                 */
+                if (results.size() == 1 || !(q instanceof String)) {
+                    logger.info("Only 1 quality available --> Choosing this one ...");
+                    dllink = d;
+                    break;
+                }
                 final String qualityTmpStr = (String) q;
                 if (StringUtils.equals(qualityTmpStr, preferredQuality)) {
                     logger.info("Found user preferred quality: " + qualityTmpStr);

@@ -19,13 +19,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/[a-z0-9\\-]+\\-\\d+\\.html|video/\\d+/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/video/[a-z0-9\\-]+\\-(\\d+)\\.html" })
 public class PornRabbitComDecrypter extends PornEmbedParser {
     public PornRabbitComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,14 +49,7 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
         if (filename == null) {
             /* Fallbacks - get filename from URL */
             /* Fallback 1 */
-            filename = new Regex(br.getURL(), "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
-            if (filename == null) {
-                /* Fallback 2 */
-                filename = new Regex(parameter, "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
-            }
-            if (filename != null) {
-                filename = filename.replace("-", " ");
-            }
+            filename = jd.plugins.hoster.PornRabbitCom.getTitleFromURL(this.br, parameter);
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {

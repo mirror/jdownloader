@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -34,10 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+(?:\\&wbst=[^\\&]+)?|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +46,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
     private static final String TYPE_EMBEDDED            = ".+/player/v3/video/.+";
-    private static final String TYPE_MAIN                = "https?://(?:www\\.)?filesmonster\\.com/download\\.php\\?id=([A-Za-z0-9_-]+)";
+    private static final String TYPE_MAIN                = "https?://(?:www\\.)?filesmonster\\.com/download\\.php\\?id=([A-Za-z0-9_-]+).*";
     private static final String TYPE_DL_FREE             = "https?://(?:www\\.)?filesmonster\\.com/dl/([A-Za-z0-9_-]+)/free/.+";
 
     /**
@@ -56,6 +57,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String FAILED = null;
+        final String referer_url = UrlQuery.parse(param.toString()).get("wbst");
         final boolean onlyAddNeededLinks = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(ADDLINKSACCOUNTDEPENDANT, false);
         boolean addFree = true;
         boolean addPremium = true;
@@ -102,7 +104,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             parameter = String.format("https://%s/download.php?id=%s", this.getHost(), main_id);
         } else if (param.toString().matches(TYPE_MAIN)) {
             main_id = new Regex(param.toString(), TYPE_MAIN).getMatch(0);
-            parameter = param.toString();
+            /* Removes e.g. unneeded parameters from URL */
+            parameter = String.format("https://%s/download.php?id=%s", this.getHost(), main_id);
         } else if (param.toString().matches(TYPE_MAIN)) {
             main_id = new Regex(param.toString(), TYPE_MAIN).getMatch(0);
             parameter = param.toString();
@@ -123,7 +126,13 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         jd.plugins.hoster.FilesMonsterCom.prepBR(br);
-        br.getPage(parameter);
+        if (referer_url != null) {
+            logger.info("Accessing URL with referer: " + referer_url);
+            br.getPage(parameter + "&wbst=" + referer_url);
+        } else {
+            logger.info("Accessing URL without referer");
+            br.getPage(parameter);
+        }
         final String title = jd.plugins.hoster.FilesMonsterCom.getLongTitle(this.br);
         if (jd.plugins.hoster.FilesMonsterCom.isOffline(this.br)) {
             final DownloadLink finalOne = this.createOfflinelink(parameter);
@@ -134,7 +143,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         final String fname = jd.plugins.hoster.FilesMonsterCom.getFileName(br);
         final String fsize = jd.plugins.hoster.FilesMonsterCom.getFileSize(br);
         String[] decryptedStuff = null;
-        final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
+        final String postThat = br.getRegex("\"[^\"]*(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
             br.postPage(postThat, "");
             final String findOtherLinks = br.getRegex("'(/dl/rft/.*?)\\'").getMatch(0);
@@ -180,6 +189,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     finalOne.setProperty("origfilename", filename);
                     finalOne.setProperty("origsize", filesize);
                     finalOne.setProperty("mainlink", parameter);
+                    if (referer_url != null) {
+                        finalOne.setProperty("referer_url", referer_url);
+                    }
                     if (title != null) {
                         finalOne.setComment(title);
                     }
