@@ -23,6 +23,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -44,11 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -85,7 +85,23 @@ public class PornHubCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.|[a-z]{2}\\.)?" + buildHostsPatternPart(domains) + "/(?:.*\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|(pornstar|model)/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(?:/(?:upload|paid))?)?|channels/[A-Za-z0-9\\-_]+(?:/videos)?|users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|playlist/\\d+)");
+            String pattern = "https?://(?:www\\.|[a-z]{2}\\.)?" + buildHostsPatternPart(domains) + "/(?:";
+            /* Single video */
+            pattern += ".*\\?viewkey=[a-z0-9]+|";
+            /* Single video embeded */
+            pattern += "embed/[a-z0-9]+|";
+            pattern += "embed_player\\.php\\?id=\\d+|";
+            /* All videos of a pornstar/model */
+            pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/video|/from_videos)?|";
+            // pattern += "videos(?:/(?:upload|paid))?)?|";
+            /* All videos of a channel */
+            pattern += "channels/[A-Za-z0-9\\-_]+(?:/videos)?|";
+            /* All videos of a user */
+            pattern += "users/[^/]+(?:/gifs(/public|/video|/from_videos)?|/videos(/public)?)?|";
+            /* Video playlist */
+            pattern += "playlist/\\d+";
+            pattern += ")";
+            ret.add(pattern);
         }
         return ret.toArray(new String[0]);
     }
@@ -193,30 +209,28 @@ public class PornHubCom extends PluginForDecrypt {
             int numberofActuallyAddedItems = 0;
             page++;
             logger.info(String.format("Crawling page %d / %d", page, maxPage));
+            /* 2020-07-16: Especially required for "/model/bla/videos/premium" URLs */
             /* 2020-03-17: Keep in mind: In premium modes, users may be able to see more items here than in free! */
             String src = null;
             /*
              * 2020-03-26: html code contains matching stuff everywhere so let's try to either only pick what we want or at least remove
              * some stuff we don't want.
              */
-            /* 2020-05-28: Not needed anymore for now. */
-            // final String contentWeWant = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
-            // if (contentWeWant != null) {
-            // logger.info("Found html snippet contentWeWant");
-            // src = contentWeWant;
-            // } else {
-            // logger.info("Failed to find html snippet contentWeWant");
-            // final String contentWeDoNotWant =
-            // br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
-            // if (contentWeDoNotWant != null) {
-            // logger.info("Successfully found html snippet contentWeDoNotWant");
-            // src = br.toString().replace(contentWeDoNotWant, "");
-            // } else {
-            // logger.info("Failed to grab html_snippet --> Crawling in full html code");
-            // src = br.toString();
-            // }
-            // }
-            src = br.toString();
+            final String contentWeWant = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
+            if (contentWeWant != null) {
+                logger.info("Found html snippet contentWeWant");
+                src = contentWeWant;
+            } else {
+                logger.info("Failed to find html snippet contentWeWant");
+                final String contentWeDoNotWant = br.getRegex("data-button-id=\"subscribe_\\d+\".*?page_params\\.lazyLoad\\.sections\\.push").getMatch(-1);
+                if (contentWeDoNotWant != null) {
+                    logger.info("Successfully found html snippet contentWeDoNotWant");
+                    src = br.toString().replace(contentWeDoNotWant, "");
+                } else {
+                    logger.info("Failed to grab html_snippet --> Crawling in full html code");
+                    src = br.toString();
+                }
+            }
             final String[] viewkeys = new Regex(src, "/view_video\\.php\\?viewkey=([^\"\\']+)").getColumn(0);
             if (viewkeys.length == 0) {
                 logger.info("Stopping now because could not find ANY content on this page");

@@ -24,7 +24,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amateurdumper.com" }, urls = { "http://(www\\.)?amateurdumper\\.com/(index\\.php\\?ctr=view\\&id=\\d+|\\d+/.*?\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amateurdumper.com" }, urls = { "https?://(?:www\\.)?amateurdumper\\.com/[^/]{10,}" })
 public class AmateurDumperCom extends PornEmbedParser {
     public AmateurDumperCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,16 +36,20 @@ public class AmateurDumperCom extends PornEmbedParser {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read|>404 The page was not found!<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read|>404 The page was not found!<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String externID = br.getRedirectLocation();
-        if (externID != null) {
-            DownloadLink dl = createDownloadlink(externID);
+        String redirect = br.getRedirectLocation();
+        if (redirect != null && !redirect.contains(this.getHost())) {
+            DownloadLink dl = createDownloadlink(redirect);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        } else if (redirect != null) {
+            br.setFollowRedirects(true);
+            br.followRedirect();
         }
         String filename = br.getRegex("<div class=\"video\\-hed hed3\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
@@ -62,7 +66,7 @@ public class AmateurDumperCom extends PornEmbedParser {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         filename = filename.trim();
-        externID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"(\\&)?file=([^<>\"]*?)\\&").getMatch(1);
+        String externID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"(\\&)?file=([^<>\"]*?)\\&").getMatch(1);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + externID + ".flv");
             decryptedLinks.add(dl);

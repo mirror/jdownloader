@@ -783,6 +783,8 @@ public class ImgurComHoster extends PluginForHost {
     public static Browser prepBRWebsite(final Browser br) {
         br.setAllowedResponseCodes(responsecode_website_overloaded);
         br.setFollowRedirects(true);
+        /* Skip "are you over 19?" Form. */
+        br.setCookie("imgur.com", "over18", "1");
         return br;
     }
 

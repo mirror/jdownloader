@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blog.jav4you.com" }, urls = { "http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blog.jav4you.com" }, urls = { "https?://(?:www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/" })
 public class BlogJav4YouCom extends PluginForDecrypt {
     public BlogJav4YouCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,10 +49,10 @@ public class BlogJav4YouCom extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            if (singleLink.matches("http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/")) {
+            if (singleLink.matches("https?://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/")) {
                 continue;
             }
-            if (singleLink.matches("http://(www\\.)?(l|r)\\.jav4you\\.com/[A-Za-z0-9]+")) {
+            if (singleLink.matches("https?://(www\\.)?(l|r)\\.jav4you\\.com/[A-Za-z0-9]+")) {
                 br.getPage(singleLink);
                 final String finallink = br.getRedirectLocation();
                 if (finallink == null) {
