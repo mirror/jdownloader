@@ -185,7 +185,14 @@ public class FilesMonsterCom extends PluginForHost {
         /* Find a new temporary link */
         final String mainlinkpart = getMainLinkID(mainlink);
         String temporaryLink = null;
-        br.getPage(mainlink);
+        final String referer_url = this.getDownloadLink().getStringProperty("referer_url");
+        if (referer_url != null) {
+            logger.info("Accessing URL with referer: " + referer_url);
+            br.getPage(mainlink + "&wbst=" + referer_url);
+        } else {
+            logger.info("Accessing URL without referer");
+            br.getPage(mainlink);
+        }
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -632,7 +639,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     private String[] getTempLinks() throws Exception {
         String[] decryptedStuff = null;
-        final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
+        final String postThat = br.getRegex("\"[^\"]*(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
             br.postPage("http://filesmonster.com" + postThat, "");
             final String findOtherLinks = br.getRegex("\\'(/dl/rft/.*?)\\'").getMatch(0);
