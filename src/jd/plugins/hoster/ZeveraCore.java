@@ -203,6 +203,7 @@ abstract public class ZeveraCore extends UseNet {
             /* Cannot check without account */
             return AvailableStatus.UNCHECKABLE;
         }
+        /* See: https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/ */
         callAPI(this.br, account, "/api/item/details?id=" + fileID);
         this.handleAPIErrors(br, link, account);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
