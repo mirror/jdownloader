@@ -101,7 +101,7 @@ public class UsersdriveCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 5;
     }
 
     @Override
@@ -111,5 +111,16 @@ public class UsersdriveCom extends XFileSharingProBasic {
             captchaForm.put("adblock_detected", "0");
         }
         super.handleCaptcha(link, captchaForm);
+    }
+
+    @Override
+    public Form findFormDownload2Premium() throws Exception {
+        /* 2020-07-16: Special */
+        final Form download2 = br.getFormByInputFieldKeyValue("op", "download2");
+        if (download2 != null) {
+            return download2;
+        } else {
+            return super.findFormDownload2Premium();
+        }
     }
 }
