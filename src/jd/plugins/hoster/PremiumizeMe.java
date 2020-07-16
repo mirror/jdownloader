@@ -45,7 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "premiumizedecrypted://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?premiumize\\.me/file\\?id=([A-Za-z0-9\\-_]+)" })
 public class PremiumizeMe extends ZeveraCore {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,20 +59,6 @@ public class PremiumizeMe extends ZeveraCore {
 
     public static String getClientIDExt() {
         return "616325511";
-    }
-
-    @Override
-    public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
-            return true;
-        } else {
-            /* Free(anonymous) and unknown account type */
-            return true;
-        }
     }
 
     @Override

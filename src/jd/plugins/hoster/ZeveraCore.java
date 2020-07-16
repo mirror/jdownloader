@@ -19,10 +19,24 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +46,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,15 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
@@ -60,8 +66,10 @@ abstract public class ZeveraCore extends UseNet {
     private MultiHosterManagement mhm                                         = null;
 
     @Override
+    @Deprecated
     public void correctDownloadLink(final DownloadLink link) {
-        if (isDirectURL(link.getDownloadLink())) {
+        if (isDirecturl(link.getDownloadLink())) {
+            /* TODO: Remove this after 2020-10-01 */
             final String new_url = link.getPluginPatternMatcher().replaceAll("[a-z0-9]+decrypted://", "https://");
             link.setPluginPatternMatcher(new_url);
         }
@@ -84,9 +92,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /** Must override!! */
-    public String getClientID() {
-        return null;
-    }
+    abstract String getClientID();
 
     /**
      * Returns whether resume is supported or not for current download mode based on account availability and account type. <br />
@@ -94,15 +100,29 @@ abstract public class ZeveraCore extends UseNet {
      */
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
-            return true;
+        /* Resume is always possible */
+        return true;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
-            /* Free(anonymous) and unknown account type */
-            return true;
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (this.isSelfhostedContent(link)) {
+            try {
+                return UrlQuery.parse(link.getPluginPatternMatcher()).get("id");
+            } catch (final Throwable e) {
+                return null;
+            }
+        } else {
+            return null;
         }
     }
 
@@ -158,12 +178,48 @@ abstract public class ZeveraCore extends UseNet {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
+        } else if (this.isSelfhostedContent(link)) {
+            return requestFileInformationSelfhosted(link, null);
         } else {
-            return requestFileInformationDirectURL(this.br, link);
+            return requestFileInformationDirectURL(link);
         }
     }
 
-    protected AvailableStatus requestFileInformationDirectURL(final Browser br, final DownloadLink link) throws Exception {
+    protected AvailableStatus requestFileInformationSelfhosted(final DownloadLink link, Account account) throws Exception {
+        /* 2020-07-16: New handling */
+        final String fileID = getFID(link);
+        if (fileID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!link.isNameSet()) {
+            /* Set meaningful names in case content is offline */
+            link.setName(fileID);
+        }
+        if (account == null) {
+            /* Account required to perform the API request below. */
+            account = AccountController.getInstance().getValidAccount(this.getHost());
+        }
+        if (account == null) {
+            /* Cannot check without account */
+            return AvailableStatus.UNCHECKABLE;
+        }
+        callAPI(this.br, account, "/api/item/details?id=" + fileID);
+        this.handleAPIErrors(br, link, account);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String filename = (String) entries.get("name");
+        final long filesize = ((Number) entries.get("size")).longValue();
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
+        if (filesize > 0) {
+            link.setDownloadSize(filesize);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Deprecated
+    protected AvailableStatus requestFileInformationDirectURL(final DownloadLink link) throws Exception {
+        /* OLD handling: TODO: Remove this after 2020-10-01 */
         URLConnectionAdapter con = null;
         try {
             final Browser brc = br.cloneBrowser();
@@ -202,35 +258,53 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (isDirectURL(downloadLink) && account == null) {
-            /* Generated links can be downloaded without account. */
+    public boolean canHandle(DownloadLink link, Account account) throws Exception {
+        if (link != null && this.isDirecturl(link)) {
+            /* Such URLs can even be downloaded without account */
             return true;
+        } else if (account != null) {
+            /*
+             * Either only premium accounts are allowed or, if configured by users, free accounts are allowed to be used for downloading too
+             * in some cases.
+             */
+            return account.getType() == AccountType.PREMIUM || this.supportsFreeAccountDownloadMode(account);
         } else {
-            return account != null;
+            /* Download without account is not possible */
+            return false;
         }
     }
 
-    public boolean isDirectURL(final DownloadLink downloadLink) {
-        return StringUtils.equals(getHost(), downloadLink.getHost());
+    @Deprecated
+    private boolean isDirecturl(final DownloadLink link) {
+        return StringUtils.equals(getHost(), link.getHost()) && !isSelfhostedContent(link);
+    }
+
+    private boolean isSelfhostedContent(final DownloadLink link) {
+        if (link == null) {
+            return false;
+        }
+        return link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/file\\?id=.+");
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (isDirectURL(downloadLink)) {
+    public void handleFree(DownloadLink link) throws Exception, PluginException {
+        if (isDirecturl(link)) {
             /* DirectURLs can be downloaded without logging in */
-            handleDL_DIRECT(null, downloadLink);
+            handleDL_DIRECT(null, link);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new AccountRequiredException();
         }
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (!isDirectURL(link)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
+        if (this.isSelfhostedContent(link)) {
+            handleDLSelfhosted(link, account);
+        } else if (isDirecturl(link)) {
             handleDL_DIRECT(account, link);
+        } else {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -244,7 +318,8 @@ abstract public class ZeveraCore extends UseNet {
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
-        } else if (isDirectURL(link)) {
+        } else if (isDirecturl(link)) {
+            /* TODO: Remove this */
             handleDL_DIRECT(account, link);
         } else {
             this.br = prepBR(this.br);
@@ -283,6 +358,7 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
+    @Deprecated
     protected void antiCloudflare(Browser br, final String url) throws Exception {
         /* 2019-12-18: TODO: Check if we still need this */
         final Request request = br.createHeadRequest(url);
@@ -292,6 +368,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /** Account is not required for such URLs. */
+    @Deprecated
     private void handleDL_DIRECT(final Account account, final DownloadLink link) throws Exception {
         antiCloudflare(br, link.getPluginPatternMatcher());
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -302,6 +379,22 @@ abstract public class ZeveraCore extends UseNet {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Most likely you have reached your bandwidth limit, or you don't have this file in your cloud anymore!", 3 * 60 * 1000l);
         }
+        final String contenttype = dl.getConnection().getContentType();
+        if (contenttype.contains("html")) {
+            // br.followConnection();
+            // handleAPIErrors(this.br);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
+        }
+        this.dl.startDownload();
+    }
+
+    private void handleDLSelfhosted(final DownloadLink link, final Account account) throws Exception {
+        this.requestFileInformationSelfhosted(link, account);
+        final String dllink = PluginJSonUtils.getJson(br, "link");
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         final String contenttype = dl.getConnection().getContentType();
         if (contenttype.contains("html")) {
             // br.followConnection();
@@ -867,8 +960,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -876,9 +970,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
@@ -945,6 +1040,11 @@ abstract public class ZeveraCore extends UseNet {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
                 }
+            } else if ("item not found".equalsIgnoreCase(message)) {
+                /*
+                 * 2020-07-16: This should only happen for selfhosted cloud items --> Offline: {"status":"error","message":"item not found"}
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
             } else {
                 /* Unknown error */
                 mhm.handleErrorGeneric(account, link, errortype, 2, 5 * 60 * 1000l);
