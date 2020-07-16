@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Random;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -63,8 +64,8 @@ public class XunNiuCom extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     /* 2019-09-12: Successfully tested 2 chunks but this may lead to disconnects! */
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -89,7 +90,7 @@ public class XunNiuCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">文件资源若被删除，可能的原因有|内容涉及不良信息。")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div class=\"span7\">\\s*<h1>([^<>\"]+)</h1>").getMatch(0);
+        String filename = br.getRegex("<div class=\"span\\d+\">\\s*<h1>([^<>\"]+)</h1>").getMatch(0);
         String filesize = br.getRegex(">文件大小：([^<>\"]+)<").getMatch(0);
         if (filename != null) {
             /* Set final filename here because server filenames are bad. */
@@ -200,7 +201,11 @@ public class XunNiuCom extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -358,8 +363,10 @@ public class XunNiuCom extends PluginForHost {
                 if (urls_text != null) {
                     final String[] mirrors = urls_text.split("\\|");
                     if (mirrors.length > 0) {
-                        /* Choose first mirror hardcoded */
-                        dllink = mirrors[0];
+                        /* 2020-07-16: Chose random mirror */
+                        final int mirrorNumber = new Random().nextInt(mirrors.length - 1);
+                        logger.info("Selecting random mirror number: " + mirrorNumber);
+                        dllink = mirrors[mirrorNumber];
                     }
                 }
                 if (dllink == null) {
@@ -368,14 +375,22 @@ public class XunNiuCom extends PluginForHost {
                 }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    /* 2020-07-16: Retry later - chances are, we randomly select a working mirror then ;) */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken mirror?", 1 * 60 * 1000l);
+                }
                 /*
                  * 2019-09-12 E.g. error "<p>请登录原地址重新获取： <a href="http://www.xun-niu.com/viewfile.php?file_id=" target="
                  * _blank">http://www.xun-niu.com/viewfile.php?file_id=<a></p><p style="color:#ff0000">温馨提示：此文件链接已失效，请勿非法盗链, err2。</p>"
                  */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
