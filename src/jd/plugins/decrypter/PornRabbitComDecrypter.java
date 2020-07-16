@@ -48,12 +48,16 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
         if (filename == null) {
-            /* Fallback */
+            /* Fallbacks - get filename from URL */
+            /* Fallback 1 */
             filename = new Regex(br.getURL(), "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
-        }
-        if (filename == null) {
-            /* Fallback 2 */
-            filename = new Regex(parameter, "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
+            if (filename == null) {
+                /* Fallback 2 */
+                filename = new Regex(parameter, "pornrabbit\\.com/(?:\\d+|video)/(.*?)(\\.html)?$").getMatch(0);
+            }
+            if (filename != null) {
+                filename = filename.replace("-", " ");
+            }
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {

@@ -127,6 +127,7 @@ public class FaceBookComVideos extends PluginForHost {
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
         String filename = null;
         URLConnectionAdapter con = null;
+        final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
         if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO) && is_private) {
             accountNeeded = true;
             if (!loggedIN) {
@@ -245,12 +246,20 @@ public class FaceBookComVideos extends PluginForHost {
                         fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
                     }
                 }
-                /* Find downloadurl */
-                if (!fastLinkcheck && !isDownload) {
+                if (!StringUtils.isEmpty(fallback_downloadurl)) {
+                    logger.info("fallback_downloadurl is available");
+                } else {
+                    logger.warning("Failed to find fallback_downloadurl");
+                }
+                /* Find downloadurl - only do this step if either user is about to start downloads or user has fast linkcheck disabled! */
+                if (findAndCheckDownloadurl) {
                     accessVideoEmbed(videoID, false);
+                    if (!StringUtils.isEmpty(this.dllink)) {
+                        logger.info("Successfully found downloadurl via videoembed");
+                    }
                 }
                 if (StringUtils.isEmpty(this.dllink) && !StringUtils.isEmpty(fallback_downloadurl)) {
-                    logger.info("Using fallback downloadurl --> This video is probably usually only streamable via MDP streaming!");
+                    logger.info("Failed to find downloadurl via videoembed --> Using fallback downloadurl --> This video is probably usually only streamable via MDP streaming!");
                     this.dllink = fallback_downloadurl;
                 }
             }
@@ -280,7 +289,7 @@ public class FaceBookComVideos extends PluginForHost {
             filename += ".mp4";
         }
         link.setFinalFileName(filename);
-        if (this.dllink != null && this.dllink.startsWith("http") && !isDownload && !fastLinkcheck) {
+        if (this.dllink != null && this.dllink.startsWith("http") && findAndCheckDownloadurl) {
             try {
                 con = br.openHeadConnection(this.dllink);
                 if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
@@ -310,7 +319,7 @@ public class FaceBookComVideos extends PluginForHost {
         if (checkForOffline && (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pam uiBoxRed\""))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.dllink = getDllinkVideo();
+        this.dllink = getDllinkVideoEmbed();
     }
 
     // private String checkDllink(final String flink) throws Exception {
@@ -416,7 +425,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    public String getDllinkVideo() {
+    public String getDllinkVideoEmbed() {
         String dllink = null;
         final boolean preferHD = PluginJsonConfig.get(this.getConfigInterface()).isPreferHD();
         if (preferHD) {
@@ -433,18 +442,15 @@ public class FaceBookComVideos extends PluginForHost {
         return dllink;
     }
 
-    public void handleVideo(final DownloadLink downloadLink) throws Exception {
-        if (this.dllink == null || !this.dllink.startsWith("http")) {
-            getDllinkVideo();
-        }
+    public void handleVideo(final DownloadLink link) throws Exception {
         if (dllink == null || "null".equals(dllink)) {
             logger.warning("Final downloadlink \"dllink\" is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting download...");
-        final String Vollkornkeks = downloadLink.getDownloadURL().replace(FACEBOOKMAINPAGE, "");
+        final String Vollkornkeks = link.getDownloadURL().replace(FACEBOOKMAINPAGE, "");
         br.setCookie(FACEBOOKMAINPAGE, "x-referer", Encoding.urlEncode(FACEBOOKMAINPAGE + Vollkornkeks + "#" + Vollkornkeks));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
