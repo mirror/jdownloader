@@ -32,7 +32,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "zeveradecrypted://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?zevera\\.com/file\\?id=([A-Za-z0-9\\-_]+)" })
 public class ZeveraCom extends ZeveraCore {
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,20 +46,6 @@ public class ZeveraCom extends ZeveraCore {
 
     public static String getClientIDExt() {
         return "306575304";
-    }
-
-    @Override
-    public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
-            return true;
-        } else {
-            /* Free(anonymous) and unknown account type */
-            return true;
-        }
     }
 
     @Override

@@ -26,10 +26,39 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.PremiumizeBrowseNode;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumize.me", "zevera.com" }, urls = { "https?://(?:(?:www|beta)\\.)?premiumize\\.me/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+", "https?://(?:(?:www|beta)\\.)?zevera\\.com/(?:files\\?folder_id=|file\\?id=)[a-zA-Z0-9_/\\+\\=\\-%]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
     public PremiumizeMeZeveraFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "premiumize.me" });
+        ret.add(new String[] { "zevera.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z0-9\\.\\-]+)?" + buildHostsPatternPart(domains) + "/files\\?folder_id=([a-zA-Z0-9\\-_]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -82,9 +111,6 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         if (currentPath == null) {
             currentPath = "";
         }
-        /* If given, user only wants to have one specific file. */
-        /** TODO: This does not work anymore */
-        final String targetFileID = new Regex(url_source, "/file\\?id=([a-zA-Z0-9\\-_]+)").getMatch(0);
         final boolean addPath = StringUtils.isNotEmpty(currentPath);
         final Map<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         final String host = Browser.getHost(url_source);
@@ -110,8 +136,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
                 ret.add(folder);
             } else {
                 /* File */
-                final String hostname = host.split("\\.")[0];
-                final String url_for_hostplugin = node.getUrl().replaceAll("https?://", hostname + "decrypted://");
+                final String url_for_hostplugin = "https://" + host + "/file?id=" + nodeCloudID;
                 final DownloadLink link = new DownloadLink(null, null, host, url_for_hostplugin, true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
                 final FilePackage filePackage = getFilePackage(filePackages, node);
@@ -121,14 +146,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
                 if (addPath && StringUtils.isNotEmpty(currentPath)) {
                     link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
                 }
-                if (targetFileID != null && nodeCloudID.equals(targetFileID)) {
-                    /* User only wants to add specific file --> Delete everything else and only return this single URL/file. */
-                    ret.clear();
-                    ret.add(link);
-                    break;
-                } else {
-                    ret.add(link);
-                }
+                ret.add(link);
             }
         }
         return ret;
