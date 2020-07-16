@@ -19,6 +19,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.YouJizzComConfig;
+import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,12 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.YouJizzComConfig;
-import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(?:www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
@@ -66,10 +67,12 @@ public class YouJizzCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 500 });
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // if (!br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

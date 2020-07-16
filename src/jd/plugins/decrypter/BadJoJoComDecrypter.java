@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,13 +20,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "http://(www\\.)?badjojo\\.com/\\d+/.{1}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "https?://(?:www\\.)?badjojo\\.com/(\\d+)/.{1}" })
 public class BadJoJoComDecrypter extends PornEmbedParser {
-
     public BadJoJoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -35,14 +34,12 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ("http://www.badjojo.com/".equals(br.getRedirectLocation()) || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
-        }
-        br.setFollowRedirects(true);
-        if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
@@ -60,7 +57,6 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
                 return decryptedLinks;
             }
         }
-
         decryptedLinks = new ArrayList<DownloadLink>();
         decryptedLinks.add(createDownloadlink(parameter.replace("badjojo.com/", "decryptedbadjojo.com/")));
         return decryptedLinks;
@@ -70,5 +66,4 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

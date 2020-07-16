@@ -236,8 +236,6 @@ public class XunNiuCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     /**
      * @param validateCookies
      *            true = check cookies for validity, perform full login if necessary </br>
@@ -247,7 +245,7 @@ public class XunNiuCom extends PluginForHost {
      *         false = Cookies are not validated (only set on current Browser instance)
      */
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
