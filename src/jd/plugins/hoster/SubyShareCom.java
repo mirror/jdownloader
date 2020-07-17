@@ -124,6 +124,13 @@ public class SubyShareCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN download prohibited by this filehost");
             }
         }
+        if (new Regex(correctedBR, ">\\s*The owner of this file blocked you to download it").matches()) {
+            /*
+             * 2020-07-17: This may sometimes happen in premium mode - user is then supposed to contact the uploader to ask for permission
+             * to download the file (WTF?!)
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The owner of this file blocked you to download it");
+        }
     }
 
     @Override
