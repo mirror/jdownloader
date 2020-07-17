@@ -56,7 +56,9 @@ import jd.plugins.components.PluginJSonUtils;
 public class RedditCom extends PluginForHost {
     public RedditCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://www.reddit.com/register/");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.enablePremium("https://www.reddit.com/register/");
+        }
     }
     /* API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
 
@@ -105,7 +107,11 @@ public class RedditCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/2020_07_dev_work_in_progress");
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/2020_07_dev_work_in_progress");
+            } else {
+                ret.add("");
+            }
         }
         return ret.toArray(new String[0]);
     }
@@ -173,15 +179,16 @@ public class RedditCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+            logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
+            }
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -248,7 +255,7 @@ public class RedditCom extends PluginForHost {
 
     public void login(final Browser brlogin, final Account account, final boolean validateToken) throws Exception {
         synchronized (account) {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 showUnderDevelopment();
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "This plugin is still under development", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -334,7 +341,7 @@ public class RedditCom extends PluginForHost {
                 }
             } else {
                 /* First login */
-                final UrlQuery query = new UrlQuery().parse(account.getPass());
+                final UrlQuery query = UrlQuery.parse(account.getPass());
                 final String code = query.get("code");
                 logger.info("Performing first / full login");
                 final UrlQuery loginquery = new UrlQuery();
@@ -516,16 +523,16 @@ public class RedditCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
