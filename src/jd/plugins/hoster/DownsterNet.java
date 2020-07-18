@@ -255,6 +255,17 @@ public class DownsterNet extends antiDDoSForHost {
         } catch (final SocketTimeoutException e) {
             throw new PluginException(LinkStatus.ERROR_RETRY, e.getMessage());
         }
+        int statusCode = dl.getConnection().getResponseCode();
+        if (statusCode >= 400) {
+            // Read response body to get the error message
+            dl.getConnection().getRequest().read(false);
+            switch (statusCode) {
+                case 429: // To many parallel requests
+                    mhm.putError(account, link, 60 * 1000l, br.toString());
+                case 400: // Bad request
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, br.toString(), 5 * 1000l);
+            }
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
@@ -276,12 +287,6 @@ public class DownsterNet extends antiDDoSForHost {
                 }
             }
         } catch (final PluginException e) {
-            switch (dl.getConnection().getResponseCode()) {
-                // To many parallel requests
-                case 429: mhm.putError(account, link, 60 * 1000l, dl.getConnection().getResponseMessage());
-                // Bad request
-                case 400: throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 1000l);
-            }
             // New V2 chunk error handling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DownsterNet.NOCHUNKS, false) == false) {
