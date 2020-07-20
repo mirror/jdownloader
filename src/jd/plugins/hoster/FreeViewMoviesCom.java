@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(www\\.)?freeviewmoviesdecrypted/(porn|video)/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(?:www\\.)?freeviewmovies\\.com/(?:porn|video)/(\\d+)" })
 public class FreeViewMoviesCom extends PluginForHost {
     private String dllink = null;
 
@@ -48,6 +48,20 @@ public class FreeViewMoviesCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -59,15 +73,13 @@ public class FreeViewMoviesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().contains("freeviewmoviesdecrypted/")) {
-            downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("freeviewmoviesdecrypted/", "freeviewmovies.com/"));
-        }
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         // old /porn/ links redirect
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if ("http://www.freeviewmovies.com/".equals(br.getURL()) || br.containsHTML(">404 Error Page")) {
+        final String fid = getFID(link);
+        br.getPage(link.getPluginPatternMatcher());
+        if (!br.getURL().contains(fid) || br.containsHTML(">404 Error Page")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
@@ -77,7 +89,7 @@ public class FreeViewMoviesCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             }
         }
-        dllink = br.getRegex("file: \'(http[^']+)").getMatch(0);
+        dllink = br.getRegex("<source src=\"(http[^\"]+)\" type=video/mp4").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -86,7 +98,7 @@ public class FreeViewMoviesCom extends PluginForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -94,7 +106,7 @@ public class FreeViewMoviesCom extends PluginForHost {
         try {
             con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

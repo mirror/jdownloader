@@ -13,26 +13,24 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donkparty.com" }, urls = { "http://(www\\.)?donkparty\\.com/\\d+/.{1}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donkparty.com" }, urls = { "https?://(?:www\\.)?donkparty\\.com/videos/([a-z0-9\\-_]+)_(\\d+)" })
 public class DonkPartyCom extends PluginForDecrypt {
-
     public DonkPartyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     /* Porn_plugin */
 
@@ -54,10 +52,7 @@ public class DonkPartyCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String filename = br.getRegex("<span style=\"font\\-weight: bold; font\\-size: 18px;\">(.*?)</span><br").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) (free sex video)? ?\\- Donk\\s*Party</title>").getMatch(0);
-        }
+        String filename = new Regex(parameter, this.getSupportedLinks()).getMatch(0).replace("-", " ");
         if (filename == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
@@ -111,5 +106,4 @@ public class DonkPartyCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -23,7 +23,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/\\w+\\.html|link/\\d+/|\\d+/\\w+\\.html|\\w+/\\d+/\\w+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "https?://(?:www\\.)?dreamamateurs\\.com/[a-z0-9\\-]{12,}" })
 public class DreamAmateursCom extends PornEmbedParser {
     public DreamAmateursCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +37,7 @@ public class DreamAmateursCom extends PornEmbedParser {
         final String parameter = param.toString();
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
-        if (externID != null && !externID.contains("dreamamateurs.com/")) {
+        if (externID != null && !externID.contains(this.getHost() + "/")) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         } else if (externID != null) {
@@ -49,17 +49,15 @@ public class DreamAmateursCom extends PornEmbedParser {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<h1 class=\"title\">\\s*(.*?)\\s*</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
-        }
+        String filename = br.getRegex(" <meta itemprop=\"name\" content=\"([^<>\"]+)\" />").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            // logger.warning("Decrypter broken for link: " + parameter);
+            // return null;
+            filename = parameter;
         }
         filename = filename.trim();
         externID = br.getRegex("file=(http://hostave4\\.net/.*?)\\&screenfile").getMatch(0);
@@ -106,6 +104,14 @@ public class DreamAmateursCom extends PornEmbedParser {
         }
         if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        /* 2020-07-20 */
+        externID = br.getRegex("<meta itemprop=\"contentURL\" content=\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = this.createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (br.containsHTML("dreamamateurs.com/embed/")) {
