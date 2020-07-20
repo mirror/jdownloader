@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -508,18 +509,23 @@ public class ScribdCom extends PluginForHost {
         entries = (Map<String, Object>) entries.get("document");
         String firstAvailableFormat = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("formats");
+        String filesize = null;
+        String firstFilesize = null;
         for (final Object typeO : ressourcelist) {
             entries = (Map<String, Object>) typeO;
             final String extensionTmp = (String) entries.get("extension");
+            final String filesizeTmp = (String) entries.get("filesize");
             if (StringUtils.isEmpty(extensionTmp)) {
                 continue;
             }
             if (firstAvailableFormat == null) {
                 firstAvailableFormat = extensionTmp;
+                firstFilesize = filesizeTmp;
             }
             if (firstAvailableFormat.equalsIgnoreCase(userPreferredFormat)) {
                 logger.info("User preferred format is available: " + userPreferredFormat);
                 formatToDownload = userPreferredFormat;
+                filesize = filesizeTmp;
                 break;
             }
         }
@@ -530,6 +536,14 @@ public class ScribdCom extends PluginForHost {
         if (formatToDownload == null) {
             logger.info("User preferred format is not available - downloading first in the list: " + formatToDownload);
             formatToDownload = firstAvailableFormat;
+            /* Set filesize so we got it set just in case our final download requests is returning an error. */
+            if (!StringUtils.isEmpty(firstFilesize)) {
+                link.setDownloadSize(SizeFormatter.getSize(firstFilesize));
+            }
+        } else {
+            if (!StringUtils.isEmpty(filesize)) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         String[] dlinfo = new String[2];
         dlinfo[1] = formatToDownload;
@@ -547,7 +561,14 @@ public class ScribdCom extends PluginForHost {
         }
         dlinfo[0] = xmlbrowser.getRedirectLocation();
         if (dlinfo[0] == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2020-07-20: */
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (xmlbrowser.toString().length() <= 100) {
+                /* 2020-07-20: E.g. errormessage: All download limits exceeded from your IP (123.123.123.123). */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, xmlbrowser.toString());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+            }
         }
         return dlinfo;
     }

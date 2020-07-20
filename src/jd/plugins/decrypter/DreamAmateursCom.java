@@ -19,11 +19,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "https?://(?:www\\.)?dreamamateurs\\.com/[a-z0-9\\-]{12,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "https?://(?:www\\.)?dreamamateurs\\.com/([a-z0-9\\-]{12,})" })
 public class DreamAmateursCom extends PornEmbedParser {
     public DreamAmateursCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -35,6 +36,7 @@ public class DreamAmateursCom extends PornEmbedParser {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         final String parameter = param.toString();
+        final String name_url = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
         if (externID != null && !externID.contains(this.getHost() + "/")) {
@@ -55,9 +57,8 @@ public class DreamAmateursCom extends PornEmbedParser {
             return decryptedLinks;
         }
         if (filename == null) {
-            // logger.warning("Decrypter broken for link: " + parameter);
-            // return null;
-            filename = parameter;
+            /* Fallback */
+            filename = name_url;
         }
         filename = filename.trim();
         externID = br.getRegex("file=(http://hostave4\\.net/.*?)\\&screenfile").getMatch(0);
