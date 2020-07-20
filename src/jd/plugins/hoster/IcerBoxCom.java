@@ -401,7 +401,11 @@ public class IcerBoxCom extends antiDDoSForHost {
     }
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
-        br.followConnection();
+        try {
+            br.followConnection(true);
+        } catch (final IOException e) {
+            logger.log(e);
+        }
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -461,19 +465,16 @@ public class IcerBoxCom extends antiDDoSForHost {
                 try {
                     final Browser br2 = br.cloneBrowser();
                     br2.setFollowRedirects(true);
-                    try {
-                        // @since JD2
-                        con = br2.openHeadConnection(dllink);
-                    } catch (final Throwable t) {
-                        con = br2.openGetConnection(dllink);
-                    }
-                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                        downloadLink.setProperty(property, Property.NULL);
+                    con = br2.openHeadConnection(dllink);
+                    if (!con.isOK() || con.getContentType().contains("text") || con.getCompleteContentLength() <= 0) {
+                        throw new IOException();
                     } else {
                         return dllink;
                     }
                 } catch (final Exception e) {
+                    logger.log(e);
                     downloadLink.setProperty(property, Property.NULL);
+                    return null;
                 } finally {
                     try {
                         con.disconnect();
