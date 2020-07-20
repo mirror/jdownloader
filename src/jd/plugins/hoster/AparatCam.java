@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -28,6 +30,7 @@ import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AparatCam extends XFileSharingProBasic {
+
     public AparatCam(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
@@ -113,5 +116,17 @@ public class AparatCam extends XFileSharingProBasic {
     @Override
     protected boolean isVideohoster_enforce_video_filename() {
         return true;
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        // required
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<h1\\s+[^>]*>\\s*(.*?)\\s*<\\s*\\w+").getMatch(0);
+        }
+        if (StringUtils.isEmpty(fileInfo[1])) {
+            fileInfo[1] = new Regex(correctedBR, "<span\\s+class\\s*=\\s*\"\\s*uploadate\\s*\"\\s*>\\s*Size\\s*:\\s*([0-9\\.]+\\s*[KMGTP]{0,1}B)\\s*").getMatch(0);
+        }
+        return super.scanInfo(fileInfo);
     }
 }
