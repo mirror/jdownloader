@@ -227,6 +227,8 @@ public class DownsterNet extends antiDDoSForHost {
             String error = PluginJSonUtils.getJsonValue(br, "error");
             if (status == 510 || status == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
+            } else if (status == 422) { // Limit reached
+                mhm.putError(account, link, 30 * 60 * 1000l, error);
             } else if (status >= 500 || "false".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "success"))) {
                 mhm.putError(account, link, 60 * 1000l, error);
             }
@@ -262,6 +264,8 @@ public class DownsterNet extends antiDDoSForHost {
             switch (statusCode) {
                 case 429: // To many parallel requests
                     mhm.putError(account, link, 60 * 1000l, br.toString());
+                case 422: // Limit reached
+                    mhm.putError(account, link, 30 * 60 * 1000l, br.toString());
                 case 400: // Bad request
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, br.toString(), 5 * 1000l);
             }
