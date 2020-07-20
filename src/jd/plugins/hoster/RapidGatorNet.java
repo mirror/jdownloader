@@ -32,19 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -65,6 +52,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -428,20 +428,23 @@ public class RapidGatorNet extends antiDDoSForHost {
                 final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("https://rapidgator.net/download/captcha"));
                 if (con1.getResponseCode() == 302) {
                     try {
-                        con1.disconnect();
-                    } catch (final Throwable e) {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 5 * 60 * 1000l);
                 } else if (con1.getResponseCode() == 403) {
                     try {
-                        con1.disconnect();
-                    } catch (final Throwable e) {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (con1.getResponseCode() == 500) {
                     try {
-                        con1.disconnect();
-                    } catch (final Throwable e) {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
                     }
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT_OTHERS);
                 }
@@ -1157,7 +1160,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             final boolean sessionReset = session_id != null && session_id.equals(account.getStringProperty(PROPERTY_sessionid));
-            if (errorMessage.contains("Please wait")) {
+            if (errorMessage.contains("Denied by IP")) {
+                throw new AccountUnavailableException("Denied by IP", 2 * 60 * 60 * 1000l);
+            } else if (errorMessage.contains("Please wait")) {
                 account.setProperty("lastPleaseWait", System.currentTimeMillis());
                 if (link == null) {
                     /* we are inside fetchAccountInfo */
@@ -1539,6 +1544,13 @@ public class RapidGatorNet extends antiDDoSForHost {
              * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
              */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", 10 * 60 * 1000l);
+        } else if (br.containsHTML("Denied by IP") && false) {
+            // disabled because I don't know the exact HTML of this error
+            if (account != null) {
+                throw new AccountUnavailableException("Denied by IP", 2 * 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Denied by IP", 2 * 60 * 60 * 1000l);
+            }
         }
     }
 

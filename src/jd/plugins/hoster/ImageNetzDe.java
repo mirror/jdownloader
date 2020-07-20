@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagenetz.de" }, urls = { "https?://(?:www\\.)?imagenetz\\.de/[a-z0-9]+/.+" })
 public class ImageNetzDe extends PluginForHost {
-
     public ImageNetzDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -53,7 +51,7 @@ public class ImageNetzDe extends PluginForHost {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Diese Datei existiert nicht mehr")) {
+        if (br.containsHTML("Diese Datei existiert nicht mehr") || br.getURL().matches("^.*?imagenetz.de/?$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Regex fileInfo = br.getRegex("<td height=\"22\" class=\"main\"><div align=\"left\"></div>[\t\n\r ]+<div align=\"left\">(.*?)</div></td>[\t\n\r ]+<td height=\"22\" class=\"main\"><div align=\"center\">(.*?)</div></td>");
@@ -90,5 +88,4 @@ public class ImageNetzDe extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
