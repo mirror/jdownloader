@@ -1200,6 +1200,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 handleInvalidSession(link, account, null);
             } else if (status == 404) {
                 handle404API(link, account);
+            } else if (status == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 500", 5 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                 handleInvalidSession(link, account, null);
             } else if (errorMessage.contains("\"Error: Error e-mail or password")) {

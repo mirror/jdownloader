@@ -90,6 +90,7 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "propertysex.com" });
         ret.add(new String[] { "realitykings.com", "gfleaks.com", "inthevip.com", "mikesapartment.com", "8thstreetlatinas.com", "bignaturals.com", "cumfiesta.com", "happytugs.com", "milfhunter.com", "momsbangteens.com", "momslickteens.com", "moneytalks.com", "roundandbrown.com", "sneakysex.com", "teenslovehugecocks.com", "welivetogether.com" });
         ret.add(new String[] { "sexyhub.com" });
+        ret.add(new String[] { "spankwirepremium.com" });
         ret.add(new String[] { "squirted.com" });
         ret.add(new String[] { "transangels.com" });
         ret.add(new String[] { "transsensual.com" });
