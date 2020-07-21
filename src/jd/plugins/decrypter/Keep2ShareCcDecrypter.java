@@ -73,7 +73,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/folder/(?:info/)?([a-z0-9]{13,})");
+            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:folder/(?:info/)?|thumbnail/)([a-z0-9]{13,})");
         }
         return ret.toArray(new String[0]);
     }
@@ -84,13 +84,21 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance("keep2share.cc");
         plugin.setBrowser(br);
         plugin.setLogger(getLogger());
-        if (plugin == null) {
+        final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (fuid == null) {
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (param.getCryptedUrl().matches("https?://[^/]+/thumbnail/.*")) {
+            /* 2020-07-21: Thumbnail to video / single file --> Goes into host plugin */
+            final String url = "https://" + this.getHost() + "/file/" + fuid;
+            final DownloadLink dl = this.createDownloadlink(url);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser(true);
         // set cross browser support
         ((jd.plugins.hoster.K2SApi) plugin).setBrowser(br);
-        final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", "{\"ids\":[\"" + fuid + "\"]}", null);
         Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (!"success".equals(response.get("status"))) {
