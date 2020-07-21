@@ -59,12 +59,13 @@ public class VidtodoCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "viddoto.com", "widtodo.com", "vidtodo.com", "vidtodo.me", "vidtodo.pro", "vidtodoo.com", "vidtodoo.me", "vidtodoo.pro", "vidotodo.com", "vidotodo.me", "vidotodo.pro", "vidtodu.com", "vidtodu.me", "vidtodu.pro", "vidtoro.com", "vidtoro.me", "vidtoro.pro", "playvidto.com", "vidto-do.com", "vixtodo.com" });
+        ret.add(new String[] { "vidtodo.com", "viddoto.com", "widtodo.com", "vidtodo.me", "vidtodo.pro", "vidtodoo.com", "vidtodoo.me", "vidtodoo.pro", "vidotodo.com", "vidotodo.me", "vidotodo.pro", "vidtodu.com", "vidtodu.me", "vidtodu.pro", "vidtoro.com", "vidtoro.me", "vidtoro.pro", "playvidto.com", "vidto-do.com", "vixtodo.com" });
         return ret;
     }
 
     @Override
     public String rewriteHost(String host) {
+        /* 2020-07-21: vidtodo.com is the current/new main domain */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
