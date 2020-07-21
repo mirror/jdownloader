@@ -324,8 +324,8 @@ public class PornportalCom extends PluginForHost {
             }
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.isContentDisposition()) {
-                link.setDownloadSize(con.getLongContentLength());
+            } else if (con.isContentDisposition() || con.getContentType().contains("video")) {
+                link.setDownloadSize(con.getCompleteContentLength());
                 /*
                  * 2020-04-08: Final filename is supposed to be set in crawler. Their internal filenames are always the same e.g.
                  * "scene_320p.mp4".
