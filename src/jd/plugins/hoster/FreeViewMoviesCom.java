@@ -89,7 +89,15 @@ public class FreeViewMoviesCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             }
         }
-        dllink = br.getRegex("<source src=\"(http[^\"]+)\" type=video/mp4").getMatch(0);
+        if (filename == null) {
+            /* Fallback1 */
+            filename = new Regex(br.getURL(), "/([^/]+)/?$").getMatch(0);
+        }
+        if (filename == null) {
+            /* Fallback2 */
+            filename = fid;
+        }
+        dllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

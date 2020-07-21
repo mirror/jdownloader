@@ -1034,27 +1034,20 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2018-01-07 Can't convert back (final link) - directHTTP
-        externID = br.getRegex("(https://cdn[^/]+.xtube.com/[^\"]+)\"").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("(https://cdn[^/]+.tnaflix.com/[^\"]+)\"").getMatch(0);
-        }
-        if (externID == null) { // <source src="https://smog-02.tnaflix.com/15/15845fb87f8c5eae3cbf/.+
-            externID = br.getRegex("<source src=\"([^\"]+(cdn(?!\\.perfectgirls)|smog)[^\"]+)\"").getMatch(0);
-        }
-        /* 2020-07-16: Do not do this anymore! It could potentially pick up a lot of trash! */
-        // if (externID == null) {
-        // externID = br.getRegex("<source src=\"(http[^\"]*?)\"").getMatch(0);
-        // }
-        if (externID != null) {
-            final DownloadLink dl = this.createDownloadlink(externID);
-            dl.setFinalFileName(title + ".mp4");
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
+        /*
+         * 2020-07-21: Skip DownloadLinks of current host found in current html. E.g. pornrabit.com --> Will find same pornrabbit URL as
+         * "embed URL" --> This will lose file title
+         */
+        final ArrayList<DownloadLink> cleanedArray = new ArrayList<DownloadLink>();
+        final String currentBrowserHost = br.getHost();
+        for (final DownloadLink dl : decryptedLinks) {
+            final String thishost = dl.getHost();
+            if (thishost.equals(currentBrowserHost)) {
+                continue;
             }
+            cleanedArray.add(dl);
         }
-        return decryptedLinks;
+        return cleanedArray;
     }
 
     private boolean handleExtern(final String host, final boolean processAll, DecrypterArrayList<DownloadLink> decryptedLinks) {

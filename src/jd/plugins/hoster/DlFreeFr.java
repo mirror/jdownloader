@@ -222,6 +222,10 @@ public class DlFreeFr extends PluginForHost {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
         }
+        /*
+         * 2020-07-21: Because this is basic auth, browser may ask for username AND password --> This is irritating - any username will
+         * work! They've mis-used basic auth as a password prompt!
+         */
         String passCode = link.getDownloadPassword();
         if (!dl.getConnection().isContentDisposition() && br.getHttpConnection().getResponseCode() == 401) {
             logger.info("Password required");

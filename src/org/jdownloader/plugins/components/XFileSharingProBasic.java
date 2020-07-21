@@ -2326,7 +2326,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Allow ' in URL */
         patterns.add(Pattern.compile("\"" + String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*)", this.getDllinkHostPattern()) + "\""));
         /* Don't allow ' in URL */
-        patterns.add(Pattern.compile(String.format("https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*", this.getDllinkHostPattern())));
+        patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*)", this.getDllinkHostPattern())));
         return patterns;
     }
 
