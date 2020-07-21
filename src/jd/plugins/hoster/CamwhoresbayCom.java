@@ -231,6 +231,10 @@ public class CamwhoresbayCom extends antiDDoSForHost {
         }
     }
 
+    private boolean isLoggedIN() {
+        return br.getCookie(br.getHost(), "kt_member", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -249,10 +253,6 @@ public class CamwhoresbayCom extends antiDDoSForHost {
         requestFileInformation(link);
         getDllink(link);
         doFree(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    }
-
-    private boolean isLoggedIN() {
-        return br.getCookie(br.getHost(), "kt_member", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
