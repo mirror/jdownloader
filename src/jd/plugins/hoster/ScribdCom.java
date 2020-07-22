@@ -424,7 +424,6 @@ public class ScribdCom extends PluginForHost {
                     brlogin.getPage("https://www." + account.getHoster() + "/");
                     if (isLoggedin(brlogin)) {
                         /* Cookie login successful --> Save cookie timestamp */
-                        brlogin.getPage("https://www.scribd.com/doc-page/download-receipt-modal-props/66995478");
                         account.saveCookies(brlogin.getCookies(brlogin.getHost()), "");
                         return;
                     }
