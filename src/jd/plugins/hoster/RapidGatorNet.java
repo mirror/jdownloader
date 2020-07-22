@@ -204,7 +204,7 @@ public class RapidGatorNet extends antiDDoSForHost {
              * https://board.jdownloader.org/showthread.php?t=83764
              */
             final int customReadTimeoutSeconds = PluginJsonConfig.get(RapidGatorConfig.class).getReadTimeout();
-            prepBr.setReadTimeout(customReadTimeoutSeconds * 60 * 1000);
+            prepBr.setReadTimeout(customReadTimeoutSeconds * 1000);
             prepBr.setConnectTimeout(1 * 60 * 1000);
             // for the api
             prepBr.addAllowedResponseCodes(401, 402, 501, 423);
