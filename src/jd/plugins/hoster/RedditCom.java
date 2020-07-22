@@ -253,15 +253,15 @@ public class RedditCom extends PluginForHost {
         return false;
     }
 
-    public void login(final Browser brlogin, final Account account, final boolean validateToken) throws Exception {
+    public void login(final Account account, final boolean validateToken) throws Exception {
         synchronized (account) {
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 showUnderDevelopment();
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "This plugin is still under development", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            brlogin.setFollowRedirects(true);
-            brlogin.setCookiesExclusive(true);
-            prepBRAPI(brlogin);
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            prepBRAPI(br);
             if (!isAuthorizationURL(account.getPass())) {
                 /* User did not enter valid login information which can be used for oauth login! */
                 /* Reset this property to e.g. try again right away with new token once set by user e.g. if user changes 'password'. */
@@ -300,17 +300,17 @@ public class RedditCom extends PluginForHost {
                 active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
                 token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
                 if (!StringUtils.isEmpty(active_access_token)) {
-                    brlogin.getHeaders().put("Authorization", "bearer " + active_access_token);
+                    br.getHeaders().put("Authorization", "bearer " + active_access_token);
                     if (!validateToken && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
                         logger.info("Trust token without check");
                         return;
                     }
                     /* Check existing access_token */
                     /* Request account information and, at the same time, check if authorization is still valid. */
-                    brlogin.getPage(getApiBaseOauth() + "/me");
-                    checkErrors(brlogin, null, account);
+                    br.getPage(getApiBaseLogin() + "/me");
+                    checkErrors(br, null, account);
                     /* TODO: Check which error API will return on expired token. */
-                    Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     entries = (Map<String, Object>) entries.get("data");
                     loggedIN = entries != null && entries.containsKey("id");
                 }
@@ -325,17 +325,17 @@ public class RedditCom extends PluginForHost {
                     final UrlQuery loginquery = new UrlQuery();
                     loginquery.add("grant_type", "refresh_token");
                     loginquery.add("refresh_token", Encoding.urlEncode(active_refresh_token));
-                    brlogin.postPage(getApiBaseLogin() + "/access_token", loginquery);
-                    active_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
-                    active_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
-                    active_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
+                    br.postPage(getApiBaseLogin() + "/access_token", loginquery);
+                    active_access_token = PluginJSonUtils.getJson(br, "access_token");
+                    active_refresh_token = PluginJSonUtils.getJson(br, "refresh_token");
+                    active_valid_until = PluginJSonUtils.getJson(br, "expires_in");
                     if (StringUtils.isEmpty(active_access_token)) {
                         /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
                         checkErrors(this.br, null, account);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     /* Update authorization header */
-                    brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
+                    br.getHeaders().put("Authorization", "Bearer " + active_access_token);
                     /* Update token first use timestamp */
                     token_first_use_timestamp = System.currentTimeMillis();
                 }
@@ -348,11 +348,11 @@ public class RedditCom extends PluginForHost {
                 loginquery.add("grant_type", "authorization_code");
                 loginquery.add("code", Encoding.urlEncode(code));
                 loginquery.add("redirect_uri", Encoding.urlEncode(getRedirectURI()));
-                brlogin.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(getClientID() + ":"));
-                brlogin.postPage(getApiBaseLogin() + "/access_token", loginquery);
-                active_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
-                active_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
-                active_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
+                br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(getClientID() + ":"));
+                br.postPage(getApiBaseLogin() + "/access_token", loginquery);
+                active_access_token = PluginJSonUtils.getJson(br, "access_token");
+                active_refresh_token = PluginJSonUtils.getJson(br, "refresh_token");
+                active_valid_until = PluginJSonUtils.getJson(br, "expires_in");
                 if (StringUtils.isEmpty(active_access_token)) {
                     /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
                     checkErrors(this.br, null, account);
@@ -369,8 +369,17 @@ public class RedditCom extends PluginForHost {
             account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, token_first_use_timestamp);
             account.setProperty(PROPERTY_ACCOUNT_initial_password, account.getPass());
             /* Save cookies - but only so that we have the cookie-timestamp */
-            account.saveCookies(brlogin.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(this.getHost()), "");
         }
+    }
+
+    public String userlessLogin(final Browser brlogin) throws IOException {
+        brlogin.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(getClientID() + ":"));
+        final UrlQuery loginquery = new UrlQuery();
+        loginquery.add("grant_type", "client_credentials");
+        loginquery.add("device_id", "12345678912345678912");
+        brlogin.postPage(getApiBaseLogin() + "/access_token", loginquery);
+        return PluginJSonUtils.getJson(br, "access_token");
     }
 
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -478,7 +487,7 @@ public class RedditCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(account, true);
         if (br.getURL() == null || !br.getURL().contains("/me")) {
             br.getPage(getApiBaseOauth() + "/me");
         }
@@ -508,7 +517,7 @@ public class RedditCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(this.br, account, false);
+        login(account, false);
         br.getPage(link.getPluginPatternMatcher());
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");

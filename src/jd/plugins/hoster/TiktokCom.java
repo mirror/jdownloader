@@ -103,6 +103,10 @@ public class TiktokCom extends antiDDoSForHost {
         }
         filename += fid + ".mp4";
         // br.getPage(link.getPluginPatternMatcher());
+        /*
+         * 2020-07-21: TODO: Maybe make use of their oembed API - this could increase linkchecking speed:
+         * https://developers.tiktok.com/doc/Embed
+         */
         br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

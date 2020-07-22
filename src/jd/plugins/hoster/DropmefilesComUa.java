@@ -29,9 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropmefiles.com" }, urls = { "https?://(?:www\\.)?dropmefiles\\.com/([A-Za-z0-9]{3,})" })
-public class DropmefilesCom extends PluginForHost {
-    public DropmefilesCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropmefiles.com.ua" }, urls = { "https?://(?:www\\.)?dropmefiles\\.com\\.ua/(?:en/)?([A-Za-z0-9]{3,})" })
+public class DropmefilesComUa extends PluginForHost {
+    public DropmefilesComUa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -68,26 +68,19 @@ public class DropmefilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(getHost(), "language", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("due to ending of the share period|due to exceeding the limit|class=\"fileCount\">0</div>") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("assets/images/404\\.png") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = null;
-        String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)<").getMatch(0);
-        final String downloadurl_source = this.br.getRegex("download_btn dragout start_dl_btn.+data\\-downloadurl=\"([^\"]+)").getMatch(0);
-        if (downloadurl_source != null && downloadurl_source.contains(":")) {
-            final String[] dlinfo = downloadurl_source.split(":");
-            if (dlinfo.length >= 3) {
-                filename = dlinfo[1];
-            }
-            dllink = new Regex(downloadurl_source, "(https?.+)").getMatch(0);
-        }
-        if (filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        String filename = br.getRegex("\"Download file ([^\"]+)\";").getMatch(0);
+        String filesize = br.getRegex("/div></td><td style=\"font-size:70%;\">([^<>\"]+)</td>").getMatch(0);
+        this.dllink = br.getRegex("class=\"hidden-link\"[^>]*data-link=\"(https?://[^\"]+)").getMatch(0);
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            /* 2020-07-21: Set final filename here as host seems to tag filenames */
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         }
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -99,10 +92,6 @@ public class DropmefilesCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (dllink == null) {
-            if (this.br.containsHTML("download when uploaded")) {
-                /* 2017-02-22: User already get their downloadlinks while the upload is still ongoing! */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait until the file is uploaded to download it");
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
