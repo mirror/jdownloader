@@ -90,13 +90,12 @@ public class ScribdCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        prepFreeBrowser(this.br);
         return requestFileInformation(link, false);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean checkViaJson) throws IOException, PluginException, InterruptedException {
-        // this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        prepFreeBrowser(this.br);
         // final boolean checkViaJson = !link.getPluginPatternMatcher().matches(TYPE_AUDIO);
         String filename = null;
         String description = null;
@@ -395,7 +394,7 @@ public class ScribdCom extends PluginForHost {
         } else if (!is_downloadable) {
             /* 2019-08-11: Not downloadable at all (?!) */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is not downloadable");
-        } else if (is_view_restricted_archive && show_archive_paywall) {
+        } else if (is_view_restricted_archive && show_archive_paywall && account.getType() != AccountType.PREMIUM) {
             this.premiumonlyArchiveViewRestricted();
         } else if (is_audiobook) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Audiobooks cannot be downloaded yet!");
@@ -411,42 +410,43 @@ public class ScribdCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(final Browser brlogin, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                br.setCookiesExclusive(true);
-                prepBRGeneral(br);
-                br.setFollowRedirects(true);
+                brlogin.setCookiesExclusive(true);
+                prepBRGeneral(brlogin);
+                brlogin.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 String authenticity_token = null;
                 if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
+                    brlogin.setCookies(account.getHoster(), cookies);
                     authenticity_token = getauthenticity_token(account);
-                    br.getPage("https://www." + account.getHoster() + "/");
-                    if (isLoggedin(br)) {
+                    brlogin.getPage("https://www." + account.getHoster() + "/");
+                    if (isLoggedin(brlogin)) {
                         /* Cookie login successful --> Save cookie timestamp */
-                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        brlogin.getPage("https://www.scribd.com/doc-page/download-receipt-modal-props/66995478");
+                        account.saveCookies(brlogin.getCookies(brlogin.getHost()), "");
                         return;
                     }
-                    br.clearAll();
+                    brlogin.clearAll();
                 }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                brlogin.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 /* 2020-06-08: No required anymore(?) */
-                authenticity_token = createCSRFTOKEN(br, account.getHoster());
+                authenticity_token = createCSRFTOKEN(brlogin, account.getHoster());
                 if (authenticity_token != null) {
-                    br.getHeaders().put("x-csrf-token", authenticity_token);
+                    brlogin.getHeaders().put("x-csrf-token", authenticity_token);
                 }
-                br.getHeaders().put("content-type", "application/json");
+                brlogin.getHeaders().put("content-type", "application/json");
                 // br.getHeaders().put("origin", "https://de.scribd.com");
                 // br.getHeaders().put("referer", "https://de.scribd.com/");
-                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                brlogin.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 final String postData = String.format("{\"login_or_email\":\"%s\",\"login_password\":\"%s\",\"rememberme\":\"\",\"signup_location\":\"https://de.scribd.com/\",\"login_params\":{}}", account.getUser(), account.getPass());
-                br.postPageRaw("/login", postData);
-                final String loginstatus = PluginJSonUtils.getJson(br, "login");
-                if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
+                brlogin.postPageRaw("/login", postData);
+                final String loginstatus = PluginJSonUtils.getJson(brlogin, "login");
+                if (brlogin.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(brlogin)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(br.getCookies(br.getHost()), "");
+                account.saveCookies(brlogin.getCookies(brlogin.getHost()), "");
                 account.setProperty("authenticity_token", authenticity_token);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -473,29 +473,24 @@ public class ScribdCom extends PluginForHost {
     }
 
     private String[] getDllink(final DownloadLink link, final Account account, final boolean is_audiobook) throws PluginException, IOException {
-        br.getPage(origurl);
-        if (this.br.getHttpConnection().getResponseCode() == 400) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400");
-        }
         final String userPreferredFormat = getExtension(is_audiobook);
         final String fileId = this.getFID(link);
         if (fileId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
-        final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
-        Browser xmlbrowser = br.cloneBrowser();
-        xmlbrowser.setFollowRedirects(true);
-        xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        xmlbrowser.getHeaders().put("Accept", "*/*");
-        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_session", scribdsession);
-        xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
-        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
-        this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        // final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
+        // final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
+        br.setFollowRedirects(true);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "*/*");
+        // xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_session", scribdsession);
+        // xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        // this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
+        // this.br.setCookie("http://" + this.getHost(), "_scribd_expire", scribdexpire);
         // This will make it fail...
         // xmlbrowser.postPage("http://www.scribd.com/document_downloads/request_document_for_download", "id=" + fileId);
-        xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
-        xmlbrowser.getHeaders().put("X-CSRF-Token", getauthenticity_token(account));
+        // xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
+        // xmlbrowser.getHeaders().put("X-CSRF-Token", getauthenticity_token(account));
         /* Seems like this is not needed anymore. */
         // xmlbrowser.postPage("/document_downloads/register_download_attempt", "doc_id=" + fileId +
         // "&next_screen=download_lightbox&source=read");
@@ -504,8 +499,8 @@ public class ScribdCom extends PluginForHost {
          * format in list.
          */
         String formatToDownload = null;
-        xmlbrowser.getPage("https://www." + this.getHost() + "/doc-page/download-receipt-modal-props/" + fileId);
-        Map<String, Object> entries = JSonStorage.restoreFromString(xmlbrowser.toString(), TypeRef.HASHMAP);
+        br.getPage("https://www." + this.getHost() + "/doc-page/download-receipt-modal-props/" + fileId);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("document");
         String firstAvailableFormat = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("formats");
@@ -531,6 +526,7 @@ public class ScribdCom extends PluginForHost {
         }
         if (firstAvailableFormat == null) {
             /* E.g. for free accounts, this will return an empty list of items */
+            logger.info("Seems like not a single download is available --> This item is READ-ONLY");
             throw new AccountRequiredException();
         }
         if (formatToDownload == null) {
@@ -547,25 +543,25 @@ public class ScribdCom extends PluginForHost {
         }
         String[] dlinfo = new String[2];
         dlinfo[1] = formatToDownload;
-        xmlbrowser.setFollowRedirects(false);
-        xmlbrowser.getPage("/document_downloads/" + fileId + "?extension=" + dlinfo[1]);
-        if (xmlbrowser.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
+        br.setFollowRedirects(false);
+        br.getPage("/document_downloads/" + fileId + "?extension=" + dlinfo[1]);
+        if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
         }
-        if (xmlbrowser.containsHTML("You do not have access to download this document|Invalid document format")) {
+        if (br.containsHTML("You do not have access to download this document|Invalid document format")) {
             /* This will usually go along with response 403. */
             if (account != null) {
                 logger.info("This file might not be downloadable at all");
             }
             throw new AccountRequiredException("This file can only be downloaded by premium users");
         }
-        dlinfo[0] = xmlbrowser.getRedirectLocation();
+        dlinfo[0] = br.getRedirectLocation();
         if (dlinfo[0] == null) {
             /* 2020-07-20: */
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (xmlbrowser.toString().length() <= 100) {
+            if (br.toString().length() <= 100) {
                 /* 2020-07-20: E.g. errormessage: All download limits exceeded from your IP (123.123.123.123). */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, xmlbrowser.toString());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, br.toString());
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
