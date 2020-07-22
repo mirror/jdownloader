@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -66,22 +67,60 @@ public class RedditCom extends PluginForDecrypt {
         for (final Object postO : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) postO;
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/children/{0}/data");
+            /* TODO: Add FilePackage handling */
+            // final String title = (String) entries.get("title");
             /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs) */
             final String externalURL = (String) entries.get("url");
             if (externalURL != null) {
                 decryptedLinks.add(this.createDownloadlink(externalURL));
             }
-            /* Look for embedded content from external sources */
+            /* Look for embedded content from external sources - the object is always given but can be empty */
             final Object embeddedMediaO = entries.get("media_embed");
             if (embeddedMediaO != null) {
-                logger.info("Found embedded media");
                 LinkedHashMap<String, Object> embeddedMediaInfo = (LinkedHashMap<String, Object>) embeddedMediaO;
-                String media_embedStr = (String) embeddedMediaInfo.get("content");
-                final String[] links = HTMLParser.getHttpLinks(media_embedStr, this.br.getURL());
-                for (final String url : links) {
-                    decryptedLinks.add(this.createDownloadlink(url));
+                if (!embeddedMediaInfo.isEmpty()) {
+                    logger.info("Found media_embed");
+                    String media_embedStr = (String) embeddedMediaInfo.get("content");
+                    final String[] links = HTMLParser.getHttpLinks(media_embedStr, this.br.getURL());
+                    for (final String url : links) {
+                        decryptedLinks.add(this.createDownloadlink(url));
+                    }
                 }
             }
+            /* Look for selfhosted video content */
+            final Object secureMediaO = entries.get("secure_media");
+            if (secureMediaO != null) {
+                final LinkedHashMap<String, Object> secureMedia = (LinkedHashMap<String, Object>) secureMediaO;
+                if (!secureMedia.isEmpty()) {
+                    logger.info("Found secure_media");
+                    /* This is not always given */
+                    final Object redditVideoO = secureMedia.get("reddit_video");
+                    if (redditVideoO != null) {
+                        logger.info("");
+                        final LinkedHashMap<String, Object> redditVideo = (LinkedHashMap<String, Object>) redditVideoO;
+                        final String hls_url = (String) redditVideo.get("hls_url");
+                        if (!StringUtils.isEmpty(hls_url)) {
+                            decryptedLinks.add(this.createDownloadlink(hls_url));
+                        }
+                    }
+                }
+            }
+            /* Look for selfhosted photo content */
+            if (decryptedLinks.size() == 0) {
+                /* Only add image if nothing else is found */
+                /* TODO: Add support for multiple images */
+                logger.info("Found nothing --> Looking for image");
+                final String bestImage = (String) JavaScriptEngineFactory.walkJson(entries, "preview/images/{0}/source/url");
+                if (bestImage != null) {
+                    logger.info("Found image");
+                    final DownloadLink dl = this.createDownloadlink("directhttp://" + bestImage);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                } else {
+                    logger.info("Failed to find image");
+                }
+            }
+            /* TODO: Look for URLs inside post text as a final fallback - this might possibly also be the field "url_overridden_by_dest". */
             /* Only grab first post - stop then! */
             break;
         }
