@@ -92,7 +92,7 @@ public class PornHubCom extends PluginForDecrypt {
             pattern += "embed/[a-z0-9]+|";
             pattern += "embed_player\\.php\\?id=\\d+|";
             /* All videos of a pornstar/model */
-            pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/video|/from_videos)?|";
+            pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/videos|/from_videos)?|";
             // pattern += "videos(?:/(?:upload|paid))?)?|";
             /* All videos of a channel */
             pattern += "channels/[A-Za-z0-9\\-_]+(?:/videos)?|";
