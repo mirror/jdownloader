@@ -422,12 +422,23 @@ public class FavIcons {
         URLConnectionAdapter con = null;
         byte[] bytes = null;
         try {
-            favBr.setFollowRedirects(true);
             try {
                 favBr.getPage("https://" + host);
+                if (favBr.getRedirectLocation() != null) {
+                    favBr.followRedirect(true);
+                    if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
+                        throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                    }
+                }
             } catch (final IOException e) {
                 logger.log(e);
                 favBr.getPage("http://" + host);
+                if (favBr.getRedirectLocation() != null) {
+                    favBr.followRedirect(true);
+                    if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
+                        logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                    }
+                }
             }
             String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(4);
             if (StringUtils.isEmpty(url)) {
