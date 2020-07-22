@@ -64,7 +64,7 @@ public class DegooCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://app\\." + buildHostsPatternPart(domains) + "/share/([A-Za-z0-9]+)\\?ID=(\\d+)");
+            ret.add("https?://cloud\\." + buildHostsPatternPart(domains) + "/share/([A-Za-z0-9]+)\\?ID=(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -113,7 +113,12 @@ public class DegooCom extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.postPageRaw("https://rest-api.degoo.com/shared", String.format("{\"HashValue\":\"%s\",\"Limit\":100,\"FileID\":null,\"JWT\":null}", folderID));
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put("HashValue", folderID);
+        params.put("FileID", fileID);
+        params.put("Limit", 100);
+        params.put("JWT", null);
+        br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
