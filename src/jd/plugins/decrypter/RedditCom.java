@@ -113,22 +113,27 @@ public class RedditCom extends PluginForDecrypt {
                     }
                 }
             }
-            /* Look for selfhosted video content */
-            final Object secureMediaO = entries.get("secure_media");
-            if (secureMediaO != null) {
-                final LinkedHashMap<String, Object> secureMedia = (LinkedHashMap<String, Object>) secureMediaO;
-                if (!secureMedia.isEmpty()) {
-                    logger.info("Found secure_media");
-                    /* This is not always given */
-                    final Object redditVideoO = secureMedia.get("reddit_video");
-                    if (redditVideoO != null) {
-                        logger.info("");
-                        final LinkedHashMap<String, Object> redditVideo = (LinkedHashMap<String, Object>) redditVideoO;
-                        final String hls_url = (String) redditVideo.get("hls_url");
-                        if (!StringUtils.isEmpty(hls_url)) {
-                            decryptedLinks.add(this.createDownloadlink(hls_url));
+            /* Look for selfhosted video content. Prefer content without https */
+            final String[] mediaTypes = new String[] { "media", "secure_media" };
+            for (final String mediaType : mediaTypes) {
+                final Object mediaO = entries.get(mediaType);
+                if (mediaO != null) {
+                    final LinkedHashMap<String, Object> mediaInfo = (LinkedHashMap<String, Object>) mediaO;
+                    if (!mediaInfo.isEmpty()) {
+                        logger.info("Found mediaType '" + mediaType + "'");
+                        /* This is not always given */
+                        final Object redditVideoO = mediaInfo.get("reddit_video");
+                        if (redditVideoO != null) {
+                            logger.info("");
+                            final LinkedHashMap<String, Object> redditVideo = (LinkedHashMap<String, Object>) redditVideoO;
+                            final String hls_url = (String) redditVideo.get("hls_url");
+                            if (!StringUtils.isEmpty(hls_url)) {
+                                decryptedLinks.add(this.createDownloadlink(hls_url));
+                            }
                         }
                     }
+                    /* Stop once one type has been found! */
+                    break;
                 }
             }
             /* Look for selfhosted photo content, Only add image if nothing else is found */

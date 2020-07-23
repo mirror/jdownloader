@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -29,10 +28,10 @@ import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -117,15 +116,12 @@ public class RedditCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXCHUNKS               = 0;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean FREE_RESUME          = true;
+    private final int     FREE_MAXCHUNKS       = 0;
+    private final int     FREE_MAXDOWNLOADS    = 20;
+    private final boolean ACCOUNT_RESUME       = true;
+    private final int     ACCOUNT_MAXCHUNKS    = 0;
+    private final int     ACCOUNT_MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -306,25 +302,26 @@ public class RedditCom extends PluginForHost {
                         return;
                     }
                     /* Check existing access_token */
-                    /* Request account information and, at the same time, check if authorization is still valid. */
-                    br.getPage(getApiBaseLogin() + "/me");
+                    /* Perform an API request to check if our access_token is still valid. */
+                    br.getPage(getApiBaseOauth() + "/me/friends");
                     checkErrors(br, null, account);
                     /* TODO: Check which error API will return on expired token. */
-                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    entries = (Map<String, Object>) entries.get("data");
-                    loggedIN = entries != null && entries.containsKey("id");
+                    // Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    // entries = (Map<String, Object>) entries.get("data");
+                    /* TODO: Check/fix this */
+                    loggedIN = br.getHttpConnection().isOK();
                 }
                 if (!loggedIN) {
                     /* Build new query containing only what we need. */
                     if (StringUtils.isEmpty(active_refresh_token)) {
-                        logger.info("active_refresh_token is not given --> Cannot Refresh login-token");
+                        logger.info("active_refresh_token is not given --> Cannot Refresh login-token --> Login invalid");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     logger.info("Trying to generate new authorization token");
-                    /* First login with new logindata --> Generate new login tokens */
                     final UrlQuery loginquery = new UrlQuery();
                     loginquery.add("grant_type", "refresh_token");
                     loginquery.add("refresh_token", Encoding.urlEncode(active_refresh_token));
+                    br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(getClientID() + ":"));
                     br.postPage(getApiBaseLogin() + "/access_token", loginquery);
                     active_access_token = PluginJSonUtils.getJson(br, "access_token");
                     active_refresh_token = PluginJSonUtils.getJson(br, "refresh_token");
@@ -386,6 +383,12 @@ public class RedditCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 429) {
             rateLimitReached(br, account);
         }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String errormsg = (String) entries.get("message");
+        final long errorcode = JavaScriptEngineFactory.toLong(entries.get("error"), 0);
+        if (errorcode == 403) {
+            /* TODO */
+        }
     }
 
     /* TODO: Check if this works */
@@ -411,7 +414,7 @@ public class RedditCom extends PluginForHost {
     }
 
     private Thread showLoginInformation() {
-        final String authURL = getApiBaseLogin() + "/authorize?client_id=" + getClientID() + "&response_type=code&state=TODO&redirect_uri=" + Encoding.urlEncode(getRedirectURI()) + "&duration=permanent&scope=read";
+        final String authURL = getApiBaseLogin() + "/authorize?client_id=" + getClientID() + "&response_type=code&state=TODO&redirect_uri=" + Encoding.urlEncode(getRedirectURI()) + "&duration=permanent&scope=read%20history";
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -488,29 +491,19 @@ public class RedditCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/me")) {
-            br.getPage(getApiBaseOauth() + "/me");
-        }
+        // if (br.getURL() == null || !br.getURL().contains("/me/friends")) {
+        // br.getPage(getApiBaseOauth() + "/me/friends");
+        // }
+        /*
+         * 2020-07-23: We're trying to request minimal API permissions (via oauth2 scopes) so we don't get access to the users' profile -->
+         * Just display all accounts as free accounts! To get information about the users' profile, we'd have to additionally request the
+         * scope "identity": https://github.com/reddit-archive/reddit/wiki/OAuth2
+         */
+        /* TODO: Find out why this doesn't work */
+        // br.getPage(getApiBaseOauth() + "/user/test/saved");
         ai.setUnlimitedTraffic();
-        /* TODO */
-        if (br.containsHTML("")) {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
-        } else {
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
-        }
+        account.setType(AccountType.FREE);
+        ai.setStatus("Registered (free) user");
         return ai;
     }
 
@@ -520,7 +513,7 @@ public class RedditCom extends PluginForHost {
         login(account, false);
         br.getPage(link.getPluginPatternMatcher());
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            doFree(link, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
@@ -530,7 +523,7 @@ public class RedditCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
@@ -552,7 +545,7 @@ public class RedditCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return ACCOUNT_MAXDOWNLOADS;
     }
 
     @Override
