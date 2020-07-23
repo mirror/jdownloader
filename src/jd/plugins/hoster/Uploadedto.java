@@ -35,11 +35,16 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.UploadedNetConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -65,11 +70,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" })
 public class Uploadedto extends PluginForHost {
     // DEV NOTES:
@@ -88,9 +88,8 @@ public class Uploadedto extends PluginForHost {
     /* Reconnect-workaround-related */
     private static final long              FREE_RECONNECTWAIT                        = 3 * 60 * 60 * 1000L;
     private String                         PROPERTY_LASTIP                           = "UPLOADEDNET_PROPERTY_LASTIP";
+    private static final String            PROPERTY_NOAPI                            = "NOAPI";
     private static final String            PROPERTY_LASTDOWNLOAD                     = "uploadednet_lastdownload_timestamp";
-    private final String                   ACTIVATEACCOUNTERRORHANDLING              = "ACTIVATEACCOUNTERRORHANDLING";
-    private final String                   EXPERIMENTALHANDLING                      = "EXPERIMENTALHANDLING";
     private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                                 = new AtomicReference<String>();
@@ -100,12 +99,6 @@ public class Uploadedto extends PluginForHost {
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
     private static final String            NOCHUNKS                                  = "NOCHUNKS";
     private static final String            NORESUME                                  = "NORESUME";
-    private static final String            SSL_CONNECTION                            = "SSL_CONNECTION";
-    private static final String            PREFER_PREMIUM_DOWNLOAD_API               = "PREFER_PREMIUM_DOWNLOAD_API_V2";
-    private static final String            DOWNLOAD_ABUSED                           = "DOWNLOAD_ABUSED";
-    private static final String            DISABLE_START_INTERVAL                    = "DISABLE_START_INTERVAL";
-    private static final String            EXPERIMENTAL_MULTIFREE                    = "EXPERIMENTAL_MULTIFREE2";
-    private boolean                        PREFERSSL                                 = true;
     private boolean                        avoidHTTPS                                = false;
     private static final String            UPLOADED_FINAL_FILENAME                   = "UPLOADED_FINAL_FILENAME";
     private static final String            CURRENT_DOMAIN                            = "http://uploaded.net/";
@@ -131,7 +124,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     private boolean isPreferSSL() {
-        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL);
+        return PluginJsonConfig.get(UploadedNetConfig.class).isUseSSL();
     }
 
     @Override
@@ -258,8 +251,8 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if ((account == null || !AccountType.PREMIUM.equals(account.getType())) && downloadLink.getKnownDownloadSize() > 1073741824l) {
+    public boolean canHandle(DownloadLink link, Account account) throws Exception {
+        if ((account == null || !AccountType.PREMIUM.equals(account.getType())) && link.getKnownDownloadSize() > 1073741824l) {
             return false;
         } else {
             return true;
@@ -317,13 +310,12 @@ public class Uploadedto extends PluginForHost {
     @SuppressWarnings("deprecation")
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
-        this.enablePremium("http://uploaded.to/");
+        this.enablePremium("https://uploaded.net/");
     }
 
-    protected long getStartIntervall(final DownloadLink downloadLink, final Account account) {
-        if (!this.getPluginConfig().getBooleanProperty(DISABLE_START_INTERVAL, false) && downloadLink != null) {
-            final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+    protected long getStartIntervall(final DownloadLink link, final Account account) {
+        if (!PluginJsonConfig.get(UploadedNetConfig.class).isDisableStartInterval() && link != null) {
+            final long verifiedFileSize = link.getVerifiedFileSize();
             if (account != null) {
                 if (verifiedFileSize >= 50 * 1000 * 1000l) {
                     return 1000;
@@ -478,10 +470,11 @@ public class Uploadedto extends PluginForHost {
 
     private boolean preferAPI(final Account account) {
         if (account == null) {
-            return this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
+            return PluginJsonConfig.get(UploadedNetConfig.class).isUseAPIInAccountMode();
         } else {
-            if (this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda)) {
-                return !StringUtils.equals(account.getPass(), account.getStringProperty("NOAPI", null));
+            if (PluginJsonConfig.get(UploadedNetConfig.class).isUseAPIInAccountMode()) {
+                /* API enabled by user? Check if plugin has disabled it and forces usage ob website as workaround! */
+                return !StringUtils.equals(account.getPass(), account.getStringProperty(PROPERTY_NOAPI, null));
             }
             return false;
         }
@@ -614,9 +607,6 @@ public class Uploadedto extends PluginForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE);
-            if (preferAPI(account)) {
-                account.setProperty("NOAPI", account.getPass());
-            }
         } else {
             account.setValid(true);
             String traffic = br.getMatch("traffic: (\\d+)");
@@ -642,9 +632,17 @@ public class Uploadedto extends PluginForHost {
                 account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
             }
-            if (preferAPI(account)) {
-                account.setProperty("NOAPI", account.getPass());
-            }
+        }
+        if (preferAPI(account)) {
+            /*
+             * Was website mode used as fallback? Okay it worked fine --> Make sure we'll use website mode again for the next account check
+             * and prefer it over API usage. Temporarily overrides user setting.
+             */
+            /*
+             * 2020-07-23: TODO: Maybe update this - at this moment, setting this flag once will cause an account to never get checked via
+             * API again which is not good (?!)
+             */
+            account.setProperty(PROPERTY_NOAPI, account.getPass());
         }
         return ai;
     }
@@ -769,7 +767,7 @@ public class Uploadedto extends PluginForHost {
         /**
          * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
          */
-        if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+        if (PluginJsonConfig.get(UploadedNetConfig.class).isEnableReconnectWorkaround()) {
             /*
              * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
              * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
@@ -782,7 +780,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
             }
         }
-        if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
+        if (account != null && PluginJsonConfig.get(UploadedNetConfig.class).isEnableReconnectWorkaroundAccount()) {
             /* User has no limit on his IP in general --> Check if the current account has a limit. */
             lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD, 0);
             passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
@@ -928,7 +926,8 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setProperty(UPLOADED_FINAL_FILENAME, true);
             }
         }
-        final boolean multiFree = getPluginConfig().getBooleanProperty(EXPERIMENTAL_MULTIFREE, false);
+        /* Are multiple free downloads allowed? */
+        final boolean multiFree = PluginJsonConfig.get(UploadedNetConfig.class).isAllowUnlimitedFreeDownloads();
         try {
             if (multiFree) {
                 /* add a download slot */
@@ -1882,63 +1881,13 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private boolean dmcaDlEnabled() {
-        final SubConfiguration thiscfg = this.getPluginConfig();
-        return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
+        return (!PluginJsonConfig.get(UploadedNetConfig.class).isUseAPIInAccountMode() && PluginJsonConfig.get(UploadedNetConfig.class).isAllowDMCAAbusedDownload());
     }
 
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter additional captchas in between downloads.");
-            put("SETTING_EXPERIMENTALHANDLING", "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.");
-            put("SETTING_SSL_CONNECTION", "Use Secure Communication over SSL (HTTPS://)");
-            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.");
-            put("SETTING_DOWNLOAD_ABUSED", "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart");
-        }
-    };
-    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_ACTIVATEACCOUNTERRORHANDLING", "Aktiviere experimentielles free Account Handling: Führe Reconnects aus und wechsle zwischen verfügbaren free Accounts (um die Downloadgeschwindigkeit zu erhöhen). Verhindert auch sinnlose Captchaabfragen zwischen Downloads.");
-            put("SETTING_EXPERIMENTALHANDLING", "Aktiviere Reconnect Workaround: Verhindert sinnlose Captchaabfragen zwischen Downloads.");
-            put("SETTING_SSL_CONNECTION", "Verwende sichere Verbindungen per SSL (HTTPS://)");
-            put("SETTING_PREFER_PREMIUM_DOWNLOAD_API", "Ist dieses Feature aktiviert, verwendet JDownloader die Programmierschnittstelle (API). Nach Fehlversuchen wird automatisch zum Handling per Webseite gewechselt.\r\nIst dieses Feature deaktiviert benutzt JDownloader ausschließlich die Webseite. Die Webseite ist allgemein instabiler als die API.");
-            put("SETTING_DOWNLOAD_ABUSED", "Aktiviere Download DMCA gesperrter Links?\r\nBedenke folgendes:\r\n-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n--> Falls diese wirklich offline sind, wird der korrekte (offline) Status erst beim Downloadstart angezeigt\r\n--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt");
-        }
-    };
-
-    /**
-     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
-     * English.
-     *
-     * @param key
-     * @return
-     */
-    private String getPhrase(String key) {
-        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
-            return phrasesDE.get(key);
-        } else if (phrasesEN.containsKey(key)) {
-            return phrasesEN.get(key);
-        }
-        return "Translation not found!";
-    }
-
-    private final boolean default_ppda   = true;
-    private final boolean default_aaeh   = false;
-    private final boolean default_eh     = false;
-    private final boolean default_abused = false;
-
-    public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, getPhrase("SETTING_ACTIVATEACCOUNTERRORHANDLING")).setDefaultValue(default_aaeh));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, getPhrase("SETTING_EXPERIMENTALHANDLING")).setDefaultValue(default_eh));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSL_CONNECTION, getPhrase("SETTING_SSL_CONNECTION")).setDefaultValue(PREFERSSL));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, getPhrase("SETTING_PREFER_PREMIUM_DOWNLOAD_API")).setDefaultValue(default_ppda);
-        getConfig().addEntry(cfe);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, getPhrase("SETTING_DOWNLOAD_ABUSED")).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLE_START_INTERVAL, "Disable start interval. Warning: This may cause IP blocks from uploaded.to").setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTAL_MULTIFREE, "Experimental support of multiple free downloads").setDefaultValue(false));
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return UploadedNetConfig.class;
     }
 
     @Override
