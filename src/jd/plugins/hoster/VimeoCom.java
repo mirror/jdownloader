@@ -990,15 +990,15 @@ public class VimeoCom extends PluginForHost {
             videoExt = downloadLink.getStringProperty("videoExt", null);
         }
         String formattedDate = null;
-        if (date != null) {
+        if (!StringUtils.isEmpty(date)) {
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-            SimpleDateFormat formatter = getFormatterForDate(date);
-            final Date dateStr;
-            dateStr = formatter.parse(date);
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
             if (userDefinedDateFormat != null) {
                 try {
+                    SimpleDateFormat formatter = getFormatterForDate(date);
+                    final Date dateStr;
+                    dateStr = formatter.parse(date);
+                    formattedDate = formatter.format(dateStr);
+                    Date theDate = formatter.parse(formattedDate);
                     formatter = new SimpleDateFormat(userDefinedDateFormat);
                     formattedDate = formatter.format(theDate);
                 } catch (Exception e) {

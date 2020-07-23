@@ -63,7 +63,7 @@ import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+(?:/[a-f0-9]+)?|(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+((/config\\?|\\?|#).+)?|https?://(?:www\\.)?vimeo\\.com/[a-z0-9]+/review/\\d+/[a-f0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
     private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
@@ -78,6 +78,50 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "vimeo.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            /* Main domain URLs */
+            String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
+            pattern += "\\d+(?:/[a-f0-9]+)?|";
+            /* Single video of a channel */
+            pattern += "(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|";
+            /* All videos of a user/channel */
+            pattern += "[A-Za-z0-9\\-_]+/videos|";
+            pattern += "ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|";
+            /* All videos of a group and single video of a group */
+            pattern += "groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?|";
+            /* "Review" --> Also just a single video but with a special additional ID */
+            pattern += "[a-z0-9]+/review/\\d+/[a-f0-9]+";
+            pattern += ")";
+            /* Embedded content URLs */
+            pattern += "|";
+            pattern += "https?://player\\." + buildHostsPatternPart(domains) + "/(?:video|external)/\\d+((/config\\?|\\?|#).+)?";
+            ret.add(pattern);
+        }
+        return ret.toArray(new String[0]);
     }
 
     private static final String LINKTYPE_USER  = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
