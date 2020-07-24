@@ -25,6 +25,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -95,9 +96,13 @@ public class RedditCom extends PluginForDecrypt {
             fp.setName(title);
             /* 2020-07-23: TODO: This field might indicate selfhosted content: is_reddit_media_domain */
             /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
+            boolean addedRedditSelfhostedVideo = false;
             final String externalURL = (String) entries.get("url");
             if (!StringUtils.isEmpty(externalURL)) {
                 logger.info("Found external URL");
+                if (externalURL.matches("https?://v\\.redd\\.it/[a-z0-9]+.*")) {
+                    addedRedditSelfhostedVideo = true;
+                }
                 decryptedLinks.add(this.createDownloadlink(externalURL));
             }
             /* Look for embedded content from external sources - the object is always given but can be empty */
@@ -114,21 +119,25 @@ public class RedditCom extends PluginForDecrypt {
                 }
             }
             /* Look for selfhosted video content. Prefer content without https */
-            final String[] mediaTypes = new String[] { "media", "secure_media" };
-            for (final String mediaType : mediaTypes) {
-                final Object mediaO = entries.get(mediaType);
-                if (mediaO != null) {
-                    final LinkedHashMap<String, Object> mediaInfo = (LinkedHashMap<String, Object>) mediaO;
-                    if (!mediaInfo.isEmpty()) {
-                        logger.info("Found mediaType '" + mediaType + "'");
-                        /* This is not always given */
-                        final Object redditVideoO = mediaInfo.get("reddit_video");
-                        if (redditVideoO != null) {
-                            logger.info("");
-                            final LinkedHashMap<String, Object> redditVideo = (LinkedHashMap<String, Object>) redditVideoO;
-                            final String hls_url = (String) redditVideo.get("hls_url");
-                            if (!StringUtils.isEmpty(hls_url)) {
-                                decryptedLinks.add(this.createDownloadlink(hls_url));
+            if (!addedRedditSelfhostedVideo) {
+                final String[] mediaTypes = new String[] { "media", "secure_media" };
+                for (final String mediaType : mediaTypes) {
+                    final Object mediaO = entries.get(mediaType);
+                    if (mediaO != null) {
+                        final LinkedHashMap<String, Object> mediaInfo = (LinkedHashMap<String, Object>) mediaO;
+                        if (!mediaInfo.isEmpty()) {
+                            logger.info("Found mediaType '" + mediaType + "'");
+                            /* This is not always given */
+                            final Object redditVideoO = mediaInfo.get("reddit_video");
+                            if (redditVideoO != null) {
+                                final LinkedHashMap<String, Object> redditVideo = (LinkedHashMap<String, Object>) redditVideoO;
+                                String hls_url = (String) redditVideo.get("hls_url");
+                                if (!StringUtils.isEmpty(hls_url)) {
+                                    if (Encoding.isHtmlEntityCoded(hls_url)) {
+                                        hls_url = Encoding.htmlDecode(hls_url);
+                                    }
+                                    decryptedLinks.add(this.createDownloadlink(hls_url));
+                                }
                             }
                         }
                     }
