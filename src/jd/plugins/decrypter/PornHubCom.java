@@ -243,7 +243,7 @@ public class PornHubCom extends PluginForDecrypt {
                     if (dupes.add(viewkey) && !isAbort()) {
                         final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
                         decryptedLinks.add(dl);
-                        // distribute(dl);
+                        distribute(dl);
                         numberofActuallyAddedItems++;
                     }
                 }
