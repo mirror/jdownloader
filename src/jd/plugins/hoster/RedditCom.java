@@ -27,10 +27,12 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -105,23 +107,14 @@ public class RedditCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/2020_07_dev_work_in_progress");
-            } else {
-                ret.add("");
-            }
-        }
+        ret.add("https?://v\\.redd\\.it/([a-z0-9]+)|https?://i\\.redd\\.it/([a-z0-9]+)\\.jpg");
         return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME          = true;
-    private final int     FREE_MAXCHUNKS       = 0;
-    private final int     FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_RESUME       = true;
-    private final int     ACCOUNT_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_MAXDOWNLOADS = 20;
+    private final boolean RESUME       = true;
+    private final int     MAXCHUNKS    = 0;
+    private final int     MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -134,27 +127,50 @@ public class RedditCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        // return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        }
+        return fid;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("").getMatch(0);
-        }
-        String filesize = br.getRegex("").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (!StringUtils.isEmpty(filesize)) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        br.setAllowedResponseCodes(new int[] { 400 });
+        if (link.getPluginPatternMatcher().contains("v.redd.it")) {
+            /* HLS Video */
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            br.getPage(br.getPage("https://v.redd.it/" + this.getFID(link) + "/HLSPlaylist.m3u8"));
+            if (this.br.getHttpConnection().getResponseCode() == 400 || this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!link.isNameSet()) {
+                link.setFinalFileName(this.getFID(link) + ".mp4");
+            }
+        } else {
+            /* Image */
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(link.getPluginPatternMatcher());
+                /* 2020-07-24: On offline, they will return a dummy image along with responsecode 404. */
+                if (con.getResponseCode() == 400 || con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (con.getContentType().contains("image")) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+            link.setFinalFileName(this.getFID(link) + ".jpg");
         }
         return AvailableStatus.TRUE;
     }
@@ -162,64 +178,44 @@ public class RedditCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, RESUME, MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            dllink = br.getRegex("").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (link.getPluginPatternMatcher().contains("v.redd.it")) {
+            /* HLS video */
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            /* Image */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), false, 1);
+            if (!dl.getConnection().getContentType().contains("image")) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
+            dl.startDownload();
         }
-        return dllink;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return MAXDOWNLOADS;
     }
 
     private static final String PROPERTY_ACCOUNT_initial_password          = "initial_password";
@@ -509,56 +505,18 @@ public class RedditCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
-        if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS, "account_free_directlink");
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
-        }
+        /* Login is not required for any reddit content! */
+        this.handleFree(link);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_MAXDOWNLOADS;
+        return MAXDOWNLOADS;
     }
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
+        /* No captchas at all */
         return false;
     }
 
