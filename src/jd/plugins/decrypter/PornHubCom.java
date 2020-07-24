@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -92,8 +93,7 @@ public class PornHubCom extends PluginForDecrypt {
             pattern += "embed/[a-z0-9]+|";
             pattern += "embed_player\\.php\\?id=\\d+|";
             /* All videos of a pornstar/model */
-            pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/videos|/from_videos)?|";
-            // pattern += "videos(?:/(?:upload|paid))?)?|";
+            pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/videos/paid|/videos|/from_videos)?|";
             /* All videos of a channel */
             pattern += "channels/[A-Za-z0-9\\-_]+(?:/videos)?|";
             /* All videos of a user */
@@ -209,37 +209,41 @@ public class PornHubCom extends PluginForDecrypt {
             page++;
             logger.info(String.format("Crawling page %s| %d / %d", br.getURL(), page, maxPage));
             // account/fan-/paid-only
-            final String paidVideosSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"paidVideosSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);// /videos/paid
-            final String fanVideosSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"fanVideosSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);// videos/fanonly
+            final String paidVideosSection = findVideoSection(br, "paidVideosSection");// /videos/paid
+            final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
+            final String moreData = findVideoSection(br, "moreData");// eg the videos listed in /videos/paid
             // public
-            final String mostRecentVideosSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"mostRecentVideosSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);// public
-            // TODO?
-            // also included in mostRecentVideosSection
-            final String uploadedVideosSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"uploadedVideosSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);// videos/upload
-            final String privateVideosSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"privateVideosSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);
-            final String publicPlaylistSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"publicPlaylistSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);// playlist/public
-            final String loversPlaylistSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"loversPlaylistSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);
-            final String privatePlaylistSection = br.getRegex("(<ul\\s*class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"privatePlaylistSection\".*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);
+            final String mostRecentVideosSection = findVideoSection(br, "mostRecentVideosSection");// /public
+            final Set<String> viewKeys = new HashSet<String>();
             if (account != null) {
                 if (paidVideosSection != null) {
-                    br.getPage(br.getURL() + "/paid");
-                    decryptAllVideosOfAPornstar(br.cloneBrowser(), account, dupes);
+                    // TODO: doesn't make sense to add all paid/fanonly, add support to check paid/fan status
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(br.getURL() + "/paid");
+                    decryptAllVideosOfAPornstar(br, account, dupes);
                 }
-                if (fanVideosSection != null) {
-                    br.getPage(br.getURL() + "/fanonly");
-                    decryptAllVideosOfAPornstar(br.cloneBrowser(), account, dupes);
+                if (false && fanVideosSection != null) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(br.getURL() + "/fanonly");
+                    decryptAllVideosOfAPornstar(brc.cloneBrowser(), account, dupes);
                 }
             }
-            String[] viewKeys = new Regex(mostRecentVideosSection, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
-            if (viewKeys == null || viewKeys.length == 0) {
-                viewKeys = br.getRegex("_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
+            String[] vKeys = new Regex(mostRecentVideosSection, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
+            if ((vKeys == null || vKeys.length == 0) && moreData != null) {
+                vKeys = new Regex(moreData, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
             }
-            if (viewKeys != null) {
+            if (vKeys == null || vKeys.length == 0) {
+                vKeys = br.getRegex("_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
+            }
+            if (vKeys != null) {
+                viewKeys.addAll(Arrays.asList(vKeys));
+            }
+            if (viewKeys.size() > 0) {
                 for (final String viewkey : viewKeys) {
                     if (dupes.add(viewkey) && !isAbort()) {
                         final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
                         decryptedLinks.add(dl);
-                        distribute(dl);
+                        // distribute(dl);
                         numberofActuallyAddedItems++;
                     }
                 }
@@ -279,6 +283,10 @@ public class PornHubCom extends PluginForDecrypt {
             }
         } while (true);
         return true;
+    }
+
+    private String findVideoSection(Browser br, String section) {
+        return br.getRegex("(<ul[^>]*(?:class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"" + section + "\"|[^>]*id\\s*=\\s*\"" + section + "\"[^>]*class\\s*=\\s*\"videos[^>]).*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);
     }
 
     private boolean decryptAllVideosOfAUser() throws Exception {

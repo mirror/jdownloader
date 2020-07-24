@@ -29,14 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -63,18 +55,29 @@ import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
-    private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
-    private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
-    private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?|#)forced_referer=[A-Za-z0-9=]+)?";
-    private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?|#)forced_referer=[A-Za-z0-9=]+";
+    private final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
+    private final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
+    private final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?|#)forced_referer=[A-Za-z0-9=]+)?";
+    private final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?|#)forced_referer=[A-Za-z0-9=]+";
     /*
      * 2018-03-26: Such URLs will later have an important parameter "s" inside player.vimeo.com URL. Without this String, we cannot
      * watch/download them!!
      */
-    public static final String  type_normal                         = ".+vimeo\\.com/\\d+.*";
-    public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+.+";
+    private final String type_normal                         = ".+vimeo\\.com/\\d+.*";
+    private final String type_player                         = "https?://player\\.vimeo.com/video/\\d+.+";
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,28 +107,34 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             /* Main domain URLs */
-            String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
-            pattern += "\\d+(?:/[a-f0-9]+)?|";
+            StringBuilder pattern = new StringBuilder();
+            pattern.append("https?://(?:www\\.)?" + buildHostsPatternPart(domains));
+            pattern.append("(");
+            pattern.append("\\d+(?:/[a-f0-9]+)?").append("|");
             /* Single video of a channel */
-            pattern += "(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+|";
+            pattern.append("(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+").append("|");
             /* All videos of a user/channel */
-            pattern += "[A-Za-z0-9\\-_]+/videos|";
-            pattern += "ondemand/[A-Za-z0-9\\-_]+(/\\d+)?|";
+            pattern.append("[A-Za-z0-9\\-_]+/videos").append("|");
+            pattern.append("ondemand/[A-Za-z0-9\\-_]+(/\\d+)?").append("|");
             /* All videos of a group and single video of a group */
-            pattern += "groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?|";
+            pattern.append("groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?").append("|");
             /* "Review" --> Also just a single video but with a special additional ID */
-            pattern += "[a-z0-9]+/review/\\d+/[a-f0-9]+";
-            pattern += ")";
+            pattern.append("[a-z0-9]+/review/\\d+/[a-f0-9]+");
+            pattern.append(")");
+            /* Showcase URLs */
+            pattern.append("|");
+            pattern.append("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/showcase/\\d+(?:/embed)?");
             /* Embedded content URLs */
-            pattern += "|";
-            pattern += "https?://player\\." + buildHostsPatternPart(domains) + "/(?:video|external)/\\d+((/config\\?|\\?|#).+)?";
-            ret.add(pattern);
+            pattern.append("|");
+            pattern.append("https?://player\\." + buildHostsPatternPart(domains) + "/(?:video|external)/\\d+((/config\\?|\\?|#).+)?");
+            ret.add(pattern.toString());
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String LINKTYPE_USER  = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
-    private static final String LINKTYPE_GROUP = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
+    private final String LINKTYPE_USER     = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
+    private final String LINKTYPE_GROUP    = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
+    private final String LINKTYPE_SHOWCASE = "https?://(?:www\\.)?vimeo\\.com/showcase/\\d+(?:/embed)?";
 
     private String guessReferer(CryptedLink param) {
         CrawledLink check = getCurrentLink().getSourceLink();
@@ -177,7 +186,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (e instanceof WrongRefererException) {
             return true;
         } else if (e instanceof PluginException) {
-            return VIMEO_URL_TYPE.PLAYER.equals(urlType) && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
+            switch (urlType) {
+            case SHOWCASE:
+                return ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"clips\"\\s*:\\s*\\[\\s*\\]");
+            case PLAYER:
+                return ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 403) || (br.containsHTML(">\\s*Private Video on Vimeo\\s*<")));
+            default:
+                return false;
+            }
         } else {
             return false;
         }
@@ -306,6 +322,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             fp.setName("Videos of vimeo.com user " + userName);
             fp.addLinks(decryptedLinks);
         } else {
+            final VIMEO_URL_TYPE urlType = jd.plugins.hoster.VimeoCom.getUrlType(parameter);
             /* Check if we got a forced Referer - if so, extract it, clean url, use it and set it on our DownloadLinks for later usage. */
             final AtomicReference<String> referer = new AtomicReference<String>();
             final String vimeo_forced_referer_url_part = new Regex(parameter, "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
@@ -318,10 +335,25 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
             }
             if (referer.get() == null) {
-                final String vimeo_guessed_referer = guessReferer(param);
-                if (vimeo_guessed_referer != null) {
-                    referer.set(vimeo_guessed_referer);
-                    logger.info("Use *guessed* referer:" + vimeo_guessed_referer);
+                switch (urlType) {
+                case CONFIG_TOKEN:
+                case PLAYER:
+                    final UrlQuery query = UrlQuery.parse(parameter);
+                    final String referrer = query.getDecoded("referrer");
+                    if (StringUtils.startsWithCaseInsensitive(referrer, "http://") || StringUtils.startsWithCaseInsensitive(referrer, "https://")) {
+                        referer.set(referrer);
+                        logger.info("Use *config/player* referer:" + referrer);
+                    }
+                    break;
+                default:
+                    break;
+                }
+                if (referer.get() == null) {
+                    final String vimeo_guessed_referer = guessReferer(param);
+                    if (vimeo_guessed_referer != null) {
+                        referer.set(vimeo_guessed_referer);
+                        logger.info("Use *guessed* referer:" + vimeo_guessed_referer);
+                    }
                 }
             }
             String videoID = getVideoidFromURL(parameter);
@@ -354,7 +386,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     lock = acc;
                 }
             }
-            final VIMEO_URL_TYPE urlType = jd.plugins.hoster.VimeoCom.getUrlType(parameter);
             synchronized (lock) {
                 try {
                     try {
@@ -381,6 +412,31 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 if (isPasswordProtected(this.br)) {
                     password = handlePW(param, this.br);
+                }
+                if (VIMEO_URL_TYPE.SHOWCASE.equals(urlType)) {
+                    final String jsonString = br.getRegex("<script\\s*id\\s*=\\s*\"app-data\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
+                    if (jsonString == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Map<String, Object> json = JSonStorage.restoreFromString(jsonString, TypeRef.HASHMAP);
+                    final List<Map<String, Object>> clips = (List<Map<String, Object>>) json.get("clips");
+                    if (clips == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String appendReferer;
+                    if (referer.get() != null) {
+                        appendReferer = "#forced_referer=" + HexFormatter.byteArrayToHex(referer.get().getBytes("UTF-8"));
+                    } else {
+                        appendReferer = "";
+                    }
+                    for (Map<String, Object> clip : clips) {
+                        final String config = (String) clip.get("config");
+                        if (config != null) {
+                            final DownloadLink clipEntry = this.createDownloadlink(config + appendReferer);
+                            decryptedLinks.add(clipEntry);
+                        }
+                    }
+                    return decryptedLinks;
                 }
                 final String cleanVimeoURL = br.getURL();
                 /*

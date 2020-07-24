@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -36,6 +34,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" })
 public class DlFreeFr extends PluginForHost {
@@ -228,6 +228,11 @@ public class DlFreeFr extends PluginForHost {
          */
         String passCode = link.getDownloadPassword();
         if (!dl.getConnection().isContentDisposition() && br.getHttpConnection().getResponseCode() == 401) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             logger.info("Password required");
             if (passCode == null) {
                 passCode = getUserInput("Password?", link);
@@ -237,15 +242,19 @@ public class DlFreeFr extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl.getConnection().getURL().toString(), true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (br.getHttpConnection().getResponseCode() == 401) {
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-            }
-            br.followConnection();
-            if (br.getURL().contains("overload")) {
+            } else if (br.getURL().contains("overload")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
             link.setDownloadPassword(passCode);
@@ -261,12 +270,12 @@ public class DlFreeFr extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
-            if (con.isContentDisposition()) {
+            if (con.isOK() && con.isContentDisposition()) {
                 link.setFinalFileName(Plugin.getFileNameFromHeader(con));
-                link.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getCompleteContentLength());
                 return AvailableStatus.TRUE;
             } else {
-                br.followConnection();
+                br.followConnection(true);
                 HTML = true;
             }
         } catch (final BrowserException e) {

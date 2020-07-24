@@ -710,7 +710,7 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {

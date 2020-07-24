@@ -69,7 +69,7 @@ public class XvideosCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video\\d+/.*|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(video\\d+/.*|embedframe/\\d+|[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/(\\d+)?)");
         }
         return ret.toArray(new String[0]);
     }
