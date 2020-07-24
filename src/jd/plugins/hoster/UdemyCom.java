@@ -24,6 +24,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -41,11 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
@@ -69,7 +69,7 @@ public class UdemyCom extends PluginForHost {
     private boolean              textAssetType                  = false;
     private boolean              is_officially_downloadable     = true;
     private static final String  TYPE_SINGLE_FREE_OLD           = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
-    public static final String   TYPE_SINGLE_PREMIUM_WEBSITE    = ".+/lecture/\\d+$";
+    public static final String   TYPE_SINGLE_PREMIUM_WEBSITE    = "(.+/lecture/\\d+).*";
     public static final String   TYPE_SINGLE_PREMIUM__DECRYPRED = ".+/lecture_id/\\d+$";
 
     @Override
@@ -103,7 +103,7 @@ public class UdemyCom extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
-                login(this.br, aa, false);
+                login(aa, false);
                 loggedin = true;
             } catch (final Throwable e) {
             }
@@ -193,13 +193,18 @@ public class UdemyCom extends PluginForHost {
                                 long quality_best = -1;
                                 for (final Map<String, Object> video : videos) {
                                     final String file = (String) video.get("file");
-                                    final Object label = video.get("label");
+                                    final Object labelO = video.get("label");
                                     final long quality;
-                                    if (label != null && label instanceof Number) {
-                                        quality = ((Number) label).longValue();
-                                    } else if (label != null && label instanceof String) {
+                                    if (labelO != null && labelO instanceof Number) {
+                                        quality = ((Number) labelO).longValue();
+                                    } else if (labelO != null && labelO instanceof String) {
                                         /* E.g. '360p' or '360' */
-                                        quality = Long.parseLong(new Regex(label.toString(), "(\\d+)p?").getMatch(0));
+                                        final String labelNumberStr = new Regex(labelO.toString(), "(\\d+)p?").getMatch(0);
+                                        if (labelNumberStr == null) {
+                                            /* E.g. "auto" */
+                                            continue;
+                                        }
+                                        quality = Long.parseLong(labelNumberStr);
                                     } else {
                                         quality = -1;
                                     }
@@ -419,22 +424,35 @@ public class UdemyCom extends PluginForHost {
         }
     }
 
-    private static final String MAINPAGE = "https://udemy.com";
-    private static Object       LOCK     = new Object();
-
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(MAINPAGE, cookies);
-                    return;
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    logger.info("Checking cookies");
+                    final Browser ajaxBR = br.cloneBrowser();
+                    this.prepBRAPI(ajaxBR);
+                    ajaxBR.getPage("https://www.udemy.com/api-2.0/contexts/me/?header=True&footer=True");
+                    final String email = PluginJSonUtils.getJson(ajaxBR, "email");
+                    if (!StringUtils.isEmpty(email)) {
+                        logger.info("Successfully loggedin via cookies");
+                        return;
+                    } else {
+                        logger.info("Failed to login via cookies");
+                        br.clearAll();
+                    }
                 }
+                logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.getPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
-                final String csrftoken = br.getCookie(MAINPAGE, "csrftoken");
+                final String csrftoken = br.getCookie(this.getHost(), "csrftoken");
                 if (csrftoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -451,7 +469,7 @@ public class UdemyCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -461,17 +479,15 @@ public class UdemyCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setConcurrentUsePossible(true);
         account.setType(AccountType.PREMIUM);
         /* There is no separate free/premium - users can buy videos which will be available for their accounts only afterwards. */
         ai.setStatus("Valid account");
-        account.setValid(true);
         return ai;
     }
 
@@ -482,9 +498,9 @@ public class UdemyCom extends PluginForHost {
         handleDownload(link);
     }
 
-    public static void prepBRAPI(final Browser br) {
-        final String clientid = br.getCookie(MAINPAGE, "client_id");
-        final String bearertoken = br.getCookie(MAINPAGE, "access_token");
+    public void prepBRAPI(final Browser br) {
+        final String clientid = br.getCookie(this.getHost(), "client_id");
+        final String bearertoken = br.getCookie(this.getHost(), "access_token");
         final String newrelicid = "XAcEWV5ADAEDUlhaDw==";
         if (clientid == null || bearertoken == null || newrelicid == null) {
             return;

@@ -32,6 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+" })
@@ -46,22 +47,26 @@ public class UdemyComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final String parameter = param.toString();
-        if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM_WEBSITE)) {
-            /* Single links --> Host plugin */
-            decryptedLinks.add(this.createDownloadlink(parameter.replace(this.getHost() + "/", decrypter_domain + "/")));
-            return decryptedLinks;
+        String parameter = param.toString();
+        final String courseName = new Regex(parameter, "/course/([^/]+)").getMatch(0);
+        if (courseName != null) {
+            parameter = "https://" + this.getHost() + "/course/" + courseName + "/";
         }
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("udemy.com"));
+        /* 2020-07-24: Don't do this anymore - always add all items of the course instead! */
+        // if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM_WEBSITE)) {
+        // /* Single links --> Host plugin */
+        // decryptedLinks.add(this.createDownloadlink(parameter.replace(this.getHost() + "/", decrypter_domain + "/")));
+        // return decryptedLinks;
+        // }
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
         if (aa == null) {
             logger.info("Account needed to download urls of this website");
             return decryptedLinks;
         }
-        try {
-            jd.plugins.hoster.UdemyCom.login(this.br, aa, false);
-        } catch (final Throwable e) {
-        }
-        jd.plugins.hoster.UdemyCom.prepBRAPI(this.br);
+        hostPlugin.setBrowser(this.br);
+        ((jd.plugins.hoster.UdemyCom) hostPlugin).login(aa, false);
+        ((jd.plugins.hoster.UdemyCom) hostPlugin).prepBRAPI(this.br);
         br.getPage(parameter);
         br.followRedirect();
         if (this.br.getHttpConnection().getResponseCode() == 404) {
