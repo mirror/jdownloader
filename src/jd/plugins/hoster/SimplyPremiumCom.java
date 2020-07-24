@@ -47,12 +47,10 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom extends PluginForHost {
-    private static final String          NICE_HOST         = "simply-premium.com";
-    private static final String          NICE_HOSTproperty = "simplypremiumcom";
-    private static final String          API_BASE          = "https://www.simply-premium.com";
-    private static String                APIKEY            = null;
-    private static Object                LOCK              = new Object();
-    private static MultiHosterManagement mhm               = new MultiHosterManagement("simply-premium.com");
+    private static final String          API_BASE = "https://www.simply-premium.com";
+    private static String                APIKEY   = null;
+    private static Object                LOCK     = new Object();
+    private static MultiHosterManagement mhm      = new MultiHosterManagement("simply-premium.com");
 
     public SimplyPremiumCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -117,14 +115,14 @@ public class SimplyPremiumCom extends PluginForHost {
         if (!resume_allowed) {
             maxChunks = 1;
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         br.setAllowedResponseCodes(new int[] { 503 });
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_allowed, maxChunks);
         handle503(this.br, dl.getConnection().getResponseCode());
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             downloadErrorhandling(account, link);
-            logger.info(NICE_HOST + ": Unknown download error");
+            logger.info(this.getHost() + ": Unknown download error");
             mhm.handleErrorGeneric(account, link, "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         dl.startDownload();
@@ -157,7 +155,7 @@ public class SimplyPremiumCom extends PluginForHost {
         mhm.runCheck(account, link);
         getapikey(account);
         showMessage(link, "Task 1: Checking link");
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             /* request download information */
             br.getPage(API_BASE + "/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -165,7 +163,7 @@ public class SimplyPremiumCom extends PluginForHost {
             /* request download */
             dllink = getXML("download");
             if (dllink == null) {
-                logger.info(NICE_HOST + ": dllinknull");
+                logger.info(this.getHost() + ": dllinknull");
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
             String hash = getXML("hash");
@@ -179,25 +177,30 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private void downloadErrorhandling(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        if (br.containsHTML("<error>NOTFOUND</error>")) {
+        if (br.containsHTML("<code>9</code>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<error>hostererror</error>")) {
-            logger.info(NICE_HOST + ": Host is unavailable at the moment -> Disabling it");
+        } else if (br.containsHTML("<code>8</code>")) { // temporarily not available
+            logger.info(this.getHost() + ": Host is unavailable at the moment -> Disabling it");
             mhm.handleErrorGeneric(account, link, "hostererror", 10, 5 * 60 * 1000l);
-        } else if (br.containsHTML("<error>maxconnection</error>")) {
-            logger.info(NICE_HOST + ": Too many simultan connections");
-            throw new AccountUnavailableException("Wait before starting new downloads", 5 * 60 * 1000l);
-        } else if (br.containsHTML("<error>notvalid</error>")) {
-            logger.info(NICE_HOST + ": Account invalid -> Disabling it");
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        } else if (br.containsHTML("<error>trafficlimit</error>")) {
-            logger.info(NICE_HOST + ": Traffic limit reached -> Temp. disabling account");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else if (br.containsHTML("<code>11</code>")) { // Hoster not Reachable
+            logger.info(this.getHost() + ": Host is unavailable at the moment -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "hostererror2", 10, 5 * 60 * 1000l);
+        } else if (br.containsHTML("<code>14</code>")) { // Your host-specific traffic limit has been used up.
+            logger.info(this.getHost() + ": Host-specific traffic limit used up -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "hosttrafficusedup", 10, 5 * 60 * 1000l);
+        } else if (br.containsHTML("<code>12</code>")) { // Maintenance
+            logger.info(this.getHost() + ": Maintenance -> Disabling it");
+            mhm.handleErrorGeneric(account, link, "maintenance", 10, 5 * 60 * 1000l);
+        } else if (br.containsHTML("<code>4</code>")) {
+            logger.info(this.getHost() + ": Too many simultan connections");
+            /* Temp. disable account */
+            throw new AccountUnavailableException("Wait before starting new downloads", 1 * 60 * 1000l);
+        } else if (br.containsHTML("<code>1</code>") || br.containsHTML("<code>2</code>") || br.containsHTML("<code>5</code>")) {
+            logger.info(this.getHost() + ": Account invalid -> Disabling it");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.containsHTML("<code>3</code>")) {
+            logger.info(this.getHost() + ": Traffic limit reached -> Temp. disabling account");
+            throw new AccountUnavailableException("Traffic limit reached", 1 * 60 * 1000l);
         }
     }
 
@@ -300,7 +303,7 @@ public class SimplyPremiumCom extends PluginForHost {
             if (acmatch) {
                 acmatch = Encoding.urlEncode(acc.getPass()).equals(acc.getStringProperty("pass", Encoding.urlEncode(acc.getPass())));
             }
-            APIKEY = acc.getStringProperty(NICE_HOSTproperty + "apikey", null);
+            APIKEY = acc.getStringProperty(this.getHost() + "apikey", null);
             if (APIKEY != null && acmatch) {
                 br.setCookie(API_BASE, "apikey", APIKEY);
             } else {
@@ -356,7 +359,7 @@ public class SimplyPremiumCom extends PluginForHost {
         if (APIKEY == null || br.containsHTML("<error>not_valid</error>")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        account.setProperty(NICE_HOSTproperty + "apikey", APIKEY);
+        account.setProperty(this.getHost() + "apikey", APIKEY);
         account.setProperty("name", Encoding.urlEncode(account.getUser()));
         account.setProperty("pass", Encoding.urlEncode(account.getPass()));
     }
