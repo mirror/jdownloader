@@ -220,7 +220,7 @@ public class PornHubCom extends PluginForDecrypt {
                     // TODO: doesn't make sense to add all paid/fanonly, add support to check paid/fan status
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(br.getURL() + "/paid");
-                    decryptAllVideosOfAPornstar(br, account, dupes);
+                    decryptAllVideosOfAPornstar(brc, account, dupes);
                 }
                 if (false && fanVideosSection != null) {
                     final Browser brc = br.cloneBrowser();
@@ -254,7 +254,7 @@ public class PornHubCom extends PluginForDecrypt {
             }
             logger.info(String.format("Found %d new items", numberofActuallyAddedItems));
             final String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
-            final String nextAjax = br.getRegex("onclick=\"loadMoreDataStream\\(([^\\)]+)\\)").getMatch(0);
+            final String nextAjax = br.getRegex("onclick=\"[^\"]*loadMoreDataStream\\(([^\\)]+)\\)").getMatch(0);
             if (nextAjax != null) {
                 final String[] ajaxVars = nextAjax.replace("'", "").split(", ");
                 if (ajaxVars == null || ajaxVars.length < 3) {
