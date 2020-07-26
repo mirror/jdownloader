@@ -136,7 +136,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
     private void getByUserIDQueryHash(Browser br) throws Exception {
         synchronized (QUERY_HASH) {
-            final String profilePageContainer = br.getRegex("(/static/bundles/([^/]+/)?ProfilePageContainer\\.js/[a-f0-9]+.js)").getMatch(0);
+            // they keep changing the filename. was ProfilePageContainer[x], ..., ..., and now Consumer[3rd ref].
+            final String profilePageContainer = br.getRegex("(/static/bundles/([^/]+/)?Consumer\\.js/[a-f0-9]+.js)").getMatch(0);
             if (profilePageContainer != null) {
                 {
                     final Qdb qdb = QUERY_HASH.get(profilePageContainer);
@@ -149,13 +150,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 Browser brc = br.cloneBrowser();
                 brc.getHeaders().put("Accept", "*/*");
                 brc.getPage(profilePageContainer);
-                qHash = brc.getRegex("queryId\\s*:\\s*\"([0-9a-f]{32})\"").getMatch(0);
+                qHash = brc.getRegex("\\},queryId\\s*:\\s*\"([0-9a-f]{32})\"").getMatch(0);
                 {
                     final String clc = br.getRegex("(/static/bundles/([^/]+/)?ConsumerLibCommons\\.js/[a-f0-9]+.js)").getMatch(0);
                     if (clc != null) {
                         brc = br.cloneBrowser();
                         brc.getHeaders().put("Accept", "*/*");
-                        brc.getPage(profilePageContainer);
+                        brc.getPage(clc);
                         fbAppId = brc.getRegex("e\\.instagramWebDesktopFBAppId\\s*=\\s*'(\\d+)'").getMatch(0);
                         if (StringUtils.isEmpty(fbAppId)) {
                             logger.info("no fbAppId found!?:" + profilePageContainer);
