@@ -42,7 +42,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class ThisvidCom extends antiDDoSForHost {
     public ThisvidCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.camwhoresbay.com/");
+        this.enablePremium("https://www.thisvid.com/");
     }
 
     /* DEV NOTES */
