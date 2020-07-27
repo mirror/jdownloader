@@ -122,6 +122,12 @@ public class EasyloadIo extends PluginForHost {
         }
         String filename = null;
         String json = br.getRegex("<file-component v-bind:data=\"([^\"]+)").getMatch(0);
+        /* 2020-07-27: New */
+        String json_b64 = br.getRegex("<file-component exdata=\"([^\"]+)\"").getMatch(0);
+        if (json == null && json_b64 != null) {
+            json = Encoding.Base64Decode(json_b64);
+            json = Encoding.Base64Decode(json);
+        }
         try {
             json = Encoding.htmlDecode(json);
             entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);

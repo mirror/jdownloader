@@ -20,6 +20,8 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoAparatCom;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -30,7 +32,6 @@ import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AparatCam extends XFileSharingProBasic {
-
     public AparatCam(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
@@ -128,5 +129,10 @@ public class AparatCam extends XFileSharingProBasic {
             fileInfo[1] = new Regex(correctedBR, "<span\\s+class\\s*=\\s*\"\\s*uploadate\\s*\"\\s*>\\s*Size\\s*:\\s*([0-9\\.]+\\s*[KMGTP]{0,1}B)\\s*").getMatch(0);
         }
         return super.scanInfo(fileInfo);
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideo> getConfigInterface() {
+        return XFSConfigVideoAparatCom.class;
     }
 }
