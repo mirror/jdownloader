@@ -22,12 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,6 +40,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -166,15 +166,19 @@ public class UploadgigCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         setConstants(null);
-        doFree(link);
+        doFree(null, link);
     }
 
-    private void doFree(final DownloadLink link) throws Exception, PluginException {
+    private void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            if (account != null) {
+                // login method might have validated cookies
+                getPage(link.getDownloadURL());
+            }
             /* 2020-07-10: See http://uploadgig.com/static/tpl2/js/f45862367.js?v=0.0.2 */
             // premium only content
             if (br.containsHTML(">\\s*This file can be downloaded by Premium Member only")) {
@@ -293,9 +297,14 @@ public class UploadgigCom extends antiDDoSForHost {
     private boolean testLink(final String dllink, boolean throwException) throws Exception {
         try {
             final Browser br2 = this.br.cloneBrowser();
+            br2.setFollowRedirects(true);
             dl = new jd.plugins.BrowserAdapter().openDownload(br2, this.getDownloadLink(), dllink, resumes, chunks);
             if (dl.getConnection().getContentType().contains("html")) {
-                br2.followConnection();
+                try {
+                    br2.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (br2.getHttpConnection().getResponseCode() == 403 && br2.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
                 }
@@ -312,6 +321,7 @@ public class UploadgigCom extends antiDDoSForHost {
             } else if (e instanceof PluginException) {
                 throw e;
             } else {
+                logger.log(e);
                 return false;
             }
         }
@@ -473,7 +483,7 @@ public class UploadgigCom extends antiDDoSForHost {
         /* 2020-05-15: Always verify cookies for this host! */
         login(account, true);
         if (account.getType() == AccountType.FREE) {
-            doFree(link);
+            doFree(account, link);
         } else {
             br.setFollowRedirects(false);
             String dllink = this.checkDirectLink(link, "premium_directlink");

@@ -204,6 +204,7 @@ public class PornHubCom extends PluginForDecrypt {
         int page = 0;
         int maxPage = -1;
         String ajaxPaginationURL = null;
+        final String containerURL = br.getURL();
         do {
             int numberofActuallyAddedItems = 0;
             page++;
@@ -217,7 +218,6 @@ public class PornHubCom extends PluginForDecrypt {
             final Set<String> viewKeys = new HashSet<String>();
             if (account != null) {
                 if (paidVideosSection != null) {
-                    // TODO: doesn't make sense to add all paid/fanonly, add support to check paid/fan status
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(br.getURL() + "/paid");
                     decryptAllVideosOfAPornstar(brc, account, dupes);
@@ -242,6 +242,7 @@ public class PornHubCom extends PluginForDecrypt {
                 for (final String viewkey : viewKeys) {
                     if (dupes.add(viewkey) && !isAbort()) {
                         final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
+                        dl.setContainerUrl(containerURL);
                         decryptedLinks.add(dl);
                         distribute(dl);
                         numberofActuallyAddedItems++;

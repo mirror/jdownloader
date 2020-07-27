@@ -256,6 +256,9 @@ public class XvideosCom extends PluginForHost {
         } else {
             videoURL = getVideoLow();
         }
+        if (videoURL != null && !isValidVideoURL(link, videoURL)) {
+            videoURL = null;
+        }
         if (videoURL == null) {
             /* Fallback / try to find BEST */
             logger.info("Failed to find selected http quality");
