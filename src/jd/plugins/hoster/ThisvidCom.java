@@ -27,6 +27,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -37,9 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhoresbay.com" }, urls = { "https?://(?:www\\.)?camwhoresbay\\.com/(embed/\\d+|videos/\\d+/[a-z0-9\\-]+/)" })
-public class CamwhoresbayCom extends antiDDoSForHost {
-    public CamwhoresbayCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thisvid.com" }, urls = { "https?://(?:www\\.)?thisvid\\.com/(embed/\\d+|videos/[a-z0-9\\-]+/)" })
+public class ThisvidCom extends antiDDoSForHost {
+    public ThisvidCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.camwhoresbay.com/");
     }
@@ -63,7 +64,7 @@ public class CamwhoresbayCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.camwhoresbay.com/terms/";
+        return "https://www.thisvid.com/terms/";
     }
 
     @Override
@@ -77,7 +78,7 @@ public class CamwhoresbayCom extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/(?:videos|embed)/(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "/(?:videos|embed)/(.+)/?$").getMatch(0);
     }
 
     @Override
@@ -102,8 +103,8 @@ public class CamwhoresbayCom extends antiDDoSForHost {
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        is_private_video = this.br.containsHTML("This video is a private");
-        if (is_private_video && br.containsHTML("login-required")) {
+        is_private_video = this.br.containsHTML(">\\s*This video is a private video uploaded by");
+        if (is_private_video) {
             return AvailableStatus.TRUE;
         }
         getDllink(link);
@@ -199,7 +200,7 @@ public class CamwhoresbayCom extends antiDDoSForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     if (!test) {
                     }
-                    getPage("https://www." + this.getHost() + "/");
+                    getPage("https://" + this.getHost() + "/");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -209,12 +210,15 @@ public class CamwhoresbayCom extends antiDDoSForHost {
                     }
                 }
                 br.clearCookies(this.getHost());
-                getPage("https://www." + this.getHost() + "/login/");
-                /*
-                 * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
-                 * premium accounts available at all.
-                 */
-                postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + this.getHost() + "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                getPage("https://" + this.getHost() + "/login.php");
+                final Form loginform = br.getFormbyProperty("id", "logon_form");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                loginform.put("remember_me", "1");
+                this.submitForm(loginform);
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }

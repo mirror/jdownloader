@@ -55,7 +55,9 @@ public class RedditCom extends PluginForDecrypt {
         return dl;
     }
 
-    private FilePackage fp = null;
+    private FilePackage         fp                    = null;
+    private static final String TYPE_SELFHOSTED_VIDEO = "https?://v\\.redd\\.it/[a-z0-9]+.*";
+    private static final String TYPE_SELFHOSTED_IMAGE = "https?://i\\.redd\\.it/[a-z0-9]+.*";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -100,10 +102,14 @@ public class RedditCom extends PluginForDecrypt {
             final String externalURL = (String) entries.get("url");
             if (!StringUtils.isEmpty(externalURL)) {
                 logger.info("Found external URL");
-                if (externalURL.matches("https?://v\\.redd\\.it/[a-z0-9]+.*")) {
+                final DownloadLink dl = this.createDownloadlink(externalURL);
+                if (externalURL.matches(TYPE_SELFHOSTED_VIDEO)) {
                     addedRedditSelfhostedVideo = true;
+                    dl.setFinalFileName(title + ".mp4");
+                } else if (externalURL.matches(TYPE_SELFHOSTED_IMAGE)) {
+                    dl.setFinalFileName(title + ".jpg");
                 }
-                decryptedLinks.add(this.createDownloadlink(externalURL));
+                decryptedLinks.add(dl);
             }
             /* Look for embedded content from external sources - the object is always given but can be empty */
             final Object embeddedMediaO = entries.get("media_embed");
