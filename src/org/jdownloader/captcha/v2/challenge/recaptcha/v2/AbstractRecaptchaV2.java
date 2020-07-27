@@ -277,7 +277,8 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                 siteKeys.removeAll(INVALID_SITE_KEYS);
                 logger.info("Auto siteKeys filtered:" + siteKeys);
             }
-            return findCorretSiteKeys(source, br, siteKeys);
+            siteKey = findCorretSiteKeys(source, br, siteKeys);
+            return siteKey;
         }
     }
 
@@ -286,13 +287,13 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             logger.info("No siteKey found!");
             return null;
         } else if (siteKeys.size() == 1) {
-            logger.info("Auto single siteKey:" + siteKeys);
-            siteKey = siteKeys.iterator().next();
+            final String siteKey = siteKeys.iterator().next();
+            logger.info("Auto single siteKey:" + siteKey);
             return siteKey;
         } else {
             logger.info("Auto multiple siteKeys:" + siteKeys);
             if (br == null) {
-                siteKey = siteKeys.iterator().next();
+                final String siteKey = siteKeys.iterator().next();
                 logger.info("No browser available?! Use first known siteKey:" + siteKey);
                 return siteKey;
             } else {
@@ -312,7 +313,6 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                             it.remove();
                         } else {
                             logger.info("SiteKey:" + siteKey + " seems to be valid!");
-                            this.siteKey = siteKey;
                             return siteKey;
                         }
                     } catch (IOException e) {
