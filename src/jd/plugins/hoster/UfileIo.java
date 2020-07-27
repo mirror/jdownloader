@@ -95,10 +95,12 @@ public class UfileIo extends antiDDoSForHost {
         String filesize = br.getRegex("File Size\\s*:([^<>\"]+)").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */
-            filename = this.getFID(link);
+            link.setName(this.getFID(link));
+        } else {
+            filename = Encoding.htmlDecode(filename).trim();
+            /* 2020-07-27: Set final filename here as contentDisposition filenames are sometimes crippled. */
+            link.setFinalFileName(filename);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }

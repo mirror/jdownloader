@@ -1,5 +1,9 @@
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.google.GoogleAccountConfig;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -9,10 +13,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.components.google.GoogleAccountConfig;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "recaptcha.google.com" }, urls = { "google://.+" })
 public class GooglePremium extends PluginForHost {
@@ -65,7 +65,11 @@ public class GooglePremium extends PluginForHost {
 
     public GooglePremium(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://accounts.google.com/signup");
+        /*
+         * 2020-07-027: Disabled as it is not needed anymore (for now) and is only confusing users. Google login is still possible via
+         * hosts: youtube.com and docs.google.com
+         */
+        // this.enablePremium("https://accounts.google.com/signup");
     }
 
     @Override
