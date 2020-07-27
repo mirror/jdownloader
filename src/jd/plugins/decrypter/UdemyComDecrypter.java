@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/course/([^/]+)" })
 public class UdemyComDecrypter extends PluginForDecrypt {
     public UdemyComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,11 +47,8 @@ public class UdemyComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        String parameter = param.toString();
-        final String courseName = new Regex(parameter, "/course/([^/]+)").getMatch(0);
-        if (courseName != null) {
-            parameter = "https://" + this.getHost() + "/course/" + courseName + "/";
-        }
+        final String parameter = param.toString();
+        final String courseName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         /* 2020-07-24: Don't do this anymore - always add all items of the course instead! */
         // if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM_WEBSITE)) {
         // /* Single links --> Host plugin */
@@ -87,7 +84,6 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "udemy\\.com/([^/]+)").getMatch(0);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("results");
@@ -106,25 +102,25 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             if (entries == null) {
                 continue;
             }
-            decryptAsset(entries, lecture_id, position);
+            decryptAsset(entries, courseName, lecture_id, position);
+            /* Add file content */
             if (supplementary_assets != null) {
-                /* Most likely files ... */
                 ressourcelist_2 = (ArrayList<Object>) supplementary_assets;
                 for (final Object supplementary_asseto : ressourcelist_2) {
                     entries = (LinkedHashMap<String, Object>) supplementary_asseto;
-                    decryptAsset(entries, lecture_id, position);
+                    decryptAsset(entries, courseName, lecture_id, position);
                 }
             }
             position++;
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
+        fp.setName(courseName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
     /** Crawls single object (video or document) */
-    private void decryptAsset(final LinkedHashMap<String, Object> entries, final String lecture_id, final int position) {
+    private void decryptAsset(final LinkedHashMap<String, Object> entries, final String courseTitle, final String lecture_id, final int position) {
         final DecimalFormat df = new DecimalFormat("000");
         final String position_formatted = df.format(position);
         String asset_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
