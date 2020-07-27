@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,10 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
  * Google "Secure your links with a captcha, a password and much more" to find such sites
@@ -45,6 +45,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
+
     public abstractSafeLinking(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -68,8 +69,10 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // set parameter. required to be set here!
+        parameter = param.toString();
         // link correction
-        parameter = correctLink(param.toString());
+        parameter = correctLink(parameter);
         // setuid
         uid = getUID(parameter);
         // shortlink i assume
@@ -510,8 +513,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     /**
      * 2020-01-24: I was able to test the following captcha types: reCaptchaV2, basiccaptcha, simplecaptcha, coolcaptcha, fancycaptcha(Fancy
-     * Captcha, fancy), with- and without password and with password + captcha. </br> Seems like the following captcha types are not used
-     * anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
+     * Captcha, fancy), with- and without password and with password + captcha. </br>
+     * Seems like the following captcha types are not used anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
      */
     protected void handleCaptcha_oldStyle(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
