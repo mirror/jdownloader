@@ -170,7 +170,9 @@ public class RedditCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            link.setFinalFileName(this.getFID(link) + ".jpg");
+            if (!link.isNameSet()) {
+                link.setFinalFileName(this.getFID(link) + ".jpg");
+            }
         }
         return AvailableStatus.TRUE;
     }
