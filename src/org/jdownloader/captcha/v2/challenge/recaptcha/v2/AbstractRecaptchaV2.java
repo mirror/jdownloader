@@ -1,7 +1,12 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -15,6 +20,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.jdownloader.logging.LogController;
@@ -240,6 +246,8 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         return new Regex(source, "<\\s*(div|button)(?:[^>]*>.*?</\\1>|[^>]*\\s*/\\s*>)").getColumn(-1);
     }
 
+    protected static final HashSet<String> INVALID_SITE_KEYS = new HashSet<String>();
+
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
      *
@@ -253,68 +261,132 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         } else if (source == null) {
             return null;
         } else {
-            {
-                // lets look for defaults
-                final String[] divs = getDIVs(source);
-                if (divs != null) {
-                    for (final String div : divs) {
-                        if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches()) {
-                            siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
-                            if (siteKey != null) {
-                                return siteKey;
-                            }
-                        }
-                    }
-                }
-            }
-            {
-                // can also be within <script> (for example cloudflare)
-                final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
-                if (scripts != null) {
-                    for (final String script : scripts) {
-                        siteKey = new Regex(script, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
-                        if (siteKey != null) {
-                            return siteKey;
-                        }
-                    }
-                }
-            }
-            {
-                // within iframe
-                final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
-                if (iframes != null) {
-                    for (final String iframe : iframes) {
-                        siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
-                        if (siteKey != null) {
-                            return siteKey;
-                        }
-                    }
-                }
-            }
-            {
-                // json values in script or json
-                // with container, grecaptcha.render(container,parameters), eg RecaptchaV2
-                String jsSource = new Regex(source, "recaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
-                siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
+            String findNextSiteKeySource = source;
+            final HashSet<String> siteKeys = new HashSet<String>();
+            while (StringUtils.isNotEmpty(findNextSiteKeySource)) {
+                final String siteKey = findNextSiteKey(findNextSiteKeySource);
                 if (siteKey != null) {
-                    return siteKey;
-                }
-                // without, grecaptcha.render(parameters), eg RecaptchaV3
-                jsSource = new Regex(source, "recaptcha\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
-                siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
-                if (siteKey != null) {
-                    return siteKey;
+                    siteKeys.add(siteKey);
+                    findNextSiteKeySource = findNextSiteKeySource.replace(siteKey, "");
+                } else {
+                    break;
                 }
             }
-            {
-                // RecaptchaV3, grecaptcha.execute(apiKey)
-                siteKey = new Regex(source, "grecaptcha\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
-                if (siteKey != null) {
-                    return siteKey;
-                }
+            synchronized (INVALID_SITE_KEYS) {
+                logger.info("Auto siteKeys unfiltered:" + siteKeys);
+                siteKeys.removeAll(INVALID_SITE_KEYS);
+                logger.info("Auto siteKeys filtered:" + siteKeys);
             }
-            return siteKey;
+            return findCorretSiteKeys(source, br, siteKeys);
         }
+    }
+
+    protected String findCorretSiteKeys(final String source, final Browser br, Set<String> siteKeys) {
+        if (siteKeys.size() == 0) {
+            logger.info("No siteKey found!");
+            return null;
+        } else if (siteKeys.size() == 1) {
+            logger.info("Auto single siteKey:" + siteKeys);
+            siteKey = siteKeys.iterator().next();
+            return siteKey;
+        } else {
+            logger.info("Auto multiple siteKeys:" + siteKeys);
+            if (br == null) {
+                siteKey = siteKeys.iterator().next();
+                logger.info("No browser available?! Use first known siteKey:" + siteKey);
+                return siteKey;
+            } else {
+                final URL url = br._getURL();
+                final String co = Base64.encode(url.getProtocol() + "://" + url.getHost() + ":" + (url.getPort() == -1 ? url.getDefaultPort() : url.getPort())).replace("=", ".");
+                final Iterator<String> it = siteKeys.iterator();
+                while (it.hasNext()) {
+                    final Browser brc = br.cloneBrowser();
+                    final String siteKey = it.next();
+                    try {
+                        brc.getPage("https://www.google.com/recaptcha/api2/anchor?k=" + siteKey + "&co=" + co);
+                        if (brc.containsHTML("Invalid site key")) {
+                            synchronized (INVALID_SITE_KEYS) {
+                                INVALID_SITE_KEYS.add(siteKey);
+                            }
+                            logger.info("SiteKey:" + siteKey + " seems to be invalid!");
+                            it.remove();
+                        } else {
+                            logger.info("SiteKey:" + siteKey + " seems to be valid!");
+                            this.siteKey = siteKey;
+                            return siteKey;
+                        }
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                }
+                logger.info("Could not auto find siteKey!");
+                return null;
+            }
+        }
+    }
+
+    protected String findNextSiteKey(String source) {
+        {
+            // lets look for defaults
+            final String[] divs = getDIVs(source);
+            if (divs != null) {
+                for (final String div : divs) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches()) {
+                        final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                        if (siteKey != null) {
+                            return siteKey;
+                        }
+                    }
+                }
+            }
+        }
+        {
+            // can also be within <script> (for example cloudflare)
+            final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
+            if (scripts != null) {
+                for (final String script : scripts) {
+                    final String siteKey = new Regex(script, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                    if (siteKey != null) {
+                        return siteKey;
+                    }
+                }
+            }
+        }
+        {
+            // within iframe
+            final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
+            if (iframes != null) {
+                for (final String iframe : iframes) {
+                    final String siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
+                    if (siteKey != null) {
+                        return siteKey;
+                    }
+                }
+            }
+        }
+        {
+            // json values in script or json
+            // with container, grecaptcha.render(container,parameters), eg RecaptchaV2
+            String jsSource = new Regex(source, "recaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+            String siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
+            if (siteKey != null) {
+                return siteKey;
+            }
+            // without, grecaptcha.render(parameters), eg RecaptchaV3
+            jsSource = new Regex(source, "recaptcha\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+            siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
+            if (siteKey != null) {
+                return siteKey;
+            }
+        }
+        {
+            // RecaptchaV3, grecaptcha.execute(apiKey)
+            final String siteKey = new Regex(source, "grecaptcha\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+            if (siteKey != null) {
+                return siteKey;
+            }
+        }
+        return null;
     }
 
     protected RecaptchaV2Challenge createChallenge() {

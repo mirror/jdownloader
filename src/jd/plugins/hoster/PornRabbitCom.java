@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/(video/[a-z0-9\\-]+\\-(\\d+)\\.html|embed/(\\d+))" })
 public class PornRabbitCom extends PluginForHost {
@@ -69,7 +69,10 @@ public class PornRabbitCom extends PluginForHost {
     }
 
     public static String getTitleFromURL(final Browser br, final String url) {
-        String title = new Regex(br.getURL(), "pornrabbit\\.com/video/(.*?)\\-\\d+\\.html$").getMatch(0);
+        String title = new Regex(br != null ? br.getURL() : url, "pornrabbit\\.com/video/(.*?)\\-\\d+\\.html$").getMatch(0);
+        if (title == null) {
+            title = new Regex(url, "pornrabbit\\.com/video/(.*?)\\-\\d+\\.html$").getMatch(0);
+        }
         if (title != null) {
             /* Make title "nicer" */
             title = title.replace("-", " ");
@@ -91,6 +94,10 @@ public class PornRabbitCom extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?): Porn Rabbit</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+            if (filename == null) {
+                final String canonical = br.getRegex("<link\\s*rel\\s*=\\s*[^>]*href\\s*=\\s*\"(https?://[^\"]*?" + getFID(link) + "\\.html)").getMatch(0);
+                filename = getTitleFromURL(null, canonical);
+            }
         }
         if (filename == null) {
             /* Fallback */
@@ -130,8 +137,10 @@ public class PornRabbitCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            final Browser brc = br2.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = brc.openHeadConnection(dllink);
+            if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -149,8 +158,12 @@ public class PornRabbitCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!dl.getConnection().isOK() || dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

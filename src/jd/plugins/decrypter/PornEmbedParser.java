@@ -3,8 +3,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -15,6 +13,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -1035,19 +1035,10 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         /*
-         * 2020-07-21: Skip DownloadLinks of current host found in current html. E.g. pornrabit.com --> Will find same pornrabbit URL as
+         * 2020-07-21: Skip DownloadLinks of current host found in current html. E.g. pornrabbit.com --> Will find same pornrabbit URL as
          * "embed URL" --> This will lose file title
          */
-        final ArrayList<DownloadLink> cleanedArray = new ArrayList<DownloadLink>();
-        final String currentBrowserHost = br.getHost();
-        for (final DownloadLink dl : decryptedLinks) {
-            final String thishost = dl.getHost();
-            if (thishost.equals(currentBrowserHost)) {
-                continue;
-            }
-            cleanedArray.add(dl);
-        }
-        return cleanedArray;
+        return decryptedLinks;
     }
 
     private boolean handleExtern(final String host, final boolean processAll, DecrypterArrayList<DownloadLink> decryptedLinks) {
