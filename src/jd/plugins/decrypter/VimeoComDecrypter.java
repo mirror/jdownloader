@@ -49,6 +49,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -406,6 +407,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                             return decryptedLinks;
                         }
+                    } else if (isPasswordProtected(this.br)) {
+                        password = handlePW(param, this.br);
                     } else {
                         throw e2;
                     }
@@ -901,7 +904,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     public static boolean isPasswordProtected(final Browser br) throws PluginException {
-        return br.containsHTML("\\d+/password");
+        // view variable: 4 scheint private mit passwort zu sein
+        // view 2 scheint referer
+        return br.containsHTML("\\d+/password") || jd.plugins.hoster.VimeoCom.isPasswordProtectedReview(br);
     }
 
     private Browser prepBrowser(final Browser ibr) throws PluginException {
@@ -938,9 +943,39 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             passwords.add(lastUsedPass);
         }
         final String videourl = br.getURL();
+        String urlToAccessOnCorrectPassword = null;
+        String videoID = null;
         retry: for (int i = 0; i < 3; i++) {
-            final Form pwpwform = getPasswordForm(br);
-            pwpwform.put("token", getXsrft(br));
+            final Form pwform;
+            final String token;
+            if (jd.plugins.hoster.VimeoCom.isPasswordProtectedReview(br)) {
+                pwform = new Form();
+                pwform.setMethod(MethodType.POST);
+                videoID = new Regex(videourl, "/review/data/(\\d+)").getMatch(0);
+                if (videoID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                pwform.setAction("/" + videoID + "/password");
+                /* First get "xsrft" token ... */
+                br.getPage("https://vimeo.com/_rv/viewer");
+                final String vuid = PluginJSonUtils.getJson(br, "vuid");
+                token = PluginJSonUtils.getJson(br, "xsrft");
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                pwform.put("is_review", "1");
+                if (!StringUtils.isEmpty(vuid)) {
+                    br.setCookie(br.getURL(), "vuid", vuid);
+                }
+                urlToAccessOnCorrectPassword = videourl;
+            } else {
+                pwform = getPasswordForm(br);
+                token = getXsrft(br);
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            pwform.put("token", token);
             final String password;
             if (passwords.size() > 0) {
                 i -= 1;
@@ -952,9 +987,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 // empty pass?? not good...
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            pwpwform.put("password", Encoding.urlEncode(password));
+            pwform.put("password", Encoding.urlEncode(password));
             try {
-                br.submitForm(pwpwform);
+                br.submitForm(pwform);
             } catch (final Throwable e) {
                 /* HTTP/1.1 418 I'm a teapot --> lol */
                 if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
@@ -971,6 +1006,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (isPasswordProtected(br) || br.getHttpConnection().getResponseCode() == 405 || "false".equalsIgnoreCase(br.toString())) {
                 br.getPage(videourl);
                 continue retry;
+            }
+            if (urlToAccessOnCorrectPassword != null) {
+                br.getPage(urlToAccessOnCorrectPassword);
             }
             getPluginConfig().setProperty("lastusedpass", password);
             return password;
