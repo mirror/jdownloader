@@ -128,14 +128,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /* Embedded content URLs */
             pattern.append("|");
             pattern.append("https?://player\\." + buildHostsPatternPart(domains) + "/(?:video|external)/\\d+((/config\\?|\\?|#).+)?");
+            pattern.append("|");
+            pattern.append("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/shortest/[^/]+");
             ret.add(pattern.toString());
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String LINKTYPE_USER     = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
-    private final String LINKTYPE_GROUP    = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
-    private final String LINKTYPE_SHOWCASE = "https?://(?:www\\.)?vimeo\\.com/showcase/\\d+(?:/embed)?";
+    private final String LINKTYPE_USER           = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
+    private final String LINKTYPE_GROUP          = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
+    private final String LINKTYPE_SHOWCASE       = "https?://(?:www\\.)?vimeo\\.com/showcase/\\d+(?:/embed)?";
+    private final String LINKTYPE_SHORT_REDIRECT = "https?://(?:www\\.)?vimeo\\.com/shortest/.+";
 
     private String guessReferer(CryptedLink param) {
         CrawledLink check = getCurrentLink().getSourceLink();
@@ -236,6 +239,16 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
+        } else if (parameter.matches(LINKTYPE_SHORT_REDIRECT)) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            final String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            decryptedLinks.add(this.createDownloadlink(redirect));
+            return decryptedLinks;
         }
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();
@@ -903,10 +916,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    public static boolean isPasswordProtected(final Browser br) throws PluginException {
-        // view variable: 4 scheint private mit passwort zu sein
-        // view 2 scheint referer
-        return br.containsHTML("\\d+/password") || jd.plugins.hoster.VimeoCom.isPasswordProtectedReview(br);
+    private static boolean isPasswordProtected(final Browser br) throws PluginException {
+        return VimeoCom.isPasswordProtected(br);
     }
 
     private Browser prepBrowser(final Browser ibr) throws PluginException {

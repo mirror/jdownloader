@@ -606,7 +606,7 @@ public class VimeoCom extends PluginForHost {
     public static boolean isPasswordProtected(final Browser br) throws PluginException {
         // view variable: 4 scheint private mit passwort zu sein
         // view 2 scheint referer
-        return br.containsHTML("\\d+/password");
+        return br.containsHTML("\\d+/password") || isPasswordProtectedReview(br);
     }
 
     public static boolean isPasswordProtectedReview(final Browser br) throws PluginException {
@@ -616,28 +616,7 @@ public class VimeoCom extends PluginForHost {
 
     /** Handles password protected URLs - usually correct password will already be given via decrypter handling! */
     private void handlePW(final DownloadLink link, final Browser br) throws Exception {
-        if (isPasswordProtected(br)) {
-            final String xsrft = getXsrft(br);
-            final Form pwform = jd.plugins.decrypter.VimeoComDecrypter.getPasswordForm(br);
-            if (pwform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String passCode = link.getDownloadPassword();
-            if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", link);
-                if (passCode == null) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
-                }
-            }
-            pwform.put("token", xsrft);
-            pwform.put("password", Encoding.urlEncode(passCode));
-            br.submitForm(pwform);
-            if (isPasswordProtected(br)) {
-                link.setDownloadPassword(null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
-            }
-            link.setDownloadPassword(passCode);
-        } else if (isPasswordProtectedReview(br)) {
+        if (isPasswordProtectedReview(br)) {
             /* 2020-07-28: New and differs from the other password handling */
             final String initialURL = br.getURL();
             final String videoID = new Regex(initialURL, "/review/data/(\\d+)").getMatch(0);
@@ -674,6 +653,27 @@ public class VimeoCom extends PluginForHost {
             if (!StringUtils.isEmpty(vuid)) {
                 br.setCookie(br.getURL(), "vuid", vuid);
             }
+        } else {
+            final String xsrft = getXsrft(br);
+            final Form pwform = jd.plugins.decrypter.VimeoComDecrypter.getPasswordForm(br);
+            if (pwform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+                if (passCode == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+                }
+            }
+            pwform.put("token", xsrft);
+            pwform.put("password", Encoding.urlEncode(passCode));
+            br.submitForm(pwform);
+            if (isPasswordProtected(br)) {
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+            }
+            link.setDownloadPassword(passCode);
         }
     }
 
