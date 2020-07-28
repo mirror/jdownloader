@@ -32,6 +32,19 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,19 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -569,9 +569,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 } else if (responsecode == 416) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
                 }
-                String json_errormsg = PluginJSonUtils.getJson(br, "error");
-                final String error = con.getRequest().getResponseHeader("X-Error");
-                if ("Unexpected range request".equalsIgnoreCase(error)) {
+                /* 2020-07-28: Resume can now also fail with error 500 and josn: {"error":"Unexpected range request","success":false} */
+                String errorMsgJson = PluginJSonUtils.getJson(br, "error");
+                final String errorMsgHeader = con.getRequest().getResponseHeader("X-Error");
+                if (StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgHeader) || StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgJson)) {
                     /* Resume impossible */
                     if (!resume) {
                         /* Resume was already disabled? Then we cannot do anything about it --> Wait and retry later */
@@ -598,10 +599,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
                 } else {
                     logger.info("Unknown error happened");
-                    if (StringUtils.isEmpty(json_errormsg)) {
-                        json_errormsg = "Unknown server error";
+                    if (StringUtils.isEmpty(errorMsgJson)) {
+                        errorMsgJson = "Unknown server error";
                     }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, json_errormsg);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgJson);
                 }
             }
             /*
@@ -1455,7 +1456,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         logger.info("Performing cached login sequence!!");
         boolean validated_cookies = login_web(account, false);
