@@ -218,8 +218,10 @@ public class PornHubCom extends PluginForDecrypt {
             final Set<String> viewKeys = new HashSet<String>();
             if (account != null) {
                 if (paidVideosSection != null) {
+                    // /videos/premium contains paid/available premium videos while
+                    // /videos/paid contains all un-paid videos
                     final Browser brc = br.cloneBrowser();
-                    brc.getPage(br.getURL() + "/paid");
+                    brc.getPage(br.getURL() + "/premium");
                     decryptAllVideosOfAPornstar(brc, account, dupes);
                 }
                 if (false && fanVideosSection != null) {
