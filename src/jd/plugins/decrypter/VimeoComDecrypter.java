@@ -557,25 +557,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                         final Browser brc = br.cloneBrowser();
                         brc.setRequest(null);
-                        brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".xml");
+                        brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".json");
                         if (StringUtils.isEmpty(title)) {
-                            title = brc.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
-                            title = Encoding.htmlOnlyDecode(title);
+                            title = PluginJSonUtils.getJson(brc, "title");
                         }
                         if (StringUtils.isEmpty(date)) {
-                            date = brc.getRegex("<upload_date>\\s*(.*?)\\s*</upload_date>").getMatch(0);
+                            date = PluginJSonUtils.getJson(brc, "upload_date");
                         }
                         if (StringUtils.isEmpty(ownerName)) {
-                            ownerName = brc.getRegex("<user_name>\\s*(.*?)\\s*</user_name>").getMatch(0);
+                            ownerName = PluginJSonUtils.getJson(brc, "user_name");
                         }
                         if (StringUtils.isEmpty(ownerUrl)) {
-                            ownerUrl = new Regex(brc.getRegex("<user_url>\\s*(.*?)\\s*</user_url>").getMatch(0), "vimeo\\.com/([^/]+)").getMatch(0);
+                            ownerUrl = PluginJSonUtils.getJson(brc, "user_url");
                         }
                         if (StringUtils.isEmpty(description)) {
-                            description = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
-                            description = Encoding.htmlOnlyDecode(description);
+                            description = PluginJSonUtils.getJson(brc, "description");
                         }
-                        embed_privacy = brc.getRegex("<description>\\s*(.*?)\\s*</description>").getMatch(0);
+                        embed_privacy = PluginJSonUtils.getJson(brc, "embed_privacy");
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
