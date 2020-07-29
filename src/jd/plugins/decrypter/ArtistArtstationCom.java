@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-]+\\.artstation\\.com/(projects/[A-Z0-9]+|$)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-]+\\.artstation\\.com/(projects/[A-Z0-9]+|(?!artwork)$)" })
 public class ArtistArtstationCom extends antiDDoSForDecrypt {
     public ArtistArtstationCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,6 +38,7 @@ public class ArtistArtstationCom extends antiDDoSForDecrypt {
                 }
             }
             getPage("/projects");
+            /* Projects == "artwork" URLs */
             projects = br.getRegex("/projects/([A-Z0-9]+)").getColumn(0);
             if (projects != null) {
                 for (final String project : projects) {
