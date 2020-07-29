@@ -866,17 +866,24 @@ public class XHamsterCom extends PluginForHost {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamsterpremium.com", "http://xhamsterpremium.com", true);
                         this.setDownloadLink(dummyLink);
                     }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    final String recaptchaV2Response_json = "\"" + recaptchaV2Response + "\"";
+                    final String sitekey = br.getRegex("data-site-key=\"([^\"]+)\"").getMatch(0);
+                    final String recaptchaV2Response;
+                    if (!StringUtils.isEmpty(sitekey)) {
+                        /* 2020-07-29: Invisible reCaptcha is used from now on. */
+                        recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, this.br, sitekey).getToken();
+                    } else {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    }
                     final String csrftoken = br.getRegex("data-name=\"csrf-token\" content=\"([^<>\"]+)\"").getMatch(0);
                     if (csrftoken != null) {
                         br.getHeaders().put("x-csrf-token", csrftoken);
                     } else {
                         logger.warning("Failed to find csrftoken --> Premium login might fail because of this");
                     }
-                    br.postPageRaw("https://gold.xhamsterpremium.com/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":%s}", account.getUser(), account.getPass(), recaptchaV2Response_json));
+                    br.postPageRaw("https://gold.xhamsterpremium.com/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":\"%s\",\"recaptcha\":\"%s\"}", account.getUser(), account.getPass(), recaptchaV2Response, recaptchaV2Response));
+                    final String userId = PluginJSonUtils.getJson(br, "userId");
                     final String success = PluginJSonUtils.getJson(br, "success");
-                    if ("true".equalsIgnoreCase(success)) {
+                    if ("true".equalsIgnoreCase(success) && !StringUtils.isEmpty(userId)) {
                         logger.info("Premium login successful");
                         isloggedinPremium = true;
                     } else {

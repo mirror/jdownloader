@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -32,10 +36,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
@@ -85,6 +85,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> resource_data_list = (ArrayList<Object>) json.get("assets");
             final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
+            final String username = (String) JavaScriptEngineFactory.walkJson(json, "user/username");
             final String projectTitle = (String) json.get("title");
             for (final Object jsono : resource_data_list) {
                 final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) jsono;
@@ -161,6 +162,10 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 dl.setAvailable(true);
                 dl.setFinalFileName(filename);
                 dl.setProperty("decrypterfilename", filename);
+                if (!StringUtils.isEmpty(username)) {
+                    /* 2020-07-29: Packagizer property */
+                    dl.setProperty("username", username);
+                }
                 fp.add(dl);
                 decryptedLinks.add(dl);
             }
